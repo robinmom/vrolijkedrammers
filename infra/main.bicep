@@ -17,12 +17,6 @@ param sqlUseFreeOffer bool
 param keyVaultPurgeProtection bool
 param logDailyQuotaGb int
 
-@allowed(['Free', 'Standard'])
-param staticWebAppSku string
-
-@description('Static Web Apps kent beperkt regio\'s (OQ-76); de content zelf wordt wereldwijd via CDN geserveerd.')
-param staticWebAppLocation string
-
 @description('Entra External ID: authority, client-ID van de API-app-registratie en de vereiste environmentAccess-waarde (leeg in Prod).')
 param externalIdAuthority string
 param apiClientId string
@@ -138,15 +132,6 @@ module apiRoles 'modules/role-assignments.bicep' = {
   }
 }
 
-module portal 'modules/staticwebapp.bicep' = {
-  name: 'portal'
-  params: {
-    location: staticWebAppLocation
-    environmentName: environmentName
-    tags: tags
-    sku: staticWebAppSku
-  }
-}
 
 module budget 'modules/budget.bicep' = if (!empty(budgetContactEmails)) {
   name: 'budget'
@@ -160,8 +145,8 @@ module budget 'modules/budget.bicep' = if (!empty(budgetContactEmails)) {
 
 output apiAppName string = api.outputs.name
 output apiUrl string = 'https://${api.outputs.defaultHostName}'
-output portalName string = portal.outputs.name
-output portalUrl string = 'https://${portal.outputs.defaultHostName}'
+// Het beheerportal wordt door de API-app geserveerd (OQ-76: alles in de EU).
+output portalUrl string = 'https://${api.outputs.defaultHostName}/beheer/'
 output sqlServerFqdn string = sql.outputs.serverFqdn
 output keyVaultName string = keyVault.outputs.name
 output storageAccountName string = storage.outputs.name

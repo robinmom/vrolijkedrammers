@@ -1,6 +1,7 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Drammers.Api.Authentication;
 using Drammers.Api.ErrorHandling;
+using Drammers.Api.Portal;
 using Drammers.Infrastructure;
 using Drammers.SharedKernel.Time;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -36,6 +37,7 @@ try
 
     var app = builder.Build();
 
+    app.UseSecurityHeaders();
     app.UseExceptionHandler();
     app.UseStatusCodePages();
     app.UseSerilogRequestLogging();
@@ -56,6 +58,7 @@ try
     app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
     app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyTag) });
     app.MapControllers();
+    app.MapPortal();
 
     await app.RunAsync();
 }

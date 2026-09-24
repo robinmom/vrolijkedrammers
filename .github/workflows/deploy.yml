@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build API en portal
+    name: Build API + portal
     # Pas actief nadat de bootstrap en de GitHub-variabelen zijn ingericht (runbook omgeving-opbouwen §2).
     if: vars.DVD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
@@ -39,16 +39,16 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build portal
-        run: pnpm --filter @drammers/admin build
+      - name: Build portal en meeleveren in de API (wwwroot/beheer, OQ-76)
+        run: |
+          pnpm --filter @drammers/admin build
+          rm -rf publish/api/wwwroot/beheer
+          mkdir -p publish/api/wwwroot
+          cp -r apps/admin/dist publish/api/wwwroot/beheer
       - uses: actions/upload-artifact@v4
         with:
           name: api
           path: publish/api
-      - uses: actions/upload-artifact@v4
-        with:
-          name: portal
-          path: apps/admin/dist
 
   deploy:
     name: Uitrol ${{ inputs.environment || 'dev' }}
@@ -87,37 +87,16 @@ jobs:
             --query properties.outputs -o json)
           echo "api-app=$(jq -r .apiAppName.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
           echo "api-url=$(jq -r .apiUrl.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
-          echo "portal=$(jq -r .portalName.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@v4
         with:
           name: api
           path: publish/api
-      - name: API – uitrol
+      - name: API + portal – uitrol
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ steps.infra.outputs.api-app }}
           package: publish/api
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: portal
-          path: publish/portal
-      - name: Portal – deploy-token ophalen (niet opgeslagen)
-        id: swa
-        run: |
-          token=$(az staticwebapp secrets list --name "${{ steps.infra.outputs.portal }}" \
-            --resource-group "$RESOURCE_GROUP" --query properties.apiKey -o tsv)
-          echo "::add-mask::$token"
-          echo "token=$token" >> "$GITHUB_OUTPUT"
-      - name: Portal – uitrol
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
-          action: upload
-          app_location: publish/portal
-          skip_app_build: true
-          skip_api_build: true
 
       - name: Smoke-test – /health/ready
         run: |
@@ -129,6 +108,9 @@ jobs:
             sleep 15
           done
           exit 1
+      - name: Smoke-test – portal
+        run: |
+          curl -sf "${{ steps.infra.outputs.api-url }}/beheer/" | grep -q '<div id="root">'
       - name: Smoke-test – anonieme blob-toegang geweigerd
         run: |
           status=$(curl -s -o /dev/null -w '%{http_code}' "https://stdvd$ENVIRONMENT.blob.core.windows.net/exports?restype=container&comp=list")

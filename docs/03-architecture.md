@@ -6,7 +6,7 @@
 
 1. **Eenvoud boven schaal**: een *modulaire monoliet* (één API-deployable) met duidelijke modulegrenzen. Geen microservices, geen message bus, geen Kubernetes.
 2. **API-first**: app, beheerportal en website gebruiken dezelfde REST API (`/api/v1`), gedocumenteerd met OpenAPI.
-3. **PaaS in Azure**: App Service (API + achtergrondworkers), Azure SQL, Blob Storage, Key Vault en Static Web Apps. Geen VM's en (in het MVP) geen Functions (ADR-007/B-01).
+3. **PaaS in Azure**: App Service (API + achtergrondworkers), Azure SQL, Blob Storage, Key Vault. Het beheerportal wordt als statische bestanden door de API-app geserveerd (OQ-76). Geen VM's en (in het MVP) geen Functions (ADR-007/B-01).
 4. **Security by default**: managed identities, geen secrets in code, least privilege, auditlog.
 5. **Offline waar het ertoe doet**: alleen de scanner en "Mijn QR" zijn offline-capabel; de rest werkt met cache.
 
@@ -55,7 +55,7 @@ flowchart LR
 flowchart TB
   subgraph Clients
     A[Expo app\nReact Native + TS]
-    P[Beheerportal\nReact + Vite + TS\nAzure Static Web Apps]
+    P[Beheerportal\nReact + Vite + TS\ngeserveerd door de API-app onder /beheer]
     W[Website\nbestaand/nieuw]
   end
 
@@ -233,7 +233,7 @@ Website → API (/api/v1, public + authenticated endpoints) → Business logic �
 | ADR-004 | Authenticatie | Entra External ID (één tenant) + eigen RBAC |
 | ADR-005 | QR-security | Dynamische, device-gebonden, gesigneerde QR |
 | ADR-006 | Offline scannen | Lokale validatie + queue + server-reconciliatie |
-| ADR-007 | Hosting | App Service (API + workers) + Static Web Apps |
+| ADR-007 | Hosting | App Service (API + workers + beheerportal) |
 | ADR-008 | Bestanden | Private Blob + quarantaine + malwarescan |
 | ADR-009 | Push | Expo Push achter abstractie |
 | ADR-010 | e-Boekhouden | Pull-sync `/v1/member`, idempotent op lidnummer |

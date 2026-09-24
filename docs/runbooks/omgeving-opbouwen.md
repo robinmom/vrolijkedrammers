@@ -9,7 +9,7 @@
 | Resource group | Inhoud | Beheerd door |
 |---|---|---|
 | `rg-dvd-nonprod-shared` | App Service-plan `asp-dvd-nonprod` (B1, Linux, gedeeld door Dev en Acc); managed identities `id-dvd-github-dev`, `id-dvd-github-acc` (deploy) en `id-dvd-github-whatif` (alleen lezen, voor pull requests); budget | `infra/bootstrap` (beheerder, eenmalig) |
-| `rg-dvd-dev`, `rg-dvd-acc` | API-app, SQL-server + database, Storage, Key Vault, Log Analytics + App Insights, Static Web App, Communication Services Email, budget | `infra/main.bicep` (pipeline, bij elke uitrol) |
+| `rg-dvd-dev`, `rg-dvd-acc` | API-app, SQL-server + database, Storage, Key Vault, Log Analytics + App Insights, Communication Services Email, budget. Het beheerportal draait in de API-app onder `/beheer` | `infra/main.bicep` (pipeline, bij elke uitrol) |
 | `rg-dvd-identity` | External ID-tenant (zie [entra-external-id.md](entra-external-id.md)) | Handmatig |
 
 Rechten (least privilege, docs/08 §4):
@@ -18,7 +18,7 @@ Rechten (least privilege, docs/08 §4):
 - **SQL:** Entra-groep `sg-dvd-sql-admin-<env>` (beheerders + deploy-identiteit) is SQL-beheerder; SQL-logins zijn uitgeschakeld.
 - **API (system-assigned managed identity):** `Key Vault Secrets User`, `Storage Blob Data Contributor`, `Storage Blob Delegator` en `Communication and Email Service Owner`, telkens alleen op de resource van de eigen omgeving.
 
-**Regio:** `swedencentral`. West Europe accepteert geen nieuwe klanten voor deze subscription (`RequestDisallowedByAzure … not accepting new customers`, gecontroleerd op 2026-09-25). North Europe en Germany West Central hebben geen B1-quota. De Static Web App kan niet in Sweden Central staan; zie [10-open-questions](../10-open-questions.md) OQ-75 en OQ-76.
+**Regio:** `swedencentral`. West Europe accepteert geen nieuwe klanten voor deze subscription (`RequestDisallowedByAzure … not accepting new customers`, gecontroleerd op 2026-09-25). North Europe en Germany West Central hebben geen B1-quota. Het beheerportal wordt door de API-app geserveerd, zodat alles in de EU staat ([10-open-questions](../10-open-questions.md) OQ-75 en OQ-76).
 
 ## 2. Eenmalig: bootstrap (beheerder)
 
@@ -41,15 +41,15 @@ Het script maakt de drie resource groups, het plan, de identiteiten met federati
 3. *Secrets and variables → Actions → Variables*: vul de repository-variabelen voor what-if in pull requests in.
 4. Zet daarna de repository-variabele `DVD_DEPLOY_ENABLED` = `true`. Zonder die variabele slaat de workflow *Deploy* zichzelf over.
 
-Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC. Het deploy-token van de Static Web App wordt tijdens elke run opgehaald en gemaskeerd.
+Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC.
 
 ## 3. Eenmalig per omgeving: Entra External ID
 
 1. **Handmatig (één keer voor de hele tenant):** Entra-beheercentrum (tenant *De Vrolijke Drammers App*) → External Identities → *Custom user attributes* → *Add*: naam `environmentAccess`, type *String*. De Azure CLI heeft niet de Graph-rechten om dit zelf te doen.
-2. Registreer de apps, nadat de eerste uitrol de URL van het portal heeft opgeleverd:
+2. Registreer de apps, na de eerste uitrol:
    ```bash
    az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
-   DVD_PORTAL_URL=https://<swa-host> infra/entra/register-apps.sh dev
+   DVD_PORTAL_URL=https://app-dvd-api-dev.azurewebsites.net/beheer/ infra/entra/register-apps.sh dev
    ```
    Dit maakt `DVD API (dev)`, `DVD Beheerportal (dev)` en `DVD App (dev)` aan, met *Require user assignment* en de groep `Testers`. Ook zet het de claims-mapping (`environmentAccess`) en de user flow *DVD aanmelden* klaar: e-mail met eenmalige code, zelfregistratie uit.
 3. Neem `DVD_API_CLIENT_ID` en `DVD_ENVIRONMENT_ACCESS_CLAIM` over in de GitHub environment en start de uitrol opnieuw.
@@ -61,7 +61,7 @@ Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC. Het d
 
 ## 4. Uitrol
 
-- **Dev:** automatisch bij elke merge naar `main` (workflow *Deploy*). Volgorde: what-if, infra, API, portal en smoke-tests: `/health/ready` = 200, anonieme blob-toegang geweigerd, SQL alleen met Entra-authenticatie.
+- **Dev:** automatisch bij elke merge naar `main` (workflow *Deploy*). Volgorde: what-if, infra, API + portal (één pakket) en smoke-tests: portal op `/beheer/`, `/health/ready` = 200, anonieme blob-toegang geweigerd, SQL alleen met Entra-authenticatie.
 - **Acc:** Actions → *Deploy* → *Run workflow* → `acc` (na goedkeuring door een reviewer).
 - **Pull requests:** Bicep-lint en build altijd; what-if tegen Dev als de what-if-identiteit is ingericht.
 
@@ -98,4 +98,4 @@ Let op: de volgende uitrol laat handmatige regels staan, omdat ze niet door Bice
 
 ## 8. Kosten
 
-Budgetten (met e-mail op 80 % werkelijk en 100 % verwacht): `rg-dvd-nonprod-shared` € 20, Dev € 25, Acc € 35 per maand. Het overzicht staat in Azure-portal → Cost Management → Budgets. De grootste post is het gedeelde B1-plan. SQL (free offer, pauzeert bij opgebruikte limiet), Static Web Apps (Free) en Log Analytics (1 GB/dag cap) zijn in Dev/Acc nagenoeg gratis.
+Budgetten (met e-mail op 80 % werkelijk en 100 % verwacht): `rg-dvd-nonprod-shared` € 20, Dev € 25, Acc € 35 per maand. Het overzicht staat in Azure-portal → Cost Management → Budgets. De grootste post is het gedeelde B1-plan. SQL (free offer, pauzeert bij opgebruikte limiet), en Log Analytics (1 GB/dag cap) zijn in Dev/Acc nagenoeg gratis.

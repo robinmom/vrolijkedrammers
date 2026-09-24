@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # App-registraties per omgeving in de Entra External ID-tenant (B-02, docs/runbooks/entra-external-id.md §4).
 #   az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
-#   DVD_PORTAL_URL=https://<swa-host> infra/entra/register-apps.sh dev
+#   DVD_PORTAL_URL=https://app-dvd-api-dev.azurewebsites.net/beheer/ infra/entra/register-apps.sh dev
 # Idempotent. Maakt per omgeving: API, beheerportal (SPA) en app (public client).
 # Dev/Acc: "Require user assignment" + groep Testers; de API krijgt de claim environmentAccess.
 set -euo pipefail

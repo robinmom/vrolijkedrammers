@@ -13,7 +13,7 @@
 | `rg-dvd-identity` | External ID-tenant (zie [entra-external-id.md](entra-external-id.md)) | Handmatig |
 
 Rechten (least privilege, docs/08 §4):
-- **Deploy-identiteit per omgeving:** `Contributor` op de eigen resource group; `Role Based Access Control Administrator` op de eigen resource group, met een voorwaarde die alleen de vier rollen van de API-identiteit toestaat; `Website Contributor` op het gedeelde plan (om een app eraan te koppelen). Het federated credential accepteert alleen tokens van de GitHub environment met dezelfde naam.
+- **Deploy-identiteit per omgeving:** `Contributor` op de eigen resource group; `Role Based Access Control Administrator` op de eigen resource group, met een voorwaarde die alleen de vier rollen van de API-identiteit toestaat; `Website Contributor` op het gedeelde plan (om een app eraan te koppelen). Het federated credential accepteert alleen tokens van de GitHub environment met dezelfde naam. GitHub zet in het subject de eigenaar en repository **met hun ID's** (`repo:robinmom@37656265/vrolijkedrammers@1386066275:environment:dev`). Na het overdragen of hernoemen van de repository moet `DVD_GITHUB_REPOSITORY` worden aangepast en de bootstrap opnieuw worden gedraaid.
 - **What-if-identiteit:** eigen rol *DVD Bicep What-If* (lezen + validate/what-if) op `rg-dvd-dev` en `rg-dvd-acc`; kan niets wijzigen.
 - **SQL:** Entra-groep `sg-dvd-sql-admin-<env>` (beheerders + deploy-identiteit) is SQL-beheerder; SQL-logins zijn uitgeschakeld.
 - **API (system-assigned managed identity):** `Key Vault Secrets User`, `Storage Blob Data Contributor`, `Storage Blob Delegator` en `Communication and Email Service Owner`, telkens alleen op de resource van de eigen omgeving.

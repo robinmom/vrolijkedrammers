@@ -8,7 +8,8 @@ set -euo pipefail
 
 : "${AZURE_SUBSCRIPTION_ID:?Zet AZURE_SUBSCRIPTION_ID}"
 LOCATION="${DVD_LOCATION:-swedencentral}"
-REPOSITORY="${DVD_GITHUB_REPOSITORY:-robinmom/vrolijkedrammers}"
+# OIDC-subject van GitHub met eigenaar- en repo-ID (zie https://api.github.com/repos/<eigenaar>/<repo>: owner.id en id).
+REPOSITORY="${DVD_GITHUB_REPOSITORY:-robinmom@37656265/vrolijkedrammers@1386066275}"
 BUDGET_EMAIL="${DVD_BUDGET_EMAIL:-}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 

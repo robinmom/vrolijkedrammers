@@ -1,5 +1,6 @@
 # Gedeelde helpers voor Microsoft Graph in de External ID-tenant (B-02).
-# shellcheck shell=bash disable=SC2034  # constanten worden gebruikt door de scripts die dit bestand sourcen
+# De constanten worden gebruikt door de scripts die dit bestand sourcen.
+# shellcheck shell=bash disable=SC2034
 CIAM_TENANT_ID="260db5a1-e5b6-4388-9f6c-d9b02cb5578b"
 GRAPH="https://graph.microsoft.com/v1.0"
 GRAPH_APP_ID="00000003-0000-0000-c000-000000000000"

@@ -4,7 +4,7 @@ targetScope = 'subscription'
 
 param location string = 'swedencentral'
 
-@description('GitHub-repository in de vorm eigenaar/naam.')
+@description('Repository zoals GitHub die in het OIDC-subject zet: eigenaar@eigenaar-id/naam@repo-id (nieuwe, onveranderlijke vorm).')
 param githubRepository string
 
 param environments array = ['dev', 'acc']

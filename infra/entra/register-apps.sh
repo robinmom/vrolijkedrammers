@@ -117,8 +117,11 @@ ensure_in_user_flow() { # <appId>
 echo "==> API ($ENV)"
 API_NAME="DVD API ($ENV)"
 API_APP_ID="$(find_by_name "$GRAPH/applications" "$API_NAME" appId)"
-SCOPE_ID="$( [[ -n "$API_APP_ID" ]] && graph --method get --url "$GRAPH/applications(appId='$API_APP_ID')" \
-  --query "api.oauth2PermissionScopes[?value=='access_as_user'].id | [0]" -o tsv || true)"
+SCOPE_ID=""
+if [[ -n "$API_APP_ID" ]]; then
+  SCOPE_ID="$(graph --method get --url "$GRAPH/applications(appId='$API_APP_ID')" \
+    --query "api.oauth2PermissionScopes[?value=='access_as_user'].id | [0]" -o tsv)"
+fi
 SCOPE_ID="${SCOPE_ID:-$(uuidgen | tr '[:upper:]' '[:lower:]')}"
 API_APP_ID="$(ensure_app "$API_NAME" "{
   \"displayName\": \"$API_NAME\",

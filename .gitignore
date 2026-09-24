@@ -43,3 +43,7 @@ local.settings.json
 __azurite_db_*
 __blobstorage__/
 __queuestorage__/
+
+# Monorepo (fase 0)
+expo-env.d.ts
+.vite/

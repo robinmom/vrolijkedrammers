@@ -1,0 +1,16 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Expo/React Native werkt het betrouwbaarst met een platte node_modules-structuur (docs.expo.dev/guides/monorepos).
+nodeLinker: hoisted
+
+# Installatiescripts van pakketten staan standaard uit (supply-chain-bescherming).
+# Alleen hier expliciet benoemde pakketten worden beoordeeld; false = script bewust niet uitvoeren.
+allowBuilds:
+  unrs-resolver: false
+
+# Eén React-versie in de hele monorepo (app en portal); twee versies naast elkaar geven "invalid hook call"-fouten.
+overrides:
+  react: 19.2.3
+  react-dom: 19.2.3

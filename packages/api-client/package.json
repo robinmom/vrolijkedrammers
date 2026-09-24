@@ -1,0 +1,19 @@
+{
+  "name": "@drammers/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Getypte API-client, gegenereerd uit openapi/v1.json (docs/05 §9)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "generate": "openapi-typescript ../../openapi/v1.json -o src/schema.d.ts",
+    "typecheck": "pnpm generate && tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  }
+}

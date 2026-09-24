@@ -46,12 +46,15 @@
 | `bg.canvas` | `#FAFAF7` | `#0D1A25` | Figma |
 | `bg.surface` (kaarten, tabbar) | `#FFFFFF` (tabbar 96 % wit) | `#172939` | Figma |
 | `text.primary` | `#123047` | `#F2F4F6` | Figma |
-| `text.secondary` | `rgba(18,48,71,.65)` | `rgba(242,244,246,.55)` | Figma |
-| `text.tertiary` / tab inactief | `rgba(18,48,71,.55)` ⚠ | `rgba(242,244,246,.55)` | Figma, zie §7 |
+| `text.secondary` | `#5B6C7B` (Figma: navy 65 %, iets donkerder voor ≥ 4,5:1 op canvas) | `#8F99A1` | Figma + OQ-66 |
+| `text.tertiary` / tab inactief | `#5F7080` (Figma 55 % = 3,4:1) | `#8F99A1` | OQ-66 |
 | `border.subtle` | `rgba(18,48,71,.10)` | `rgba(242,244,246,.08–.10)` | Figma |
 | `action.primary.bg` | `#ED0012` | `#ED0012` | Figma |
 | `action.primary.fg` | `#FFFFFF` | `#FFFFFF` | Figma |
-| `action.accentText` (links "Alles", "Meer", actieve tab) | `#ED0012` ⚠ | `#FF4557` | Figma |
+| `action.accentText` (links "Alles", "Meer", actieve tab) | `#D4000F` (Figma `#ED0012`) | `#FF5A6A` (Figma `#FF4557`) | OQ-66 |
+| `linkText` (blauwe tekstlinks) | `#066AA6` (Figma `#087BC1` = 4,35:1 op canvas) | `#5AB0E6` | OQ-66 |
+| `textOnLightButton` (tekst op witte knop in blauw vlak) | `#066AA6` | `#066AA6` (Figma `#5AB0E6` = 2,4:1) | OQ-66 |
+| `successText` (groene tekst, badge "Jeugd") | `#287A26` | `#4FB84B` | OQ-66 |
 | `icon.tint.red/blue/yellow/green` (tegel-achtergrond) | kleur @ 14 % | kleur @ 14 % | Figma |
 | `shadow.card` | `0 4 16 rgba(18,48,71,.08)` | `0 4 16 rgba(0,0,0,.35)` | Figma |
 | `scan.valid` | `#39A935` + ✓ | idem | Nieuw (scanner) |
@@ -152,7 +155,7 @@ Contrastberekening (WCAG 2.2, normale tekst ≥ 4,5:1; grote tekst ≥ 18,66 px 
 | Muted 55 % op donker surface | 5,12 | ✅ | — |
 | Geel badge met donkerblauwe tekst | 7,71 | ✅ | — |
 
-**Besloten (OQ-66):** de toegankelijke varianten worden gebruikt voor kleine tekst; de merkkleuren zelf blijven ongewijzigd. De designer kan dit later bevestigen of aanpassen in Figma.
+**Besloten (OQ-66), vastgelegd in `packages/design-tokens` en bewaakt door contrasttests:** de toegankelijke varianten worden gebruikt voor kleine tekst; de merkkleuren zelf blijven ongewijzigd. De designer kan dit later bevestigen of aanpassen in Figma.
 
 Overige richtlijnen:
 - Kleur nooit als enige drager (statusbadges en scanner altijd met icoon + tekst).

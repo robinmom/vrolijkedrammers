@@ -1,0 +1,58 @@
+body {
+  margin: 0;
+  background: var(--dvd-canvas);
+  color: var(--dvd-text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+}
+
+h1,
+h2 {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--dvd-surface);
+  border-right: 1px solid var(--dvd-border);
+  padding: 20px;
+}
+
+.sidebar h1 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.sidebar p {
+  color: var(--dvd-text-secondary);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+main {
+  padding: 24px;
+}
+
+.card {
+  background: var(--dvd-surface);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px var(--dvd-shadow);
+  padding: 16px;
+  max-width: 640px;
+}
+
+.muted {
+  color: var(--dvd-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

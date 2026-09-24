@@ -1,0 +1,31 @@
+{
+  "name": "@drammers/admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Beheerportal De Vrolijke Drammers (React + Vite, ADR-007/ADR-013)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.1.1",
+    "vite": "^8.3.0"
+  },
+  "dependencies": {
+    "@drammers/design-tokens": "workspace:*",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/poppins": "^5.3.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  }
+}

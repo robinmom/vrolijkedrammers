@@ -60,6 +60,51 @@ jobs:
       - name: Kwetsbare npm-pakketten (high/critical)
         run: pnpm audit --audit-level high
 
+  infra:
+    name: Bicep – lint en build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint (waarschuwingen = fouten)
+        run: |
+          az bicep install
+          for file in infra/main.bicep infra/bootstrap/nonprod.bicep; do
+            az bicep lint --file "$file" --diagnostics-format sarif > lint.sarif
+            jq -e '[.runs[].results[]] | length == 0' lint.sarif || { jq '.runs[].results[]' lint.sarif; exit 1; }
+          done
+      - name: Parameterbestanden bouwen
+        env:
+          DVD_APP_SERVICE_PLAN_ID: /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Web/serverfarms/plan
+          DVD_SQL_ADMIN_GROUP_OBJECT_ID: 00000000-0000-0000-0000-000000000000
+        run: |
+          for env in dev acc; do az bicep build-params --file "infra/env/$env.bicepparam" --stdout > /dev/null; done
+      - name: Shellscripts
+        run: shellcheck -x infra/bootstrap/*.sh infra/entra/*.sh
+
+  infra-what-if:
+    name: Bicep – what-if Dev
+    # Alleen als de alleen-lezen what-if-identiteit is ingericht, en niet voor pull requests vanuit forks.
+    if: >-
+      vars.AZURE_WHATIF_CLIENT_ID != '' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DVD_APP_SERVICE_PLAN_ID: ${{ vars.DVD_APP_SERVICE_PLAN_ID }}
+      DVD_SQL_ADMIN_GROUP_OBJECT_ID: ${{ vars.DVD_DEV_SQL_ADMIN_GROUP_OBJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_WHATIF_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - run: |
+          az deployment group what-if --resource-group rg-dvd-dev --name dvd-dev-pr \
+            --template-file infra/main.bicep --parameters infra/env/dev.bicepparam
+
   secrets:
     name: Secret scanning (gitleaks)
     runs-on: ubuntu-latest

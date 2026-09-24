@@ -1,0 +1,141 @@
+# Uitrol naar Dev (automatisch na merge op main) of Acc (handmatig) — docs/08 §7, fase 1.
+# Aanmelden bij Azure via OIDC met de managed identity van de GitHub environment; geen secrets.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Omgeving
+        type: choice
+        options: [dev, acc]
+        default: dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build API en portal
+    # Pas actief nadat de bootstrap en de GitHub-variabelen zijn ingericht (runbook omgeving-opbouwen §2).
+    if: vars.DVD_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish API
+        run: dotnet publish src/Drammers.Api -c Release -o publish/api
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build portal
+        run: pnpm --filter @drammers/admin build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: publish/api
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portal
+          path: apps/admin/dist
+
+  deploy:
+    name: Uitrol ${{ inputs.environment || 'dev' }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+      RESOURCE_GROUP: rg-dvd-${{ inputs.environment || 'dev' }}
+      DVD_APP_SERVICE_PLAN_ID: ${{ vars.DVD_APP_SERVICE_PLAN_ID }}
+      DVD_SQL_ADMIN_GROUP_OBJECT_ID: ${{ vars.DVD_SQL_ADMIN_GROUP_OBJECT_ID }}
+      DVD_API_CLIENT_ID: ${{ vars.DVD_API_CLIENT_ID }}
+      DVD_ENVIRONMENT_ACCESS_CLAIM: ${{ vars.DVD_ENVIRONMENT_ACCESS_CLAIM }}
+      DVD_BUDGET_EMAIL: ${{ vars.DVD_BUDGET_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Infrastructuur – what-if
+        run: |
+          az deployment group what-if --resource-group "$RESOURCE_GROUP" --name "dvd-$ENVIRONMENT" \
+            --template-file infra/main.bicep --parameters "infra/env/$ENVIRONMENT.bicepparam"
+
+      - name: Infrastructuur – uitrol
+        id: infra
+        run: |
+          outputs=$(az deployment group create --resource-group "$RESOURCE_GROUP" --name "dvd-$ENVIRONMENT" \
+            --template-file infra/main.bicep --parameters "infra/env/$ENVIRONMENT.bicepparam" \
+            --query properties.outputs -o json)
+          echo "api-app=$(jq -r .apiAppName.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+          echo "api-url=$(jq -r .apiUrl.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+          echo "portal=$(jq -r .portalName.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: publish/api
+      - name: API – uitrol
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ steps.infra.outputs.api-app }}
+          package: publish/api
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: portal
+          path: publish/portal
+      - name: Portal – deploy-token ophalen (niet opgeslagen)
+        id: swa
+        run: |
+          token=$(az staticwebapp secrets list --name "${{ steps.infra.outputs.portal }}" \
+            --resource-group "$RESOURCE_GROUP" --query properties.apiKey -o tsv)
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+      - name: Portal – uitrol
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: publish/portal
+          skip_app_build: true
+          skip_api_build: true
+
+      - name: Smoke-test – /health/ready
+        run: |
+          # De serverless database kan gepauzeerd zijn; hervatten duurt tot ~1 minuut.
+          for attempt in $(seq 1 20); do
+            status=$(curl -s -o /dev/null -w '%{http_code}' "${{ steps.infra.outputs.api-url }}/health/ready" || true)
+            echo "poging $attempt: $status"
+            [[ "$status" == "200" ]] && exit 0
+            sleep 15
+          done
+          exit 1
+      - name: Smoke-test – anonieme blob-toegang geweigerd
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://stdvd$ENVIRONMENT.blob.core.windows.net/exports?restype=container&comp=list")
+          echo "anoniem: $status"
+          [[ "$status" == "401" || "$status" == "403" || "$status" == "409" ]]
+      - name: Smoke-test – SQL alleen Entra-authenticatie
+        run: |
+          only_entra=$(az sql server ad-only-auth get --resource-group "$RESOURCE_GROUP" --name "sql-dvd-$ENVIRONMENT" --query azureAdOnlyAuthentication -o tsv)
+          echo "azureADOnlyAuthentication: $only_entra"
+          [[ "$only_entra" == "true" ]]

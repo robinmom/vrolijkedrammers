@@ -59,7 +59,7 @@ flowchart TB
     W[Website\nbestaand/nieuw]
   end
 
-  subgraph Azure["Azure (West Europe) – per omgeving"]
+  subgraph Azure["Azure (Sweden Central) – per omgeving"]
     API[API + Worker\nASP.NET Core .NET 10 LTS\nApp Service Linux\nhosted services: sync, scheduler, imports, push, beeldverwerking]
     SQL[(Azure SQL Database\n1 DB, meerdere schemas)]
     BLOB[(Blob Storage\nprivate containers)]

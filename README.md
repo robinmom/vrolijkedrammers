@@ -59,7 +59,7 @@ apps/mobile              Expo-app (SDK 57, Expo Router, routes in src/app)
 apps/admin               beheerportal (React + Vite)
 packages/design-tokens   kleuren, typografie en maten uit Figma (met contrasttests)
 packages/api-client      getypte API-client, gegenereerd uit openapi/v1.json
-infra/                   Bicep (vanaf fase 1)
+infra/                   Bicep (main + modules + env), bootstrap (eenmalig) en Entra-scripts; zie docs/runbooks/omgeving-opbouwen.md
 ```
 
 ## Lokaal starten

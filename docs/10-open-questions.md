@@ -1,6 +1,6 @@
 # 10 – Besluitenregister (open vragen en beslissingen)
 
-> Status: v0.3 · 2026-09-24 · **Alle blockers besloten** in de sessie met de opdrachtgever (zie §0a)
+> Status: v0.4 · 2026-09-25 · **Alle blockers besloten** in de sessie met de opdrachtgever (zie §0a); OQ-75/76 (regio) nieuw bij fase 1
 > Bronnen: requirements (01), functioneel ontwerp (02), architectuur (03/08/ARCHITECTURE.md), security (06/11), datamodel (04/14), ADR-001…013, architectuurreview (18).
 > Status: 🔴 open blocker · 🟡 open · 🟢 besloten (voorstel door architect, bevestiging door opdrachtgever tenzij anders vermeld).
 
@@ -19,6 +19,8 @@
 | OQ-74 | **Geen open-sourcelicentie**: de code is publiek zichtbaar, maar alle rechten zijn voorbehouden (geen `LICENSE`-bestand; vermelding in README) | Hergebruik alleen met toestemming van de vereniging |
 | OQ-66 | **Toegankelijke tokenvarianten** voor kleine tekst (merkkleuren ongewijzigd); de designer kan later bevestigen | Fase 0 design tokens |
 | B-04 (tijdelijk) | Repository voorlopig op `github.com/robinmom/vrolijkedrammers`; later overdragen aan een GitHub-organisatie van de vereniging | Transfer behoudt historie |
+| B-02 (uitgevoerd) | External ID-tenant `vrolijkedrammersapp` aangemaakt (2026-09-24, Europe) met twee noodaccounts | [runbook](runbooks/entra-external-id.md) |
+| B-04 (open actie) | **Tweede persoonlijke beheerder** (Global Administrator in de app-tenant en Owner op de Azure-subscription) nog aan te wijzen | Tot die tijd één persoonlijke beheerder + twee noodaccounts |
 
 ## 0. Indeling
 
@@ -78,6 +80,8 @@
 | OQ-71 | Pronkzitting 2027 via de app | IMPORTANT | 13 | 🟡 |
 | OQ-72 | Private endpoints/VNet, Front Door WAF | LATER | — | 🟡 |
 | OQ-73 | Attestation (App Attest/Play Integrity) verplicht voor scanners | IMPORTANT | 14 | 🟢 voorstel: ja, "should" |
+| OQ-75 | Azure-regio: West Europe neemt geen nieuwe klanten aan | IMPORTANT | 1 (uitrol) | 🟡 voorstel: Sweden Central |
+| OQ-76 | Regio van de Static Web App (niet beschikbaar in Sweden Central; West Europe gesloten) | IMPORTANT | 1 (uitrol) | 🟡 voorstel: East US 2 (alleen statische code) |
 
 ---
 
@@ -285,6 +289,8 @@ Dit bepaalt het `User`-model, de standaardrollen en het activatieproces (fase 3)
 | OQ-69 | Kosten MFA/CA | Prijspagina External ID controleren; sms uit | 3 |
 | OQ-71 | Pronkzitting 2027 | Via het bestaande kanaal; geen app-ticketing vóór carnaval | 13 |
 | OQ-73 | Attestation scanners | "Should": App Attest/Play Integrity bij registratie van scanners; zonder attestation alleen met expliciete goedkeuring door het bestuur | 14 |
+| OQ-75 | Azure-regio | West Europe weigert nieuwe resources voor deze subscription (`RequestDisallowedByAzure: not accepting new customers`, 2026-09-25); North Europe en Germany West Central hebben 0 B1-quota. **Aanbeveling: Sweden Central** (EU, AVG, ~25 ms vanaf NL, alle diensten incl. SQL free offer beschikbaar). Alternatief: France Central. Eén parameter (`DVD_LOCATION`) | 1 (uitrol) |
+| OQ-76 | Regio Static Web App | SWA kan alleen in centralus, eastus2, westus2, westeurope, eastasia. **Aanbeveling: East US 2** — de SWA bevat alleen de gebouwde portalcode (geen persoonsgegevens; die staan in de API/SQL in de EU) en wordt wereldwijd via CDN geserveerd. Alternatief: het portal als statische bestanden vanuit de API-app serveren (EU, maar koppelt de uitrol van API en portal) | 1 (uitrol) |
 
 ## 4. LATER (na het MVP)
 

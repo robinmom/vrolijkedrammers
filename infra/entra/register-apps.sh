@@ -41,7 +41,9 @@ if [[ -z "$TESTERS_ID" ]]; then
 fi
 
 echo "==> User flow 'DVD aanmelden' (e-mail + eenmalige code, zelfregistratie uit)"
-FLOW_ID="$(find_by_name "$GRAPH/identity/authenticationEventsFlows" "DVD aanmelden" id)"
+# Dit endpoint ondersteunt geen $select/$top.
+FLOW_ID="$(graph --method get --url "$GRAPH/identity/authenticationEventsFlows" \
+  --query "value[?displayName=='DVD aanmelden'].id | [0]" -o tsv)"
 if [[ -z "$FLOW_ID" ]]; then
   FLOW_ID="$(graph --method post --url "$GRAPH/identity/authenticationEventsFlows" --body '{
     "@odata.type": "#microsoft.graph.externalUsersSelfServiceSignUpEventsFlow",

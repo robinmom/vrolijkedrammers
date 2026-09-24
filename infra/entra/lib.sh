@@ -9,7 +9,9 @@ graph() { az rest --resource https://graph.microsoft.com --headers "Content-Type
 
 # Eerste object in een collectie waarvan displayName exact overeenkomt (client-side gefilterd, geen URL-encoding nodig).
 find_by_name() { # <collectie-url> <displayName> <veld>
-  graph --method get --url "$1" --url-parameters "\$select=id,appId,displayName" "\$top=999" \
+  local select="id,displayName"
+  [[ "$3" == id ]] || select="$select,$3"
+  graph --method get --url "$1" --url-parameters "\$select=$select" "\$top=999" \
     --query "value[?displayName=='$2'].$3 | [0]" -o tsv
 }
 

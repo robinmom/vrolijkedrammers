@@ -1,0 +1,2367 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`snapshots in thema dark Button primair en secundair 1`] = `
+<>
+  <View
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 12,
+          "flexDirection": "row",
+          "gap": 8,
+          "justifyContent": "center",
+          "minHeight": 50,
+          "paddingHorizontal": 18,
+        },
+        {
+          "backgroundColor": "#ED0012",
+        },
+        undefined,
+      ]
+    }
+  >
+    <RNSVGSvgView
+      accessibilityElementsHidden={true}
+      accessible={false}
+      align="none"
+      bbHeight={20}
+      bbWidth={20}
+      fill="none"
+      focusable={false}
+      height={20}
+      importantForAccessibility="no-hide-descendants"
+      meetOrSlice={0}
+      minX={0}
+      minY={0}
+      overflow="visible"
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
+          },
+          {
+            "display": "block",
+          },
+          {
+            "flex": 0,
+            "height": 20,
+            "width": 20,
+          },
+        ]
+      }
+      vbHeight={20}
+      vbWidth={20}
+      width={20}
+      xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/plus">
+<path id="Vector" d="M4.16667 10H15.8333M10 4.16667V15.8333" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <RNSVGGroup
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
+        }
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+          name="Icon/plus"
+        >
+          <RNSVGPath
+            d="M4.16667 10H15.8333M10 4.16667V15.8333"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294967295,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+        </RNSVGGroup>
+      </RNSVGGroup>
+    </RNSVGSvgView>
+    <Text
+      maxFontSizeMultiplier={2}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "Inter_600SemiBold",
+            "fontSize": 15,
+            "lineHeight": undefined,
+            "textTransform": undefined,
+          },
+          undefined,
+        ]
+      }
+    >
+      Groep inschrijven
+    </Text>
+  </View>
+  <View
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 12,
+          "flexDirection": "row",
+          "gap": 8,
+          "justifyContent": "center",
+          "minHeight": 50,
+          "paddingHorizontal": 18,
+        },
+        {
+          "borderColor": "#5AB0E6",
+          "borderWidth": 1.5,
+        },
+        undefined,
+      ]
+    }
+  >
+    <RNSVGSvgView
+      accessibilityElementsHidden={true}
+      accessible={false}
+      align="none"
+      bbHeight={20}
+      bbWidth={20}
+      fill="none"
+      focusable={false}
+      height={20}
+      importantForAccessibility="no-hide-descendants"
+      meetOrSlice={0}
+      minX={0}
+      minY={0}
+      overflow="visible"
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
+          },
+          {
+            "display": "block",
+          },
+          {
+            "flex": 0,
+            "height": 20,
+            "width": 20,
+          },
+        ]
+      }
+      vbHeight={22}
+      vbWidth={22}
+      width={20}
+      xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/locatie">
+<path id="Vector" d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <RNSVGGroup
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
+        }
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+          name="Icon/locatie"
+        >
+          <RNSVGPath
+            d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4284133606,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+          <RNSVGPath
+            d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector_2"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4284133606,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+        </RNSVGGroup>
+      </RNSVGGroup>
+    </RNSVGSvgView>
+    <Text
+      maxFontSizeMultiplier={2}
+      style={
+        [
+          {
+            "color": "#5AB0E6",
+            "fontFamily": "Inter_600SemiBold",
+            "fontSize": 15,
+            "lineHeight": undefined,
+            "textTransform": undefined,
+          },
+          undefined,
+        ]
+      }
+    >
+      Route
+    </Text>
+  </View>
+</>
+`;
+
+exports[`snapshots in thema dark EventCard met badge en hoogtepunt 1`] = `
+<View
+  accessibilityLabel="Optocht Loil, ZO 07 FEB, 13:30 uur, Centrum Loil"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "elevation": 3,
+          "padding": 12,
+          "shadowOffset": {
+            "height": 4,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 8,
+        },
+        {
+          "backgroundColor": "#172939",
+          "shadowColor": "rgba(0,0,0,0.35)",
+        },
+        [
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 14,
+          },
+          {
+            "borderColor": "#ED0012",
+            "borderWidth": 1.5,
+          },
+        ],
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="ZO 07 FEB"
+      accessible={true}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 12,
+            "justifyContent": "center",
+            "minHeight": 60,
+            "width": 52,
+          },
+          {
+            "backgroundColor": "#ED0012",
+          },
+        ]
+      }
+    >
+      <Text
+        maxFontSizeMultiplier={2}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "Inter_600SemiBold",
+              "fontSize": 11,
+              "lineHeight": undefined,
+              "textTransform": "uppercase",
+            },
+            {
+              "fontSize": 10,
+            },
+          ]
+        }
+      >
+        ZO
+      </Text>
+      <Text
+        maxFontSizeMultiplier={1.6}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "Poppins_700Bold",
+              "fontSize": 20,
+              "lineHeight": 24,
+              "textTransform": undefined,
+            },
+            undefined,
+          ]
+        }
+      >
+        07
+      </Text>
+      <Text
+        maxFontSizeMultiplier={2}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "Inter_600SemiBold",
+              "fontSize": 11,
+              "lineHeight": undefined,
+              "textTransform": "uppercase",
+            },
+            {
+              "fontSize": 10,
+            },
+          ]
+        }
+      >
+        FEB
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "flex": 1,
+          "gap": 4,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "flexWrap": "wrap",
+            "gap": 8,
+          }
+        }
+      >
+        <Text
+          maxFontSizeMultiplier={2}
+          numberOfLines={2}
+          style={
+            [
+              {
+                "color": "#F2F4F6",
+                "fontFamily": "Inter_600SemiBold",
+                "fontSize": 16,
+                "lineHeight": undefined,
+                "textTransform": undefined,
+              },
+              {
+                "flexShrink": 1,
+              },
+            ]
+          }
+        >
+          Optocht Loil
+        </Text>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 100,
+                "paddingHorizontal": 8,
+                "paddingVertical": 2,
+              },
+              {
+                "backgroundColor": "#F4B942",
+              },
+            ]
+          }
+        >
+          <Text
+            maxFontSizeMultiplier={2}
+            style={
+              [
+                {
+                  "color": "#123047",
+                  "fontFamily": "Inter_600SemiBold",
+                  "fontSize": 11,
+                  "lineHeight": undefined,
+                  "textTransform": "uppercase",
+                },
+                {
+                  "textTransform": "none",
+                },
+              ]
+            }
+          >
+            Hoogtepunt
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 6,
+          }
+        }
+      >
+        <RNSVGSvgView
+          accessibilityElementsHidden={true}
+          accessible={false}
+          align="none"
+          bbHeight={14}
+          bbWidth={14}
+          fill="none"
+          focusable={false}
+          height={14}
+          importantForAccessibility="no-hide-descendants"
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          overflow="visible"
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "display": "block",
+              },
+              {
+                "flex": 0,
+                "height": 14,
+                "width": 14,
+              },
+            ]
+          }
+          vbHeight={14}
+          vbWidth={14}
+          width={14}
+          xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/klok">
+<path id="Vector" d="M7 12.8333C10.2217 12.8333 12.8333 10.2217 12.8333 7C12.8333 3.77834 10.2217 1.16667 7 1.16667C3.77834 1.16667 1.16667 3.77834 1.16667 7C1.16667 10.2217 3.77834 12.8333 7 12.8333Z" stroke="#8F99A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M7 3.5V7L9.33333 8.16667" stroke="#8F99A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <RNSVGGroup
+            fill={null}
+            propList={
+              [
+                "fill",
+              ]
+            }
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Icon/klok"
+            >
+              <RNSVGPath
+                d="M7 12.8333C10.2217 12.8333 12.8333 10.2217 12.8333 7C12.8333 3.77834 10.2217 1.16667 7 1.16667C3.77834 1.16667 1.16667 3.77834 1.16667 7C1.16667 10.2217 3.77834 12.8333 7 12.8333Z"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4287601057,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+              <RNSVGPath
+                d="M7 3.5V7L9.33333 8.16667"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector_2"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4287601057,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          maxFontSizeMultiplier={2}
+          style={
+            [
+              {
+                "color": "#8F99A1",
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 13,
+                "lineHeight": undefined,
+                "textTransform": undefined,
+              },
+              undefined,
+            ]
+          }
+        >
+          13:30 uur
+        </Text>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 6,
+          }
+        }
+      >
+        <RNSVGSvgView
+          accessibilityElementsHidden={true}
+          accessible={false}
+          align="none"
+          bbHeight={14}
+          bbWidth={14}
+          fill="none"
+          focusable={false}
+          height={14}
+          importantForAccessibility="no-hide-descendants"
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          overflow="visible"
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "display": "block",
+              },
+              {
+                "flex": 0,
+                "height": 14,
+                "width": 14,
+              },
+            ]
+          }
+          vbHeight={22}
+          vbWidth={22}
+          width={14}
+          xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/locatie">
+<path id="Vector" d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z" stroke="#8F99A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z" stroke="#8F99A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <RNSVGGroup
+            fill={null}
+            propList={
+              [
+                "fill",
+              ]
+            }
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Icon/locatie"
+            >
+              <RNSVGPath
+                d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4287601057,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+              <RNSVGPath
+                d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector_2"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4287601057,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          maxFontSizeMultiplier={2}
+          style={
+            [
+              {
+                "color": "#8F99A1",
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 13,
+                "lineHeight": undefined,
+                "textTransform": undefined,
+              },
+              undefined,
+            ]
+          }
+        >
+          Centrum Loil
+        </Text>
+      </View>
+    </View>
+    <RNSVGSvgView
+      accessibilityElementsHidden={true}
+      accessible={false}
+      align="none"
+      bbHeight={20}
+      bbWidth={20}
+      fill="none"
+      focusable={false}
+      height={20}
+      importantForAccessibility="no-hide-descendants"
+      meetOrSlice={0}
+      minX={0}
+      minY={0}
+      overflow="visible"
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
+          },
+          {
+            "display": "block",
+          },
+          {
+            "flex": 0,
+            "height": 20,
+            "width": 20,
+          },
+        ]
+      }
+      vbHeight={20}
+      vbWidth={20}
+      width={20}
+      xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/chevron">
+<path id="Vector" d="M7.5 15L12.5 10L7.5 5" stroke="#8F99A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <RNSVGGroup
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
+        }
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+          name="Icon/chevron"
+        >
+          <RNSVGPath
+            d="M7.5 15L12.5 10L7.5 5"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4287601057,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+        </RNSVGGroup>
+      </RNSVGGroup>
+    </RNSVGSvgView>
+  </View>
+</View>
+`;
+
+exports[`snapshots in thema dark ShortcutTile 1`] = `
+<View
+  accessibilityLabel="Foto's"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    {
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "elevation": 3,
+          "padding": 12,
+          "shadowOffset": {
+            "height": 4,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 8,
+        },
+        {
+          "backgroundColor": "#172939",
+          "shadowColor": "rgba(0,0,0,0.35)",
+        },
+        [
+          {
+            "alignItems": "center",
+            "gap": 8,
+            "paddingBottom": 12,
+            "paddingHorizontal": 4,
+            "paddingTop": 14,
+          },
+          false,
+        ],
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+            "justifyContent": "center",
+          },
+          {
+            "backgroundColor": "rgba(8,123,193,0.14)",
+            "borderRadius": 22,
+            "height": 44,
+            "width": 44,
+          },
+        ]
+      }
+    >
+      <RNSVGSvgView
+        accessibilityElementsHidden={true}
+        accessible={false}
+        align="none"
+        bbHeight={22}
+        bbWidth={22}
+        fill="none"
+        focusable={false}
+        height={22}
+        importantForAccessibility="no-hide-descendants"
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        overflow="visible"
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {
+              "display": "block",
+            },
+            {
+              "flex": 0,
+              "height": 22,
+              "width": 22,
+            },
+          ]
+        }
+        vbHeight={22}
+        vbWidth={22}
+        width={22}
+        xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/fotos">
+<path id="Vector" d="M17.4167 2.75H4.58333C3.57081 2.75 2.75 3.57081 2.75 4.58333V17.4167C2.75 18.4292 3.57081 19.25 4.58333 19.25H17.4167C18.4292 19.25 19.25 18.4292 19.25 17.4167V4.58333C19.25 3.57081 18.4292 2.75 17.4167 2.75Z" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M8.25 10.0833C9.26252 10.0833 10.0833 9.26252 10.0833 8.25C10.0833 7.23748 9.26252 6.41667 8.25 6.41667C7.23748 6.41667 6.41667 7.23748 6.41667 8.25C6.41667 9.26252 7.23748 10.0833 8.25 10.0833Z" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M19.25 13.75L16.4212 10.9212C16.0774 10.5775 15.6111 10.3844 15.125 10.3844C14.6389 10.3844 14.1726 10.5775 13.8288 10.9212L5.5 19.25" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <RNSVGGroup
+          fill={null}
+          propList={
+            [
+              "fill",
+            ]
+          }
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Icon/fotos"
+          >
+            <RNSVGPath
+              d="M17.4167 2.75H4.58333C3.57081 2.75 2.75 3.57081 2.75 4.58333V17.4167C2.75 18.4292 3.57081 19.25 4.58333 19.25H17.4167C18.4292 19.25 19.25 18.4292 19.25 17.4167V4.58333C19.25 3.57081 18.4292 2.75 17.4167 2.75Z"
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Vector"
+              propList={
+                [
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4284133606,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+            <RNSVGPath
+              d="M8.25 10.0833C9.26252 10.0833 10.0833 9.26252 10.0833 8.25C10.0833 7.23748 9.26252 6.41667 8.25 6.41667C7.23748 6.41667 6.41667 7.23748 6.41667 8.25C6.41667 9.26252 7.23748 10.0833 8.25 10.0833Z"
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Vector_2"
+              propList={
+                [
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4284133606,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+            <RNSVGPath
+              d="M19.25 13.75L16.4212 10.9212C16.0774 10.5775 15.6111 10.3844 15.125 10.3844C14.6389 10.3844 14.1726 10.5775 13.8288 10.9212L5.5 19.25"
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Vector_3"
+              propList={
+                [
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4284133606,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+          </RNSVGGroup>
+        </RNSVGGroup>
+      </RNSVGSvgView>
+    </View>
+    <Text
+      maxFontSizeMultiplier={2}
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#F2F4F6",
+            "fontFamily": "Inter_500Medium",
+            "fontSize": 12,
+            "lineHeight": undefined,
+            "textTransform": undefined,
+          },
+          false,
+        ]
+      }
+    >
+      Foto's
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`snapshots in thema light Button primair en secundair 1`] = `
+<>
+  <View
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 12,
+          "flexDirection": "row",
+          "gap": 8,
+          "justifyContent": "center",
+          "minHeight": 50,
+          "paddingHorizontal": 18,
+        },
+        {
+          "backgroundColor": "#ED0012",
+        },
+        undefined,
+      ]
+    }
+  >
+    <RNSVGSvgView
+      accessibilityElementsHidden={true}
+      accessible={false}
+      align="none"
+      bbHeight={20}
+      bbWidth={20}
+      fill="none"
+      focusable={false}
+      height={20}
+      importantForAccessibility="no-hide-descendants"
+      meetOrSlice={0}
+      minX={0}
+      minY={0}
+      overflow="visible"
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
+          },
+          {
+            "display": "block",
+          },
+          {
+            "flex": 0,
+            "height": 20,
+            "width": 20,
+          },
+        ]
+      }
+      vbHeight={20}
+      vbWidth={20}
+      width={20}
+      xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/plus">
+<path id="Vector" d="M4.16667 10H15.8333M10 4.16667V15.8333" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <RNSVGGroup
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
+        }
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+          name="Icon/plus"
+        >
+          <RNSVGPath
+            d="M4.16667 10H15.8333M10 4.16667V15.8333"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4294967295,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+        </RNSVGGroup>
+      </RNSVGGroup>
+    </RNSVGSvgView>
+    <Text
+      maxFontSizeMultiplier={2}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "Inter_600SemiBold",
+            "fontSize": 15,
+            "lineHeight": undefined,
+            "textTransform": undefined,
+          },
+          undefined,
+        ]
+      }
+    >
+      Groep inschrijven
+    </Text>
+  </View>
+  <View
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "borderRadius": 12,
+          "flexDirection": "row",
+          "gap": 8,
+          "justifyContent": "center",
+          "minHeight": 50,
+          "paddingHorizontal": 18,
+        },
+        {
+          "borderColor": "#066AA6",
+          "borderWidth": 1.5,
+        },
+        undefined,
+      ]
+    }
+  >
+    <RNSVGSvgView
+      accessibilityElementsHidden={true}
+      accessible={false}
+      align="none"
+      bbHeight={20}
+      bbWidth={20}
+      fill="none"
+      focusable={false}
+      height={20}
+      importantForAccessibility="no-hide-descendants"
+      meetOrSlice={0}
+      minX={0}
+      minY={0}
+      overflow="visible"
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
+          },
+          {
+            "display": "block",
+          },
+          {
+            "flex": 0,
+            "height": 20,
+            "width": 20,
+          },
+        ]
+      }
+      vbHeight={22}
+      vbWidth={22}
+      width={20}
+      xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/locatie">
+<path id="Vector" d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z" stroke="#066AA6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z" stroke="#066AA6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <RNSVGGroup
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
+        }
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+          name="Icon/locatie"
+        >
+          <RNSVGPath
+            d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4278610598,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+          <RNSVGPath
+            d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector_2"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4278610598,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+        </RNSVGGroup>
+      </RNSVGGroup>
+    </RNSVGSvgView>
+    <Text
+      maxFontSizeMultiplier={2}
+      style={
+        [
+          {
+            "color": "#066AA6",
+            "fontFamily": "Inter_600SemiBold",
+            "fontSize": 15,
+            "lineHeight": undefined,
+            "textTransform": undefined,
+          },
+          undefined,
+        ]
+      }
+    >
+      Route
+    </Text>
+  </View>
+</>
+`;
+
+exports[`snapshots in thema light EventCard met badge en hoogtepunt 1`] = `
+<View
+  accessibilityLabel="Optocht Loil, ZO 07 FEB, 13:30 uur, Centrum Loil"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "elevation": 3,
+          "padding": 12,
+          "shadowOffset": {
+            "height": 4,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "shadowColor": "rgba(18,48,71,0.08)",
+        },
+        [
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 14,
+          },
+          {
+            "borderColor": "#ED0012",
+            "borderWidth": 1.5,
+          },
+        ],
+      ]
+    }
+  >
+    <View
+      accessibilityLabel="ZO 07 FEB"
+      accessible={true}
+      style={
+        [
+          {
+            "alignItems": "center",
+            "borderRadius": 12,
+            "justifyContent": "center",
+            "minHeight": 60,
+            "width": 52,
+          },
+          {
+            "backgroundColor": "#ED0012",
+          },
+        ]
+      }
+    >
+      <Text
+        maxFontSizeMultiplier={2}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "Inter_600SemiBold",
+              "fontSize": 11,
+              "lineHeight": undefined,
+              "textTransform": "uppercase",
+            },
+            {
+              "fontSize": 10,
+            },
+          ]
+        }
+      >
+        ZO
+      </Text>
+      <Text
+        maxFontSizeMultiplier={1.6}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "Poppins_700Bold",
+              "fontSize": 20,
+              "lineHeight": 24,
+              "textTransform": undefined,
+            },
+            undefined,
+          ]
+        }
+      >
+        07
+      </Text>
+      <Text
+        maxFontSizeMultiplier={2}
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "Inter_600SemiBold",
+              "fontSize": 11,
+              "lineHeight": undefined,
+              "textTransform": "uppercase",
+            },
+            {
+              "fontSize": 10,
+            },
+          ]
+        }
+      >
+        FEB
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "flex": 1,
+          "gap": 4,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "flexWrap": "wrap",
+            "gap": 8,
+          }
+        }
+      >
+        <Text
+          maxFontSizeMultiplier={2}
+          numberOfLines={2}
+          style={
+            [
+              {
+                "color": "#123047",
+                "fontFamily": "Inter_600SemiBold",
+                "fontSize": 16,
+                "lineHeight": undefined,
+                "textTransform": undefined,
+              },
+              {
+                "flexShrink": 1,
+              },
+            ]
+          }
+        >
+          Optocht Loil
+        </Text>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 100,
+                "paddingHorizontal": 8,
+                "paddingVertical": 2,
+              },
+              {
+                "backgroundColor": "#F4B942",
+              },
+            ]
+          }
+        >
+          <Text
+            maxFontSizeMultiplier={2}
+            style={
+              [
+                {
+                  "color": "#123047",
+                  "fontFamily": "Inter_600SemiBold",
+                  "fontSize": 11,
+                  "lineHeight": undefined,
+                  "textTransform": "uppercase",
+                },
+                {
+                  "textTransform": "none",
+                },
+              ]
+            }
+          >
+            Hoogtepunt
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 6,
+          }
+        }
+      >
+        <RNSVGSvgView
+          accessibilityElementsHidden={true}
+          accessible={false}
+          align="none"
+          bbHeight={14}
+          bbWidth={14}
+          fill="none"
+          focusable={false}
+          height={14}
+          importantForAccessibility="no-hide-descendants"
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          overflow="visible"
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "display": "block",
+              },
+              {
+                "flex": 0,
+                "height": 14,
+                "width": 14,
+              },
+            ]
+          }
+          vbHeight={14}
+          vbWidth={14}
+          width={14}
+          xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/klok">
+<path id="Vector" d="M7 12.8333C10.2217 12.8333 12.8333 10.2217 12.8333 7C12.8333 3.77834 10.2217 1.16667 7 1.16667C3.77834 1.16667 1.16667 3.77834 1.16667 7C1.16667 10.2217 3.77834 12.8333 7 12.8333Z" stroke="#5B6C7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M7 3.5V7L9.33333 8.16667" stroke="#5B6C7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <RNSVGGroup
+            fill={null}
+            propList={
+              [
+                "fill",
+              ]
+            }
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Icon/klok"
+            >
+              <RNSVGPath
+                d="M7 12.8333C10.2217 12.8333 12.8333 10.2217 12.8333 7C12.8333 3.77834 10.2217 1.16667 7 1.16667C3.77834 1.16667 1.16667 3.77834 1.16667 7C1.16667 10.2217 3.77834 12.8333 7 12.8333Z"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284181627,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+              <RNSVGPath
+                d="M7 3.5V7L9.33333 8.16667"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector_2"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284181627,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          maxFontSizeMultiplier={2}
+          style={
+            [
+              {
+                "color": "#5B6C7B",
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 13,
+                "lineHeight": undefined,
+                "textTransform": undefined,
+              },
+              undefined,
+            ]
+          }
+        >
+          13:30 uur
+        </Text>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 6,
+          }
+        }
+      >
+        <RNSVGSvgView
+          accessibilityElementsHidden={true}
+          accessible={false}
+          align="none"
+          bbHeight={14}
+          bbWidth={14}
+          fill="none"
+          focusable={false}
+          height={14}
+          importantForAccessibility="no-hide-descendants"
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          overflow="visible"
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "display": "block",
+              },
+              {
+                "flex": 0,
+                "height": 14,
+                "width": 14,
+              },
+            ]
+          }
+          vbHeight={22}
+          vbWidth={22}
+          width={14}
+          xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/locatie">
+<path id="Vector" d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z" stroke="#5B6C7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z" stroke="#5B6C7B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <RNSVGGroup
+            fill={null}
+            propList={
+              [
+                "fill",
+              ]
+            }
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Icon/locatie"
+            >
+              <RNSVGPath
+                d="M18.3333 9.16667C18.3333 14.6667 11 20.1667 11 20.1667C11 20.1667 3.66667 14.6667 3.66667 9.16667C3.66667 7.22175 4.43928 5.35648 5.81455 3.98122C7.18982 2.60595 9.05508 1.83333 11 1.83333C12.9449 1.83333 14.8102 2.60595 16.1855 3.98122C17.5607 5.35648 18.3333 7.22175 18.3333 9.16667Z"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284181627,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+              <RNSVGPath
+                d="M11 11.9167C12.5188 11.9167 13.75 10.6854 13.75 9.16667C13.75 7.64788 12.5188 6.41667 11 6.41667C9.48122 6.41667 8.25 7.64788 8.25 9.16667C8.25 10.6854 9.48122 11.9167 11 11.9167Z"
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+                name="Vector_2"
+                propList={
+                  [
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4284181627,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          maxFontSizeMultiplier={2}
+          style={
+            [
+              {
+                "color": "#5B6C7B",
+                "fontFamily": "Inter_400Regular",
+                "fontSize": 13,
+                "lineHeight": undefined,
+                "textTransform": undefined,
+              },
+              undefined,
+            ]
+          }
+        >
+          Centrum Loil
+        </Text>
+      </View>
+    </View>
+    <RNSVGSvgView
+      accessibilityElementsHidden={true}
+      accessible={false}
+      align="none"
+      bbHeight={20}
+      bbWidth={20}
+      fill="none"
+      focusable={false}
+      height={20}
+      importantForAccessibility="no-hide-descendants"
+      meetOrSlice={0}
+      minX={0}
+      minY={0}
+      overflow="visible"
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
+          },
+          {
+            "display": "block",
+          },
+          {
+            "flex": 0,
+            "height": 20,
+            "width": 20,
+          },
+        ]
+      }
+      vbHeight={20}
+      vbWidth={20}
+      width={20}
+      xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/chevron">
+<path id="Vector" d="M7.5 15L12.5 10L7.5 5" stroke="#5F7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <RNSVGGroup
+        fill={null}
+        propList={
+          [
+            "fill",
+          ]
+        }
+      >
+        <RNSVGGroup
+          fill={
+            {
+              "payload": 4278190080,
+              "type": 0,
+            }
+          }
+          name="Icon/chevron"
+        >
+          <RNSVGPath
+            d="M7.5 15L12.5 10L7.5 5"
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Vector"
+            propList={
+              [
+                "stroke",
+                "strokeWidth",
+                "strokeLinecap",
+                "strokeLinejoin",
+              ]
+            }
+            stroke={
+              {
+                "payload": 4284444800,
+                "type": 0,
+              }
+            }
+            strokeLinecap={1}
+            strokeLinejoin={1}
+            strokeWidth={2}
+          />
+        </RNSVGGroup>
+      </RNSVGGroup>
+    </RNSVGSvgView>
+  </View>
+</View>
+`;
+
+exports[`snapshots in thema light ShortcutTile 1`] = `
+<View
+  accessibilityLabel="Foto's"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    {
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 16,
+          "elevation": 3,
+          "padding": 12,
+          "shadowOffset": {
+            "height": 4,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 8,
+        },
+        {
+          "backgroundColor": "#FFFFFF",
+          "shadowColor": "rgba(18,48,71,0.08)",
+        },
+        [
+          {
+            "alignItems": "center",
+            "gap": 8,
+            "paddingBottom": 12,
+            "paddingHorizontal": 4,
+            "paddingTop": 14,
+          },
+          false,
+        ],
+      ]
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "alignItems": "center",
+            "justifyContent": "center",
+          },
+          {
+            "backgroundColor": "rgba(8,123,193,0.14)",
+            "borderRadius": 22,
+            "height": 44,
+            "width": 44,
+          },
+        ]
+      }
+    >
+      <RNSVGSvgView
+        accessibilityElementsHidden={true}
+        accessible={false}
+        align="none"
+        bbHeight={22}
+        bbWidth={22}
+        fill="none"
+        focusable={false}
+        height={22}
+        importantForAccessibility="no-hide-descendants"
+        meetOrSlice={0}
+        minX={0}
+        minY={0}
+        overflow="visible"
+        style={
+          [
+            {
+              "backgroundColor": "transparent",
+              "borderWidth": 0,
+            },
+            {
+              "display": "block",
+            },
+            {
+              "flex": 0,
+              "height": 22,
+              "width": 22,
+            },
+          ]
+        }
+        vbHeight={22}
+        vbWidth={22}
+        width={22}
+        xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/fotos">
+<path id="Vector" d="M17.4167 2.75H4.58333C3.57081 2.75 2.75 3.57081 2.75 4.58333V17.4167C2.75 18.4292 3.57081 19.25 4.58333 19.25H17.4167C18.4292 19.25 19.25 18.4292 19.25 17.4167V4.58333C19.25 3.57081 18.4292 2.75 17.4167 2.75Z" stroke="#087BC1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M8.25 10.0833C9.26252 10.0833 10.0833 9.26252 10.0833 8.25C10.0833 7.23748 9.26252 6.41667 8.25 6.41667C7.23748 6.41667 6.41667 7.23748 6.41667 8.25C6.41667 9.26252 7.23748 10.0833 8.25 10.0833Z" stroke="#087BC1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M19.25 13.75L16.4212 10.9212C16.0774 10.5775 15.6111 10.3844 15.125 10.3844C14.6389 10.3844 14.1726 10.5775 13.8288 10.9212L5.5 19.25" stroke="#087BC1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <RNSVGGroup
+          fill={null}
+          propList={
+            [
+              "fill",
+            ]
+          }
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+            name="Icon/fotos"
+          >
+            <RNSVGPath
+              d="M17.4167 2.75H4.58333C3.57081 2.75 2.75 3.57081 2.75 4.58333V17.4167C2.75 18.4292 3.57081 19.25 4.58333 19.25H17.4167C18.4292 19.25 19.25 18.4292 19.25 17.4167V4.58333C19.25 3.57081 18.4292 2.75 17.4167 2.75Z"
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Vector"
+              propList={
+                [
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4278746049,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+            <RNSVGPath
+              d="M8.25 10.0833C9.26252 10.0833 10.0833 9.26252 10.0833 8.25C10.0833 7.23748 9.26252 6.41667 8.25 6.41667C7.23748 6.41667 6.41667 7.23748 6.41667 8.25C6.41667 9.26252 7.23748 10.0833 8.25 10.0833Z"
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Vector_2"
+              propList={
+                [
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4278746049,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+            <RNSVGPath
+              d="M19.25 13.75L16.4212 10.9212C16.0774 10.5775 15.6111 10.3844 15.125 10.3844C14.6389 10.3844 14.1726 10.5775 13.8288 10.9212L5.5 19.25"
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+              name="Vector_3"
+              propList={
+                [
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                  "strokeLinejoin",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 4278746049,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeLinejoin={1}
+              strokeWidth={2}
+            />
+          </RNSVGGroup>
+        </RNSVGGroup>
+      </RNSVGSvgView>
+    </View>
+    <Text
+      maxFontSizeMultiplier={2}
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#123047",
+            "fontFamily": "Inter_500Medium",
+            "fontSize": 12,
+            "lineHeight": undefined,
+            "textTransform": undefined,
+          },
+          false,
+        ]
+      }
+    >
+      Foto's
+    </Text>
+  </View>
+</View>
+`;

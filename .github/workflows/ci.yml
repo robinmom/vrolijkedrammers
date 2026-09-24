@@ -1,0 +1,72 @@
+# CI voor elke pull request en push naar main (docs/08 §7, docs/16).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    name: .NET – build, format, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore Drammers.sln
+      - name: Build (warnings = fouten)
+        run: dotnet build Drammers.sln --no-restore -c Release
+      - name: Formattering
+        run: dotnet format Drammers.sln --verify-no-changes --no-restore
+      - name: Tests
+        run: dotnet test Drammers.sln --no-build -c Release
+      - name: Kwetsbare NuGet-pakketten
+        run: |
+          dotnet list Drammers.sln package --vulnerable --include-transitive | tee vulnerable.txt
+          ! grep -E "Critical|High" vulnerable.txt
+      - name: OpenAPI-document is actueel
+        run: git diff --exit-code -- openapi/
+
+  javascript:
+    name: TypeScript – lint, typecheck, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Iconen zijn gegenereerd uit assets/icons
+        run: |
+          pnpm --filter @drammers/mobile icons
+          git diff --exit-code -- apps/mobile/src/ui/icons.generated.ts
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Portal bouwt
+        run: pnpm --filter @drammers/admin build
+      - name: Kwetsbare npm-pakketten (high/critical)
+        run: pnpm audit --audit-level high
+
+  secrets:
+    name: Secret scanning (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

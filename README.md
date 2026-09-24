@@ -48,19 +48,43 @@ Begin bij **[docs/00-overzicht.md](docs/00-overzicht.md)**.
 | Identiteit | Microsoft Entra External ID (één tenant, geen zelfregistratie, ADR-014) + eigen RBAC |
 | Infra | Bicep, GitHub Actions (publieke repository, B-03) |
 
-## Geplande repositorystructuur
+## Repositorystructuur
 
 ```
-docs/          ontwerpdocumentatie, ADR's, design-exports
-src/           .NET backend (API, worker, modules)
-tests/         unit-, integratie- en API-tests
-apps/mobile    Expo-app
-apps/admin     beheerportal
-packages/      design tokens, gegenereerde API-client
-infra/         Bicep
+docs/                    ontwerpdocumentatie, ADR's, design-exports
+src/                     .NET backend: Drammers.Api (host), Drammers.Worker, SharedKernel, Infrastructure, Modules.*
+tests/                   UnitTests (incl. architectuurtests), IntegrationTests (vanaf fase 2), ApiTests
+openapi/v1.json          OpenAPI-contract, gegenereerd bij elke build van de API
+apps/mobile              Expo-app (SDK 57, Expo Router, routes in src/app)
+apps/admin               beheerportal (React + Vite)
+packages/design-tokens   kleuren, typografie en maten uit Figma (met contrasttests)
+packages/api-client      getypte API-client, gegenereerd uit openapi/v1.json
+infra/                   Bicep (vanaf fase 1)
 ```
 
-(Alleen `docs/` bestaat in deze fase.)
+## Lokaal starten
+
+Benodigd: .NET 10 SDK, Node.js 22, Xcode (iOS-simulator) en/of Android Studio. Docker is vanaf fase 2 nodig voor integratietests.
+
+```bash
+corepack enable pnpm          # eenmalig: pnpm-versie uit package.json
+pnpm install                  # alle JS/TS-pakketten (hoisted, zie pnpm-workspace.yaml)
+
+dotnet build Drammers.sln     # API + modules; schrijft ook openapi/v1.json
+dotnet test Drammers.sln
+dotnet run --project src/Drammers.Api        # http://localhost:5162/health/live
+
+pnpm --filter @drammers/admin dev            # beheerportal op http://localhost:5173
+cd apps/mobile && npx expo start             # app; druk op i (iOS) of a (Android)
+```
+
+Kwaliteitscontroles (ook in CI): `pnpm lint`, `pnpm typecheck`, `pnpm test`, `dotnet format Drammers.sln --verify-no-changes`.
+
+Afspraken in de monorepo:
+- **Supply-chain-beveiliging (pnpm)**: pakketten jonger dan 24 uur worden niet geïnstalleerd, en installatiescripts van pakketten staan uit, behalve wat expliciet in `pnpm-workspace.yaml` (`allowBuilds`) is beoordeeld.
+- **Eén React-versie** voor app en portal (`overrides` in `pnpm-workspace.yaml`).
+- **Iconen** komen ongewijzigd uit Figma (`apps/mobile/assets/icons`); `pnpm --filter @drammers/mobile icons` genereert daaruit `icons.generated.ts`. De app kleurt ze in via het thema.
+- De componentenpagina (Meer → Componenten) is alleen zichtbaar in development-builds.
 
 ## Licentie
 

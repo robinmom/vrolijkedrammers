@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- OpenAPI-document tijdens de build genereren naar /openapi (contract voor packages/api-client en de OpenAPI-diff in CI). -->
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../openapi</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name v1</OpenApiGenerateDocumentsOptions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.12">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Drammers.SharedKernel\Drammers.SharedKernel.csproj" />
+    <ProjectReference Include="..\Drammers.Infrastructure\Drammers.Infrastructure.csproj" />
+    <ProjectReference Include="..\Drammers.Worker\Drammers.Worker.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Audit\Drammers.Modules.Audit.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Content\Drammers.Modules.Content.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Identity\Drammers.Modules.Identity.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Import\Drammers.Modules.Import.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Membership\Drammers.Modules.Membership.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Notification\Drammers.Modules.Notification.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Parade\Drammers.Modules.Parade.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Payments\Drammers.Modules.Payments.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Ticketing\Drammers.Modules.Ticketing.csproj" />
+  </ItemGroup>
+
+</Project>

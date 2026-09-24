@@ -1,12 +1,12 @@
 # 12 – Teststrategie
 
-> Status: concept v0.1 · 2026-09-24
+> Status: v0.2 · 2026-09-24 · tooling bijgewerkt na fase 0
 
 ## 1. Testpiramide en tooling
 
 | Niveau | Doel | Tooling | Waar |
 |---|---|---|---|
-| Unit | Domeinlogica (statusmachines, validaties, nummering, QR-parsing, reconciliatie, jubileumberekening, audience-regels) | xUnit + FluentAssertions; Jest (app/portal) | `tests/Drammers.UnitTests`, `apps/*/__tests__` |
+| Unit | Domeinlogica (statusmachines, validaties, nummering, QR-parsing, reconciliatie, jubileumberekening, audience-regels) | xUnit (Assert; geen FluentAssertions i.v.m. de commerciële licentie van v8); Jest + React Native Testing Library (app); Vitest + Testing Library (portal, packages) | `tests/Drammers.UnitTests`, `apps/mobile/src/**/__tests__`, `apps/admin/src/*.test.tsx`, `packages/*/src/*.test.ts` |
 | Integratie | EF Core + echte SQL Server (constraints, locking, filtered unique indexes), Blob (Azurite), externe API's gemockt | Testcontainers (mcr.microsoft.com/mssql/server), Azurite, WireMock.Net, Respawn | `tests/Drammers.IntegrationTests` |
 | API | Endpoints end-to-end in-process: auth, permissions, ProblemDetails, OpenAPI-contract | WebApplicationFactory + test-JWT-issuer | `tests/Drammers.ApiTests` |
 | Contract | OpenAPI-diff (geen breaking changes), gegenereerde client compileert | oasdiff, tsc | CI |

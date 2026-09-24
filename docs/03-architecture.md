@@ -96,7 +96,7 @@ MI = Managed Identity (geen connection-string-secrets).
 | Laag | Keuze | Toelichting |
 |---|---|---|
 | Mobiel | **React Native + Expo** (SDK LTS), TypeScript, Expo Router, TanStack Query, Zustand, `expo-camera` (QR), `expo-notifications`, `expo-secure-store`, `expo-sqlite`, `react-native-svg`, `expo-auth-session` (OIDC/PKCE) | ADR-001 |
-| Beheerportal | React + Vite + TypeScript, TanStack Router/Query/Table, MSAL.js, `dnd-kit` (optocht samenstellen) | Zelfde taal/tooling als de app, gedeelde tokens en API-client |
+| Beheerportal | React + Vite + TypeScript, TanStack Router/Query/Table, MSAL.js, `dnd-kit` (optocht samenstellen), Vitest; fonts zelf gehost via `@fontsource` (strikte CSP) | Zelfde taal/tooling als de app, gedeelde tokens en API-client |
 | Gedeeld | `packages/design-tokens` (Figma-tokens), `packages/api-client` (gegenereerd uit OpenAPI met `openapi-typescript`) | Eén bron voor types |
 | API | **ASP.NET Core (.NET 10 LTS)**, **Controllers** (besluit OQ-63), service-klassen per use case (geen MediatR), FluentValidation, EF Core (SQL Server), Serilog → App Insights, `Microsoft.Identity.Web`, rate limiting middleware, ProblemDetails | ADR-002 |
 | Achtergrond | Hosted services in de API-app (`Drammers.Worker`): scheduler met `sp_getapplock` (sync, gepland nieuws, receipts, retentie) en DB-queues (outbox: push/mail; media-jobs; imports) | ADR-007 (B-01) |
@@ -108,6 +108,17 @@ MI = Managed Identity (geen connection-string-secrets).
 | Excel | ClosedXML (import/export), CsvHelper | MIT-licentie |
 | IaC | Bicep + GitHub Actions (OIDC federatie) | §7 |
 | Tests | xUnit, Testcontainers (SQL Server), Respawn, WireMock.Net (Mollie/e-Boekhouden), Jest + React Native Testing Library, Playwright (portal), Maestro (app E2E) | [12](12-testing-strategy.md) |
+
+### Vastgestelde versies (fase 0, 2026-09-24)
+
+| Onderdeel | Versie | Toelichting |
+|---|---|---|
+| .NET SDK / runtime | 10.0 (LTS) | `TreatWarningsAsErrors`, code-stijl afgedwongen in de build |
+| Expo SDK / React Native / React | 57 / 0.86 / 19.2.3 | React via `overrides` gelijk voor app en portal |
+| TypeScript | 6.0 | typescript-eslint ondersteunt nog geen TypeScript 7 |
+| ESLint | 9 | `eslint-plugin-react` (via eslint-config-expo) werkt nog niet met ESLint 10 |
+| pnpm | 12 (via corepack) | `nodeLinker: hoisted`; minimale pakketleeftijd 24 uur; installatiescripts standaard uit |
+| Testen | xUnit, Jest + RNTL 14, Vitest 5 | RNTL 14 rendert asynchroon (`await render`) |
 
 ## 5. Modulaire monoliet – modules
 

@@ -1,0 +1,12 @@
+pnpm-lock.yaml
+openapi/
+**/schema.d.ts
+docs/
+*.md
+bin/
+obj/
+.expo/
+src/
+tests/
+apps/mobile/src/ui/icons.generated.ts
+apps/mobile/src/ui/__tests__/__snapshots__/

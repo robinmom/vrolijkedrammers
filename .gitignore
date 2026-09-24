@@ -1,0 +1,45 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Secrets – never commit
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.p8
+*.key
+*.pem
+appsettings.*.local.json
+secrets.json
+google-services.json
+GoogleService-Info.plist
+
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+coverage/
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+ios/
+android/
+
+# Azure / tooling
+.azure/
+*.bicep.json
+local.settings.json
+__azurite_db_*
+__blobstorage__/
+__queuestorage__/

@@ -30,6 +30,8 @@ export interface ColorScheme {
   successText: string;
   actionPrimary: string;
   onActionPrimary: string;
+  /** Destructieve knoppen ("Alle leden verwijderen"): wit erop ≥ 4,5:1 en duidelijk zichtbaar op licht én donker canvas. */
+  actionDanger: string;
   actionSecondary: string;
   heroBackground: string;
   onHero: string;
@@ -54,6 +56,7 @@ export const light: ColorScheme = {
   successText: '#287A26',
   actionPrimary: brand.red,
   onActionPrimary: '#FFFFFF',
+  actionDanger: '#D4000F',
   actionSecondary: brand.blue,
   heroBackground: brand.blue,
   onHero: '#FFFFFF',
@@ -78,6 +81,7 @@ export const dark: ColorScheme = {
   successText: '#4FB84B',
   actionPrimary: brand.red,
   onActionPrimary: '#FFFFFF',
+  actionDanger: '#D4000F',
   actionSecondary: brand.blue,
   heroBackground: brand.blue,
   onHero: '#FFFFFF',

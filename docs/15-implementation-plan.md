@@ -119,11 +119,11 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 0; B-01, B-02, B-04 (subscription).
 
 **Acceptatiecriteria.**
-- [ ] Merge naar `main` → infra `what-if` + deploy + API + portal automatisch in Dev; `/health/ready` groen.
-- [ ] Het verwijderen en opnieuw uitrollen van de Dev-resource-group vanuit Bicep lukt zonder handmatige stappen (behalve de gedocumenteerde Entra-stappen).
-- [ ] Geen secrets in pipeline-variabelen, behalve niet-gevoelige ID's.
-- [ ] Acc kan met dezelfde templates en andere parameters worden uitgerold.
-- [ ] Een testaccount zonder toewijzing kan niet inloggen op de Dev-app; een token van de Prod-app-registratie wordt door de Dev-API geweigerd.
+- [x] Merge naar `main` → infra `what-if` + deploy + API + portal automatisch in Dev; `/health/ready` groen. *(2026-09-25, Deploy #3/#5)*
+- [x] Het verwijderen en opnieuw uitrollen van de Dev-resource-group vanuit Bicep lukt zonder handmatige stappen (behalve de gedocumenteerde Entra-stappen). *(2026-09-25, runbook §5 + Deploy #7; nieuwe API-identiteit kreeg automatisch een databasegebruiker)*
+- [x] Geen secrets in pipeline-variabelen, behalve niet-gevoelige ID's. *(OIDC; geen GitHub-secrets)*
+- [x] Acc kan met dezelfde templates en andere parameters worden uitgerold. *(2026-09-25, Deploy #6)*
+- [x] Een testaccount zonder toewijzing kan niet inloggen op de Dev-app; een token van de Prod-app-registratie wordt door de Dev-API geweigerd. *(2026-09-25: handmatige logintest (tester wel, niet-toegewezen account geweigerd); audience- en environmentAccess-weigering in `EnvironmentAccessTests`; live met een echt token opnieuw in fase 3/4)*
 
 ---
 

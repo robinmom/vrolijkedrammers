@@ -11,10 +11,19 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <!-- Vanaf SqlClient 7 zit Entra-authenticatie (managed identity) in een apart pakket. -->
     <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Drammers.SharedKernel\Drammers.SharedKernel.csproj" />
+    <ProjectReference Include="..\Drammers.Worker\Drammers.Worker.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Audit\Drammers.Modules.Audit.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Content\Drammers.Modules.Content.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Notification\Drammers.Modules.Notification.csproj" />
   </ItemGroup>
 
 </Project>

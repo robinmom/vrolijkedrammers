@@ -33,6 +33,12 @@ jobs:
           dotnet-version: 10.0.x
       - name: Publish API
         run: dotnet publish src/Drammers.Api -c Release -o publish/api
+      - name: Migratiescript (idempotent) en databasetool
+        run: |
+          dotnet tool restore
+          dotnet ef migrations script --idempotent -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure \
+            -o publish/db/migrations.sql
+          dotnet publish tools/Drammers.DbSetup -c Release -o publish/db/tool
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -49,6 +55,10 @@ jobs:
         with:
           name: api
           path: publish/api
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db
+          path: publish/db
 
   deploy:
     name: Uitrol ${{ inputs.environment || 'dev' }}
@@ -93,7 +103,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Database – API-identiteit als gebruiker
+      - uses: actions/download-artifact@v4
+        with:
+          name: db
+          path: publish/db
+      - name: Database – migraties en API-identiteit (vóór de app; een fout stopt de deploy)
         run: |
           # Tijdelijke firewallregel voor deze runner; wordt altijd weer verwijderd.
           rule="github-runner-$GITHUB_RUN_ID"
@@ -101,8 +115,10 @@ jobs:
           az sql server firewall-rule create -g "$RESOURCE_GROUP" -s "sql-dvd-$ENVIRONMENT" -n "$rule" \
             --start-ip-address "$ip" --end-ip-address "$ip" -o none
           trap 'az sql server firewall-rule delete -g "$RESOURCE_GROUP" -s "sql-dvd-$ENVIRONMENT" -n "$rule" -o none' EXIT
-          dotnet run --project tools/Drammers.DbSetup -c Release -- \
-            "${{ steps.infra.outputs.sql-server }}" sqldb-dvd "${{ steps.infra.outputs.api-app }}" "${{ steps.infra.outputs.api-client-id }}"
+          server="${{ steps.infra.outputs.sql-server }}"
+          dotnet publish/db/tool/Drammers.DbSetup.dll "$server" sqldb-dvd migrate publish/db/migrations.sql
+          dotnet publish/db/tool/Drammers.DbSetup.dll "$server" sqldb-dvd ensure-user \
+            "${{ steps.infra.outputs.api-app }}" "${{ steps.infra.outputs.api-client-id }}" app_runtime
 
       - uses: actions/download-artifact@v4
         with:

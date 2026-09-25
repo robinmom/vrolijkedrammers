@@ -68,8 +68,8 @@ flowchart TB
 
 | Identiteit | Rechten |
 |---|---|
-| API + worker (system MI) | SQL: DB-user `app_runtime` (custom role: DML op module-schemas, INSERT/SELECT op audit, EXEC op scan-reconciliatie-proc, `sp_getapplock`); Storage: `Storage Blob Data Contributor` + `Storage Blob Delegator` (voor user-delegation SAS); Key Vault: `Key Vault Secrets User` (o.a. `eboekhouden-token`, `expo-access-token`, `mollie-api-key`); ACS: `Communication and Email Service Owner` op de ACS-resource (geen connection string) |
-| Pipeline-identiteit (GitHub Actions, federated credential per environment) | `Contributor` op de resource group van die omgeving; `Website Contributor` op de API-app; SQL: `app_migrator` (DDL) |
+| API + worker (system MI) | SQL: DB-user met de naam van de app (bijv. `app-dvd-api-dev`), lid van de rol `app_runtime` (fase 2: DML op module-schemas, INSERT/SELECT op audit, EXEC op scan-reconciliatie-proc, `sp_getapplock`); Storage: `Storage Blob Data Contributor` + `Storage Blob Delegator` (voor user-delegation SAS); Key Vault: `Key Vault Secrets User` (o.a. `eboekhouden-token`, `expo-access-token`, `mollie-api-key`); ACS: `Communication and Email Service Owner` op de ACS-resource (geen connection string) |
+| Pipeline-identiteit (GitHub Actions, federated credential per environment) | `Contributor` op de resource group van die omgeving; `Website Contributor` op het gedeelde plan; SQL: lid van de Entra-beheergroep `sg-dvd-sql-admin-<env>` (nodig voor `CREATE USER` van de API-identiteit). De rol `app_migrator` (DDL + data) bestaat voor een latere, aparte migratie-identiteit |
 | Mensen | 2–3 beheerders: `Contributor` op Dev/Acc; Prod: `Reader` standaard, `Contributor` alleen via break-glass/tijdelijk. SQL-toegang via Entra-groep `sg-dvd-prod-dba` (read-only standaard) |
 
 ## 5. Netwerk

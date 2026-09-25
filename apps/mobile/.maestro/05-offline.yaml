@@ -4,11 +4,11 @@ tags:
   - android-only
 ---
 - launchApp
-- assertVisible: "Eerstvolgende activiteit"
+- assertVisible: 'Eerstvolgende activiteit'
 - setAirplaneMode: enabled
 - stopApp
 - launchApp
-- assertVisible: "Je bent offline.*"
-- assertVisible: "Eerstvolgende activiteit"
-- assertNotVisible: "Er ging iets mis"
+- assertVisible: 'Je bent offline.*'
+- assertVisible: 'Eerstvolgende activiteit'
+- assertNotVisible: 'Er ging iets mis'
 - setAirplaneMode: disabled

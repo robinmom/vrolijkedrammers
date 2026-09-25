@@ -2,14 +2,14 @@
 appId: nl.vrolijkedrammers.app
 ---
 - launchApp
-- tapOn: "Meer"
+- tapOn: 'Meer'
 - tapOn: "Foto's"
-- assertVisible: "Albums"
+- assertVisible: 'Albums'
 - tapOn:
-    id: "album-card"
+    id: 'album-card'
     index: 0
 - tapOn:
-    id: "photo"
+    id: 'photo'
     index: 0
-- assertVisible: "1 / .*"
-- tapOn: "Sluiten"
+- assertVisible: '1 / .*'
+- tapOn: 'Sluiten'

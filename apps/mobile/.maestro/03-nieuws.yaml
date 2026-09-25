@@ -2,8 +2,8 @@
 appId: nl.vrolijkedrammers.app
 ---
 - launchApp
-- tapOn: "Nieuws"
-- tapOn: "Lees meer"
+- tapOn: 'Nieuws'
+- tapOn: 'Lees meer'
 # Detailscherm: terugknop (hero of "‹ Nieuws") en geen foutmelding.
-- assertVisible: "Terug.*"
-- assertNotVisible: "Er ging iets mis"
+- assertVisible: 'Terug.*'
+- assertNotVisible: 'Er ging iets mis'

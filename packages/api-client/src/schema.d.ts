@@ -4,6 +4,511 @@
  */
 
 export interface paths {
+    "/api/v1/admin/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    action?: string;
+                    entityType?: string;
+                    entityId?: string;
+                    actorUserId?: string;
+                    from?: string;
+                    to?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfAuditLogEntryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfAuditLogEntryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfAuditLogEntryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/carnival-years": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminCarnivalYearResponse"][];
+                        "application/json": components["schemas"]["AdminCarnivalYearResponse"][];
+                        "text/json": components["schemas"]["AdminCarnivalYearResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CarnivalYearRequest"];
+                    "text/json": components["schemas"]["CarnivalYearRequest"];
+                    "application/*+json": components["schemas"]["CarnivalYearRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminCarnivalYearResponse"];
+                        "application/json": components["schemas"]["AdminCarnivalYearResponse"];
+                        "text/json": components["schemas"]["AdminCarnivalYearResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/carnival-years/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CarnivalYearRequest"];
+                    "text/json": components["schemas"]["CarnivalYearRequest"];
+                    "application/*+json": components["schemas"]["CarnivalYearRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/carnival-years/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/app-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppConfigSettingsResponse"];
+                        "application/json": components["schemas"]["AppConfigSettingsResponse"];
+                        "text/json": components["schemas"]["AppConfigSettingsResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AppConfigSettingsRequest"];
+                    "text/json": components["schemas"]["AppConfigSettingsRequest"];
+                    "application/*+json": components["schemas"]["AppConfigSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/feature-flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FeatureFlagResponse"][];
+                        "application/json": components["schemas"]["FeatureFlagResponse"][];
+                        "text/json": components["schemas"]["FeatureFlagResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/feature-flags/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagRequest"];
+                    "text/json": components["schemas"]["FeatureFlagRequest"];
+                    "application/*+json": components["schemas"]["FeatureFlagRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RetentionPolicyResponse"][];
+                        "application/json": components["schemas"]["RetentionPolicyResponse"][];
+                        "text/json": components["schemas"]["RetentionPolicyResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/retention/{dataType}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    dataType: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RetentionPolicyRequest"];
+                    "text/json": components["schemas"]["RetentionPolicyRequest"];
+                    "application/*+json": components["schemas"]["RetentionPolicyRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DashboardResponse"];
+                        "application/json": components["schemas"]["DashboardResponse"];
+                        "text/json": components["schemas"]["DashboardResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/permissions": {
         parameters: {
             query?: never;
@@ -272,6 +777,8 @@ export interface paths {
             parameters: {
                 query?: {
                     search?: string;
+                    page?: number;
+                    pageSize?: number;
                 };
                 header?: never;
                 path?: never;
@@ -285,9 +792,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["UserSummaryResponse"][];
-                        "application/json": components["schemas"]["UserSummaryResponse"][];
-                        "text/json": components["schemas"]["UserSummaryResponse"][];
+                        "text/plain": components["schemas"]["PagedResultOfUserSummaryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfUserSummaryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfUserSummaryResponse"];
                     };
                 };
             };
@@ -333,6 +840,94 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UserSummaryResponse"];
+                        "application/json": components["schemas"]["UserSummaryResponse"];
+                        "text/json": components["schemas"]["UserSummaryResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gebruikerslijst als Excel met Nederlandse kolomnamen; de export zelf wordt geaudit (fase 4). */
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -629,10 +1224,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portal-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PortalConfigResponse"];
+                        "application/json": components["schemas"]["PortalConfigResponse"];
+                        "text/json": components["schemas"]["PortalConfigResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminCarnivalYearResponse: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: date */
+            carnivalStartDate: string;
+            /** Format: date */
+            carnivalEndDate: string;
+            active: boolean;
+        };
         AppConfigResponse: {
             minAppVersion: components["schemas"]["MinAppVersion"];
             recommendedAppVersion: string;
@@ -642,9 +1288,51 @@ export interface components {
                 [key: string]: boolean;
             };
         };
+        AppConfigSettingsRequest: {
+            minAppVersionIos: string;
+            minAppVersionAndroid: string;
+            recommendedAppVersion: string;
+            maintenanceMode: boolean;
+            maintenanceMessage: null | string;
+            supportEmail: null | string;
+        };
+        AppConfigSettingsResponse: {
+            minAppVersionIos: string;
+            minAppVersionAndroid: string;
+            recommendedAppVersion: string;
+            maintenanceMode: boolean;
+            maintenanceMessage: null | string;
+            supportEmail: null | string;
+        };
+        AuditLogEntryResponse: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            occurredAt: string;
+            actorType: string;
+            /** Format: uuid */
+            actorUserId: null | string;
+            actorName: null | string;
+            action: string;
+            entityType: string;
+            entityId: string;
+            oldValues: null | string;
+            newValues: null | string;
+        };
+        CarnivalYearRequest: {
+            name: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: date */
+            carnivalStartDate: string;
+            /** Format: date */
+            carnivalEndDate: string;
+        };
         CarnivalYearResponse: {
             /** Format: int32 */
-            id: number | string;
+            id: number;
             name: string;
             /** Format: date */
             startDate: string;
@@ -660,6 +1348,35 @@ export interface components {
             name: string;
             description: null | string;
             permissions: string[];
+        };
+        DashboardResponse: {
+            /** Format: int32 */
+            activeUsers: number;
+            /** Format: int32 */
+            blockedUsers: number;
+            carnivalYear: null | string;
+            /** Format: int32 */
+            daysUntilCarnival: null | number;
+            /** Format: int32 */
+            outboxBacklog: number;
+            /** Format: date-time */
+            lastHeartbeat: null | string;
+            systemStatus: string;
+            checks: components["schemas"]["HealthEntry"][];
+        };
+        FeatureFlagRequest: {
+            enabled: boolean;
+            description: null | string;
+        };
+        FeatureFlagResponse: {
+            key: string;
+            enabled: boolean;
+            description: null | string;
+            hasAudience: boolean;
+        };
+        HealthEntry: {
+            name: string;
+            status: string;
         };
         Maintenance: {
             enabled: boolean;
@@ -686,16 +1403,41 @@ export interface components {
             ios: string;
             android: string;
         };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfAuditLogEntryResponse: {
+            items: components["schemas"]["AuditLogEntryResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfUserSummaryResponse: {
+            items: components["schemas"]["UserSummaryResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
         PermissionResponse: {
             code: string;
             description: string;
             category: string;
         };
+        PortalConfigResponse: {
+            clientId: string;
+            authority: string;
+            apiScope: string;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
             /** Format: int32 */
-            status?: null | number | string;
+            status?: null | number;
             detail?: null | string;
             instance?: null | string;
         };
@@ -703,6 +1445,19 @@ export interface components {
             email: string;
             displayName: string;
             roles: string[];
+        };
+        /** @enum {unknown} */
+        RetentionAction: "Delete" | "Anonymize" | "Aggregate";
+        RetentionPolicyRequest: {
+            /** Format: int32 */
+            retentionDays: number;
+            action: components["schemas"]["RetentionAction"];
+        };
+        RetentionPolicyResponse: {
+            dataType: string;
+            /** Format: int32 */
+            retentionDays: number;
+            action: string;
         };
         RoleAssignmentRequest: {
             roleCode: string;
@@ -713,7 +1468,7 @@ export interface components {
         };
         RoleResponse: {
             /** Format: int32 */
-            id: number | string;
+            id: number;
             code: string;
             name: string;
             description: null | string;

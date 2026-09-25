@@ -11,3 +11,5 @@ tests/
 apps/mobile/src/ui/icons.generated.ts
 apps/mobile/src/ui/__tests__/__snapshots__/
 dotnet-tools.json
+test-results/
+playwright-report/

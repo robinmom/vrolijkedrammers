@@ -23,6 +23,9 @@ param apiClientId string
 param environmentAccessClaim string
 param requiredEnvironmentAccess string
 
+@description('Client-ID van de portal-app-registratie; het portal haalt deze op via GET /api/v1/portal-config.')
+param portalClientId string
+
 @description('Graph in de External ID-tenant: provisioning-app, issuer-domein en het certificaat in Key Vault (provisioning-certificate.sh).')
 param externalIdTenantId string
 param graphClientId string
@@ -118,6 +121,7 @@ module api 'modules/appservice.bicep' = {
       Auth__Audience: apiClientId
       Auth__EnvironmentAccessClaim: environmentAccessClaim
       Auth__RequiredEnvironmentAccess: requiredEnvironmentAccess
+      Portal__ClientId: portalClientId
       Graph__TenantId: empty(graphClientId) ? '' : externalIdTenantId
       Graph__ClientId: graphClientId
       Graph__IssuerDomain: externalIdIssuerDomain

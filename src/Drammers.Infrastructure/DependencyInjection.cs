@@ -109,6 +109,7 @@ public static class DependencyInjection
         services.AddScoped<IUserAccessService, UserAccessService>();
         services.AddScoped<ILoginRecorder, LoginRecorder>();
         services.AddScoped<AccountAdministration>();
+        services.AddScoped<ConfigurationAdministration>();
         return services;
     }
 }

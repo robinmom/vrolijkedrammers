@@ -31,6 +31,9 @@ public sealed class AppConfigReader(DrammersDbContext db, IMemoryCache cache)
             return await LoadAsync(cancellationToken);
         }))!;
 
+    /// <summary>Na een wijziging via het portal: direct zichtbaar op deze instantie.</summary>
+    public void Invalidate() => cache.Remove(CacheKey);
+
     private async Task<AppConfigSnapshot> LoadAsync(CancellationToken cancellationToken)
     {
         var settings = await db.AppConfiguration.AsNoTracking()

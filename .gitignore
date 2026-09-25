@@ -44,6 +44,10 @@ __azurite_db_*
 __blobstorage__/
 __queuestorage__/
 
+# Playwright (fase 4)
+test-results/
+playwright-report/
+
 # Monorepo (fase 0)
 expo-env.d.ts
 .vite/

@@ -60,6 +60,10 @@ jobs:
       - run: pnpm test
       - name: Portal bouwt
         run: pnpm --filter @drammers/admin build
+      - name: Portal end-to-end + toegankelijkheid (Playwright, axe)
+        run: |
+          pnpm --filter @drammers/admin exec playwright install --with-deps chromium
+          pnpm --filter @drammers/admin e2e
       - name: Kwetsbare npm-pakketten (high/critical)
         run: pnpm audit --audit-level high
 

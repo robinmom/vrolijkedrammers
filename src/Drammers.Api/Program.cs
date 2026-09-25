@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Drammers.Api;
 using Drammers.Api.Authentication;
@@ -25,7 +26,18 @@ try
 
     builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = ProblemDetailsDefaults.Customize);
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            // Getallen alleen als getal (ook in het OpenAPI-contract, dus zuivere types in de clients).
+            options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+        });
+    builder.Services.ConfigureHttpJsonOptions(options =>
+    {
+        options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+    });
     builder.Services.AddOpenApi("v1");
     builder.Services.AddDrammersInfrastructure(builder.Configuration, builder.Environment);
     builder.Services.AddDrammersAuthentication(builder.Configuration);

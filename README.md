@@ -90,7 +90,8 @@ dotnet ef database update -p src/Drammers.Infrastructure -s src/Drammers.Infrast
 Nieuwe migratie na een modelwijziging: `dotnet ef migrations add <Naam> -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure -o Persistence/Migrations`. CI faalt als het model is gewijzigd zonder migratie.
 
 ```bash
-pnpm --filter @drammers/admin dev            # beheerportal op http://localhost:5173
+pnpm --filter @drammers/admin dev            # beheerportal op http://localhost:5173/beheer/ (proxy /api → :5162)
+pnpm --filter @drammers/admin e2e            # Playwright + axe met nep-login en gemockte API
 cd apps/mobile && npx expo start             # app; druk op i (iOS) of a (Android)
 ```
 

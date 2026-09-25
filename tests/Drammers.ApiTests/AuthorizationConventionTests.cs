@@ -17,6 +17,7 @@ public class AuthorizationConventionTests
     [
         $"{nameof(AppConfigController)}.{nameof(AppConfigController.Get)}",
         $"{nameof(CarnivalYearsController)}.{nameof(CarnivalYearsController.GetCurrent)}",
+        $"{nameof(PortalConfigController)}.{nameof(PortalConfigController.Get)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

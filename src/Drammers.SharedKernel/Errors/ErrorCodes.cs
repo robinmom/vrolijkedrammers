@@ -17,4 +17,8 @@ public static class ErrorCodes
     public const string UnknownPermission = "UNKNOWN_PERMISSION";
     public const string LockoutPrevented = "LOCKOUT_PREVENTED";
     public const string ProvisioningFailed = "PROVISIONING_FAILED";
+    public const string CarnivalYearNotFound = "CARNIVAL_YEAR_NOT_FOUND";
+    public const string CarnivalYearInvalidDates = "CARNIVAL_YEAR_INVALID_DATES";
+    public const string CarnivalYearNameTaken = "CARNIVAL_YEAR_NAME_TAKEN";
+    public const string ConfigKeyUnknown = "CONFIG_KEY_UNKNOWN";
 }

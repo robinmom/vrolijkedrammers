@@ -31,7 +31,6 @@ De gewone (workforce) tenant van de vereniging, "Vrolijke Drammers" (`vrolijkedr
 ### Afspraken noodaccounts
 - Alleen gebruiken als het gewone beheerdersaccount of de workforce-tenant niet beschikbaar is.
 - Wachtwoorden: lang en uniek, door de beheerder zelf gezet (2026-09-24). Ze staan **nooit** in deze repository, in chatgesprekken of in tickets. Bewaring: gedeelde wachtwoordkluis van de vereniging, of verzegeld bij de voorzitter (account 1) en de secretaris (account 2).
-- Worden uitgesloten van de Conditional Access-policy voor het beheerportal (fase 3), zodat een fout in die policy niet iedereen buitensluit.
 - Elk gebruik geeft een melding (alert op aanmeldingen van `bg-admin-*`, in te richten in fase 7) en wordt achteraf gedocumenteerd.
 - Controle elk kwartaal: kan er nog met beide accounts worden ingelogd? Zijn ze niet per ongeluk uitgeschakeld?
 
@@ -64,7 +63,7 @@ Bron: [CIAM Tenants – Create (Microsoft Learn)](https://learn.microsoft.com/en
 
 Beide accounts gebruiken e-mail met eenmalige code, op persoonlijke adressen van de beheerder (niet in deze repository). Logintest geslaagd op 2026-09-25. Toegang wijzigen gaat met `infra/entra/set-tester.sh`.
 
-## 3b. Fase 3: provisioning, eerste beheerder en MFA
+## 3b. Fase 3: provisioning en eerste beheerder
 
 **Provisioning-app (per omgeving).** Via deze app maakt en blokkeert de API accounts via Graph (ADR-014). De app meldt zich aan met het certificaat `graph-provisioning` uit `kv-dvd-<env>`. Key Vault maakt het certificaat aan en vernieuwt het; de privésleutel verlaat Key Vault niet. Federatie met de managed identity werkt niet naar een external tenant (AADSTS700236, getest op 2026-09-25).
 ```bash
@@ -79,13 +78,7 @@ Zet daarna `DVD_GRAPH_CLIENT_ID` en `DVD_GRAPH_CERTIFICATE_NAME` (= `graph-provi
 
 **Eerste beheerder.** Beheerders worden normaal door een andere beheerder aangemaakt (`POST /api/v1/admin/users`). Voor de allereerste zet je in de GitHub environment de variabele `DVD_BOOTSTRAP_ADMIN` = `<oid>;<e-mail>;<naam>` van een bestaand account. Bij de volgende uitrol krijgt dat account de rol `beheerder-it`. De stap is idempotent en wordt geaudit. Haal de variabele daarna weer weg.
 
-**MFA voor het beheerportal (handmatig, OQ-69).** Entra-beheercentrum → Protection → Conditional Access → New policy:
-- Users: *All users*; exclude `bg-admin-01` en `bg-admin-02`;
-- Target resources: de apps *DVD Beheerportal (dev/acc/prod)*;
-- Grant: *Require multifactor authentication*;
-- zet de policy eerst op *Report-only* en daarna op *On*.
-
-Controleer vooraf in de prijsinformatie van External ID of hier kosten aan zitten (OQ-69). Als een echt token van het portal `amr = mfa` bevat, zet dan in Bicep `requirePortalMfa = true` (tweede slot in de API).
+**Geen MFA-policy in Entra (B-02-MFA).** Beheerders gebruiken een eigen vrolijkedrammers.nl-adres voor hun app-account; zorg dat MFA aan staat op die mailboxen (Microsoft 365-beheer van de vereniging). Beheerrollen alleen voor weinig personen; alle beheeracties staan in de auditlog.
 
 ## 4. Nog in te richten (volgende fasen)
 
@@ -93,7 +86,6 @@ Controleer vooraf in de prijsinformatie van External ID of hier kosten aan zitte
 |---|---|
 | App-registraties per omgeving (API, app, portal) + Dev/Acc op *Require user assignment*, groep `Testers`, custom attribuut `environmentAccess` — gescript in `infra/entra/` (zie [omgeving-opbouwen §3](omgeving-opbouwen.md#3-eenmalig-per-omgeving-entra-external-id)); het custom attribuut zelf is een handmatige stap | 1 |
 | User flow met e-mail-OTP en zelfregistratie uit: basis in fase 1 (`register-apps.sh`); huisstijl en afronding | 3 |
-| Conditional Access: MFA voor de portal-app, noodaccounts uitgesloten; kosten controleren (OQ-69) — zie §3b | 3 |
 | Provisioning-app-registratie (Graph `User.ReadWrite.All`, certificaat in Key Vault) — `register-provisioning-app.sh` + `provisioning-certificate.sh`, zie §3b | 3 |
 | Aanmeldmeldingen voor `bg-admin-*` en auditlogs naar Log Analytics | 7 |
 | Eigen inlogdomein (bijv. `login.vrolijkedrammers.nl`, OQ-67) | 7 |

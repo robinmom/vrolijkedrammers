@@ -10,7 +10,7 @@ flowchart LR
   PORTAL[Beheerportal\nReact SPA] --> API
   WEB[Website] --> API
   APP -. OIDC/PKCE .-> ENTRA[Entra External ID]
-  PORTAL -. OIDC/PKCE + MFA .-> ENTRA
+  PORTAL -. OIDC/PKCE + e-mailcode .-> ENTRA
   subgraph Azure
     API[ASP.NET Core API + worker\nmodulaire monoliet\nhosted services: sync · planning · push · imports]
     SQL[(Azure SQL\n1 DB, schema per module)]

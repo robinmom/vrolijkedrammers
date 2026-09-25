@@ -1,6 +1,6 @@
 # ADR-004: Authenticatie
 
-- **Status**: Geaccepteerd · 2026-09-24 (besluiten **B-02**: één tenant; **B-05**: alleen leden, zelfregistratie uit, zie ADR-014)
+- **Status**: Geaccepteerd · 2026-09-24 (besluiten **B-02**: één tenant; **B-05**: alleen leden, zelfregistratie uit, zie ADR-014) · Bijgesteld 2026-09-25: **B-02-MFA**, geen Conditional Access (zie Decision)
 
 ## Context
 
@@ -23,7 +23,7 @@ Leden, ouders, groepsverantwoordelijken (soms niet-lid) en beheerders moeten vei
 
 **Microsoft Entra External ID** als identity provider, met **één external tenant** (`dvd`) voor alle omgevingen en **aparte app-registraties per omgeving** (Dev, Acc, Prod × API, app, portal). Dev/Acc-apps staan op *Require user assignment* (alleen toegewezen testers, groep `Testers`), en de Dev/Acc-API accepteert alleen tokens met de claim `environmentAccess` die de omgeving bevat (custom attribuut, via *Attributes & Claims* in het token) (B-02). **Zelfregistratie staat uit** (`isSignUpAllowed = false`); accounts worden uitsluitend door de backend via Microsoft Graph aangemaakt na goedkeuring (ADR-014, B-05). Verder:
 - App: OIDC Authorization Code + PKCE via systeembrowser (`expo-auth-session`), met gebrande sign-in pages (logo, kleuren uit het design system).
-- Portal: MSAL.js; **MFA via een Conditional Access-policy die gericht is op de app-registratie van het beheerportal** (iedereen die het portal opent, doet MFA; beheerrechten komen uit onze RBAC). Methode: **passkey (FIDO2) aanbevolen**, e-mail-OTP als terugval; sms uit.
+- Portal: MSAL.js; aanmelden met een **eenmalige e-mailcode**. **Geen Conditional Access-policy** (B-02-MFA, 2026-09-25): beheerders gebruiken een eigen vrolijkedrammers.nl-adres waarvan de mailbox in Microsoft 365 met MFA is beveiligd, zodat misbruik van het portal eerst een mailbox met MFA vereist. Beheerrechten komen uit onze RBAC en worden geaudit. Access tokens van External ID bevatten geen `amr`, dus de API kan MFA niet zelf controleren. Passkeys zijn een latere verbetering.
 - Bestuursleden gebruiken hetzelfde account voor app en portal (geen aparte workforce-tenant).
 - Methoden: e-mail-OTP (standaard) en optioneel e-mail + wachtwoord (in te stellen via "Wachtwoord vergeten"); er gaan nooit wachtwoorden per mail.
 - **Autorisatie (rollen/permissions) in onze eigen database** (07-rbac), gekoppeld via `oid` → `User.external_object_id`.
@@ -55,5 +55,5 @@ Leden, ouders, groepsverantwoordelijken (soms niet-lid) en beheerders moeten vei
 
 ## Cost implications
 
-- € 0 tot 50.000 MAU. Sms-MFA is betaald (niet gebruiken; e-mail-OTP en passkey). Eventuele add-on-kosten voor Conditional Access/MFA in external tenants vóór fase 3 bevestigen (OQ-69).
+- € 0 tot 50.000 MAU. Sms-MFA is betaald (niet gebruiken; e-mail-OTP en passkey). Geen Conditional Access, dus geen add-on-kosten (OQ-69 vervallen).
 - Een eigen auth-service zou naar schatting 3–6 weken extra ontwikkeling kosten plus blijvend securityonderhoud.

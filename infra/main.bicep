@@ -27,10 +27,11 @@ param requiredEnvironmentAccess string
 param portalClientId string
 param requirePortalMfa bool
 
-@description('Graph in de External ID-tenant: provisioning-app (federatie met de managed identity van de API) en issuer-domein.')
+@description('Graph in de External ID-tenant: provisioning-app, issuer-domein en het certificaat in Key Vault (provisioning-certificate.sh).')
 param externalIdTenantId string
 param graphClientId string
 param externalIdIssuerDomain string
+param graphCertificateName string
 
 param budgetAmount int
 param budgetStartDate string
@@ -126,6 +127,7 @@ module api 'modules/appservice.bicep' = {
       Graph__TenantId: empty(graphClientId) ? '' : externalIdTenantId
       Graph__ClientId: graphClientId
       Graph__IssuerDomain: externalIdIssuerDomain
+      Graph__CertificateName: graphCertificateName
     }
   }
 }

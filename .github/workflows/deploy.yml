@@ -39,7 +39,7 @@ jobs:
           dotnet ef migrations script --idempotent -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure \
             -o publish/db/migrations.sql
           dotnet publish tools/Drammers.DbSetup -c Release -o publish/db/tool
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22

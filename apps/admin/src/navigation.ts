@@ -12,6 +12,8 @@ export const navItems: readonly NavItem[] = [
   { label: "Foto's", to: '/fotos', permission: 'photo.manage' },
   { label: 'Leden', to: '/leden', permission: 'member.read' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run' },
+  { label: 'Groepen', to: '/groepen', permission: 'member.read' },
+  { label: 'Rapportage', to: '/rapportage', permission: 'report.view' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage' },

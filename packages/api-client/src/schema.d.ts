@@ -835,6 +835,278 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GroupSummaryResponse"][];
+                        "application/json": components["schemas"]["GroupSummaryResponse"][];
+                        "text/json": components["schemas"]["GroupSummaryResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GroupRequest"];
+                    "text/json": components["schemas"]["GroupRequest"];
+                    "application/*+json": components["schemas"]["GroupRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GroupDetailResponse"];
+                        "application/json": components["schemas"]["GroupDetailResponse"];
+                        "text/json": components["schemas"]["GroupDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GroupRequest"];
+                    "text/json": components["schemas"]["GroupRequest"];
+                    "application/*+json": components["schemas"]["GroupRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/groups/{id}/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GroupMemberRequest"];
+                    "text/json": components["schemas"]["GroupMemberRequest"];
+                    "application/*+json": components["schemas"]["GroupMemberRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content-audiences/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Groepen als keuzelijst bij het publiceren van content (alleen naam, geen leden). Voor redacteuren, die geen
+         *     ledengegevens mogen zien.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AudienceOptionResponse"][];
+                        "application/json": components["schemas"]["AudienceOptionResponse"][];
+                        "text/json": components["schemas"]["AudienceOptionResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members": {
         parameters: {
             query?: never;
@@ -2135,6 +2407,78 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberReportResponse"];
+                        "application/json": components["schemas"]["MemberReportResponse"];
+                        "text/json": components["schemas"]["MemberReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/members/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3454,6 +3798,11 @@ export interface components {
             sizeBytes: number;
             url: string;
         };
+        AudienceOptionResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         AuditLogEntryResponse: {
             /** Format: int64 */
             id: number;
@@ -3599,6 +3948,60 @@ export interface components {
             description: null | string;
             hasAudience: boolean;
         };
+        GroupDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            type: components["schemas"]["GroupType"];
+            /** Format: int32 */
+            carnivalYearId: null | number;
+            active: boolean;
+            members: components["schemas"]["GroupMemberResponse"][];
+        };
+        /** @enum {unknown} */
+        GroupFunction: "Member" | "Lead";
+        GroupMemberRequest: {
+            function: components["schemas"]["GroupFunction"];
+            /** Format: date */
+            validFrom: null | string;
+            /** Format: date */
+            validTo: null | string;
+        };
+        GroupMemberResponse: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            function: components["schemas"]["GroupFunction"];
+            /** Format: date */
+            validFrom: null | string;
+            /** Format: date */
+            validTo: null | string;
+        };
+        GroupRequest: {
+            name: string;
+            description: null | string;
+            type: components["schemas"]["GroupType"];
+            /** Format: int32 */
+            carnivalYearId: null | number;
+            /** @default true */
+            active: boolean;
+        };
+        GroupSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            type: components["schemas"]["GroupType"];
+            /** Format: int32 */
+            carnivalYearId: null | number;
+            active: boolean;
+            /** Format: int32 */
+            memberCount: number;
+        };
+        /** @enum {unknown} */
+        GroupType: "DanceGuard" | "Committee" | "ParadeGroup" | "Other";
         HealthEntry: {
             name: string;
             status: string;
@@ -3700,6 +4103,18 @@ export interface components {
             syncJobs: number;
             /** Format: int32 */
             unlinkedAccounts: number;
+        };
+        /** @description Rollen, leeftijd, inschrijfjaar en groepen tellen alleen actieve leden; status telt alle leden. */
+        MemberReportResponse: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            active: number;
+            byStatus: components["schemas"]["ReportRow"][];
+            byRole: components["schemas"]["ReportRow"][];
+            byAgeClass: components["schemas"]["ReportRow"][];
+            byJoinYear: components["schemas"]["ReportRow"][];
+            byGroup: components["schemas"]["ReportRow"][];
         };
         /** @enum {unknown} */
         MembershipStatus: "Active" | "Inactive" | "Suspended" | "Deceased";
@@ -3913,6 +4328,8 @@ export interface components {
             status: components["schemas"]["PublicationStatus"];
             /** Format: date-time */
             publishAt: null | string;
+            audienceGroups?: null | string[];
+            audienceMembers?: null | string[];
         };
         PublicationResponse: {
             visibility: components["schemas"]["ContentVisibility"];
@@ -3920,9 +4337,16 @@ export interface components {
             status: components["schemas"]["PublicationStatus"];
             /** Format: date-time */
             publishAt: null | string;
+            audienceGroups: string[];
+            audienceMembers: string[];
         };
         /** @enum {unknown} */
         PublicationStatus: "Draft" | "Scheduled" | "Published" | "Archived";
+        ReportRow: {
+            label: string;
+            /** Format: int32 */
+            count: number;
+        };
         ResolveConflictRequest: {
             resolution: components["schemas"]["SyncConflictStatus"];
             note: null | string;

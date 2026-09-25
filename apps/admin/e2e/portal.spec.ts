@@ -95,6 +95,9 @@ for (const path of [
   'leden/m-2',
   'ledensync',
   'ledensync/j-1',
+  'groepen',
+  'groepen/g-1',
+  'rapportage',
   'gebruikers',
   'gebruikers/u-jan',
   'rollen',
@@ -190,4 +193,53 @@ test('zonder member.purge geen knop om leden te verwijderen', async ({ page }) =
   await open(page, new MockApi(['member.read']), 'leden');
   await expect(page.getByRole('heading', { name: 'Leden' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Alle leden verwijderen' })).toHaveCount(0);
+});
+
+test('bestuur maakt een groep en voegt een lid toe', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'groepen');
+  await page.getByRole('button', { name: 'Groep toevoegen' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Naam').fill('Dansgarde meisjes');
+  await dialog.getByLabel('Soort').selectOption('DanceGuard');
+  await dialog.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByRole('heading', { name: 'Dansgarde meisjes' })).toBeVisible();
+
+  await page.getByLabel('Zoek op naam of lidnummer').fill('Anna');
+  await page.getByRole('list', { name: 'Zoekresultaten' }).getByRole('button', { name: 'Toevoegen' }).click();
+  await expect(page.getByText('Anna Jansen is toegevoegd.')).toBeVisible();
+  expect(api.groups.find((g) => g.name === 'Dansgarde meisjes')!.members.map((m) => m.fullName)).toEqual([
+    'Anna Jansen',
+  ]);
+});
+
+test('redacteur kiest een groep als doelgroep; ledenkeuze alleen met ledenrechten', async ({ page }) => {
+  const api = new MockApi(['event.manage', 'news.manage', 'photo.manage']);
+  let sent: Record<string, unknown> | null = null;
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/v1/admin/news') && request.method() === 'POST') {
+      sent = JSON.parse(request.postData()!) as Record<string, unknown>;
+    }
+  });
+  await open(page, api, 'nieuws/nieuw');
+  await page.getByLabel('Beperkt (rollen)').check();
+  await page.getByRole('checkbox', { name: 'Jeugdcommissie' }).check();
+  await expect(page.getByRole('group', { name: 'Individuele leden' })).toHaveCount(0);
+  await page.getByLabel('Titel').fill('Vergadering');
+  await page.getByLabel('Bericht (Markdown)').fill('Donderdag om acht uur.');
+  await page
+    .getByRole('button', { name: /Opslaan/ })
+    .first()
+    .click();
+  await expect
+    .poll(() => (sent?.publication as { audienceGroups?: string[] } | undefined)?.audienceGroups)
+    .toEqual(['g-1']);
+});
+
+test('rapportage toont aantallen per categorie', async ({ page }) => {
+  await open(page, new MockApi(), 'rapportage');
+  await expect(page.getByText('3 leden in de app, waarvan 2 actief.', { exact: false })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Per groep' }).getByRole('cell', { name: 'Jeugdcommissie' }),
+  ).toBeVisible();
 });

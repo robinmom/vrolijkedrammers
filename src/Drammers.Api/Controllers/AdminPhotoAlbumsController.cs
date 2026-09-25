@@ -43,7 +43,7 @@ public sealed class AdminPhotoAlbumsController(DrammersDbContext db, ContentAdmi
         }
 
         return new AdminAlbumResponse(album.Id, album.Title, album.AlbumDate, album.Description, album.EventId, album.CoverPhotoId,
-            new PublicationResponse(album.Visibility, [.. album.Audiences.Select(a => a.AudienceRef)], album.Status, album.PublishAt), items);
+            PublicationResponse.From(album.Visibility, album.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), album.Status, album.PublishAt), items);
     }
 
     [HttpPost("photo-albums")]

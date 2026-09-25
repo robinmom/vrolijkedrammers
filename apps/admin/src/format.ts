@@ -102,3 +102,12 @@ export function formatChangedFields(value: string | null | undefined): string {
         .join(', ')
     : '';
 }
+
+export const groupTypeLabels: Record<string, string> = {
+  Committee: 'Commissie',
+  DanceGuard: 'Dansgarde',
+  ParadeGroup: 'Optochtgroep',
+  Other: 'Overig',
+};
+
+export const groupFunctionLabels: Record<string, string> = { Member: 'Lid', Lead: 'Leiding' };

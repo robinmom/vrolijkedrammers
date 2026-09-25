@@ -48,7 +48,7 @@ public sealed class AdminEventsController(DrammersDbContext db, ContentAdministr
         return new AdminEventResponse(
             e.Id, e.CategoryId, e.Title, e.Summary, e.Description, e.StartAt, e.EndAt, e.AllDay, e.LocationName, e.LocationAddress,
             e.Latitude, e.Longitude, e.IsHighlight, e.BadgeText,
-            new PublicationResponse(e.Visibility, [.. e.Audiences.Select(a => a.AudienceRef)], e.Status, e.PublishAt),
+            PublicationResponse.From(e.Visibility, e.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), e.Status, e.PublishAt),
             await urls.ForAsync(FileContainers.Content, e.ImageBlobPath, cancellationToken), attachments);
     }
 

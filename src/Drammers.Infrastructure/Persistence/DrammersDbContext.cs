@@ -8,6 +8,7 @@ using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Import.Sync;
+using Drammers.Modules.Membership.Groups;
 using Drammers.Modules.Membership.Members;
 using Drammers.Modules.Notification.Outbox;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<AccountProvisioning> AccountProvisioning => Set<AccountProvisioning>();
 
     public DbSet<Member> Members => Set<Member>();
+
+    public DbSet<Group> Groups => Set<Group>();
+
+    public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
 
     public DbSet<SyncJob> SyncJobs => Set<SyncJob>();
 

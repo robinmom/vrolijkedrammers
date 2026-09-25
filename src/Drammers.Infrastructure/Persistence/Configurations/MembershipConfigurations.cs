@@ -74,3 +74,28 @@ internal sealed class SyncConflictConfiguration : IEntityTypeConfiguration<SyncC
         builder.HasIndex(c => c.Status);
     }
 }
+
+internal sealed class GroupConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Groups.Group>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Groups.Group> builder)
+    {
+        builder.ToTable("Group", Schemas.Membership);
+        builder.Property(g => g.Id).ValueGeneratedNever();
+        builder.Property(g => g.Name).HasMaxLength(100);
+        builder.HasIndex(g => g.Name).IsUnique();
+        builder.Property(g => g.Description).HasMaxLength(500);
+        builder.HasOne<Modules.Content.CarnivalYears.CarnivalYear>().WithMany().HasForeignKey(g => g.CarnivalYearId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(g => g.Memberships).WithOne().HasForeignKey(m => m.GroupId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class GroupMembershipConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Groups.GroupMembership>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Groups.GroupMembership> builder)
+    {
+        builder.ToTable("GroupMembership", Schemas.Membership);
+        builder.HasKey(m => new { m.GroupId, m.MemberId });
+        builder.HasOne<Member>().WithMany().HasForeignKey(m => m.MemberId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(m => m.MemberId);
+    }
+}

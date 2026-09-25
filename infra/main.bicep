@@ -100,6 +100,8 @@ module api 'modules/appservice.bicep' = {
     appServicePlanId: appServicePlanId
     appSettings: {
       ASPNETCORE_ENVIRONMENT: aspnetEnvironment[environmentName]
+      // App draait uit het zip-pakket, dat bij een deploy in één keer wordt gewisseld (geen half vervangen DLL's).
+      WEBSITE_RUN_FROM_PACKAGE: '1'
       APPLICATIONINSIGHTS_CONNECTION_STRING: monitoring.outputs.appInsightsConnectionString
       ConnectionStrings__Drammers: 'Server=tcp:${sql.outputs.serverFqdn},1433;Database=${sql.outputs.databaseName};Authentication=Active Directory Managed Identity;Encrypt=True;TrustServerCertificate=False;Connect Timeout=60'
       Azure__KeyVaultUri: keyVault.outputs.uri

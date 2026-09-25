@@ -68,7 +68,36 @@ test('carnavalsjaar toevoegen en activeren; precies één actief', async ({ page
   expect(api.years.filter((y) => y.active).map((y) => y.name)).toEqual(['2027/2028']);
 });
 
-for (const path of ['', 'gebruikers', 'gebruikers/u-jan', 'rollen', 'carnavalsjaren', 'configuratie', 'auditlog']) {
+test('redacteur publiceert een event voor iedereen; het staat in de publieke agenda', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'agenda');
+  await page.getByRole('link', { name: 'Event toevoegen' }).click();
+  await page.getByLabel('Titel').fill('Pronkzitting');
+  await page.getByLabel('Begint').fill('2027-01-16T20:00');
+  await page.getByLabel('Status').selectOption('Published');
+  await page.getByRole('button', { name: 'Opslaan', exact: true }).click();
+  await expect(page.getByText('Event opgeslagen.')).toBeVisible();
+
+  const agenda = await page.evaluate(async () => (await fetch('/api/v1/events')).json());
+  expect(agenda.items.map((e: { title: string }) => e.title)).toEqual(['Pronkzitting']);
+  expect(api.events[0]!.publication.visibility).toBe('Public');
+});
+
+for (const path of [
+  '',
+  'agenda',
+  'agenda/nieuw',
+  'nieuws',
+  'nieuws/nieuw',
+  'fotos',
+  'fotos/a-1',
+  'gebruikers',
+  'gebruikers/u-jan',
+  'rollen',
+  'carnavalsjaren',
+  'configuratie',
+  'auditlog',
+]) {
   test(`toegankelijkheid (axe) /${path}`, async ({ page }) => {
     await open(page, new MockApi(), path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

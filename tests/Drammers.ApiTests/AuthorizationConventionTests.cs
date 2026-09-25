@@ -18,6 +18,15 @@ public class AuthorizationConventionTests
         $"{nameof(AppConfigController)}.{nameof(AppConfigController.Get)}",
         $"{nameof(CarnivalYearsController)}.{nameof(CarnivalYearsController.GetCurrent)}",
         $"{nameof(PortalConfigController)}.{nameof(PortalConfigController.Get)}",
+        $"{nameof(EventsController)}.{nameof(EventsController.GetCategories)}",
+        $"{nameof(EventsController)}.{nameof(EventsController.Search)}",
+        $"{nameof(EventsController)}.{nameof(EventsController.Get)}",
+        $"{nameof(EventsController)}.{nameof(EventsController.Ical)}",
+        $"{nameof(NewsController)}.{nameof(NewsController.Search)}",
+        $"{nameof(NewsController)}.{nameof(NewsController.Get)}",
+        $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Search)}",
+        $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Get)}",
+        $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Photos)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

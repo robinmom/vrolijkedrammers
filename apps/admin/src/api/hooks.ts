@@ -143,3 +143,61 @@ export function useApiMutation<TVariables>(fn: (variables: TVariables) => Promis
     },
   });
 }
+
+export type AdminEvent = Schemas['AdminEventResponse'];
+export type EventRequest = Schemas['EventRequest'];
+export type NewsRequest = Schemas['NewsRequest'];
+export type AlbumRequest = Schemas['AlbumRequest'];
+
+export function useEventCategories() {
+  const api = useApi();
+  return useQuery({ queryKey: ['event-categories'], queryFn: async () => required((await api.GET('/api/v1/event-categories')).data) });
+}
+
+export function useAdminEvents(includePast: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['admin-events', includePast],
+    queryFn: async () => required((await api.GET('/api/v1/admin/events', { params: { query: { includePast } } })).data),
+  });
+}
+
+export function useAdminEvent(id: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['admin-event', id],
+    enabled: id !== null,
+    queryFn: async () => required((await api.GET('/api/v1/admin/events/{id}', { params: { path: { id: id! } } })).data),
+  });
+}
+
+export function useAdminNews() {
+  const api = useApi();
+  return useQuery({ queryKey: ['admin-news'], queryFn: async () => required((await api.GET('/api/v1/admin/news')).data) });
+}
+
+export function useAdminNewsItem(id: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['admin-news-item', id],
+    enabled: id !== null,
+    queryFn: async () => required((await api.GET('/api/v1/admin/news/{id}', { params: { path: { id: id! } } })).data),
+  });
+}
+
+export function useAdminAlbums() {
+  const api = useApi();
+  return useQuery({ queryKey: ['admin-albums'], queryFn: async () => required((await api.GET('/api/v1/admin/photo-albums')).data) });
+}
+
+export function useAdminAlbum(id: string | null, pollWhilePending = false) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['admin-album', id],
+    enabled: id !== null,
+    // Foto's worden op de achtergrond verwerkt: ververs zolang er nog foto's in verwerking zijn.
+    refetchInterval: (query) =>
+      pollWhilePending && query.state.data?.photos.some((p) => p.processingStatus === 'Pending') ? 3000 : false,
+    queryFn: async () => required((await api.GET('/api/v1/admin/photo-albums/{id}', { params: { path: { id: id! } } })).data),
+  });
+}

@@ -21,4 +21,10 @@ public static class ErrorCodes
     public const string CarnivalYearInvalidDates = "CARNIVAL_YEAR_INVALID_DATES";
     public const string CarnivalYearNameTaken = "CARNIVAL_YEAR_NAME_TAKEN";
     public const string ConfigKeyUnknown = "CONFIG_KEY_UNKNOWN";
+    public const string FileTooLarge = "FILE_TOO_LARGE";
+    public const string FileTypeNotAllowed = "FILE_TYPE_NOT_ALLOWED";
+    public const string FileInfected = "FILE_INFECTED";
+    public const string ContentNotFound = "CONTENT_NOT_FOUND";
+    public const string CategoryNotFound = "CATEGORY_NOT_FOUND";
+    public const string NoActiveCarnivalYear = "NO_ACTIVE_CARNIVAL_YEAR";
 }

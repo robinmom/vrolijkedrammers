@@ -1,6 +1,9 @@
 using Drammers.Infrastructure.Configuration;
 using Drammers.Modules.Audit.AuditLog;
 using Drammers.Modules.Content.CarnivalYears;
+using Drammers.Modules.Content.Events;
+using Drammers.Modules.Content.News;
+using Drammers.Modules.Content.Photos;
 using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
@@ -30,6 +33,18 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<AccountProvisioning> AccountProvisioning => Set<AccountProvisioning>();
 
     public DbSet<CarnivalYear> CarnivalYears => Set<CarnivalYear>();
+
+    public DbSet<EventCategory> EventCategories => Set<EventCategory>();
+
+    public DbSet<Event> Events => Set<Event>();
+
+    public DbSet<EventAttachment> EventAttachments => Set<EventAttachment>();
+
+    public DbSet<NewsItem> News => Set<NewsItem>();
+
+    public DbSet<PhotoAlbum> PhotoAlbums => Set<PhotoAlbum>();
+
+    public DbSet<Photo> Photos => Set<Photo>();
 
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 

@@ -34,3 +34,71 @@ export function fromLocalInput(value: string): string | null {
 
 export const visibilityLabels: Record<string, string> = { Public: 'Iedereen', Members: 'Leden', Restricted: 'Beperkt (rollen)' };
 export const statusLabels: Record<string, string> = { Draft: 'Concept', Scheduled: 'Gepland', Published: 'Gepubliceerd', Archived: 'Gearchiveerd' };
+
+export const membershipStatusLabels: Record<string, string> = {
+  Active: 'Actief',
+  Inactive: 'Inactief',
+  Suspended: 'Geschorst',
+  Deceased: 'Overleden',
+};
+
+export const syncStateLabels: Record<string, string> = {
+  InSync: 'Gesynchroniseerd',
+  Missing: 'Ontbreekt in e-Boekhouden',
+  Conflict: 'Conflict',
+};
+
+export const syncJobStatusLabels: Record<string, string> = {
+  Queued: 'In de wachtrij',
+  Running: 'Bezig',
+  Succeeded: 'Geslaagd',
+  SucceededWithWarnings: 'Geslaagd met waarschuwingen',
+  Conflict: 'Conflicten',
+  Failed: 'Mislukt',
+};
+
+export const syncItemActionLabels: Record<string, string> = {
+  Created: 'Nieuw',
+  Updated: 'Gewijzigd',
+  Unchanged: 'Ongewijzigd',
+  Missing: 'Ontbreekt',
+  Deactivated: 'Op inactief gezet',
+  Reactivated: 'Teruggekeerd',
+  Warning: 'Waarschuwing',
+  Error: 'Fout',
+  Conflict: 'Conflict',
+};
+
+export const syncConflictTypeLabels: Record<string, string> = {
+  DuplicateMemberNumber: 'Dubbel lidnummer',
+  MemberNumberChanged: 'Lidnummer gewijzigd',
+  EmailChangedForActiveAccount: 'E-mail gewijzigd bij actief account',
+  MassDeletionGuard: 'Veel leden ontbreken',
+};
+
+/** Veldnamen uit de sync (bijv. "email,city") in het Nederlands. */
+const fieldLabels: Record<string, string> = {
+  name: 'naam',
+  salutation: 'aanhef',
+  gender: 'geslacht',
+  address: 'adres',
+  postalCode: 'postcode',
+  city: 'plaats',
+  country: 'land',
+  email: 'e-mail',
+  phone: 'telefoon',
+  mobilePhone: 'mobiel',
+  birthDate: 'geboortedatum',
+  joinYear: 'inschrijfjaar',
+  status: 'status',
+  category: 'categorie',
+};
+
+export function formatChangedFields(value: string | null | undefined): string {
+  return value
+    ? value
+        .split(',')
+        .map((f) => fieldLabels[f] ?? f)
+        .join(', ')
+    : '';
+}

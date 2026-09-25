@@ -15,6 +15,7 @@
 | B-05 | **Alleen leden krijgen een account**, met uitzondering van **ouders/verzorgers van minderjarige leden** (alleen hun eigen kinderen, geen ledencontent). **Niet-leden schrijven zich voor de optocht in via een openbaar webformulier zonder account** en worden per e-mail geïnformeerd. **Zelfregistratie in Entra staat uit**; accounts worden pas **na goedkeuring door het bestuur** aangemaakt, in de volgorde e-Boekhouden → lokaal lid → Entra (bestaande leden bij een exacte match lidnummer + e-mail direct) | Nieuwe **ADR-014**; 01, 02, 04, 05, 06, 07, 11, 12, 13, 14, 15 aangepast; OQ-05 en OQ-11 daarmee besloten |
 | B-06 | **Vrije velden in e-Boekhouden** (geboortedatum, inschrijfjaar, status, categorie), eenmalig gevuld vanuit het huidige ledenbestand; vereist een actieve ledenmodule (OQ-03 controleren) | ADR-010 |
 | OQ-40 | **Uitslagen-tegel** toont nieuwsberichten met categorie "Uitslagen" (geen aparte module) | Fase 6 (2026-09-25) |
+| OQ-04 | **Echt ledenbestand tijdelijk in Dev** (alleen lezen uit e-Boekhouden); met de functie "Alle leden verwijderen" (alleen Dev/Acc) kan het er in één keer weer uit | [runbook](runbooks/eboekhouden-koppeling.md) (2026-09-25) |
 | Volgorde | **Fase 7 (livegang) na de functionele fasen**: eerst zoveel mogelijk functionaliteit bouwen in Dev, alleen met test-/fictieve data | [15 §2](15-implementation-plan.md) (2026-09-25) |
 | B-07 | **Planning is niet relevant** voor de documentatie: geen datums of capaciteitsramingen; de fasevolgorde is technisch bepaald | 09 en 15 zonder kalender |
 | Plan | **Implementatieplan (15) goedgekeurd** als basis voor de bouw | Start fase 0 |
@@ -46,7 +47,7 @@
 | B-05 | Accountmodel: wie mag een account hebben, basisrol, lidkoppeling | BLOCKER | 3 | 🟢 besloten |
 | B-06 | Ledengegevens uit e-Boekhouden: ledenmodule, vrije velden, statusbron (OQ-01/02/03) | BLOCKER | 8 | 🟢 besloten |
 | B-07 | Planning, capaciteit en MVP-scope per datum (11-11 / optocht / carnaval) | BLOCKER | 0 | 🟢 besloten |
-| OQ-04 | Testadministratie e-Boekhouden | IMPORTANT | 8 | 🟡 |
+| OQ-04 | Testadministratie e-Boekhouden | IMPORTANT | 8 | 🟢 besloten: tijdelijk het echte ledenbestand in Dev, met opruimfunctie (2026-09-25) |
 | OQ-05 | Nieuwe leden automatisch in e-Boekhouden aanmaken | → B-05 | 9 | 🟢 besloten: automatisch na goedkeuring (ADR-014) |
 | OQ-06 | Syncfrequentie | IMPORTANT | 8 | 🟢 voorstel |
 | OQ-10 | Deelnemersregel versus categorie | IMPORTANT | 11 | 🟡 |

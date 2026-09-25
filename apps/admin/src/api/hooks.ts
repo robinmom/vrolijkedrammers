@@ -201,3 +201,107 @@ export function useAdminAlbum(id: string | null, pollWhilePending = false) {
     queryFn: async () => required((await api.GET('/api/v1/admin/photo-albums/{id}', { params: { path: { id: id! } } })).data),
   });
 }
+
+// --- Leden en ledensync (fase 8) ---
+
+export type MemberSummary = Schemas['MemberSummaryResponse'];
+export type MemberDetail = Schemas['MemberDetailResponse'];
+export type MembershipStatus = Schemas['MembershipStatus'];
+export type MemberSyncState = Schemas['MemberSyncState'];
+export type SyncJob = Schemas['SyncJobResponse'];
+export type SyncJobItem = Schemas['SyncJobItemResponse'];
+export type SyncItemAction = Schemas['SyncItemAction'];
+export type SyncConflict = Schemas['SyncConflictResponse'];
+export type MemberFieldMapping = Schemas['MemberFieldMapping'];
+export type MemberPurgeResult = Schemas['MemberPurgeResponse'];
+
+export interface MemberFilters {
+  search: string;
+  status: MembershipStatus | '';
+  syncState: MemberSyncState | '';
+}
+
+export function useMembers(filters: MemberFilters, page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['members', filters, page],
+    queryFn: async () =>
+      required(
+        (
+          await api.GET('/api/v1/admin/members', {
+            params: {
+              query: {
+                search: filters.search || undefined,
+                status: filters.status || undefined,
+                syncState: filters.syncState || undefined,
+                page,
+                pageSize: 50,
+              },
+            },
+          })
+        ).data,
+      ),
+  });
+}
+
+export function useMember(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['member', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/members/{id}', { params: { path: { id } } })).data),
+  });
+}
+
+const isBusy = (status: string | undefined) => status === 'Queued' || status === 'Running';
+
+/** Syncruns; ververst elke 3 seconden zolang er een run in de wachtrij staat of loopt. */
+export function useSyncJobs(page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['sync-jobs', page],
+    queryFn: async () =>
+      required((await api.GET('/api/v1/admin/sync-jobs', { params: { query: { page, pageSize: 20 } } })).data),
+    refetchInterval: (query) => (query.state.data?.items.some((j) => isBusy(j.status)) ? 3000 : false),
+  });
+}
+
+export function useSyncJob(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['sync-job', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/sync-jobs/{id}', { params: { path: { id } } })).data),
+    refetchInterval: (query) => (isBusy(query.state.data?.status) ? 3000 : false),
+  });
+}
+
+export function useSyncJobItems(id: string, action: SyncItemAction | '', page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['sync-job-items', id, action, page],
+    queryFn: async () =>
+      required(
+        (
+          await api.GET('/api/v1/admin/sync-jobs/{id}/items', {
+            params: { path: { id }, query: { action: action || undefined, page, pageSize: 50 } },
+          })
+        ).data,
+      ),
+  });
+}
+
+export function useSyncConflicts() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['sync-conflicts'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/sync-conflicts')).data),
+  });
+}
+
+export function useMemberMapping(enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['member-mapping'],
+    enabled,
+    queryFn: async () => required((await api.GET('/api/v1/admin/config/member-mapping')).data),
+  });
+}

@@ -27,4 +27,8 @@ public static class ErrorCodes
     public const string ContentNotFound = "CONTENT_NOT_FOUND";
     public const string CategoryNotFound = "CATEGORY_NOT_FOUND";
     public const string NoActiveCarnivalYear = "NO_ACTIVE_CARNIVAL_YEAR";
+    public const string MemberNotFound = "MEMBER_NOT_FOUND";
+    public const string MemberFieldFromSource = "MEMBER_FIELD_FROM_SOURCE";
+    public const string SyncAlreadyRunning = "SYNC_ALREADY_RUNNING";
+    public const string PurgeNotAllowed = "PURGE_NOT_ALLOWED";
 }

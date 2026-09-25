@@ -45,6 +45,7 @@ public static class Permissions
     public const string AuditRead = "audit.read";
     public const string RoleManage = "role.manage";
     public const string ConfigManage = "config.manage";
+    public const string MemberPurge = "member.purge";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -88,6 +89,8 @@ public static class Permissions
         new(AuditRead, "Auditlog inzien", "Beheer"),
         new(RoleManage, "Rollen, permissions en toewijzingen beheren", "Beheer"),
         new(ConfigManage, "Carnavalsjaar, feature flags, appversie, bewaartermijnen", "Beheer"),
+        // Nieuwe permissions achteraan (vaste Id per positie).
+        new(MemberPurge, "Alle leden uit de test-/acceptatieomgeving verwijderen (niet in productie)", "Leden"),
     ];
 }
 

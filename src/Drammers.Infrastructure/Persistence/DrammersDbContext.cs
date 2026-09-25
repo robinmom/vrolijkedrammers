@@ -7,6 +7,8 @@ using Drammers.Modules.Content.Photos;
 using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
+using Drammers.Modules.Import.Sync;
+using Drammers.Modules.Membership.Members;
 using Drammers.Modules.Notification.Outbox;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +33,14 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<LoginHistory> LoginHistory => Set<LoginHistory>();
 
     public DbSet<AccountProvisioning> AccountProvisioning => Set<AccountProvisioning>();
+
+    public DbSet<Member> Members => Set<Member>();
+
+    public DbSet<SyncJob> SyncJobs => Set<SyncJob>();
+
+    public DbSet<SyncJobItem> SyncJobItems => Set<SyncJobItem>();
+
+    public DbSet<SyncConflict> SyncConflicts => Set<SyncConflict>();
 
     public DbSet<CarnivalYear> CarnivalYears => Set<CarnivalYear>();
 

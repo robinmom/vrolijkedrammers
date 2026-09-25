@@ -6,6 +6,9 @@ import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { EventEditorPage, EventsPage } from './pages/EventsPage';
+import { MemberDetailPage } from './pages/MemberDetailPage';
+import { MembersPage } from './pages/MembersPage';
+import { MemberSyncPage, SyncJobPage } from './pages/MemberSyncPage';
 import { NewsEditorPage, NewsPage } from './pages/NewsPage';
 import { AlbumEditorPage, PhotosPage } from './pages/PhotosPage';
 import { RolesPage } from './pages/RolesPage';
@@ -32,6 +35,10 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/nieuws/$id', component: guarded('news.manage', NewsEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/fotos', component: guarded('photo.manage', PhotosPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/fotos/$id', component: guarded('photo.manage', AlbumEditorPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/leden', component: guarded('member.read', MembersPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/leden/$id', component: guarded('member.read', MemberDetailPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/ledensync', component: guarded('import.run', MemberSyncPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/ledensync/$id', component: guarded('import.run', SyncJobPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/gebruikers', component: guarded('role.manage', UsersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/gebruikers/$id', component: guarded('role.manage', UserDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/rollen', component: guarded('role.manage', RolesPage) }),

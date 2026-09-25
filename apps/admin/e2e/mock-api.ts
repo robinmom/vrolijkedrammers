@@ -125,6 +125,55 @@ export class MockApi {
     },
   ];
 
+  members = [
+    {
+      id: 'm-1',
+      memberNumber: '001',
+      fullName: 'Piet van der Berg',
+      email: 'piet@example.com',
+      city: 'Loil',
+      status: 'Active',
+      syncState: 'InSync',
+      joinYear: 1995 as number | null,
+      hasAccount: false,
+      localStatusOverride: null as string | null,
+    },
+    {
+      id: 'm-2',
+      memberNumber: '002',
+      fullName: 'Anna Jansen',
+      email: 'anna@example.com',
+      city: 'Didam',
+      status: 'Active',
+      syncState: 'Missing',
+      joinYear: null as number | null,
+      hasAccount: false,
+      localStatusOverride: null as string | null,
+    },
+  ];
+  syncJobs: Record<string, unknown>[] = [];
+  conflicts = [
+    {
+      id: 'c-1',
+      syncJobId: 'j-0',
+      type: 'EmailChangedForActiveAccount',
+      memberNumber: '001',
+      memberId: 'm-1',
+      details: 'Het e-mailadres is gewijzigd in e-Boekhouden, terwijl dit lid een actief app-account heeft.',
+      status: 'Open',
+      createdAt: '2026-09-25T10:00:00Z',
+      resolvedAt: null as string | null,
+      resolutionNote: null as string | null,
+    },
+  ];
+  mapping = {
+    birthDate: null as string | null,
+    joinYear: 'freeText2' as string | null,
+    status: null as string | null,
+    category: null as string | null,
+    inactiveStatusValues: ['opgezegd'],
+  };
+
   constructor(
     permissions: string[] = [
       'report.view',
@@ -134,6 +183,11 @@ export class MockApi {
       'event.manage',
       'news.manage',
       'photo.manage',
+      'member.read',
+      'member.update',
+      'member.export',
+      'member.purge',
+      'import.run',
     ],
   ) {
     this.permissions = permissions;
@@ -319,6 +373,139 @@ export class MockApi {
     }
     if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)$/))) {
       return json(this.albums.find((a) => a.id === m![1]));
+    }
+    if (path === '/admin/members' && method === 'GET') {
+      const search = (url.searchParams.get('search') ?? '').toLowerCase();
+      const items = this.members
+        .filter((x) => !search || x.fullName.toLowerCase().includes(search) || x.memberNumber === search)
+        .map((x) => ({ ...x, status: x.localStatusOverride ?? x.status }));
+      return json({ items, page: 1, pageSize: 50, totalCount: items.length });
+    }
+    if (path === '/admin/members/purge' && method === 'POST') {
+      if (body.confirmation !== 'LEDEN VERWIJDEREN') {
+        return json(
+          {
+            status: 422,
+            title: 'Ongeldig',
+            detail: 'Typ ter bevestiging "LEDEN VERWIJDEREN".',
+            code: 'VALIDATION_FAILED',
+          },
+          422,
+        );
+      }
+      const result = { members: this.members.length, syncJobs: this.syncJobs.length, unlinkedAccounts: 0 };
+      this.members = [];
+      this.syncJobs = [];
+      this.conflicts = [];
+      this.record('member.purged', 'Member', '*', result);
+      return json(result);
+    }
+    if (path === '/admin/members/import' && method === 'POST') {
+      const dryRun = url.searchParams.get('dryRun') !== 'false';
+      const id = `j-${this.syncJobs.length + 1}`;
+      this.syncJobs.unshift({
+        id,
+        status: 'Succeeded',
+        dryRun,
+        trigger: 'Manual',
+        requestedAt: new Date().toISOString(),
+        startedAt: null,
+        completedAt: null,
+        totalInSource: 3,
+        created: 1,
+        updated: 1,
+        unchanged: 1,
+        missing: 0,
+        deactivated: 0,
+        reactivated: 0,
+        warnings: 0,
+        errors: 0,
+        conflicts: 0,
+        errorMessage: null,
+      });
+      return json({ id }, 202);
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/confirm-inactive$/))) {
+      const member = this.members.find((x) => x.id === m![1])!;
+      member.status = 'Inactive';
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)$/))) {
+      const member = this.members.find((x) => x.id === m![1]);
+      if (!member) {
+        return json({ status: 404, title: 'Niet gevonden', code: 'MEMBER_NOT_FOUND' }, 404);
+      }
+      if (method === 'PATCH') {
+        member.localStatusOverride = (body.localStatusOverride as string | null) ?? null;
+        this.record('member.updated', 'Member', member.id, body);
+        return noContent();
+      }
+      return json({
+        id: member.id,
+        memberNumber: member.memberNumber,
+        ebMemberId: 1,
+        fullName: member.fullName,
+        firstName: member.fullName.split(' ')[0],
+        namePrefix: null,
+        lastName: member.fullName.split(' ').slice(1).join(' '),
+        nameCorrectedManually: false,
+        salutation: null,
+        gender: 'm',
+        addressLine: 'Dorpsstraat 1',
+        postalCode: '6999 AA',
+        city: member.city,
+        country: 'NL',
+        email: member.email,
+        phone: null,
+        mobilePhone: null,
+        birthDate: null,
+        joinYear: member.joinYear,
+        ebStatusRaw: null,
+        memberCategory: null,
+        syncedStatus: member.status,
+        localStatusOverride: member.localStatusOverride,
+        effectiveStatus: member.localStatusOverride ?? member.status,
+        membershipValidFrom: null,
+        membershipValidTo: null,
+        syncState: member.syncState,
+        ebLastSeenAt: '2026-09-25T03:00:00Z',
+        ebMissingSince: member.syncState === 'Missing' ? '2026-09-24T03:00:00Z' : null,
+        fieldSources: {
+          birthDateFromEBoekhouden: false,
+          joinYearFromEBoekhouden: true,
+          statusFromEBoekhouden: false,
+          categoryFromEBoekhouden: false,
+        },
+        account: null,
+      });
+    }
+    if (path === '/admin/sync-jobs') {
+      return json({ items: this.syncJobs, page: 1, pageSize: 20, totalCount: this.syncJobs.length });
+    }
+    if ((m = path.match(/^\/admin\/sync-jobs\/([^/]+)\/items$/))) {
+      const items = [
+        { id: 1, memberNumber: '001', memberId: 'm-1', action: 'Updated', changedFields: 'email,city', message: null },
+        { id: 2, memberNumber: '003', memberId: null, action: 'Created', changedFields: null, message: null },
+      ];
+      return json({ items, page: 1, pageSize: 50, totalCount: items.length });
+    }
+    if ((m = path.match(/^\/admin\/sync-jobs\/([^/]+)$/))) {
+      return json(this.syncJobs.find((j) => j.id === m![1]));
+    }
+    if (path === '/admin/sync-conflicts') {
+      return json(this.conflicts.filter((c) => c.status === 'Open'));
+    }
+    if ((m = path.match(/^\/admin\/sync-conflicts\/([^/]+)\/resolve$/))) {
+      const conflict = this.conflicts.find((c) => c.id === m![1])!;
+      conflict.status = body.resolution as string;
+      return noContent();
+    }
+    if (path === '/admin/config/member-mapping') {
+      if (method === 'PUT') {
+        this.mapping = body as typeof this.mapping;
+        return noContent();
+      }
+      return json(this.mapping);
     }
     return json({ status: 404, title: 'Not Found', code: 'NOT_FOUND' }, 404);
   }

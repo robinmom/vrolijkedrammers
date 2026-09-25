@@ -28,7 +28,14 @@
     <ProjectReference Include="..\Drammers.Modules.Audit\Drammers.Modules.Audit.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Content\Drammers.Modules.Content.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Identity\Drammers.Modules.Identity.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Import\Drammers.Modules.Import.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Membership\Drammers.Modules.Membership.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Notification\Drammers.Modules.Notification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Contracttest van de e-Boekhouden-client (HTTP-verkeer) zonder de client publiek te maken. -->
+    <InternalsVisibleTo Include="Drammers.UnitTests" />
   </ItemGroup>
 
 </Project>

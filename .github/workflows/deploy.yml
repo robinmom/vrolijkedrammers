@@ -87,6 +87,22 @@ jobs:
             --query properties.outputs -o json)
           echo "api-app=$(jq -r .apiAppName.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
           echo "api-url=$(jq -r .apiUrl.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+          echo "api-client-id=$(jq -r .apiIdentityClientId.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+          echo "sql-server=$(jq -r .sqlServerFqdn.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Database – API-identiteit als gebruiker
+        run: |
+          # Tijdelijke firewallregel voor deze runner; wordt altijd weer verwijderd.
+          rule="github-runner-$GITHUB_RUN_ID"
+          ip=$(curl -sf https://api.ipify.org)
+          az sql server firewall-rule create -g "$RESOURCE_GROUP" -s "sql-dvd-$ENVIRONMENT" -n "$rule" \
+            --start-ip-address "$ip" --end-ip-address "$ip" -o none
+          trap 'az sql server firewall-rule delete -g "$RESOURCE_GROUP" -s "sql-dvd-$ENVIRONMENT" -n "$rule" -o none' EXIT
+          dotnet run --project tools/Drammers.DbSetup -c Release -- \
+            "${{ steps.infra.outputs.sql-server }}" sqldb-dvd "${{ steps.infra.outputs.api-app }}" "${{ steps.infra.outputs.api-client-id }}"
 
       - uses: actions/download-artifact@v4
         with:

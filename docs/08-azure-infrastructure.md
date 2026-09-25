@@ -1,6 +1,6 @@
 # 08 – Azure-infrastructuur
 
-> Status: v0.3 · 2026-09-24 (besluiten B-01…B-04 verwerkt) · Regio: **West Europe** (Nederland), alle resources
+> Status: v0.4 · 2026-09-25 (fase 1 gebouwd, zie [runbook](runbooks/omgeving-opbouwen.md)) · Regio: **Sweden Central** (West Europe neemt geen nieuwe klanten aan, OQ-75); beheerportal vanuit de API-app, zodat alles in de EU staat (OQ-76)
 > Prijzen zijn **indicatief** (pay-as-you-go, EUR, excl. btw, prijspeil 2025/2026) en moeten vóór oplevering met de Azure Pricing Calculator worden gecontroleerd.
 
 ## 1. Componenten en keuzes
@@ -9,7 +9,7 @@
 |---|---|---|---|
 | API hosting | **Azure App Service** (Linux, .NET) | Azure Container Apps | App Service is eenvoudiger (geen containers/registry nodig), vaste lage prijs, deployment slots (vanaf S1), managed certificaten. Container Apps is "scale to zero", maar vraagt container-kennis en heeft cold starts; pas relevant bij meerdere services |
 | Achtergrondtaken | **Hosted services in de API-app** (`Drammers.Worker`) | Functions Flex Consumption, Functions Windows Consumption, WebJobs | Linux Consumption ondersteunt geen .NET 10; één deployable, vaste outbound-IP's, € 0 extra (ADR-007, B-01) |
-| Beheerportal | **Azure Static Web Apps** | App Service | Gratis/goedkoop, CDN, custom domain + certificaat |
+| Beheerportal | **Statische bestanden in de API-app** (`/beheer`, OQ-76) | Azure Static Web Apps | Alles in de EU (SWA kan niet in Sweden Central en West Europe is gesloten); zelfde origin als de API, dus geen CORS; € 0 extra. Nadeel: API en portal worden samen uitgerold |
 | Database | **Azure SQL Database** (single DB) | PostgreSQL Flexible Server, Cosmos DB | Relationeel model, transacties/locking (opgavenummer), EF Core, PITR, gratis offer voor Dev |
 | Bestanden | **Blob Storage** (StorageV2, LRS/ZRS) | — | Private containers, SAS, versioning, soft delete |
 | Secrets | **Key Vault** (Standard, RBAC) | App Settings | Centrale secrets, managed identity, audit |
@@ -18,7 +18,7 @@
 | Push | **Expo Push Service** (extern, gratis) | Azure Notification Hubs | ADR-009; Notification Hubs Basic als migratiepad |
 | E-mail | **Azure Communication Services Email** | SendGrid, Mailgun | Azure-native, zeer lage kosten |
 | Malwarescan | **Defender for Storage – malware scanning** (alleen Prod, optioneel Acc) | ClamAV-container | Managed; zie ADR-008 |
-| Front Door | **Niet in MVP** | — | App Service en SWA hebben TLS/certificaten; WAF niet nodig bij dit risicoprofiel. Heroverwegen bij DDoS-/botproblemen (~€ 30+/mnd) |
+| Front Door | **Niet in MVP** | — | App Service heeft TLS/certificaten; WAF niet nodig bij dit risicoprofiel. Heroverwegen bij DDoS-/botproblemen (~€ 30+/mnd) |
 | API Management | **Niet nodig** | APIM Consumption | Rate limiting, OpenAPI en auth in ASP.NET Core zelf; APIM voegt complexiteit toe |
 | Netwerk | Publieke endpoints + firewall/RBAC (MVP); VNet + private endpoints optioneel | — | Kosten/complexiteit versus risico; zie §5 |
 | DNS | Azure DNS of bestaande provider | — | `api.`, `beheer.`, `app.` subdomeinen |
@@ -37,7 +37,7 @@
 | e-Boekhouden | Mock (WireMock) / testadministratie | Testadministratie (OQ-04) of read-only prod met dry-run | Prod-token |
 | Push | Expo (dev build) | Expo (preview build, TestFlight/Internal testing) | Expo (store build) |
 | Deploy | Automatisch op merge naar `main` | Automatisch na Dev-succes (of release-tag) | Handmatige goedkeuring |
-| Naamgeving | `app-dvd-api-dev`, `sql-dvd-dev`, `kv-dvd-dev`, `stdvddev`, `swa-dvd-admin-dev` | …`-acc` | …`-prod` |
+| Naamgeving | `app-dvd-api-dev`, `sql-dvd-dev`, `kv-dvd-dev`, `stdvddev` (portal: `app-dvd-api-dev/beheer`) | …`-acc` | …`-prod` |
 
 Scheiding: aparte resource groups, aparte managed identities, aparte Key Vaults, aparte app-registraties per omgeving in één gedeelde Entra-tenant (B-02), aparte Mollie-keys. Omdat de tenant gedeeld is, worden tenantwijzigingen (user flow, branding, CA) via een checklist doorgevoerd en direct in alle omgevingen gecontroleerd. Geen enkele identiteit heeft rechten in meerdere omgevingen.
 
@@ -47,8 +47,7 @@ Scheiding: aparte resource groups, aparte managed identities, aparte Key Vaults,
 flowchart TB
   subgraph RG["rg-dvd-{env}"]
     ASP["App Service Plan Linux B1"]
-    API["App Service: app-dvd-api-{env}\nAPI + hosted workers, system MI"]
-    SWA["Static Web App: swa-dvd-admin-{env}"]
+    API["App Service: app-dvd-api-{env}\nAPI + hosted workers + beheerportal (/beheer), system MI"]
     SQL[("Azure SQL: sql-dvd-{env}/sqldb-dvd")]
     ST[("Storage: stdvd{env}\ncontainers: parade-documents, photos-original,\nphotos-derived, quarantine, exports, dataprotection")]
     KV["Key Vault: kv-dvd-{env}"]
@@ -69,7 +68,7 @@ flowchart TB
 
 | Identiteit | Rechten |
 |---|---|
-| API + worker (system MI) | SQL: DB-user `app_runtime` (custom role: DML op module-schemas, INSERT/SELECT op audit, EXEC op scan-reconciliatie-proc, `sp_getapplock`); Storage: `Storage Blob Data Contributor` + `Storage Blob Delegator` (voor user-delegation SAS); Key Vault: `Key Vault Secrets User` (o.a. `eboekhouden-token`, `expo-access-token`, `mollie-api-key`); ACS: `Contributor` op ACS-resource (of connection string in KV) |
+| API + worker (system MI) | SQL: DB-user `app_runtime` (custom role: DML op module-schemas, INSERT/SELECT op audit, EXEC op scan-reconciliatie-proc, `sp_getapplock`); Storage: `Storage Blob Data Contributor` + `Storage Blob Delegator` (voor user-delegation SAS); Key Vault: `Key Vault Secrets User` (o.a. `eboekhouden-token`, `expo-access-token`, `mollie-api-key`); ACS: `Communication and Email Service Owner` op de ACS-resource (geen connection string) |
 | Pipeline-identiteit (GitHub Actions, federated credential per environment) | `Contributor` op de resource group van die omgeving; `Website Contributor` op de API-app; SQL: `app_migrator` (DDL) |
 | Mensen | 2–3 beheerders: `Contributor` op Dev/Acc; Prod: `Reader` standaard, `Contributor` alleen via break-glass/tijdelijk. SQL-toegang via Entra-groep `sg-dvd-prod-dba` (read-only standaard) |
 
@@ -96,14 +95,19 @@ flowchart TB
 
 **Advies: Bicep.** Alles draait in Azure, er is geen state-beheer nodig, `what-if` in de pipeline geeft een veilige preview, en Bicep is makkelijker over te dragen aan vrijwilligers. Entra External ID-tenant en app-registraties: eenmalig handmatig/gescript (Graph/`az`), gedocumenteerd, omdat IaC-ondersteuning hiervoor beperkt is.
 
-Structuur:
+Structuur (gebouwd in fase 1):
 ```
 infra/
-  main.bicep                 # orchestrator per omgeving
-  modules/appservice.bicep, sql.bicep, storage.bicep,
-          keyvault.bicep, monitoring.bicep, staticwebapp.bicep, acs.bicep, alerts.bicep
-  env/dev.bicepparam, acc.bicepparam, prod.bicepparam
+  main.bicep                 # orchestrator per omgeving (scope: rg-dvd-<env>)
+  modules/appservice.bicep, sql.bicep, sql-firewall.bicep, storage.bicep, keyvault.bicep,
+          monitoring.bicep, email.bicep, role-assignments.bicep, budget.bicep
+  env/dev.bicepparam, acc.bicepparam            # prod.bicepparam volgt in fase 7
+  bootstrap/nonprod.bicep, shared.bicep, environment-access.bicep, bootstrap-nonprod.sh
+                             # eenmalig door een beheerder: resource groups, gedeeld B1-plan,
+                             # GitHub-identiteiten (OIDC), rollen, SQL-beheergroepen
+  entra/register-apps.sh, set-tester.sh, lib.sh # app-registraties en testers in External ID
 ```
+Het gedeelde B1-plan en de pipeline-identiteiten staan in `rg-dvd-nonprod-shared`, zodat `rg-dvd-dev` volledig verwijderd en opnieuw opgebouwd kan worden. Niet-gevoelige ID's (subscription, object-ID's) komen via `readEnvironmentVariable()` uit GitHub environment variables en staan niet in de publieke repository.
 
 ## 7. CI/CD (§71)
 
@@ -178,7 +182,7 @@ Action group: e-mail naar IT-beheer + optioneel SMS/Teams tijdens carnaval.
 | ↳ LTR-backups | 12 maandelijkse | ~1–2 | Noodzakelijk |
 | Storage (Blob, ± 50 GB foto's) | Hot LRS + versioning | ~2–4 | Noodzakelijk |
 | Achtergrondverwerking | Hosted services in de API-app | 0 | Noodzakelijk |
-| Static Web Apps | Free (Standard ~9 als SLA/meer nodig) | 0–9 | Noodzakelijk |
+| Beheerportal | Vanuit de API-app (OQ-76) | 0 | Noodzakelijk |
 | Key Vault | Standard | < 1 | Noodzakelijk |
 | Application Insights / Log Analytics | < 5 GB/mnd met sampling | 0–5 | Noodzakelijk |
 | Communication Services Email | < 5.000 mails/mnd | < 2 | Noodzakelijk |
@@ -188,8 +192,8 @@ Action group: e-mail naar IT-beheer + optioneel SMS/Teams tijdens carnaval.
 | Private endpoints + VNet | 3 endpoints | ~25–35 | Later/optioneel |
 | Front Door Standard (WAF) | — | ~30+ | Later/optioneel |
 | Notification Hubs Basic | — | ~9 | Later (alleen bij migratie weg van Expo) |
-| **Totaal Prod (noodzakelijk)** | | **≈ € 45–60** | |
-| **Totaal Prod incl. aanbevolen opties** | | **≈ € 60–80** (+ carnavalsopschaling) | |
+| **Totaal Prod (noodzakelijk)** | | **≈ € 45–55** | |
+| **Totaal Prod incl. aanbevolen opties** | | **≈ € 55–75** (+ carnavalsopschaling) | |
 
 ### Acceptance (per maand)
 
@@ -197,7 +201,7 @@ Action group: e-mail naar IT-beheer + optioneel SMS/Teams tijdens carnaval.
 |---|---|
 | App Service B1 (gedeeld met Dev) | ~6 (helft van 12) |
 | SQL Free offer / Basic 5 DTU | 0–5 |
-| Storage, KV, SWA Free, AI | ~2–4 |
+| Storage, KV, AI | ~2–4 |
 | **Totaal** | **≈ € 10–15** |
 
 ### Development (per maand)

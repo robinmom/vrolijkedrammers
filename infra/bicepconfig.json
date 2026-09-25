@@ -1,0 +1,19 @@
+{
+  "analyzers": {
+    "core": {
+      "enabled": true,
+      "rules": {
+        "no-hardcoded-env-urls": { "level": "error" },
+        "no-unused-params": { "level": "error" },
+        "no-unused-vars": { "level": "error" },
+        "outputs-should-not-contain-secrets": { "level": "error" },
+        "secure-secrets-in-params": { "level": "error" },
+        "use-secure-value-for-secure-inputs": { "level": "error" },
+        "adminusername-should-not-be-literal": { "level": "error" },
+        "prefer-interpolation": { "level": "error" },
+        "use-resource-symbol-reference": { "level": "error" },
+        "use-recent-api-versions": { "level": "warning" }
+      }
+    }
+  }
+}

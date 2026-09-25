@@ -1,6 +1,6 @@
 # 10 – Besluitenregister (open vragen en beslissingen)
 
-> Status: v0.3 · 2026-09-24 · **Alle blockers besloten** in de sessie met de opdrachtgever (zie §0a)
+> Status: v0.4 · 2026-09-25 · **Alle blockers besloten** in de sessie met de opdrachtgever (zie §0a); OQ-75/76 (regio, alles in de EU) besloten bij fase 1
 > Bronnen: requirements (01), functioneel ontwerp (02), architectuur (03/08/ARCHITECTURE.md), security (06/11), datamodel (04/14), ADR-001…013, architectuurreview (18).
 > Status: 🔴 open blocker · 🟡 open · 🟢 besloten (voorstel door architect, bevestiging door opdrachtgever tenzij anders vermeld).
 
@@ -19,6 +19,10 @@
 | OQ-74 | **Geen open-sourcelicentie**: de code is publiek zichtbaar, maar alle rechten zijn voorbehouden (geen `LICENSE`-bestand; vermelding in README) | Hergebruik alleen met toestemming van de vereniging |
 | OQ-66 | **Toegankelijke tokenvarianten** voor kleine tekst (merkkleuren ongewijzigd); de designer kan later bevestigen | Fase 0 design tokens |
 | B-04 (tijdelijk) | Repository voorlopig op `github.com/robinmom/vrolijkedrammers`; later overdragen aan een GitHub-organisatie van de vereniging | Transfer behoudt historie |
+| B-02 (uitgevoerd) | External ID-tenant `vrolijkedrammersapp` aangemaakt (2026-09-24, Europe) met twee noodaccounts | [runbook](runbooks/entra-external-id.md) |
+| OQ-75 | **Azure-regio Sweden Central** voor alle resources (West Europe neemt geen nieuwe klanten aan) | 08, ADR-007, runbook |
+| OQ-76 | **Alles in de EU**: het beheerportal wordt door de API-app geserveerd onder `/beheer` in plaats van door Static Web Apps (die kan niet in de EU-regio's van deze subscription) | 03, 08, 15, ADR-007 |
+| B-04 (open actie) | **Tweede persoonlijke beheerder** (Global Administrator in de app-tenant en Owner op de Azure-subscription) nog aan te wijzen | Tot die tijd één persoonlijke beheerder + twee noodaccounts |
 
 ## 0. Indeling
 
@@ -78,6 +82,8 @@
 | OQ-71 | Pronkzitting 2027 via de app | IMPORTANT | 13 | 🟡 |
 | OQ-72 | Private endpoints/VNet, Front Door WAF | LATER | — | 🟡 |
 | OQ-73 | Attestation (App Attest/Play Integrity) verplicht voor scanners | IMPORTANT | 14 | 🟢 voorstel: ja, "should" |
+| OQ-75 | Azure-regio: West Europe neemt geen nieuwe klanten aan | IMPORTANT | 1 (uitrol) | 🟢 Sweden Central |
+| OQ-76 | Hosting beheerportal (SWA niet beschikbaar in Sweden Central; West Europe gesloten) | IMPORTANT | 1 (uitrol) | 🟢 vanuit de API-app, alles in de EU |
 
 ---
 

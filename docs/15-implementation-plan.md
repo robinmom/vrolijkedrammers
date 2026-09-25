@@ -102,9 +102,9 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Doel.** De Dev- (en Acc-) omgeving als code, met automatische deploy van de API-skeleton en het portal.
 
-**Functionaliteit.** Bicep-modules en parameters voor Dev en Acc ([08](08-azure-infrastructure.md)): resource group, App Service Plan B1 (gedeeld Dev/Acc) + API-app (Always On, HTTPS only, TLS 1.2, FTP uit), Azure SQL-server + DB (free offer, Entra-only), Storage-account (geen publieke toegang, shared key uit, containers aangemaakt, soft delete/versioning), Key Vault (RBAC, purge protection), Log Analytics + App Insights, Static Web App (portal), ACS Email (domein later). Eén Entra External ID-tenant (B-02) met app-registraties per omgeving (API, app, portal); Dev/Acc-app-registraties op *Require user assignment* (groep `Testers`) en een custom attribuut `environmentAccess` dat als claim in het token komt; zelfregistratie uit (`isSignUpAllowed = false`); alles gescript en gedocumenteerd. Budgetalert.
+**Functionaliteit.** Bicep-modules en parameters voor Dev en Acc ([08](08-azure-infrastructure.md)): resource group, App Service Plan B1 (gedeeld Dev/Acc) + API-app (Always On, HTTPS only, TLS 1.2, FTP uit), Azure SQL-server + DB (free offer, Entra-only), Storage-account (geen publieke toegang, shared key uit, containers aangemaakt, soft delete/versioning), Key Vault (RBAC, purge protection), Log Analytics + App Insights, beheerportal als statische bestanden in de API-app onder `/beheer` (OQ-76), ACS Email (domein later). Eén Entra External ID-tenant (B-02) met app-registraties per omgeving (API, app, portal); Dev/Acc-app-registraties op *Require user assignment* (groep `Testers`) en een custom attribuut `environmentAccess` dat als claim in het token komt; zelfregistratie uit (`isSignUpAllowed = false`); alles gescript en gedocumenteerd. Budgetalert.
 
-**Technische componenten.** Bicep, `what-if` in CI, pipeline-identiteit met OIDC/workload identity federation per environment, deploy-workflows voor API (zip) en portal (SWA).
+**Technische componenten.** Bicep, `what-if` in CI, pipeline-identiteit met OIDC/workload identity federation per environment, deploy-workflow voor API + portal (één zip; het portal in `wwwroot/beheer`).
 
 **Databasewijzigingen.** Alleen de lege database; DB-users/rechten volgen in fase 2.
 
@@ -206,7 +206,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Functionaliteit.** Login (MSAL, MFA), layout en navigatie volgens het menu uit [02 §6](02-functional-design.md#6-beheerportal--menu-en-release), waarbij menu-items verborgen zijn zonder permission. Dashboard (placeholder-kerncijfers, systeemstatus uit `/health/ready`). Gebruikers en rollen (overzicht, rollen toekennen met geldigheid, beheerdersaccount aanmaken via de provisioning-kern uit fase 3). Rollen/rechten-beheer. Auditlog-viewer (filters, read-only). Configuratie (feature flags, minimum-appversie, maintenance). Carnavalsjaar-beheer. Generieke tabelcomponent (sorteren, filteren, kolomkeuze, CSV/Excel-export via de API), formuliercomponenten, bevestigingsdialogen en foutweergave (ProblemDetails).
 
-**Technische componenten.** React + Vite, TanStack Router/Query/Table, MSAL.js, gegenereerde API-client, design tokens als CSS-variabelen, Playwright + axe-core, `staticwebapp.config.json` (CSP en headers).
+**Technische componenten.** React + Vite, TanStack Router/Query/Table, MSAL.js, gegenereerde API-client, design tokens als CSS-variabelen, Playwright + axe-core, CSP en security headers door de API (`PortalHosting`).
 
 **Databasewijzigingen.** Geen (hooguit seeds voor configuratie).
 

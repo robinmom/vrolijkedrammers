@@ -41,7 +41,7 @@ Begin bij **[docs/00-overzicht.md](docs/00-overzicht.md)**.
 | Laag | Keuze |
 |---|---|
 | Mobiel | React Native + Expo (TypeScript) |
-| Beheerportal | React + Vite (TypeScript), Azure Static Web Apps |
+| Beheerportal | React + Vite (TypeScript), geserveerd door de API-app onder `/beheer` |
 | API | ASP.NET Core (.NET 10 LTS, Controllers), EF Core, Azure App Service |
 | Achtergrond | Hosted services in de API-app (geen Functions in het MVP, zie B-01) |
 | Data | Azure SQL Database, Azure Blob Storage |
@@ -59,7 +59,7 @@ apps/mobile              Expo-app (SDK 57, Expo Router, routes in src/app)
 apps/admin               beheerportal (React + Vite)
 packages/design-tokens   kleuren, typografie en maten uit Figma (met contrasttests)
 packages/api-client      getypte API-client, gegenereerd uit openapi/v1.json
-infra/                   Bicep (vanaf fase 1)
+infra/                   Bicep (main + modules + env), bootstrap (eenmalig) en Entra-scripts; zie docs/runbooks/omgeving-opbouwen.md
 ```
 
 ## Lokaal starten

@@ -47,7 +47,7 @@ flowchart LR
 | [004](docs/adr/ADR-004-authentication.md) | Entra External ID (één tenant, zelfregistratie uit) + eigen RBAC |
 | [005](docs/adr/ADR-005-qr-ticket-security.md) | Dynamische, device-gebonden, ondertekende QR |
 | [006](docs/adr/ADR-006-offline-scanning.md) | Offline scanqueue + deterministische reconciliatie |
-| [007](docs/adr/ADR-007-azure-hosting.md) | App Service (API + hosted workers) + Static Web Apps; geen Functions (B-01) |
+| [007](docs/adr/ADR-007-azure-hosting.md) | App Service (API + hosted workers + beheerportal onder `/beheer`, OQ-76); geen Functions (B-01) |
 | [008](docs/adr/ADR-008-file-storage.md) | Private Blob + quarantaine + malwarescan |
 | [009](docs/adr/ADR-009-push-notifications.md) | Expo Push achter abstractie |
 | [010](docs/adr/ADR-010-eboekhouden-sync.md) | Pull-sync e-Boekhouden, idempotent op lidnummer |

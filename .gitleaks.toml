@@ -1,0 +1,9 @@
+# Gitleaks: standaardregels plus een smalle allowlist voor bekende valse meldingen.
+# Klassieke [allowlist]-syntaxis: werkt ook met de oudere gitleaks-versie van gitleaks-action.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Publieke ID's van ingebouwde Azure-roldefinities (geen geheimen), bijv. Key Vault Secrets User"
+regexTarget = "match"
+regexes = ['''4633458b-17de-408a-b874-0445c86b69e6''']

@@ -89,7 +89,7 @@ MVP = fase 0–18 in [15](15-implementation-plan.md): fundament, publieke lancer
 Top: admin-account-takeover (MFA), gelekte e-Boekhouden-token (Key Vault, minimale rechten), offline dubbele toegang (reconciliatie + bandjes), BOLA op optochtgegevens (resource-autorisatie + tests), gemanipuleerde webhook (server-side verificatie), kwaadwillende uploads (quarantaine + scan), misbruik pushkanaal. 21 dreigingen uitgewerkt met STRIDE. → [11-threat-model.md](11-threat-model.md), [06-security.md](06-security.md)
 
 ## 21. Azure-componenten
-Noodzakelijk: App Service (B1, API + workers), Azure SQL, Storage, Key Vault, App Insights/Log Analytics, Static Web Apps, Communication Services Email, Entra External ID. Optioneel: Defender for Storage (malwarescan), opschaling tijdens carnaval, DNS. Later: private endpoints/VNet, Front Door WAF, Notification Hubs. Niet nodig: APIM, AKS, VM's. → [08-azure-infrastructure.md](08-azure-infrastructure.md)
+Noodzakelijk: App Service (B1, API + workers), Azure SQL, Storage, Key Vault, App Insights/Log Analytics, Communication Services Email, Entra External ID. Optioneel: Defender for Storage (malwarescan), opschaling tijdens carnaval, DNS. Later: private endpoints/VNet, Front Door WAF, Notification Hubs. Niet nodig: APIM, AKS, VM's. → [08-azure-infrastructure.md](08-azure-infrastructure.md)
 
 ## 22. Globale Azure-kosten (indicatief per maand)
 Dev **€ 0–10** · Acc **€ 10–15** · Prod **€ 45–60** (noodzakelijk) / **€ 60–80** incl. aanbevolen opties, + ~€ 45 in februari voor opschaling. Totaal ≈ **€ 60–100/mnd** + app stores ~€ 100/jaar. → [08 §10](08-azure-infrastructure.md#10-kostenindicatie-83)

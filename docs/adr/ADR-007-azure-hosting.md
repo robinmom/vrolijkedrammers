@@ -1,6 +1,6 @@
 # ADR-007: Azure-hosting
 
-- **Status**: Geaccepteerd · 2026-09-24 (achtergrondverwerking in de API-app; besluit **B-01** in [10](../10-open-questions.md#b-01--hosting-van-achtergrondverwerking))
+- **Status**: Geaccepteerd · 2026-09-24 (achtergrondverwerking in de API-app; besluit **B-01** in [10](../10-open-questions.md#b-01--hosting-van-achtergrondverwerking)) · Herzien 2026-09-25: regio Sweden Central en beheerportal vanuit de API-app (OQ-75/76)
 - **Wijziging t.o.v. v0.1**: Azure Functions (Linux Consumption) vervangen door hosted background services in de API, omdat Linux Consumption geen .NET 10 ondersteunt en in 2028 wordt uitgefaseerd.
 
 ## Context
@@ -15,7 +15,7 @@ Geverifieerd (Microsoft Learn, "Supported languages in Azure Functions", bijgewe
 |---|---|
 | API | **App Service (Linux)** · Azure Container Apps · AKS · VM |
 | Achtergrond | **Hosted services in de API (App Service)** · Functions Flex Consumption · Functions Windows Consumption · WebJobs · Container Apps Jobs · ~~Functions Linux Consumption~~ (geen .NET 10) |
-| Portal | **Static Web Apps** · App Service · Blob static website + CDN |
+| Portal | **Statische bestanden in de API-app** · Static Web Apps · Blob static website + CDN |
 | Edge | Front Door (+WAF) · geen |
 | API-gateway | API Management · geen |
 
@@ -37,7 +37,8 @@ Afweging achtergrond: zie B-01 in het besluitenregister (hosted services, Flex C
   - **Queue**: DB-tabellen (`notification.Outbox`, `import.ImportJob`, `content.MediaJob`), gepolld door `BackgroundService`-workers (claimen met `UPDATE … OUTPUT` + `READPAST`), idempotent en hervatbaar.
   - **Scheduler**: tijdgestuurde jobs (e-Boekhouden-sync 03:00, geplande publicatie elke minuut, Expo-receipts, retentie) via een lichte scheduler (bijv. Coravel of een eigen `PeriodicTimer`) met **`sp_getapplock`** als distributed lock, zodat er bij scale-out maar één instantie draait.
   - **Workload-isolatie**: beeldverwerking met begrensde parallelliteit (1 tegelijk) en lage prioriteit, om API-latency te beschermen.
-- **Beheerportal**: Azure Static Web Apps (Free, eventueel Standard).
+- **Beheerportal**: statische bestanden in de API-app onder `/beheer` (OQ-76). Static Web Apps kan niet in Sweden Central staan en West Europe neemt geen nieuwe klanten aan; de opdrachtgever wil alles in de EU. Bijkomend voordeel: dezelfde origin als de API, dus geen CORS.
+- **Regio**: Sweden Central (OQ-75).
 - **Geen** Front Door, API Management, AKS, VM's of Functions in de MVP.
 
 ## Reasoning
@@ -62,9 +63,9 @@ Afweging achtergrond: zie B-01 in het besluitenregister (hosted services, Flex C
 - Eén managed identity voor API en worker: het e-Boekhouden-token en de Expo-token zijn door hetzelfde proces leesbaar. Mitigatie: aparte secrets, code-review, en optioneel een user-assigned MI voor de sync-DB-verbinding.
 - Minder aanvalsoppervlak dan met Functions (geen extra storage-account, geen "Allow Azure services" op SQL).
 - Geen WAF in de MVP; basisbescherming via Azure-platform-DDoS, rate limiting en auth. Front Door WAF is een optie bij misbruik.
-- Static Web Apps: CSP en security headers via `staticwebapp.config.json`.
+- Beheerportal: CSP en security headers door de API (`PortalHosting`); `index.html` zonder cache, gehashte assets onbeperkt cachebaar. API en portal worden samen uitgerold.
 
 ## Cost implications
 
-- Prod: App Service B1 ~€ 12 + tijdelijke opschaling ~€ 45 in februari; achtergrondverwerking € 0 extra; SWA € 0–9.
+- Prod: App Service B1 ~€ 12 + tijdelijke opschaling ~€ 45 in februari; achtergrondverwerking en beheerportal € 0 extra.
 - Afgewezen opties: Functions Flex (~€ 0 compute, maar + storage-account + eventueel VNet/NAT voor vaste IP's); Front Door Standard ~€ 30+/mnd; APIM Developer ~€ 45/mnd (en niet voor productie), Basic ~€ 130/mnd.

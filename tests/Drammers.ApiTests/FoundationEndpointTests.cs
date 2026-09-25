@@ -17,6 +17,25 @@ public class FoundationEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
     }
 
     [Fact]
+    public async Task Health_ready_geeft_200_zonder_geconfigureerde_Azure_resources()
+    {
+        var response = await _client.GetAsync("/health/ready");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Api_zonder_Entra_configuratie_weigert_elk_token()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/check");
+        request.Headers.Authorization = new("Bearer", TestTokens.Create(TestTokens.DevAudience, "dev"));
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Onbekende_route_geeft_ProblemDetails_met_code_en_traceId()
     {
         var response = await _client.GetAsync("/bestaat-niet");

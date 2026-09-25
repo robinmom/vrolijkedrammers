@@ -229,10 +229,10 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 3.
 
 **Acceptatiecriteria.**
-- [ ] Een bestuurder logt in (e-mailcode), kent een rol toe en ziet deze actie in de auditlog.
-- [ ] Een gebruiker zonder beheer-permissions ziet een lege navigatie met de melding "Geen beheerrechten" en kan geen admin-API aanroepen (403).
-- [ ] Een carnavalsjaar aanmaken en activeren lukt; er is altijd precies één actief jaar.
-- [ ] Exporteren van de gebruikerslijst levert een Excel met Nederlandse kolomnamen op en een auditregel.
+- [x] Een bestuurder logt in (e-mailcode), kent een rol toe en ziet deze actie in de auditlog. *(2026-09-25: handmatig in Dev + Playwright)*
+- [x] Een gebruiker zonder beheer-permissions ziet een lege navigatie met de melding "Geen beheerrechten" en kan geen admin-API aanroepen (403). *(Playwright + `AdminPortalApiTests`)*
+- [x] Een carnavalsjaar aanmaken en activeren lukt; er is altijd precies één actief jaar. *(integratietest + Playwright)*
+- [x] Exporteren van de gebruikerslijst levert een Excel met Nederlandse kolomnamen op en een auditregel. *(handmatig in Dev + integratietest)*
 
 ---
 

@@ -1,10 +1,12 @@
 using Drammers.Infrastructure.Configuration;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Drammers.Api.Controllers;
 
 /// <summary>Publieke app-configuratie: minimale appversie, onderhoud en feature flags (docs/05 §2).</summary>
 [ApiController]
+[AllowAnonymous]
 [Route("api/v1/app-config")]
 public sealed class AppConfigController(AppConfigReader reader) : ControllerBase
 {

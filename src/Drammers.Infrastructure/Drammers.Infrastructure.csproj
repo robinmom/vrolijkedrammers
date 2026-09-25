@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Drammers.Worker\Drammers.Worker.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Audit\Drammers.Modules.Audit.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Content\Drammers.Modules.Content.csproj" />
+    <ProjectReference Include="..\Drammers.Modules.Identity\Drammers.Modules.Identity.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Notification\Drammers.Modules.Notification.csproj" />
   </ItemGroup>
 

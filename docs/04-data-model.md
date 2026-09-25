@@ -111,7 +111,7 @@ erDiagram
 Device-identiteit = een server-uitgegeven ID + een bewijs van bezit van de private key (challenge-signature bij registratie en bij gevoelige calls). Zie [06-security.md](06-security.md).
 
 ### LoginHistory
-`id bigint identity`, `user_id NULL`, `email_hash` (bij mislukte login zonder user), `occurred_at`, `result` (`Success`, `Failed`, `Locked`), `ip_hash`, `device_id NULL`, `user_agent`. Bewaartermijn 12 maanden.
+`id bigint identity`, `user_id NULL`, `subject_hash` (SHA-256 van de onbekende `oid` bij een mislukte aanmelding zonder user; de API ziet geen e-mailadres van een onbekend account), `occurred_at`, `result` (`Success`, `Failed`, `Locked`), `reason` (`unknown-account`, `blocked`, `environment-access`, …), `ip_hash`, `user_agent`. Eén regel per token, niet per request. Bewaartermijn 12 maanden. *Nog te doen:* de IP-hash met een geheime sleutel (HMAC) maken, zodat IPv4-adressen niet terug te rekenen zijn.
 
 ## 4. Schema `membership`
 
@@ -196,7 +196,7 @@ Voor doelgroepen die geen rol zijn: `Dansgarde meisjes`, `Dansgarde leiding`, `J
 `id`, `member_number` (ingevoerd), `email` 🔒 (ingevoerd), `matched_member_id NULL`, `status` (`AutoApproved`, `PendingReview`, `Approved`, `Rejected`, `Expired`), `handled_by`, `handled_at`, `ip_hash`, `created_at`. Bewaartermijn 3 maanden na afhandeling.
 
 ### identity.AccountProvisioning (idempotente saga, ADR-014)
-`id`, `source_type` (`MembershipApplication`, `AccountRequest`, `Guardian`, `Manual`), `source_id`, `kind` (`Member`, `Guardian`), `step` (`Pending`, `EbCreated`, `MemberCreated`, `AccountCreated`, `WelcomeSent`, `Completed`, `Failed`), `eb_member_id NULL`, `member_number NULL`, `member_id NULL`, `entra_object_id NULL`, `user_id NULL`, `attempts`, `last_error`, `created_at`, `completed_at`, `row_version`.
+`id`, `source_type` (`MembershipApplication`, `AccountRequest`, `Guardian`, `Manual`), `source_id` (bij `Manual`: het genormaliseerde e-mailadres; uniek per bron), `kind` (`Member`, `Guardian`, `Administrator`), `step` (`Pending`, `EbCreated`, `MemberCreated`, `AccountCreated`, `WelcomeSent`, `Completed`, `Failed`), `eb_member_id NULL`, `member_number NULL`, `member_id NULL`, `entra_object_id NULL`, `user_id NULL`, `attempts`, `last_error`, `created_at`, `completed_at`, `row_version`.
 
 ### MembershipApproval
 Historie van beoordelingsstappen: `id`, `application_id`, `from_status`, `to_status`, `actor_user_id`, `comment`, `occurred_at`. (Iedere transitie = 1 record; audit-vriendelijk.)

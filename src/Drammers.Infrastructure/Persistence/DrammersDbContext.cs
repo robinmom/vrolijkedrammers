@@ -1,6 +1,9 @@
 using Drammers.Infrastructure.Configuration;
 using Drammers.Modules.Audit.AuditLog;
 using Drammers.Modules.Content.CarnivalYears;
+using Drammers.Modules.Identity.Provisioning;
+using Drammers.Modules.Identity.Roles;
+using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Notification.Outbox;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +15,20 @@ namespace Drammers.Infrastructure.Persistence;
 /// </summary>
 public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> options) : DbContext(options)
 {
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+
+    public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<Permission> Permissions => Set<Permission>();
+
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+    public DbSet<LoginHistory> LoginHistory => Set<LoginHistory>();
+
+    public DbSet<AccountProvisioning> AccountProvisioning => Set<AccountProvisioning>();
+
     public DbSet<CarnivalYear> CarnivalYears => Set<CarnivalYear>();
 
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();

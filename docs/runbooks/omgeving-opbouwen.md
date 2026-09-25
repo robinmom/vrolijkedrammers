@@ -39,7 +39,8 @@ Het script maakt de drie resource groups, het plan, de identiteiten met federati
 1. *Environments* → maak `dev` en `acc` aan. Zet bij allebei *Deployment branches and tags* op **Selected: `main`**. Zet bij `acc` ook *Required reviewers* aan.
 2. Vul per environment de *Environment variables* in die het script toont (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DVD_APP_SERVICE_PLAN_ID`, `DVD_SQL_ADMIN_GROUP_OBJECT_ID`), eventueel ook `DVD_BUDGET_EMAIL`.
 3. *Secrets and variables → Actions → Variables*: vul de repository-variabelen voor what-if in pull requests in.
-4. Zet daarna de repository-variabele `DVD_DEPLOY_ENABLED` = `true`. Zonder die variabele slaat de workflow *Deploy* zichzelf over.
+4. Vanaf fase 3 per environment ook `DVD_PORTAL_CLIENT_ID`, `DVD_GRAPH_CLIENT_ID` (provisioning-app) en eenmalig `DVD_BOOTSTRAP_ADMIN` (zie [entra-external-id §3b](entra-external-id.md#3b-fase-3-provisioning-eerste-beheerder-en-mfa)).
+5. Zet daarna de repository-variabele `DVD_DEPLOY_ENABLED` = `true`. Zonder die variabele slaat de workflow *Deploy* zichzelf over.
 
 Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC.
 

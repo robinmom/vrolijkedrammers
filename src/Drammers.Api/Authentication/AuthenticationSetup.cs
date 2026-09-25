@@ -5,8 +5,8 @@ namespace Drammers.Api.Authentication;
 public static class AuthenticationSetup
 {
     /// <summary>
-    /// JWT-bearer-validatie tegen Entra External ID. Zonder geconfigureerde audience faalt elke tokenvalidatie
-    /// (fail closed), zodat een ontbrekende instelling nooit tot open toegang leidt.
+    /// JWT-bearer-validatie tegen Entra External ID: handtekening, issuer, audience (per omgeving) en looptijd; anders 401.
+    /// Zonder geconfigureerde audience faalt elke tokenvalidatie (fail closed).
     /// </summary>
     public static IServiceCollection AddDrammersAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
@@ -22,21 +22,9 @@ public static class AuthenticationSetup
                 jwt.TokenValidationParameters.ValidateAudience = true;
                 jwt.TokenValidationParameters.ValidAudience = string.IsNullOrWhiteSpace(options.Audience) ? null : options.Audience;
                 jwt.TokenValidationParameters.NameClaimType = "name";
-                jwt.Events = new JwtBearerEvents
-                {
-                    OnTokenValidated = context =>
-                    {
-                        if (!EnvironmentAccess.IsAllowed(context.Principal!, options.EnvironmentAccessClaim, options.RequiredEnvironmentAccess))
-                        {
-                            context.Fail("Het token geeft geen toegang tot deze omgeving.");
-                        }
-
-                        return Task.CompletedTask;
-                    },
-                };
             });
 
-        services.AddAuthorization();
+        // environmentAccess, account-status en permissions controleert de autorisatie (403), zie ActiveUserHandler.
         return services;
     }
 }

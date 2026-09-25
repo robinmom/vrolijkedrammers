@@ -5,6 +5,8 @@ using Azure.Storage.Blobs;
 using Drammers.Infrastructure.Auditing;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Health;
+using Drammers.Infrastructure.Identity;
+using Drammers.Infrastructure.Identity.Entra;
 using Drammers.Infrastructure.Messaging;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Scheduling;
@@ -61,6 +63,19 @@ public static class DependencyInjection
             }
         }
 
+        // Graph in de External ID-tenant (provisioning, blokkeren); zonder configuratie faalt elke aanroep duidelijk.
+        var graph = configuration.GetSection(GraphOptions.SectionName);
+        services.Configure<GraphOptions>(graph);
+        if (graph.Get<GraphOptions>()?.IsConfigured == true)
+        {
+            services.AddSingleton<GraphCredentialProvider>();
+            services.AddHttpClient<IEntraUserDirectory, GraphEntraUserDirectory>();
+        }
+        else
+        {
+            services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();
+        }
+
         if (options.KeyVaultUri is not null)
         {
             services.AddSingleton(new SecretClient(options.KeyVaultUri, credential));
@@ -91,6 +106,9 @@ public static class DependencyInjection
         services.AddScoped<IOutboxStore, SqlOutboxStore>();
         services.AddScoped<IJobCoordinator, SqlJobCoordinator>();
         services.AddScoped<AppConfigReader>();
+        services.AddScoped<IUserAccessService, UserAccessService>();
+        services.AddScoped<ILoginRecorder, LoginRecorder>();
+        services.AddScoped<AccountAdministration>();
         return services;
     }
 }

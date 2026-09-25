@@ -83,10 +83,11 @@ jobs:
 
   infra-what-if:
     name: Bicep – what-if Dev
-    # Alleen als de alleen-lezen what-if-identiteit is ingericht, en niet voor pull requests vanuit forks.
+    # Alleen voor pull requests uit deze repository (de federatie vertrouwt alleen het pull_request-subject;
+    # op main doet de Deploy-workflow zelf een what-if) en als de what-if-identiteit is ingericht.
     if: >-
-      vars.AZURE_WHATIF_CLIENT_ID != '' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      vars.AZURE_WHATIF_CLIENT_ID != '' && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read

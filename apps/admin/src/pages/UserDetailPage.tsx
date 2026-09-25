@@ -70,50 +70,52 @@ export function UserDetailPage() {
             saveRoles.mutate(undefined, { onSuccess: () => setMessage('Rollen opgeslagen.') });
           }}
         >
-          <table className="table compact">
-            <caption className="visually-hidden">Rollen van deze gebruiker, met optionele geldigheid</caption>
-            <thead>
-              <tr>
-                <th scope="col">Rol</th>
-                <th scope="col">Geldig vanaf</th>
-                <th scope="col">Geldig tot</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(roles.data ?? []).map((role) => {
-                const assignment = assignments.find((a) => a.roleCode === role.code);
-                return (
-                  <tr key={role.code}>
-                    <td>
-                      <Checkbox
-                        label={role.name}
-                        checked={Boolean(assignment)}
-                        onChange={(e) => update(role.code, e.target.checked ? {} : null)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="date"
-                        aria-label={`${role.name} geldig vanaf`}
-                        disabled={!assignment}
-                        value={assignment?.validFrom ?? ''}
-                        onChange={(e) => update(role.code, { validFrom: e.target.value || null })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="date"
-                        aria-label={`${role.name} geldig tot`}
-                        disabled={!assignment}
-                        value={assignment?.validTo ?? ''}
-                        onChange={(e) => update(role.code, { validTo: e.target.value || null })}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="table-scroll">
+            <table className="table compact">
+              <caption className="visually-hidden">Rollen van deze gebruiker, met optionele geldigheid</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Rol</th>
+                  <th scope="col">Geldig vanaf</th>
+                  <th scope="col">Geldig tot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(roles.data ?? []).map((role) => {
+                  const assignment = assignments.find((a) => a.roleCode === role.code);
+                  return (
+                    <tr key={role.code}>
+                      <td>
+                        <Checkbox
+                          label={role.name}
+                          checked={Boolean(assignment)}
+                          onChange={(e) => update(role.code, e.target.checked ? {} : null)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          aria-label={`${role.name} geldig vanaf`}
+                          disabled={!assignment}
+                          value={assignment?.validFrom ?? ''}
+                          onChange={(e) => update(role.code, { validFrom: e.target.value || null })}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          aria-label={`${role.name} geldig tot`}
+                          disabled={!assignment}
+                          value={assignment?.validTo ?? ''}
+                          onChange={(e) => update(role.code, { validTo: e.target.value || null })}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           <ProblemAlert error={saveRoles.error} />
           <button type="submit" className="button" disabled={saveRoles.isPending}>
             Rollen opslaan

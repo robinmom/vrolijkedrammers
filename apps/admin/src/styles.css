@@ -391,6 +391,8 @@ legend {
 
 .table-scroll {
   overflow-x: auto;
+  /* Containing block voor de visueel verborgen teksten in de kopjes; anders maken die de hele pagina breder op mobiel. */
+  position: relative;
 }
 
 .table {
@@ -533,4 +535,56 @@ a.button {
 
 .photo-grid .actions {
   justify-content: flex-start;
+}
+
+/* Fase 8: ledenbeheer */
+.alert-warning {
+  background: var(--dvd-tint-yellow);
+  color: var(--dvd-text-primary);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.details dt {
+  color: var(--dvd-text-secondary);
+}
+
+.details dd {
+  margin: 0;
+}
+
+.grid-2,
+.grid-3 {
+  display: grid;
+  gap: 0 16px;
+}
+
+@media (min-width: 720px) {
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--dvd-border);
+}
+
+.list li:last-child {
+  border-bottom: none;
 }

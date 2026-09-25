@@ -91,6 +91,10 @@ for (const path of [
   'nieuws/nieuw',
   'fotos',
   'fotos/a-1',
+  'leden',
+  'leden/m-2',
+  'ledensync',
+  'ledensync/j-1',
   'gebruikers',
   'gebruikers/u-jan',
   'rollen',
@@ -99,8 +103,88 @@ for (const path of [
   'auditlog',
 ]) {
   test(`toegankelijkheid (axe) /${path}`, async ({ page }) => {
-    await open(page, new MockApi(), path);
+    const api = new MockApi();
+    // Het rapport van een run bestaat pas na een start; voor de axe-check één run klaarzetten.
+    api.syncJobs.push({
+      id: 'j-1',
+      status: 'Succeeded',
+      dryRun: true,
+      trigger: 'Manual',
+      requestedAt: '2026-09-25T10:00:00Z',
+      startedAt: null,
+      completedAt: null,
+      totalInSource: 3,
+      created: 1,
+      updated: 1,
+      unchanged: 1,
+      missing: 0,
+      deactivated: 0,
+      reactivated: 0,
+      warnings: 0,
+      errors: 0,
+      conflicts: 0,
+      errorMessage: null,
+    });
+    await open(page, api, path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expectNoSeriousA11yIssues(page);
+    // Geen horizontaal scrollen van de hele pagina (op mobiel verschuiven taps anders naar het verkeerde element).
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
   });
 }
+
+test('bestuur start een dry-run, bekijkt het rapport en handelt een conflict af', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'ledensync');
+  await page.getByRole('button', { name: 'Dry-run starten' }).click();
+  await expect(page.getByText('Dry-run gestart. Het rapport verschijnt hieronder.')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Dry-run' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Afhandelen' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Accepteren' }).click();
+  await expect(page.getByRole('heading', { name: /Openstaande conflicten/ })).toHaveCount(0);
+  expect(api.conflicts[0]!.status).toBe('Accepted');
+
+  await page
+    .getByRole('link', { name: /2026|2027/ })
+    .first()
+    .click();
+  await expect(page.getByRole('cell', { name: 'e-mail, plaats' })).toBeVisible();
+});
+
+test('lid-detail: status-override opslaan en ontbrekend lid op inactief zetten', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'leden');
+  await page.getByRole('link', { name: 'Anna Jansen' }).click();
+  await expect(page.getByText(/niet meer in e-Boekhouden/)).toBeVisible();
+  await page.getByRole('button', { name: 'Nu op inactief zetten' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Op inactief zetten' }).click();
+  await expect(page.getByText('Het lid is op inactief gezet.')).toBeVisible();
+
+  await page.getByLabel('Status-override').selectOption('Suspended');
+  await page.getByRole('button', { name: 'Gegevens van de app opslaan' }).click();
+  await expect(page.getByText('Opgeslagen.')).toBeVisible();
+  expect(api.members[1]!.localStatusOverride).toBe('Suspended');
+});
+
+test('alle leden verwijderen vraagt een getypte bevestiging', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'leden');
+  await page.getByRole('button', { name: 'Alle leden verwijderen' }).click();
+  const dialog = page.getByRole('dialog');
+  const confirm = dialog.getByRole('button', { name: 'Alles verwijderen' });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByLabel(/ter bevestiging/).fill('LEDEN VERWIJDEREN');
+  await confirm.click();
+  await expect(page.getByText(/2 leden en 0 syncruns verwijderd/)).toBeVisible();
+  expect(api.members).toHaveLength(0);
+});
+
+test('zonder member.purge geen knop om leden te verwijderen', async ({ page }) => {
+  await open(page, new MockApi(['member.read']), 'leden');
+  await expect(page.getByRole('heading', { name: 'Leden' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Alle leden verwijderen' })).toHaveCount(0);
+});

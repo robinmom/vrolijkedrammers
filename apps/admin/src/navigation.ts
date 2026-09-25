@@ -10,6 +10,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Agenda', to: '/agenda', permission: 'event.manage' },
   { label: 'Nieuws', to: '/nieuws', permission: 'news.manage' },
   { label: "Foto's", to: '/fotos', permission: 'photo.manage' },
+  { label: 'Leden', to: '/leden', permission: 'member.read' },
+  { label: 'Ledensync', to: '/ledensync', permission: 'import.run' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage' },

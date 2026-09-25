@@ -55,6 +55,15 @@ az rest --method put \
 
 Bron: [CIAM Tenants – Create (Microsoft Learn)](https://learn.microsoft.com/en-us/rest/api/activedirectory/ciam-tenants/create?view=rest-activedirectory-2023-05-17-preview).
 
+## 3a. Testaccounts (fase 1)
+
+| Account | Toegang | Doel |
+|---|---|---|
+| "Test Tester" | Lid van `Testers`, `environmentAccess = dev,acc` | Moet kunnen inloggen op Dev/Acc |
+| "Test Geen Toegang" | Geen toewijzing | Moet geweigerd worden (AADSTS50105) |
+
+Beide accounts gebruiken e-mail met eenmalige code, op persoonlijke adressen van de beheerder (niet in deze repository). Logintest geslaagd op 2026-09-25. Toegang wijzigen gaat met `infra/entra/set-tester.sh`.
+
 ## 4. Nog in te richten (volgende fasen)
 
 | Wat | Fase |

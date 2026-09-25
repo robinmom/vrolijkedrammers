@@ -67,13 +67,15 @@ Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC.
 
 ## 5. Dev opnieuw opbouwen vanuit Bicep
 
+> Getest op 2026-09-25: Dev verwijderd en met deze stappen + *Deploy* (`dev`) volledig hersteld. De pipeline maakt de databasegebruiker voor de nieuwe API-identiteit automatisch aan (`tools/Drammers.DbSetup`).
+
 ```bash
 az group delete --name rg-dvd-dev --yes
 # Key Vault blijft 90 dagen "soft deleted"; Dev heeft geen purge protection, dus definitief verwijderen kan:
 az keyvault purge --name kv-dvd-dev --location swedencentral
 infra/bootstrap/bootstrap-nonprod.sh      # maakt rg-dvd-dev en de pipelinerechten opnieuw aan
 ```
-Start daarna *Deploy* (Run workflow → `dev`). De API krijgt een nieuwe managed identity; vanaf fase 2 maakt de migratiestap de databasegebruiker opnieuw aan. Handmatig: Key Vault-secrets opnieuw zetten (vanaf fase 3, lijst in §6).
+Start daarna *Deploy* (Run workflow → `dev`). De API krijgt een nieuwe managed identity; de deploystap *Database – API-identiteit als gebruiker* maakt de databasegebruiker automatisch opnieuw aan. Handmatig: Key Vault-secrets opnieuw zetten (vanaf fase 3, lijst in §6).
 
 **Acc** heeft purge protection. Na verwijderen kan `kv-dvd-acc` niet worden gepurged, maar wel hersteld. Doe dat vóór de bootstrap: `az keyvault recover --name kv-dvd-acc`.
 

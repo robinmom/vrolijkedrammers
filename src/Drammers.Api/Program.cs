@@ -1,4 +1,5 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Drammers.Api;
 using Drammers.Api.Authentication;
 using Drammers.Api.Authorization;
 using Drammers.Api.ErrorHandling;
@@ -61,7 +62,8 @@ try
     app.UseAuthorization();
 
     // live: het proces draait (App Service health check). ready: SQL, Key Vault en Blob zijn bereikbaar.
-    app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).AllowAnonymous();
+    app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false, ResponseWriter = AppVersion.WriteLiveResponseAsync })
+        .AllowAnonymous();
     app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyTag) })
         .AllowAnonymous();
     app.MapControllers();

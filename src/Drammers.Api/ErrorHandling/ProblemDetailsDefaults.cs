@@ -17,6 +17,8 @@ public static class ProblemDetailsDefaults
         {
             problem.Extensions["code"] = problem.Status switch
             {
+                StatusCodes.Status401Unauthorized => ErrorCodes.Unauthorized,
+                StatusCodes.Status403Forbidden => ErrorCodes.Forbidden,
                 StatusCodes.Status404NotFound => ErrorCodes.NotFound,
                 StatusCodes.Status400BadRequest or StatusCodes.Status422UnprocessableEntity => ErrorCodes.Validation,
                 _ => ErrorCodes.Unexpected,

@@ -32,7 +32,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Publish API
-        run: dotnet publish src/Drammers.Api -c Release -o publish/api
+        run: dotnet publish src/Drammers.Api -c Release -o publish/api -p:SourceRevisionId=${{ github.sha }}
       - name: Migratiescript (idempotent) en databasetool
         run: |
           dotnet tool restore
@@ -151,6 +151,24 @@ jobs:
           app-name: ${{ steps.infra.outputs.api-app }}
           package: publish/api
 
+      - name: Draait de nieuwe versie?
+        run: |
+          # Een herstart door gewijzigde app-instellingen kan vóór het plaatsen van het pakket vallen; dan draait de
+          # oude versie door. Wacht op de nieuwe commit en herstart zo nodig één keer.
+          url="${{ steps.infra.outputs.api-url }}/health/live"
+          wait_for_version() {
+            for attempt in $(seq 1 12); do
+              version=$(curl -s -D - -o /dev/null --max-time 30 "$url" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-app-version"{print $2}')
+              echo "poging $attempt: ${version:-geen antwoord}"
+              [[ "$version" == *"$GITHUB_SHA"* ]] && return 0
+              sleep 15
+            done
+            return 1
+          }
+          wait_for_version && exit 0
+          echo "Oude versie draait nog; app herstarten"
+          az webapp restart --resource-group "$RESOURCE_GROUP" --name "${{ steps.infra.outputs.api-app }}"
+          wait_for_version
       - name: Smoke-test – /health/ready
         run: |
           # De serverless database kan gepauzeerd zijn; hervatten duurt tot ~1 minuut.

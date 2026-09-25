@@ -56,6 +56,16 @@ flowchart LR
   P18 --> P20[20 Rapportage & jubilarissen]
 ```
 
+**Wijziging 2026-09-25 (besluit product owner).** Fase 7 (Acc/Prod en publieke lancering) schuift op tot ná de functionele fasen: omdat de bouw voorloopt op schema, wordt eerst zoveel mogelijk functionaliteit gebouwd en getest in Dev. De fasen 8 en verder gebruiken in Dev alleen test- of fictieve data; echte ledengegevens komen pas in een omgeving na fase 7 en OQ-50 (privacyverklaring). Fase 7 kan op elk moment tussendoor worden ingepland, uiterlijk vóór fase 18.
+
+```mermaid
+flowchart LR
+  P6[6 Publieke app] --> P8[8 e-Boekhouden] --> P9[9 Leden-app] --> P10[10 Push]
+  P10 --> P11[11 Optocht] --> P12[12 Optocht beheer]
+  P10 --> P13[13 QR tickets] --> P14[14 Scanner] --> P15[15 Offline]
+  P6 -.-> P7[7 Prod + lancering] -.-> P18[18 Carnavals-gereedheid]
+```
+
 ## 3. Planning
 
 Niet opgenomen (besluit B-07): er zijn geen datums of capaciteitsramingen. Het **MVP** omvat fase 0–18 (alles wat nodig is voor een volledig carnavalsseizoen, inclusief toegangscontrole); fase 19–20 vallen erbuiten.
@@ -313,11 +323,13 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 5; OQ-40, OQ-42 (niet nodig voor deze schermen), OQ-66.
 
 **Acceptatiecriteria.**
-- [ ] De 7 Figma-schermen zijn in licht en donker op iOS en Android gerealiseerd; de product owner accepteert de visuele review.
-- [ ] Content die in het portal wordt gepubliceerd, verschijnt na pull-to-refresh in de app.
-- [ ] Zonder netwerk toont de app de laatst geladen content met de offline-banner; er zijn geen crashes.
-- [ ] Een minimale appversie boven de geïnstalleerde versie toont een blokkerend updatescherm.
-- [ ] VoiceOver/TalkBack leest alle tegels, knoppen en de countdown begrijpelijk voor.
+- [x] De 7 Figma-schermen zijn in licht en donker op iOS en Android gerealiseerd; de product owner accepteert de visuele review. *(2026-09-25: geaccepteerd door de product owner; visuele verfijning volgt in een latere versie. Snapshots licht/donker in `snapshots.test.tsx`)*
+- [x] Content die in het portal wordt gepubliceerd, verschijnt na pull-to-refresh in de app. *(handmatig getest in Dev na de fix `no-cache` + verversen bij openen van een scherm; tests in `screens.test.tsx`)*
+- [ ] Zonder netwerk toont de app de laatst geladen content met de offline-banner; er zijn geen crashes. *(geautomatiseerd getest; test op een toestel (vliegtuigmodus, Maestro-flow 05) verplaatst naar de go-live-checklist van fase 7)*
+- [x] Een minimale appversie boven de geïnstalleerde versie toont een blokkerend updatescherm. *(tests "app-config" in `screens.test.tsx`)*
+- [ ] VoiceOver/TalkBack leest alle tegels, knoppen en de countdown begrijpelijk voor. *(labels en rollen aanwezig en getest; controle met VoiceOver/TalkBack op een toestel verplaatst naar de go-live-checklist van fase 7)*
+
+**Bekende punten voor later.** Visuele verfijning na de review van de product owner (2026-09-25); de afwijkingen staan in [17 §9](17-design-system.md).
 
 ---
 
@@ -337,7 +349,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Tests.** Smoke-tests Prod na deploy; restore-oefening (PITR naar een tijdelijke DB) met gedocumenteerde duur; alert-test (geforceerde 5xx → melding ontvangen); rollback-oefening (vorige versie opnieuw deployen).
 
-**Aanvullende DoD.** Go-live-checklist afgetekend door de product owner en de technisch eigenaar.
+**Aanvullende DoD.** Go-live-checklist afgetekend door de product owner en de technisch eigenaar. De checklist bevat ook de uit fase 6 verplaatste toesteltests: offline (vliegtuigmodus, Maestro-flow 05) en VoiceOver/TalkBack op alle 7 schermen.
 
 **Afhankelijkheden.** Fase 6; B-04 (store-accounts, domein), OQ-50, OQ-52, OQ-67.
 
@@ -373,7 +385,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Aanvullende DoD.** Dry-run-rapport tegen de echte (of test-)administratie gereviewd door de secretaris.
 
-**Afhankelijkheden.** Fase 7 (Prod bestaat), fase 5 (audiences uitbreiden); **B-06**, OQ-03, OQ-04, OQ-06, OQ-50.
+**Afhankelijkheden.** Fase 5 (audiences uitbreiden); fase 7 alleen voor de inzet met echte ledengegevens in Prod; **B-06**, OQ-03, OQ-04, OQ-06, OQ-50 (Prod).
 
 **Acceptatiecriteria.**
 - [ ] Een eerste dry-run toont het verwachte aantal nieuwe leden en eventuele parsefouten; na goedkeuring maakt de echte run exact dat aantal aan.

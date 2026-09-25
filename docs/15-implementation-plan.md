@@ -271,11 +271,11 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 4; OQ-65.
 
 **Acceptatiecriteria.**
-- [ ] Een redacteur publiceert een event voor "Iedereen" → het staat binnen een minuut in `GET /events` zonder token.
-- [ ] Een event met zichtbaarheid "Leden" is niet zichtbaar voor een gast of een ouderaccount zonder rol Lid (404 op detail), wel voor een Lid.
-- [ ] Nieuws met een publicatiemoment in de toekomst verschijnt automatisch op dat moment.
-- [ ] Een geüploade foto heeft een thumbnail en een display-versie, zonder GPS-metadata; een verborgen foto is direct onzichtbaar.
-- [ ] Er is geen enkele blob anoniem opvraagbaar.
+- [x] Een redacteur publiceert een event voor "Iedereen" → het staat binnen een minuut in `GET /events` zonder token. *(2026-09-25: handmatig in Dev + integratietest + Playwright)*
+- [x] Een event met zichtbaarheid "Leden" is niet zichtbaar voor een gast of een ouderaccount zonder rol Lid (404 op detail), wel voor een Lid. *(audience-matrix in `ContentTests`; handmatig in Dev)*
+- [x] Nieuws met een publicatiemoment in de toekomst verschijnt automatisch op dat moment. *(handmatig in Dev + nepklok-test)*
+- [x] Een geüploade foto heeft een thumbnail en een display-versie, zonder GPS-metadata; een verborgen foto is direct onzichtbaar. *(handmatig in Dev; GPS-strip bewezen in `FileUploadTests`)*
+- [x] Er is geen enkele blob anoniem opvraagbaar. *(live: anonieme toegang tot alle containers geweigerd; SAS ≤ 15 min)*
 
 ---
 

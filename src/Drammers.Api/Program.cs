@@ -1,5 +1,6 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Drammers.Api.Authentication;
+using Drammers.Api.Authorization;
 using Drammers.Api.ErrorHandling;
 using Drammers.Api.Portal;
 using Drammers.Infrastructure;
@@ -27,6 +28,7 @@ try
     builder.Services.AddOpenApi("v1");
     builder.Services.AddDrammersInfrastructure(builder.Configuration, builder.Environment);
     builder.Services.AddDrammersAuthentication(builder.Configuration);
+    builder.Services.AddDrammersAuthorization();
     builder.Services.AddSingleton<IClock, SystemClock>();
 
     // Traces, metrics en logs naar Application Insights; de connection string zet Bicep (niet geheim).
@@ -37,6 +39,7 @@ try
 
     var app = builder.Build();
 
+    app.UseForwardedHeaders();
     app.UseSecurityHeaders();
     app.UseExceptionHandler();
     app.UseStatusCodePages();
@@ -44,21 +47,25 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();
+        app.MapOpenApi().AllowAnonymous();
     }
     else
     {
         app.UseHsts();
     }
 
+    // Het portal (statische bestanden) vóór de authenticatie: het is publiek en logt zelf in via MSAL.
+    app.UsePortalStaticFiles();
     app.UseAuthentication();
+    app.UseRateLimiter();
     app.UseAuthorization();
 
     // live: het proces draait (App Service health check). ready: SQL, Key Vault en Blob zijn bereikbaar.
-    app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
-    app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyTag) });
+    app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).AllowAnonymous();
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyTag) })
+        .AllowAnonymous();
     app.MapControllers();
-    app.MapPortal();
+    app.MapPortalFallback();
 
     await app.RunAsync();
 }

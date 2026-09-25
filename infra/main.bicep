@@ -23,6 +23,15 @@ param apiClientId string
 param environmentAccessClaim string
 param requiredEnvironmentAccess string
 
+@description('Client-ID van de portal-app (voor de MFA-controle) en of die controle aan staat (pas na verificatie met een echt token).')
+param portalClientId string
+param requirePortalMfa bool
+
+@description('Graph in de External ID-tenant: provisioning-app (federatie met de managed identity van de API) en issuer-domein.')
+param externalIdTenantId string
+param graphClientId string
+param externalIdIssuerDomain string
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -112,6 +121,11 @@ module api 'modules/appservice.bicep' = {
       Auth__Audience: apiClientId
       Auth__EnvironmentAccessClaim: environmentAccessClaim
       Auth__RequiredEnvironmentAccess: requiredEnvironmentAccess
+      Auth__PortalClientId: portalClientId
+      Auth__RequirePortalMfa: string(requirePortalMfa)
+      Graph__TenantId: empty(graphClientId) ? '' : externalIdTenantId
+      Graph__ClientId: graphClientId
+      Graph__IssuerDomain: externalIdIssuerDomain
     }
   }
 }

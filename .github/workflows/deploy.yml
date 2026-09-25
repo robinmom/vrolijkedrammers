@@ -76,6 +76,9 @@ jobs:
       DVD_API_CLIENT_ID: ${{ vars.DVD_API_CLIENT_ID }}
       DVD_ENVIRONMENT_ACCESS_CLAIM: ${{ vars.DVD_ENVIRONMENT_ACCESS_CLAIM }}
       DVD_BUDGET_EMAIL: ${{ vars.DVD_BUDGET_EMAIL }}
+      DVD_BOOTSTRAP_ADMIN: ${{ vars.DVD_BOOTSTRAP_ADMIN }}
+      DVD_PORTAL_CLIENT_ID: ${{ vars.DVD_PORTAL_CLIENT_ID }}
+      DVD_GRAPH_CLIENT_ID: ${{ vars.DVD_GRAPH_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -119,6 +122,11 @@ jobs:
           dotnet publish/db/tool/Drammers.DbSetup.dll "$server" sqldb-dvd migrate publish/db/migrations.sql
           dotnet publish/db/tool/Drammers.DbSetup.dll "$server" sqldb-dvd ensure-user \
             "${{ steps.infra.outputs.api-app }}" "${{ steps.infra.outputs.api-client-id }}" app_runtime
+          # Eerste beheerder (optioneel, idempotent): variabele "oid;e-mail;naam" in de GitHub environment.
+          if [[ -n "${DVD_BOOTSTRAP_ADMIN:-}" ]]; then
+            IFS=';' read -r admin_oid admin_email admin_name <<<"$DVD_BOOTSTRAP_ADMIN"
+            dotnet publish/db/tool/Drammers.DbSetup.dll "$server" sqldb-dvd bootstrap-admin "$admin_oid" "$admin_email" "$admin_name"
+          fi
 
       - name: Wachten tot de app stabiel is na infra-wijzigingen
         run: |

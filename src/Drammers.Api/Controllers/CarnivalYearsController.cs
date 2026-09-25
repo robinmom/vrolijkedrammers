@@ -1,4 +1,5 @@
 using Drammers.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,6 +7,7 @@ namespace Drammers.Api.Controllers;
 
 /// <summary>Het actieve carnavalsjaar, o.a. voor de countdown in de app (docs/05 §2).</summary>
 [ApiController]
+[AllowAnonymous]
 [Route("api/v1/carnival-years")]
 public sealed class CarnivalYearsController(DrammersDbContext db) : ControllerBase
 {

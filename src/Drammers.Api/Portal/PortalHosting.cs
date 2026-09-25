@@ -34,7 +34,8 @@ public static class PortalHosting
             return next(context);
         });
 
-    public static WebApplication MapPortal(this WebApplication app)
+    /// <summary>Redirect <c>/beheer</c> → <c>/beheer/</c> en statische bestanden; vóór authenticatie en autorisatie.</summary>
+    public static WebApplication UsePortalStaticFiles(this WebApplication app)
     {
         // /beheer → /beheer/ (Vite gebruikt paden onder de base). Geen route: routing negeert de trailing slash.
         app.Use((context, next) =>
@@ -49,10 +50,15 @@ public static class PortalHosting
         });
         app.UseDefaultFiles();
         app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = context => SetCacheHeaders(context.Context) });
+        return app;
+    }
 
-        // Client-side routes van het portal vallen terug op index.html; /api en /health blijven ProblemDetails geven.
+    /// <summary>Client-side routes van het portal vallen terug op index.html; /api en /health blijven ProblemDetails geven.</summary>
+    public static WebApplication MapPortalFallback(this WebApplication app)
+    {
         app.MapFallbackToFile($"{BasePath.TrimStart('/')}/{{*path:nonfile}}", $"{BasePath.TrimStart('/')}/index.html",
-            new StaticFileOptions { OnPrepareResponse = context => SetCacheHeaders(context.Context) });
+                new StaticFileOptions { OnPrepareResponse = context => SetCacheHeaders(context.Context) })
+            .AllowAnonymous();
         return app;
     }
 

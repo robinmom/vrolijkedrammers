@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Drammers.Api.ErrorHandling;
 
 /// <summary>
-/// Vangt onverwachte fouten af: logt ze volledig, maar geeft de client alleen een generieke
-/// ProblemDetails zonder stacktrace (docs/06 §9, docs/16 §6).
+/// Zet <see cref="DomainException"/> om naar 404/409/422 met code; vangt onverwachte fouten af: logt ze volledig,
+/// maar geeft de client alleen een generieke ProblemDetails zonder stacktrace (docs/06 §9, docs/16 §6).
 /// </summary>
 public sealed partial class GlobalExceptionHandler(
     IProblemDetailsService problemDetailsService,
@@ -14,6 +14,22 @@ public sealed partial class GlobalExceptionHandler(
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        if (exception is DomainException domain)
+        {
+            var status = domain.Kind switch
+            {
+                DomainErrorKind.NotFound => StatusCodes.Status404NotFound,
+                DomainErrorKind.Conflict => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status422UnprocessableEntity,
+            };
+            httpContext.Response.StatusCode = status;
+            return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+            {
+                HttpContext = httpContext,
+                ProblemDetails = new ProblemDetails { Status = status, Detail = domain.Message, Extensions = { ["code"] = domain.Code } },
+            });
+        }
+
         LogUnhandledException(logger, httpContext.Request.Method, httpContext.Request.Path, exception);
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;

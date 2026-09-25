@@ -1,6 +1,6 @@
 # 07 – Rollen- en rechtenmodel (RBAC)
 
-> Status: v0.3 · 2026-09-24 · accountmodel: alleen leden + ouders (B-05, ADR-014)
+> Status: v0.4 · 2026-09-25 · accountmodel: alleen leden + ouders (B-05, ADR-014) · fase 3 gebouwd (§8)
 
 ## 1. Principes
 
@@ -169,3 +169,13 @@ var auth = await _authorization.AuthorizeAsync(User, registration, ParadePolicie
 - Een permission-matrix-test genereert voor **elk endpoint** × **elke standaardrol** het verwachte resultaat (200/403/401) uit een tabel en vergelijkt die met de werkelijkheid (WebApplicationFactory + test-JWT).
 - Een reflectietest: elk controller-endpoint heeft `[RequirePermission]` of `[AllowAnonymous]`, zodat er geen "vergeten" endpoints zijn.
 - Audience-filtertests per combinatie (gast, lid, rol, groep, individueel, ouder van kind).
+
+## 8. Implementatie fase 3 (2026-09-25)
+
+- **Seed:** `DefaultRoles` (Infrastructure) is de bron voor de migratie. Rolcodes: `lid`, `groepsverantwoordelijke`, `kaderlid`, `dansgarde-leiding`, `dansgarde-lid`, `ouder`, `raad-van-elf`, `scanner`, `optochtcommissie`, `redactie`, `bestuur`, `beheerder-it`. Systeemrollen (niet te verwijderen): `lid`, `ouder`, `bestuur`, `beheerder-it`.
+- **Scoped (◐):** de permission zit in de rol, de scoping (eigen inschrijving, eigen kinderen, eigen groep) komt met de resource-handlers in de betreffende fase. Uitzonderingen voor één functie zijn **niet** standaard toegekend: `parade.manage-final` voor de optochtvoorzitter, `payment.manage` voor de penningmeester en `ticket.scan` voor de Raad van Elf. Die gaan via een eigen rol (bijv. "Penningmeester") of de rol Scanner.
+- **401 of 403:** een ongeldig token (handtekening, issuer, audience, looptijd) geeft **401**. Een geldig token zonder toegang geeft **403**: onbekende `oid` (geen JIT), geblokkeerd of inactief account, ontbrekende `environmentAccess` in Dev/Acc, ontbrekende permission.
+- **Annotaties:** `[RequirePermission(...)]`, `[RequireActiveUser]` (ingelogd, bijv. `GET /me`) of `[AllowAnonymous]`. De fallbackpolicy weigert endpoints zonder annotatie. Een onbekende route geeft gewoon 404. De reflectietest somt de publieke endpoints op, en de permission-matrix-test controleert elk beschermd endpoint tegen elke standaardrol.
+- **Cache:** `IUserAccessService` cachet de gebruiker met rollen en permissions 5 minuten. Een rol- of statuswijziging maakt de cache op dezelfde instantie direct ongeldig en verhoogt `permissions_version`.
+- **Lock-out-preventie:** elke wijziging aan rollen, rolrechten of blokkades wordt teruggedraaid (409 `LOCKOUT_PREVENTED`) als er daarna geen actieve gebruiker met `role.manage` overblijft.
+- **Portal-MFA:** Conditional Access op de portal-app is het eerste slot. De API kan als tweede slot `amr = mfa` eisen voor tokens van de portal-app (`Auth__RequirePortalMfa`). Dat zetten we pas aan nadat met een echt token is gecontroleerd dat External ID de claim meestuurt.

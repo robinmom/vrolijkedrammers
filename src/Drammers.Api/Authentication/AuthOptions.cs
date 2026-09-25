@@ -16,4 +16,13 @@ public sealed class AuthOptions
 
     /// <summary>Vereiste waarde in <see cref="EnvironmentAccessClaim"/> (<c>dev</c> of <c>acc</c>); leeg in Production.</summary>
     public string? RequiredEnvironmentAccess { get; set; }
+
+    /// <summary>Client-ID van de portal-app; tokens van die client moeten MFA bevatten als <see cref="RequirePortalMfa"/> aan staat.</summary>
+    public string? PortalClientId { get; set; }
+
+    /// <summary>
+    /// Tweede slot naast de Conditional Access-policy op de portal-app (B-02): <c>amr</c> moet <c>mfa</c> bevatten.
+    /// Pas aanzetten nadat met een echt token is gecontroleerd dat External ID de claim meestuurt.
+    /// </summary>
+    public bool RequirePortalMfa { get; set; }
 }

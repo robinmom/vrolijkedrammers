@@ -81,7 +81,61 @@ export class MockApi {
     },
   ];
 
-  constructor(permissions: string[] = ['report.view', 'role.manage', 'config.manage', 'audit.read']) {
+  events: {
+    id: string;
+    categoryId: number;
+    title: string;
+    summary: string | null;
+    description: string | null;
+    startAt: string;
+    endAt: string | null;
+    allDay: boolean;
+    locationName: string | null;
+    locationAddress: string | null;
+    latitude: null;
+    longitude: null;
+    isHighlight: boolean;
+    badgeText: string | null;
+    publication: { visibility: string; audienceRoles: string[]; status: string; publishAt: string | null };
+  }[] = [];
+  albums = [
+    {
+      id: 'a-1',
+      title: 'Optocht 2027',
+      albumDate: '2027-02-07',
+      description: null as string | null,
+      eventId: null,
+      coverPhotoId: null,
+      publication: {
+        visibility: 'Public',
+        audienceRoles: [] as string[],
+        status: 'Published',
+        publishAt: null as string | null,
+      },
+      photos: [
+        {
+          id: 'p-1',
+          processingStatus: 'Ready',
+          hidden: false,
+          caption: null,
+          photographer: null,
+          thumbnailUrl: null as string | null,
+        },
+      ],
+    },
+  ];
+
+  constructor(
+    permissions: string[] = [
+      'report.view',
+      'role.manage',
+      'config.manage',
+      'audit.read',
+      'event.manage',
+      'news.manage',
+      'photo.manage',
+    ],
+  ) {
     this.permissions = permissions;
   }
 
@@ -207,6 +261,64 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/carnival-years\/(\d+)\/activate$/))) {
       this.years.forEach((y) => (y.active = y.id === Number(m![1])));
       return noContent();
+    }
+    if (path === '/event-categories') {
+      return json([
+        { id: 1, code: 'carnaval', name: 'Carnaval' },
+        { id: 2, code: 'jeugd', name: 'Jeugd' },
+      ]);
+    }
+    if (path === '/admin/events') {
+      if (method === 'POST') {
+        const created = { ...(body as unknown as (typeof this.events)[number]), id: `e-${this.events.length + 1}` };
+        this.events.push(created);
+        this.record('event.created', 'Event', created.id, body);
+        return json({ id: created.id }, 201);
+      }
+      return json(
+        this.events.map((e) => ({
+          id: e.id,
+          title: e.title,
+          startAt: e.startAt,
+          visibility: e.publication.visibility,
+          status: e.publication.status,
+          publishAt: e.publication.publishAt,
+          isHighlight: e.isHighlight,
+        })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/events\/([^/]+)$/))) {
+      const e = this.events.find((x) => x.id === m![1]);
+      return e ? json({ ...e, imageUrl: null, attachments: [] }) : json({ status: 404 }, 404);
+    }
+    if (path === '/events') {
+      const items = this.events.filter(
+        (e) => e.publication.status === 'Published' && e.publication.visibility === 'Public',
+      );
+      return json({
+        items: items.map((e) => ({ id: e.id, title: e.title })),
+        page: 1,
+        pageSize: 25,
+        totalCount: items.length,
+      });
+    }
+    if (path === '/admin/news') {
+      return json([]);
+    }
+    if (path === '/admin/photo-albums') {
+      return json(
+        this.albums.map((a) => ({
+          id: a.id,
+          title: a.title,
+          albumDate: a.albumDate,
+          visibility: a.publication.visibility,
+          status: a.publication.status,
+          photoCount: a.photos.length,
+        })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)$/))) {
+      return json(this.albums.find((a) => a.id === m![1]));
     }
     return json({ status: 404, title: 'Not Found', code: 'NOT_FOUND' }, 404);
   }

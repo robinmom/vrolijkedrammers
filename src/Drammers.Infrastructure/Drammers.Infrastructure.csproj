@@ -11,7 +11,11 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <!-- Vanaf SqlClient 7 zit Entra-authenticatie (managed identity) in een apart pakket. -->
     <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.0" />
+    <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
+    <PackageReference Include="Markdig" Version="1.4.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+    <!-- Six Labors Split License: gratis voor non-profitorganisaties (de vereniging). Versie 3.1: v4 eist een licentiesleutel bij de build. -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

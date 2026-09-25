@@ -4,6 +4,8 @@ using Azure.Security.KeyVault.Secrets;
 using Azure.Storage.Blobs;
 using Drammers.Infrastructure.Auditing;
 using Drammers.Infrastructure.Configuration;
+using Drammers.Infrastructure.Content;
+using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Health;
 using Drammers.Infrastructure.Identity;
 using Drammers.Infrastructure.Identity.Entra;
@@ -60,6 +62,7 @@ public static class DependencyInjection
             if (configuration.GetValue("Worker:Enabled", defaultValue: true))
             {
                 services.AddDrammersWorker();
+                services.AddRecurringJob<ContentPublisherJob>(ContentPublisherJob.JobName, ContentPublisherJob.Interval);
             }
         }
 
@@ -85,7 +88,16 @@ public static class DependencyInjection
         if (options.BlobEndpoint is not null)
         {
             services.AddSingleton(new BlobServiceClient(options.BlobEndpoint, credential));
+            services.AddSingleton<IFileStore, BlobFileStore>();
             healthChecks.AddCheck<BlobStorageHealthCheck>("blob", HealthStatus.Unhealthy, [ReadyTag], timeout);
+        }
+
+        // Lokaal/tests: Azurite via connection string (met account-key; SAS dan als service-SAS).
+        var blobConnectionString = configuration.GetConnectionString("Blob");
+        if (options.BlobEndpoint is null && !string.IsNullOrWhiteSpace(blobConnectionString))
+        {
+            services.AddSingleton(new BlobServiceClient(blobConnectionString));
+            services.AddSingleton<IFileStore, BlobFileStore>();
         }
 
         return services;
@@ -110,6 +122,11 @@ public static class DependencyInjection
         services.AddScoped<ILoginRecorder, LoginRecorder>();
         services.AddScoped<AccountAdministration>();
         services.AddScoped<ConfigurationAdministration>();
+        services.AddScoped<ContentAdministration>();
+        services.AddScoped<ContentFiles>();
+        services.AddScoped<IOutboxMessageHandler, PhotoProcessingHandler>();
+        services.TryAddSingleton<IMalwareScanner, NoMalwareScanner>();
+        services.TryAddSingleton<IFileStore, UnconfiguredFileStore>();
         return services;
     }
 }

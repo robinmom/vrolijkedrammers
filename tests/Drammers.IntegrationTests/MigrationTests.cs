@@ -1,6 +1,8 @@
+using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Setup;
 using Drammers.IntegrationTests.Infrastructure;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.IntegrationTests;
 
@@ -17,7 +19,8 @@ public class MigrationTests(SqlServerFixture sql)
         // Nogmaals hetzelfde script: mag niets doen en niet falen.
         await SqlScriptRunner.RunAsync(connection, SqlServerFixture.MigrationScript(), CancellationToken.None);
 
-        Assert.Equal(3, await ScalarAsync<int>(connection, "SELECT COUNT(*) FROM [__EFMigrationsHistory]"));
+        using var context = new DrammersDbContext(new DbContextOptionsBuilder<DrammersDbContext>().UseSqlServer(connectionString).Options);
+        Assert.Equal(context.Database.GetMigrations().Count(), await ScalarAsync<int>(connection, "SELECT COUNT(*) FROM [__EFMigrationsHistory]"));
         Assert.Equal("2026/2027", await ScalarAsync<string>(connection, "SELECT name FROM content.CarnivalYear WHERE active = 1"));
         Assert.Equal(13, await ScalarAsync<int>(connection, "SELECT COUNT(*) FROM config.RetentionPolicy"));
         Assert.Equal(11, await ScalarAsync<int>(

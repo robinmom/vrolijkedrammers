@@ -14,9 +14,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Drammers.IntegrationTests.Infrastructure;
 
 /// <summary>API met echte database en tokenvalidatie (lokale testsleutel), ingesteld als de Dev-omgeving.</summary>
-public sealed class AuthenticatedApiFactory(string connectionString) : WebApplicationFactory<Program>
+public sealed class AuthenticatedApiFactory(
+    string connectionString, string? blobConnectionString = null, Action<IServiceCollection>? configure = null) : WebApplicationFactory<Program>
 {
     public FakeEntraUserDirectory Entra { get; } = new();
+
+    /// <summary>Instelbare klok (geplande publicatie, SAS-verloop).</summary>
+    public FakeClock Clock { get; } = new(DateTimeOffset.UtcNow);
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -25,9 +29,15 @@ public sealed class AuthenticatedApiFactory(string connectionString) : WebApplic
         builder.UseSetting("Worker:Enabled", "false");
         builder.UseSetting("Auth:Audience", TestTokens.DevAudience);
         builder.UseSetting("Auth:RequiredEnvironmentAccess", "dev");
+        if (blobConnectionString is not null)
+        {
+            builder.UseSetting("ConnectionStrings:Blob", blobConnectionString);
+        }
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<IEntraUserDirectory>(Entra);
+            services.AddSingleton<Drammers.SharedKernel.Time.IClock>(Clock);
+            configure?.Invoke(services);
             services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.Authority = null;

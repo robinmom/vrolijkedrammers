@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Testcontainers.Azurite;
 using Testcontainers.MsSql;
 
 namespace Drammers.IntegrationTests.Infrastructure;
@@ -15,12 +16,32 @@ namespace Drammers.IntegrationTests.Infrastructure;
 public sealed class SqlServerFixture : IAsyncLifetime
 {
     private readonly MsSqlContainer _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
+    private readonly AzuriteContainer _azurite = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:latest").WithInMemoryPersistence().Build();
 
     public string ServerConnectionString => _container.GetConnectionString();
 
-    public Task InitializeAsync() => _container.StartAsync();
+    /// <summary>Blob Storage-emulator; elke testklasse maakt eigen containers met <see cref="CreateBlobStorageAsync"/>.</summary>
+    public string BlobConnectionString => _azurite.GetConnectionString();
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public Task InitializeAsync() => Task.WhenAll(_container.StartAsync(), _azurite.StartAsync());
+
+    public async Task DisposeAsync()
+    {
+        await _container.DisposeAsync();
+        await _azurite.DisposeAsync();
+    }
+
+    /// <summary>Maakt de containers aan (idempotent) zoals Bicep dat in Azure doet.</summary>
+    public async Task<string> CreateBlobStorageAsync()
+    {
+        var service = new Azure.Storage.Blobs.BlobServiceClient(BlobConnectionString);
+        foreach (var container in Drammers.Infrastructure.Files.FileContainers.All)
+        {
+            await service.GetBlobContainerClient(container).CreateIfNotExistsAsync();
+        }
+
+        return BlobConnectionString;
+    }
 
     /// <summary>Het idempotente script zoals <c>dotnet ef migrations script --idempotent</c> dat maakt.</summary>
     public static string MigrationScript()

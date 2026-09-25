@@ -229,6 +229,8 @@ News: `id`, `title`, `summary`, `body`, `image_blob_path`, `author_user_id`, `ca
 - PhotoAlbumAudience: gelijk aan EventAudience.
 - Photo: `id`, `album_id`, `original_blob_path`, `thumbnail_blob_path`, `display_blob_path` (≈ 1600 px), `sort_order`, `width`, `height`, `taken_at`, `caption`, `photographer`, `hidden bit` (portretrecht-verzoek), `uploaded_by`, `uploaded_at`. EXIF/GPS wordt bij verwerking gestript.
 
+**Gebouwd in fase 5:** doelgroepen alleen van het type `Role` (`audience_ref` = rolcode); `Group` en `Member` volgen in fase 8. Foto krijgt `processing_status` (`Pending`, `Ready`, `Rejected`); `original_blob_path` wijst tijdens de verwerking naar de quarantaine. Event- en nieuwsbestanden staan in de container `content`, foto's in `photos-original` en `photos-derived`.
+
 ### Newsletter (voorbereid, R5)
 `id`, `title`, `body`, `channels` (`InApp`, `Email`), `audience…`, `status`, `sent_at`.
 

@@ -4,7 +4,7 @@ param environmentName string
 param tags object
 param workspaceId string
 
-@description('Blob-containers die de API gebruikt (docs/08 §3).')
+@description('Blob-containers die de API gebruikt (docs/08 §3); content = afbeeldingen en bijlagen van events en nieuws.')
 param containerNames array = [
   'parade-documents'
   'photos-original'
@@ -12,6 +12,7 @@ param containerNames array = [
   'quarantine'
   'exports'
   'dataprotection'
+  'content'
 ]
 
 resource account 'Microsoft.Storage/storageAccounts@2025-01-01' = {

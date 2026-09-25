@@ -486,3 +486,51 @@ legend {
     padding: 16px;
   }
 }
+
+textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--dvd-canvas);
+  border: 1px solid var(--dvd-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.preview {
+  max-width: 320px;
+  border-radius: 12px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+a.button {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.photo-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.photo-grid img,
+.photo-grid .placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--dvd-tint-blue);
+}
+
+.photo-grid .hidden-photo img {
+  opacity: 0.4;
+}
+
+.photo-grid .actions {
+  justify-content: flex-start;
+}

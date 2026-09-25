@@ -42,6 +42,8 @@ try
     builder.Services.AddDrammersInfrastructure(builder.Configuration, builder.Environment);
     builder.Services.AddDrammersAuthentication(builder.Configuration);
     builder.Services.AddDrammersAuthorization();
+    builder.Services.AddScoped<Drammers.Api.Content.ContentViewerResolver>();
+    builder.Services.AddScoped<Drammers.Api.Content.ContentUrls>();
     builder.Services.AddSingleton<IClock, SystemClock>();
 
     // Traces, metrics en logs naar Application Insights; de connection string zet Bicep (niet geheim).

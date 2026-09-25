@@ -27,7 +27,7 @@ jobs:
     if: vars.DVD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
@@ -81,7 +81,7 @@ jobs:
       DVD_PORTAL_CLIENT_ID: ${{ vars.DVD_PORTAL_CLIENT_ID }}
       DVD_GRAPH_CERTIFICATE_NAME: ${{ vars.DVD_GRAPH_CERTIFICATE_NAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}

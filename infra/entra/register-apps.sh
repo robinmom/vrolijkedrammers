@@ -109,8 +109,14 @@ ensure_in_user_flow() { # <appId>
   linked="$(graph --method get --url "$GRAPH/identity/authenticationEventsFlows/$FLOW_ID/conditions/applications/includeApplications" \
     --query "value[?appId=='$1'].appId | [0]" -o tsv)"
   if [[ -z "$linked" ]]; then
-    graph --method post --url "$GRAPH/identity/authenticationEventsFlows/$FLOW_ID/conditions/applications/includeApplications" \
-      --body "{\"@odata.type\": \"#microsoft.graph.authenticationConditionApplication\", \"appId\": \"$1\"}" -o none
+    # Een net aangemaakte app is niet direct overal bekend ("application id is invalid"): enkele pogingen.
+    for attempt in 1 2 3 4 5 6; do
+      graph --method post --url "$GRAPH/identity/authenticationEventsFlows/$FLOW_ID/conditions/applications/includeApplications" \
+        --body "{\"@odata.type\": \"#microsoft.graph.authenticationConditionApplication\", \"appId\": \"$1\"}" -o none && return 0
+      echo "   nog niet bekend in de user flow, nieuwe poging ($attempt)…" >&2
+      sleep 20
+    done
+    return 1
   fi
 }
 

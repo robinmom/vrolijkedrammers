@@ -14,6 +14,8 @@
 | B-04 | **Alle accounts op naam van de vereniging**, betaald door de vereniging, ≥ 2 beheerders per account, gedeelde wachtwoordkluis; D-U-N-S en store-accounts direct aanvragen | — |
 | B-05 | **Alleen leden krijgen een account**, met uitzondering van **ouders/verzorgers van minderjarige leden** (alleen hun eigen kinderen, geen ledencontent). **Niet-leden schrijven zich voor de optocht in via een openbaar webformulier zonder account** en worden per e-mail geïnformeerd. **Zelfregistratie in Entra staat uit**; accounts worden pas **na goedkeuring door het bestuur** aangemaakt, in de volgorde e-Boekhouden → lokaal lid → Entra (bestaande leden bij een exacte match lidnummer + e-mail direct) | Nieuwe **ADR-014**; 01, 02, 04, 05, 06, 07, 11, 12, 13, 14, 15 aangepast; OQ-05 en OQ-11 daarmee besloten |
 | B-06 | **Vrije velden in e-Boekhouden** (geboortedatum, inschrijfjaar, status, categorie), eenmalig gevuld vanuit het huidige ledenbestand; vereist een actieve ledenmodule (OQ-03 controleren) | ADR-010 |
+| OQ-40 | **Uitslagen-tegel** toont nieuwsberichten met categorie "Uitslagen" (geen aparte module) | Fase 6 (2026-09-25) |
+| Volgorde | **Fase 7 (livegang) na de functionele fasen**: eerst zoveel mogelijk functionaliteit bouwen in Dev, alleen met test-/fictieve data | [15 §2](15-implementation-plan.md) (2026-09-25) |
 | B-07 | **Planning is niet relevant** voor de documentatie: geen datums of capaciteitsramingen; de fasevolgorde is technisch bepaald | 09 en 15 zonder kalender |
 | Plan | **Implementatieplan (15) goedgekeurd** als basis voor de bouw | Start fase 0 |
 | OQ-74 | **Geen open-sourcelicentie**: de code is publiek zichtbaar, maar alle rechten zijn voorbehouden (geen `LICENSE`-bestand; vermelding in README) | Hergebruik alleen met toestemming van de vereniging |
@@ -61,7 +63,7 @@
 | OQ-25 | Certificate pinning scanner | IMPORTANT | 14 | 🟢 voorstel: nee |
 | OQ-26 | MFA voor gewone leden | IMPORTANT | 3 | 🟢 voorstel: nee |
 | OQ-30 | Jubileumregels | LATER | 20 | 🟡 |
-| OQ-40 | "Uitslagen"-tegel | IMPORTANT | 6 | 🟡 |
+| OQ-40 | "Uitslagen"-tegel | IMPORTANT | 6 | 🟢 besloten: nieuwscategorie "Uitslagen" (2026-09-25) |
 | OQ-41 | Route/kaart optocht | IMPORTANT | 11 | 🟢 voorstel |
 | OQ-42 | Ontbrekende Figma-schermen | IMPORTANT | 6/9/11/13/14 | 🟡 |
 | OQ-43 | Nieuwsbrief e-maildienst | LATER | — | 🟡 |

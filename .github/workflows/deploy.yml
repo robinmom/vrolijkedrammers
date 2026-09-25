@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - name: Publish API
@@ -100,7 +100,7 @@ jobs:
           echo "api-client-id=$(jq -r .apiIdentityClientId.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
           echo "sql-server=$(jq -r .sqlServerFqdn.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - uses: actions/download-artifact@v4

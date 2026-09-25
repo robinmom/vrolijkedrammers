@@ -64,14 +64,7 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   }
 }
 
-// Client-ID van de system-assigned identity; nodig om de databasegebruiker aan te maken (tools/Drammers.DbSetup).
-resource apiIdentity 'Microsoft.ManagedIdentity/identities@2024-11-30' existing = {
-  scope: api
-  name: 'default'
-}
-
 output name string = api.name
-output clientId string = apiIdentity.properties.clientId
 output defaultHostName string = api.properties.defaultHostName
 output principalId string = api.identity.principalId
 output possibleOutboundIpAddresses array = split(api.properties.possibleOutboundIpAddresses, ',')

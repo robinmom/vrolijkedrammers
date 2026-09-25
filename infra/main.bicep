@@ -114,6 +114,14 @@ module api 'modules/appservice.bicep' = {
   }
 }
 
+// Client-ID van de API-identiteit; nodig om de databasegebruiker aan te maken (tools/Drammers.DbSetup).
+module apiIdentity 'modules/site-identity.bicep' = {
+  name: 'api-identity'
+  params: {
+    siteName: api.outputs.name
+  }
+}
+
 module sqlFirewall 'modules/sql-firewall.bicep' = {
   name: 'sql-firewall'
   params: {
@@ -144,7 +152,7 @@ module budget 'modules/budget.bicep' = if (!empty(budgetContactEmails)) {
 }
 
 output apiAppName string = api.outputs.name
-output apiIdentityClientId string = api.outputs.clientId
+output apiIdentityClientId string = apiIdentity.outputs.clientId
 output apiUrl string = 'https://${api.outputs.defaultHostName}'
 // Het beheerportal wordt door de API-app geserveerd (OQ-76: alles in de EU).
 output portalUrl string = 'https://${api.outputs.defaultHostName}/beheer/'

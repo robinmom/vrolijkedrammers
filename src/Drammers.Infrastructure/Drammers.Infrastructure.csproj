@@ -9,6 +9,8 @@
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.1" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.29.2" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
+    <!-- Vanaf SqlClient 7 zit Entra-authenticatie (managed identity) in een apart pakket. -->
+    <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.0" />
   </ItemGroup>
 
   <ItemGroup>

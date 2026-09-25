@@ -219,13 +219,14 @@ td.actions {
 
 .button.secondary {
   background: transparent;
-  color: var(--dvd-text-on-light-button);
-  border: 1px solid var(--dvd-text-on-light-button);
+  /* Linkkleur: donkerblauw in licht, lichtblauw in donker (de kleur voor witte knoppen was in donker onleesbaar). */
+  color: var(--dvd-link-text);
+  border: 1px solid var(--dvd-link-text);
 }
 
 .button.danger {
-  background: var(--dvd-accent-text);
-  color: #fff;
+  background: var(--dvd-action-danger);
+  color: var(--dvd-on-action-primary);
 }
 
 .button.small {

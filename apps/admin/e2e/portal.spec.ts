@@ -102,38 +102,41 @@ for (const path of [
   'configuratie',
   'auditlog',
 ]) {
-  test(`toegankelijkheid (axe) /${path}`, async ({ page }) => {
-    const api = new MockApi();
-    // Het rapport van een run bestaat pas na een start; voor de axe-check één run klaarzetten.
-    api.syncJobs.push({
-      id: 'j-1',
-      status: 'Succeeded',
-      dryRun: true,
-      trigger: 'Manual',
-      requestedAt: '2026-09-25T10:00:00Z',
-      startedAt: null,
-      completedAt: null,
-      totalInSource: 3,
-      created: 1,
-      updated: 1,
-      unchanged: 1,
-      missing: 0,
-      deactivated: 0,
-      reactivated: 0,
-      warnings: 0,
-      errors: 0,
-      conflicts: 0,
-      errorMessage: null,
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`toegankelijkheid (axe, ${scheme === 'light' ? 'licht' : 'donker'}) /${path}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      const api = new MockApi();
+      // Het rapport van een run bestaat pas na een start; voor de axe-check één run klaarzetten.
+      api.syncJobs.push({
+        id: 'j-1',
+        status: 'Succeeded',
+        dryRun: true,
+        trigger: 'Manual',
+        requestedAt: '2026-09-25T10:00:00Z',
+        startedAt: null,
+        completedAt: null,
+        totalInSource: 3,
+        created: 1,
+        updated: 1,
+        unchanged: 1,
+        missing: 0,
+        deactivated: 0,
+        reactivated: 0,
+        warnings: 0,
+        errors: 0,
+        conflicts: 0,
+        errorMessage: null,
+      });
+      await open(page, api, path);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expectNoSeriousA11yIssues(page);
+      // Geen horizontaal scrollen van de hele pagina (op mobiel verschuiven taps anders naar het verkeerde element).
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(1);
     });
-    await open(page, api, path);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expectNoSeriousA11yIssues(page);
-    // Geen horizontaal scrollen van de hele pagina (op mobiel verschuiven taps anders naar het verkeerde element).
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(1);
-  });
+  }
 }
 
 test('bestuur start een dry-run, bekijkt het rapport en handelt een conflict af', async ({ page }) => {

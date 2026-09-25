@@ -29,6 +29,11 @@ describe.each([
     expect(contrastRatio(scheme.onActionPrimary, scheme.actionPrimary)).toBeGreaterThanOrEqual(AA_NORMAL);
   });
 
+  it('tekst op de destructieve knop ≥ 4,5:1 en de knop zelf zichtbaar op canvas (≥ 3:1)', () => {
+    expect(contrastRatio(scheme.onActionPrimary, scheme.actionDanger)).toBeGreaterThanOrEqual(AA_NORMAL);
+    expect(contrastRatio(scheme.actionDanger, scheme.canvas)).toBeGreaterThanOrEqual(AA_LARGE);
+  });
+
   it('tekst op het blauwe hero-vlak ≥ 4,5:1', () => {
     expect(contrastRatio(scheme.onHero, scheme.heroBackground)).toBeGreaterThanOrEqual(AA_NORMAL);
   });

@@ -64,8 +64,8 @@ flowchart LR
 |---|---|
 | STRIDE | Spoofing, Elevation |
 | Scenario | Phishing, wachtwoordhergebruik, overname van het e-mailaccount |
-| Maatregelen | Entra: smart lockout, banned passwords, e-mail-OTP; zelfregistratie uit, accounts alleen via provisioning na goedkeuring of exacte match (ADR-014); MFA verplicht voor het beheerportal; loginmeldingen bij een nieuw device (push/mail); sessies intrekbaar; bij gebruikerswijziging van e-mail in e-Boekhouden → conflict, geen automatische login-e-mailwijziging |
-| Restrisico | M voor gewone leden (geen verplichte MFA), L voor admins |
+| Maatregelen | Entra: smart lockout, banned passwords, e-mail-OTP; zelfregistratie uit, accounts alleen via provisioning na goedkeuring of exacte match (ADR-014); beheerders loggen in met een e-mailcode naar een mailbox met MFA (B-02-MFA), audit op beheeracties; loginmeldingen bij een nieuw device (push/mail); sessies intrekbaar; bij gebruikerswijziging van e-mail in e-Boekhouden → conflict, geen automatische login-e-mailwijziging |
+| Restrisico | M voor gewone leden (geen verplichte MFA); L–M voor admins (afhankelijk van de MFA op hun mailbox; geen afgedwongen MFA in Entra) |
 
 ### T4 – Gestolen telefoon
 | | |
@@ -167,7 +167,7 @@ flowchart LR
 
 | # | Dreiging | Maatregel |
 |---|---|---|
-| T16 | Misbruik pushkanaal (gehackt redacteuraccount stuurt paniekbericht) | MFA admins; "Iedereen" en "Dringend" alleen met `notification.send.urgent`; bevestigingsdialoog; audit; optioneel 4-ogen (OQ-44) |
+| T16 | Misbruik pushkanaal (gehackt redacteuraccount stuurt paniekbericht) | Admins: e-mailcode naar mailbox met MFA; "Iedereen" en "Dringend" alleen met `notification.send.urgent`; bevestigingsdialoog; audit; optioneel 4-ogen (OQ-44) |
 | T17 | Lekken e-Boekhouden-token | Alleen in Key Vault, alleen de MI van de API-app en alleen gelezen door de sync-module; token met minimale rechten; rotatie jaarlijks en bij personeelswissel |
 | T18 | DoS tijdens carnaval (API down) | Offline scanner; App Service autoscale-optie (S1) tijdens carnaval; rate limits; health alerts |
 | T19 | Bot-aanmeldingen / spam via website | Turnstile/hCaptcha, rate limit, handmatige goedkeuring |

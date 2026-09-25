@@ -17,7 +17,7 @@
 |---|---|
 | Identity provider | Microsoft Entra External ID: **één tenant** met aparte app-registraties per omgeving; Dev/Acc beperkt tot testers via *Require user assignment* + claim `environmentAccess` (B-02). **Zelfregistratie uit**; accounts alleen via de provisioning-service na goedkeuring (ADR-014) |
 | App | OIDC Authorization Code + PKCE via systeembrowser (`expo-auth-session` / ASWebAuthenticationSession / Custom Tabs); gebrande hosted pages. Native-auth-SDK's bestaan (nog) niet voor React Native, zie ADR-004 |
-| Portal | MSAL.js (Auth Code + PKCE); **MFA verplicht** via een Conditional Access-policy gericht op de app-registratie van het beheerportal (external tenants kunnen CA niet op een groep richten, wel op een app). Methoden: passkey (FIDO2) aanbevolen, e-mail-OTP als terugval; een authenticator-app wordt voor klantaccounts niet ondersteund (B-02) |
+| Portal | MSAL.js (Auth Code + PKCE) met een eenmalige e-mailcode. **Geen Conditional Access** (B-02-MFA): beheerders gebruiken een vrolijkedrammers.nl-adres waarvan de mailbox met MFA is beveiligd (Microsoft 365). Aanvullend: weinig beheerders, audit op alle beheeracties, meldingen bij gevoelige acties (fase 7); passkeys later |
 | Methoden | E-mail + wachtwoord, e-mail-OTP (wachtwoordloos). Social login optioneel (niet in MVP) |
 | Wachtwoorden | Uitsluitend in Entra (nooit in onze DB). Policy: min. 8 tekens + banned-password-list (Entra); "Wachtwoord opnieuw instellen" via e-mailcode; wachtwoorden nooit zichtbaar, terug te lezen of per mail te verzenden |
 | Brute force | Entra smart lockout + onze rate limits en Turnstile op accountverzoeken, lid-worden en het optochtformulier |

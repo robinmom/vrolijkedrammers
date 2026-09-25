@@ -9,7 +9,7 @@
 | ID | Besluit | Gevolg |
 |---|---|---|
 | B-01 | **Achtergrondtaken in de API-app** (hosted services) | ADR-007 geaccepteerd |
-| B-02 | **Eén Entra External ID-tenant** voor Dev, Acc en Prod, met aparte app-registraties per omgeving. Dev/Acc-apps: **"Require user assignment"** (alleen toegewezen testers) **én** de Dev/Acc-API weigert tokens zonder claim `environmentAccess` (custom attribuut). MFA voor het beheerportal via Conditional Access (passkey aanbevolen) | ADR-004 herzien; 08 aangepast |
+| B-02 | **Eén Entra External ID-tenant** voor Dev, Acc en Prod, met aparte app-registraties per omgeving. Dev/Acc-apps: **"Require user assignment"** (alleen toegewezen testers) **én** de Dev/Acc-API weigert tokens zonder claim `environmentAccess` (custom attribuut). MFA voor het beheerportal via Conditional Access (passkey aanbevolen) — *bijgesteld door B-02-MFA (geen CA)* | ADR-004 herzien; 08 aangepast |
 | B-03 | **Publieke GitHub-repository** (open source) met branch protection, verplichte review op de `production`-environment, CodeQL, secret scanning + push protection, Dependabot | 06, 08, SECURITY.md aangepast |
 | B-04 | **Alle accounts op naam van de vereniging**, betaald door de vereniging, ≥ 2 beheerders per account, gedeelde wachtwoordkluis; D-U-N-S en store-accounts direct aanvragen | — |
 | B-05 | **Alleen leden krijgen een account**, met uitzondering van **ouders/verzorgers van minderjarige leden** (alleen hun eigen kinderen, geen ledencontent). **Niet-leden schrijven zich voor de optocht in via een openbaar webformulier zonder account** en worden per e-mail geïnformeerd. **Zelfregistratie in Entra staat uit**; accounts worden pas **na goedkeuring door het bestuur** aangemaakt, in de volgorde e-Boekhouden → lokaal lid → Entra (bestaande leden bij een exacte match lidnummer + e-mail direct) | Nieuwe **ADR-014**; 01, 02, 04, 05, 06, 07, 11, 12, 13, 14, 15 aangepast; OQ-05 en OQ-11 daarmee besloten |
@@ -22,6 +22,7 @@
 | B-02 (uitgevoerd) | External ID-tenant `vrolijkedrammersapp` aangemaakt (2026-09-24, Europe) met twee noodaccounts | [runbook](runbooks/entra-external-id.md) |
 | OQ-75 | **Azure-regio Sweden Central** voor alle resources (West Europe neemt geen nieuwe klanten aan) | 08, ADR-007, runbook |
 | OQ-76 | **Alles in de EU**: het beheerportal wordt door de API-app geserveerd onder `/beheer` in plaats van door Static Web Apps (die kan niet in de EU-regio's van deze subscription) | 03, 08, 15, ADR-007 |
+| B-02-MFA (2026-09-25) | **Geen Conditional Access / MFA-policy in Entra.** Beheerders loggen in het portal in met een eenmalige e-mailcode naar een eigen vrolijkedrammers.nl-adres; op die mailboxen staat MFA aan in Microsoft 365 (inbraak op het portal vereist dus eerst een mailbox met MFA). Aanvullend: beheerrollen bij weinig personen, audit op alle beheeracties, meldingen bij gevoelige acties (fase 7). Passkeys later als verbetering. OQ-69 vervalt | ADR-004, 06, 07, 11, 15, runbook Entra |
 | B-04 (open actie) | **Tweede persoonlijke beheerder** (Global Administrator in de app-tenant en Owner op de Azure-subscription) nog aan te wijzen | Tot die tijd één persoonlijke beheerder + twee noodaccounts |
 
 ## 0. Indeling
@@ -77,7 +78,7 @@
 | OQ-66 | Contrastaanpassingen design tokens (designer) | IMPORTANT | 0 / 6 | 🟢 toegankelijke varianten |
 | OQ-67 | Custom domains (api./beheer./login.) | IMPORTANT | 7 | 🟡 |
 | OQ-68 | Haalbaarheid hardware-sleutel (Expo native module) | IMPORTANT | 9 (spike) / 13 | 🟡 |
-| OQ-69 | Kosten Conditional Access/MFA in external tenant | IMPORTANT | 3 | 🟡 |
+| OQ-69 | Kosten Conditional Access/MFA in external tenant | IMPORTANT | 3 | 🟢 vervallen (B-02-MFA: geen CA) |
 | OQ-70 | Releasevolgorde | → B-07 | 0 | 🟢 n.v.t. (B-07) |
 | OQ-71 | Pronkzitting 2027 via de app | IMPORTANT | 13 | 🟡 |
 | OQ-72 | Private endpoints/VNet, Front Door WAF | LATER | — | 🟡 |
@@ -129,7 +130,7 @@ Achtergrondtaken in scope: nachtelijke e-Boekhouden-sync, geplande publicatie, p
 | B. 3 external tenants (dev/acc/prod) | Maximale scheiding | Extra beheer van app-registraties en testaccounts, zonder echte winst (geen productiedata buiten prod) |
 | C. Beheerders in een aparte **workforce**-tenant (bijv. een M365-tenant van de vereniging) | Volledige Entra-MFA (authenticator), Conditional Access per groep | Bestuursleden hebben twee identiteiten; de API moet twee issuers accepteren en de gebruikers koppelen; hogere complexiteit; eventueel licentiekosten |
 
-**Aanbeveling: A.** De MFA-policy geldt voor het beheerportal. Rechten blijven in onze eigen RBAC, dus iemand zonder admin-permissions ziet in het portal niets, maar heeft wel een MFA-stap. Daarnaast: *break-glass* tenantbeheerders als interne accounts met passkey. Sms-MFA staat uit (kosten, SIM-swap). Controleer vóór fase 3 de prijs van MFA/CA in external tenants (OQ-69).
+**Aanbeveling: A.** De MFA-policy geldt voor het beheerportal. *(Bijgesteld 2026-09-25, B-02-MFA: geen CA-policy; MFA op de mailboxen van beheerders.)* Rechten blijven in onze eigen RBAC, dus iemand zonder admin-permissions ziet in het portal niets, maar heeft wel een MFA-stap. Daarnaast: *break-glass* tenantbeheerders als interne accounts met passkey. Sms-MFA staat uit (kosten, SIM-swap). Controleer vóór fase 3 de prijs van MFA/CA in external tenants (OQ-69).
 
 | Impact | |
 |---|---|
@@ -275,7 +276,7 @@ Dit bepaalt het `User`-model, de standaardrollen en het activatieproces (fase 3)
 | OQ-21 | Bandjes | Kleur per dag; geen herscan bij geldig bandje; configureerbaar | 14 |
 | OQ-23 | Zonder smartphone | Printkaart + naamcontrole + bandje | 13 |
 | OQ-25 | Pinning scanner | Niet in MVP | 14 |
-| OQ-26 | MFA leden | Nee; wel beheerders (B-02, CA-policy op het portal). Scanners worden beschermd door het trusted device + device-key + biometrie/PIN bij het openen van de scanmodus (CA kan niet op een scope of rol binnen de app worden gericht) | 3 |
+| OQ-26 | MFA leden | Nee. Beheerders: e-mailcode naar een mailbox met MFA (B-02-MFA, geen CA-policy). Scanners worden beschermd door het trusted device + device-key + biometrie/PIN bij het openen van de scanmodus (CA kan niet op een scope of rol binnen de app worden gericht) | 3 |
 | OQ-40 | "Uitslagen"-tegel | Tegel tonen als link naar nieuwscategorie "Uitslagen" (geen aparte module) | 6 |
 | OQ-41 | Route optocht | Statische routekaart + "Open in Kaarten" | 11 |
 | OQ-42 | Ontbrekende Figma-schermen | Designer levert per fase aan: login/activatie + Mijn gegevens (vóór 9), wizard (vóór 11), QR + scanner (vóór 13/14); anders bouwen met bestaande componenten + review | 6/9/11/13/14 |
@@ -288,7 +289,7 @@ Dit bepaalt het `User`-model, de standaardrollen en het activatieproces (fase 3)
 | OQ-66 | Contrast-tokens | Voorstellen uit [17 §7](17-design-system.md#7-toegankelijkheid--bevindingen-en-voorstellen) laten bevestigen door de designer | 0 / 6 |
 | OQ-67 | Custom domains | `api.`, `beheer.`, (optioneel) `login.` via de custom URL domain van External ID; DNS-toegang via B-04 | 7 |
 | OQ-68 | Hardware-sleutel | Technische spike (1–2 dagen) in fase 9 om een ECDSA-P-256-sleutel te genereren en te laten ondertekenen in Secure Enclave/StrongBox via een Expo-module; fallback: server-signed kortlevende QR (ADR-005 optie 4) | 9 (spike) / 13 |
-| OQ-69 | Kosten MFA/CA | Prijspagina External ID controleren; sms uit | 3 |
+| OQ-69 | Kosten MFA/CA | **Vervallen** door B-02-MFA (geen Conditional Access) | 3 |
 | OQ-71 | Pronkzitting 2027 | Via het bestaande kanaal; geen app-ticketing vóór carnaval | 13 |
 | OQ-73 | Attestation scanners | "Should": App Attest/Play Integrity bij registratie van scanners; zonder attestation alleen met expliciete goedkeuring door het bestuur | 14 |
 

@@ -59,13 +59,6 @@ public sealed partial class ActiveUserHandler(
             return "environment-access";
         }
 
-        if (options.RequirePortalMfa && !string.IsNullOrEmpty(options.PortalClientId)
-            && principal.FindFirst("azp")?.Value == options.PortalClientId
-            && !principal.FindAll("amr").Any(c => c.Value == "mfa"))
-        {
-            return "portal-mfa-required";
-        }
-
         return user switch
         {
             null => "unknown-account",

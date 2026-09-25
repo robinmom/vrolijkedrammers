@@ -174,7 +174,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - `GET /me` (profiel, rollen, permissions, features).
 - Accountblokkade (`account_status = Blocked`) en Graph-sessie-intrekking.
 - `LoginHistory` (succes/mislukt, gehashte IP).
-- Entra: user flow met e-mail-OTP (optioneel wachtwoord), **zelfregistratie uit**, branding, CA-policy "MFA" op de portal-app (B-02). Wachtwoordreset via Entra.
+- Entra: user flow met e-mail-OTP (optioneel wachtwoord), **zelfregistratie uit**, branding. Geen CA-policy (B-02-MFA: e-mailcode naar een mailbox met MFA). Wachtwoordreset via Entra.
 
 **Technische componenten.** Microsoft.Identity.Web, Microsoft Graph SDK (app-only, alleen `User.ReadWrite.All` in de external tenant voor revoke/delete; secret/cert in Key Vault), rate limiting (policies uit [05 §7](05-api-design.md#7-rate-limiting-aspnet-core-ratelimiter)).
 
@@ -188,15 +188,15 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Aanvullende DoD.** 07-rbac bijgewerkt als de permissions-seed afwijkt; testaccounts per rol (herkenbare `test+…@`-adressen, groep `Testers`, alleen toegewezen aan Dev/Acc-apps; credentials in de kluis).
 
-**Afhankelijkheden.** Fase 2; B-02, B-05 (ADR-014); OQ-26, OQ-69.
+**Afhankelijkheden.** Fase 2; B-02, B-05 (ADR-014); OQ-26.
 
 **Acceptatiecriteria.**
-- [ ] Zelfregistratie is niet mogelijk; een beheerder die via de bootstrap is aangemaakt, logt in met een e-mailcode en ziet via `GET /me` zijn/haar rollen en permissions.
-- [ ] Een Entra-account dat buiten de provisioning om bestaat (onbekende `oid`), krijgt 403 op alle ingelogde endpoints.
-- [ ] Een beheerder kent de rol Redactie toe; binnen 5 minuten (zelfde instantie: direct) heeft de gebruiker `news.manage`; de wijziging staat in de auditlog.
-- [ ] Het openen van de portal-app vraagt MFA; de API zelf accepteert tokens zonder MFA-claim alleen voor niet-portalclients.
-- [ ] Een geblokkeerd account krijgt 403 op alle ingelogde endpoints en de sessies zijn ingetrokken.
-- [ ] Er bestaat geen endpoint zonder expliciete autorisatie-annotatie (reflectietest groen).
+- [x] Zelfregistratie is niet mogelijk; een beheerder die via de bootstrap is aangemaakt, logt in met een e-mailcode en ziet via `GET /me` zijn/haar rollen en permissions. *(2026-09-25, live in Dev)*
+- [x] Een Entra-account dat buiten de provisioning om bestaat (onbekende `oid`), krijgt 403 op alle ingelogde endpoints. *(live in Dev + integratietest)*
+- [x] Een beheerder kent de rol Redactie toe; binnen 5 minuten (zelfde instantie: direct) heeft de gebruiker `news.manage`; de wijziging staat in de auditlog. *(live in Dev; direct effect en auditregel in `RoleAdministrationTests`)*
+- [x] ~~Het openen van de portal-app vraagt MFA~~ — vervallen door besluit B-02-MFA (2026-09-25): geen Conditional Access; beheerders loggen in met een e-mailcode naar een mailbox met MFA. Tokens bevatten geen `amr`, dus een API-controle is niet mogelijk.
+- [x] Een geblokkeerd account krijgt 403 op alle ingelogde endpoints en de sessies zijn ingetrokken. *(live in Dev: Entra-account uitgeschakeld, sessies ingetrokken; deblokkeren herstelt)*
+- [x] Er bestaat geen endpoint zonder expliciete autorisatie-annotatie (reflectietest groen).
 
 ---
 
@@ -204,7 +204,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Doel.** Een werkend, beveiligd beheerportal met de generieke functies waarop latere beheerschermen aansluiten.
 
-**Functionaliteit.** Login (MSAL, MFA), layout en navigatie volgens het menu uit [02 §6](02-functional-design.md#6-beheerportal--menu-en-release), waarbij menu-items verborgen zijn zonder permission. Dashboard (placeholder-kerncijfers, systeemstatus uit `/health/ready`). Gebruikers en rollen (overzicht, rollen toekennen met geldigheid, beheerdersaccount aanmaken via de provisioning-kern uit fase 3). Rollen/rechten-beheer. Auditlog-viewer (filters, read-only). Configuratie (feature flags, minimum-appversie, maintenance). Carnavalsjaar-beheer. Generieke tabelcomponent (sorteren, filteren, kolomkeuze, CSV/Excel-export via de API), formuliercomponenten, bevestigingsdialogen en foutweergave (ProblemDetails).
+**Functionaliteit.** Login (MSAL, e-mailcode), layout en navigatie volgens het menu uit [02 §6](02-functional-design.md#6-beheerportal--menu-en-release), waarbij menu-items verborgen zijn zonder permission. Dashboard (placeholder-kerncijfers, systeemstatus uit `/health/ready`). Gebruikers en rollen (overzicht, rollen toekennen met geldigheid, beheerdersaccount aanmaken via de provisioning-kern uit fase 3). Rollen/rechten-beheer. Auditlog-viewer (filters, read-only). Configuratie (feature flags, minimum-appversie, maintenance). Carnavalsjaar-beheer. Generieke tabelcomponent (sorteren, filteren, kolomkeuze, CSV/Excel-export via de API), formuliercomponenten, bevestigingsdialogen en foutweergave (ProblemDetails).
 
 **Technische componenten.** React + Vite, TanStack Router/Query/Table, MSAL.js, gegenereerde API-client, design tokens als CSS-variabelen, Playwright + axe-core, CSP en security headers door de API (`PortalHosting`).
 
@@ -221,7 +221,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 3.
 
 **Acceptatiecriteria.**
-- [ ] Een bestuurder logt in met MFA, kent een rol toe en ziet deze actie in de auditlog.
+- [ ] Een bestuurder logt in (e-mailcode), kent een rol toe en ziet deze actie in de auditlog.
 - [ ] Een gebruiker zonder beheer-permissions ziet een lege navigatie met de melding "Geen beheerrechten" en kan geen admin-API aanroepen (403).
 - [ ] Een carnavalsjaar aanmaken en activeren lukt; er is altijd precies één actief jaar.
 - [ ] Exporteren van de gebruikerslijst levert een Excel met Nederlandse kolomnamen op en een auditregel.
@@ -652,7 +652,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **API-endpoints.** Geen nieuwe.
 
-**Security requirements.** Geen high/critical findings open; alle secrets < 12 maanden oud; beheerders hebben MFA (passkey) actief; scanner-devices zijn goedgekeurd en getest.
+**Security requirements.** Geen high/critical findings open; alle secrets < 12 maanden oud; de mailboxen van beheerders hebben MFA (B-02-MFA); scanner-devices zijn goedgekeurd en getest.
 
 **Tests.** Loadtest-rapport, pentest-rapport, DR-rapport, verslag van de generale repetitie.
 

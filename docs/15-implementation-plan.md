@@ -262,7 +262,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Uitvoering (2026-09-25).**
 - **Mediaverwerking via de bestaande outbox** (bericht `media.process-photo`) in plaats van een aparte tabel `content.MediaJob`. Dat is dezelfde wachtrij met claimen, nieuwe pogingen en herstel na een crash (ADR-007).
 - **Malwarescan** via `IMalwareScanner`. Dev en Acc slaan de scan over, met dezelfde flow (OQ-65); Defender for Storage in Prod volgt in fase 7.
-- **Beeldverwerking** met ImageSharp (Six Labors Split License: gratis voor non-profits). Toegestaan zijn JPEG, PNG en WebP, bepaald op inhoud (magic bytes); HEIC wordt niet ondersteund. Derivaten van 1600 en 400 px, zonder EXIF, GPS, IPTC en XMP. Ook event- en nieuwsafbeeldingen worden zonder metadata opgeslagen.
+- **Beeldverwerking** met ImageSharp 3.1 (Six Labors Split License: gratis voor non-profits). Versie 4 eist bij een Release-build een licentiesleutel; daarom 3.1. Toegestaan zijn JPEG, PNG en WebP, bepaald op inhoud (magic bytes); HEIC wordt niet ondersteund. Derivaten van 1600 en 400 px, zonder EXIF, GPS, IPTC en XMP. Ook event- en nieuwsafbeeldingen worden zonder metadata opgeslagen.
 - **Tekst** in Markdown; de API levert gesanitizede HTML (Markdig zonder ruwe HTML + HtmlSanitizer).
 - **iCal** met een eigen, kleine RFC 5545-writer in plaats van Ical.Net.
 - **Nieuwe blob-container `content`** voor afbeeldingen en bijlagen van events en nieuws.

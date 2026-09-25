@@ -5,7 +5,11 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ThemeProvider } from '../theme/ThemeProvider';
+import { StyleSheet, View } from 'react-native';
+import { QueryProvider } from '../api/QueryProvider';
+import { AppGate } from '../shell/AppGate';
+import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
+import { OfflineBanner } from '../ui';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,8 +35,27 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <QueryProvider>
+        <StatusBar style="auto" />
+        <Shell />
+      </QueryProvider>
     </ThemeProvider>
   );
 }
+
+function Shell() {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.flex, { backgroundColor: colors.canvas }]}>
+      <AppGate>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }} />
+      </AppGate>
+      {/* Als laatste gerenderd: de banner ligt bovenop de schermen en verschuift hun layout niet. */}
+      <OfflineBanner />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+});

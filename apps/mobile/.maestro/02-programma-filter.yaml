@@ -1,0 +1,11 @@
+# Programma: filterchips en detail.
+appId: nl.vrolijkedrammers.app
+---
+- launchApp
+- tapOn: "Programma"
+- assertVisible: "Seizoen .*"
+- tapOn: "Alle"
+- tapOn:
+    id: "event-card"
+    index: 0
+- assertVisible: "Toevoegen aan agenda"

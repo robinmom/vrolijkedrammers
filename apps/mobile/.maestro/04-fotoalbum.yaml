@@ -1,0 +1,15 @@
+# Meer → Foto's → album → viewer.
+appId: nl.vrolijkedrammers.app
+---
+- launchApp
+- tapOn: "Meer"
+- tapOn: "Foto's"
+- assertVisible: "Albums"
+- tapOn:
+    id: "album-card"
+    index: 0
+- tapOn:
+    id: "photo"
+    index: 0
+- assertVisible: "1 / .*"
+- tapOn: "Sluiten"

@@ -5,10 +5,12 @@ using Azure.Storage.Blobs;
 using Drammers.Infrastructure.Auditing;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Content;
+using Drammers.Infrastructure.EBoekhouden;
 using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Health;
 using Drammers.Infrastructure.Identity;
 using Drammers.Infrastructure.Identity.Entra;
+using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Messaging;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Scheduling;
@@ -63,6 +65,7 @@ public static class DependencyInjection
             {
                 services.AddDrammersWorker();
                 services.AddRecurringJob<ContentPublisherJob>(ContentPublisherJob.JobName, ContentPublisherJob.Interval);
+                services.AddRecurringJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Interval);
             }
         }
 
@@ -78,6 +81,11 @@ public static class DependencyInjection
         {
             services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();
         }
+
+        // e-Boekhouden (ADR-010): token uit Key Vault; leegmaken van leden alleen in Dev en Acc.
+        services.Configure<EBoekhoudenOptions>(configuration.GetSection(EBoekhoudenOptions.SectionName));
+        services.AddHttpClient<IEBoekhoudenClient, EBoekhoudenClient>(http => http.Timeout = TimeSpan.FromSeconds(60));
+        services.Configure<MemberDataOptions>(o => o.AllowPurge = configuration["Auth:RequiredEnvironmentAccess"] is "dev" or "acc");
 
         if (options.KeyVaultUri is not null)
         {
@@ -125,6 +133,11 @@ public static class DependencyInjection
         services.AddScoped<ContentAdministration>();
         services.AddScoped<ContentFiles>();
         services.AddScoped<IOutboxMessageHandler, PhotoProcessingHandler>();
+        services.AddScoped<MemberSync>();
+        services.AddScoped<MemberSyncSettings>();
+        services.AddScoped<MemberAdministration>();
+        services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
+        services.TryAddSingleton<IEBoekhoudenClient, UnconfiguredEBoekhoudenClient>();
         services.TryAddSingleton<IMalwareScanner, NoMalwareScanner>();
         services.TryAddSingleton<IFileStore, UnconfiguredFileStore>();
         return services;

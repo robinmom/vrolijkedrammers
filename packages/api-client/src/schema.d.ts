@@ -835,6 +835,616 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    status?: components["schemas"]["MembershipStatus"];
+                    syncState?: components["schemas"]["MemberSyncState"];
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfMemberSummaryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfMemberSummaryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfMemberSummaryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberDetailResponse"];
+                        "application/json": components["schemas"]["MemberDetailResponse"];
+                        "text/json": components["schemas"]["MemberDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberLocalUpdateRequest"];
+                    "text/json": components["schemas"]["MemberLocalUpdateRequest"];
+                    "application/*+json": components["schemas"]["MemberLocalUpdateRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/confirm-inactive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ledenlijst als Excel; de export wordt geaudit (aantal en filter, geen namen). */
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    status?: components["schemas"]["MembershipStatus"];
+                    syncState?: components["schemas"]["MemberSyncState"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alle leden en syncgegevens verwijderen en de nachtelijke sync uitzetten. Alleen in Dev en Acc; vraagt de tekst
+         *     "LEDEN VERWIJDEREN" ter bevestiging.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberPurgeRequest"];
+                    "text/json": components["schemas"]["MemberPurgeRequest"];
+                    "application/*+json": components["schemas"]["MemberPurgeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberPurgeResponse"];
+                        "application/json": components["schemas"]["MemberPurgeResponse"];
+                        "text/json": components["schemas"]["MemberPurgeResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start een run (standaard een dry-run); de worker voert hem uit. Volg de status via `/sync-jobs/{id}`. */
+        post: {
+            parameters: {
+                query?: {
+                    dryRun?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sync-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfSyncJobResponse"];
+                        "application/json": components["schemas"]["PagedResultOfSyncJobResponse"];
+                        "text/json": components["schemas"]["PagedResultOfSyncJobResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sync-jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SyncJobResponse"];
+                        "application/json": components["schemas"]["SyncJobResponse"];
+                        "text/json": components["schemas"]["SyncJobResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sync-jobs/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    action?: components["schemas"]["SyncItemAction"];
+                    includeUnchanged?: boolean;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfSyncJobItemResponse"];
+                        "application/json": components["schemas"]["PagedResultOfSyncJobItemResponse"];
+                        "text/json": components["schemas"]["PagedResultOfSyncJobItemResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sync-conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["SyncConflictStatus"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SyncConflictResponse"][];
+                        "application/json": components["schemas"]["SyncConflictResponse"][];
+                        "text/json": components["schemas"]["SyncConflictResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sync-conflicts/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ResolveConflictRequest"];
+                    "text/json": components["schemas"]["ResolveConflictRequest"];
+                    "application/*+json": components["schemas"]["ResolveConflictRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/member-mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberFieldMapping"];
+                        "application/json": components["schemas"]["MemberFieldMapping"];
+                        "text/json": components["schemas"]["MemberFieldMapping"];
+                    };
+                };
+            };
+        };
+        /** Mapping van de vrije velden wijzigen; daarna eerst een dry-run doen (ADR-010). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberFieldMapping"];
+                    "text/json": components["schemas"]["MemberFieldMapping"];
+                    "application/*+json": components["schemas"]["MemberFieldMapping"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/news": {
         parameters: {
             query?: never;
@@ -3000,6 +3610,114 @@ export interface components {
             enabled: boolean;
             message: null | string;
         };
+        MemberAccountResponse: {
+            /** Format: uuid */
+            userId: string;
+            email: string;
+            accountStatus: string;
+            /** Format: date-time */
+            lastLoginAt: null | string;
+        };
+        MemberDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            memberNumber: string;
+            /** Format: int32 */
+            ebMemberId: null | number;
+            fullName: string;
+            firstName: null | string;
+            namePrefix: null | string;
+            lastName: null | string;
+            nameCorrectedManually: boolean;
+            salutation: null | string;
+            gender: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            country: null | string;
+            email: null | string;
+            phone: null | string;
+            mobilePhone: null | string;
+            /** Format: date */
+            birthDate: null | string;
+            /** Format: int16 */
+            joinYear: null | number;
+            ebStatusRaw: null | string;
+            memberCategory: null | string;
+            syncedStatus: components["schemas"]["MembershipStatus"];
+            localStatusOverride: null | components["schemas"]["MembershipStatus"];
+            effectiveStatus: components["schemas"]["MembershipStatus"];
+            /** Format: date */
+            membershipValidFrom: null | string;
+            /** Format: date */
+            membershipValidTo: null | string;
+            syncState: components["schemas"]["MemberSyncState"];
+            /** Format: date-time */
+            ebLastSeenAt: null | string;
+            /** Format: date-time */
+            ebMissingSince: null | string;
+            fieldSources: components["schemas"]["MemberFieldSourcesResponse"];
+            account: null | components["schemas"]["MemberAccountResponse"];
+        };
+        /**
+         * @description Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld
+         *     betekent "niet gemapt": het gegeven wordt dan lokaal beheerd. Opgeslagen in `config.AppConfiguration`.
+         */
+        MemberFieldMapping: {
+            birthDate: null | string;
+            joinYear: null | string;
+            status: null | string;
+            category: null | string;
+            inactiveStatusValues: string[];
+        };
+        MemberFieldSourcesResponse: {
+            birthDateFromEBoekhouden: boolean;
+            joinYearFromEBoekhouden: boolean;
+            statusFromEBoekhouden: boolean;
+            categoryFromEBoekhouden: boolean;
+        };
+        MemberLocalUpdateRequest: {
+            localStatusOverride: null | components["schemas"]["MembershipStatus"];
+            /** Format: date */
+            membershipValidFrom: null | string;
+            /** Format: date */
+            membershipValidTo: null | string;
+            firstName: null | string;
+            namePrefix: null | string;
+            lastName: null | string;
+            /** Format: date */
+            birthDate: null | string;
+            /** Format: int16 */
+            joinYear: null | number;
+        };
+        MemberPurgeRequest: {
+            confirmation: string;
+        };
+        MemberPurgeResponse: {
+            /** Format: int32 */
+            members: number;
+            /** Format: int32 */
+            syncJobs: number;
+            /** Format: int32 */
+            unlinkedAccounts: number;
+        };
+        /** @enum {unknown} */
+        MembershipStatus: "Active" | "Inactive" | "Suspended" | "Deceased";
+        MemberSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            memberNumber: string;
+            fullName: string;
+            email: null | string;
+            city: null | string;
+            status: components["schemas"]["MembershipStatus"];
+            syncState: components["schemas"]["MemberSyncState"];
+            /** Format: int16 */
+            joinYear: null | number;
+            hasAccount: boolean;
+        };
+        /** @enum {unknown} */
+        MemberSyncState: "InSync" | "Missing" | "Conflict";
         MeResponse: {
             /** Format: uuid */
             id: string;
@@ -3072,6 +3790,16 @@ export interface components {
             totalCount: number;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfMemberSummaryResponse: {
+            items: components["schemas"]["MemberSummaryResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfNewsSummaryResponse: {
             items: components["schemas"]["NewsSummaryResponse"][];
             /** Format: int32 */
@@ -3084,6 +3812,26 @@ export interface components {
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfPhotoAlbumResponse: {
             items: components["schemas"]["PhotoAlbumResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfSyncJobItemResponse: {
+            items: components["schemas"]["SyncJobItemResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfSyncJobResponse: {
+            items: components["schemas"]["SyncJobResponse"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -3175,6 +3923,10 @@ export interface components {
         };
         /** @enum {unknown} */
         PublicationStatus: "Draft" | "Scheduled" | "Published" | "Archived";
+        ResolveConflictRequest: {
+            resolution: components["schemas"]["SyncConflictStatus"];
+            note: null | string;
+        };
         /** @enum {unknown} */
         RetentionAction: "Delete" | "Anonymize" | "Aggregate";
         RetentionPolicyRequest: {
@@ -3214,6 +3966,77 @@ export interface components {
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];
         };
+        SyncConflictResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            syncJobId: string;
+            type: components["schemas"]["SyncConflictType"];
+            memberNumber: null | string;
+            /** Format: uuid */
+            memberId: null | string;
+            details: string;
+            status: components["schemas"]["SyncConflictStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            resolvedAt: null | string;
+            resolutionNote: null | string;
+        };
+        /** @enum {unknown} */
+        SyncConflictStatus: "Open" | "Accepted" | "Ignored";
+        /** @enum {unknown} */
+        SyncConflictType: "DuplicateMemberNumber" | "MemberNumberChanged" | "EmailChangedForActiveAccount" | "MassDeletionGuard";
+        /** @enum {unknown} */
+        SyncItemAction: "Created" | "Updated" | "Unchanged" | "Missing" | "Deactivated" | "Reactivated" | "Warning" | "Error" | "Conflict";
+        SyncJobItemResponse: {
+            /** Format: int64 */
+            id: number;
+            memberNumber: string;
+            /** Format: uuid */
+            memberId: null | string;
+            action: components["schemas"]["SyncItemAction"];
+            changedFields: null | string;
+            message: null | string;
+        };
+        SyncJobResponse: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["SyncJobStatus"];
+            dryRun: boolean;
+            trigger: components["schemas"]["SyncTrigger"];
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: date-time */
+            startedAt: null | string;
+            /** Format: date-time */
+            completedAt: null | string;
+            /** Format: int32 */
+            totalInSource: number;
+            /** Format: int32 */
+            created: number;
+            /** Format: int32 */
+            updated: number;
+            /** Format: int32 */
+            unchanged: number;
+            /** Format: int32 */
+            missing: number;
+            /** Format: int32 */
+            deactivated: number;
+            /** Format: int32 */
+            reactivated: number;
+            /** Format: int32 */
+            warnings: number;
+            /** Format: int32 */
+            errors: number;
+            /** Format: int32 */
+            conflicts: number;
+            errorMessage: null | string;
+        };
+        /** @enum {unknown} */
+        SyncJobStatus: "Queued" | "Running" | "Succeeded" | "SucceededWithWarnings" | "Conflict" | "Failed";
+        /** @enum {unknown} */
+        SyncTrigger: "Scheduled" | "Manual";
         UpdateRoleRequest: {
             name: string;
             description: null | string;

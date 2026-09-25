@@ -385,6 +385,12 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Aanvullende DoD.** Dry-run-rapport tegen de echte (of test-)administratie gereviewd door de secretaris.
 
+**Uitvoering (2026-09-25).** In drie delen: 8a backend, 8b portal, 8c groepen en rapportage.
+- **8a** — `membership.Member`, `import.SyncJob/SyncJobItem/SyncConflict`, FK `identity.User.member_id`; e-Boekhouden-client (alleen lezen, ≤ 5 req/s, retry op 429/5xx, sessie intrekken), sync volgens ADR-010 via de outbox (max. één run tegelijk), dry-run, massadeletie-guard (> 10 %), conflicten, naam-parser, mapping van vrije velden in `config.AppConfiguration`, nachtelijke run om 03:00 achter de feature flag `members-sync`.
+- **Echt ledenbestand in Dev** (besluit OQ-04): de functie **Alle leden verwijderen** (`POST /admin/members/purge`, recht `member.purge`) verwijdert leden, syncruns en conflicten, ontkoppelt accounts en zet de nachtelijke sync uit; alleen in Dev/Acc. Zie de [runbook](runbooks/eboekhouden-koppeling.md).
+- **Contracttests** met een gestubde `HttpMessageHandler` in plaats van WireMock.Net (lichter, zelfde dekking: sessie, paginering, headers, retry, afmelden); de synclogica is getest met een e-Boekhouden in het geheugen tegen een echte SQL Server.
+- **Dataminimalisatie**: het model van de client heeft geen velden voor IBAN, BIC, mandaat, notitie of factuuradressen; die worden dus nooit ingelezen.
+
 **Afhankelijkheden.** Fase 5 (audiences uitbreiden); fase 7 alleen voor de inzet met echte ledengegevens in Prod; **B-06**, OQ-03, OQ-04, OQ-06, OQ-50 (Prod).
 
 **Acceptatiecriteria.**

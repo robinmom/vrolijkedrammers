@@ -1038,6 +1038,754 @@
         }
       }
     },
+    "/api/v1/admin/members": {
+      "get": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MembershipStatus"
+            }
+          },
+          {
+            "name": "syncState",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MemberSyncState"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfMemberSummaryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfMemberSummaryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfMemberSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}": {
+      "get": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDetailResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDetailResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberLocalUpdateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberLocalUpdateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberLocalUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/confirm-inactive": {
+      "post": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/export": {
+      "get": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Ledenlijst als Excel; de export wordt geaudit (aantal en filter, geen namen).",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MembershipStatus"
+            }
+          },
+          {
+            "name": "syncState",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MemberSyncState"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/purge": {
+      "post": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Alle leden en syncgegevens verwijderen en de nachtelijke sync uitzetten. Alleen in Dev en Acc; vraagt de tekst\n\"LEDEN VERWIJDEREN\" ter bevestiging.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPurgeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPurgeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPurgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPurgeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPurgeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPurgeResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/import": {
+      "post": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "summary": "Start een run (standaard een dry-run); de worker voert hem uit. Volg de status via `/sync-jobs/{id}`.",
+        "parameters": [
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sync-jobs": {
+      "get": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfSyncJobResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfSyncJobResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfSyncJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sync-jobs/{id}": {
+      "get": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncJobResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncJobResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncJobResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sync-jobs/{id}/items": {
+      "get": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SyncItemAction"
+            }
+          },
+          {
+            "name": "includeUnchanged",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfSyncJobItemResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfSyncJobItemResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfSyncJobItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sync-conflicts": {
+      "get": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SyncConflictStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyncConflictResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyncConflictResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyncConflictResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sync-conflicts/{id}/resolve": {
+      "post": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveConflictRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveConflictRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveConflictRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/config/member-mapping": {
+      "get": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberFieldMapping"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberFieldMapping"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberFieldMapping"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "summary": "Mapping van de vrije velden wijzigen; daarna eerst een dry-run doen (ADR-010).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberFieldMapping"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberFieldMapping"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberFieldMapping"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/news": {
       "get": {
         "tags": [
@@ -4434,6 +5182,489 @@
           }
         }
       },
+      "MemberAccountResponse": {
+        "required": [
+          "userId",
+          "email",
+          "accountStatus",
+          "lastLoginAt"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "accountStatus": {
+            "type": "string"
+          },
+          "lastLoginAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "MemberDetailResponse": {
+        "required": [
+          "id",
+          "memberNumber",
+          "ebMemberId",
+          "fullName",
+          "firstName",
+          "namePrefix",
+          "lastName",
+          "nameCorrectedManually",
+          "salutation",
+          "gender",
+          "addressLine",
+          "postalCode",
+          "city",
+          "country",
+          "email",
+          "phone",
+          "mobilePhone",
+          "birthDate",
+          "joinYear",
+          "ebStatusRaw",
+          "memberCategory",
+          "syncedStatus",
+          "localStatusOverride",
+          "effectiveStatus",
+          "membershipValidFrom",
+          "membershipValidTo",
+          "syncState",
+          "ebLastSeenAt",
+          "ebMissingSince",
+          "fieldSources",
+          "account"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "ebMemberId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "namePrefix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nameCorrectedManually": {
+            "type": "boolean"
+          },
+          "salutation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "gender": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "addressLine": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mobilePhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "birthDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "joinYear": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int16"
+          },
+          "ebStatusRaw": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "memberCategory": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "syncedStatus": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "localStatusOverride": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MembershipStatus"
+              }
+            ]
+          },
+          "effectiveStatus": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "membershipValidFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "membershipValidTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "syncState": {
+            "$ref": "#/components/schemas/MemberSyncState"
+          },
+          "ebLastSeenAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "ebMissingSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "fieldSources": {
+            "$ref": "#/components/schemas/MemberFieldSourcesResponse"
+          },
+          "account": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MemberAccountResponse"
+              }
+            ]
+          }
+        }
+      },
+      "MemberFieldMapping": {
+        "required": [
+          "birthDate",
+          "joinYear",
+          "status",
+          "category",
+          "inactiveStatusValues"
+        ],
+        "type": "object",
+        "properties": {
+          "birthDate": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "joinYear": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "category": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "inactiveStatusValues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld\nbetekent \"niet gemapt\": het gegeven wordt dan lokaal beheerd. Opgeslagen in `config.AppConfiguration`."
+      },
+      "MemberFieldSourcesResponse": {
+        "required": [
+          "birthDateFromEBoekhouden",
+          "joinYearFromEBoekhouden",
+          "statusFromEBoekhouden",
+          "categoryFromEBoekhouden"
+        ],
+        "type": "object",
+        "properties": {
+          "birthDateFromEBoekhouden": {
+            "type": "boolean"
+          },
+          "joinYearFromEBoekhouden": {
+            "type": "boolean"
+          },
+          "statusFromEBoekhouden": {
+            "type": "boolean"
+          },
+          "categoryFromEBoekhouden": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberLocalUpdateRequest": {
+        "required": [
+          "localStatusOverride",
+          "membershipValidFrom",
+          "membershipValidTo",
+          "firstName",
+          "namePrefix",
+          "lastName",
+          "birthDate",
+          "joinYear"
+        ],
+        "type": "object",
+        "properties": {
+          "localStatusOverride": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MembershipStatus"
+              }
+            ]
+          },
+          "membershipValidFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "membershipValidTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "namePrefix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "birthDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "joinYear": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int16"
+          }
+        }
+      },
+      "MemberPurgeRequest": {
+        "required": [
+          "confirmation"
+        ],
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          }
+        }
+      },
+      "MemberPurgeResponse": {
+        "required": [
+          "members",
+          "syncJobs",
+          "unlinkedAccounts"
+        ],
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "syncJobs": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unlinkedAccounts": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MembershipStatus": {
+        "enum": [
+          "Active",
+          "Inactive",
+          "Suspended",
+          "Deceased"
+        ]
+      },
+      "MemberSummaryResponse": {
+        "required": [
+          "id",
+          "memberNumber",
+          "fullName",
+          "email",
+          "city",
+          "status",
+          "syncState",
+          "joinYear",
+          "hasAccount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "syncState": {
+            "$ref": "#/components/schemas/MemberSyncState"
+          },
+          "joinYear": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int16"
+          },
+          "hasAccount": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberSyncState": {
+        "enum": [
+          "InSync",
+          "Missing",
+          "Conflict"
+        ]
+      },
       "MeResponse": {
         "required": [
           "id",
@@ -4702,6 +5933,36 @@
         },
         "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
       },
+      "PagedResultOfMemberSummaryResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberSummaryResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
+      },
       "PagedResultOfNewsSummaryResponse": {
         "required": [
           "items",
@@ -4745,6 +6006,66 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PhotoAlbumResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
+      },
+      "PagedResultOfSyncJobItemResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncJobItemResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
+      },
+      "PagedResultOfSyncJobResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncJobResponse"
             }
           },
           "page": {
@@ -5107,6 +6428,24 @@
           "Archived"
         ]
       },
+      "ResolveConflictRequest": {
+        "required": [
+          "resolution",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "$ref": "#/components/schemas/SyncConflictStatus"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RetentionAction": {
         "enum": [
           "Delete",
@@ -5255,6 +6594,258 @@
           }
         }
       },
+      "SyncConflictResponse": {
+        "required": [
+          "id",
+          "syncJobId",
+          "type",
+          "memberNumber",
+          "memberId",
+          "details",
+          "status",
+          "createdAt",
+          "resolvedAt",
+          "resolutionNote"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "syncJobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/SyncConflictType"
+          },
+          "memberNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "memberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "details": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SyncConflictStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "resolutionNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SyncConflictStatus": {
+        "enum": [
+          "Open",
+          "Accepted",
+          "Ignored"
+        ]
+      },
+      "SyncConflictType": {
+        "enum": [
+          "DuplicateMemberNumber",
+          "MemberNumberChanged",
+          "EmailChangedForActiveAccount",
+          "MassDeletionGuard"
+        ]
+      },
+      "SyncItemAction": {
+        "enum": [
+          "Created",
+          "Updated",
+          "Unchanged",
+          "Missing",
+          "Deactivated",
+          "Reactivated",
+          "Warning",
+          "Error",
+          "Conflict"
+        ]
+      },
+      "SyncJobItemResponse": {
+        "required": [
+          "id",
+          "memberNumber",
+          "memberId",
+          "action",
+          "changedFields",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "memberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "action": {
+            "$ref": "#/components/schemas/SyncItemAction"
+          },
+          "changedFields": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SyncJobResponse": {
+        "required": [
+          "id",
+          "status",
+          "dryRun",
+          "trigger",
+          "requestedAt",
+          "startedAt",
+          "completedAt",
+          "totalInSource",
+          "created",
+          "updated",
+          "unchanged",
+          "missing",
+          "deactivated",
+          "reactivated",
+          "warnings",
+          "errors",
+          "conflicts",
+          "errorMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SyncJobStatus"
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/SyncTrigger"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "totalInSource": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unchanged": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "missing": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deactivated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reactivated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warnings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "conflicts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SyncJobStatus": {
+        "enum": [
+          "Queued",
+          "Running",
+          "Succeeded",
+          "SucceededWithWarnings",
+          "Conflict",
+          "Failed"
+        ]
+      },
+      "SyncTrigger": {
+        "enum": [
+          "Scheduled",
+          "Manual"
+        ]
+      },
       "UpdateRoleRequest": {
         "required": [
           "name",
@@ -5353,6 +6944,12 @@
     },
     {
       "name": "AdminEvents"
+    },
+    {
+      "name": "AdminMembers"
+    },
+    {
+      "name": "AdminMemberSync"
     },
     {
       "name": "AdminNews"

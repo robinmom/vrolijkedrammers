@@ -56,10 +56,10 @@ public static class DefaultRoles
              P.EventManage, P.NewsManage, P.PhotoManage, P.NotificationSend, P.NotificationSendUrgent, P.ParadeRegister,
              P.ParadeRead, P.ParadeManage, P.ParadeManageFinal, P.ParadeAssignStartNumber, P.ParadeImportArrivalTimes,
              P.ParadeExport, P.ParadeConfig, P.TicketScan, P.TicketScanDetails, P.TicketRead, P.TicketManage,
-             P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage]),
+             P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),
         new(12, BeheerderIt, "Beheerder (IT)", "Technisch beheer, zonder inhoudelijke rechten op betalingen en goedkeuringen (systeemrol)",
             IsSystem: true, IsAssignableBySync: false,
-            [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage]),
+            [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>
@@ -94,6 +94,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email);
         builder.Property(u => u.DisplayName).HasMaxLength(200);
         builder.HasIndex(u => u.MemberId).IsUnique().HasFilter("[member_id] IS NOT NULL");
+        builder.HasOne<Modules.Membership.Members.Member>().WithMany().HasForeignKey(u => u.MemberId).OnDelete(DeleteBehavior.SetNull);
         builder.Property(u => u.PermissionsVersion).IsConcurrencyToken();
         builder.HasMany(u => u.Roles).WithOne().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
     }

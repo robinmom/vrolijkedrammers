@@ -25,7 +25,7 @@ public sealed class User : IAuditable
 
     public required string DisplayName { get; set; }
 
-    /// <summary>Gekoppeld lid; de FK naar <c>membership.Member</c> volgt in fase 8.</summary>
+    /// <summary>Gekoppeld lid (FK naar <c>membership.Member</c>, bij verwijderen van het lid leeg).</summary>
     public Guid? MemberId { get; set; }
 
     public AccountStatus AccountStatus { get; set; }

@@ -32,10 +32,12 @@ public sealed class GraphOptions
     public string? IssuerDomain { get; set; }
 
     /// <summary>
-    /// Optioneel: naam van het Key Vault-certificaat (terugvaloptie). Zonder certificaat meldt de app zich aan met zijn
-    /// managed identity via workload identity federation (geen secret).
+    /// Naam van het Key Vault-certificaat waarmee de provisioning-app zich aanmeldt. Federatie met de managed identity
+    /// is niet mogelijk naar een external tenant (AADSTS700236); het certificaat verlaat Key Vault niet.
     /// </summary>
     public string? CertificateName { get; set; }
 
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(TenantId) && !string.IsNullOrWhiteSpace(ClientId) && !string.IsNullOrWhiteSpace(IssuerDomain);
+    public bool IsConfigured =>
+        !string.IsNullOrWhiteSpace(TenantId) && !string.IsNullOrWhiteSpace(ClientId)
+        && !string.IsNullOrWhiteSpace(IssuerDomain) && !string.IsNullOrWhiteSpace(CertificateName);
 }

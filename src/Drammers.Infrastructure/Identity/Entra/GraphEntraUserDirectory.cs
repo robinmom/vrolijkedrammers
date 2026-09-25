@@ -10,7 +10,7 @@ namespace Drammers.Infrastructure.Identity.Entra;
 
 /// <summary>
 /// Minimale Graph-client (vier aanroepen) in plaats van de volledige Graph SDK. Aanmelden als de provisioning-app met
-/// <c>User.ReadWrite.All</c> (application permission) in de External ID-tenant.
+/// <c>User.ReadWrite.All</c> (application permission) in de External ID-tenant, met een certificaat uit Key Vault.
 /// </summary>
 internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialProvider credentials, IOptions<GraphOptions> options) : IEntraUserDirectory
 {
@@ -96,7 +96,7 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
 internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
 {
     private static InvalidOperationException NotConfigured() =>
-        new("Microsoft Graph is niet geconfigureerd (Graph__TenantId, Graph__ClientId, Graph__IssuerDomain).");
+        new("Microsoft Graph is niet geconfigureerd (Graph__TenantId, Graph__ClientId, Graph__IssuerDomain, Graph__CertificateName).");
 
     public Task<string?> FindByEmailAsync(string email, CancellationToken cancellationToken) => throw NotConfigured();
 
@@ -108,10 +108,10 @@ internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
 }
 
 /// <summary>
-/// Credential voor Graph in de External ID-tenant: bij voorkeur workload identity federation met de managed identity
-/// van de API (geen secret); anders een certificaat uit Key Vault.
+/// Credential voor Graph in de External ID-tenant: het certificaat <c>graph-provisioning</c> uit Key Vault, gelezen met
+/// de managed identity van de API. Na een vernieuwing door Key Vault pakt een herstart de nieuwe versie op.
 /// </summary>
-internal sealed class GraphCredentialProvider(IOptions<GraphOptions> options, TokenCredential managedIdentity, IServiceProvider services)
+internal sealed class GraphCredentialProvider(IOptions<GraphOptions> options, IServiceProvider services)
 {
     private TokenCredential? _credential;
 
@@ -123,21 +123,11 @@ internal sealed class GraphCredentialProvider(IOptions<GraphOptions> options, To
         }
 
         var graph = options.Value;
-        if (string.IsNullOrWhiteSpace(graph.CertificateName))
-        {
-            _credential = new Azure.Identity.ClientAssertionCredential(
-                graph.TenantId, graph.ClientId,
-                async ct => (await managedIdentity.GetTokenAsync(new TokenRequestContext(["api://AzureADTokenExchange/.default"]), ct)).Token);
-        }
-        else
-        {
-            var secrets = services.GetRequiredService<Azure.Security.KeyVault.Secrets.SecretClient>();
-            var secret = await secrets.GetSecretAsync(graph.CertificateName, cancellationToken: cancellationToken);
-            var certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(
-                Convert.FromBase64String(secret.Value.Value), password: null);
-            _credential = new Azure.Identity.ClientCertificateCredential(graph.TenantId, graph.ClientId, certificate);
-        }
-
+        var secrets = services.GetRequiredService<Azure.Security.KeyVault.Secrets.SecretClient>();
+        var secret = await secrets.GetSecretAsync(graph.CertificateName, cancellationToken: cancellationToken);
+        var certificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(
+            Convert.FromBase64String(secret.Value.Value), password: null);
+        _credential = new Azure.Identity.ClientCertificateCredential(graph.TenantId, graph.ClientId, certificate);
         return _credential;
     }
 }

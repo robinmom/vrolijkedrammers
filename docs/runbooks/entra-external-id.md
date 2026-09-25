@@ -66,13 +66,16 @@ Beide accounts gebruiken e-mail met eenmalige code, op persoonlijke adressen van
 
 ## 3b. Fase 3: provisioning, eerste beheerder en MFA
 
-**Provisioning-app (per omgeving).** Via deze app maakt en blokkeert de API accounts via Graph (ADR-014). Er is geen secret nodig: de app vertrouwt via workload identity federation de managed identity van de API.
+**Provisioning-app (per omgeving).** Via deze app maakt en blokkeert de API accounts via Graph (ADR-014). De app meldt zich aan met het certificaat `graph-provisioning` uit `kv-dvd-<env>`. Key Vault maakt het certificaat aan en vernieuwt het; de privésleutel verlaat Key Vault niet. Federatie met de managed identity werkt niet naar een external tenant (AADSTS700236, getest op 2026-09-25).
 ```bash
-az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
-MI=$(az webapp identity show -g rg-dvd-dev -n app-dvd-api-dev --query principalId -o tsv --subscription <sub>)
-infra/entra/register-provisioning-app.sh dev "$MI" <tenant-id-vereniging>
+az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions   # en de tenant van de vereniging
+infra/entra/register-provisioning-app.sh dev
+# tijdelijk: rol "Key Vault Certificates Officer" op kv-dvd-dev voor de beheerder
+AZURE_SUBSCRIPTION_ID=<sub> infra/entra/provisioning-certificate.sh dev
 ```
-Zet daarna `DVD_GRAPH_CLIENT_ID` in de GitHub environment. Na het opnieuw opbouwen van de API-app (nieuwe managed identity) draai je het script opnieuw. Werkt de federatie niet in de external tenant, dan is de terugvaloptie een certificaat in Key Vault (`Graph__CertificateName`).
+Zet daarna `DVD_GRAPH_CLIENT_ID` en `DVD_GRAPH_CERTIFICATE_NAME` (= `graph-provisioning`) in de GitHub environment en verwijder de tijdelijke Key Vault-rol weer.
+
+**Jaarlijks** (Key Vault vernieuwt 60 dagen voor de vervaldatum): draai `provisioning-certificate.sh <env> --renew-only` om de nieuwe publieke sleutel op de app te zetten, en herstart de API.
 
 **Eerste beheerder.** Beheerders worden normaal door een andere beheerder aangemaakt (`POST /api/v1/admin/users`). Voor de allereerste zet je in de GitHub environment de variabele `DVD_BOOTSTRAP_ADMIN` = `<oid>;<e-mail>;<naam>` van een bestaand account. Bij de volgende uitrol krijgt dat account de rol `beheerder-it`. De stap is idempotent en wordt geaudit. Haal de variabele daarna weer weg.
 
@@ -91,6 +94,6 @@ Controleer vooraf in de prijsinformatie van External ID of hier kosten aan zitte
 | App-registraties per omgeving (API, app, portal) + Dev/Acc op *Require user assignment*, groep `Testers`, custom attribuut `environmentAccess` — gescript in `infra/entra/` (zie [omgeving-opbouwen §3](omgeving-opbouwen.md#3-eenmalig-per-omgeving-entra-external-id)); het custom attribuut zelf is een handmatige stap | 1 |
 | User flow met e-mail-OTP en zelfregistratie uit: basis in fase 1 (`register-apps.sh`); huisstijl en afronding | 3 |
 | Conditional Access: MFA voor de portal-app, noodaccounts uitgesloten; kosten controleren (OQ-69) — zie §3b | 3 |
-| Provisioning-app-registratie (Graph `User.ReadWrite.All`, federatie met de managed identity) — `register-provisioning-app.sh`, zie §3b | 3 |
+| Provisioning-app-registratie (Graph `User.ReadWrite.All`, certificaat in Key Vault) — `register-provisioning-app.sh` + `provisioning-certificate.sh`, zie §3b | 3 |
 | Aanmeldmeldingen voor `bg-admin-*` en auditlogs naar Log Analytics | 7 |
 | Eigen inlogdomein (bijv. `login.vrolijkedrammers.nl`, OQ-67) | 7 |

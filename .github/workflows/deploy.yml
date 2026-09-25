@@ -79,6 +79,7 @@ jobs:
       DVD_BOOTSTRAP_ADMIN: ${{ vars.DVD_BOOTSTRAP_ADMIN }}
       DVD_PORTAL_CLIENT_ID: ${{ vars.DVD_PORTAL_CLIENT_ID }}
       DVD_GRAPH_CLIENT_ID: ${{ vars.DVD_GRAPH_CLIENT_ID }}
+      DVD_GRAPH_CERTIFICATE_NAME: ${{ vars.DVD_GRAPH_CERTIFICATE_NAME }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2

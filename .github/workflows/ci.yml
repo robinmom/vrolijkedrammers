@@ -101,9 +101,15 @@ jobs:
           client-id: ${{ vars.AZURE_WHATIF_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - run: |
+      - name: What-if (alleen-lezen identiteit; RBAC-controle op schrijven overgeslagen)
+        run: |
           az deployment group what-if --resource-group rg-dvd-dev --name dvd-dev-pr \
-            --template-file infra/main.bicep --parameters infra/env/dev.bicepparam
+            --template-file infra/main.bicep --parameters infra/env/dev.bicepparam \
+            --validation-level ProviderNoRbac 2> what-if-error.txt || {
+            cat what-if-error.txt
+            echo "::error title=what-if::$(tr '\n' ' ' < what-if-error.txt | cut -c1-1500)"
+            exit 1
+          }
 
   secrets:
     name: Secret scanning (gitleaks)

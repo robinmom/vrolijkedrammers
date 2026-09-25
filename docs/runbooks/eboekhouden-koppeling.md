@@ -10,13 +10,28 @@ De ledensync (fase 8, [ADR-010](../adr/ADR-010-eboekhouden-sync.md)) leest leden
 
 ## 2. Token in Key Vault zetten
 
-Het token komt nooit in de repository, in app-instellingen of in de chat. Zet het zelf in Key Vault (rol *Key Vault Secrets Officer* op de vault nodig):
+Het token komt nooit in de repository, in app-instellingen of in de chat. Zet het zelf in Key Vault.
+
+De vault gebruikt Azure RBAC: ook een *Owner* van de subscription mag daar zonder aparte rol **geen** secrets schrijven (foutmelding `ForbiddenByRbac`). Geef jezelf daarom tijdelijk de rol *Key Vault Secrets Officer* op alleen deze vault:
 
 ```bash
-read -rs EB_TOKEN   # plak het token; het verschijnt niet op het scherm en niet in de shellhistorie
+# 1. Tijdelijk schrijfrecht op alleen deze vault
+VAULT=$(az keyvault show --name kv-dvd-dev --query id -o tsv)
+ME=$(az ad signed-in-user show --query id -o tsv)
+az role assignment create --assignee-object-id "$ME" --assignee-principal-type User \
+  --role "Key Vault Secrets Officer" --scope "$VAULT" --output none
+
+# 2. Na 1 à 2 minuten (rechten moeten doorwerken): token zetten.
+#    Het token verschijnt niet op het scherm en niet in de shellhistorie.
+read -rs EB_TOKEN
 az keyvault secret set --vault-name kv-dvd-dev --name eboekhouden-api-token --value "$EB_TOKEN" --output none
 unset EB_TOKEN
+
+# 3. Recht weer intrekken (in Dev mag het blijven staan; in Acc/Prod altijd intrekken)
+az role assignment delete --assignee "$ME" --role "Key Vault Secrets Officer" --scope "$VAULT"
 ```
+
+Controle zonder de waarde te tonen: `az keyvault secret list --vault-name kv-dvd-dev --query "[?name=='eboekhouden-api-token'].attributes.enabled"`.
 
 De API leest het secret met zijn managed identity (rol *Key Vault Secrets User*, al toegekend in fase 1). Er is geen herstart nodig: de sync leest het token bij elke run.
 
@@ -41,6 +56,7 @@ Besluit 2026-09-25: in Dev wordt tijdelijk het echte ledenbestand gebruikt. Om a
 | Melding in het portal | Oorzaak | Oplossing |
 |---|---|---|
 | "Het e-Boekhouden-token staat nog niet in Key Vault" | Secret ontbreekt | Stap 2 |
+| `ForbiddenByRbac` bij het zetten van het token | Eigen account heeft geen datarol op de vault | Stap 2, onderdeel 1 (rol toekennen) |
 | "Aanmelden bij e-Boekhouden mislukt: controleer het API-token" | Token ongeldig of verlopen | Nieuw token maken (stap 1) en opnieuw zetten (stap 2) |
 | Status **Conflict** met "meer dan 10 % ontbreekt" | Massadeletie-guard | Controleer e-Boekhouden; er is niemand gedeactiveerd |
 | "Er loopt al een ledensync" | Een run is bezig | Wachten; een run die na 30 minuten niet klaar is, wordt automatisch afgebroken |

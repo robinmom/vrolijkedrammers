@@ -8,9 +8,12 @@ public sealed record PublicationRequest(
     ContentVisibility Visibility,
     IReadOnlyList<string>? AudienceRoles,
     PublicationStatus Status,
-    DateTime? PublishAt)
+    DateTime? PublishAt,
+    IReadOnlyList<Guid>? AudienceGroups = null,
+    IReadOnlyList<Guid>? AudienceMembers = null)
 {
-    public PublicationInput ToInput() => new(Visibility, AudienceRoles ?? [], Status, PublishAt?.ToUniversalTime());
+    public PublicationInput ToInput() =>
+        new(Visibility, AudienceRoles ?? [], Status, PublishAt?.ToUniversalTime(), AudienceGroups ?? [], AudienceMembers ?? []);
 }
 
 public sealed record EventRequest(
@@ -54,6 +57,20 @@ public sealed record AlbumRequest(
     public AlbumInput ToInput() => new(Title, AlbumDate, Description, EventId, Publication.ToInput());
 }
 
-public sealed record PublicationResponse(ContentVisibility Visibility, IReadOnlyList<string> AudienceRoles, PublicationStatus Status, DateTime? PublishAt);
+public sealed record PublicationResponse(
+    ContentVisibility Visibility, IReadOnlyList<string> AudienceRoles, PublicationStatus Status, DateTime? PublishAt,
+    IReadOnlyList<Guid> AudienceGroups, IReadOnlyList<Guid> AudienceMembers)
+{
+    /// <summary>Bouwt het antwoord uit de audience-rijen van een event, nieuwsbericht of album.</summary>
+    public static PublicationResponse From(
+        ContentVisibility visibility, IEnumerable<(AudienceType Type, string Ref)> audiences, PublicationStatus status, DateTime? publishAt)
+    {
+        var list = audiences.ToList();
+        return new PublicationResponse(visibility,
+            [.. list.Where(a => a.Type == AudienceType.Role).Select(a => a.Ref)], status, publishAt,
+            [.. list.Where(a => a.Type == AudienceType.Group).Select(a => Guid.Parse(a.Ref))],
+            [.. list.Where(a => a.Type == AudienceType.Member).Select(a => Guid.Parse(a.Ref))]);
+    }
+}
 
 public sealed record CreatedResponse(Guid Id);

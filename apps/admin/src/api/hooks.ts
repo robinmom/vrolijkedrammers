@@ -305,3 +305,38 @@ export function useMemberMapping(enabled: boolean) {
     queryFn: async () => required((await api.GET('/api/v1/admin/config/member-mapping')).data),
   });
 }
+
+// --- Groepen en rapportage (fase 8c) ---
+
+export type GroupSummary = Schemas['GroupSummaryResponse'];
+export type GroupDetail = Schemas['GroupDetailResponse'];
+export type GroupType = Schemas['GroupType'];
+export type GroupFunction = Schemas['GroupFunction'];
+export type MemberReport = Schemas['MemberReportResponse'];
+
+/** Groepen als keuzelijst bij publiceren (alleen naam); ook voor redacteuren zonder toegang tot ledengegevens. */
+export function useAudienceGroups() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['audience-groups'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/content-audiences/groups')).data),
+  });
+}
+
+export function useGroups() {
+  const api = useApi();
+  return useQuery({ queryKey: ['groups'], queryFn: async () => required((await api.GET('/api/v1/admin/groups')).data) });
+}
+
+export function useGroup(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['group', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/groups/{id}', { params: { path: { id } } })).data),
+  });
+}
+
+export function useMemberReport() {
+  const api = useApi();
+  return useQuery({ queryKey: ['member-report'], queryFn: async () => required((await api.GET('/api/v1/admin/reports/members')).data) });
+}

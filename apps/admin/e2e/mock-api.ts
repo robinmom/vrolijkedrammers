@@ -166,6 +166,24 @@ export class MockApi {
       resolutionNote: null as string | null,
     },
   ];
+  groups = [
+    {
+      id: 'g-1',
+      name: 'Jeugdcommissie',
+      description: null as string | null,
+      type: 'Committee',
+      carnivalYearId: null as number | null,
+      active: true,
+      members: [] as {
+        memberId: string;
+        memberNumber: string;
+        fullName: string;
+        function: string;
+        validFrom: string | null;
+        validTo: string | null;
+      }[],
+    },
+  ];
   mapping = {
     birthDate: null as string | null,
     joinYear: 'freeText2' as string | null,
@@ -506,6 +524,73 @@ export class MockApi {
         return noContent();
       }
       return json(this.mapping);
+    }
+    if (path === '/admin/content-audiences/groups') {
+      return json(this.groups.filter((g) => g.active).map((g) => ({ id: g.id, name: g.name })));
+    }
+    if (path === '/admin/groups' && method === 'GET') {
+      return json(this.groups.map(({ members, ...g }) => ({ ...g, memberCount: members.length })));
+    }
+    if (path === '/admin/groups' && method === 'POST') {
+      const group = {
+        id: `g-${this.groups.length + 1}`,
+        name: body.name as string,
+        description: (body.description as string | null) ?? null,
+        type: body.type as string,
+        carnivalYearId: null,
+        active: body.active !== false,
+        members: [] as (typeof this.groups)[number]['members'],
+      };
+      this.groups.push(group);
+      this.record('group.created', 'Group', group.id, body);
+      return json({ id: group.id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/groups\/([^/]+)\/members\/([^/]+)$/))) {
+      const group = this.groups.find((g) => g.id === m![1])!;
+      const member = this.members.find((x) => x.id === m![2])!;
+      group.members = group.members.filter((x) => x.memberId !== member.id);
+      if (method === 'PUT') {
+        group.members.push({
+          memberId: member.id,
+          memberNumber: member.memberNumber,
+          fullName: member.fullName,
+          function: body.function as string,
+          validFrom: null,
+          validTo: (body.validTo as string | null) ?? null,
+        });
+      }
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/groups\/([^/]+)$/))) {
+      const group = this.groups.find((g) => g.id === m![1]);
+      if (!group) {
+        return json({ status: 404, title: 'Niet gevonden', code: 'GROUP_NOT_FOUND' }, 404);
+      }
+      if (method === 'DELETE') {
+        this.groups = this.groups.filter((g) => g.id !== group.id);
+        return noContent();
+      }
+      return json(group);
+    }
+    if (path === '/admin/reports/members') {
+      return json({
+        total: 3,
+        active: 2,
+        byStatus: [
+          { label: 'Actief', count: 2 },
+          { label: 'Inactief', count: 1 },
+        ],
+        byRole: [{ label: 'Carnavalist', count: 1 }],
+        byAgeClass: [
+          { label: '0–11', count: 1 },
+          { label: 'Onbekend', count: 1 },
+        ],
+        byJoinYear: [
+          { label: '1995', count: 1 },
+          { label: 'Onbekend', count: 1 },
+        ],
+        byGroup: [{ label: 'Jeugdcommissie', count: 1 }],
+      });
     }
     return json({ status: 404, title: 'Not Found', code: 'NOT_FOUND' }, 404);
   }

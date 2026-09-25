@@ -14,7 +14,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Infrastructure.Content;
 
-public sealed record PublicationInput(ContentVisibility Visibility, IReadOnlyCollection<string> AudienceRoles, PublicationStatus Status, DateTime? PublishAt);
+/// <summary>Zichtbaarheid en doelgroepen; bij "Beperkt" ten minste één rol, groep of lid.</summary>
+public sealed record PublicationInput(
+    ContentVisibility Visibility,
+    IReadOnlyCollection<string> AudienceRoles,
+    PublicationStatus Status,
+    DateTime? PublishAt,
+    IReadOnlyCollection<Guid>? AudienceGroups = null,
+    IReadOnlyCollection<Guid>? AudienceMembers = null);
 
 public sealed record EventInput(
     int CategoryId, string Title, string? Summary, string? Description, DateTime StartAt, DateTime? EndAt, bool AllDay,
@@ -300,7 +307,7 @@ public sealed class ContentAdministration(
             (input.LocationName, input.LocationAddress, input.Latitude, input.Longitude, input.IsHighlight, input.BadgeText);
         (e.Visibility, e.Status, e.PublishAt) = Publication(input.Publication);
         e.Audiences.Clear();
-        e.Audiences.AddRange(Audiences(input.Publication).Select(r => new EventAudience { EventId = e.Id, AudienceType = AudienceType.Role, AudienceRef = r }));
+        e.Audiences.AddRange(Audiences(input.Publication).Select(r => new EventAudience { EventId = e.Id, AudienceType = r.Type, AudienceRef = r.Ref }));
     }
 
     private void Apply(NewsItem n, NewsInput input)
@@ -308,7 +315,7 @@ public sealed class ContentAdministration(
         (n.Title, n.Summary, n.Body, n.Category, n.ExpireAt) = (input.Title, input.Summary, input.Body, input.Category, input.ExpireAt);
         (n.Visibility, n.Status, n.PublishAt) = Publication(input.Publication);
         n.Audiences.Clear();
-        n.Audiences.AddRange(Audiences(input.Publication).Select(r => new NewsAudience { NewsId = n.Id, AudienceType = AudienceType.Role, AudienceRef = r }));
+        n.Audiences.AddRange(Audiences(input.Publication).Select(r => new NewsAudience { NewsId = n.Id, AudienceType = r.Type, AudienceRef = r.Ref }));
     }
 
     private void Apply(PhotoAlbum a, AlbumInput input)
@@ -316,14 +323,14 @@ public sealed class ContentAdministration(
         (a.Title, a.AlbumDate, a.Description, a.EventId) = (input.Title, input.AlbumDate, input.Description, input.EventId);
         (a.Visibility, a.Status, a.PublishAt) = Publication(input.Publication);
         a.Audiences.Clear();
-        a.Audiences.AddRange(Audiences(input.Publication).Select(r => new PhotoAlbumAudience { AlbumId = a.Id, AudienceType = AudienceType.Role, AudienceRef = r }));
+        a.Audiences.AddRange(Audiences(input.Publication).Select(r => new PhotoAlbumAudience { AlbumId = a.Id, AudienceType = r.Type, AudienceRef = r.Ref }));
     }
 
     private (ContentVisibility, PublicationStatus, DateTime?) Publication(PublicationInput p)
     {
-        if (p.Visibility == ContentVisibility.Restricted && p.AudienceRoles.Count == 0)
+        if (p.Visibility == ContentVisibility.Restricted && !Audiences(p).Any())
         {
-            throw new DomainException(ErrorCodes.Validation, "Kies bij 'Beperkt' ten minste één rol als doelgroep.");
+            throw new DomainException(ErrorCodes.Validation, "Kies bij 'Beperkt' ten minste één rol, groep of lid als doelgroep.");
         }
 
         var now = clock.UtcNow.UtcDateTime;
@@ -336,8 +343,13 @@ public sealed class ContentAdministration(
         };
     }
 
-    private static IEnumerable<string> Audiences(PublicationInput p) =>
-        p.Visibility == ContentVisibility.Restricted ? p.AudienceRoles.Distinct() : [];
+    /// <summary>De doelgroepen als (type, verwijzing); groepen en leden met hun id (zoals <c>ContentViewer</c> ze vergelijkt).</summary>
+    private static IEnumerable<(AudienceType Type, string Ref)> Audiences(PublicationInput p) =>
+        p.Visibility != ContentVisibility.Restricted
+            ? []
+            : p.AudienceRoles.Distinct().Select(r => (AudienceType.Role, r))
+                .Concat((p.AudienceGroups ?? []).Distinct().Select(g => (AudienceType.Group, g.ToString())))
+                .Concat((p.AudienceMembers ?? []).Distinct().Select(m => (AudienceType.Member, m.ToString())));
 
     private async Task SaveWithAuditAsync(string action, string entityType, Guid id, object? values, CancellationToken cancellationToken)
     {

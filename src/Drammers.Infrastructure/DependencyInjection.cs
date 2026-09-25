@@ -136,6 +136,7 @@ public static class DependencyInjection
         services.AddScoped<MemberSync>();
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();
+        services.AddScoped<GroupAdministration>();
         services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
         services.TryAddSingleton<IEBoekhoudenClient, UnconfiguredEBoekhoudenClient>();
         services.TryAddSingleton<IMalwareScanner, NoMalwareScanner>();

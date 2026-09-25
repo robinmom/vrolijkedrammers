@@ -32,7 +32,7 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
         var n = await db.News.AsNoTracking().Include(x => x.Audiences).SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new DomainException(ErrorCodes.ContentNotFound, "Niet gevonden.", DomainErrorKind.NotFound);
         return new AdminNewsResponse(n.Id, n.Title, n.Summary, n.Body, n.Category, n.ExpireAt,
-            new PublicationResponse(n.Visibility, [.. n.Audiences.Select(a => a.AudienceRef)], n.Status, n.PublishAt),
+            PublicationResponse.From(n.Visibility, n.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), n.Status, n.PublishAt),
             await urls.ForAsync(FileContainers.Content, n.ImageBlobPath, cancellationToken));
     }
 

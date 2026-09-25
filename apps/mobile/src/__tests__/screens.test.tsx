@@ -1,6 +1,6 @@
 import { useNetInfo } from '@react-native-community/netinfo';
 import { onlineManager, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { createEventInCalendarAsync } from 'expo-calendar/legacy';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabLayout from '../app/(tabs)/_layout';
@@ -18,7 +18,7 @@ import NieuwsBerichtScreen from '../app/nieuws/[id]';
 import UitslagenScreen from '../app/uitslagen';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider } from '../theme/ThemeProvider';
-import { api } from '../test/api-fixture';
+import { api, paged } from '../test/api-fixture';
 import * as data from '../test/fixtures';
 import { createTestQueryClient, mockApi, renderApp } from '../test/render';
 import { AppText, OfflineBanner } from '../ui';
@@ -140,6 +140,39 @@ describe('03 Nieuws', () => {
     expect(screen.getByText('Uitslag Dansgarde Festival 2026')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Lees meer' }));
     expect(await screen.findByText('optocht')).toBeTruthy();
+  });
+
+  it('nieuw gepubliceerd nieuws verschijnt bij terugkeren naar de tab (zonder pull-to-refresh)', async () => {
+    mockApi(api);
+    await renderApp(routes, '/nieuws');
+    expect(await screen.findByText('De optocht-inschrijving is geopend!')).toBeTruthy();
+
+    // Intussen publiceert een redacteur een nieuw bericht in het portal.
+    const nieuw = { ...data.news[0]!, id: '99999999-9999-4999-8999-999999999999', title: 'Prins Ferry I bekendgemaakt', publishedAt: '2026-09-25T06:30:00Z' };
+    mockApi({ ...api, '/api/v1/news': paged([nieuw, ...data.news]) });
+
+    await fireEvent.press(screen.getAllByText('Home')[0]!);
+    jest.advanceTimersByTime(31_000);
+    await fireEvent.press(screen.getAllByText('Nieuws').at(-1)!);
+    expect(await screen.findByText('Prins Ferry I bekendgemaakt')).toBeTruthy();
+  });
+
+  it('pull-to-refresh haalt direct nieuwe content op', async () => {
+    mockApi(api);
+    await renderApp(routes, '/nieuws');
+    await screen.findByText('De optocht-inschrijving is geopend!');
+    const nieuw = { ...data.news[0]!, id: '99999999-9999-4999-8999-999999999998', title: 'Net gepubliceerd' };
+    mockApi({ ...api, '/api/v1/news': paged([nieuw, ...data.news]) });
+
+    // De RefreshControl-mock geeft zijn props niet door; de ScrollView houdt het element wel vast als prop.
+    type Node = NonNullable<typeof screen.root>;
+    const findScroll = (node: Node): Node | undefined =>
+      node.props.refreshControl ? node : node.children.filter((c): c is Node => typeof c !== 'string').map(findScroll).find(Boolean);
+    const onRefresh = findScroll(screen.root!)!.props.refreshControl.props.onRefresh as () => Promise<void>;
+    await act(async () => {
+      await onRefresh();
+    });
+    expect(await screen.findByText('Net gepubliceerd')).toBeTruthy();
   });
 
   it('Uitslagen toont alleen de categorie Uitslagen', async () => {

@@ -149,7 +149,7 @@ public class ContentTests(SqlServerFixture sql) : IAsyncLifetime
         var guest = _api.CreateClient();
 
         var first = await guest.GetAsync("/api/v1/events");
-        Assert.Equal("public, max-age=60", first.Headers.CacheControl!.ToString());
+        Assert.Equal("public, no-cache", first.Headers.CacheControl!.ToString());
         var etag = first.Headers.ETag!;
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/events");

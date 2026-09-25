@@ -13,8 +13,9 @@ export function createQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // Korter dan de geldigheid van de SAS-links (15 min), zodat afbeeldingen online altijd laden.
-        staleTime: 5 * 60 * 1000,
+        // Na 30 s ververst een scherm zijn data bij openen; ruim binnen de geldigheid van de SAS-links (15 min).
+        // De API antwoordt met een ETag (304 als er niets veranderd is), dus vaak verversen is goedkoop.
+        staleTime: 30 * 1000,
         // Minstens zo lang als de persistente cache, anders gooit de client offline-data weg.
         gcTime: WEEK,
         // 404 betekent "bestaat niet of geen toegang" (docs/05); opnieuw proberen heeft dan geen zin.

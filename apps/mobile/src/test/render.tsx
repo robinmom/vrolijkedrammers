@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '../api/QueryProvider';
 import { renderRouter } from 'expo-router/testing-library';
 import type { ComponentType, ReactNode } from 'react';
 import { ThemeProvider, type ThemeMode } from '../theme/ThemeProvider';
@@ -22,8 +23,11 @@ export function mockApi(routes: Record<string, Body>): string[] {
   return calls;
 }
 
+/** Dezelfde instellingen als de app (staleTime e.d.), alleen zonder nieuwe pogingen, zodat fouten direct zichtbaar zijn. */
 export function createTestQueryClient() {
-  return new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const client = createQueryClient();
+  client.setDefaultOptions({ queries: { ...client.getDefaultOptions().queries, retry: false, gcTime: Infinity } });
+  return client;
 }
 
 /** Rendert schermen binnen Expo Router met thema en een verse querycache (zonder persistentie). */

@@ -1,6 +1,6 @@
 import * as data from './fixtures';
 
-const paged = <T,>(items: T[]) => ({ items, page: 1, pageSize: 100, totalCount: items.length });
+export const paged = <T,>(items: T[]) => ({ items, page: 1, pageSize: 100, totalCount: items.length });
 
 /** Antwoorden per API-pad voor schermtests (zie mockApi). */
 export const api = {

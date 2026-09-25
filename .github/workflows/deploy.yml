@@ -120,6 +120,19 @@ jobs:
           dotnet publish/db/tool/Drammers.DbSetup.dll "$server" sqldb-dvd ensure-user \
             "${{ steps.infra.outputs.api-app }}" "${{ steps.infra.outputs.api-client-id }}" app_runtime
 
+      - name: Wachten tot de app stabiel is na infra-wijzigingen
+        run: |
+          # Een gewijzigde app-instelling herstart de site inclusief Kudu; een zip-deploy die dan start, wordt
+          # afgebroken ("Deployment has been stopped due to SCM container restart"). Wacht tot Kudu reageert.
+          scm="https://${{ steps.infra.outputs.api-app }}.scm.azurewebsites.net/api/deployments"
+          sleep 30
+          for attempt in $(seq 1 20); do
+            if az rest --method get --url "$scm" --resource https://management.azure.com/ -o none 2>/dev/null; then
+              echo "Kudu bereikbaar (poging $attempt)"; exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Kudu niet bereikbaar na infra-uitrol"; exit 1
       - uses: actions/download-artifact@v4
         with:
           name: api

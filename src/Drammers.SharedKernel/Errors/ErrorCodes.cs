@@ -8,6 +8,8 @@ public static class ErrorCodes
     public const string Unexpected = "UNEXPECTED_ERROR";
     public const string NotFound = "NOT_FOUND";
     public const string Validation = "VALIDATION_FAILED";
+    public const string Unauthorized = "UNAUTHORIZED";
+    public const string Forbidden = "FORBIDDEN";
     public const string RoleNotFound = "ROLE_NOT_FOUND";
     public const string UserNotFound = "USER_NOT_FOUND";
     public const string RoleCodeTaken = "ROLE_CODE_TAKEN";

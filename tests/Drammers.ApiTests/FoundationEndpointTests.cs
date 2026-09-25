@@ -14,6 +14,7 @@ public class FoundationEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
         var response = await _client.GetAsync("/health/live");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(string.IsNullOrEmpty(Assert.Single(response.Headers.GetValues("X-App-Version"))));
     }
 
     [Fact]
@@ -41,6 +42,8 @@ public class FoundationEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
         var response = await _client.GetAsync("/test/unannotated");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("UNAUTHORIZED", body.RootElement.GetProperty("code").GetString());
     }
 
     [Fact]

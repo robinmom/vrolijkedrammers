@@ -19,7 +19,8 @@ const string Sql = """
     IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = @name)
     BEGIN
         DECLARE @sid NVARCHAR(100) = CONVERT(NVARCHAR(100), CONVERT(VARBINARY(16), @clientId), 1);
-        EXEC (N'CREATE USER ' + QUOTENAME(@name) + N' WITH SID = ' + @sid + N', TYPE = E');
+        DECLARE @statement NVARCHAR(400) = N'CREATE USER ' + QUOTENAME(@name) + N' WITH SID = ' + @sid + N', TYPE = E';
+        EXEC sys.sp_executesql @statement;
         SELECT 1;
     END
     ELSE SELECT 0;

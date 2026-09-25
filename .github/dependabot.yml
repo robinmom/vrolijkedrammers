@@ -7,15 +7,35 @@ updates:
     groups:
       dotnet-minor-patch:
         update-types: [minor, patch]
+      dotnet-test:
+        patterns: ['Microsoft.NET.Test.Sdk', 'xunit*', 'coverlet*']
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     groups:
-      expo-sdk:
-        patterns: ['expo', 'expo-*', '@expo/*', 'jest-expo', 'eslint-config-expo', 'react-native*']
       js-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Expo legt deze versies per SDK vast; bijwerken gaat samen met een SDK-upgrade via `npx expo install`.
+      - dependency-name: 'expo'
+      - dependency-name: 'expo-*'
+      - dependency-name: '@expo/*'
+      - dependency-name: 'jest-expo'
+      - dependency-name: 'eslint-config-expo'
+      - dependency-name: 'react'
+      - dependency-name: 'react-dom'
+      - dependency-name: 'react-native'
+      - dependency-name: 'react-native-*'
+      - dependency-name: '@types/react'
+      - dependency-name: '@types/react-dom'
+      - dependency-name: 'jest'
+      - dependency-name: '@types/jest'
+      # Nieuwe majors pas als typescript-eslint en eslint-plugin-react ze ondersteunen (fase 0).
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

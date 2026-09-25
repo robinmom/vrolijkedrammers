@@ -27,8 +27,8 @@ jobs:
     if: vars.DVD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - name: Publish API
@@ -39,8 +39,8 @@ jobs:
           dotnet ef migrations script --idempotent -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure \
             -o publish/db/migrations.sql
           dotnet publish tools/Drammers.DbSetup -c Release -o publish/db/tool
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -81,7 +81,7 @@ jobs:
       DVD_PORTAL_CLIENT_ID: ${{ vars.DVD_PORTAL_CLIENT_ID }}
       DVD_GRAPH_CERTIFICATE_NAME: ${{ vars.DVD_GRAPH_CERTIFICATE_NAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -104,7 +104,7 @@ jobs:
           echo "api-client-id=$(jq -r .apiIdentityClientId.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
           echo "sql-server=$(jq -r .sqlServerFqdn.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - uses: actions/download-artifact@v4

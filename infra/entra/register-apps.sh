@@ -159,7 +159,7 @@ GRAPH_SP_ID="$(graph --method get --url "$GRAPH/servicePrincipals(appId='$GRAPH_
 echo "==> Beheerportal ($ENV)"
 PORTAL_NAME="DVD Beheerportal ($ENV)"
 PORTAL_REDIRECTS="$(jq -cn --arg url "$PORTAL_URL" --arg env "$ENV" \
-  '[($url | select(length > 0)), (if $env == "dev" then "http://localhost:5173" else empty end)]')"
+  '[($url | select(length > 0)), (if $env == "dev" then "http://localhost:5173", "http://localhost:5173/beheer/" else empty end)]')"
 PORTAL_APP_ID="$(ensure_app "$PORTAL_NAME" "{
   \"displayName\": \"$PORTAL_NAME\", \"signInAudience\": \"AzureADMyOrg\",
   \"spa\": {\"redirectUris\": $PORTAL_REDIRECTS},

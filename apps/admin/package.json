@@ -9,12 +9,17 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vitest run"
+    "lint": "eslint src e2e",
+    "test": "vitest run",
+    "build:e2e": "VITE_E2E_AUTH=mock vite build",
+    "e2e": "pnpm build:e2e && playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
@@ -22,9 +27,14 @@
     "vite": "^8.3.0"
   },
   "dependencies": {
+    "@azure/msal-browser": "^5.23.0",
+    "@drammers/api-client": "workspace:*",
     "@drammers/design-tokens": "workspace:*",
     "@fontsource/inter": "^5.3.0",
     "@fontsource/poppins": "^5.3.0",
+    "@tanstack/react-query": "^5.103.2",
+    "@tanstack/react-router": "^1.170.39",
+    "@tanstack/react-table": "^9.2.4",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   }

@@ -16,6 +16,7 @@ param externalIdTenantId = '260db5a1-e5b6-4388-9f6c-d9b02cb5578b'
 param graphClientId = readEnvironmentVariable('DVD_GRAPH_CLIENT_ID', '')
 param externalIdIssuerDomain = 'vrolijkedrammersapp.onmicrosoft.com'
 param graphCertificateName = readEnvironmentVariable('DVD_GRAPH_CERTIFICATE_NAME', '')
+param portalClientId = readEnvironmentVariable('DVD_PORTAL_CLIENT_ID', '')
 param requiredEnvironmentAccess = 'dev'
 param budgetAmount = 25
 param budgetStartDate = '2026-09-01'

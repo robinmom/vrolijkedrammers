@@ -218,6 +218,14 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Aanvullende DoD.** Portal responsive getest (1280 px en 390 px).
 
+**Uitvoering (2026-09-25).**
+- Het portal haalt zijn aanmeldinstellingen op via `GET /api/v1/portal-config` (publiek, geen geheimen). Daardoor is het één pakket voor Dev, Acc en Prod.
+- MSAL (`msal-browser`) bewaart tokens in `sessionStorage`.
+- TanStack Router met routes in code; TanStack Table v9 met sorteren en kolomkeuze; zoeken en paginering server-side.
+- De export van de gebruikerslijst valt onder `role.manage` en wordt geaudit (`user.exported`).
+- Playwright draait met een nep-login en een gemockte API, 22 tests op 1280 en 390 px, inclusief axe. De echte login met e-mailcode wordt handmatig getest.
+- Het API-contract gebruikt enums als string en strikte getallen.
+
 **Afhankelijkheden.** Fase 3.
 
 **Acceptatiecriteria.**

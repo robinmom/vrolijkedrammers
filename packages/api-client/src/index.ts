@@ -1,7 +1,7 @@
 import createClient from 'openapi-fetch';
 import type { paths } from './schema';
 
-export type { paths } from './schema';
+export type { components, paths } from './schema';
 
 /**
  * Maakt een getypte client voor de Drammers API. Het contract komt uit het door de build

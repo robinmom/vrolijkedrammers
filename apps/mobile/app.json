@@ -34,11 +34,21 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200
         }
+      ],
+      "expo-image",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "De app zet activiteiten van De Vrolijke Drammers in je agenda als je daarom vraagt."
+        }
       ]
     ],
     "scheme": "drammers",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "appStoreUrl": null
     }
   }
 }

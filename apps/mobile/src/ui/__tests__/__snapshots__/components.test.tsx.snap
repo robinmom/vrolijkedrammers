@@ -484,10 +484,13 @@ exports[`snapshots in thema dark EventCard met badge en hoogtepunt 1`] = `
     </View>
     <View
       style={
-        {
-          "flex": 1,
-          "gap": 4,
-        }
+        [
+          {
+            "flex": 1,
+            "gap": 4,
+          },
+          false,
+        ]
       }
     >
       <View
@@ -525,6 +528,8 @@ exports[`snapshots in thema dark EventCard met badge en hoogtepunt 1`] = `
             [
               {
                 "borderRadius": 100,
+              },
+              {
                 "paddingHorizontal": 8,
                 "paddingVertical": 2,
               },
@@ -1667,10 +1672,13 @@ exports[`snapshots in thema light EventCard met badge en hoogtepunt 1`] = `
     </View>
     <View
       style={
-        {
-          "flex": 1,
-          "gap": 4,
-        }
+        [
+          {
+            "flex": 1,
+            "gap": 4,
+          },
+          false,
+        ]
       }
     >
       <View
@@ -1708,6 +1716,8 @@ exports[`snapshots in thema light EventCard met badge en hoogtepunt 1`] = `
             [
               {
                 "borderRadius": 100,
+              },
+              {
                 "paddingHorizontal": 8,
                 "paddingVertical": 2,
               },

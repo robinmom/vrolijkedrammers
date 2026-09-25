@@ -182,3 +182,18 @@ export const tokens = {
 ```
 
 Het beheerportal gebruikt dezelfde tokens (CSS custom properties), zodat app en beheer als één product voelen. De synchronisatie Figma-variabelen → tokens gebeurt handmatig per designwijziging (klein aantal tokens; tooling zoals Tokens Studio is optioneel).
+
+## 9. Realisatie fase 6 – afwijkingen van Figma
+
+| Scherm | Afwijking | Reden |
+|---|---|---|
+| 01 Home | De countdown verdwijnt na de laatste carnavalsdag; tijdens carnaval staat er "Alaaf! Het is carnaval!" | Figma toont alleen de situatie vóór carnaval |
+| 01/03/05 | De bel opent een lege pagina Meldingen | De inbox volgt in fase 10 |
+| 02 Programma | Er zijn alleen filterchips voor categorieën die activiteiten hebben | Een chip zonder resultaat is verwarrend (bijv. Kader) |
+| 04 Optocht | Deelnemers "–" en de tijden zijn voorlopig; "Groep inschrijven" meldt dat de inschrijving binnenkort opent | De optochtdata volgen in fase 11 |
+| 05 Meer | Weergave in plaats van de schakelaars Pushmeldingen/Herinneringen | Push volgt in fase 10 |
+| 06 Activiteit detail | Geen ticketkaart en geen actiebalk "Tickets bestellen"; de tweede regel bij de tijd toont de samenvatting van het event | Ticketing volgt in fase 19; er is (nog) geen apart veld voor "zaal open" |
+| 06 Activiteit detail | Zonder afbeelding: blauwe hero met het logo | Niet elk event heeft een afbeelding |
+| Nieuwsdetail, album, fotoviewer | Geen Figma-ontwerp; opgebouwd uit de bestaande componenten (hero van 06, raster van 07) | Nog geen ontwerp nodig; te beoordelen bij de visuele review |
+| Tekstkleuren | Secundaire tekst gebruikt de toegankelijke varianten uit §7 in plaats van 55–65 % dekking | Contrast ≥ 4,5:1 (OQ-66) |
+

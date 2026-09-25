@@ -1,0 +1,16 @@
+# Home → eerstvolgende activiteit → toevoegen aan agenda (systeemformulier opent).
+appId: nl.vrolijkedrammers.app
+---
+- launchApp
+- assertVisible: 'Eerstvolgende activiteit'
+- assertVisible: 'Nog tot carnaval.*'
+- tapOn:
+    id: 'next-event'
+- assertVisible: 'Toevoegen aan agenda'
+- tapOn: 'Toevoegen aan agenda'
+# Het systeemformulier van de agenda annuleren; de app mag daarna gewoon doorwerken.
+- tapOn:
+    text: 'Cancel|Annuleer|Annuleren'
+    optional: true
+- back
+- assertVisible: 'Eerstvolgende activiteit'

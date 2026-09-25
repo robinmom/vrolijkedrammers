@@ -297,6 +297,19 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Aanvullende DoD.** Visuele review tegen Figma (per scherm, per variant) door de product owner/designer; afwijkingen vastgelegd.
 
+**Uitvoering (2026-09-25).**
+- **Data** via de gedeelde, getypte client (`@drammers/api-client`) en TanStack Query. De cache blijft een week bewaard in AsyncStorage (offline); `staleTime` is 5 minuten, korter dan de geldigheid van de SAS-links (15 min). Afbeeldingen gebruiken `expo-image` met een vaste `cacheKey` per item, zodat ze ook offline zichtbaar blijven terwijl de SAS-query per aanroep verandert.
+- **API-adres** via `EXPO_PUBLIC_API_URL` (per build in te stellen); zonder waarde gebruikt de app Dev. De bundle bevat geen secrets.
+- **Toevoegen aan agenda** via het systeemformulier (`expo-calendar/legacy`, zonder agendatoestemming); lukt dat niet, dan de iCal-export van de API. De nieuwe expo-calendar-API van SDK 57 vraagt wél toestemming en is daarom niet gebruikt.
+- **Beschrijvingen** (gesanitizede HTML uit fase 5) worden native weergegeven met een kleine eigen parser, zonder WebView. Alleen http(s)- en mailto-links zijn klikbaar.
+- **Deeplinks**: `drammers://activiteit/{id}` en `drammers://nieuws/{id}`. Alleen een geldige GUID gaat naar de API; al het andere toont "niet gevonden".
+- **Forced update en onderhoud** via `/app-config`. Zonder antwoord (offline, eerste start) blijft de app bruikbaar.
+- **Optocht-tab**: de datum volgt uit het actieve carnavalsjaar (carnavalszondag). Tijden, route en tijdlijn staan voorlopig in `apps/mobile/src/content/static.ts`; de deelnemers en de inschrijving volgen in fase 11.
+- **Meer**: Vereniging, Locatie, Contact en Lid worden hebben plaatshoudertekst in `content/static.ts`, met de melding "Voorlopige informatie". Het bestuur levert de definitieve teksten aan vóór fase 7. Contact gebruikt het supportadres uit `/app-config`. Uitslagen toont nieuws met de categorie "Uitslagen" (aanbeveling OQ-40).
+- **Instellingen**: alleen Weergave (Automatisch/Licht/Donker). De schakelaars voor pushmeldingen en herinneringen uit Figma volgen in fase 10.
+- **Tests**: Jest/RNTL voor alle schermen met fixtures, snapshots in licht en donker voor de 7 Figma-schermen, en app-config- en offlinetests. De Maestro-flows staan in `apps/mobile/.maestro/`; ze draaien pas als Maestro en een build beschikbaar zijn.
+- **Nog open**: EAS Build/Update (code signing) vraagt een Expo-account van de vereniging, en de visuele review door de product owner. Tot dan werkt de review met Expo Go (`pnpm --filter @drammers/mobile start`); alle gebruikte native modules zitten in Expo Go.
+
 **Afhankelijkheden.** Fase 5; OQ-40, OQ-42 (niet nodig voor deze schermen), OQ-66.
 
 **Acceptatiecriteria.**

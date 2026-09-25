@@ -1,15 +1,15 @@
-import { renderRouter } from 'expo-router/testing-library';
 import TabLayout from '../app/(tabs)/_layout';
 import HomeScreen from '../app/(tabs)/index';
 import MeerScreen from '../app/(tabs)/meer';
 import NieuwsScreen from '../app/(tabs)/nieuws';
 import OptochtScreen from '../app/(tabs)/optocht';
 import ProgrammaScreen from '../app/(tabs)/programma';
+import { mockApi, renderApp } from '../test/render';
 
 describe('tabnavigatie', () => {
   it('toont de 5 tabs uit Figma in de juiste volgorde', async () => {
-    // RNTL 14 rendert asynchroon; renderRouter geeft daarom een Promise terug.
-    const view = await renderRouter(
+    mockApi({});
+    const view = await renderApp(
       {
         '(tabs)/_layout': TabLayout,
         '(tabs)/index': HomeScreen,
@@ -18,7 +18,7 @@ describe('tabnavigatie', () => {
         '(tabs)/nieuws': NieuwsScreen,
         '(tabs)/meer': MeerScreen,
       },
-      { initialUrl: '/' },
+      '/',
     );
     const labels = ['Home', 'Programma', 'Optocht', 'Nieuws', 'Meer'];
     for (const label of labels) {

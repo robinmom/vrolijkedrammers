@@ -1,0 +1,6 @@
+# Maestro-flows voor de publieke app (fase 6, docs/15). Draaien tegen een build met Dev-data:
+#   maestro test .maestro
+flows:
+  - '*.yaml'
+excludeTags:
+  - android-only

@@ -1,0 +1,14 @@
+# Offline: na één keer laden toont de app de laatste content met de offline-banner (vliegtuigmodus: alleen Android).
+appId: nl.vrolijkedrammers.app
+tags:
+  - android-only
+---
+- launchApp
+- assertVisible: 'Eerstvolgende activiteit'
+- setAirplaneMode: enabled
+- stopApp
+- launchApp
+- assertVisible: 'Je bent offline.*'
+- assertVisible: 'Eerstvolgende activiteit'
+- assertNotVisible: 'Er ging iets mis'
+- setAirplaneMode: disabled

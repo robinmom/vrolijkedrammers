@@ -7,9 +7,10 @@ import { Icon } from './Icon';
 
 export type SettingsItem =
   | { type: 'toggle'; key: string; label: string; value: boolean; onValueChange: (value: boolean) => void }
-  | { type: 'link'; key: string; label: string; onPress: () => void };
+  | { type: 'link'; key: string; label: string; onPress: () => void }
+  | { type: 'choice'; key: string; label: string; selected: boolean; onPress: () => void };
 
-/** Instellingenlijst (Figma 05 Meer): rijen van 52 pt met toggle of chevron. */
+/** Instellingenlijst (Figma 05 Meer): rijen van 52 pt met toggle, chevron of vinkje (keuze). */
 export function SettingsList({ items }: { items: SettingsItem[] }) {
   const { colors } = useTheme();
   return (
@@ -31,6 +32,21 @@ export function SettingsList({ items }: { items: SettingsItem[] }) {
                 thumbColor="#FFFFFF"
               />
             </View>
+          );
+        }
+        if (item.type === 'choice') {
+          return (
+            <Pressable key={item.key} onPress={item.onPress} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: item.selected }} style={rowStyle}>
+              <AppText variant="body" style={styles.label}>
+                {item.label}
+              </AppText>
+              {item.selected ? (
+                // Het vinkje is visueel; schermlezers krijgen de keuze via accessibilityState.checked.
+                <AppText variant="bodyStrong" color={colors.accentText}>
+                  ✓
+                </AppText>
+              ) : null}
+            </Pressable>
           );
         }
         return (

@@ -155,10 +155,10 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 1.
 
 **Acceptatiecriteria.**
-- [ ] Een nieuwe migratie wordt in Dev automatisch toegepast vóór de app-deploy; een mislukte migratie stopt de deploy.
-- [ ] Twee gelijktijdig draaiende API-instanties voeren de heartbeat-job niet dubbel uit (log + test).
-- [ ] `GET /app-config` levert de minimale app-versie en de maintenance-vlag; de wijziging via DB is zonder deploy zichtbaar (cache ≤ 60 s).
-- [ ] De auditlog is aantoonbaar niet te wijzigen of te verwijderen met de runtime-identiteit.
+- [x] Een nieuwe migratie wordt in Dev automatisch toegepast vóór de app-deploy; een mislukte migratie stopt de deploy. *(2026-09-25, Deploy #9: migraties `InitialCreate` + `DatabaseRoles` in Dev; de migratiestap staat vóór de app-uitrol en stopt de job bij een fout (exitcode ≠ 0))*
+- [x] Twee gelijktijdig draaiende API-instanties voeren de heartbeat-job niet dubbel uit (log + test). *(`JobCoordinationTests`; in Dev één heartbeat per minuut in de logs)*
+- [x] `GET /app-config` levert de minimale app-versie en de maintenance-vlag; de wijziging via DB is zonder deploy zichtbaar (cache ≤ 60 s). *(cache 30 s; `PublicEndpointTests`; live in Dev)*
+- [x] De auditlog is aantoonbaar niet te wijzigen of te verwijderen met de runtime-identiteit. *(`PermissionTests`: UPDATE, DELETE, TRUNCATE en ALTER geweigerd voor `app_runtime`)*
 
 ---
 

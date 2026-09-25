@@ -18,6 +18,15 @@
 | Geld | `decimal(10,2)` + `currency char(3)` (altijd EUR) |
 | Persoonsgegevens | Gemarkeerd in de modeldocumentatie met 🔒; de kolommen komen in de Data Discovery & Classification van Azure SQL |
 
+**Bevestigd in fase 2 (2026-09-25)**, met deze aanvullingen:
+- **UUIDv7 en SQL Server:** SQL Server sorteert `uniqueidentifier` eerst op de laatste zes bytes, dus UUIDv7 is daar níét index-sequentieel. Bij de volumes van deze app (duizenden rijen per tabel) is de fragmentatie verwaarloosbaar. Wordt dat een probleem, dan komt er een SQL-geordende variant in `IdGenerator`. Tabellen met veel inserts en geen externe ID (`AuditLog`) gebruiken `bigint identity`.
+- **Namen:** tabellen expliciet per configuratie (`ToTable(naam, schema)`); een entiteit zonder schema faalt bij het opstarten. Kolomnamen worden automatisch snake_case (`ModelConventions`). CHECK-constraints heten `CK_<Tabel>_<kolom>`.
+- **Tijd:** alle `DateTime`-kolommen zijn `datetime2(3)` en worden bij het lezen als UTC gemarkeerd. Datums zonder tijd zijn `DateOnly` → `date`.
+- **Auditkolommen:** entiteiten met `IAuditable` krijgen `created_*`/`updated_*` automatisch via een interceptor; `created_*` is na aanmaken niet meer te wijzigen.
+- **Jobstatus:** extra tabel `config.ScheduledJob` (`name`, `last_started_at`, `last_completed_at`, `last_succeeded_at`, `last_error`, `last_instance`) voor de coördinatie van tijdgestuurde jobs over instanties heen (ADR-007) en de health check.
+- **Outbox:** extra kolom `locked_until` in `notification.Outbox` (claim met verloop; na een crash komt een bericht vanzelf terug).
+- **Rechten:** rollen `app_runtime` (DML op alle module-schema's; op `audit` alleen `SELECT`/`INSERT`, `UPDATE`/`DELETE`/`ALTER` expliciet geweigerd), `app_migrator` en `app_reporting` (alleen `reporting`). Aangemaakt in de migratie `DatabaseRoles`; bewezen met integratietests.
+
 ## 2. Overzicht per schema
 
 ```mermaid
@@ -249,7 +258,7 @@ News: `id`, `title`, `summary`, `body`, `image_blob_path`, `author_user_id`, `ca
 `user_id`, `category`, `enabled bit`. (Urgent is niet uit te zetten, afgedwongen in code.)
 
 ### Outbox
-`id`, `type`, `payload json`, `created_at`, `processed_at`, `attempts`, `last_error`. Push en e-mail worden via de outbox na de commit verstuurd.
+`id`, `type`, `payload json`, `created_at`, `processed_at`, `locked_until`, `attempts`, `last_error`. Push en e-mail worden via de outbox na de commit verstuurd. De worker claimt berichten met `READPAST` en een lock die na 5 minuten verloopt; mislukte berichten krijgen exponentieel uitstel (maximaal 5 pogingen).
 
 ## 7. Schema `ticketing`
 

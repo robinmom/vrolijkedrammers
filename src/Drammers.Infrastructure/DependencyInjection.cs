@@ -2,9 +2,21 @@ using Azure.Core;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Azure.Storage.Blobs;
+using Drammers.Infrastructure.Auditing;
+using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Health;
+using Drammers.Infrastructure.Messaging;
+using Drammers.Infrastructure.Persistence;
+using Drammers.Infrastructure.Scheduling;
+using Drammers.SharedKernel.Auditing;
+using Drammers.SharedKernel.Messaging;
+using Drammers.Worker;
+using Drammers.Worker.Outbox;
+using Drammers.Worker.Scheduling;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
@@ -18,8 +30,8 @@ public static class DependencyInjection
     public const string ConnectionStringName = "Drammers";
 
     /// <summary>
-    /// Registreert de Azure-clients en de readiness-checks. Alleen wat geconfigureerd is wordt geregistreerd,
-    /// zodat lokaal en in tests zonder Azure gewerkt kan worden; in Azure zet Bicep alle waarden.
+    /// Registreert database, Azure-clients, worker en readiness-checks. Alleen wat geconfigureerd is wordt
+    /// geregistreerd, zodat lokaal en in tests zonder Azure gewerkt kan worden; in Azure zet Bicep alle waarden.
     /// </summary>
     public static IServiceCollection AddDrammersInfrastructure(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
@@ -34,11 +46,19 @@ public static class DependencyInjection
             : new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
         services.AddSingleton(credential);
 
+
         var connectionString = configuration.GetConnectionString(ConnectionStringName);
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
+            services.AddDrammersDatabase(connectionString);
             healthChecks.Add(new HealthCheckRegistration(
                 "sql", _ => new SqlHealthCheck(connectionString), HealthStatus.Unhealthy, [ReadyTag], timeout));
+            healthChecks.AddCheck<WorkerHealthCheck>("worker", HealthStatus.Degraded, [ReadyTag], timeout);
+
+            if (configuration.GetValue("Worker:Enabled", defaultValue: true))
+            {
+                services.AddDrammersWorker();
+            }
         }
 
         if (options.KeyVaultUri is not null)
@@ -53,6 +73,24 @@ public static class DependencyInjection
             healthChecks.AddCheck<BlobStorageHealthCheck>("blob", HealthStatus.Unhealthy, [ReadyTag], timeout);
         }
 
+        return services;
+    }
+
+    /// <summary>DbContext en de databasegebonden diensten; ook los bruikbaar in integratietests.</summary>
+    public static IServiceCollection AddDrammersDatabase(this IServiceCollection services, string connectionString)
+    {
+        services.AddMemoryCache();
+        services.TryAddScoped<ICurrentActor, SystemActor>();
+        services.AddScoped<AuditableInterceptor>();
+        services.AddDbContext<DrammersDbContext>((provider, db) => db
+            .UseSqlServer(connectionString)
+            .AddInterceptors(provider.GetRequiredService<AuditableInterceptor>()));
+
+        services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddScoped<IOutbox, EfOutbox>();
+        services.AddScoped<IOutboxStore, SqlOutboxStore>();
+        services.AddScoped<IJobCoordinator, SqlJobCoordinator>();
+        services.AddScoped<AppConfigReader>();
         return services;
     }
 }

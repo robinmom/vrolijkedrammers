@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/api/v1/app-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppConfigResponse"];
+                        "application/json": components["schemas"]["AppConfigResponse"];
+                        "text/json": components["schemas"]["AppConfigResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/check": {
         parameters: {
             query?: never;
@@ -48,10 +85,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carnival-years/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CarnivalYearResponse"];
+                        "application/json": components["schemas"]["CarnivalYearResponse"];
+                        "text/json": components["schemas"]["CarnivalYearResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AppConfigResponse: {
+            minAppVersion: components["schemas"]["MinAppVersion"];
+            recommendedAppVersion: string;
+            maintenance: components["schemas"]["Maintenance"];
+            supportEmail: null | string;
+            features: {
+                [key: string]: boolean;
+            };
+        };
+        CarnivalYearResponse: {
+            /** Format: int32 */
+            id: number | string;
+            name: string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: date */
+            carnivalStartDate: string;
+            /** Format: date */
+            carnivalEndDate: string;
+        };
+        Maintenance: {
+            enabled: boolean;
+            message: null | string;
+        };
+        MinAppVersion: {
+            ios: string;
+            android: string;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;

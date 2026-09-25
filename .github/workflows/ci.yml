@@ -23,12 +23,15 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet restore Drammers.sln
+      - run: dotnet tool restore
       - name: Build (warnings = fouten)
         run: dotnet build Drammers.sln --no-restore -c Release
       - name: Formattering
         run: dotnet format Drammers.sln --verify-no-changes --no-restore
-      - name: Tests
+      - name: Tests (incl. integratietests tegen SQL Server in Docker)
         run: dotnet test Drammers.sln --no-build -c Release
+      - name: Geen modelwijzigingen zonder migratie
+        run: dotnet ef migrations has-pending-model-changes -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure --no-build --configuration Release
       - name: Kwetsbare NuGet-pakketten
         run: |
           dotnet list Drammers.sln package --vulnerable --include-transitive | tee vulnerable.txt

@@ -71,9 +71,25 @@ corepack enable pnpm          # eenmalig: pnpm-versie uit package.json
 pnpm install                  # alle JS/TS-pakketten (hoisted, zie pnpm-workspace.yaml)
 
 dotnet build Drammers.sln     # API + modules; schrijft ook openapi/v1.json
-dotnet test Drammers.sln
+dotnet test Drammers.sln      # integratietests starten zelf een SQL Server-container (Docker)
 dotnet run --project src/Drammers.Api        # http://localhost:5162/health/live
+```
 
+Lokaal met een database (optioneel; zonder connection string draait de API zonder database en worker):
+
+```bash
+docker run -d --name drammers-sql -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD='<kies-een-sterk-wachtwoord>' \
+  -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
+dotnet user-secrets --project src/Drammers.Api set ConnectionStrings:Drammers \
+  'Server=localhost;Database=drammers;User Id=sa;Password=<wachtwoord>;TrustServerCertificate=True'
+dotnet tool restore
+dotnet ef database update -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure \
+  --connection 'Server=localhost;Database=drammers;User Id=sa;Password=<wachtwoord>;TrustServerCertificate=True'
+```
+
+Nieuwe migratie na een modelwijziging: `dotnet ef migrations add <Naam> -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure -o Persistence/Migrations`. CI faalt als het model is gewijzigd zonder migratie.
+
+```bash
 pnpm --filter @drammers/admin dev            # beheerportal op http://localhost:5173
 cd apps/mobile && npx expo start             # app; druk op i (iOS) of a (Android)
 ```

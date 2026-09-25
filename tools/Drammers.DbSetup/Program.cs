@@ -1,36 +1,40 @@
+using Drammers.Infrastructure.Setup;
 using Microsoft.Data.SqlClient;
 
-// Maakt de managed identity van de API aan als databasegebruiker (idempotent). De pipeline draait dit na elke
-// infra-uitrol, zodat een opnieuw opgebouwde omgeving zonder handmatige stap werkt. Aanmelden gebeurt met de
-// pipeline-identiteit (lid van de SQL-beheergroep) via Azure CLI/DefaultAzureCredential.
-// Gebruik: Drammers.DbSetup <sql-server-fqdn> <database> <gebruikersnaam> <client-id van de managed identity>
-// Rechten volgen in fase 2 (migraties); SELECT 1 voor /health/ready heeft alleen CONNECT nodig.
-if (args.Length != 4 || !Guid.TryParse(args[3], out var clientId))
+// Databasestappen van de deploy-pipeline (fase 2). Aanmelden gebeurt met de pipeline-identiteit (lid van de
+// SQL-beheergroep) via Azure CLI/DefaultAzureCredential.
+//   Drammers.DbSetup <server> <database> migrate <script.sql>
+//       Voert het idempotente EF-migratiescript uit; bij een fout stopt de deploy (exitcode ≠ 0).
+//   Drammers.DbSetup <server> <database> ensure-user <gebruikersnaam> <client-id> [rol ...]
+//       Maakt de managed identity aan als databasegebruiker en maakt haar lid van de rollen (idempotent).
+if (args.Length < 4)
 {
-    Console.Error.WriteLine("Gebruik: Drammers.DbSetup <server> <database> <gebruikersnaam> <client-id>");
+    Console.Error.WriteLine("Gebruik: Drammers.DbSetup <server> <database> migrate <script.sql>");
+    Console.Error.WriteLine("         Drammers.DbSetup <server> <database> ensure-user <naam> <client-id> [rol ...]");
     return 2;
 }
 
-var (server, database, userName) = (args[0], args[1], args[2]);
+var (server, database, command) = (args[0], args[1], args[2]);
 var connectionString = $"Server=tcp:{server},1433;Database={database};Authentication=Active Directory Default;Encrypt=True;Connect Timeout=90";
-
-// WITH SID + TYPE = E: geen Graph-opzoeking door de SQL-server nodig (die heeft geen Directory Readers-rol).
-const string Sql = """
-    IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = @name)
-    BEGIN
-        DECLARE @sid NVARCHAR(100) = CONVERT(NVARCHAR(100), CONVERT(VARBINARY(16), @clientId), 1);
-        DECLARE @statement NVARCHAR(400) = N'CREATE USER ' + QUOTENAME(@name) + N' WITH SID = ' + @sid + N', TYPE = E';
-        EXEC sys.sp_executesql @statement;
-        SELECT 1;
-    END
-    ELSE SELECT 0;
-    """;
 
 await using var connection = new SqlConnection(connectionString);
 await connection.OpenAsync();
-await using var command = new SqlCommand(Sql, connection);
-command.Parameters.AddWithValue("@name", userName);
-command.Parameters.AddWithValue("@clientId", clientId);
-var created = (int)(await command.ExecuteScalarAsync() ?? 0) == 1;
-Console.WriteLine(created ? $"Databasegebruiker '{userName}' aangemaakt." : $"Databasegebruiker '{userName}' bestaat al.");
-return 0;
+
+switch (command)
+{
+    case "migrate":
+        var script = await File.ReadAllTextAsync(args[3]);
+        var batches = await SqlScriptRunner.RunAsync(connection, script, CancellationToken.None);
+        Console.WriteLine($"Migratiescript uitgevoerd ({batches} batches).");
+        return 0;
+
+    case "ensure-user" when args.Length >= 5 && Guid.TryParse(args[4], out var clientId):
+        var roles = args.Skip(5).ToArray();
+        var created = await DatabaseUserProvisioner.EnsureEntraUserAsync(connection, args[3], clientId, roles, CancellationToken.None);
+        Console.WriteLine($"Databasegebruiker '{args[3]}' {(created ? "aangemaakt" : "bestaat al")}; rollen: {string.Join(", ", roles)}.");
+        return 0;
+
+    default:
+        Console.Error.WriteLine($"Onbekend of onvolledig commando: {command}");
+        return 2;
+}

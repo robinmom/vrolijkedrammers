@@ -61,7 +61,7 @@ Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC.
 
 ## 4. Uitrol
 
-- **Dev:** automatisch bij elke merge naar `main` (workflow *Deploy*). Volgorde: what-if, infra, API + portal (één pakket) en smoke-tests: portal op `/beheer/`, `/health/ready` = 200, anonieme blob-toegang geweigerd, SQL alleen met Entra-authenticatie.
+- **Dev:** automatisch bij elke merge naar `main` (workflow *Deploy*). Volgorde: what-if, infra, **databasemigraties** (idempotent script; een fout stopt de deploy) en de databasegebruiker van de API (rol `app_runtime`), dan API + portal (één pakket) en smoke-tests: portal op `/beheer/`, `/health/ready` = 200, anonieme blob-toegang geweigerd, SQL alleen met Entra-authenticatie.
 - **Acc:** Actions → *Deploy* → *Run workflow* → `acc` (na goedkeuring door een reviewer).
 - **Pull requests:** Bicep-lint en build altijd; what-if tegen Dev als de what-if-identiteit is ingericht.
 
@@ -78,6 +78,11 @@ infra/bootstrap/bootstrap-nonprod.sh      # maakt rg-dvd-dev en de pipelinerecht
 Start daarna *Deploy* (Run workflow → `dev`). De API krijgt een nieuwe managed identity; de deploystap *Database – API-identiteit als gebruiker* maakt de databasegebruiker automatisch opnieuw aan. Handmatig: Key Vault-secrets opnieuw zetten (vanaf fase 3, lijst in §6).
 
 **Acc** heeft purge protection. Na verwijderen kan `kv-dvd-acc` niet worden gepurged, maar wel hersteld. Doe dat vóór de bootstrap: `az keyvault recover --name kv-dvd-acc`.
+
+### Migraties handmatig bekijken
+
+Het script dat de pipeline uitvoert, staat in het artefact `db` van elke Deploy-run (`migrations.sql`). Lokaal genereren:
+`dotnet tool restore && dotnet ef migrations script --idempotent -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure`.
 
 ## 6. Secrets
 

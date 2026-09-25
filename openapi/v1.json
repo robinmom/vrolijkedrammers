@@ -5,6 +5,35 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/v1/app-config": {
+      "get": {
+        "tags": [
+          "AppConfig"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/check": {
       "get": {
         "tags": [
@@ -36,10 +65,165 @@
           }
         }
       }
+    },
+    "/api/v1/carnival-years/current": {
+      "get": {
+        "tags": [
+          "CarnivalYears"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarnivalYearResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarnivalYearResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarnivalYearResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AppConfigResponse": {
+        "required": [
+          "minAppVersion",
+          "recommendedAppVersion",
+          "maintenance",
+          "supportEmail",
+          "features"
+        ],
+        "type": "object",
+        "properties": {
+          "minAppVersion": {
+            "$ref": "#/components/schemas/MinAppVersion"
+          },
+          "recommendedAppVersion": {
+            "type": "string"
+          },
+          "maintenance": {
+            "$ref": "#/components/schemas/Maintenance"
+          },
+          "supportEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "features": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "CarnivalYearResponse": {
+        "required": [
+          "id",
+          "name",
+          "startDate",
+          "endDate",
+          "carnivalStartDate",
+          "carnivalEndDate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "carnivalStartDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "carnivalEndDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "Maintenance": {
+        "required": [
+          "enabled",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MinAppVersion": {
+        "required": [
+          "ios",
+          "android"
+        ],
+        "type": "object",
+        "properties": {
+          "ios": {
+            "type": "string"
+          },
+          "android": {
+            "type": "string"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -82,7 +266,13 @@
   },
   "tags": [
     {
+      "name": "AppConfig"
+    },
+    {
       "name": "AuthCheck"
+    },
+    {
+      "name": "CarnivalYears"
     }
   ]
 }

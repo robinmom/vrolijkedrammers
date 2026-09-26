@@ -115,10 +115,12 @@ public class RoleAdministrationTests(SqlServerFixture sql) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);
         Assert.Equal(HttpStatusCode.Created, second.StatusCode);
-        Assert.Equal(1, _api.Entra.CreateCalls);
         using var scope = _api.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
-        Assert.Equal(1, await db.Users.CountAsync(u => u.Email == "nieuwe.beheerder@example.com"));
+        var user = await db.Users.SingleAsync(u => u.Email == "nieuwe.beheerder@example.com");
+        // Geen inlog aangemaakt: de beheerder maakt die zelf met e-mail + code en wordt dan gekoppeld.
+        Assert.True(Drammers.Infrastructure.Identity.PendingObjectId.IsPending(user.ExternalObjectId));
+        Assert.False(_api.Entra.AccountsByEmail.ContainsKey("nieuwe.beheerder@example.com"));
         var saga = await db.AccountProvisioning.SingleAsync();
         Assert.Equal(ProvisioningStep.Completed, saga.Step);
     }
@@ -131,7 +133,6 @@ public class RoleAdministrationTests(SqlServerFixture sql) : IAsyncLifetime
         var response = await _admin.PostAsJsonAsync("/api/v1/admin/users", new { email = "bestaand@example.com", displayName = "Bestaand", roles = new[] { DefaultRoles.Bestuur } });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.Equal(0, _api.Entra.CreateCalls);
         using var scope = _api.Services.CreateScope();
         var access = await scope.ServiceProvider.GetRequiredService<IUserAccessService>().GetByExternalObjectIdAsync("bestaande-oid", default);
         Assert.Contains(Permissions.MemberApprove, access!.Permissions);

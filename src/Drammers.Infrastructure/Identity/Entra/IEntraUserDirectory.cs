@@ -1,16 +1,21 @@
 namespace Drammers.Infrastructure.Identity.Entra;
 
 /// <summary>
-/// Accounts in Entra External ID via Microsoft Graph (ADR-014). Alleen de provisioning maakt accounts; zelfregistratie
-/// staat uit.
+/// Accounts in Entra External ID via Microsoft Graph (ADR-014, herzien 2026-09-27). De API maakt zelf geen inlogaccounts
+/// meer: Graph eist daarbij een wachtwoord, en zo'n account krijgt altijd de wachtwoordpagina. Leden en beheerders maken
+/// hun inlog zelf aan met e-mail + eenmalige code; de API koppelt die alleen aan een goedgekeurd account
+/// (<see cref="Identity.AccountLinker"/>).
 /// </summary>
 public interface IEntraUserDirectory
 {
     /// <returns>De <c>oid</c> van het account met dit aanmeld-e-mailadres, of <c>null</c>.</returns>
     Task<string?> FindByEmailAsync(string email, CancellationToken cancellationToken);
 
-    /// <returns>De <c>oid</c> van het nieuwe account (aanmelden met e-mail + eenmalige code).</returns>
-    Task<string> CreateAsync(string email, string displayName, CancellationToken cancellationToken);
+    /// <returns>
+    /// Het (door de eenmalige code geverifieerde) aanmeld-e-mailadres van dit account, of <c>null</c> als het account niet
+    /// (meer) bestaat.
+    /// </returns>
+    Task<string?> GetSignInEmailAsync(string objectId, CancellationToken cancellationToken);
 
     Task SetAccountEnabledAsync(string objectId, bool enabled, CancellationToken cancellationToken);
 

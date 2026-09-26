@@ -56,7 +56,9 @@ export function QueryProvider({ children, client }: { children: ReactNode; clien
       const next = getStatus();
       // Alleen bij een echte wissel (niet bij het inlezen bij het starten).
       if (previous !== 'loading' && next !== 'loading' && previous !== next) {
-        queryClient.clear();
+        // resetQueries (niet clear): wist de oude data én haalt wat op het scherm staat direct opnieuw op. Na clear()
+        // bleven open schermen (Home, Nieuws, Programma) leeg tot ze opnieuw werden geopend.
+        void queryClient.resetQueries();
       }
       previous = next;
     });

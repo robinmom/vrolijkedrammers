@@ -3,7 +3,7 @@ using Drammers.Infrastructure.Identity.Entra;
 
 namespace Drammers.IntegrationTests.Infrastructure;
 
-/// <summary>Graph-mock: houdt accounts en aanroepen bij.</summary>
+/// <summary>Graph-mock: houdt inlogaccounts en aanroepen bij.</summary>
 public sealed class FakeEntraUserDirectory : IEntraUserDirectory
 {
     public ConcurrentDictionary<string, string> AccountsByEmail { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -12,25 +12,22 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
 
     public ConcurrentBag<string> RevokedSessions { get; } = [];
 
-    public int CreateCalls;
+    public ConcurrentBag<string> Deleted { get; } = [];
+
+    /// <summary>Iemand maakt zelf een inlog met e-mail + code (zelfregistratie in de user flow); geeft de <c>oid</c>.</summary>
+    public string SignUp(string email)
+    {
+        var id = Guid.NewGuid().ToString();
+        AccountsByEmail[email] = id;
+        Enabled[id] = true;
+        return id;
+    }
 
     public Task<string?> FindByEmailAsync(string email, CancellationToken cancellationToken) =>
         Task.FromResult(AccountsByEmail.TryGetValue(email, out var id) ? id : null);
 
-    public Task<string> CreateAsync(string email, string displayName, CancellationToken cancellationToken)
-    {
-        if (FailNextCreate)
-        {
-            FailNextCreate = false;
-            throw new HttpRequestException("Graph tijdelijk niet bereikbaar");
-        }
-
-        Interlocked.Increment(ref CreateCalls);
-        var id = Guid.NewGuid().ToString();
-        AccountsByEmail[email] = id;
-        Enabled[id] = true;
-        return Task.FromResult(id);
-    }
+    public Task<string?> GetSignInEmailAsync(string objectId, CancellationToken cancellationToken) =>
+        Task.FromResult<string?>(AccountsByEmail.FirstOrDefault(e => e.Value == objectId).Key);
 
     public Task SetAccountEnabledAsync(string objectId, bool enabled, CancellationToken cancellationToken)
     {
@@ -43,11 +40,6 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
         RevokedSessions.Add(objectId);
         return Task.CompletedTask;
     }
-
-    public ConcurrentBag<string> Deleted { get; } = [];
-
-    /// <summary>Laat de volgende <see cref="CreateAsync"/> falen (saga-hervatting testen).</summary>
-    public bool FailNextCreate;
 
     public Task DeleteAsync(string objectId, CancellationToken cancellationToken)
     {

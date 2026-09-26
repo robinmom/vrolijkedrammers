@@ -4912,6 +4912,7 @@ export interface components {
             enabled: boolean;
             message: null | string;
         };
+        /** @description App-account van een lid; `AwaitingFirstSignIn`: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27). */
         MemberAccountResponse: {
             /** Format: uuid */
             userId: string;
@@ -4919,6 +4920,7 @@ export interface components {
             accountStatus: string;
             /** Format: date-time */
             lastLoginAt: null | string;
+            awaitingFirstSignIn: boolean;
         };
         MemberDetailResponse: {
             /** Format: uuid */

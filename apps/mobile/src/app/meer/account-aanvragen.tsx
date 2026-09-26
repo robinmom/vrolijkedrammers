@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { api } from '../../api/client';
+import { api, apiBaseUrl } from '../../api/client';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, LargeTitleHeader, Screen, TextField } from '../../ui';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Melding na het versturen. Ook bij een time-out: de API kan er na een rustige periode lang over doen (de database
+ * wordt dan eerst gestart) en verwerkt de aanvraag dan alsnog; een dubbele aanvraag binnen 24 uur telt niet.
+ */
+export const PENDING_MESSAGE =
+  'Je aanvraag is in behandeling. Klopt alles met de ledenadministratie, dan ontvang je binnen enkele minuten een e-mail met uitleg om in te loggen. Kijk ook in je map met ongewenste e-mail. Zo niet, dan kijkt het bestuur ernaar en hoor je van ons.';
 
 /**
  * "Ik ben al lid" (fase 9, ADR-014): lidnummer + e-mailadres. Iedereen krijgt dezelfde melding; klopt alles met de
@@ -19,22 +26,30 @@ export default function AccountAanvragenScreen() {
   const [error, setError] = useState<string | null>(null);
   const valid = memberNumber.trim().length > 0 && EMAIL.test(email.trim());
 
+  // Maakt de API (en de database) alvast wakker terwijl het lid het formulier invult.
+  useEffect(() => {
+    fetch(`${apiBaseUrl}/health/ready`).catch(() => undefined);
+  }, []);
+
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      const { data, response } = await api.POST('/api/v1/account-requests', {
+      const { response } = await api.POST('/api/v1/account-requests', {
         body: { memberNumber: memberNumber.trim(), email: email.trim() },
       });
       if (response.status === 429) {
         setError('Te veel aanvragen vanaf dit netwerk. Probeer het over tien minuten opnieuw.');
-      } else if (!response.ok || !data) {
-        setError('Aanvragen lukt nu niet. Controleer je gegevens en je verbinding.');
+      } else if (response.status === 400) {
+        setError('Controleer je lidnummer en e-mailadres.');
+      } else if (response.ok) {
+        setDone(PENDING_MESSAGE);
       } else {
-        setDone(data.message);
+        setError('Aanvragen lukt nu niet. Probeer het later opnieuw.');
       }
     } catch {
-      setError('Aanvragen lukt nu niet. Controleer je verbinding en probeer het opnieuw.');
+      // Geen antwoord (bijv. time-out): de aanvraag is meestal wel aangekomen en wordt verwerkt.
+      setDone(PENDING_MESSAGE);
     } finally {
       setBusy(false);
     }

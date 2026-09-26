@@ -24,6 +24,13 @@ public static class CurrentUser
         if (objectId is not null && service is not null)
         {
             user = await service.GetByExternalObjectIdAsync(objectId, httpContext.RequestAborted);
+
+            // Eerste aanmelding met een zelf gemaakte inlog: koppelen aan een goedgekeurd account (ADR-014).
+            if (user is null && httpContext.RequestServices.GetService<AccountLinker>() is { } linker
+                && await linker.TryLinkAsync(objectId, httpContext.RequestAborted))
+            {
+                user = await service.GetByExternalObjectIdAsync(objectId, httpContext.RequestAborted);
+            }
         }
 
         httpContext.Items[ItemKey] = user;

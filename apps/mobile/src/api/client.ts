@@ -36,7 +36,9 @@ api.use({
     if (getStatus() !== 'signedIn') {
       return request;
     }
-    const token = await getAccessToken();
+    // Lukt het vernieuwen van het token niet (bijv. geen netwerk), dan toch anoniem proberen: publieke content blijft
+    // zo zichtbaar, en een volgende aanroep probeert het token opnieuw.
+    const token = await getAccessToken().catch(() => null);
     if (token) {
       request.headers.set('authorization', `Bearer ${token}`);
       request.headers.set('x-device-id', await getInstallationId());

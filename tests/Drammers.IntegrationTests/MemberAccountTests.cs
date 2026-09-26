@@ -84,11 +84,8 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         return failures;
     }
 
-    private HttpClient ClientForMemberAsync(string email)
-    {
-        Assert.True(_api.Entra.AccountsByEmail.TryGetValue(email, out var objectId));
-        return _api.ClientFor(objectId!);
-    }
+    /// <summary>Het lid maakt zelf een inlog met e-mail + code en logt in; de API koppelt bij de eerste aanroep.</summary>
+    private HttpClient SignUpAndSignIn(string email) => _api.ClientFor(_api.Entra.SignUp(email));
 
     [Fact]
     public async Task Exacte_match_geeft_account_welkomstmail_en_eigen_gegevens()
@@ -100,12 +97,17 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         Assert.Equal(AccountRequestsController.GenericMessage, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("message").GetString());
         Assert.Equal(0, await RunProvisioningAsync());
-        Assert.Equal(1, _api.Entra.CreateCalls);
+        // Geen inlog aangemaakt (Graph eist dan een wachtwoord); het account wacht op de eerste aanmelding.
+        Assert.False(_api.Entra.AccountsByEmail.ContainsKey("piet@example.com"));
+        Assert.True(PendingObjectId.IsPending(await WithDbAsync(db => db.Users.Where(u => u.Email == "piet@example.com").Select(u => u.ExternalObjectId).SingleAsync())));
         var mail = Assert.Single(_api.Emails.Sent);
         Assert.Equal("piet@example.com", mail.To);
         Assert.Contains("Beste Piet", mail.PlainText, StringComparison.Ordinal);
+        Assert.Contains("code", mail.PlainText, StringComparison.Ordinal);
+        Assert.DoesNotContain("wachtwoord vergeten", mail.PlainText, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith("Groeten,\nDe Vrolijke Drammers", mail.PlainText.ReplaceLineEndings("\n").TrimEnd(), StringComparison.Ordinal);
 
-        var member = ClientForMemberAsync("piet@example.com");
+        var member = SignUpAndSignIn("piet@example.com");
         var me = await member.GetFromJsonAsync<JsonElement>("/api/v1/me/member");
         Assert.Equal("0101", me.GetProperty("memberNumber").GetString());
         Assert.Equal("Loil", me.GetProperty("city").GetString());
@@ -127,8 +129,10 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Single(bodies.Distinct());
 
         await RunProvisioningAsync();
-        Assert.Equal(1, _api.Entra.CreateCalls);
-        Assert.False(_api.Entra.AccountsByEmail.ContainsKey("ander@example.com"));
+        Assert.Equal(1, await WithDbAsync(db => db.Users.CountAsync(u => u.Email == "echt@example.com")));
+        Assert.False(await WithDbAsync(db => db.Users.AnyAsync(u => u.Email == "ander@example.com")));
+        // Wie zich met het afwijkende adres zelf een inlog maakt, blijft onbekend.
+        Assert.Equal(HttpStatusCode.Forbidden, (await SignUpAndSignIn("ander@example.com").GetAsync("/api/v1/me")).StatusCode);
 
         var queue = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/account-requests?status=Pending");
         var items = queue.GetProperty("items").EnumerateArray().ToList();
@@ -156,7 +160,8 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NoContent, approve.StatusCode);
         await RunProvisioningAsync();
 
-        Assert.True(_api.Entra.AccountsByEmail.ContainsKey("nieuw@example.com"));
+        Assert.True(await WithDbAsync(db => db.Users.AnyAsync(u => u.Email == "nieuw@example.com" && u.MemberId == memberId)));
+        Assert.Equal(HttpStatusCode.OK, (await SignUpAndSignIn("nieuw@example.com").GetAsync("/api/v1/me/member")).StatusCode);
         var again = await _bestuur.PostAsJsonAsync($"/api/v1/admin/account-requests/{requestId}/approve", new { memberId });
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
     }
@@ -173,8 +178,8 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         await RequestAccountAsync("0401", "dubbel@example.com");
         await RunProvisioningAsync();
 
-        Assert.Equal(1, _api.Entra.CreateCalls);
         Assert.Equal(1, await WithDbAsync(db => db.Users.CountAsync(u => u.Email == "dubbel@example.com")));
+        Assert.Single(_api.Emails.Sent);
         Assert.Equal(AccountRequestStatus.Duplicate, await WithDbAsync(db => db.AccountRequests.OrderByDescending(r => r.RequestedAt).Select(r => r.Status).FirstAsync()));
     }
 
@@ -182,16 +187,16 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
     public async Task Provisioning_die_halverwege_faalt_is_zichtbaar_en_slaagt_na_opnieuw_proberen_zonder_dubbelen()
     {
         var memberId = await AddMemberAsync("0501", "retry@example.com");
-        _api.Entra.FailNextCreate = true;
+        _api.Emails.FailNextSend = true;
 
         var start = await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null);
         Assert.Equal(HttpStatusCode.Accepted, start.StatusCode);
         Assert.Equal(1, await RunProvisioningAsync());
 
         var open = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/account-provisioning")).EnumerateArray().Single();
-        Assert.Contains("Graph", open.GetProperty("lastError").GetString(), StringComparison.Ordinal);
+        Assert.Contains("ACS", open.GetProperty("lastError").GetString(), StringComparison.Ordinal);
         var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{memberId}");
-        Assert.Equal("Pending", detail.GetProperty("provisioning").GetProperty("step").GetString());
+        Assert.Equal("MemberCreated", detail.GetProperty("provisioning").GetProperty("step").GetString());
 
         Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/account-provisioning/{open.GetProperty("id").GetGuid()}/retry", null)).StatusCode);
         Assert.Equal(0, await RunProvisioningAsync());
@@ -199,7 +204,7 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/account-provisioning/{open.GetProperty("id").GetGuid()}/retry", null)).StatusCode);
         await RunProvisioningAsync();
 
-        Assert.Equal(1, _api.Entra.CreateCalls);
+        Assert.Equal(1, await WithDbAsync(db => db.Users.CountAsync(u => u.Email == "retry@example.com")));
         Assert.Single(_api.Emails.Sent);
         Assert.Equal(ProvisioningStep.Completed, await WithDbAsync(db => db.AccountProvisioning.Where(p => p.MemberId == memberId).Select(p => p.Step).SingleAsync()));
         Assert.Empty((await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/account-provisioning")).EnumerateArray());
@@ -261,8 +266,9 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         var memberId = await AddMemberAsync("0601", "weg@example.com");
         await RequestAccountAsync("0601", "weg@example.com");
         await RunProvisioningAsync();
-        var member = ClientForMemberAsync("weg@example.com");
+        var member = SignUpAndSignIn("weg@example.com");
         var objectId = _api.Entra.AccountsByEmail["weg@example.com"];
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync("/api/v1/me")).StatusCode);
 
         var wrong = await member.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/v1/me") { Content = JsonContent.Create(new { confirmation = "ja" }) });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, wrong.StatusCode);
@@ -280,7 +286,60 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         _api.Clock.Advance(TimeSpan.FromDays(2));
         await RequestAccountAsync("0601", "weg@example.com");
         Assert.Equal(0, await RunProvisioningAsync());
-        Assert.Equal(2, _api.Entra.CreateCalls);
+        Assert.Equal(HttpStatusCode.OK, (await SignUpAndSignIn("weg@example.com").GetAsync("/api/v1/me")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Zelf_gemaakte_inlog_zonder_goedkeuring_blijft_onbekend()
+    {
+        var stranger = SignUpAndSignIn("vreemde@example.com");
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.GetAsync("/api/v1/me")).StatusCode);
+        Assert.False(await WithDbAsync(db => db.Users.AnyAsync(u => u.Email == "vreemde@example.com")));
+    }
+
+    [Fact]
+    public async Task Oude_inlog_met_wachtwoord_verwijderd_dan_koppelt_een_nieuwe_inlog_hetzelfde_account()
+    {
+        // Een beheerder met een inlog die om een wachtwoord vraagt (van vóór 2026-09-27). Die inlog wordt in Entra
+        // verwijderd, waarna de beheerder zelf een nieuwe inlog met e-mail + code maakt.
+        var (userId, oldObjectId) = await _api.CreateUserAsync("beheer@example.com", DefaultRoles.Bestuur);
+        await _api.Entra.DeleteAsync(oldObjectId, CancellationToken.None);
+        var second = _api.Entra.SignUp("beheer@example.com");
+
+        var response = await _api.ClientFor(second).GetFromJsonAsync<JsonElement>("/api/v1/me");
+        Assert.Equal(userId, response.GetProperty("id").GetGuid());
+        Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(oldObjectId).GetAsync("/api/v1/me")).StatusCode);
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "user.relinked")));
+    }
+
+    [Fact]
+    public async Task Tweede_inlog_neemt_een_account_niet_over_zolang_de_oude_inlog_bestaat()
+    {
+        var (_, oldObjectId) = await _api.CreateUserAsync("dubbelinlog@example.com", DefaultRoles.Lid);
+        // Een tweede inlog met hetzelfde e-mailadres terwijl de oude nog bestaat (de mock kent per adres één inlog, dus
+        // de oude staat onder een ander adres: GetSignInEmailAsync geeft voor de oude inlog nog steeds een waarde).
+        var intruder = _api.Entra.SignUp("dubbelinlog@example.com");
+        _api.Entra.AccountsByEmail["dubbelinlog-oud@example.com"] = oldObjectId;
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(intruder).GetAsync("/api/v1/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _api.ClientFor(oldObjectId).GetAsync("/api/v1/me")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Blokkeren_van_een_account_zonder_inlog_raakt_Entra_niet()
+    {
+        var memberId = await AddMemberAsync("0801", "nognooit@example.com");
+        await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null);
+        await RunProvisioningAsync();
+        var userId = await WithDbAsync(db => db.Users.Where(u => u.MemberId == memberId).Select(u => u.Id).SingleAsync());
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{memberId}");
+        Assert.True(detail.GetProperty("account").GetProperty("awaitingFirstSignIn").GetBoolean());
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/users/{userId}/block", null)).StatusCode);
+        Assert.Empty(_api.Entra.RevokedSessions);
+        // Een geblokkeerd account wordt ook bij een eerste aanmelding niet bruikbaar.
+        Assert.Equal(HttpStatusCode.Forbidden, (await SignUpAndSignIn("nognooit@example.com").GetAsync("/api/v1/me")).StatusCode);
     }
 
     [Fact]
@@ -289,7 +348,7 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         await AddMemberAsync("0701", "avg@example.com");
         await RequestAccountAsync("0701", "avg@example.com");
         await RunProvisioningAsync();
-        var member = ClientForMemberAsync("avg@example.com");
+        var member = SignUpAndSignIn("avg@example.com");
         member.DefaultRequestHeaders.Add("X-Device-Id", "installatie-avg-000000001");
         await member.PostAsJsonAsync("/api/v1/me/devices", new { installationId = "installatie-avg-000000001", platform = "Android", model = "Pixel", appVersion = "1.0.0" });
 

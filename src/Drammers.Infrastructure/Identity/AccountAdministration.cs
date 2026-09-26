@@ -98,7 +98,13 @@ public sealed class AccountAdministration(
         await transaction.CommitAsync(cancellationToken);
         userAccess.Invalidate(user.ExternalObjectId);
 
-        // Na de commit: de API weigert het account nu al; Entra volgt (bij een fout kan dit veilig opnieuw).
+        // Na de commit: de API weigert het account nu al; Entra volgt (bij een fout kan dit veilig opnieuw). Zonder
+        // gekoppelde inlog (nog nooit aangemeld) is er in Entra niets te doen.
+        if (PendingObjectId.IsPending(user.ExternalObjectId))
+        {
+            return;
+        }
+
         await entra.SetAccountEnabledAsync(user.ExternalObjectId, enabled: !blocked, cancellationToken);
         if (blocked)
         {
@@ -247,8 +253,9 @@ public sealed class AccountAdministration(
         {
             if (saga.EntraObjectId is null)
             {
-                saga.EntraObjectId = await entra.FindByEmailAsync(normalizedEmail, cancellationToken)
-                    ?? await entra.CreateAsync(normalizedEmail, displayName, cancellationToken);
+                // Geen inlog maken (Graph eist een wachtwoord): de beheerder maakt zelf een inlog met e-mail + code, die
+                // AccountLinker bij de eerste aanmelding koppelt.
+                saga.EntraObjectId = await entra.FindByEmailAsync(normalizedEmail, cancellationToken) ?? PendingObjectId.New();
                 saga.Step = ProvisioningStep.AccountCreated;
                 await db.SaveChangesAsync(cancellationToken);
             }

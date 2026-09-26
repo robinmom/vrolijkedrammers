@@ -18,7 +18,7 @@ namespace Drammers.Api.Controllers;
 public sealed class AccountRequestsController(MemberAccounts accounts) : ControllerBase
 {
     public const string GenericMessage =
-        "Bedankt! Klopt alles, dan ontvang je binnen enkele minuten een e-mail om in te loggen. Zo niet, dan kijkt het bestuur ernaar en hoor je van ons.";
+        "Je aanvraag is in behandeling. Klopt alles met de ledenadministratie, dan ontvang je binnen enkele minuten een e-mail met uitleg om in te loggen. Kijk ook in je map met ongewenste e-mail. Zo niet, dan kijkt het bestuur ernaar en hoor je van ons.";
 
     [HttpPost]
     [ProducesResponseType<AccountRequestAcceptedResponse>(StatusCodes.Status202Accepted)]

@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using Azure.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Drammers.Infrastructure.Identity.Entra;
 
 /// <summary>
-/// Minimale Graph-client (vier aanroepen) in plaats van de volledige Graph SDK. Aanmelden als de provisioning-app met
+/// Minimale Graph-client (vijf aanroepen) in plaats van de volledige Graph SDK. Aanmelden als de provisioning-app met
 /// <c>User.ReadWrite.All</c> (application permission) in de External ID-tenant, met een certificaat uit Key Vault.
 /// </summary>
 internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialProvider credentials, IOptions<GraphOptions> options) : IEntraUserDirectory
@@ -27,24 +26,18 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
         return result?.Value.FirstOrDefault()?.Id;
     }
 
-    public async Task<string> CreateAsync(string email, string displayName, CancellationToken cancellationToken)
+    public async Task<string?> GetSignInEmailAsync(string objectId, CancellationToken cancellationToken)
     {
-        // Wachtwoord is verplicht bij aanmaken, maar wordt nooit gebruikt: de user flow kent alleen e-mail + eenmalige code.
-        var body = new
-        {
-            displayName,
-            accountEnabled = true,
-            mail = email,
-            identities = new[] { new { signInType = "emailAddress", issuer = options.Value.IssuerDomain, issuerAssignedId = email } },
-            passwordProfile = new { password = RandomPassword(), forceChangePasswordNextSignIn = false },
-            passwordPolicies = "DisablePasswordExpiration",
-        };
-        using var request = await CreateRequestAsync(HttpMethod.Post, "users", cancellationToken);
-        request.Content = JsonContent.Create(body);
+        using var request = await CreateRequestAsync(HttpMethod.Get, $"users/{Uri.EscapeDataString(objectId)}?$select=identities", cancellationToken);
         using var response = await http.SendAsync(request, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
         await EnsureSuccessAsync(response, cancellationToken);
-        var created = await response.Content.ReadFromJsonAsync<GraphUser>(cancellationToken);
-        return created?.Id ?? throw new InvalidOperationException("Graph gaf geen id terug voor het nieuwe account");
+        var user = await response.Content.ReadFromJsonAsync<GraphIdentities>(cancellationToken);
+        return user?.Identities.FirstOrDefault(i => i.SignInType == "emailAddress" && i.Issuer == options.Value.IssuerDomain)?.IssuerAssignedId;
     }
 
     public async Task SetAccountEnabledAsync(string objectId, bool enabled, CancellationToken cancellationToken)
@@ -95,11 +88,16 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
 
     private static string Escape(string value) => value.Replace("'", "''", StringComparison.Ordinal);
 
-    private static string RandomPassword() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)) + "aA1!";
-
     private sealed record GraphList([property: JsonPropertyName("value")] List<GraphUser> Value);
 
     private sealed record GraphUser([property: JsonPropertyName("id")] string Id);
+
+    private sealed record GraphIdentities([property: JsonPropertyName("identities")] List<GraphIdentity> Identities);
+
+    private sealed record GraphIdentity(
+        [property: JsonPropertyName("signInType")] string SignInType,
+        [property: JsonPropertyName("issuer")] string Issuer,
+        [property: JsonPropertyName("issuerAssignedId")] string IssuerAssignedId);
 }
 
 /// <summary>Zonder Graph-configuratie (lokaal, tests): elke aanroep faalt met een duidelijke melding.</summary>
@@ -110,7 +108,7 @@ internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
 
     public Task<string?> FindByEmailAsync(string email, CancellationToken cancellationToken) => throw NotConfigured();
 
-    public Task<string> CreateAsync(string email, string displayName, CancellationToken cancellationToken) => throw NotConfigured();
+    public Task<string?> GetSignInEmailAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
 
     public Task SetAccountEnabledAsync(string objectId, bool enabled, CancellationToken cancellationToken) => throw NotConfigured();
 

@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
 # Geeft een bestaand account toegang tot Dev en/of Acc (B-02): lid van Testers + attribuut environmentAccess.
-#   infra/entra/set-tester.sh <user-object-id> dev,acc     (leeg tweede argument = toegang intrekken)
+#   infra/entra/set-tester.sh <user-object-id of e-mailadres> dev,acc     (leeg tweede argument = toegang intrekken)
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=infra/entra/lib.sh
 source "$HERE/lib.sh"
 
-USER_ID="${1:?Gebruik: set-tester.sh <user-object-id> [dev,acc]}"
+USER_ID="${1:?Gebruik: set-tester.sh <user-object-id of e-mailadres> [dev,acc]}"
 ACCESS="${2:-}"
 [[ -z "$ACCESS" || "$ACCESS" =~ ^(dev|acc)(,(dev|acc))?$ ]] || { echo "Toegestaan: dev, acc of dev,acc" >&2; exit 1; }
 use_ciam_tenant
+
+# Een e-mailadres (bijv. na een eigen inlog met e-mail + code) omzetten naar de object-id.
+if [[ "$USER_ID" == *@* ]]; then
+  EMAIL="$USER_ID"
+  USER_ID="$(graph --method get --url "$GRAPH/users" \
+    --url-parameters "\$filter=identities/any(i:i/issuerAssignedId eq '$EMAIL' and i/issuer eq 'vrolijkedrammersapp.onmicrosoft.com')" "\$select=id" \
+    --query "value[0].id" -o tsv)"
+  [[ -n "$USER_ID" ]] || { echo "Geen inlog gevonden voor $EMAIL" >&2; exit 1; }
+fi
 
 EXTENSION_NAME="$(environment_access_extension)"
 TESTERS_ID="$(find_by_name "$GRAPH/groups" Testers id)"

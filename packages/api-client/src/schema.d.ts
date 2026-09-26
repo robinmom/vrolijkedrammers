@@ -4,6 +4,437 @@
  */
 
 export interface paths {
+    "/api/v1/account-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AccountRequestRequest"];
+                    "text/json": components["schemas"]["AccountRequestRequest"];
+                    "application/*+json": components["schemas"]["AccountRequestRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccountRequestAcceptedResponse"];
+                        "application/json": components["schemas"]["AccountRequestAcceptedResponse"];
+                        "text/json": components["schemas"]["AccountRequestAcceptedResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ValidationProblemDetails"];
+                        "application/json": components["schemas"]["ValidationProblemDetails"];
+                        "text/json": components["schemas"]["ValidationProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["AccountRequestStatus"];
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfAccountRequestResponse"];
+                        "application/json": components["schemas"]["PagedResultOfAccountRequestResponse"];
+                        "text/json": components["schemas"]["PagedResultOfAccountRequestResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApproveAccountRequestRequest"];
+                    "text/json": components["schemas"]["ApproveAccountRequestRequest"];
+                    "application/*+json": components["schemas"]["ApproveAccountRequestRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RejectAccountRequestRequest"];
+                    "text/json": components["schemas"]["RejectAccountRequestRequest"];
+                    "application/*+json": components["schemas"]["RejectAccountRequestRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/provision-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Direct een account maken voor een lid (bron Manual; e-mailadres uit e-Boekhouden). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProvisioningStartedResponse"];
+                        "application/json": components["schemas"]["ProvisioningStartedResponse"];
+                        "text/json": components["schemas"]["ProvisioningStartedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-provisioning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    openOnly?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProvisioningResponse"][];
+                        "application/json": components["schemas"]["ProvisioningResponse"][];
+                        "text/json": components["schemas"]["ProvisioningResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-provisioning/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DeviceResponse"][];
+                        "application/json": components["schemas"]["DeviceResponse"][];
+                        "text/json": components["schemas"]["DeviceResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/devices/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/audit-log": {
         parameters: {
             query?: never;
@@ -3114,6 +3545,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/app-auth-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppAuthConfigResponse"];
+                        "application/json": components["schemas"]["AppAuthConfigResponse"];
+                        "text/json": components["schemas"]["AppAuthConfigResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app-config": {
         parameters: {
             query?: never;
@@ -3408,6 +3876,337 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        /** Account verwijderen: ook het Entra-account. De ledenadministratie in e-Boekhouden blijft ongemoeid. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeleteAccountRequest"];
+                    "text/json": components["schemas"]["DeleteAccountRequest"];
+                    "application/*+json": components["schemas"]["DeleteAccountRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/member": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eigen lidgegevens (read-only; wijzigen via het secretariaat in e-Boekhouden) en groepen. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyMemberResponse"];
+                        "application/json": components["schemas"]["MyMemberResponse"];
+                        "text/json": components["schemas"]["MyMemberResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DeviceResponse"][];
+                        "application/json": components["schemas"]["DeviceResponse"][];
+                        "text/json": components["schemas"]["DeviceResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Meldt deze installatie aan na het inloggen (idempotent). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RegisterDeviceRequest"];
+                    "text/json": components["schemas"]["RegisterDeviceRequest"];
+                    "application/*+json": components["schemas"]["RegisterDeviceRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DeviceResponse"];
+                        "application/json": components["schemas"]["DeviceResponse"];
+                        "text/json": components["schemas"]["DeviceResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/devices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Apparaat afmelden; dat apparaat is daarna uitgelogd (401 `DEVICE_REVOKED`). */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RenameDeviceRequest"];
+                    "text/json": components["schemas"]["RenameDeviceRequest"];
+                    "application/*+json": components["schemas"]["RenameDeviceRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/me/privacy/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AVG-export (inzage): JSON met alle gegevens, 24 uur te downloaden. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrivacyExportResponse"];
+                        "application/json": components["schemas"]["PrivacyExportResponse"];
+                        "text/json": components["schemas"]["PrivacyExportResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/privacy/export/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrivacyExportResponse"];
+                        "application/json": components["schemas"]["PrivacyExportResponse"];
+                        "text/json": components["schemas"]["PrivacyExportResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3685,6 +4484,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountRequestAcceptedResponse: {
+            message: string;
+        };
+        AccountRequestMemberResponse: {
+            /** Format: uuid */
+            id: string;
+            memberNumber: string;
+            fullName: string;
+            email: null | string;
+            status: components["schemas"]["MembershipStatus"];
+        };
+        AccountRequestRequest: {
+            memberNumber: string;
+            email: string;
+        };
+        AccountRequestResponse: {
+            /** Format: uuid */
+            id: string;
+            memberNumber: string;
+            email: string;
+            status: components["schemas"]["AccountRequestStatus"];
+            mismatchReason: null | string;
+            rejectionReason: null | string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: date-time */
+            decidedAt: null | string;
+            member: null | components["schemas"]["AccountRequestMemberResponse"];
+        };
+        /** @enum {unknown} */
+        AccountRequestStatus: "Pending" | "Approved" | "Rejected" | "Duplicate";
         AdminAlbumResponse: {
             /** Format: uuid */
             id: string;
@@ -3802,6 +4632,12 @@ export interface components {
             eventId: null | string;
             publication: components["schemas"]["PublicationRequest"];
         };
+        AppAuthConfigResponse: {
+            clientId: string;
+            authority: string;
+            scopes: string[];
+            redirectBridgeUrl: null | string;
+        };
         AppConfigResponse: {
             minAppVersion: components["schemas"]["MinAppVersion"];
             recommendedAppVersion: string;
@@ -3826,6 +4662,10 @@ export interface components {
             maintenanceMode: boolean;
             maintenanceMessage: null | string;
             supportEmail: null | string;
+        };
+        ApproveAccountRequestRequest: {
+            /** Format: uuid */
+            memberId: string;
         };
         AttachmentResponse: {
             /** Format: uuid */
@@ -3910,6 +4750,27 @@ export interface components {
             systemStatus: string;
             checks: components["schemas"]["HealthEntry"][];
         };
+        DeleteAccountRequest: {
+            confirmation: string;
+        };
+        /** @enum {unknown} */
+        DevicePlatform: "Ios" | "Android";
+        DeviceResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            platform: components["schemas"]["DevicePlatform"];
+            model: null | string;
+            appVersion: null | string;
+            status: components["schemas"]["DeviceStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastSeenAt: string;
+            current: boolean;
+        };
+        /** @enum {unknown} */
+        DeviceStatus: "Active" | "Revoked";
         EventCategoryResponse: {
             /** Format: int32 */
             id: number;
@@ -4100,6 +4961,7 @@ export interface components {
             fieldSources: components["schemas"]["MemberFieldSourcesResponse"];
             account: null | components["schemas"]["MemberAccountResponse"];
             groups: components["schemas"]["MemberGroupResponse"][];
+            provisioning: null | components["schemas"]["MemberProvisioningResponse"];
         };
         /**
          * @description Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld
@@ -4139,6 +5001,17 @@ export interface components {
             birthDate: null | string;
             /** Format: int16 */
             joinYear: null | number;
+        };
+        /** @description Laatste provisioning van een account voor dit lid (fase 9). */
+        MemberProvisioningResponse: {
+            /** Format: uuid */
+            id: string;
+            step: components["schemas"]["ProvisioningStep"];
+            /** Format: int32 */
+            attempts: number;
+            lastError: null | string;
+            /** Format: date-time */
+            createdAt: string;
         };
         MemberPurgeRequest: {
             confirmation: string;
@@ -4217,6 +5090,28 @@ export interface components {
             ios: string;
             android: string;
         };
+        MyGroupResponse: {
+            name: string;
+            function: components["schemas"]["GroupFunction"];
+        };
+        MyMemberResponse: {
+            memberNumber: string;
+            fullName: string;
+            firstName: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            email: null | string;
+            phone: null | string;
+            /** Format: date */
+            birthDate: null | string;
+            /** Format: int16 */
+            joinYear: null | number;
+            status: components["schemas"]["MembershipStatus"];
+            /** Format: date */
+            membershipValidTo: null | string;
+            groups: components["schemas"]["MyGroupResponse"][];
+        };
         NewsDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -4246,6 +5141,16 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
             imageUrl: null | string;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfAccountRequestResponse: {
+            items: components["schemas"]["AccountRequestResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfAuditLogEntryResponse: {
@@ -4372,6 +5277,14 @@ export interface components {
             authority: string;
             apiScope: string;
         };
+        PrivacyExportResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uri */
+            downloadUrl: null | string;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -4380,6 +5293,31 @@ export interface components {
             detail?: null | string;
             instance?: null | string;
         };
+        ProvisioningResponse: {
+            /** Format: uuid */
+            id: string;
+            sourceType: components["schemas"]["ProvisioningSourceType"];
+            step: components["schemas"]["ProvisioningStep"];
+            /** Format: uuid */
+            memberId: null | string;
+            memberName: null | string;
+            memberNumber: null | string;
+            /** Format: int32 */
+            attempts: number;
+            lastError: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+        };
+        /** @enum {unknown} */
+        ProvisioningSourceType: "MembershipApplication" | "AccountRequest" | "Guardian" | "Manual";
+        ProvisioningStartedResponse: {
+            /** Format: uuid */
+            provisioningId: string;
+        };
+        /** @enum {unknown} */
+        ProvisioningStep: "Pending" | "EbCreated" | "MemberCreated" | "AccountCreated" | "WelcomeSent" | "Completed" | "Failed";
         ProvisionUserRequest: {
             email: string;
             displayName: string;
@@ -4405,6 +5343,18 @@ export interface components {
         };
         /** @enum {unknown} */
         PublicationStatus: "Draft" | "Scheduled" | "Published" | "Archived";
+        RegisterDeviceRequest: {
+            installationId: string;
+            platform: components["schemas"]["DevicePlatform"];
+            model: null | string;
+            appVersion: null | string;
+        };
+        RejectAccountRequestRequest: {
+            reason: null | string;
+        };
+        RenameDeviceRequest: {
+            name: string;
+        };
         ReportRow: {
             label: string;
             /** Format: int32 */
@@ -4544,6 +5494,17 @@ export interface components {
             accountStatus: string;
             /** Format: date-time */
             lastLoginAt: null | string;
+        };
+        ValidationProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number;
+            detail?: null | string;
+            instance?: null | string;
+            errors?: {
+                [key: string]: string[];
+            };
         };
     };
     responses: never;

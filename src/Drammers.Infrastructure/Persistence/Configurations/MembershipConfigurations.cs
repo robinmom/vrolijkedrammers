@@ -99,3 +99,15 @@ internal sealed class GroupMembershipConfiguration : IEntityTypeConfiguration<Dr
         builder.HasIndex(m => m.MemberId);
     }
 }
+
+internal sealed class PrivacyRequestConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Privacy.PrivacyRequest>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Privacy.PrivacyRequest> builder)
+    {
+        builder.ToTable("PrivacyRequest", Schemas.Membership);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.Property(r => r.FilePath).HasMaxLength(200).IsUnicode(false);
+        builder.HasIndex(r => r.UserId);
+        builder.HasIndex(r => r.ExpiresAt).HasFilter("[file_path] IS NOT NULL");
+    }
+}

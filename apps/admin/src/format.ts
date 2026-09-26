@@ -111,3 +111,28 @@ export const groupTypeLabels: Record<string, string> = {
 };
 
 export const groupFunctionLabels: Record<string, string> = { Member: 'Lid', Lead: 'Leiding' };
+
+export const accountRequestStatusLabels: Record<string, string> = {
+  Pending: 'Wacht op beoordeling',
+  Approved: 'Goedgekeurd',
+  Rejected: 'Afgewezen',
+  Duplicate: 'Had al een account',
+};
+
+/** Waarom een accountverzoek niet automatisch is goedgekeurd (fase 9). */
+export const mismatchReasonLabels: Record<string, string> = {
+  'unknown-member-number': 'Lidnummer onbekend',
+  'email-mismatch': 'E-mailadres wijkt af van e-Boekhouden',
+  'member-not-active': 'Lid is niet actief',
+  'has-account': 'Lid heeft al een account',
+};
+
+export const provisioningStepLabels: Record<string, string> = {
+  Pending: 'Wordt gestart',
+  AccountCreated: 'Inlogaccount aangemaakt',
+  MemberCreated: 'Gekoppeld aan het lid',
+  WelcomeSent: 'Welkomstmail verstuurd',
+  Completed: 'Klaar',
+  Failed: 'Mislukt',
+  EbCreated: 'In e-Boekhouden aangemaakt',
+};

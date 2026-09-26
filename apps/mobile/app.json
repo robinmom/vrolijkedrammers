@@ -41,7 +41,9 @@
         {
           "calendarPermission": "De app zet activiteiten van De Vrolijke Drammers in je agenda als je daarom vraagt."
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-secure-store"
     ],
     "scheme": "drammers",
     "experiments": {

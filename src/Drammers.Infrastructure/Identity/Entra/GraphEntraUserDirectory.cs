@@ -62,6 +62,16 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task DeleteAsync(string objectId, CancellationToken cancellationToken)
+    {
+        using var request = await CreateRequestAsync(HttpMethod.Delete, $"users/{Uri.EscapeDataString(objectId)}", cancellationToken);
+        using var response = await http.SendAsync(request, cancellationToken);
+        if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+        {
+            await EnsureSuccessAsync(response, cancellationToken);
+        }
+    }
+
     private async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string path, CancellationToken cancellationToken)
     {
         var credential = await credentials.GetAsync(cancellationToken);
@@ -105,6 +115,8 @@ internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
     public Task SetAccountEnabledAsync(string objectId, bool enabled, CancellationToken cancellationToken) => throw NotConfigured();
 
     public Task RevokeSessionsAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
+
+    public Task DeleteAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
 }
 
 /// <summary>

@@ -374,3 +374,40 @@ export function useCurrentCarnivalYear() {
     queryFn: async () => required((await api.GET('/api/v1/carnival-years/current')).data),
   });
 }
+
+// ----- Fase 9: accountverzoeken, provisioning en apparaten -------------------------------------------------------
+
+export type AccountRequest = Schemas['AccountRequestResponse'];
+export type AccountRequestStatus = Schemas['AccountRequestStatus'];
+export type Provisioning = Schemas['ProvisioningResponse'];
+export type Device = Schemas['DeviceResponse'];
+
+export function useAccountRequests(status: AccountRequestStatus | '', page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['account-requests', status, page],
+    queryFn: async () =>
+      required(
+        (await api.GET('/api/v1/admin/account-requests', { params: { query: { status: status || undefined, page, pageSize: 25 } } })).data,
+      ),
+  });
+}
+
+/** Openstaande (of mislukte) provisioning; ververst elke 5 s zolang er iets loopt. */
+export function useProvisioning() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['account-provisioning'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/account-provisioning')).data),
+    refetchInterval: (query) => ((query.state.data ?? []).some((p) => !p.lastError) ? 5000 : false),
+  });
+}
+
+export function useUserDevices(id: string, enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['user-devices', id],
+    enabled,
+    queryFn: async () => required((await api.GET('/api/v1/admin/users/{id}/devices', { params: { path: { id } } })).data),
+  });
+}

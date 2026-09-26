@@ -172,10 +172,14 @@ ensure_in_user_flow "$PORTAL_APP_ID"
 
 echo "==> Mobiele app ($ENV)"
 MOBILE_NAME="DVD App ($ENV)"
+# Dev/Acc: ook de doorstuurpagina van de API voor Expo Go (fase 9, /app/auth-redirect), afgeleid van DVD_PORTAL_URL.
+MOBILE_REDIRECTS="$(jq -cn --arg url "$PORTAL_URL" --arg env "$ENV" \
+  '["drammers://auth", "msauth.nl.vrolijkedrammers.app://auth",
+    (if $env != "prod" and ($url | length > 0) then ($url | sub("/beheer/?$"; "") + "/app/auth-redirect") else empty end)]')"
 MOBILE_APP_ID="$(ensure_app "$MOBILE_NAME" "{
   \"displayName\": \"$MOBILE_NAME\", \"signInAudience\": \"AzureADMyOrg\",
   \"isFallbackPublicClient\": true,
-  \"publicClient\": {\"redirectUris\": [\"drammers://auth\", \"msauth.nl.vrolijkedrammers.app://auth\"]},
+  \"publicClient\": {\"redirectUris\": $MOBILE_REDIRECTS},
   \"requiredResourceAccess\": $REQUIRED_ACCESS }")"
 MOBILE_SP_ID="$(ensure_service_principal "$MOBILE_APP_ID")"
 ensure_testers_assignment "$MOBILE_SP_ID"

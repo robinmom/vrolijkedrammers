@@ -55,6 +55,30 @@ resource containers 'Microsoft.Storage/storageAccounts/blobServices/containers@2
   }
 ]
 
+// AVG-exports (fase 9) zijn 24 uur via de API te downloaden; daarna ruimt deze regel ze (en oude versies) op.
+resource lifecycle 'Microsoft.Storage/storageAccounts/managementPolicies@2025-01-01' = {
+  parent: account
+  name: 'default'
+  properties: {
+    policy: {
+      rules: [
+        {
+          name: 'privacy-exports-opruimen'
+          enabled: true
+          type: 'Lifecycle'
+          definition: {
+            filters: { blobTypes: ['blockBlob'], prefixMatch: ['exports/privacy/'] }
+            actions: {
+              baseBlob: { delete: { daysAfterModificationGreaterThan: 2 } }
+              version: { delete: { daysAfterCreationGreaterThan: 2 } }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
 // Nieuwste versie die categoryGroup ondersteunt.
 #disable-next-line use-recent-api-versions
 resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {

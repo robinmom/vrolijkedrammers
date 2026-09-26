@@ -6,7 +6,15 @@ import { ConfirmDialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
-import { accountStatusLabels, formatDate, formatDateTime, groupFunctionLabels, membershipStatusLabels, syncStateLabels } from '../format';
+import {
+  accountStatusLabels,
+  formatDate,
+  formatDateTime,
+  groupFunctionLabels,
+  membershipStatusLabels,
+  provisioningStepLabels,
+  syncStateLabels,
+} from '../format';
 
 interface LocalForm {
   localStatusOverride: MembershipStatus | '';
@@ -44,6 +52,7 @@ export function MemberDetailPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [confirmInactive, setConfirmInactive] = useState(false);
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
+  const canApprove = (me.data?.permissions ?? []).includes('member.approve');
 
   useEffect(() => {
     if (member.data) {
@@ -67,6 +76,10 @@ export function MemberDetailPage() {
         },
       }),
     [['member', id], ['members']],
+  );
+  const provision = useApiMutation(
+    () => api.POST('/api/v1/admin/members/{id}/provision-account', { params: { path: { id } } }),
+    [['member', id], ['account-provisioning']],
   );
   const markInactive = useApiMutation(
     () => api.POST('/api/v1/admin/members/{id}/confirm-inactive', { params: { path: { id } } }),
@@ -270,7 +283,33 @@ export function MemberDetailPage() {
                 </Link>
               </>
             ) : (
-              <p className="muted">Dit lid heeft (nog) geen app-account. Accounts voor leden volgen in fase 9.</p>
+              <>
+                <p className="muted">Dit lid heeft (nog) geen app-account.</p>
+                {m.provisioning ? (
+                  <p>
+                    <span className={`badge ${m.provisioning.lastError ? 'error' : 'info'}`}>
+                      {m.provisioning.lastError ? 'Aanmaken mislukt' : (provisioningStepLabels[m.provisioning.step] ?? m.provisioning.step)}
+                    </span>{' '}
+                    {m.provisioning.lastError ? (
+                      <Link to="/accountverzoeken">Bekijk en probeer opnieuw</Link>
+                    ) : null}
+                  </p>
+                ) : null}
+                <ProblemAlert error={provision.error} />
+                {canApprove ? (
+                  <button
+                    type="button"
+                    className="button"
+                    disabled={!m.email || m.effectiveStatus !== 'Active' || provision.isPending || Boolean(m.provisioning && !m.provisioning.lastError)}
+                    title={m.email ? undefined : 'Vul eerst een e-mailadres in e-Boekhouden in'}
+                    onClick={() =>
+                      provision.mutate(undefined, { onSuccess: () => setMessage(`Het account wordt aangemaakt; ${m.fullName} krijgt een welkomstmail op ${m.email}.`) })
+                    }
+                  >
+                    App-account aanmaken
+                  </button>
+                ) : null}
+              </>
             )}
           </section>
 

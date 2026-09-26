@@ -33,4 +33,12 @@ public static class ErrorCodes
     public const string PurgeNotAllowed = "PURGE_NOT_ALLOWED";
     public const string GroupNotFound = "GROUP_NOT_FOUND";
     public const string GroupNameTaken = "GROUP_NAME_TAKEN";
+    public const string DeviceRevoked = "DEVICE_REVOKED";
+    public const string DeviceNotFound = "DEVICE_NOT_FOUND";
+    public const string AccountRequestNotFound = "ACCOUNT_REQUEST_NOT_FOUND";
+    public const string AccountRequestDecided = "ACCOUNT_REQUEST_DECIDED";
+    public const string MemberHasAccount = "MEMBER_HAS_ACCOUNT";
+    public const string MemberNotEligible = "MEMBER_NOT_ELIGIBLE";
+    public const string ProvisioningNotFound = "PROVISIONING_NOT_FOUND";
+    public const string PrivacyExportNotFound = "PRIVACY_EXPORT_NOT_FOUND";
 }

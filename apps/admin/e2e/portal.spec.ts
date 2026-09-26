@@ -96,6 +96,7 @@ test('redacteur publiceert een event voor iedereen; het staat in de publieke age
 
 for (const path of [
   '',
+  'accountverzoeken',
   'agenda',
   'agenda/nieuw',
   'nieuws',
@@ -260,4 +261,52 @@ test('rapportage toont aantallen per categorie', async ({ page }) => {
   await expect(
     page.getByRole('region', { name: 'Per groep' }).getByRole('cell', { name: 'Jeugdcommissie' }),
   ).toBeVisible();
+});
+
+test('fase 9: accountverzoek goedkeuren met het e-mailadres uit e-Boekhouden, en een mislukte provisioning opnieuw proberen', async ({
+  page,
+}) => {
+  const api = new MockApi();
+  await open(page, api, 'accountverzoeken');
+  await expect(page.getByRole('heading', { name: 'Accountverzoeken' })).toBeVisible();
+  await expect(page.getByText('E-mailadres wijkt af van e-Boekhouden')).toBeVisible();
+  // Zonder gevonden lid kan het bestuur alleen afwijzen.
+  await expect(page.getByRole('button', { name: 'Account aanmaken voor 999' })).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Account aanmaken voor Piet van der Berg' }).click();
+  await expect(
+    page.getByText('Het account voor Piet van der Berg wordt aangemaakt met piet@example.com.'),
+  ).toBeVisible();
+  expect(api.accountRequests.find((r) => r.id === 'r-1')!.status).toBe('Approved');
+
+  await page.getByRole('button', { name: 'Verzoek 999 afwijzen' }).click();
+  await page.getByRole('dialog').getByLabel('Reden (intern, optioneel)').fill('Onbekend');
+  await page.getByRole('dialog').getByRole('button', { name: 'Afwijzen' }).click();
+  await expect(page.getByText('Het verzoek is afgewezen.')).toBeVisible();
+
+  await expect(page.getByText('Graph-aanroep mislukt (503)')).toBeVisible();
+  await page.getByRole('button', { name: 'Opnieuw proberen' }).click();
+  await expect(page.getByText('Graph-aanroep mislukt (503)')).toHaveCount(0);
+});
+
+test('fase 9: app-account aanmaken vanuit het lid-detail', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'leden/m-1');
+  await page.getByRole('button', { name: 'App-account aanmaken' }).click();
+  await expect(page.getByText(/krijgt een welkomstmail op piet@example.com/)).toBeVisible();
+  await expect(page.getByText('Wordt gestart')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'App-account aanmaken' })).toBeDisabled();
+});
+
+test('fase 9: apparaat van een gebruiker intrekken; zonder rechten geen accountverzoeken', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'gebruikers/u-jan');
+  await page.getByRole('button', { name: 'iPhone 15 intrekken' }).click();
+  await expect(page.getByText('iPhone 15 is ingetrokken.')).toBeVisible();
+  expect(api.devices[0]!.status).toBe('Revoked');
+
+  const page2 = await page.context().newPage();
+  await open(page2, new MockApi(['member.read']), 'leden');
+  await openMenuIfMobile(page2);
+  await expect(page2.getByRole('link', { name: 'Accountverzoeken' })).toHaveCount(0);
 });

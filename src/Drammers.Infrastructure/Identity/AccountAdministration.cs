@@ -106,6 +106,34 @@ public sealed class AccountAdministration(
         }
     }
 
+    // ----- Verwijderen --------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Verwijdert een account lokaal (account verwijderen, fase 9) en geeft de <c>oid</c> terug zodat de aanroeper het
+    /// Entra-account kan verwijderen. De rij blijft bestaan voor de auditlog, zonder naam, e-mail, rollen of lid.
+    /// </summary>
+    public async Task<string> DeleteUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var user = await db.Users.Include(u => u.Roles).SingleOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.UserNotFound, "Gebruiker niet gevonden.", DomainErrorKind.NotFound);
+        var now = clock.UtcNow.UtcDateTime;
+        user.Roles.Clear();
+        user.MemberId = null;
+        user.AccountStatus = AccountStatus.Deleted;
+        user.Email = $"verwijderd-{user.Id:N}@invalid";
+        user.DisplayName = "Verwijderd account";
+        user.PermissionsVersion++;
+        await db.Devices.Where(d => d.UserId == userId && d.Status == Modules.Identity.Devices.DeviceStatus.Active)
+            .ExecuteUpdateAsync(s => s.SetProperty(d => d.Status, Modules.Identity.Devices.DeviceStatus.Revoked).SetProperty(d => d.RevokedAt, now), cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await EnsureRoleManagerRemainsAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("user.deleted", "User", user.Id.ToString(), null, null), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        userAccess.Invalidate(user.ExternalObjectId);
+        return user.ExternalObjectId;
+    }
+
     // ----- Rollen en permissions ----------------------------------------------------------------------------------
 
     public async Task<Role> CreateRoleAsync(string code, string name, string? description, IReadOnlyCollection<string> permissions, CancellationToken cancellationToken)

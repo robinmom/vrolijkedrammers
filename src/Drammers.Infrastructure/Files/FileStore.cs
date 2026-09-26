@@ -13,7 +13,10 @@ public static class FileContainers
     public const string PhotosDerived = "photos-derived";
     public const string Content = "content";
 
-    public static readonly string[] All = [Quarantine, PhotosOriginal, PhotosDerived, Content];
+    /// <summary>Exports (AVG, ledenlijsten); een lifecycle-regel ruimt ze op (docs/08 §3).</summary>
+    public const string Exports = "exports";
+
+    public static readonly string[] All = [Quarantine, PhotosOriginal, PhotosDerived, Content, Exports];
 }
 
 /// <summary>Opslag van bestanden; paden worden altijd door de server bepaald, nooit door de uploader.</summary>

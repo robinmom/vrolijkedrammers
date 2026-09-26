@@ -27,4 +27,5 @@ export type { SettingsItem } from './SettingsList';
 export { ShortcutTile } from './ShortcutTile';
 export type { TileTint } from './ShortcutTile';
 export { EmptyState, ErrorState } from './StateMessage';
+export { TextField } from './TextField';
 export { Screen } from './Screen';

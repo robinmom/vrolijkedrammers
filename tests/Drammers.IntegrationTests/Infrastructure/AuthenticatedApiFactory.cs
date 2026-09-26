@@ -19,6 +19,12 @@ public sealed class AuthenticatedApiFactory(
 {
     public FakeEntraUserDirectory Entra { get; } = new();
 
+    /// <summary>Verstuurde e-mails (welkomstmail).</summary>
+    public RecordingEmailSender Emails { get; } = new();
+
+    /// <summary>Limiet voor anonieme formulieren; alle testrequests delen één IP, dus standaard ruim.</summary>
+    public int AnonymousFormsLimit { get; init; } = 1000;
+
     /// <summary>Instelbare klok (geplande publicatie, SAS-verloop).</summary>
     public FakeClock Clock { get; } = new(DateTimeOffset.UtcNow);
 
@@ -29,6 +35,7 @@ public sealed class AuthenticatedApiFactory(
         builder.UseSetting("Worker:Enabled", "false");
         builder.UseSetting("Auth:Audience", TestTokens.DevAudience);
         builder.UseSetting("Auth:RequiredEnvironmentAccess", "dev");
+        builder.UseSetting("RateLimits:AnonymousForms", AnonymousFormsLimit.ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (blobConnectionString is not null)
         {
             builder.UseSetting("ConnectionStrings:Blob", blobConnectionString);
@@ -36,6 +43,7 @@ public sealed class AuthenticatedApiFactory(
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<IEntraUserDirectory>(Entra);
+            services.AddSingleton<Drammers.Infrastructure.Email.IEmailSender>(Emails);
             services.AddSingleton<Drammers.SharedKernel.Time.IClock>(Clock);
             configure?.Invoke(services);
             services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>

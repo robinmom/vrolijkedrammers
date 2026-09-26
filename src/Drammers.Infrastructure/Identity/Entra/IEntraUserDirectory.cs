@@ -16,6 +16,9 @@ public interface IEntraUserDirectory
 
     /// <summary>Trekt alle refresh-tokens en sessies in; lopende access tokens verlopen binnen hun looptijd.</summary>
     Task RevokeSessionsAsync(string objectId, CancellationToken cancellationToken);
+
+    /// <summary>Verwijdert het account (account verwijderen door het lid); een al verwijderd account is geen fout.</summary>
+    Task DeleteAsync(string objectId, CancellationToken cancellationToken);
 }
 
 /// <summary>Instellingen voor Graph in de External ID-tenant (app settings <c>Graph__*</c>).</summary>

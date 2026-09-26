@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useSessionStatus } from '../auth/useSession';
 import { api, unwrap } from './client';
 
 /**
@@ -16,6 +17,10 @@ export const queryKeys = {
   albums: ['photo-albums'] as const,
   album: (id: string) => ['photo-albums', id] as const,
   photos: (albumId: string) => ['photo-albums', albumId, 'photos'] as const,
+  /** Persoonlijke gegevens: nooit in de persistente cache (zie QueryProvider). */
+  me: ['me'] as const,
+  myMember: ['me', 'member'] as const,
+  myDevices: ['me', 'devices'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -74,3 +79,32 @@ export const useAlbumPhotos = (albumId: string | undefined) =>
     queryFn: () => unwrap(api.GET('/api/v1/photo-albums/{id}/photos', { params: { path: { id: albumId ?? '' } } })),
     enabled: Boolean(albumId),
   });
+
+/** Profiel, rollen en permissions van de ingelogde gebruiker. */
+export const useMe = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.me,
+    queryFn: () => unwrap(api.GET('/api/v1/me')),
+    enabled: status === 'signedIn',
+  });
+};
+
+/** Eigen lidgegevens uit e-Boekhouden (read-only). */
+export const useMyMember = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myMember,
+    queryFn: () => unwrap(api.GET('/api/v1/me/member')),
+    enabled: status === 'signedIn',
+  });
+};
+
+export const useMyDevices = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myDevices,
+    queryFn: () => unwrap(api.GET('/api/v1/me/devices')),
+    enabled: status === 'signedIn',
+  });
+};

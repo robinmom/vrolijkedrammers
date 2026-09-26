@@ -78,6 +78,11 @@ public sealed class AdminMembersController(
             .OrderBy(g => g.Name)
             .Select(g => new MemberGroupResponse(g.Id, g.Name, g.Function, g.ValidTo))
             .ToListAsync(cancellationToken);
+        var provisioning = await db.AccountProvisioning.AsNoTracking()
+            .Where(p => p.MemberId == id && p.Kind == Modules.Identity.Provisioning.ProvisioningKind.Member)
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new MemberProvisioningResponse(p.Id, p.Step, p.Attempts, p.LastError, p.CreatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
         return new MemberDetailResponse(
             m.Id, m.MemberNumber, m.EbMemberId, m.FullName, m.FirstName, m.NamePrefix, m.LastName, m.NameCorrectedManually,
             m.Salutation, m.Gender, m.AddressLine, m.PostalCode, m.City, m.Country, m.Email, m.Phone, m.MobilePhone,
@@ -85,7 +90,7 @@ public sealed class AdminMembersController(
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),
-            account, groups);
+            account, groups, provisioning);
     }
 
     [HttpPatch("{id:guid}")]
@@ -221,7 +226,12 @@ public sealed record MemberDetailResponse(
     string? Country, string? Email, string? Phone, string? MobilePhone, DateOnly? BirthDate, short? JoinYear, string? EbStatusRaw,
     string? MemberCategory, MembershipStatus SyncedStatus, MembershipStatus? LocalStatusOverride, MembershipStatus EffectiveStatus,
     DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, MemberSyncState SyncState, DateTime? EbLastSeenAt,
-    DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups);
+    DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups,
+    MemberProvisioningResponse? Provisioning);
+
+/// <summary>Laatste provisioning van een account voor dit lid (fase 9).</summary>
+public sealed record MemberProvisioningResponse(
+    Guid Id, Modules.Identity.Provisioning.ProvisioningStep Step, int Attempts, string? LastError, DateTime CreatedAt);
 
 public sealed record MemberGroupResponse(Guid GroupId, string Name, Modules.Membership.Groups.GroupFunction Function, DateOnly? ValidTo);
 

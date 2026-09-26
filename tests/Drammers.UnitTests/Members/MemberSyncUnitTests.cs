@@ -111,6 +111,65 @@ public class EBoekhoudenClientTests
         Assert.Equal((HttpMethod.Delete, "/v1/session"), (handler.Requests[^1].Method, handler.Requests[^1].Path));
     }
 
+    /// <summary>Meer dan 500 leden: `count` is het aantal op de pagina, niet het totaal (gezien bij 680 leden in Dev).</summary>
+    [Fact]
+    public async Task Pagineert_voorbij_500_leden_ook_als_count_het_aantal_op_de_pagina_is()
+    {
+        var handler = new PagingHandler(total: 680, ignoreOffset: false);
+        await using var session = await CreateWith(handler).OpenSessionAsync(CancellationToken.None);
+
+        var members = await session.ListMembersAsync(CancellationToken.None);
+
+        Assert.Equal(680, members.Count);
+        Assert.Equal(680, members.Select(m => m.Id).Distinct().Count());
+        Assert.Equal(["/v1/member?limit=500&offset=0", "/v1/member?limit=500&offset=500"], handler.ListPaths);
+    }
+
+    [Fact]
+    public async Task Stopt_als_e_Boekhouden_de_offset_negeert()
+    {
+        var handler = new PagingHandler(total: 680, ignoreOffset: true);
+        await using var session = await CreateWith(handler).OpenSessionAsync(CancellationToken.None);
+
+        var members = await session.ListMembersAsync(CancellationToken.None);
+
+        Assert.Equal(500, members.Count);
+        Assert.Equal(2, handler.ListPaths.Count);
+    }
+
+    private static EBoekhoudenClient CreateWith(HttpMessageHandler handler) =>
+        new(new HttpClient(handler), Options.Create(new EBoekhoudenOptions { ApiToken = "api-token", RequestsPerSecond = 1000 }),
+            new ServiceCollection().BuildServiceProvider(), NullLogger<EBoekhoudenClient>.Instance);
+
+    private sealed class PagingHandler(int total, bool ignoreOffset) : HttpMessageHandler
+    {
+        public List<string> ListPaths { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var path = request.RequestUri!.PathAndQuery;
+            if (request.Method == HttpMethod.Post)
+            {
+                return Task.FromResult(Json("""{"token":"sessie","expiresIn":3600}"""));
+            }
+
+            if (request.Method == HttpMethod.Delete)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+            }
+
+            ListPaths.Add(path);
+            var query = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query);
+            var limit = int.Parse(query["limit"]!, System.Globalization.CultureInfo.InvariantCulture);
+            var offset = ignoreOffset ? 0 : int.Parse(query["offset"]!, System.Globalization.CultureInfo.InvariantCulture);
+            var ids = Enumerable.Range(offset + 1, Math.Max(0, Math.Min(limit, total - offset))).ToList();
+            var items = string.Join(",", ids.Select(id => $$"""{"id":{{id}},"memberNumber":"{{id:D4}}"}"""));
+            return Task.FromResult(Json($$"""{"items":[{{items}}],"count":{{ids.Count}}}"""));
+        }
+
+        private static HttpResponseMessage Json(string json) => new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+    }
+
     [Fact]
     public void Bankgegevens_en_notities_hebben_geen_plek_in_het_model()
     {

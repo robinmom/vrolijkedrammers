@@ -16,7 +16,7 @@ describe.each([
   ['donker', dark],
 ])('tekstkleuren in het %s thema (WCAG AA, docs/17 §7)', (_name, scheme) => {
   const textTokens = ['textPrimary', 'textSecondary', 'textTertiary', 'accentText', 'successText'] as const;
-  const backgrounds = ['canvas', 'surface'] as const;
+  const backgrounds = ['canvas', 'surface', 'surfaceMuted'] as const;
 
   it.each(textTokens.flatMap((text) => backgrounds.map((bg) => [text, bg] as const)))(
     '%s op %s ≥ 4,5:1',
@@ -74,6 +74,7 @@ describe('merkkleuren', () => {
       navy: '#123047',
       green: '#39A935',
       offWhite: '#FAFAF7',
+      lightGrey: '#F0F1F2',
       yellow: '#F4B942',
     });
   });

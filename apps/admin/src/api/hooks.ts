@@ -109,10 +109,11 @@ export function useAppConfigSettings() {
   });
 }
 
-export function useFeatureFlags() {
+export function useFeatureFlags(enabled = true) {
   const api = useApi();
   return useQuery({
     queryKey: ['feature-flags'],
+    enabled,
     queryFn: async () => required((await api.GET('/api/v1/admin/config/feature-flags')).data),
   });
 }
@@ -154,10 +155,11 @@ export function useEventCategories() {
   return useQuery({ queryKey: ['event-categories'], queryFn: async () => required((await api.GET('/api/v1/event-categories')).data) });
 }
 
-export function useAdminEvents(includePast: boolean) {
+export function useAdminEvents(includePast: boolean, enabled = true) {
   const api = useApi();
   return useQuery({
     queryKey: ['admin-events', includePast],
+    enabled,
     queryFn: async () => required((await api.GET('/api/v1/admin/events', { params: { query: { includePast } } })).data),
   });
 }
@@ -171,9 +173,9 @@ export function useAdminEvent(id: string | null) {
   });
 }
 
-export function useAdminNews() {
+export function useAdminNews(enabled = true) {
   const api = useApi();
-  return useQuery({ queryKey: ['admin-news'], queryFn: async () => required((await api.GET('/api/v1/admin/news')).data) });
+  return useQuery({ queryKey: ['admin-news'], enabled, queryFn: async () => required((await api.GET('/api/v1/admin/news')).data) });
 }
 
 export function useAdminNewsItem(id: string | null) {
@@ -289,10 +291,11 @@ export function useSyncJobItems(id: string, action: SyncItemAction | '', page: n
   });
 }
 
-export function useSyncConflicts() {
+export function useSyncConflicts(enabled = true) {
   const api = useApi();
   return useQuery({
     queryKey: ['sync-conflicts'],
+    enabled,
     queryFn: async () => required((await api.GET('/api/v1/admin/sync-conflicts')).data),
   });
 }
@@ -339,4 +342,35 @@ export function useGroup(id: string) {
 export function useMemberReport() {
   const api = useApi();
   return useQuery({ queryKey: ['member-report'], queryFn: async () => required((await api.GET('/api/v1/admin/reports/members')).data) });
+}
+
+export type MemberSummaryCounts = Schemas['MemberSummaryCountsResponse'];
+
+export function useMemberSummary(enabled = true) {
+  const api = useApi();
+  return useQuery({ queryKey: ['members', 'summary'], enabled, queryFn: async () => required((await api.GET('/api/v1/admin/members/summary')).data) });
+}
+
+/** Auditregels van één lid (nieuwste eerst), voor de historie op het lid-detail. */
+export function useMemberHistory(memberId: string, enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['audit-log', 'member', memberId],
+    enabled,
+    queryFn: async () =>
+      required(
+        (await api.GET('/api/v1/admin/audit-log', { params: { query: { entityType: 'Member', entityId: memberId, page: 1, pageSize: 5 } } }))
+          .data,
+      ),
+  });
+}
+
+/** Het actieve carnavalsjaar (publiek endpoint), voor de countdown op het dashboard. */
+export function useCurrentCarnivalYear() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['carnival-year', 'current'],
+    retry: false,
+    queryFn: async () => required((await api.GET('/api/v1/carnival-years/current')).data),
+  });
 }

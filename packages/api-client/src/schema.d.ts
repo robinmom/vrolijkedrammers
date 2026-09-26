@@ -1150,6 +1150,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/members/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kengetallen voor de ledenpagina: aantallen per status, ontbrekend in e-Boekhouden, met app-account. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberSummaryCountsResponse"];
+                        "application/json": components["schemas"]["MemberSummaryCountsResponse"];
+                        "text/json": components["schemas"]["MemberSummaryCountsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members/{id}": {
         parameters: {
             query?: never;
@@ -4061,6 +4099,7 @@ export interface components {
             ebMissingSince: null | string;
             fieldSources: components["schemas"]["MemberFieldSourcesResponse"];
             account: null | components["schemas"]["MemberAccountResponse"];
+            groups: components["schemas"]["MemberGroupResponse"][];
         };
         /**
          * @description Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld
@@ -4078,6 +4117,14 @@ export interface components {
             joinYearFromEBoekhouden: boolean;
             statusFromEBoekhouden: boolean;
             categoryFromEBoekhouden: boolean;
+        };
+        MemberGroupResponse: {
+            /** Format: uuid */
+            groupId: string;
+            name: string;
+            function: components["schemas"]["GroupFunction"];
+            /** Format: date */
+            validTo: null | string;
         };
         MemberLocalUpdateRequest: {
             localStatusOverride: null | components["schemas"]["MembershipStatus"];
@@ -4118,6 +4165,22 @@ export interface components {
         };
         /** @enum {unknown} */
         MembershipStatus: "Active" | "Inactive" | "Suspended" | "Deceased";
+        MemberSummaryCountsResponse: {
+            /** Format: int32 */
+            active: number;
+            /** Format: int32 */
+            inactive: number;
+            /** Format: int32 */
+            suspended: number;
+            /** Format: int32 */
+            deceased: number;
+            /** Format: int32 */
+            missingInEBoekhouden: number;
+            /** Format: int32 */
+            activeWithAccount: number;
+            /** Format: date-time */
+            lastSyncAt: null | string;
+        };
         MemberSummaryResponse: {
             /** Format: uuid */
             id: string;

@@ -38,6 +38,30 @@ public sealed class AdminMembersController(
         return new PagedResult<MemberSummaryResponse>(items, p, size, total);
     }
 
+    /// <summary>Kengetallen voor de ledenpagina: aantallen per status, ontbrekend in e-Boekhouden, met app-account.</summary>
+    [HttpGet("summary")]
+    [RequirePermission(Permissions.MemberRead)]
+    [ProducesResponseType<MemberSummaryCountsResponse>(StatusCodes.Status200OK)]
+    public async Task<MemberSummaryCountsResponse> Summary(CancellationToken cancellationToken)
+    {
+        var counts = await db.Members.AsNoTracking()
+            .GroupBy(m => m.LocalStatusOverride ?? m.MembershipStatus)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        int Count(MembershipStatus status) => counts.SingleOrDefault(c => c.Status == status)?.Count ?? 0;
+        var missing = await db.Members.CountAsync(m => m.SyncState == MemberSyncState.Missing, cancellationToken);
+        var withAccount = await db.Members.CountAsync(
+            m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active
+                && db.Users.Any(u => u.MemberId == m.Id && u.AccountStatus == AccountStatus.Active), cancellationToken);
+        var lastSync = await db.SyncJobs.AsNoTracking()
+            .Where(j => !j.DryRun && (j.Status == Modules.Import.Sync.SyncJobStatus.Succeeded
+                || j.Status == Modules.Import.Sync.SyncJobStatus.SucceededWithWarnings || j.Status == Modules.Import.Sync.SyncJobStatus.Conflict))
+            .OrderByDescending(j => j.CompletedAt).Select(j => j.CompletedAt).FirstOrDefaultAsync(cancellationToken);
+        return new MemberSummaryCountsResponse(
+            Count(MembershipStatus.Active), Count(MembershipStatus.Inactive), Count(MembershipStatus.Suspended), Count(MembershipStatus.Deceased),
+            missing, withAccount, lastSync);
+    }
+
     [HttpGet("{id:guid}")]
     [RequirePermission(Permissions.MemberRead)]
     [ProducesResponseType<MemberDetailResponse>(StatusCodes.Status200OK)]
@@ -49,6 +73,11 @@ public sealed class AdminMembersController(
         var account = await db.Users.AsNoTracking().Where(u => u.MemberId == id)
             .Select(u => new MemberAccountResponse(u.Id, u.Email, u.AccountStatus.ToString(), u.LastLoginAt)).SingleOrDefaultAsync(cancellationToken);
         var mapping = await settings.GetMappingAsync(cancellationToken);
+        var groups = await db.GroupMemberships.AsNoTracking().Where(gm => gm.MemberId == id)
+            .Join(db.Groups, gm => gm.GroupId, g => g.Id, (gm, g) => new { g.Id, g.Name, gm.Function, gm.ValidTo })
+            .OrderBy(g => g.Name)
+            .Select(g => new MemberGroupResponse(g.Id, g.Name, g.Function, g.ValidTo))
+            .ToListAsync(cancellationToken);
         return new MemberDetailResponse(
             m.Id, m.MemberNumber, m.EbMemberId, m.FullName, m.FirstName, m.NamePrefix, m.LastName, m.NameCorrectedManually,
             m.Salutation, m.Gender, m.AddressLine, m.PostalCode, m.City, m.Country, m.Email, m.Phone, m.MobilePhone,
@@ -56,7 +85,7 @@ public sealed class AdminMembersController(
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),
-            account);
+            account, groups);
     }
 
     [HttpPatch("{id:guid}")]
@@ -192,7 +221,12 @@ public sealed record MemberDetailResponse(
     string? Country, string? Email, string? Phone, string? MobilePhone, DateOnly? BirthDate, short? JoinYear, string? EbStatusRaw,
     string? MemberCategory, MembershipStatus SyncedStatus, MembershipStatus? LocalStatusOverride, MembershipStatus EffectiveStatus,
     DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, MemberSyncState SyncState, DateTime? EbLastSeenAt,
-    DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account);
+    DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups);
+
+public sealed record MemberGroupResponse(Guid GroupId, string Name, Modules.Membership.Groups.GroupFunction Function, DateOnly? ValidTo);
+
+public sealed record MemberSummaryCountsResponse(
+    int Active, int Inactive, int Suspended, int Deceased, int MissingInEBoekhouden, int ActiveWithAccount, DateTime? LastSyncAt);
 
 public sealed record MemberLocalUpdateRequest(
     MembershipStatus? LocalStatusOverride, DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, string? FirstName,

@@ -8,12 +8,15 @@ export const brand = {
   navy: '#123047', // color/donkerblauw
   green: '#39A935', // color/eikenloof-groen
   offWhite: '#FAFAF7', // color/warm-wit
+  lightGrey: '#F0F1F2', // color/lichtgrijs
   yellow: '#F4B942', // accent (badges, uitslagen)
 } as const;
 
 export interface ColorScheme {
   canvas: string;
   surface: string;
+  /** Rustig vlak binnen een kaart, bijv. tabelkoppen (Lichtgrijs uit de branding). */
+  surfaceMuted: string;
   tabBar: string;
   textPrimary: string;
   /** Figma: donkerblauw 65 %; iets donkerder gemaakt voor ≥ 4,5:1 op canvas. */
@@ -45,6 +48,7 @@ export interface ColorScheme {
 export const light: ColorScheme = {
   canvas: brand.offWhite,
   surface: '#FFFFFF',
+  surfaceMuted: brand.lightGrey,
   tabBar: 'rgba(255,255,255,0.96)',
   textPrimary: brand.navy,
   textSecondary: '#5B6C7B',
@@ -70,6 +74,7 @@ export const light: ColorScheme = {
 export const dark: ColorScheme = {
   canvas: '#0D1A25',
   surface: '#172939',
+  surfaceMuted: '#1A2D3E',
   tabBar: '#172939',
   textPrimary: '#F2F4F6',
   textSecondary: '#8F99A1',

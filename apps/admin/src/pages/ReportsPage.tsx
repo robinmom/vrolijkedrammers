@@ -13,7 +13,7 @@ function ReportTable({ title, header, rows }: { title: string; header: string; r
       {rows.length === 0 ? (
         <p className="muted">Geen gegevens.</p>
       ) : (
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0} role="region" aria-label={title}>
           <table className="table compact">
             <caption className="visually-hidden">{title}</caption>
             <thead>

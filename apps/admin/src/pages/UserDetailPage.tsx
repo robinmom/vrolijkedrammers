@@ -70,7 +70,7 @@ export function UserDetailPage() {
             saveRoles.mutate(undefined, { onSuccess: () => setMessage('Rollen opgeslagen.') });
           }}
         >
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="Rollen van deze gebruiker">
             <table className="table compact">
               <caption className="visually-hidden">Rollen van deze gebruiker, met optionele geldigheid</caption>
               <thead>

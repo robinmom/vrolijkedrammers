@@ -21,7 +21,7 @@ export function PhotosPage() {
         </Link>
       </div>
       <ProblemAlert error={albums.error} />
-      <div className="table-scroll table-wrapper">
+      <div className="table-scroll table-wrapper" tabIndex={0} role="region" aria-label="Albums">
         <table className="table">
           <caption className="visually-hidden">Fotoalbums</caption>
           <thead>

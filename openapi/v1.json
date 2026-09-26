@@ -1454,6 +1454,36 @@
         }
       }
     },
+    "/api/v1/admin/members/summary": {
+      "get": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Kengetallen voor de ledenpagina: aantallen per status, ontbrekend in e-Boekhouden, met app-account.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSummaryCountsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSummaryCountsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSummaryCountsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/members/{id}": {
       "get": {
         "tags": [
@@ -5855,7 +5885,8 @@
           "ebLastSeenAt",
           "ebMissingSince",
           "fieldSources",
-          "account"
+          "account",
+          "groups"
         ],
         "type": "object",
         "properties": {
@@ -6036,6 +6067,12 @@
                 "$ref": "#/components/schemas/MemberAccountResponse"
               }
             ]
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberGroupResponse"
+            }
           }
         }
       },
@@ -6102,6 +6139,34 @@
           },
           "categoryFromEBoekhouden": {
             "type": "boolean"
+          }
+        }
+      },
+      "MemberGroupResponse": {
+        "required": [
+          "groupId",
+          "name",
+          "function",
+          "validTo"
+        ],
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/components/schemas/GroupFunction"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           }
         }
       },
@@ -6269,6 +6334,51 @@
           "Suspended",
           "Deceased"
         ]
+      },
+      "MemberSummaryCountsResponse": {
+        "required": [
+          "active",
+          "inactive",
+          "suspended",
+          "deceased",
+          "missingInEBoekhouden",
+          "activeWithAccount",
+          "lastSyncAt"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inactive": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "suspended": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deceased": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "missingInEBoekhouden": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "activeWithAccount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastSyncAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
       },
       "MemberSummaryResponse": {
         "required": [

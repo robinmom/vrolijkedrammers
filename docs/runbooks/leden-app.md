@@ -7,13 +7,14 @@
 
 | Onderdeel | Werking |
 |---|---|
-| Account aanvragen ("Ik ben al lid") | Lidnummer + e-mailadres in de app. Klopt het exact met e-Boekhouden (actief lid, nog geen account), dan maakt de worker het Entra-account en de gebruiker (rol *Carnavalist*) en stuurt een welkomstmail. Anders komt het verzoek in **Beheerportal → Accountverzoeken**. De aanvrager ziet altijd dezelfde melding. |
+| Account aanvragen ("Ik ben al lid") | Lidnummer + e-mailadres in de app. Klopt het exact met e-Boekhouden (actief lid, nog geen account), dan maakt de worker het account (rol *Carnavalist*) en stuurt een welkomstmail. Anders komt het verzoek in **Beheerportal → Accountverzoeken**. De aanvrager ziet altijd de melding "in behandeling". |
+| Eerste keer inloggen | Het lid maakt op de inlogpagina zelf een inlog met hetzelfde e-mailadres ("Maak er een") en een code per e-mail. De API koppelt die inlog bij de eerste aanroep aan het goedgekeurde account (ADR-014, herzien 2026-09-27). Wie niet is goedgekeurd, komt niet verder dan "geen account". |
 | Account vanuit het portal | **Leden → lid → App-account aanmaken** (recht `member.approve`); het account krijgt het e-mailadres uit e-Boekhouden. |
-| Inloggen | App → Meer → Inloggen: inlogpagina van Entra External ID met een e-mailcode (geen wachtwoord). Het refresh-token staat in de Keychain/Keystore. |
+| Inloggen | App → Meer → Inloggen: inlogpagina van Entra External ID met een e-mailcode (geen wachtwoord). Het refresh-token staat in de Keychain/Keystore. Beheerders loggen op dezelfde manier in op het portal. |
 | Apparaten | Elke aanmelding registreert de installatie. Een afgemeld apparaat (door het lid of via **Gebruikers → gebruiker → Apparaten**) krijgt 401 `DEVICE_REVOKED` en logt uit. |
 | Account verwijderen | App → Mijn gegevens → Account verwijderen: lokaal account geanonimiseerd, Entra-account verwijderd. Het lid in e-Boekhouden blijft. |
 | AVG-export | App → Mijn gegevens → Mijn gegevens downloaden: JSON met alle gegevens, 24 uur te downloaden; na 2 dagen opgeruimd (lifecycle-regel). |
-| Welkomstmail | Azure Communication Services, afzender `DoNotReply@…azurecomm.net` (eigen domein in fase 7). **De tekst is een concept; het bestuur keurt hem goed** (`MemberAccounts.WelcomeMail`). |
+| Welkomstmail | Azure Communication Services, afzender `DoNotReply@…azurecomm.net` (eigen domein in fase 7). Legt uit: eerste keer "Maak er een" met dit e-mailadres, daarna steeds een code. **De tekst is een concept; het bestuur keurt hem goed** (`MemberAccounts.WelcomeMail`). |
 
 ## 2. Eenmalig inrichten per omgeving (door de beheerder)
 
@@ -28,6 +29,18 @@
 
 De Graph-provisioning (fase 3) en Azure Communication Services (fase 1) zijn al ingericht; er is geen extra recht nodig.
 
+### Eenmalig: user flow bijwerken (zelf een inlog maken met e-mail + code)
+
+Na deze wijziging: `infra/entra/register-apps.sh dev` opnieuw draaien (stap 1 hierboven). Controle in het Entra-beheercentrum → External Identities → User flows → *DVD aanmelden* → Properties: "Sign up" staat aan, alleen *Email one-time passcode*.
+
+### Overstappen van een inlog met wachtwoord (accounts van vóór 2026-09-27)
+
+Accounts die de API met Graph heeft aangemaakt, vragen om een wachtwoord. Overstappen, per persoon:
+1. Entra-beheercentrum (tenant *De Vrolijke Drammers App*) → Users → de gebruiker → **Delete**. Alleen de inlog verdwijnt; rollen en lidkoppeling staan in de app-database.
+2. De persoon logt opnieuw in (app of portal) en kiest **"Maak er een"** met hetzelfde e-mailadres; er volgt een code.
+3. **Alleen Dev/Acc:** voeg de nieuwe inlog toe aan de groep Testers: `infra/entra/set-tester.sh <e-mailadres> dev` (of `dev,acc`). Tot dan toont de inlogpagina "geen toegang" (AADSTS50105).
+4. Opnieuw inloggen: de API koppelt de nieuwe inlog aan het bestaande account (auditregel `user.relinked`).
+
 ## 3. Testen met Expo Go
 
 Expo Go heeft geen eigen URL-schema (`drammers://`). In Dev/Acc stuurt Entra de code daarom naar `https://…/app/auth-redirect`, die hem doorgeeft aan `exp://…` (alleen `exp://`, `exps://` en `drammers://` zijn toegestaan; zonder de PKCE-verifier van de app is de code waardeloos). In Production staat deze pagina uit.
@@ -40,6 +53,8 @@ Het testaccount moet in de groep **Testers** zitten (Dev/Acc, B-02) én als lid 
 |---|---|---|
 | App: "Inloggen is voor deze omgeving nog niet ingericht" | `DVD_MOBILE_CLIENT_ID` ontbreekt | Stap 2 en 3 |
 | Entra: "redirect URI … does not match" | Doorstuurpagina niet geregistreerd | Stap 1 |
-| App: "Voor dit e-mailadres is (nog) geen account" | Wel Entra-account, geen gebruiker bij de vereniging (bijv. na verwijderen) | Account aanvragen of via het portal aanmaken |
-| Accountverzoeken: "Aanmaken mislukt" | Graph of mail tijdelijk niet bereikbaar | **Opnieuw proberen**; de saga maakt nooit een tweede account |
+| App: "Voor dit e-mailadres is (nog) geen account" | Wel een inlog, maar geen goedgekeurd account met dit e-mailadres (of de oude inlog met wachtwoord bestaat nog) | Account aanvragen of via het portal aanmaken; bij een oude inlog: zie "Overstappen" |
+| Inlogpagina vraagt om een wachtwoord | Inlog van vóór 2026-09-27 (met wachtwoord) | Zie "Overstappen" |
+| Inlogpagina: AADSTS50105 (Dev/Acc) | Nieuwe inlog zit nog niet in de groep Testers | `set-tester.sh` |
+| Accountverzoeken: "Aanmaken mislukt" | Mail tijdelijk niet bereikbaar | **Opnieuw proberen**; de saga maakt nooit een tweede account of tweede mail |
 | Geen welkomstmail | Spamfilter, of ACS-afzenderdomein nog niet geverifieerd | Map "Ongewenst"; status in Azure Portal → Communication Services → Insights |

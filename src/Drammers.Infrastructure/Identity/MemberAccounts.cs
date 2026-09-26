@@ -21,7 +21,8 @@ namespace Drammers.Infrastructure.Identity;
 
 /// <summary>
 /// Accounts voor leden (ADR-014, fase 9): "Ik ben al lid"-verzoeken, beoordeling door het bestuur en de
-/// provisioning-saga (Entra-account → lokale gebruiker met rol Lid → welkomstmail). Alleen een exacte match met
+/// provisioning-saga (lokale gebruiker met rol Lid → welkomstmail). De inlog zelf maakt het lid bij de eerste aanmelding
+/// met e-mail + code; <see cref="AccountLinker"/> koppelt die aan dit account. Alleen een exacte match met
 /// e-Boekhouden of een goedkeuring leidt tot een account; de aanvrager ziet nooit wat er wel of niet klopte.
 /// </summary>
 public sealed class MemberAccounts(
@@ -206,8 +207,9 @@ public sealed class MemberAccounts(
 
             if (saga.EntraObjectId is null)
             {
-                saga.EntraObjectId = await entra.FindByEmailAsync(loginEmail, cancellationToken)
-                    ?? await entra.CreateAsync(loginEmail, member.FullName, cancellationToken);
+                // Bestaat er al een inlog met dit e-mailadres (bijv. een beheerder die ook lid is), dan die; anders maakt
+                // het lid zelf een inlog met e-mail + code en koppelt de API die bij de eerste aanmelding (AccountLinker).
+                saga.EntraObjectId = await entra.FindByEmailAsync(loginEmail, cancellationToken) ?? PendingObjectId.New();
                 saga.Step = ProvisioningStep.AccountCreated;
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -351,31 +353,34 @@ public sealed class MemberAccounts(
     /// <summary>Concepttekst; de definitieve tekst keurt het bestuur goed (aanvullende DoD fase 9).</summary>
     public static EmailMessage WelcomeMail(string to, string firstName)
     {
-        const string Subject = "Welkom in de app van De Vrolijke Drammers";
+        const string Subject = "Je account voor de app van De Vrolijke Drammers";
         var text = $"""
             Beste {firstName},
 
-            Je account voor de app van De Vrolijke Drammers is klaar.
+            Je account voor de app van De Vrolijke Drammers staat klaar.
 
-            Zo log je in:
+            Zo log je de eerste keer in:
             1. Open de app en kies Meer → Inloggen.
-            2. Vul dit e-mailadres in ({to}).
-            3. Je krijgt een code per e-mail. Een wachtwoord is niet nodig.
+            2. Kies op de inlogpagina voor een nieuw account ("Maak er een") en vul dit e-mailadres in: {to}.
+            3. Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.
+
+            Daarna log je steeds in met dit e-mailadres en een nieuwe code.
 
             Heb je dit niet aangevraagd? Neem dan contact op met het secretariaat.
 
-            Alaaf!
-            Het bestuur van De Vrolijke Drammers
+            Groeten,
+            De Vrolijke Drammers
             """;
         var encodedName = System.Net.WebUtility.HtmlEncode(firstName);
         var encodedTo = System.Net.WebUtility.HtmlEncode(to);
         var html = $"""
             <p>Beste {encodedName},</p>
-            <p>Je account voor de app van De Vrolijke Drammers is klaar.</p>
-            <p><strong>Zo log je in:</strong></p>
-            <ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Vul dit e-mailadres in ({encodedTo}).</li><li>Je krijgt een code per e-mail. Een wachtwoord is niet nodig.</li></ol>
+            <p>Je account voor de app van De Vrolijke Drammers staat klaar.</p>
+            <p><strong>Zo log je de eerste keer in:</strong></p>
+            <ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Kies op de inlogpagina voor een nieuw account (&quot;Maak er een&quot;) en vul dit e-mailadres in: {encodedTo}.</li><li>Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.</li></ol>
+            <p>Daarna log je steeds in met dit e-mailadres en een nieuwe code.</p>
             <p>Heb je dit niet aangevraagd? Neem dan contact op met het secretariaat.</p>
-            <p>Alaaf!<br>Het bestuur van De Vrolijke Drammers</p>
+            <p>Groeten,<br>De Vrolijke Drammers</p>
             """;
         return new EmailMessage(to, Subject, text, html);
     }

@@ -276,7 +276,13 @@ export function MemberDetailPage() {
                     </span>
                   </dd>
                   <dt>Laatste login</dt>
-                  <dd>{formatDateTime(m.account.lastLoginAt)}</dd>
+                  <dd>
+                    {m.account.awaitingFirstSignIn ? (
+                      <span className="badge info">Wacht op eerste aanmelding</span>
+                    ) : (
+                      formatDateTime(m.account.lastLoginAt)
+                    )}
+                  </dd>
                 </dl>
                 <Link to="/gebruikers/$id" params={{ id: m.account.userId }} className="button ghost">
                   Naar gebruiker en rollen →

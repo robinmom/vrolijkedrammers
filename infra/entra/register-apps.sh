@@ -16,7 +16,7 @@ RESTRICTED=$([[ "$ENV" == prod ]] && echo false || echo true)
 use_ciam_tenant
 
 # ---------------------------------------------------------------------------------------------
-# Tenant-breed (eenmalig): custom attribuut, claims-mapping, groep Testers, user flow zonder sign-up.
+# Tenant-breed (eenmalig): custom attribuut, claims-mapping, groep Testers, user flow (e-mail + code, zelf een inlog maken toegestaan).
 # ---------------------------------------------------------------------------------------------
 echo "==> Custom attribuut environmentAccess"
 # Handmatige stap (de Azure CLI heeft geen IdentityUserFlow-rechten): Entra-beheercentrum → External Identities →
@@ -40,7 +40,10 @@ if [[ -z "$TESTERS_ID" ]]; then
     "description": "Mogen inloggen op de Dev/Acc-apps (samen met het attribuut environmentAccess)"}' --query id -o tsv)"
 fi
 
-echo "==> User flow 'DVD aanmelden' (e-mail + eenmalige code, zelfregistratie uit)"
+echo "==> User flow 'DVD aanmelden' (e-mail + eenmalige code, zelf een inlog maken toegestaan)"
+# ADR-014 (herzien 2026-09-27): Graph kan geen account zonder wachtwoord maken, en een account met wachtwoord krijgt
+# altijd de wachtwoordpagina. Daarom maakt een lid of beheerder de inlog zelf (e-mail + code); de API koppelt die alleen
+# aan een goedgekeurd account en weigert iedereen anders (403). In Dev/Acc is daarnaast de groep Testers nodig.
 # Dit endpoint ondersteunt geen $select/$top.
 FLOW_ID="$(graph --method get --url "$GRAPH/identity/authenticationEventsFlows" \
   --query "value[?displayName=='DVD aanmelden'].id | [0]" -o tsv)"
@@ -48,13 +51,20 @@ if [[ -z "$FLOW_ID" ]]; then
   FLOW_ID="$(graph --method post --url "$GRAPH/identity/authenticationEventsFlows" --body '{
     "@odata.type": "#microsoft.graph.externalUsersSelfServiceSignUpEventsFlow",
     "displayName": "DVD aanmelden",
-    "description": "Alleen aanmelden; accounts worden via de backend aangemaakt (ADR-014)",
+    "description": "E-mail + code; de API koppelt alleen goedgekeurde accounts (ADR-014)",
     "onInteractiveAuthFlowStart": {
       "@odata.type": "#microsoft.graph.onInteractiveAuthFlowStartExternalUsersSelfServiceSignUp",
-      "isSignUpAllowed": false },
+      "isSignUpAllowed": true },
     "onAuthenticationMethodLoadStart": {
       "@odata.type": "#microsoft.graph.onAuthenticationMethodLoadStartExternalUsersSelfServiceSignUp",
       "identityProviders": [ { "id": "EmailOtpSignup-OAUTH" } ] } }' --query id -o tsv)"
+else
+  graph --method patch --url "$GRAPH/identity/authenticationEventsFlows/$FLOW_ID" --body '{
+    "@odata.type": "#microsoft.graph.externalUsersSelfServiceSignUpEventsFlow",
+    "description": "E-mail + code; de API koppelt alleen goedgekeurde accounts (ADR-014)",
+    "onInteractiveAuthFlowStart": {
+      "@odata.type": "#microsoft.graph.onInteractiveAuthFlowStartExternalUsersSelfServiceSignUp",
+      "isSignUpAllowed": true } }' -o none
 fi
 
 # ---------------------------------------------------------------------------------------------

@@ -7017,7 +7017,8 @@
           "userId",
           "email",
           "accountStatus",
-          "lastLoginAt"
+          "lastLoginAt",
+          "awaitingFirstSignIn"
         ],
         "type": "object",
         "properties": {
@@ -7037,8 +7038,12 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "awaitingFirstSignIn": {
+            "type": "boolean"
           }
-        }
+        },
+        "description": "App-account van een lid; `AwaitingFirstSignIn`: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27)."
       },
       "MemberDetailResponse": {
         "required": [

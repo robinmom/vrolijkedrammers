@@ -1,6 +1,6 @@
 # ADR-014: Accountregistratie en -provisioning (alleen leden)
 
-- **Status**: Geaccepteerd (besluit B-05, opdrachtgever) · 2026-09-24 · uitwerking van de flow door de architect op verzoek van de opdrachtgever
+- **Status**: Geaccepteerd (besluit B-05, opdrachtgever) · 2026-09-24 · uitwerking van de flow door de architect op verzoek van de opdrachtgever · **herzien 2026-09-27** (inlog door het lid zelf, zie "Herziening")
 - **Gerelateerd**: ADR-004 (authenticatie), ADR-010 (e-Boekhouden), 07-rbac
 
 ## Context
@@ -60,7 +60,7 @@ stateDiagram-v2
 - Eén ouderaccount kan aan meerdere kinderen gekoppeld zijn (één e-mailadres = één account).
 
 ### Technische uitwerking
-- **Entra**: `isSignUpAllowed = false` op de user flow; aanmeldmethode e-mail-OTP (en optioneel wachtwoord via "wachtwoord vergeten"). Accounts via Graph (`POST /users` met identity `emailAddress`, willekeurig wachtwoord dat nooit wordt gecommuniceerd, `displayName`). Graph-app-permissie `User.ReadWrite.All` voor een aparte provisioning-app-registratie (credential in Key Vault).
+- **Entra** (*herzien 2026-09-27, zie onderaan*): ~~`isSignUpAllowed = false`; accounts via Graph met een willekeurig wachtwoord~~ → de user flow staat een eigen inlog met e-mail + code toe; de API koppelt die aan het goedgekeurde account. Graph-app-permissie `User.ReadWrite.All` voor een aparte provisioning-app-registratie (credential in Key Vault).
 - **Idempotente saga** (`identity.AccountProvisioning`): elke stap legt het resultaat vast (`eb_member_id`, `member_number`, `entra_object_id`). Opnieuw proberen hervat vanaf de laatste geslaagde stap. Vóór `POST /v1/member` eerst `GET /v1/member?email=` om dubbele leden te voorkomen. Vóór het aanmaken van het Entra-account eerst Graph-lookup op de identity.
 - **Vrije velden** (B-06) bij `POST /v1/member`: geboortedatum, inschrijfjaar (huidig jaar), status `actief`, categorie.
 - **Levenscyclus**: lid wordt inactief/overleden → Entra-account `accountEnabled = false` + sessies ingetrokken; verwijderen volgens de bewaartermijn (06 §13). Heractivatie zet het account weer aan.
@@ -93,3 +93,19 @@ stateDiagram-v2
 
 - Geen extra Azure-kosten; ACS-e-mail (verificatie + welkomstmail) verwaarloosbaar.
 - Ontwikkeling: ± 1 week extra in fase 9 (saga, wachtrij, e-mails), maar minder beheerwerk voor bestuur en secretaris (geen dubbele invoer).
+
+
+## Herziening 2026-09-27: de inlog maakt het lid zelf
+
+**Aanleiding (getest in Dev).** Graph weigert een account zonder wachtwoord ("A password must be specified to create a new user", v1.0 en beta). Een account met wachtwoord krijgt in External ID **altijd** de wachtwoordpagina, ook als de user flow alleen e-mail + code toestaat ([Identity providers for external tenants](https://learn.microsoft.com/en-us/entra/external-id/customers/concept-authentication-methods-customers), "Updating sign-in methods"). Leden en beheerders kwamen daardoor alleen via "Wachtwoord vergeten" binnen.
+
+**Besluit (opdrachtgever).** Inloggen alleen met e-mail + code. Daarvoor:
+- De user flow staat **zelf een inlog maken** toe, alleen met e-mail + code (`isSignUpAllowed = true`, `EmailOtpSignup-OAUTH`).
+- De backend maakt **geen Entra-accounts** meer. Na goedkeuring (exacte match, bestuur of beheerder) maakt de saga het lokale account met een plaatshouder-`oid` (`pending:…`) en verstuurt de welkomstmail: "maak een inlog met dit e-mailadres".
+- Bij de eerste aanroep met een onbekende `oid` zoekt de API (`AccountLinker`) via Graph het **geverifieerde** aanmeld-e-mailadres op en koppelt de inlog alleen als dat precies één goedgekeurd account oplevert dat nog geen inlog heeft, of waarvan de oude inlog niet meer bestaat (overstap van een account met wachtwoord). Anders blijft het 403.
+- Rollen, lidkoppeling en status komen nooit uit Entra; blokkeren en verwijderen werken zoals voorheen (zonder Entra-aanroep zolang er nog geen inlog is).
+
+**Gevolgen.**
+- Wie geen lid is, kan wél een Entra-inlog maken, maar komt nergens in (403) en ziet geen ledencontent. Kosten: alleen MAU bij inloggen (gratis tot 50.000).
+- In Dev/Acc blijft de groep **Testers** vereist (B-02): een nieuwe inlog moet daar na het aanmaken aan worden toegevoegd (`infra/entra/set-tester.sh`).
+- Optie B uit "Options considered" is hiermee deels gekozen, met behoud van de goedkeuring vóór toegang. Graph heeft alleen nog `User.ReadWrite.All` nodig voor opzoeken, blokkeren en verwijderen.

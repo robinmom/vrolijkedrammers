@@ -8,8 +8,17 @@ public sealed class RecordingEmailSender : IEmailSender
 {
     public ConcurrentQueue<EmailMessage> Sent { get; } = new();
 
+    /// <summary>Laat de volgende verzending falen (saga-hervatting testen).</summary>
+    public bool FailNextSend;
+
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
+        if (FailNextSend)
+        {
+            FailNextSend = false;
+            throw new HttpRequestException("ACS tijdelijk niet bereikbaar");
+        }
+
         Sent.Enqueue(message);
         return Task.CompletedTask;
     }

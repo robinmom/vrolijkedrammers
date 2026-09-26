@@ -151,7 +151,10 @@ public sealed class MyAccount(
     public async Task DeleteAccountAsync(Guid userId, CancellationToken cancellationToken)
     {
         var objectId = await administration.DeleteUserAsync(userId, cancellationToken);
-        await entra.DeleteAsync(objectId, cancellationToken);
+        if (!PendingObjectId.IsPending(objectId))
+        {
+            await entra.DeleteAsync(objectId, cancellationToken);
+        }
     }
 
     // ----- AVG-export ---------------------------------------------------------------------------------------------

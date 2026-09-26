@@ -564,6 +564,12 @@ export class MockApi {
       this.provisioning = this.provisioning.filter((p) => p.id !== m![1]);
       return noContent();
     }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/account$/)) && method === 'DELETE') {
+      const member = this.members.find((x) => x.id === m![1])!;
+      member.hasAccount = false;
+      this.record('member.account-removed', 'Member', member.id, {});
+      return noContent();
+    }
     if ((m = path.match(/^\/admin\/members\/([^/]+)\/provision-account$/))) {
       const member = this.members.find((x) => x.id === m![1])!;
       this.provisioning.push({
@@ -639,7 +645,15 @@ export class MockApi {
           statusFromEBoekhouden: false,
           categoryFromEBoekhouden: false,
         },
-        account: null,
+        account: member.hasAccount
+          ? {
+              userId: 'u-jan',
+              email: member.email,
+              accountStatus: 'Active',
+              lastLoginAt: '2026-09-26T09:00:00Z',
+              awaitingFirstSignIn: false,
+            }
+          : null,
         groups: [{ groupId: 'g-1', name: 'Jeugdcommissie', function: 'Lead', validTo: null }],
         provisioning: (() => {
           const p = [...this.provisioning].reverse().find((x) => x.memberId === member.id);

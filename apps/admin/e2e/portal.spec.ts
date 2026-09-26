@@ -310,3 +310,16 @@ test('fase 9: apparaat van een gebruiker intrekken; zonder rechten geen accountv
   await openMenuIfMobile(page2);
   await expect(page2.getByRole('link', { name: 'Accountverzoeken' })).toHaveCount(0);
 });
+
+test('fase 9: app-account van een lid verwijderen na bevestiging', async ({ page }) => {
+  const api = new MockApi();
+  api.members[1]!.hasAccount = true;
+  await open(page, api, 'leden/m-2');
+  await page.getByRole('button', { name: 'App-account verwijderen' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText(/Het lid in e-Boekhouden blijft staan/)).toBeVisible();
+  await dialog.getByRole('button', { name: 'App-account verwijderen' }).click();
+  await expect(page.getByText('Het app-account van Anna Jansen is verwijderd.')).toBeVisible();
+  expect(api.members[1]!.hasAccount).toBe(false);
+  await expect(page.getByRole('button', { name: 'App-account aanmaken' })).toBeVisible();
+});

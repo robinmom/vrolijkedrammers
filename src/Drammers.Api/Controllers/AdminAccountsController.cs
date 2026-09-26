@@ -72,6 +72,18 @@ public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts
     public async Task<AcceptedResult> ProvisionAccount(Guid id, CancellationToken cancellationToken) =>
         Accepted((string?)null, new ProvisioningStartedResponse(await accounts.ProvisionForMemberAsync(id, cancellationToken)));
 
+    /// <summary>App-account van een lid verwijderen (terug naar "geen account"); het lid zelf blijft bestaan.</summary>
+    [HttpDelete("members/{id:guid}/account")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RemoveAccount(Guid id, CancellationToken cancellationToken)
+    {
+        await accounts.RemoveAccountForMemberAsync(id, cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("account-provisioning")]
     [RequirePermission(Permissions.MemberApprove)]
     [ProducesResponseType<IReadOnlyList<ProvisioningResponse>>(StatusCodes.Status200OK)]

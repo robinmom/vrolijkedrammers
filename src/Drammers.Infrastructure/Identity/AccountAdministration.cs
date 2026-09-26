@@ -132,6 +132,8 @@ public sealed class AccountAdministration(
         user.PermissionsVersion++;
         await db.Devices.Where(d => d.UserId == userId && d.Status == Modules.Identity.Devices.DeviceStatus.Active)
             .ExecuteUpdateAsync(s => s.SetProperty(d => d.Status, Modules.Identity.Devices.DeviceStatus.Revoked).SetProperty(d => d.RevokedAt, now), cancellationToken);
+        // Afgeronde provisioning van dit account vervalt, zodat het lid later opnieuw een account kan krijgen.
+        await db.AccountProvisioning.Where(p => p.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await EnsureRoleManagerRemainsAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("user.deleted", "User", user.Id.ToString(), null, null), cancellationToken);

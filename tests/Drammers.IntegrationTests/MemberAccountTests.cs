@@ -290,6 +290,35 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Bestuur_verwijdert_een_app_account_en_kan_later_opnieuw_een_account_aanmaken()
+    {
+        var memberId = await AddMemberAsync("0901", "terug@example.com");
+        await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null);
+        await RunProvisioningAsync();
+        var member = SignUpAndSignIn("terug@example.com");
+        Assert.Equal(HttpStatusCode.OK, (await member.GetAsync("/api/v1/me")).StatusCode);
+        var objectId = _api.Entra.AccountsByEmail["terug@example.com"];
+
+        var redactie = _api.ClientFor((await _api.CreateUserAsync("redactie2@example.com", DefaultRoles.Redactie)).ObjectId);
+        Assert.Equal(HttpStatusCode.Forbidden, (await redactie.DeleteAsync($"/api/v1/admin/members/{memberId}/account")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/members/{memberId}/account")).StatusCode);
+
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{memberId}");
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("account").ValueKind);
+        Assert.Contains(objectId, _api.Entra.Deleted);
+        Assert.Equal(HttpStatusCode.Forbidden, (await member.GetAsync("/api/v1/me")).StatusCode);
+        Assert.True(await WithDbAsync(db => db.Members.AnyAsync(m => m.Id == memberId)));
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "member.account-removed")));
+        Assert.Equal(HttpStatusCode.NotFound, (await _bestuur.DeleteAsync($"/api/v1/admin/members/{memberId}/account")).StatusCode);
+
+        // Opnieuw een account aanmaken werkt: een nieuwe provisioning, een nieuwe welkomstmail.
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null)).StatusCode);
+        Assert.Equal(0, await RunProvisioningAsync());
+        Assert.Equal(2, _api.Emails.Sent.Count(m => m.To == "terug@example.com"));
+        Assert.Equal(HttpStatusCode.OK, (await SignUpAndSignIn("terug@example.com").GetAsync("/api/v1/me/member")).StatusCode);
+    }
+
+    [Fact]
     public async Task Zelf_gemaakte_inlog_zonder_goedkeuring_blijft_onbekend()
     {
         var stranger = SignUpAndSignIn("vreemde@example.com");

@@ -33,7 +33,8 @@ public sealed class MemberAccounts(
     IEmailSender email,
     IUserAccessService userAccess,
     ICurrentActor actor,
-    IClock clock)
+    IClock clock,
+    AccountAdministration administration)
 {
     public const string ProvisionMessageType = "account.provision";
 
@@ -163,6 +164,26 @@ public sealed class MemberAccounts(
         await audit.WriteAsync(new AuditEntry("member.account-requested", "Member", memberId.ToString(), null, null), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return saga.Id;
+    }
+
+    /// <summary>
+    /// Het bestuur zet het app-account van een lid terug naar "geen account": inlog, rollen en apparaten vervallen; het
+    /// lid in e-Boekhouden blijft. Later kan opnieuw een account worden aangemaakt.
+    /// </summary>
+    public async Task RemoveAccountForMemberAsync(Guid memberId, CancellationToken cancellationToken)
+    {
+        var user = await db.Users.AsNoTracking()
+            .Where(u => u.MemberId == memberId && u.AccountStatus != AccountStatus.Deleted)
+            .Select(u => new { u.Id, u.ExternalObjectId })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new DomainException(ErrorCodes.UserNotFound, "Dit lid heeft geen app-account.", DomainErrorKind.NotFound);
+
+        var objectId = await administration.DeleteUserAsync(user.Id, cancellationToken);
+        await audit.WriteAsync(new AuditEntry("member.account-removed", "Member", memberId.ToString(), null, null), cancellationToken);
+        if (!PendingObjectId.IsPending(objectId))
+        {
+            await entra.DeleteAsync(objectId, cancellationToken);
+        }
     }
 
     /// <summary>Opnieuw proberen van een vastgelopen provisioning (portal).</summary>

@@ -51,6 +51,7 @@ export function MemberDetailPage() {
   const [form, setForm] = useState<LocalForm | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmInactive, setConfirmInactive] = useState(false);
+  const [confirmRemoveAccount, setConfirmRemoveAccount] = useState(false);
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
   const canApprove = (me.data?.permissions ?? []).includes('member.approve');
 
@@ -76,6 +77,10 @@ export function MemberDetailPage() {
         },
       }),
     [['member', id], ['members']],
+  );
+  const removeAccount = useApiMutation(
+    () => api.DELETE('/api/v1/admin/members/{id}/account', { params: { path: { id } } }),
+    [['member', id], ['members'], ['users']],
   );
   const provision = useApiMutation(
     () => api.POST('/api/v1/admin/members/{id}/provision-account', { params: { path: { id } } }),
@@ -287,6 +292,12 @@ export function MemberDetailPage() {
                 <Link to="/gebruikers/$id" params={{ id: m.account.userId }} className="button ghost">
                   Naar gebruiker en rollen →
                 </Link>
+                <ProblemAlert error={removeAccount.error} />
+                {canApprove ? (
+                  <button type="button" className="button danger small" onClick={() => setConfirmRemoveAccount(true)}>
+                    App-account verwijderen
+                  </button>
+                ) : null}
               </>
             ) : (
               <>
@@ -346,6 +357,20 @@ export function MemberDetailPage() {
         </div>
       </div>
 
+      <ConfirmDialog
+        open={confirmRemoveAccount}
+        title="App-account verwijderen"
+        message={`Het app-account van ${m.fullName} verwijderen? Inloggen kan daarna niet meer; rollen en apparaten vervallen. Het lid in e-Boekhouden blijft staan, en je kunt later opnieuw een account aanmaken.`}
+        confirmLabel="App-account verwijderen"
+        busy={removeAccount.isPending}
+        onCancel={() => setConfirmRemoveAccount(false)}
+        onConfirm={() =>
+          removeAccount.mutate(undefined, {
+            onSettled: () => setConfirmRemoveAccount(false),
+            onSuccess: () => setMessage(`Het app-account van ${m.fullName} is verwijderd.`),
+          })
+        }
+      />
       <ConfirmDialog
         open={confirmInactive}
         title="Lid op inactief zetten"

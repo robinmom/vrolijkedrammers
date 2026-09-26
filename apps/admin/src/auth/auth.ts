@@ -1,6 +1,7 @@
 import {
+  AuthError,
+  CacheLookupPolicy,
   createStandardPublicClientApplication,
-  InteractionRequiredAuthError,
   type AccountInfo,
 } from '@azure/msal-browser';
 import type { PortalConfig } from '../config';
@@ -53,9 +54,19 @@ export async function createMsalAuth(config: PortalConfig): Promise<AuthService>
         throw new Error('Aanmelden vereist');
       }
       try {
-        return (await msal.acquireTokenSilent({ scopes, account: active })).accessToken;
+        // Alleen cache en refresh-token: stil vernieuwen via een verborgen iframe kan niet, want de portalpagina
+        // mag niet in een frame (CSP frame-ancestors 'none') en dat eindigde na 10 s in "timed_out".
+        return (
+          await msal.acquireTokenSilent({
+            scopes,
+            account: active,
+            cacheLookupPolicy: CacheLookupPolicy.AccessTokenAndRefreshToken,
+          })
+        ).accessToken;
       } catch (error) {
-        if (error instanceof InteractionRequiredAuthError) {
+        // Elke MSAL-fout (verlopen refresh-token, time-out, interactie nodig): opnieuw aanmelden via redirect. Met een
+        // geldige Entra-sessie gaat dat zonder nieuwe code.
+        if (error instanceof AuthError) {
           await msal.acquireTokenRedirect({ scopes, account: active });
         }
         throw error;

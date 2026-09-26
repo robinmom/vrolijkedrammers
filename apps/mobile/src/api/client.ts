@@ -33,11 +33,14 @@ export const api = createApiClient(apiBaseUrl);
 /**
  * Ingelogd: elk verzoek krijgt het access-token en de installatie-id (fase 9). Is dit apparaat afgemeld
  * (401 DEVICE_REVOKED) of het account weg (401), dan wist de app de sessie; publieke content blijft werken.
+ *
+ * De middleware geeft bewust niets terug en zet headers ter plekke: openapi-fetch eist bij een teruggegeven waarde een
+ * `instanceof Response/Request`, en de Response van React Native (whatwg-fetch) voldoet daar niet aan.
  */
 api.use({
   async onRequest({ request }) {
     if (getStatus() !== 'signedIn') {
-      return request;
+      return undefined;
     }
     // Lukt het vernieuwen van het token niet (bijv. geen netwerk), dan toch anoniem proberen: publieke content blijft
     // zo zichtbaar, en een volgende aanroep probeert het token opnieuw.
@@ -46,13 +49,13 @@ api.use({
       request.headers.set('authorization', `Bearer ${token}`);
       request.headers.set('x-device-id', await getInstallationId());
     }
-    return request;
+    return undefined;
   },
   async onResponse({ response }) {
     if (response.status === 401 && getStatus() === 'signedIn') {
       await clearLocalSession();
     }
-    return response;
+    return undefined;
   },
 });
 

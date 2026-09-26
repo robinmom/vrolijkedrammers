@@ -46,3 +46,30 @@ it('als het vernieuwen van het token mislukt, wordt publieke content anoniem opg
   // De sessie blijft staan; bij een volgende aanroep wordt het token opnieuw geprobeerd.
   expect(getStatus()).toBe('signedIn');
 });
+
+/** React Native levert een eigen Response-klasse (whatwg-fetch); die is geen `instanceof` van de globale Response. */
+function reactNativeResponse(body: unknown) {
+  const text = JSON.stringify(body);
+  const response = {
+    ok: true,
+    status: 200,
+    url: 'https://api.example/api/v1/news',
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => JSON.parse(text),
+    text: async () => text,
+    clone: () => response,
+  };
+  return response;
+}
+
+it.each(['signedOut', 'signedIn'] as const)('werkt met de Response van React Native (%s)', async (status) => {
+  setSessionForTest(status);
+  (globalThis.fetch as jest.Mock).mockImplementation(async () =>
+    reactNativeResponse({ items: [], page: 1, pageSize: 5, totalCount: 0 }),
+  );
+
+  const { data, error } = await api.GET('/api/v1/news');
+
+  expect(error).toBeUndefined();
+  expect(data?.totalCount).toBe(0);
+});

@@ -60,20 +60,22 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
     private Task<HttpResponseMessage> RequestAccountAsync(string number, string email) =>
         _anonymous.PostAsJsonAsync("/api/v1/account-requests", new { memberNumber = number, email });
 
-    /// <summary>Verwerkt de openstaande provisioning-berichten zoals de worker dat doet; geeft het aantal fouten terug.</summary>
+    /// <summary>Verwerkt de openstaande provisioning- en herinneringsberichten zoals de worker; geeft het aantal fouten.</summary>
     private async Task<int> RunProvisioningAsync()
     {
-        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking()
-            .Where(m => m.Type == MemberAccounts.ProvisionMessageType).OrderBy(m => m.CreatedAt).ToListAsync());
-        await WithDbAsync(db => db.Outbox.Where(m => m.Type == MemberAccounts.ProvisionMessageType).ExecuteDeleteAsync());
+        string[] types = [MemberAccounts.ProvisionMessageType, MemberAccounts.ReminderMessageType];
+        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => types.Contains(m.Type)).OrderBy(m => m.CreatedAt).ToListAsync());
+        await WithDbAsync(db => db.Outbox.Where(m => types.Contains(m.Type)).ExecuteDeleteAsync());
         var failures = 0;
         foreach (var message in messages)
         {
             using var scope = _api.Services.CreateScope();
+            var accounts = scope.ServiceProvider.GetRequiredService<MemberAccounts>();
             try
             {
-                await scope.ServiceProvider.GetRequiredService<MemberAccounts>().RunProvisioningAsync(
-                    JsonSerializer.Deserialize<MemberAccounts.ProvisionMessage>(message.Payload, JsonSerializerOptions.Web)!, CancellationToken.None);
+                await (message.Type == MemberAccounts.ProvisionMessageType
+                    ? accounts.RunProvisioningAsync(JsonSerializer.Deserialize<MemberAccounts.ProvisionMessage>(message.Payload, JsonSerializerOptions.Web)!, CancellationToken.None)
+                    : accounts.SendReminderAsync(JsonSerializer.Deserialize<MemberAccounts.ReminderMessage>(message.Payload, JsonSerializerOptions.Web)!, CancellationToken.None));
             }
             catch (HttpRequestException)
             {
@@ -167,20 +169,46 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Dubbel_verzoek_maakt_geen_tweede_account()
+    public async Task Dubbel_verzoek_maakt_geen_tweede_account_maar_stuurt_een_herinnering()
     {
         await AddMemberAsync("0401", "dubbel@example.com");
         await RequestAccountAsync("0401", "dubbel@example.com");
         await RunProvisioningAsync();
 
-        // Opnieuw (na het duplicaatvenster, dus een nieuw verzoek): het lid heeft al een account.
-        _api.Clock.Advance(TimeSpan.FromDays(2));
+        // Direct opnieuw (bijv. vergeten dat het al gebeurd was): het lid heeft al een account.
         await RequestAccountAsync("0401", "dubbel@example.com");
         await RunProvisioningAsync();
 
         Assert.Equal(1, await WithDbAsync(db => db.Users.CountAsync(u => u.Email == "dubbel@example.com")));
-        Assert.Single(_api.Emails.Sent);
         Assert.Equal(AccountRequestStatus.Duplicate, await WithDbAsync(db => db.AccountRequests.OrderByDescending(r => r.RequestedAt).Select(r => r.Status).FirstAsync()));
+        var mails = _api.Emails.Sent.Where(m => m.To == "dubbel@example.com").ToList();
+        Assert.Equal(2, mails.Count);
+        Assert.Contains("al een account", mails[1].Subject, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Wachtend_verzoek_telt_binnen_24_uur_maar_een_keer()
+    {
+        await RequestAccountAsync("7777", "wie@example.com");
+        await RequestAccountAsync("7777", "wie@example.com");
+
+        Assert.Equal(1, await WithDbAsync(db => db.AccountRequests.CountAsync(r => r.MemberNumber == "7777")));
+    }
+
+    [Fact]
+    public async Task Na_het_verwijderen_van_een_account_kan_het_lid_direct_opnieuw_aanvragen()
+    {
+        var memberId = await AddMemberAsync("0608", "opnieuw@example.com");
+        await RequestAccountAsync("0608", "opnieuw@example.com");
+        await RunProvisioningAsync();
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/members/{memberId}/account")).StatusCode);
+
+        // Dezelfde avond nog een keer aanvragen (binnen 24 uur): nu wel een nieuw account en een nieuwe mail.
+        await RequestAccountAsync("0608", "opnieuw@example.com");
+        Assert.Equal(0, await RunProvisioningAsync());
+
+        Assert.True(await WithDbAsync(db => db.Users.AnyAsync(u => u.MemberId == memberId && u.AccountStatus == AccountStatus.Active)));
+        Assert.Equal(2, _api.Emails.Sent.Count(m => m.To == "opnieuw@example.com" && m.Subject.StartsWith("Je account", StringComparison.Ordinal)));
     }
 
     [Fact]

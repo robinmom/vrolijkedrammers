@@ -8,7 +8,7 @@ import {
   type ColumnDef,
   type RowData,
 } from '@tanstack/react-table';
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 
 /** Features van de generieke tabel: sorteren en kolomkeuze. Zoeken en pagineren gebeuren server-side. */
 export const tableFeaturesDef = tableFeatures({
@@ -34,8 +34,17 @@ export function DataTable<TData extends RowData>({
   columns,
   data,
   emptyText = 'Geen resultaten.',
+  header,
+  footer,
+  columnPicker = true,
 }: {
   caption: string;
+  /** Inhoud boven de tabel in dezelfde kaart, bijv. zoeken en filters (Figma "Leden"). */
+  header?: ReactNode;
+  /** Inhoud onder de tabel in dezelfde kaart, bijv. paginering. */
+  footer?: ReactNode;
+  /** Knop "Kolommen" tonen (standaard aan). */
+  columnPicker?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- kolommen met verschillende waardetypes
   columns: ColumnDef<TableFeatures, TData, any>[];
   data: TData[];
@@ -47,6 +56,8 @@ export function DataTable<TData extends RowData>({
 
   return (
     <div className="table-wrapper">
+      {header ? <div className="table-header">{header}</div> : null}
+      {columnPicker ? (
       <div className="table-toolbar">
         <button
           type="button"
@@ -76,7 +87,8 @@ export function DataTable<TData extends RowData>({
           </fieldset>
         ) : null}
       </div>
-      <div className="table-scroll">
+      ) : null}
+      <div className="table-scroll" tabIndex={0} role="region" aria-label={caption}>
         <table className="table">
           <caption className="visually-hidden">{caption}</caption>
           <thead>
@@ -130,6 +142,7 @@ export function DataTable<TData extends RowData>({
           </tbody>
         </table>
       </div>
+      {footer ? <div className="table-footer">{footer}</div> : null}
     </div>
   );
 }

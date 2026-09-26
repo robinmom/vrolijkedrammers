@@ -51,7 +51,7 @@ export function CarnivalYearsPage() {
       </div>
       <SuccessMessage message={message} />
       <ProblemAlert error={years.error ?? activate.error} />
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Carnavalsjaren">
         <table className="table">
           <caption className="visually-hidden">Carnavalsjaren</caption>
           <thead>

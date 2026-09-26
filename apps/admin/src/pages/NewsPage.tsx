@@ -21,7 +21,7 @@ export function NewsPage() {
         </Link>
       </div>
       <ProblemAlert error={news.error} />
-      <div className="table-scroll table-wrapper">
+      <div className="table-scroll table-wrapper" tabIndex={0} role="region" aria-label="Nieuwsberichten">
         <table className="table">
           <caption className="visually-hidden">Nieuwsberichten</caption>
           <thead>

@@ -5,6 +5,7 @@ import {
   useApiMutation,
   useMe,
   useMembers,
+  useMemberSummary,
   type MemberFilters,
   type MemberPurgeResult,
   type MemberSummary,
@@ -14,45 +15,48 @@ import {
 import { DataTable, columnHelper } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
+import { Icon } from '../components/Icon';
 import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
-import { membershipStatusLabels, syncStateLabels } from '../format';
+import { formatDateTime, membershipStatusLabels, syncStateLabels } from '../format';
+
+const statusTone: Record<string, string> = { Active: 'ok', Inactive: '', Suspended: 'warn', Deceased: '' };
+const syncTone: Record<string, string> = { InSync: '', Missing: 'warn', Conflict: 'error' };
 
 const helper = columnHelper<MemberSummary>();
 const columns = [
-  helper.accessor('memberNumber', { header: 'Lidnummer' }),
+  helper.accessor('memberNumber', { header: 'Lidnummer', cell: (info) => <span className="muted">{info.getValue()}</span> }),
   helper.accessor('fullName', {
     header: 'Naam',
     cell: (info) => (
-      <Link to="/leden/$id" params={{ id: info.row.original.id }}>
-        {info.getValue()}
-      </Link>
+      <>
+        <Link to="/leden/$id" params={{ id: info.row.original.id }} className="cell-title">
+          {info.getValue()}
+        </Link>
+        {info.row.original.email ? <span className="cell-sub">{info.row.original.email}</span> : null}
+      </>
     ),
   }),
   helper.accessor('city', { header: 'Plaats', cell: (info) => info.getValue() ?? '—' }),
   helper.accessor('status', {
     header: 'Status',
-    cell: (info) => membershipStatusLabels[info.getValue()] ?? info.getValue(),
+    cell: (info) => <span className={`badge ${statusTone[info.getValue()] ?? ''}`}>{membershipStatusLabels[info.getValue()] ?? info.getValue()}</span>,
   }),
   helper.accessor('syncState', {
     header: 'Sync',
-    cell: (info) =>
-      info.getValue() === 'InSync' ? (
-        <span className="badge ok">{syncStateLabels.InSync}</span>
-      ) : (
-        <span className="badge warn">{syncStateLabels[info.getValue()] ?? info.getValue()}</span>
-      ),
+    cell: (info) => <span className={`badge ${syncTone[info.getValue()] ?? ''}`}>{syncStateLabels[info.getValue()] ?? info.getValue()}</span>,
   }),
-  helper.accessor('hasAccount', { header: 'App-account', cell: (info) => (info.getValue() ? 'Ja' : 'Nee') }),
+  helper.accessor('hasAccount', { header: 'App-account', cell: (info) => <span className="muted">{info.getValue() ? 'Ja' : 'Nee'}</span> }),
 ];
 
 const EMPTY: MemberSummary[] = [];
 const NO_FILTERS: MemberFilters = { search: '', status: '', syncState: '' };
 
-/** Ledenlijst uit e-Boekhouden (fase 8): zoeken, filteren, exporteren en (alleen Dev/Acc) alles verwijderen. */
+/** Ledenlijst uit e-Boekhouden (Figma "Leden"): kengetallen, zoeken en filteren, exporteren, gevarenzone (alleen Dev/Acc). */
 export function MembersPage() {
   const api = useApi();
   const me = useMe();
+  const summary = useMemberSummary();
   const [form, setForm] = useState<MemberFilters>(NO_FILTERS);
   const [filters, setFilters] = useState<MemberFilters>(NO_FILTERS);
   const [page, setPage] = useState(1);
@@ -61,17 +65,14 @@ export function MembersPage() {
   const [purging, setPurging] = useState(false);
   const members = useMembers(filters, page);
   const permissions = me.data?.permissions ?? [];
+  const s = summary.data;
 
   async function exportExcel() {
     setExportError(null);
     try {
       const { data } = await api.GET('/api/v1/admin/members/export', {
         params: {
-          query: {
-            search: filters.search || undefined,
-            status: filters.status || undefined,
-            syncState: filters.syncState || undefined,
-          },
+          query: { search: filters.search || undefined, status: filters.status || undefined, syncState: filters.syncState || undefined },
         },
         parseAs: 'blob',
       });
@@ -94,83 +95,124 @@ export function MembersPage() {
     setFilters(form);
   }
 
+  const withAccountShare = s && s.active > 0 ? Math.round((s.activeWithAccount / s.active) * 100) : 0;
+
   return (
     <>
       <div className="page-header">
-        <h1>Leden</h1>
+        <div className="page-title">
+          <h1>Leden</h1>
+          <p className="page-subtitle">
+            Uit e-Boekhouden{s?.lastSyncAt ? ` · laatste synchronisatie ${formatDateTime(s.lastSyncAt)}` : ''}. Naam, adres en
+            contactgegevens wijzig je in e-Boekhouden.
+          </p>
+        </div>
         <div className="actions">
-          {permissions.includes('import.run') ? (
-            <Link to="/ledensync" className="button secondary">
-              Synchronisatie
-            </Link>
-          ) : null}
           {permissions.includes('member.export') ? (
             <button type="button" className="button secondary" onClick={() => void exportExcel()}>
               Exporteren (Excel)
             </button>
           ) : null}
-          {permissions.includes('member.purge') ? (
-            <button type="button" className="button danger" onClick={() => setPurging(true)}>
-              Alle leden verwijderen
-            </button>
+          {permissions.includes('import.run') ? (
+            <Link to="/ledensync" className="button">
+              Synchronisatie
+            </Link>
           ) : null}
         </div>
       </div>
-      <p className="muted">
-        De leden komen uit e-Boekhouden. Naam, adres en contactgegevens wijzig je daar; hier beheer je alleen de
-        gegevens van de app.
-      </p>
       <SuccessMessage message={message} />
-      <ProblemAlert error={exportError ?? members.error} />
-      <form role="search" className="toolbar" onSubmit={search}>
-        <Field
-          label="Zoeken op naam, lidnummer, e-mail of plaats"
-          value={form.search}
-          onChange={(e) => setForm({ ...form, search: e.target.value })}
-        />
-        <div className="field">
-          <label htmlFor="status-filter">Status</label>
-          <select
-            id="status-filter"
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value as MembershipStatus | '' })}
-          >
-            <option value="">Alle</option>
-            {Object.entries(membershipStatusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="sync-filter">Sync</label>
-          <select
-            id="sync-filter"
-            value={form.syncState}
-            onChange={(e) => setForm({ ...form, syncState: e.target.value as MemberSyncState | '' })}
-          >
-            <option value="">Alle</option>
-            {Object.entries(syncStateLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="button secondary">
-          Zoeken
-        </button>
-      </form>
-      <DataTable caption="Leden" columns={columns} data={members.data?.items ?? EMPTY} />
-      {members.data ? (
-        <Pagination
-          page={members.data.page}
-          pageSize={members.data.pageSize}
-          totalCount={members.data.totalCount}
-          onPage={setPage}
-        />
+      <ProblemAlert error={exportError ?? members.error ?? summary.error} />
+
+      {s ? (
+        <section className="kpis" aria-label="Kengetallen">
+          <div className="kpi">
+            <span className="kpi-label">Actieve leden</span>
+            <span className="kpi-value">{s.active}</span>
+            <span className="kpi-hint">{s.suspended ? `${s.suspended} geschorst` : 'Volgens e-Boekhouden'}</span>
+          </div>
+          <div className="kpi">
+            <span className="kpi-label">Inactief</span>
+            <span className="kpi-value">{s.inactive + s.deceased}</span>
+            <span className="kpi-hint">Opgezegd of gestopt</span>
+          </div>
+          <div className="kpi">
+            <span className="kpi-label">Ontbreekt in e-Boekhouden</span>
+            <span className="kpi-value">{s.missingInEBoekhouden}</span>
+            <span className="kpi-hint">{s.missingInEBoekhouden ? 'Controleren' : 'Alles in orde'}</span>
+          </div>
+          <div className="kpi">
+            <span className="kpi-label">Met app-account</span>
+            <span className="kpi-value">{s.activeWithAccount}</span>
+            <span className="kpi-hint">{withAccountShare} % van de actieve leden</span>
+          </div>
+        </section>
       ) : null}
+
+      <DataTable
+        caption="Leden"
+        columns={columns}
+        data={members.data?.items ?? EMPTY}
+        columnPicker={false}
+        header={
+          <form role="search" className="toolbar" onSubmit={search}>
+            <div className="field grow-field">
+              <label htmlFor="zoeken">Zoeken op naam, lidnummer, e-mail of plaats</label>
+              <input id="zoeken" value={form.search} onChange={(e) => setForm({ ...form, search: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="status-filter">Status</label>
+              <select id="status-filter" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as MembershipStatus | '' })}>
+                <option value="">Alle</option>
+                {Object.entries(membershipStatusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="sync-filter">Sync</label>
+              <select id="sync-filter" value={form.syncState} onChange={(e) => setForm({ ...form, syncState: e.target.value as MemberSyncState | '' })}>
+                <option value="">Alle</option>
+                {Object.entries(syncStateLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="button secondary">
+              Zoeken
+            </button>
+          </form>
+        }
+        footer={
+          members.data ? (
+            <Pagination page={members.data.page} pageSize={members.data.pageSize} totalCount={members.data.totalCount} onPage={setPage} noun="leden" />
+          ) : null
+        }
+      />
+
+      {permissions.includes('member.purge') ? (
+        <section className="danger-zone" aria-labelledby="gevarenzone">
+          <span className="icon-bubble red">
+            <Icon name="waarschuwing" size={22} />
+          </span>
+          <div className="grow">
+            <h2 id="gevarenzone">
+              Gevarenzone <span className="badge">Alleen test- en acceptatieomgeving</span>
+            </h2>
+            <p>
+              Verwijdert alle leden, syncruns en conflicten uit de app en zet de nachtelijke sync uit. In e-Boekhouden verandert
+              niets; met een synchronisatie zijn de leden er zo weer.
+            </p>
+          </div>
+          <button type="button" className="button danger" onClick={() => setPurging(true)}>
+            Alle leden verwijderen
+          </button>
+        </section>
+      ) : null}
+
       <PurgeDialog
         open={purging}
         onClose={() => setPurging(false)}

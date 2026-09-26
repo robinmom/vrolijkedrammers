@@ -128,7 +128,7 @@ function RetentionSection() {
       <h2 id="bewaar">Bewaartermijnen</h2>
       <SuccessMessage message={message} />
       <ProblemAlert error={retention.error ?? update.error} />
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Bewaartermijnen">
         <table className="table compact">
           <caption className="visually-hidden">Bewaartermijn per gegevenssoort</caption>
           <thead>

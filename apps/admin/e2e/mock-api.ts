@@ -392,6 +392,28 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)$/))) {
       return json(this.albums.find((a) => a.id === m![1]));
     }
+    if (path === '/admin/members/summary') {
+      const active = this.members.filter((x) => (x.localStatusOverride ?? x.status) === 'Active').length;
+      return json({
+        active,
+        inactive: this.members.length - active,
+        suspended: 0,
+        deceased: 0,
+        missingInEBoekhouden: this.members.filter((x) => x.syncState === 'Missing').length,
+        activeWithAccount: 0,
+        lastSyncAt: '2026-09-26T01:00:00Z',
+      });
+    }
+    if (path === '/carnival-years/current') {
+      return json({
+        id: 1,
+        name: '2026/2027',
+        startDate: '2026-11-11',
+        endDate: '2027-02-10',
+        carnivalStartDate: '2027-02-06',
+        carnivalEndDate: '2027-02-09',
+      });
+    }
     if (path === '/admin/members' && method === 'GET') {
       const search = (url.searchParams.get('search') ?? '').toLowerCase();
       const items = this.members
@@ -495,6 +517,7 @@ export class MockApi {
           categoryFromEBoekhouden: false,
         },
         account: null,
+        groups: [{ groupId: 'g-1', name: 'Jeugdcommissie', function: 'Lead', validTo: null }],
       });
     }
     if (path === '/admin/sync-jobs') {

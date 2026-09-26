@@ -23,7 +23,7 @@ export function EventsPage() {
       </div>
       <Checkbox label="Ook afgelopen events tonen" checked={includePast} onChange={(e) => setIncludePast(e.target.checked)} />
       <ProblemAlert error={events.error} />
-      <div className="table-scroll table-wrapper">
+      <div className="table-scroll table-wrapper" tabIndex={0} role="region" aria-label="Activiteiten">
         <table className="table">
           <caption className="visually-hidden">Events</caption>
           <thead>

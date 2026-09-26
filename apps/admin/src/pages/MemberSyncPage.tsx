@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import {
   useApiMutation,
+  useFeatureFlags,
   useMe,
   useMemberMapping,
   useSyncConflicts,
@@ -18,6 +19,7 @@ import {
 import { DataTable, columnHelper } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
+import { Icon } from '../components/Icon';
 import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import {
@@ -29,7 +31,7 @@ import {
 } from '../format';
 
 function StatusBadge({ status }: { status: SyncJob['status'] }) {
-  const kind = status === 'Succeeded' ? 'ok' : status === 'Queued' || status === 'Running' ? '' : 'warn';
+  const kind = status === 'Succeeded' ? 'ok' : status === 'Queued' || status === 'Running' ? 'info' : status === 'Failed' ? 'error' : 'warn';
   return <span className={`badge ${kind}`}>{syncJobStatusLabels[status] ?? status}</span>;
 }
 
@@ -104,53 +106,51 @@ export function MemberSyncPage() {
     });
   }
 
+  const running = jobs.data?.items.find((j) => j.status === 'Queued' || j.status === 'Running');
+  const lastDone = jobs.data?.items.find((j) => j.status !== 'Queued' && j.status !== 'Running');
+
   return (
     <>
-      <p>
-        <Link to="/leden">← Leden</Link>
-      </p>
+      <Link to="/leden" className="back-link">
+        <Icon name="terug" size={16} /> Leden
+      </Link>
       <div className="page-header">
-        <h1>Synchronisatie met e-Boekhouden</h1>
+        <div className="page-title">
+          <h1>Synchronisatie met e-Boekhouden</h1>
+          <p className="page-subtitle">
+            Leest de leden uit e-Boekhouden en schrijft daar nooit iets terug. Een dry-run laat zien wat er zou veranderen,
+            zonder iets op te slaan; doe die altijd eerst na een wijziging van de mapping.
+          </p>
+        </div>
         <div className="actions">
-          <button
-            type="button"
-            className="button secondary"
-            disabled={busy || start.isPending}
-            onClick={() => run(true)}
-          >
+          <button type="button" className="button secondary" disabled={busy || start.isPending} onClick={() => run(true)}>
             Dry-run starten
           </button>
-          <button
-            type="button"
-            className="button"
-            disabled={busy || start.isPending}
-            onClick={() => setConfirmReal(true)}
-          >
+          <button type="button" className="button" disabled={busy || start.isPending} onClick={() => setConfirmReal(true)}>
             Synchroniseren
           </button>
         </div>
       </div>
-      <p className="muted">
-        De sync leest de leden uit e-Boekhouden en schrijft daar niets terug. Een dry-run laat zien wat er zou
-        veranderen, zonder iets op te slaan. Doe na een wijziging van de mapping altijd eerst een dry-run.
-      </p>
       <SuccessMessage message={message} />
       <ProblemAlert error={start.error ?? jobs.error} />
 
+      <SyncStatus lastDone={lastDone} canConfigure={canConfigure} />
+      {running ? <RunningJob job={running} /> : null}
+
       <OpenConflicts />
 
-      <section className="card" aria-labelledby="runs">
-        <h2 id="runs">Runs</h2>
-        <DataTable caption="Syncruns" columns={jobColumns} data={jobs.data?.items ?? EMPTY_JOBS} />
-        {jobs.data ? (
-          <Pagination
-            page={jobs.data.page}
-            pageSize={jobs.data.pageSize}
-            totalCount={jobs.data.totalCount}
-            onPage={setPage}
-          />
-        ) : null}
-      </section>
+      <DataTable
+        caption="Syncruns"
+        columns={jobColumns}
+        data={jobs.data?.items ?? EMPTY_JOBS}
+        columnPicker={false}
+        header={<h2 id="runs">Runs</h2>}
+        footer={
+          jobs.data && jobs.data.totalCount > jobs.data.pageSize ? (
+            <Pagination page={jobs.data.page} pageSize={jobs.data.pageSize} totalCount={jobs.data.totalCount} onPage={setPage} noun="runs" />
+          ) : null
+        }
+      />
 
       {canConfigure ? <MappingForm /> : null}
 
@@ -173,6 +173,90 @@ export function MemberSyncPage() {
   );
 }
 
+/** Drie statuskaarten (Figma "Ledensync"): laatste run, nachtelijke sync, koppeling. */
+function SyncStatus({ lastDone, canConfigure }: { lastDone: SyncJob | undefined; canConfigure: boolean }) {
+  const flags = useFeatureFlags(canConfigure);
+  const nightly = flags.data?.find((f) => f.key === 'members-sync');
+  const tokenProblem = lastDone?.status === 'Failed' && /token|geconfigureerd|Key Vault|Aanmelden/i.test(lastDone.errorMessage ?? '');
+  return (
+    <div className="grid-3 status-cards">
+      <section className="card stat-card" aria-label="Laatste run">
+        <p className="kpi-label">Laatste run</p>
+        {lastDone ? (
+          <>
+            <p>
+              <StatusBadge status={lastDone.status} />
+            </p>
+            <p className="kpi-hint">
+              {formatDateTime(lastDone.completedAt ?? lastDone.requestedAt)} · {lastDone.dryRun ? 'dry-run' : 'echte run'} ·{' '}
+              {summary(lastDone)}
+            </p>
+          </>
+        ) : (
+          <p className="kpi-hint">Nog geen run gedaan.</p>
+        )}
+      </section>
+      <section className="card stat-card" aria-label="Nachtelijke sync">
+        <p className="kpi-label">Nachtelijke sync</p>
+        {canConfigure ? (
+          <>
+            <p>
+              <span className={`badge ${nightly?.enabled ? 'info' : ''}`}>{nightly?.enabled ? 'Aan' : 'Uit'}</span>
+            </p>
+            <p className="kpi-hint">
+              Elke nacht om 03:00 zolang de feature flag <code>members-sync</code> aan staat (Configuratie).
+            </p>
+          </>
+        ) : (
+          <p className="kpi-hint">Elke nacht om 03:00 als de beheerder die aanzet.</p>
+        )}
+      </section>
+      <section className="card stat-card" aria-label="Koppeling">
+        <p className="kpi-label">Koppeling met e-Boekhouden</p>
+        <p>
+          {tokenProblem ? (
+            <span className="badge error">Niet verbonden</span>
+          ) : lastDone && lastDone.status !== 'Failed' ? (
+            <span className="badge ok">Verbonden</span>
+          ) : (
+            <span className="badge">Nog niet getest</span>
+          )}
+        </p>
+        <p className="kpi-hint">{tokenProblem ? lastDone?.errorMessage : 'Token in Key Vault · alleen lezen'}</p>
+      </section>
+    </div>
+  );
+}
+
+/** Voortgang van een run die in de wachtrij staat of loopt; ververst vanzelf (useSyncJobs). */
+function RunningJob({ job }: { job: SyncJob }) {
+  const processed = job.created + job.updated + job.unchanged + job.reactivated + job.errors + job.conflicts;
+  const percent = job.totalInSource ? Math.min(100, Math.round((processed / job.totalInSource) * 100)) : 0;
+  return (
+    <section className="card" aria-labelledby="lopende-run">
+      <div className="card-header">
+        <h2 id="lopende-run">{job.dryRun ? 'Dry-run bezig' : 'Synchronisatie bezig'}</h2>
+        <StatusBadge status={job.status} />
+        <span className="kpi-label">{job.totalInSource ? `${processed} van ${job.totalInSource} leden` : 'Leden ophalen…'}</span>
+      </div>
+      <div
+        className="progress"
+        role="progressbar"
+        aria-label="Voortgang"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+      >
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <p className="kpi-hint">
+        Gestart om {formatDateTime(job.requestedAt)}
+        {job.dryRun ? ' · er wordt niets opgeslagen (dry-run)' : ''} · de pagina ververst vanzelf
+      </p>
+    </section>
+  );
+}
+
 function OpenConflicts() {
   const conflicts = useSyncConflicts();
   const [resolving, setResolving] = useState<SyncConflict | null>(null);
@@ -180,26 +264,26 @@ function OpenConflicts() {
     return null;
   }
   return (
-    <section className="card" aria-labelledby="conflicten">
+    <section className="card accent-gold" aria-labelledby="conflicten">
       <h2 id="conflicten">Openstaande conflicten ({conflicts.data.length})</h2>
       <ul className="list">
         {conflicts.data.map((c) => (
-          <li key={c.id}>
-            <strong>{syncConflictTypeLabels[c.type] ?? c.type}</strong>
-            {c.memberNumber ? (
-              <>
-                {' '}
-                · lidnummer{' '}
-                {c.memberId ? (
-                  <Link to="/leden/$id" params={{ id: c.memberId }}>
-                    {c.memberNumber}
-                  </Link>
-                ) : (
-                  c.memberNumber
-                )}
-              </>
-            ) : null}
-            <p>{c.details}</p>
+          <li key={c.id} className="list-row">
+            <div className="grow">
+              <p>
+                <span className="badge warn">{syncConflictTypeLabels[c.type] ?? c.type}</span>{' '}
+                {c.memberNumber ? (
+                  c.memberId ? (
+                    <Link to="/leden/$id" params={{ id: c.memberId }}>
+                      Lidnummer {c.memberNumber}
+                    </Link>
+                  ) : (
+                    <>Lidnummer {c.memberNumber}</>
+                  )
+                ) : null}
+              </p>
+              <p className="muted">{c.details}</p>
+            </div>
             <button type="button" className="button secondary" onClick={() => setResolving(c)}>
               Afhandelen
             </button>
@@ -311,7 +395,7 @@ function MappingForm() {
         gegeven het vrije veld, of laat het leeg om het gegeven in de app zelf te beheren.
       </p>
       <form onSubmit={submit}>
-        <div className="grid-2">
+        <div className="grid-4">
           {mappingFields.map((f) => (
             <div className="field" key={f.key}>
               <label htmlFor={`map-${f.key}`}>{f.label}</label>

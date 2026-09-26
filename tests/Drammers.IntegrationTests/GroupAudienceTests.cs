@@ -197,4 +197,21 @@ public class GroupAudienceTests(SqlServerFixture sql) : IAsyncLifetime
         var redactie = _api.ClientFor((await _api.CreateUserAsync("redactie2@example.com", DefaultRoles.Redactie)).ObjectId);
         Assert.Equal(HttpStatusCode.Forbidden, (await redactie.GetAsync("/api/v1/admin/reports/members")).StatusCode);
     }
+
+    [Fact]
+    public async Task Ledensamenvatting_en_groepen_op_het_lid_detail()
+    {
+        var group = await CreateGroupAsync("Jeugdcommissie");
+        var (active, _) = await MemberWithAccountAsync("600");
+        await MemberWithAccountAsync("601", status: MembershipStatus.Inactive);
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/groups/{group}/members/{active}", new { function = "Lead" });
+
+        var summary = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/members/summary");
+        Assert.Equal((1, 1, 1), (summary.GetProperty("active").GetInt32(), summary.GetProperty("inactive").GetInt32(), summary.GetProperty("activeWithAccount").GetInt32()));
+        Assert.Equal(0, summary.GetProperty("missingInEBoekhouden").GetInt32());
+
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{active}");
+        var groups = detail.GetProperty("groups");
+        Assert.Equal(("Jeugdcommissie", "Lead"), (groups[0].GetProperty("name").GetString(), groups[0].GetProperty("function").GetString()));
+    }
 }

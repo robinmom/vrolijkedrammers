@@ -1,11 +1,12 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation, useMe, useMember, type MemberDetail, type MembershipStatus } from '../api/hooks';
+import { useApiMutation, useMe, useMember, useMemberHistory, type MemberDetail, type MembershipStatus } from '../api/hooks';
 import { ConfirmDialog } from '../components/Dialog';
 import { Field } from '../components/Field';
+import { Icon } from '../components/Icon';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
-import { accountStatusLabels, formatDate, formatDateTime, membershipStatusLabels, syncStateLabels } from '../format';
+import { accountStatusLabels, formatDate, formatDateTime, groupFunctionLabels, membershipStatusLabels, syncStateLabels } from '../format';
 
 interface LocalForm {
   localStatusOverride: MembershipStatus | '';
@@ -85,25 +86,42 @@ export function MemberDetailPage() {
     save.mutate(undefined, { onSuccess: () => setMessage('Opgeslagen.') });
   }
 
+  const statusTone: Record<string, string> = { Active: 'ok', Suspended: 'warn' };
+  const address = [m.addressLine, [m.postalCode, m.city].filter(Boolean).join(' '), m.country].filter(Boolean).join(', ');
+
   return (
     <>
-      <p>
-        <Link to="/leden">← Leden</Link>
-      </p>
-      <h1>{m.fullName}</h1>
-      <p className="muted">
-        Lidnummer {m.memberNumber} · {membershipStatusLabels[m.effectiveStatus] ?? m.effectiveStatus} ·{' '}
-        {syncStateLabels[m.syncState] ?? m.syncState}
-        {m.ebLastSeenAt ? ` · laatst gezien in e-Boekhouden ${formatDateTime(m.ebLastSeenAt)}` : ''}
-      </p>
+      <Link to="/leden" className="back-link">
+        <Icon name="terug" size={16} /> Leden
+      </Link>
+      <div className="page-header">
+        <div className="page-title">
+          <h1>
+            {m.fullName}{' '}
+            <span className={`badge ${statusTone[m.effectiveStatus] ?? ''}`}>{membershipStatusLabels[m.effectiveStatus] ?? m.effectiveStatus}</span>
+            {m.syncState !== 'InSync' ? (
+              <span className={`badge ${m.syncState === 'Missing' ? 'warn' : 'error'}`}>{syncStateLabels[m.syncState] ?? m.syncState}</span>
+            ) : null}
+          </h1>
+          <p className="page-subtitle">
+            Lidnummer {m.memberNumber}
+            {m.joinYear ? ` · lid sinds ${m.joinYear}` : ''}
+            {m.ebLastSeenAt ? ` · laatst gezien in e-Boekhouden ${formatDateTime(m.ebLastSeenAt)}` : ''}
+          </p>
+        </div>
+      </div>
       <SuccessMessage message={message} />
 
       {m.syncState === 'Missing' ? (
-        <div className="alert alert-warning" role="status">
-          <p>
-            Dit lid staat sinds {formatDateTime(m.ebMissingSince)} niet meer in e-Boekhouden. Bij de volgende sync wordt
-            het lid inactief; je kunt dat hier ook direct bevestigen.
-          </p>
+        <div className="alert alert-warning banner" role="status">
+          <Icon name="waarschuwing" size={22} />
+          <div className="banner-text">
+            <strong>Dit lid staat niet meer in e-Boekhouden</strong>
+            <p>
+              Sinds {formatDateTime(m.ebMissingSince)}. Bij de volgende synchronisatie wordt het lid inactief; is het lid echt
+              gestopt, dan kun je dat nu al bevestigen. Rollen en account blijven bewaard.
+            </p>
+          </div>
           {canEdit ? (
             <button type="button" className="button secondary" onClick={() => setConfirmInactive(true)}>
               Nu op inactief zetten
@@ -112,151 +130,176 @@ export function MemberDetailPage() {
         </div>
       ) : null}
 
-      <section className="card" aria-labelledby="eboekhouden">
-        <h2 id="eboekhouden">Gegevens uit e-Boekhouden</h2>
-        <p className="muted">Wijzigen via het secretariaat in e-Boekhouden; de sync neemt het daarna over.</p>
-        <dl className="details">
-          <dt>Naam</dt>
-          <dd>{m.fullName}</dd>
-          <dt>Adres</dt>
-          <dd>
-            {[m.addressLine, [m.postalCode, m.city].filter(Boolean).join(' '), m.country].filter(Boolean).join(', ') ||
-              '—'}
-          </dd>
-          <dt>E-mailadres</dt>
-          <dd>{m.email ?? '—'}</dd>
-          <dt>Telefoon</dt>
-          <dd>{[m.phone, m.mobilePhone].filter(Boolean).join(' · ') || '—'}</dd>
-          {sources.birthDateFromEBoekhouden ? (
-            <>
-              <dt>Geboortedatum</dt>
-              <dd>{formatDate(m.birthDate)}</dd>
-            </>
-          ) : null}
-          {sources.joinYearFromEBoekhouden ? (
-            <>
-              <dt>Inschrijfjaar</dt>
-              <dd>{m.joinYear ?? '—'}</dd>
-            </>
-          ) : null}
-          {sources.statusFromEBoekhouden ? (
-            <>
-              <dt>Status in e-Boekhouden</dt>
-              <dd>{m.ebStatusRaw ?? '—'}</dd>
-            </>
-          ) : null}
-          {sources.categoryFromEBoekhouden ? (
-            <>
-              <dt>Categorie</dt>
-              <dd>{m.memberCategory ?? '—'}</dd>
-            </>
-          ) : null}
-        </dl>
-      </section>
+      <div className="columns">
+        <div>
+          <section className="card" aria-labelledby="eboekhouden">
+            <div className="card-header">
+              <h2 id="eboekhouden">Gegevens uit e-Boekhouden</h2>
+              <span className="badge info">Bron: e-Boekhouden</span>
+            </div>
+            <p className="card-hint">Alleen-lezen. Wijzigen gaat via het secretariaat in e-Boekhouden; de sync neemt het daarna over.</p>
+            <dl className="details">
+              <dt>Naam</dt>
+              <dd>{m.fullName}</dd>
+              <dt>Adres</dt>
+              <dd>{address || '—'}</dd>
+              <dt>E-mailadres</dt>
+              <dd>{m.email ?? '—'}</dd>
+              <dt>Telefoon</dt>
+              <dd>{[m.phone, m.mobilePhone].filter(Boolean).join(' · ') || '—'}</dd>
+              {sources.birthDateFromEBoekhouden ? (
+                <>
+                  <dt>Geboortedatum</dt>
+                  <dd>{formatDate(m.birthDate)}</dd>
+                </>
+              ) : null}
+              {sources.joinYearFromEBoekhouden ? (
+                <>
+                  <dt>Inschrijfjaar</dt>
+                  <dd>{m.joinYear ?? '—'}</dd>
+                </>
+              ) : null}
+              {sources.statusFromEBoekhouden ? (
+                <>
+                  <dt>Status in e-Boekhouden</dt>
+                  <dd>{m.ebStatusRaw ?? '—'}</dd>
+                </>
+              ) : null}
+              {sources.categoryFromEBoekhouden ? (
+                <>
+                  <dt>Categorie</dt>
+                  <dd>{m.memberCategory ?? '—'}</dd>
+                </>
+              ) : null}
+            </dl>
+          </section>
 
-      <section className="card" aria-labelledby="lokaal">
-        <h2 id="lokaal">Gegevens van de app</h2>
-        <form onSubmit={submit}>
-          <fieldset disabled={!canEdit}>
-            <legend>Naam (voor de app)</legend>
-            <p className="muted">
-              e-Boekhouden kent één naamveld; de app splitst het automatisch. Corrigeer hier als dat niet goed ging
-              {m.nameCorrectedManually ? ' (handmatig gecorrigeerd)' : ''}.
+          <section className="card" aria-labelledby="lokaal">
+            <h2 id="lokaal">Gegevens van de app</h2>
+            <p className="card-hint">
+              Deze gegevens beheer je hier; de sync raakt ze nooit aan.
+              {m.nameCorrectedManually ? ' De naam is handmatig gecorrigeerd.' : ''}
             </p>
-            <div className="grid-3">
-              <Field label="Voornaam" value={form.firstName} onChange={(e) => set({ firstName: e.target.value })} />
-              <Field
-                label="Tussenvoegsel"
-                value={form.namePrefix}
-                onChange={(e) => set({ namePrefix: e.target.value })}
-              />
-              <Field label="Achternaam" value={form.lastName} onChange={(e) => set({ lastName: e.target.value })} />
-            </div>
-          </fieldset>
-          <fieldset disabled={!canEdit}>
-            <legend>Lidmaatschap</legend>
-            <div className="field">
-              <label htmlFor="override">Status-override</label>
-              <select
-                id="override"
-                aria-describedby="override-hint"
-                value={form.localStatusOverride}
-                onChange={(e) => set({ localStatusOverride: e.target.value as MembershipStatus | '' })}
-              >
-                <option value="">
-                  Geen (volgt e-Boekhouden: {membershipStatusLabels[m.syncedStatus] ?? m.syncedStatus})
-                </option>
-                <option value="Suspended">Geschorst</option>
-                <option value="Inactive">Inactief</option>
-                <option value="Deceased">Overleden</option>
-              </select>
-              <small id="override-hint" className="muted">
-                Een override wint altijd van de status uit e-Boekhouden.
-              </small>
-            </div>
-            <div className="grid-3">
-              <Field
-                label="Geldig vanaf"
-                type="date"
-                value={form.membershipValidFrom}
-                onChange={(e) => set({ membershipValidFrom: e.target.value })}
-              />
-              <Field
-                label="Geldig tot"
-                type="date"
-                hint="Voor een tijdelijk lidmaatschap"
-                value={form.membershipValidTo}
-                onChange={(e) => set({ membershipValidTo: e.target.value })}
-              />
-            </div>
-            {!sources.birthDateFromEBoekhouden || !sources.joinYearFromEBoekhouden ? (
-              <div className="grid-3">
-                {!sources.birthDateFromEBoekhouden ? (
+            <form onSubmit={submit}>
+              <fieldset disabled={!canEdit} className="plain-fieldset">
+                <legend className="visually-hidden">Naam (voor de app)</legend>
+                <div className="grid-3">
+                  <Field label="Voornaam" value={form.firstName} onChange={(e) => set({ firstName: e.target.value })} />
+                  <Field label="Tussenvoegsel" value={form.namePrefix} onChange={(e) => set({ namePrefix: e.target.value })} />
+                  <Field label="Achternaam" value={form.lastName} onChange={(e) => set({ lastName: e.target.value })} />
+                </div>
+              </fieldset>
+              <fieldset disabled={!canEdit} className="plain-fieldset">
+                <legend className="visually-hidden">Lidmaatschap</legend>
+                <div className="grid-3">
+                  <div className="field">
+                    <label htmlFor="override">Status-override</label>
+                    <select
+                      id="override"
+                      aria-describedby="override-hint"
+                      value={form.localStatusOverride}
+                      onChange={(e) => set({ localStatusOverride: e.target.value as MembershipStatus | '' })}
+                    >
+                      <option value="">Volgt e-Boekhouden ({membershipStatusLabels[m.syncedStatus] ?? m.syncedStatus})</option>
+                      <option value="Suspended">Geschorst</option>
+                      <option value="Inactive">Inactief</option>
+                      <option value="Deceased">Overleden</option>
+                    </select>
+                    <small id="override-hint" className="muted">
+                      Een override wint altijd van de status uit e-Boekhouden.
+                    </small>
+                  </div>
+                  <Field label="Geldig vanaf" type="date" value={form.membershipValidFrom} onChange={(e) => set({ membershipValidFrom: e.target.value })} />
                   <Field
-                    label="Geboortedatum"
+                    label="Geldig tot"
                     type="date"
-                    value={form.birthDate}
-                    onChange={(e) => set({ birthDate: e.target.value })}
+                    hint="Voor een tijdelijk lidmaatschap"
+                    value={form.membershipValidTo}
+                    onChange={(e) => set({ membershipValidTo: e.target.value })}
                   />
+                </div>
+                {!sources.birthDateFromEBoekhouden || !sources.joinYearFromEBoekhouden ? (
+                  <div className="grid-3">
+                    {!sources.birthDateFromEBoekhouden ? (
+                      <Field label="Geboortedatum" type="date" value={form.birthDate} onChange={(e) => set({ birthDate: e.target.value })} />
+                    ) : null}
+                    {!sources.joinYearFromEBoekhouden ? (
+                      <Field
+                        label="Inschrijfjaar"
+                        type="number"
+                        min={1900}
+                        max={2100}
+                        value={form.joinYear}
+                        onChange={(e) => set({ joinYear: e.target.value })}
+                      />
+                    ) : null}
+                  </div>
                 ) : null}
-                {!sources.joinYearFromEBoekhouden ? (
-                  <Field
-                    label="Inschrijfjaar"
-                    type="number"
-                    min={1900}
-                    max={2100}
-                    value={form.joinYear}
-                    onChange={(e) => set({ joinYear: e.target.value })}
-                  />
-                ) : null}
-              </div>
-            ) : null}
-          </fieldset>
-          <ProblemAlert error={save.error ?? markInactive.error} />
-          {canEdit ? (
-            <div className="actions">
-              <button type="submit" className="button" disabled={save.isPending}>
-                Gegevens van de app opslaan
-              </button>
-            </div>
-          ) : null}
-        </form>
-      </section>
+              </fieldset>
+              <ProblemAlert error={save.error ?? markInactive.error} />
+              {canEdit ? (
+                <div className="actions">
+                  <button type="submit" className="button" disabled={save.isPending}>
+                    Gegevens van de app opslaan
+                  </button>
+                </div>
+              ) : null}
+            </form>
+          </section>
+        </div>
 
-      <section className="card" aria-labelledby="account">
-        <h2 id="account">App-account</h2>
-        {m.account ? (
-          <p>
-            <Link to="/gebruikers/$id" params={{ id: m.account.userId }}>
-              {m.account.email}
-            </Link>{' '}
-            · {accountStatusLabels[m.account.accountStatus] ?? m.account.accountStatus} · laatste login{' '}
-            {formatDateTime(m.account.lastLoginAt)}
-          </p>
-        ) : (
-          <p className="muted">Dit lid heeft (nog) geen app-account. Accounts voor leden volgen in fase 9.</p>
-        )}
-      </section>
+        <div>
+          <section className="card" aria-labelledby="account">
+            <h2 id="account">App-account</h2>
+            {m.account ? (
+              <>
+                <dl className="details compact-details">
+                  <dt>E-mailadres</dt>
+                  <dd>{m.account.email}</dd>
+                  <dt>Status</dt>
+                  <dd>
+                    <span className={`badge ${m.account.accountStatus === 'Active' ? 'ok' : 'warn'}`}>
+                      {accountStatusLabels[m.account.accountStatus] ?? m.account.accountStatus}
+                    </span>
+                  </dd>
+                  <dt>Laatste login</dt>
+                  <dd>{formatDateTime(m.account.lastLoginAt)}</dd>
+                </dl>
+                <Link to="/gebruikers/$id" params={{ id: m.account.userId }} className="button ghost">
+                  Naar gebruiker en rollen →
+                </Link>
+              </>
+            ) : (
+              <p className="muted">Dit lid heeft (nog) geen app-account. Accounts voor leden volgen in fase 9.</p>
+            )}
+          </section>
+
+          <section className="card" aria-labelledby="groepen">
+            <div className="card-header">
+              <h2 id="groepen">Groepen</h2>
+              <Link to="/groepen" className="button ghost small">
+                Groepen beheren
+              </Link>
+            </div>
+            {m.groups.length === 0 ? (
+              <p className="muted">Nog in geen enkele groep.</p>
+            ) : (
+              <ul className="list">
+                {m.groups.map((g) => (
+                  <li key={g.groupId} className="list-row">
+                    <Link to="/groepen/$id" params={{ id: g.groupId }} className="grow">
+                      {g.name}
+                    </Link>
+                    <span className="badge">{groupFunctionLabels[g.function] ?? g.function}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <MemberHistory memberId={id} />
+        </div>
+      </div>
 
       <ConfirmDialog
         open={confirmInactive}
@@ -275,5 +318,40 @@ export function MemberDetailPage() {
         }
       />
     </>
+  );
+}
+
+const historyLabels: Record<string, string> = {
+  'member.updated': 'Gegevens van de app gewijzigd',
+  'member.confirmed-inactive': 'Op inactief gezet',
+};
+
+/** Laatste wijzigingen aan dit lid uit de auditlog (alleen met audit.read). */
+function MemberHistory({ memberId }: { memberId: string }) {
+  const me = useMe();
+  const canRead = (me.data?.permissions ?? []).includes('audit.read');
+  const history = useMemberHistory(memberId, canRead);
+  if (!canRead) {
+    return null;
+  }
+  return (
+    <section className="card" aria-labelledby="historie">
+      <h2 id="historie">Historie</h2>
+      {history.data?.items.length ? (
+        <ul className="list">
+          {history.data.items.map((entry) => (
+            <li key={entry.id}>
+              <p>{historyLabels[entry.action] ?? entry.action}</p>
+              <p className="muted small-text">
+                {formatDateTime(entry.occurredAt)}
+                {entry.actorName ? ` · ${entry.actorName}` : ''}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">Nog geen wijzigingen in de app.</p>
+      )}
+    </section>
   );
 }

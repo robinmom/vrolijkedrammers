@@ -197,3 +197,13 @@ Het beheerportal gebruikt dezelfde tokens (CSS custom properties), zodat app en 
 | Nieuwsdetail, album, fotoviewer | Geen Figma-ontwerp; opgebouwd uit de bestaande componenten (hero van 06, raster van 07) | Nog geen ontwerp nodig; te beoordelen bij de visuele review |
 | Tekstkleuren | Secundaire tekst gebruikt de toegankelijke varianten uit §7 in plaats van 55–65 % dekking | Contrast ≥ 4,5:1 (OQ-66) |
 
+
+## 10. Beheerportal (Figma-pagina "🖥️ Beheerportal")
+
+Ontwerp: Figma-bestand `8EzBpDFQ28pJTf5Ciq6XHh`, pagina `30:624`. Componentenbord `31:625` (Portal/Button, Badge, NavItem, Field, Zijbalk, Tabelkop, Tabelrij) en de schermen Dashboard `39:1280`, Leden `34:703`, Lid-detail `36:992` en Ledensync `37:1135`. De bouw staat in `apps/admin`.
+
+- **Kleurgebruik:** primaire knoppen zijn Loils Blauw (`actionSecondary`). Rood (`actionDanger`) is gereserveerd voor gevaarlijke acties en de dashboard-hero. De gevarenzone ("Alle leden verwijderen") staat apart onderaan de ledenpagina, in een rood omkaderde kaart.
+- **Nieuw token:** `surfaceMuted` (licht `#F0F1F2` = `brand.lightGrey`, donker `#1A2D3E`) voor tabelkoppen en voortgangsbalken.
+- **Iconen:** `apps/admin/src/components/icons.ts` bevat de lijniconen uit de app, aangevuld met portal-iconen (sync, rapport, rollen, audit …). Ze worden via `currentColor` ingekleurd.
+- **Zijbalk:** secties Content, Leden en Beheer. Menu-items zijn zichtbaar op basis van permissions (zie `navigation.ts`).
+- **Nog te ontwerpen:** donkere en mobiele varianten van de portalschermen. De CSS ondersteunt beide al en wordt getest met Playwright en axe, in licht en donker, zonder horizontale overflow.

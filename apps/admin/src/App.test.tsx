@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ApiError, describeProblem } from './api/errors';
 import { ProblemAlert } from './components/ProblemAlert';
 import { navItems, visibleNavItems } from './navigation';
-import { applyTheme, themeStylesheet } from './theme';
+import { themeStylesheet } from './theme';
 
 describe('navigatie', () => {
   it('toont alleen menu-items waarvoor de gebruiker de permission heeft', () => {
@@ -43,8 +43,7 @@ describe('theme', () => {
     expect(css).toContain('--dvd-canvas: #0D1A25;');
   });
 
-  it('voegt het thema toe aan het document', () => {
-    applyTheme(document);
-    expect(document.head.querySelector('style[data-dvd-theme]')).not.toBeNull();
+  it('staat als bestand in de build (de CSP staat geen inline <style> toe)', async () => {
+    await expect(themeStylesheet()).toMatchFileSnapshot('./theme.generated.css');
   });
 });

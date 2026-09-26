@@ -100,6 +100,9 @@ internal sealed class EBoekhoudenClient(
 {
     private const int PageSize = 500;
 
+    /// <summary>Vangnet tegen eindeloos pagineren.</summary>
+    private const int MaxMembers = 50_000;
+
     public async Task<IEBoekhoudenSession> OpenSessionAsync(CancellationToken cancellationToken)
     {
         var settings = options.Value;
@@ -142,16 +145,27 @@ internal sealed class EBoekhoudenClient(
     {
         public async Task<IReadOnlyList<EbMemberReference>> ListMembersAsync(CancellationToken cancellationToken)
         {
+            // Doorgaan zolang een pagina vol is. `count` is niet betrouwbaar als totaal (in de praktijk het aantal op
+            // de pagina), dus daar stoppen we niet op. Een pagina zonder nieuwe leden (offset genegeerd) stopt ook.
             var result = new List<EbMemberReference>();
-            for (var offset = 0; ; offset += PageSize)
+            var seen = new HashSet<int>();
+            for (var offset = 0; offset < MaxMembers; offset += PageSize)
             {
                 var page = await SendAsync<MemberList>($"v1/member?limit={PageSize}&offset={offset}", cancellationToken);
-                result.AddRange(page.Items);
-                if (page.Items.Count < PageSize || result.Count >= page.Count)
+                var added = 0;
+                foreach (var item in page.Items.Where(item => seen.Add(item.Id)))
+                {
+                    result.Add(item);
+                    added++;
+                }
+
+                if (page.Items.Count < PageSize || added == 0)
                 {
                     return result;
                 }
             }
+
+            throw new EBoekhoudenException($"e-Boekhouden gaf meer dan {MaxMembers} leden terug; de sync is gestopt.");
         }
 
         public Task<EbMember> GetMemberAsync(int id, CancellationToken cancellationToken) =>

@@ -7,6 +7,17 @@ async function open(page: Page, api: MockApi, path = '') {
   await page.goto(`/beheer/${path}`);
 }
 
+/** CSP-schendingen (zoals een geblokkeerde inline <style>) en een ontbrekend thema vallen live anders pas op bij gebruikers. */
+async function watchCspViolations(page: Page): Promise<string[]> {
+  const violations: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('Content Security Policy')) {
+      violations.push(message.text());
+    }
+  });
+  return violations;
+}
+
 async function openMenuIfMobile(page: Page) {
   const toggle = page.getByRole('button', { name: 'Menu' });
   if (await toggle.isVisible()) {
@@ -130,8 +141,15 @@ for (const path of [
         conflicts: 0,
         errorMessage: null,
       });
+      const cspViolations = await watchCspViolations(page);
       await open(page, api, path);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // De kleurtokens moeten actief zijn (live verdwenen ze toen de CSP de inline <style> blokkeerde).
+      const surface = await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--dvd-surface').trim(),
+      );
+      expect(surface).toMatch(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+      expect(cspViolations).toEqual([]);
       await expectNoSeriousA11yIssues(page);
       // Geen horizontaal scrollen van de hele pagina (op mobiel verschuiven taps anders naar het verkeerde element).
       const overflow = await page.evaluate(

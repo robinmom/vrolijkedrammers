@@ -1,0 +1,53 @@
+/* Gegenereerd uit @drammers/design-tokens door src/theme.ts – niet handmatig wijzigen. */
+:root {
+--dvd-canvas: #FAFAF7;
+--dvd-surface: #FFFFFF;
+--dvd-surface-muted: #F0F1F2;
+--dvd-tab-bar: rgba(255,255,255,0.96);
+--dvd-text-primary: #123047;
+--dvd-text-secondary: #5B6C7B;
+--dvd-text-tertiary: #5F7080;
+--dvd-border: rgba(18,48,71,0.10);
+--dvd-accent-text: #D4000F;
+--dvd-link-text: #066AA6;
+--dvd-text-on-light-button: #066AA6;
+--dvd-success-text: #287A26;
+--dvd-action-primary: #ED0012;
+--dvd-on-action-primary: #FFFFFF;
+--dvd-action-danger: #D4000F;
+--dvd-action-secondary: #087BC1;
+--dvd-hero-background: #087BC1;
+--dvd-on-hero: #FFFFFF;
+--dvd-tint-red: rgba(237,0,18,0.14);
+--dvd-tint-blue: rgba(8,123,193,0.14);
+--dvd-tint-yellow: rgba(244,185,66,0.14);
+--dvd-tint-green: rgba(57,169,53,0.14);
+--dvd-shadow: rgba(18,48,71,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+--dvd-canvas: #0D1A25;
+--dvd-surface: #172939;
+--dvd-surface-muted: #1A2D3E;
+--dvd-tab-bar: #172939;
+--dvd-text-primary: #F2F4F6;
+--dvd-text-secondary: #8F99A1;
+--dvd-text-tertiary: #8F99A1;
+--dvd-border: rgba(242,244,246,0.08);
+--dvd-accent-text: #FF5A6A;
+--dvd-link-text: #5AB0E6;
+--dvd-text-on-light-button: #066AA6;
+--dvd-success-text: #4FB84B;
+--dvd-action-primary: #ED0012;
+--dvd-on-action-primary: #FFFFFF;
+--dvd-action-danger: #D4000F;
+--dvd-action-secondary: #087BC1;
+--dvd-hero-background: #087BC1;
+--dvd-on-hero: #FFFFFF;
+--dvd-tint-red: rgba(237,0,18,0.14);
+--dvd-tint-blue: rgba(8,123,193,0.14);
+--dvd-tint-yellow: rgba(244,185,66,0.14);
+--dvd-tint-green: rgba(57,169,53,0.14);
+--dvd-shadow: rgba(0,0,0,0.35);
+  }
+}

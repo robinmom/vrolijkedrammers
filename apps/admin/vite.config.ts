@@ -10,7 +10,16 @@ export default defineConfig({
     // Lokaal: API op http://localhost:5162 (dotnet run --project src/Drammers.Api).
     proxy: { '/api': 'http://localhost:5162', '/health': 'http://localhost:5162' },
   },
-  preview: { port: 4173 },
+  // Preview (e2e) met dezelfde CSP als de API voor /beheer (src/Drammers.Api/Portal/PortalHosting.cs), zodat
+  // bijvoorbeeld inline <style> in de tests net zo geblokkeerd wordt als live.
+  preview: {
+    port: 4173,
+    headers: {
+      'Content-Security-Policy':
+        "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.ciamlogin.com; " +
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],

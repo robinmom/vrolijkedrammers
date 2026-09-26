@@ -15,10 +15,8 @@ import { AuthProvider } from './auth/AuthContext';
 import { isE2eMock, loadPortalConfig } from './config';
 import { createAppRouter } from './router';
 import { SignIn } from './SignIn';
+import './theme.generated.css';
 import './styles.css';
-import { applyTheme } from './theme';
-
-applyTheme();
 
 const container = document.getElementById('root');
 if (!container) {

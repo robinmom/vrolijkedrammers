@@ -26,10 +26,20 @@ export function QueryState({ query, notFoundTitle }: { query: UseQueryResult<unk
   if (query.isPending) {
     // Offline zonder cache pauzeert TanStack Query de query tot er weer netwerk is; een uitgeschakelde query toont niets.
     return query.fetchStatus === 'paused' ? (
-      <ErrorState title="Geen verbinding" message="Deze gegevens zijn nog niet eerder geladen. Probeer het opnieuw als je online bent." />
+      <ErrorState
+        title="Geen verbinding"
+        message="Deze gegevens zijn nog niet eerder geladen. Probeer het opnieuw als je online bent."
+      />
     ) : null;
   }
-  return <ErrorState action={{ label: 'Opnieuw proberen', onPress: () => query.refetch() }} />;
+  // Alleen in ontwikkeling (Expo Go): de technische oorzaak erbij, zodat een fout te herleiden is. Nooit in de store-build.
+  const detail = __DEV__ ? `\n\n(${query.error instanceof Error ? query.error.message : String(query.error)})` : '';
+  return (
+    <ErrorState
+      message={`Controleer je verbinding en probeer het opnieuw.${detail}`}
+      action={{ label: 'Opnieuw proberen', onPress: () => query.refetch() }}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

@@ -20,8 +20,11 @@ export type MyDevice = Schemas['DeviceResponse'];
 
 /** Fout van de API met de HTTP-status; schermen tonen nooit technische details (docs/16 §6). */
 export class ApiError extends Error {
-  constructor(readonly status: number) {
-    super(`API-fout ${status}`);
+  constructor(
+    readonly status: number,
+    readonly path?: string,
+  ) {
+    super(`API-fout ${status}${path ? ` bij ${path}` : ''}`);
   }
 }
 
@@ -30,11 +33,14 @@ export const api = createApiClient(apiBaseUrl);
 /**
  * Ingelogd: elk verzoek krijgt het access-token en de installatie-id (fase 9). Is dit apparaat afgemeld
  * (401 DEVICE_REVOKED) of het account weg (401), dan wist de app de sessie; publieke content blijft werken.
+ *
+ * De middleware geeft bewust niets terug en zet headers ter plekke: openapi-fetch eist bij een teruggegeven waarde een
+ * `instanceof Response/Request`, en de Response van React Native (whatwg-fetch) voldoet daar niet aan.
  */
 api.use({
   async onRequest({ request }) {
     if (getStatus() !== 'signedIn') {
-      return request;
+      return undefined;
     }
     // Lukt het vernieuwen van het token niet (bijv. geen netwerk), dan toch anoniem proberen: publieke content blijft
     // zo zichtbaar, en een volgende aanroep probeert het token opnieuw.
@@ -43,13 +49,13 @@ api.use({
       request.headers.set('authorization', `Bearer ${token}`);
       request.headers.set('x-device-id', await getInstallationId());
     }
-    return request;
+    return undefined;
   },
   async onResponse({ response }) {
     if (response.status === 401 && getStatus() === 'signedIn') {
       await clearLocalSession();
     }
-    return response;
+    return undefined;
   },
 });
 
@@ -57,7 +63,7 @@ api.use({
 export async function unwrap<T>(call: Promise<{ data?: T; response: Response }>): Promise<T> {
   const { data, response } = await call;
   if (!response.ok || data === undefined) {
-    throw new ApiError(response.status);
+    throw new ApiError(response.status, response.url ? new URL(response.url).pathname : undefined);
   }
   return data;
 }

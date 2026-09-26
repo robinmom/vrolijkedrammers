@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { focusManager, onlineManager, QueryClient, type Query } from '@tanstack/react-query';
+import { focusManager, onlineManager, QueryCache, QueryClient, type Query } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
@@ -12,6 +12,17 @@ const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 export function createQueryClient() {
   return new QueryClient({
+    // In ontwikkeling elke mislukte query in de Metro-terminal, met de oorzaak.
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        if (__DEV__ && process.env.NODE_ENV !== 'test') {
+          console.warn(
+            `Query ${JSON.stringify(query.queryKey)} mislukt:`,
+            error instanceof Error ? error.message : error,
+          );
+        }
+      },
+    }),
     defaultOptions: {
       queries: {
         // Na 30 s ververst een scherm zijn data bij openen; ruim binnen de geldigheid van de SAS-links (15 min).

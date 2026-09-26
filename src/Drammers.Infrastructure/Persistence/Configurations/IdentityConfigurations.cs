@@ -1,3 +1,5 @@
+using Drammers.Modules.Identity.AccountRequests;
+using Drammers.Modules.Identity.Devices;
 using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
@@ -199,5 +201,38 @@ internal sealed class AccountProvisioningConfiguration : IEntityTypeConfiguratio
         builder.Property(p => p.EntraObjectId).HasMaxLength(64).IsUnicode(false);
         builder.Property(p => p.LastError).HasMaxLength(2000);
         builder.Property(p => p.RowVersion).IsRowVersion();
+    }
+}
+
+internal sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
+{
+    public void Configure(EntityTypeBuilder<Device> builder)
+    {
+        builder.ToTable("Device", Schemas.Identity);
+        builder.Property(d => d.Id).ValueGeneratedNever();
+        builder.Property(d => d.InstallationId).HasMaxLength(64).IsUnicode(false);
+        builder.HasIndex(d => new { d.UserId, d.InstallationId }).IsUnique();
+        builder.Property(d => d.Model).HasMaxLength(100);
+        builder.Property(d => d.Name).HasMaxLength(100);
+        builder.Property(d => d.AppVersion).HasMaxLength(20).IsUnicode(false);
+        builder.Property(d => d.PublicKey).HasMaxLength(500).IsUnicode(false);
+        builder.Property(d => d.AttestationStatus).HasMaxLength(30).IsUnicode(false);
+        builder.HasOne<User>().WithMany().HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class AccountRequestConfiguration : IEntityTypeConfiguration<AccountRequest>
+{
+    public void Configure(EntityTypeBuilder<AccountRequest> builder)
+    {
+        builder.ToTable("AccountRequest", Schemas.Identity);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.Property(r => r.MemberNumber).HasMaxLength(15);
+        builder.Property(r => r.Email).HasMaxLength(254);
+        builder.Property(r => r.MismatchReason).HasMaxLength(50).IsUnicode(false);
+        builder.Property(r => r.RejectionReason).HasMaxLength(500);
+        builder.Property(r => r.IpHash).HasMaxLength(64).IsUnicode(false);
+        builder.HasIndex(r => new { r.Status, r.RequestedAt });
+        builder.HasOne<Modules.Membership.Members.Member>().WithMany().HasForeignKey(r => r.MemberId).OnDelete(DeleteBehavior.SetNull);
     }
 }

@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { QueryProvider } from '../api/QueryProvider';
+import { restoreSession } from '../auth/session';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import { OfflineBanner } from '../ui';
@@ -21,6 +22,10 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
   });
+
+  useEffect(() => {
+    restoreSession().catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {

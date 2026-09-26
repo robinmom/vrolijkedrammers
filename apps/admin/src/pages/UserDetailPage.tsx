@@ -1,7 +1,7 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation, useRoles, useUser, useUserRoles, type RoleAssignment } from '../api/hooks';
+import { useApiMutation, useMe, useRoles, useUser, useUserDevices, useUserRoles, type RoleAssignment } from '../api/hooks';
 import { ConfirmDialog } from '../components/Dialog';
 import { Checkbox } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
@@ -16,6 +16,13 @@ export function UserDetailPage() {
   const [assignments, setAssignments] = useState<RoleAssignment[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmBlock, setConfirmBlock] = useState(false);
+  const me = useMe();
+  const canBlock = (me.data?.permissions ?? []).includes('member.block');
+  const devices = useUserDevices(id, canBlock);
+  const revokeDevice = useApiMutation(
+    (deviceId: string) => api.POST('/api/v1/admin/devices/{id}/revoke', { params: { path: { id: deviceId } } }),
+    [['user-devices', id]],
+  );
 
   useEffect(() => {
     if (userRoles.data) {
@@ -122,6 +129,61 @@ export function UserDetailPage() {
           </button>
         </form>
       </section>
+      {canBlock ? (
+        <section className="card" aria-labelledby="apparaten">
+          <h2 id="apparaten">Apparaten</h2>
+          <p className="muted">Waar deze gebruiker in de app is ingelogd. Intrekken logt dat apparaat direct uit.</p>
+          <ProblemAlert error={devices.error ?? revokeDevice.error} />
+          {devices.data && devices.data.length === 0 ? <p className="muted">Nog niet ingelogd in de app.</p> : null}
+          {devices.data && devices.data.length > 0 ? (
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Apparaten van deze gebruiker">
+              <table className="table compact">
+                <caption className="visually-hidden">Apparaten van deze gebruiker</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Apparaat</th>
+                    <th scope="col">Laatst gebruikt</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">
+                      <span className="visually-hidden">Acties</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devices.data.map((d) => (
+                    <tr key={d.id}>
+                      <td>
+                        {d.name}
+                        <div className="muted small-text">
+                          {d.platform === 'Ios' ? 'iOS' : 'Android'}
+                          {d.appVersion ? ` · app ${d.appVersion}` : ''}
+                        </div>
+                      </td>
+                      <td>{formatDateTime(d.lastSeenAt)}</td>
+                      <td>
+                        <span className={`badge ${d.status === 'Active' ? 'ok' : 'neutral'}`}>{d.status === 'Active' ? 'Actief' : 'Ingetrokken'}</span>
+                      </td>
+                      <td>
+                        {d.status === 'Active' ? (
+                          <button
+                            type="button"
+                            className="button secondary small"
+                            aria-label={`${d.name} intrekken`}
+                            disabled={revokeDevice.isPending}
+                            onClick={() => revokeDevice.mutate(d.id, { onSuccess: () => setMessage(`${d.name} is ingetrokken.`) })}
+                          >
+                            Intrekken
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
       <section className="card" aria-labelledby="toegang">
         <h2 id="toegang">Toegang</h2>
         <p>

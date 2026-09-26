@@ -27,6 +27,10 @@ public class AuthorizationConventionTests
         $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Search)}",
         $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Get)}",
         $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Photos)}",
+        // Fase 9: accountverzoek (generiek antwoord, rate limit) en aanmeldinstellingen van de app (geen geheimen).
+        $"{nameof(AccountRequestsController)}.{nameof(AccountRequestsController.Submit)}",
+        $"{nameof(AppAuthController)}.{nameof(AppAuthController.GetConfig)}",
+        $"{nameof(AppAuthController)}.{nameof(AppAuthController.Bridge)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

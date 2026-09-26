@@ -8,6 +8,9 @@ namespace Drammers.Api.Authorization;
 
 public static class AuthorizationSetup
 {
+    /// <summary>Strenge limiet voor anonieme formulieren (accountverzoek, later lid worden): 5 per 10 minuten per IP.</summary>
+    public const string AnonymousFormsPolicy = "anonymous-forms";
+
     public static IServiceCollection AddDrammersAuthorization(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
@@ -46,6 +49,14 @@ public static class AuthorizationSetup
                     ? RateLimitPartition.GetFixedWindowLimiter($"user:{objectId}", _ => Window(300))
                     : RateLimitPartition.GetFixedWindowLimiter($"ip:{context.Connection.RemoteIpAddress}", _ => Window(120));
             });
+            options.AddPolicy(AnonymousFormsPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
+                $"form:{context.Connection.RemoteIpAddress}",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("RateLimits:AnonymousForms", 5),
+                    Window = TimeSpan.FromMinutes(10),
+                    QueueLimit = 0,
+                }));
         });
 
         return services;

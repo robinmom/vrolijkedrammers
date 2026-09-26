@@ -21,7 +21,11 @@ const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slic
 /** Datumblok (Figma 02): "WO" · "11" · "NOV". */
 export function dateBlockParts(iso: string) {
   const date = new Date(iso);
-  return { weekday: clean(weekdayShort.format(date)).slice(0, 2), day: dayTwoDigit.format(date), month: clean(monthShort.format(date)).slice(0, 3) };
+  return {
+    weekday: clean(weekdayShort.format(date)).slice(0, 2),
+    day: dayTwoDigit.format(date),
+    month: clean(monthShort.format(date)).slice(0, 3),
+  };
 }
 
 /** "11:11 uur", "20:00 – 00:30 uur" of "Hele dag". */
@@ -77,8 +81,18 @@ export function countdown(target: Date, now: Date): Countdown | null {
     return null;
   }
   const total = Math.floor(ms / 1000);
-  return { days: Math.floor(total / 86400), hours: Math.floor((total % 86400) / 3600), minutes: Math.floor((total % 3600) / 60), seconds: total % 60 };
+  return {
+    days: Math.floor(total / 86400),
+    hours: Math.floor((total % 86400) / 3600),
+    minutes: Math.floor((total % 3600) / 60),
+    seconds: total % 60,
+  };
 }
 
 /** "2026/2027" → "Seizoen 2026–2027". */
 export const seasonLabel = (name: string) => `Seizoen ${name.replace('/', '–')}`;
+
+/** Kalenderdatum zonder tijd (bijv. geboortedatum "1980-03-12") als "12 maart 1980"; middag UTC voorkomt een dagverschuiving. */
+export function formatDateOnly(dateOnly: string): string {
+  return dayMonthYear.format(new Date(`${dateOnly}T12:00:00Z`));
+}

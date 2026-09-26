@@ -6,6 +6,7 @@ using Drammers.Infrastructure.Auditing;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Content;
 using Drammers.Infrastructure.EBoekhouden;
+using Drammers.Infrastructure.Email;
 using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Health;
 using Drammers.Infrastructure.Identity;
@@ -82,6 +83,14 @@ public static class DependencyInjection
             services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();
         }
 
+        // E-mail via Azure Communication Services met de managed identity; lokaal alleen een logregel.
+        var email = configuration.GetSection(EmailOptions.SectionName);
+        services.Configure<EmailOptions>(email);
+        if (email.Get<EmailOptions>()?.IsConfigured == true)
+        {
+            services.AddSingleton<IEmailSender, AcsEmailSender>();
+        }
+
         // e-Boekhouden (ADR-010): token uit Key Vault; leegmaken van leden alleen in Dev en Acc.
         services.Configure<EBoekhoudenOptions>(configuration.GetSection(EBoekhoudenOptions.SectionName));
         services.AddHttpClient<IEBoekhoudenClient, EBoekhoudenClient>(http => http.Timeout = TimeSpan.FromSeconds(60));
@@ -138,6 +147,11 @@ public static class DependencyInjection
         services.AddScoped<MemberAdministration>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
+        services.AddScoped<MemberAccounts>();
+        services.AddScoped<IOutboxMessageHandler, MemberAccountProvisioningHandler>();
+        services.AddScoped<MyAccount>();
+        services.TryAddSingleton<IEmailSender, LoggingEmailSender>();
+        services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();
         services.TryAddSingleton<IEBoekhoudenClient, UnconfiguredEBoekhoudenClient>();
         services.TryAddSingleton<IMalwareScanner, NoMalwareScanner>();
         services.TryAddSingleton<IFileStore, UnconfiguredFileStore>();

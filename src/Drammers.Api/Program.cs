@@ -72,6 +72,7 @@ try
     // Het portal (statische bestanden) vóór de authenticatie: het is publiek en logt zelf in via MSAL.
     app.UsePortalStaticFiles();
     app.UseAuthentication();
+    app.UseDeviceCheck();
     app.UseRateLimiter();
     app.UseAuthorization();
 

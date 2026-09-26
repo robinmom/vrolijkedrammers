@@ -19,6 +19,12 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
 
     public Task<string> CreateAsync(string email, string displayName, CancellationToken cancellationToken)
     {
+        if (FailNextCreate)
+        {
+            FailNextCreate = false;
+            throw new HttpRequestException("Graph tijdelijk niet bereikbaar");
+        }
+
         Interlocked.Increment(ref CreateCalls);
         var id = Guid.NewGuid().ToString();
         AccountsByEmail[email] = id;
@@ -35,6 +41,22 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
     public Task RevokeSessionsAsync(string objectId, CancellationToken cancellationToken)
     {
         RevokedSessions.Add(objectId);
+        return Task.CompletedTask;
+    }
+
+    public ConcurrentBag<string> Deleted { get; } = [];
+
+    /// <summary>Laat de volgende <see cref="CreateAsync"/> falen (saga-hervatting testen).</summary>
+    public bool FailNextCreate;
+
+    public Task DeleteAsync(string objectId, CancellationToken cancellationToken)
+    {
+        Deleted.Add(objectId);
+        foreach (var entry in AccountsByEmail.Where(e => e.Value == objectId).ToList())
+        {
+            AccountsByEmail.TryRemove(entry.Key, out _);
+        }
+
         return Task.CompletedTask;
     }
 }

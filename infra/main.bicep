@@ -26,6 +26,12 @@ param requiredEnvironmentAccess string
 @description('Client-ID van de portal-app-registratie; het portal haalt deze op via GET /api/v1/portal-config.')
 param portalClientId string
 
+@description('Client-ID van de app-registratie "DVD App"; de app haalt deze op via GET /api/v1/app-auth-config (fase 9).')
+param mobileClientId string = ''
+
+@description('Doorstuurpagina /app/auth-redirect voor Expo Go; alleen Dev/Acc.')
+param mobileRedirectBridge bool = false
+
 @description('Graph in de External ID-tenant: provisioning-app, issuer-domein en het certificaat in Key Vault (provisioning-certificate.sh).')
 param externalIdTenantId string
 param graphClientId string
@@ -122,6 +128,8 @@ module api 'modules/appservice.bicep' = {
       Auth__EnvironmentAccessClaim: environmentAccessClaim
       Auth__RequiredEnvironmentAccess: requiredEnvironmentAccess
       Portal__ClientId: portalClientId
+      Auth__MobileClientId: mobileClientId
+      Auth__MobileRedirectBridge: string(mobileRedirectBridge)
       Graph__TenantId: empty(graphClientId) ? '' : externalIdTenantId
       Graph__ClientId: graphClientId
       Graph__IssuerDomain: externalIdIssuerDomain

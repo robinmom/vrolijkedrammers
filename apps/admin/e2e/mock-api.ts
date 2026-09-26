@@ -152,6 +152,65 @@ export class MockApi {
     },
   ];
   syncJobs: Record<string, unknown>[] = [];
+
+  // Fase 9: accountverzoeken, provisioning en apparaten.
+  accountRequests = [
+    {
+      id: 'r-1',
+      memberNumber: '001',
+      email: 'piet.oud@example.com',
+      status: 'Pending',
+      mismatchReason: 'email-mismatch' as string | null,
+      rejectionReason: null as string | null,
+      requestedAt: '2026-09-26T08:00:00Z',
+      decidedAt: null as string | null,
+      member: {
+        id: 'm-1',
+        memberNumber: '001',
+        fullName: 'Piet van der Berg',
+        email: 'piet@example.com',
+        status: 'Active',
+      } as Record<string, unknown> | null,
+    },
+    {
+      id: 'r-2',
+      memberNumber: '999',
+      email: 'onbekend@example.com',
+      status: 'Pending',
+      mismatchReason: 'unknown-member-number' as string | null,
+      rejectionReason: null as string | null,
+      requestedAt: '2026-09-26T07:00:00Z',
+      decidedAt: null as string | null,
+      member: null as Record<string, unknown> | null,
+    },
+  ];
+  provisioning: Record<string, unknown>[] = [
+    {
+      id: 'p-9',
+      sourceType: 'Manual',
+      step: 'Pending',
+      memberId: 'm-2',
+      memberName: 'Anna Jansen',
+      memberNumber: '002',
+      attempts: 1,
+      lastError: 'Graph-aanroep mislukt (503)',
+      createdAt: '2026-09-26T06:00:00Z',
+      completedAt: null,
+    },
+  ];
+  devices = [
+    {
+      id: 'd-1',
+      name: 'iPhone 15',
+      platform: 'Ios',
+      model: 'iPhone 15',
+      appVersion: '1.0.0',
+      status: 'Active',
+      createdAt: '2026-09-20T10:00:00Z',
+      lastSeenAt: '2026-09-26T09:00:00Z',
+      current: false,
+    },
+  ];
   conflicts = [
     {
       id: 'c-1',
@@ -205,6 +264,8 @@ export class MockApi {
       'member.update',
       'member.export',
       'member.purge',
+      'member.approve',
+      'member.block',
       'import.run',
     ],
   ) {
@@ -465,6 +526,68 @@ export class MockApi {
       });
       return json({ id }, 202);
     }
+    if (path === '/admin/account-requests') {
+      const status = url.searchParams.get('status');
+      const items = this.accountRequests.filter((r) => !status || r.status === status);
+      return json({ items, page: 1, pageSize: 25, totalCount: items.length });
+    }
+    if ((m = path.match(/^\/admin\/account-requests\/([^/]+)\/(approve|reject)$/))) {
+      const request = this.accountRequests.find((r) => r.id === m![1])!;
+      request.status = m[2] === 'approve' ? 'Approved' : 'Rejected';
+      request.decidedAt = new Date().toISOString();
+      if (m[2] === 'approve') {
+        this.provisioning.push({
+          id: 'p-new',
+          sourceType: 'AccountRequest',
+          step: 'Pending',
+          memberId: body.memberId,
+          memberName: 'Piet van der Berg',
+          memberNumber: '001',
+          attempts: 0,
+          lastError: null,
+          createdAt: request.decidedAt,
+          completedAt: null,
+        });
+      }
+      this.record(
+        `account-request.${m[2] === 'approve' ? 'approved' : 'rejected'}`,
+        'AccountRequest',
+        request.id,
+        body,
+      );
+      return noContent();
+    }
+    if (path === '/admin/account-provisioning') {
+      return json(this.provisioning);
+    }
+    if ((m = path.match(/^\/admin\/account-provisioning\/([^/]+)\/retry$/))) {
+      this.provisioning = this.provisioning.filter((p) => p.id !== m![1]);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/provision-account$/))) {
+      const member = this.members.find((x) => x.id === m![1])!;
+      this.provisioning.push({
+        id: `p-${member.id}`,
+        sourceType: 'Manual',
+        step: 'Pending',
+        memberId: member.id,
+        memberName: member.fullName,
+        memberNumber: member.memberNumber,
+        attempts: 0,
+        lastError: null,
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+      });
+      return json({ provisioningId: `p-${member.id}` }, 202);
+    }
+    if ((m = path.match(/^\/admin\/users\/([^/]+)\/devices$/))) {
+      return json(m[1] === 'u-jan' ? this.devices : []);
+    }
+    if ((m = path.match(/^\/admin\/devices\/([^/]+)\/revoke$/))) {
+      const device = this.devices.find((d) => d.id === m![1])!;
+      device.status = 'Revoked';
+      return noContent();
+    }
     if ((m = path.match(/^\/admin\/members\/([^/]+)\/confirm-inactive$/))) {
       const member = this.members.find((x) => x.id === m![1])!;
       member.status = 'Inactive';
@@ -518,6 +641,12 @@ export class MockApi {
         },
         account: null,
         groups: [{ groupId: 'g-1', name: 'Jeugdcommissie', function: 'Lead', validTo: null }],
+        provisioning: (() => {
+          const p = [...this.provisioning].reverse().find((x) => x.memberId === member.id);
+          return p
+            ? { id: p.id, step: p.step, attempts: p.attempts, lastError: p.lastError, createdAt: p.createdAt }
+            : null;
+        })(),
       });
     }
     if (path === '/admin/sync-jobs') {

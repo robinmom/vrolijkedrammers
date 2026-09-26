@@ -1,4 +1,8 @@
 import { createApiClient, type components } from '@drammers/api-client';
+import { clearLocalSession, getAccessToken, getInstallationId, getStatus } from '../auth/session';
+import { apiBaseUrl } from './config';
+
+export { apiBaseUrl } from './config';
 
 type Schemas = components['schemas'];
 export type CarnivalYear = Schemas['CarnivalYearResponse'];
@@ -10,12 +14,9 @@ export type NewsSummary = Schemas['NewsSummaryResponse'];
 export type NewsDetail = Schemas['NewsDetailResponse'];
 export type PhotoAlbum = Schemas['PhotoAlbumResponse'];
 export type Photo = Schemas['PhotoResponse'];
-
-/**
- * Basisadres van de API. `EXPO_PUBLIC_API_URL` wordt bij het bundelen ingevuld (per EAS-profiel);
- * zonder waarde gebruikt de app de Dev-omgeving. Alleen HTTPS; er staan geen secrets in de bundle.
- */
-export const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'https://app-dvd-api-dev.azurewebsites.net';
+export type Me = Schemas['MeResponse'];
+export type MyMember = Schemas['MyMemberResponse'];
+export type MyDevice = Schemas['DeviceResponse'];
 
 /** Fout van de API met de HTTP-status; schermen tonen nooit technische details (docs/16 §6). */
 export class ApiError extends Error {
@@ -25,6 +26,30 @@ export class ApiError extends Error {
 }
 
 export const api = createApiClient(apiBaseUrl);
+
+/**
+ * Ingelogd: elk verzoek krijgt het access-token en de installatie-id (fase 9). Is dit apparaat afgemeld
+ * (401 DEVICE_REVOKED) of het account weg (401), dan wist de app de sessie; publieke content blijft werken.
+ */
+api.use({
+  async onRequest({ request }) {
+    if (getStatus() !== 'signedIn') {
+      return request;
+    }
+    const token = await getAccessToken();
+    if (token) {
+      request.headers.set('authorization', `Bearer ${token}`);
+      request.headers.set('x-device-id', await getInstallationId());
+    }
+    return request;
+  },
+  async onResponse({ response }) {
+    if (response.status === 401 && getStatus() === 'signedIn') {
+      await clearLocalSession();
+    }
+    return response;
+  },
+});
 
 /** Pakt het resultaat van een openapi-fetch-aanroep uit; elke niet-2xx wordt een {@link ApiError}. */
 export async function unwrap<T>(call: Promise<{ data?: T; response: Response }>): Promise<T> {

@@ -4,12 +4,15 @@ using Drammers.Modules.Content.CarnivalYears;
 using Drammers.Modules.Content.Events;
 using Drammers.Modules.Content.News;
 using Drammers.Modules.Content.Photos;
+using Drammers.Modules.Identity.AccountRequests;
+using Drammers.Modules.Identity.Devices;
 using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Import.Sync;
 using Drammers.Modules.Membership.Groups;
 using Drammers.Modules.Membership.Members;
+using Drammers.Modules.Membership.Privacy;
 using Drammers.Modules.Notification.Outbox;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,6 +37,12 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<LoginHistory> LoginHistory => Set<LoginHistory>();
 
     public DbSet<AccountProvisioning> AccountProvisioning => Set<AccountProvisioning>();
+
+    public DbSet<Device> Devices => Set<Device>();
+
+    public DbSet<AccountRequest> AccountRequests => Set<AccountRequest>();
+
+    public DbSet<PrivacyRequest> PrivacyRequests => Set<PrivacyRequest>();
 
     public DbSet<Member> Members => Set<Member>();
 

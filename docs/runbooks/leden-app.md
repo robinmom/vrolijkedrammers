@@ -57,4 +57,5 @@ Het testaccount moet in de groep **Testers** zitten (Dev/Acc, B-02) én als lid 
 | Inlogpagina vraagt om een wachtwoord | Inlog van vóór 2026-09-27 (met wachtwoord) | Zie "Overstappen" |
 | Inlogpagina: AADSTS50105 (Dev/Acc) | Nieuwe inlog zit nog niet in de groep Testers | `set-tester.sh` |
 | Accountverzoeken: "Aanmaken mislukt" | Mail tijdelijk niet bereikbaar | **Opnieuw proberen**; de saga maakt nooit een tweede account of tweede mail |
+| Geen mail na "Account aanvragen", niets in Accountverzoeken | Het lid had al een app-account: status "Had al een account" (filter in Accountverzoeken); het lid krijgt een herinneringsmail. Een identiek verzoek dat nog op het bestuur wacht, telt binnen 24 uur één keer | Filter op "Had al een account"; zo nodig eerst **App-account verwijderen** op het lid-detail |
 | Geen welkomstmail | Spamfilter, of ACS-afzenderdomein nog niet geverifieerd | Map "Ongewenst"; status in Azure Portal → Communication Services → Insights |

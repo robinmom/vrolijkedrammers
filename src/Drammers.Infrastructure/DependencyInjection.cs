@@ -149,6 +149,7 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
         services.AddScoped<MemberAccounts>();
         services.AddScoped<IOutboxMessageHandler, MemberAccountProvisioningHandler>();
+        services.AddScoped<IOutboxMessageHandler, MemberAccountReminderHandler>();
         services.AddScoped<MyAccount>();
         services.AddScoped<AccountLinker>();
         services.TryAddSingleton<IEmailSender, LoggingEmailSender>();

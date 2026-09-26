@@ -38,12 +38,19 @@ public sealed class MemberAccounts(
 {
     public const string ProvisionMessageType = "account.provision";
 
-    /// <summary>Een tweede identiek verzoek binnen deze tijd maakt geen nieuw verzoek (herhaald tikken, bots).</summary>
+    public const string ReminderMessageType = "account.reminder";
+
+    /// <summary>
+    /// Een tweede identiek verzoek dat nog op het bestuur wacht, maakt binnen deze tijd geen nieuw verzoek (herhaald
+    /// tikken, bots). Afgehandelde verzoeken tellen niet: na het verwijderen van een account moet opnieuw aanvragen kunnen.
+    /// </summary>
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromHours(24);
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public sealed record ProvisionMessage(ProvisioningSourceType SourceType, string SourceId);
+
+    public sealed record ReminderMessage(Guid MemberId);
 
     // ----- Accountverzoek ("Ik ben al lid") ------------------------------------------------------------------------
 
@@ -59,7 +66,8 @@ public sealed class MemberAccounts(
 
         var since = now - DuplicateWindow;
         if (await db.AccountRequests.AnyAsync(
-                r => r.MemberNumber == number && r.Email == normalizedEmail && r.RequestedAt >= since, cancellationToken))
+                r => r.MemberNumber == number && r.Email == normalizedEmail && r.Status == AccountRequestStatus.Pending && r.RequestedAt >= since,
+                cancellationToken))
         {
             return;
         }
@@ -95,6 +103,11 @@ public sealed class MemberAccounts(
         if (status == AccountRequestStatus.Approved)
         {
             outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(ProvisioningSourceType.AccountRequest, request.Id.ToString()));
+        }
+        else if (status == AccountRequestStatus.Duplicate)
+        {
+            // Het lid heeft al een account: een herinnering naar het adres uit e-Boekhouden (dus alleen naar de eigenaar).
+            outbox.Enqueue(ReminderMessageType, new ReminderMessage(member!.Id));
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -268,6 +281,18 @@ public sealed class MemberAccounts(
         }
     }
 
+    /// <summary>Herinneringsmail voor een lid dat al een account heeft (worker); stil als er intussen geen account meer is.</summary>
+    public async Task SendReminderAsync(ReminderMessage message, CancellationToken cancellationToken)
+    {
+        var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == message.MemberId, cancellationToken);
+        if (member?.Email is not { } address || !await HasAccountAsync(member.Id, cancellationToken))
+        {
+            return;
+        }
+
+        await email.SendAsync(ExistingAccountMail(address.Trim().ToLowerInvariant(), member.FirstName ?? member.FullName), cancellationToken);
+    }
+
     private async Task<Guid> CreateOrLinkUserAsync(string objectId, Member member, string loginEmail, CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -371,6 +396,38 @@ public sealed class MemberAccounts(
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
+    /// <summary>Herinnering bij een nieuw verzoek terwijl er al een account is. Concepttekst (bestuur keurt goed).</summary>
+    public static EmailMessage ExistingAccountMail(string to, string firstName)
+    {
+        const string Subject = "Je hebt al een account voor de app van De Vrolijke Drammers";
+        var text = $"""
+            Beste {firstName},
+
+            Je vroeg een account aan voor de app van De Vrolijke Drammers, maar je hebt er al een.
+
+            Zo log je in:
+            1. Open de app en kies Meer → Inloggen.
+            2. Vul dit e-mailadres in: {to}. Je krijgt een code per e-mail.
+            3. Nog nooit ingelogd? Kies dan op de inlogpagina voor een nieuw account ("Maak er een") met dit e-mailadres.
+
+            Lukt het niet? Neem dan contact op met het secretariaat.
+
+            Groeten,
+            De Vrolijke Drammers
+            """;
+        var encodedName = System.Net.WebUtility.HtmlEncode(firstName);
+        var encodedTo = System.Net.WebUtility.HtmlEncode(to);
+        var html = $"""
+            <p>Beste {encodedName},</p>
+            <p>Je vroeg een account aan voor de app van De Vrolijke Drammers, maar je hebt er al een.</p>
+            <p><strong>Zo log je in:</strong></p>
+            <ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Vul dit e-mailadres in: {encodedTo}. Je krijgt een code per e-mail.</li><li>Nog nooit ingelogd? Kies dan op de inlogpagina voor een nieuw account (&quot;Maak er een&quot;) met dit e-mailadres.</li></ol>
+            <p>Lukt het niet? Neem dan contact op met het secretariaat.</p>
+            <p>Groeten,<br>De Vrolijke Drammers</p>
+            """;
+        return new EmailMessage(to, Subject, text, html);
+    }
+
     /// <summary>Concepttekst; de definitieve tekst keurt het bestuur goed (aanvullende DoD fase 9).</summary>
     public static EmailMessage WelcomeMail(string to, string firstName)
     {
@@ -405,6 +462,15 @@ public sealed class MemberAccounts(
             """;
         return new EmailMessage(to, Subject, text, html);
     }
+}
+
+/// <summary>Verstuurt de herinnering "je hebt al een account" (worker).</summary>
+public sealed class MemberAccountReminderHandler(MemberAccounts accounts) : IOutboxMessageHandler
+{
+    public string Type => MemberAccounts.ReminderMessageType;
+
+    public Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken) =>
+        accounts.SendReminderAsync(JsonSerializer.Deserialize<MemberAccounts.ReminderMessage>(message.Payload, JsonSerializerOptions.Web)!, cancellationToken);
 }
 
 /// <summary>Voert de provisioning uit die via de outbox is aangevraagd (worker).</summary>

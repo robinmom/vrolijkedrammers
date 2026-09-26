@@ -20,8 +20,11 @@ export type MyDevice = Schemas['DeviceResponse'];
 
 /** Fout van de API met de HTTP-status; schermen tonen nooit technische details (docs/16 §6). */
 export class ApiError extends Error {
-  constructor(readonly status: number) {
-    super(`API-fout ${status}`);
+  constructor(
+    readonly status: number,
+    readonly path?: string,
+  ) {
+    super(`API-fout ${status}${path ? ` bij ${path}` : ''}`);
   }
 }
 
@@ -57,7 +60,7 @@ api.use({
 export async function unwrap<T>(call: Promise<{ data?: T; response: Response }>): Promise<T> {
   const { data, response } = await call;
   if (!response.ok || data === undefined) {
-    throw new ApiError(response.status);
+    throw new ApiError(response.status, response.url ? new URL(response.url).pathname : undefined);
   }
   return data;
 }

@@ -391,16 +391,19 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - **8b** — portal: **Leden** (zoeken, filters op status en sync, Excel-export, lid-detail met bron per veld, lokale velden, "nu op inactief zetten", **Alle leden verwijderen** met getypte bevestiging) en **Ledensync** (dry-run en echte run starten, runs volgen met automatisch verversen, rapport per lid, conflicten afhandelen, mapping van de vrije velden). Bij het testen op mobiele breedte bleek dat tabellen de hele pagina breder maakten (ook bij Gebruikers); opgelost, en elke pagina-test controleert nu dat er niet horizontaal gescrold hoeft te worden.
 - **8c** — `membership.Group` en `GroupMembership` (functie Lid/Leiding, optioneel tijdelijk); content met zichtbaarheid **Beperkt** kan nu naast rollen ook **groepen** en **individuele leden** als doelgroep hebben (REQ-EVT-02). Alleen een actief lid telt mee (geen geschorst/inactief lid, geen verlopen groepslidmaatschap). Redacteuren kiezen groepen via een eigen keuzelijst zonder ledengegevens; individuele leden kiezen kan alleen met `member.read`. **Rapportage** (`report.view`): aantallen per status, rol, leeftijdsklasse, inschrijfjaar en groep, met Excel-export (geaudit, geen namen).
 - **Contracttests** met een gestubde `HttpMessageHandler` in plaats van WireMock.Net (lichter, zelfde dekking: sessie, paginering, headers, retry, afmelden); de synclogica is getest met een e-Boekhouden in het geheugen tegen een echte SQL Server.
+- **Beheerportal in nieuw ontwerp** (2026-09-26): het portal volgt nu het Figma-ontwerp (pagina "🖥️ Beheerportal"): zijbalk met secties, dashboard, leden met gevarenzone, lid-detail en ledensync. Zie [17-design-system §10](17-design-system.md).
 - **Dataminimalisatie**: het model van de client heeft geen velden voor IBAN, BIC, mandaat, notitie of factuuradressen; die worden dus nooit ingelezen.
 
 **Afhankelijkheden.** Fase 5 (audiences uitbreiden); fase 7 alleen voor de inzet met echte ledengegevens in Prod; **B-06**, OQ-03, OQ-04, OQ-06, OQ-50 (Prod).
 
 **Acceptatiecriteria.**
-- [ ] Een eerste dry-run toont het verwachte aantal nieuwe leden en eventuele parsefouten; na goedkeuring maakt de echte run exact dat aantal aan.
-- [ ] Een tweede run zonder wijzigingen in e-Boekhouden rapporteert 0 nieuw / 0 gewijzigd.
-- [ ] Een lid dat uit e-Boekhouden verdwijnt, wordt `Missing` en na bevestiging `Inactive`; rollen, devices en tickets blijven bewaard.
-- [ ] Als > 10 % van de leden ontbreekt, wordt niemand gedeactiveerd en gaat er een alert uit.
-- [ ] Een event met doelgroep "Groep Jeugdcommissie" is alleen zichtbaar voor leden van die groep.
+- [x] Een eerste dry-run toont het verwachte aantal nieuwe leden en eventuele parsefouten; na goedkeuring maakt de echte run exact dat aantal aan. *(2026-09-25: dry-run en echte run door de product owner uitgevoerd op het echte ledenbestand in Dev; test `Dry_run_rapporteert_maar_schrijft_geen_leden`)*
+- [x] Een tweede run zonder wijzigingen in e-Boekhouden rapporteert 0 nieuw / 0 gewijzigd. *(test `Tweede_run_zonder_wijzigingen_is_nul_nieuw_en_nul_gewijzigd`)*
+- [x] Een lid dat uit e-Boekhouden verdwijnt, wordt `Missing` en na bevestiging `Inactive`; rollen, devices en tickets blijven bewaard. *(test `Verdwenen_lid_wordt_eerst_missing_en_daarna_inactief_…`)*
+- [x] Als > 10 % van de leden ontbreekt, wordt niemand gedeactiveerd en gaat er een alert uit. *(test `Massadeletie_guard_…`; de alert is een conflict `MassDeletionGuard`, zichtbaar op Ledensync en onder "Aandacht nodig" op het dashboard)*
+- [x] Een event met doelgroep "Groep Jeugdcommissie" is alleen zichtbaar voor leden van die groep. *(test `Event_voor_groep_Jeugdcommissie_is_alleen_zichtbaar_voor_leden_van_die_groep`)*
+
+**Status (2026-09-26): Done** (tag `phase-08-done`). Open punt uit de aanvullende DoD: de review van het dry-run-rapport door de secretaris gebeurt vóór de inzet in Prod (fase 7, samen met OQ-50).
 
 ---
 

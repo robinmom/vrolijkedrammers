@@ -9,6 +9,10 @@ updates:
         update-types: [minor, patch]
       dotnet-test:
         patterns: ['Microsoft.NET.Test.Sdk', 'xunit*', 'coverlet*']
+    ignore:
+      # ImageSharp 4 vraagt bij een Release-build een licentiesleutel; we blijven op 3.x (fase 5).
+      - dependency-name: 'SixLabors.ImageSharp'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -31,6 +35,11 @@ updates:
       - dependency-name: '@types/react-dom'
       - dependency-name: 'jest'
       - dependency-name: '@types/jest'
+      - dependency-name: '@react-native-async-storage/async-storage'
+      - dependency-name: '@react-native-community/netinfo'
+      # De typen volgen de Node-versie van CI en deploy (22); een nieuwere major pas samen met die upgrade.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
       # Nieuwe majors pas als typescript-eslint en eslint-plugin-react ze ondersteunen (fase 0).
       - dependency-name: 'eslint'
         update-types: ['version-update:semver-major']

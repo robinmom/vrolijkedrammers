@@ -70,6 +70,9 @@ public enum SyncItemAction
     Warning,
     Error,
     Conflict,
+
+    /// <summary>Lidnummer staat op de uitsluitlijst (lid volledig uit de app verwijderd); overgeslagen.</summary>
+    Excluded,
 }
 
 /// <summary>Resultaat per lid binnen een run; bevat lidnummers en veldnamen, nooit veldwaarden (ADR-010).</summary>

@@ -75,6 +75,11 @@ public static class DependencyInjection
         // Graph in de External ID-tenant (provisioning, blokkeren); zonder configuratie faalt elke aanroep duidelijk.
         var graph = configuration.GetSection(GraphOptions.SectionName);
         services.Configure<GraphOptions>(graph);
+        services.Configure<TestAccessOptions>(o =>
+        {
+            o.Environment = configuration["Auth:RequiredEnvironmentAccess"];
+            o.Grant = configuration["Graph:TestAccessEnvironments"] is { Length: > 0 } grant ? grant : o.Grant;
+        });
         if (graph.Get<GraphOptions>()?.IsConfigured == true)
         {
             services.AddSingleton<GraphCredentialProvider>();
@@ -144,6 +149,7 @@ public static class DependencyInjection
         services.AddScoped<IUserAccessService, UserAccessService>();
         services.AddScoped<ILoginRecorder, LoginRecorder>();
         services.AddScoped<AccountAdministration>();
+        services.AddScoped<TestAccessAdministration>();
         services.AddScoped<ConfigurationAdministration>();
         services.AddScoped<ContentAdministration>();
         services.AddScoped<ContentFiles>();

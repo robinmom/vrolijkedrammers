@@ -14,6 +14,9 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
 
     public ConcurrentBag<string> Deleted { get; } = [];
 
+    /// <summary>Testtoegang per <c>oid</c>: lid van Testers als er een waarde is.</summary>
+    public ConcurrentDictionary<string, string> TestAccess { get; } = new();
+
     /// <summary>Iemand maakt zelf een inlog met e-mail + code (zelfregistratie in de user flow); geeft de <c>oid</c>.</summary>
     public string SignUp(string email)
     {
@@ -47,6 +50,23 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
         foreach (var entry in AccountsByEmail.Where(e => e.Value == objectId).ToList())
         {
             AccountsByEmail.TryRemove(entry.Key, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<EntraTestAccess> GetTestAccessAsync(string objectId, CancellationToken cancellationToken) =>
+        Task.FromResult(TestAccess.TryGetValue(objectId, out var environments) ? new EntraTestAccess(true, environments) : new EntraTestAccess(false, null));
+
+    public Task SetTestAccessAsync(string objectId, string? environments, CancellationToken cancellationToken)
+    {
+        if (environments is null)
+        {
+            TestAccess.TryRemove(objectId, out _);
+        }
+        else
+        {
+            TestAccess[objectId] = environments;
         }
 
         return Task.CompletedTask;

@@ -1,8 +1,8 @@
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useMe, useMember, useMemberHistory, type MemberDetail, type MembershipStatus } from '../api/hooks';
-import { ConfirmDialog } from '../components/Dialog';
+import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
@@ -54,6 +54,10 @@ export function MemberDetailPage() {
   const [confirmRemoveAccount, setConfirmRemoveAccount] = useState(false);
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
   const canApprove = (me.data?.permissions ?? []).includes('member.approve');
+  const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  const navigate = useNavigate();
+  const [removing, setRemoving] = useState(false);
+  const [removeConfirmation, setRemoveConfirmation] = useState('');
 
   useEffect(() => {
     if (member.data) {
@@ -85,6 +89,10 @@ export function MemberDetailPage() {
   const provision = useApiMutation(
     () => api.POST('/api/v1/admin/members/{id}/provision-account', { params: { path: { id } } }),
     [['member', id], ['account-provisioning']],
+  );
+  const removeMember = useApiMutation(
+    () => api.POST('/api/v1/admin/members/{id}/remove', { params: { path: { id } }, body: { confirmation: removeConfirmation } }),
+    [['members'], ['users'], ['excluded-members'], ['groups']],
   );
   const markInactive = useApiMutation(
     () => api.POST('/api/v1/admin/members/{id}/confirm-inactive', { params: { path: { id } } }),
@@ -354,8 +362,53 @@ export function MemberDetailPage() {
           </section>
 
           <MemberHistory memberId={id} />
+
+          {canPrivacy ? (
+            <section className="card" aria-labelledby="verwijderen">
+              <h2 id="verwijderen">Lid volledig verwijderen</h2>
+              <p className="muted">
+                Haalt dit lid in één keer uit de app: het app-account en de inlog, groepen, aanmeldingen en alle gegevens die alleen de app
+                bewaart. Het lidnummer wordt uitgesloten, zodat de synchronisatie het niet terugzet. e-Boekhouden blijft ongemoeid; het
+                lidmaatschap daar beëindigt het secretariaat zelf.
+              </p>
+              <div className="actions">
+                <button type="button" className="button danger" onClick={() => setRemoving(true)}>
+                  Lid volledig verwijderen
+                </button>
+              </div>
+            </section>
+          ) : null}
         </div>
       </div>
+
+      <Dialog open={removing} title="Lid volledig verwijderen" onClose={() => setRemoving(false)}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            removeMember.mutate(undefined, {
+              onSuccess: () => {
+                setRemoving(false);
+                void navigate({ to: '/leden' });
+              },
+            });
+          }}
+        >
+          <p>
+            Dit kan niet ongedaan worden gemaakt: {m.fullName} (lidnummer {m.memberNumber}) verdwijnt uit de app, inclusief app-account en
+            inlog. Weer toelaten kan later via Ledensync → Uitgesloten leden; de synchronisatie haalt het lid dan opnieuw op.
+          </p>
+          <Field label="Typ VERWIJDEREN ter bevestiging" value={removeConfirmation} onChange={(e) => setRemoveConfirmation(e.target.value)} />
+          <ProblemAlert error={removeMember.error} />
+          <div className="actions">
+            <button type="button" className="button secondary" onClick={() => setRemoving(false)}>
+              Annuleren
+            </button>
+            <button type="submit" className="button danger" disabled={removeConfirmation !== 'VERWIJDEREN' || removeMember.isPending}>
+              Verwijderen
+            </button>
+          </div>
+        </form>
+      </Dialog>
 
       <ConfirmDialog
         open={confirmRemoveAccount}

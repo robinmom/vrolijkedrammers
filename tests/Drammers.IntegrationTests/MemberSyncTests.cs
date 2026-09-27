@@ -10,6 +10,7 @@ using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Import.Sync;
 using Drammers.Modules.Membership.Members;
+using Drammers.SharedKernel.Identifiers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -318,6 +319,81 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, export.StatusCode);
         Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", export.Content.Headers.ContentType!.MediaType);
         Assert.Equal(1, await WithDbAsync(db => db.AuditLog.CountAsync(a => a.Action == "member.exported")));
+    }
+
+    [Fact]
+    public async Task Een_lid_volledig_verwijderen_wist_account_en_gegevens_en_de_sync_slaat_het_over()
+    {
+        AddMembers(3);
+        await SyncAsync();
+        var member = await MemberAsync("002");
+        var (userId, objectId) = await _api.CreateUserAsync("lid2@example.com", DefaultRoles.Lid);
+        await WithDbAsync(async db =>
+        {
+            (await db.Users.SingleAsync(u => u.Id == userId)).MemberId = member.Id;
+            db.MembershipApplications.Add(new Drammers.Modules.Membership.Applications.MembershipApplication
+            {
+                Id = IdGenerator.NewId(),
+                Status = Drammers.Modules.Membership.Applications.ApplicationStatus.Activated,
+                FirstName = "Piet",
+                LastName = "Lid2",
+                BirthDate = new DateOnly(1990, 1, 1),
+                AddressLine = "Straat 1",
+                PostalCode = "6999 AA",
+                City = "Loil",
+                Email = "lid2@example.com",
+                MandateReference = "DVD-TEST-002",
+                CreatedAt = DateTime.UtcNow,
+                Iban = "NL91ABNA0417164300",
+                ResultingMemberId = member.Id,
+            });
+            return await db.SaveChangesAsync();
+        });
+
+        var wrong = await _admin.PostAsJsonAsync($"/api/v1/admin/members/{member.Id}/remove", new { confirmation = "ja" });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, wrong.StatusCode);
+        var response = await _admin.PostAsJsonAsync($"/api/v1/admin/members/{member.Id}/remove", new { confirmation = MemberAdministration.RemoveConfirmation });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(("002", 1, 1), (result.GetProperty("memberNumber").GetString(), result.GetProperty("accounts").GetInt32(), result.GetProperty("applications").GetInt32()));
+        Assert.Contains(objectId, _api.Entra.Deleted);
+        Assert.False(await WithDbAsync(db => db.Members.AnyAsync(m => m.MemberNumber == "002")));
+        Assert.False(await WithDbAsync(db => db.MembershipApplications.AnyAsync()));
+        Assert.Equal(AccountStatus.Deleted, (await WithDbAsync(db => db.Users.SingleAsync(u => u.Id == userId))).AccountStatus);
+        Assert.Equal(1, await WithDbAsync(db => db.AuditLog.CountAsync(a => a.Action == "member.removed")));
+
+        var excluded = await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/members/excluded");
+        Assert.Equal("002", Assert.Single(excluded.EnumerateArray()).GetProperty("memberNumber").GetString());
+
+        var next = await SyncAsync();
+        Assert.Equal(0, next.Created);
+        Assert.False(await WithDbAsync(db => db.Members.AnyAsync(m => m.MemberNumber == "002")));
+        Assert.True(await WithDbAsync(db => db.SyncJobItems.AnyAsync(i => i.SyncJobId == next.Id && i.MemberNumber == "002" && i.Action == SyncItemAction.Excluded)));
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _admin.DeleteAsync("/api/v1/admin/members/excluded/002")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _admin.DeleteAsync("/api/v1/admin/members/excluded/002")).StatusCode);
+        Assert.Equal(1, (await SyncAsync()).Created);
+        Assert.Null((await MemberAsync("002")).LocalStatusOverride);
+    }
+
+    [Fact]
+    public async Task Het_lid_van_de_laatste_beheerder_verwijderen_wordt_geweigerd()
+    {
+        AddMembers(1);
+        await SyncAsync();
+        var member = await MemberAsync("001");
+        await WithDbAsync(async db =>
+        {
+            (await db.Users.SingleAsync(u => u.Email == "bestuur@example.com")).MemberId = member.Id;
+            return await db.SaveChangesAsync();
+        });
+
+        var response = await _admin.PostAsJsonAsync($"/api/v1/admin/members/{member.Id}/remove", new { confirmation = MemberAdministration.RemoveConfirmation });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.True(await WithDbAsync(db => db.Members.AnyAsync(m => m.MemberNumber == "001")));
+        Assert.False(await WithDbAsync(db => db.ExcludedMembers.AnyAsync()));
     }
 
     [Fact]

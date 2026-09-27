@@ -42,6 +42,10 @@ param graphClientId string
 param externalIdIssuerDomain string
 param graphCertificateName string
 
+@description('Knop "Toegang tot testomgeving" in het portal (Dev/Acc): object-id van de groep Testers en de volledige naam van de extensie environmentAccess (register-provisioning-app.sh).')
+param testersGroupId string = ''
+param environmentAccessAttribute string = ''
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -139,6 +143,8 @@ module api 'modules/appservice.bicep' = {
       Graph__ClientId: graphClientId
       Graph__IssuerDomain: externalIdIssuerDomain
       Graph__CertificateName: graphCertificateName
+      Graph__TestersGroupId: testersGroupId
+      Graph__EnvironmentAccessAttribute: environmentAccessAttribute
     }
   }
 }

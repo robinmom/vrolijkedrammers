@@ -52,6 +52,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Member> Members => Set<Member>();
 
+    public DbSet<ExcludedMember> ExcludedMembers => Set<ExcludedMember>();
+
     public DbSet<Group> Groups => Set<Group>();
 
     public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();

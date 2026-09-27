@@ -45,4 +45,6 @@ public static class ErrorCodes
     public const string ApplicationDecided = "APPLICATION_DECIDED";
     public const string VerificationCodeInvalid = "VERIFICATION_CODE_INVALID";
     public const string VerificationCodeExpired = "VERIFICATION_CODE_EXPIRED";
+    public const string TestAccessUnavailable = "TEST_ACCESS_UNAVAILABLE";
+    public const string NoSignIn = "NO_SIGN_IN";
 }

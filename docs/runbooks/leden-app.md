@@ -56,7 +56,7 @@ Na deze wijziging: `infra/entra/register-apps.sh dev` opnieuw draaien (stap 1 hi
 Accounts die de API met Graph heeft aangemaakt, vragen om een wachtwoord. Overstappen, per persoon:
 1. Entra-beheercentrum (tenant *De Vrolijke Drammers App*) → Users → de gebruiker → **Delete**. Alleen de inlog verdwijnt; rollen en lidkoppeling staan in de app-database.
 2. De persoon logt opnieuw in (app of portal) en kiest **"Maak er een"** met hetzelfde e-mailadres; er volgt een code.
-3. **Alleen Dev/Acc:** voeg de nieuwe inlog toe aan de groep Testers: `infra/entra/set-tester.sh <e-mailadres> dev` (of `dev,acc`). Tot dan toont de inlogpagina "geen toegang" (AADSTS50105).
+3. **Alleen Dev/Acc:** geef de nieuwe inlog toegang: portal → Gebruikers → de persoon → **Toegang tot testomgeving → Toegang geven** (groep Testers + `environmentAccess = dev,acc`). Tot dan toont de inlogpagina "geen toegang" (AADSTS50105). `infra/entra/set-tester.sh` blijft bestaan als noodroute.
 4. Opnieuw inloggen: de API koppelt de nieuwe inlog aan het bestaande account (auditregel `user.relinked`).
 
 ## 3. Testen met Expo Go
@@ -73,7 +73,21 @@ Het testaccount moet in de groep **Testers** zitten (Dev/Acc, B-02) én als lid 
 | Entra: "redirect URI … does not match" | Doorstuurpagina niet geregistreerd | Stap 1 |
 | App: "Voor dit e-mailadres is (nog) geen account" | Wel een inlog, maar geen goedgekeurd account met dit e-mailadres (of de oude inlog met wachtwoord bestaat nog) | Account aanvragen of via het portal aanmaken; bij een oude inlog: zie "Overstappen" |
 | Inlogpagina vraagt om een wachtwoord | Inlog van vóór 2026-09-27 (met wachtwoord) | Zie "Overstappen" |
-| Inlogpagina: AADSTS50105 (Dev/Acc) | Nieuwe inlog zit nog niet in de groep Testers | `set-tester.sh` |
+| Inlogpagina: AADSTS50105 (Dev/Acc) | Nieuwe inlog zit nog niet in de groep Testers | Portal → gebruiker → **Toegang geven**, daarna opnieuw inloggen |
+| Portal: "De provisioning-app mag de groep Testers niet aanpassen" | Graph-recht GroupMember.ReadWrite.All ontbreekt | `infra/entra/register-provisioning-app.sh dev` (en `acc`) opnieuw draaien |
+| Portal: geen kaart "Toegang tot testomgeving" | Prod, of `DVD_TESTERS_GROUP_ID` / `DVD_ENVIRONMENT_ACCESS_ATTRIBUTE` ontbreken | Zie sectie 5 |
 | Accountverzoeken: "Aanmaken mislukt" | Mail tijdelijk niet bereikbaar | **Opnieuw proberen**; de saga maakt nooit een tweede account of tweede mail |
 | Geen mail na "Account aanvragen", niets in Accountverzoeken | Het lid had al een app-account: status "Had al een account" (filter in Accountverzoeken); het lid krijgt een herinneringsmail. Een identiek verzoek dat nog op het bestuur wacht, telt binnen 24 uur één keer | Filter op "Had al een account"; zo nodig eerst **App-account verwijderen** op het lid-detail |
 | Geen welkomstmail | Spamfilter, of ACS-afzenderdomein nog niet geverifieerd | Map "Ongewenst"; status in Azure Portal → Communication Services → Insights |
+
+## 5. Testtoegang en een lid volledig verwijderen (portal)
+
+**Toegang tot testomgeving** (Dev/Acc) vervangt `set-tester.sh`. Eenmalig per omgeving:
+1. `infra/entra/register-provisioning-app.sh dev` (en `acc`): geeft de provisioning-app het Graph-recht **GroupMember.ReadWrite.All** en toont `DVD_TESTERS_GROUP_ID` en `DVD_ENVIRONMENT_ACCESS_ATTRIBUTE`.
+2. Zet beide als GitHub-environmentvariabelen (dev en acc) en deploy.
+
+Werkwijze: de persoon maakt eerst zelf een inlog (e-mail + code) en krijgt AADSTS50105; het bestuur klikt daarna **Toegang geven** (recht `role.manage`). Intrekken beëindigt ook de sessies. Beide staan in de auditlog (`user.test-access-granted` / `-revoked`).
+
+**Lid volledig verwijderen** (lid-detail, recht `member.privacy`, typ `VERWIJDEREN`): wist de app-accounts en inlogs van het lid (zoals AVG-wissen), en verwijdert groepslidmaatschappen, aanmeldingen, accountverzoeken, doelgroepkoppelingen en synchronisatieregels van het lid. Het lidnummer komt op de uitsluitlijst: de synchronisatie slaat het over (actie *Uitgesloten*). **Ledensync → Uitgesloten leden → Weer toelaten** heft dat op; de volgende synchronisatie haalt het lid dan opnieuw op, zonder account.
+
+e-Boekhouden blijft ongemoeid; het lidmaatschap daar beëindigt het secretariaat zelf. Later (zodra schrijven naar e-Boekhouden aanstaat in Acc/Prod) kan dezelfde knop het lid daar via `PATCH /v1/member/{id}` op opgezegd zetten; een DELETE bestaat in de API niet.

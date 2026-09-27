@@ -15,7 +15,7 @@ namespace Drammers.Api.Controllers;
 /// <summary>Gebruikers: beheerders aanmaken (fase 3), rollen toewijzen, blokkeren (docs/05 §6).</summary>
 [ApiController]
 [Route("api/v1/admin/users")]
-public sealed class AdminUsersController(DrammersDbContext db, AccountAdministration administration, IAuditLogger audit) : ControllerBase
+public sealed class AdminUsersController(DrammersDbContext db, AccountAdministration administration, TestAccessAdministration testAccess, IAuditLogger audit) : ControllerBase
 {
     [HttpGet]
     [RequirePermission(Permissions.RoleManage)]
@@ -152,6 +152,21 @@ public sealed class AdminUsersController(DrammersDbContext db, AccountAdministra
         return NoContent();
     }
 
+    /// <summary>Toegang tot de testomgeving (Dev/Acc): groep Testers + environmentAccess, in plaats van set-tester.sh.</summary>
+    [HttpGet("{id:guid}/test-access")]
+    [RequirePermission(Permissions.RoleManage)]
+    [ProducesResponseType<TestAccessStatus>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public Task<TestAccessStatus> GetTestAccess(Guid id, CancellationToken cancellationToken) => testAccess.GetAsync(id, cancellationToken);
+
+    [HttpPut("{id:guid}/test-access")]
+    [RequirePermission(Permissions.RoleManage)]
+    [ProducesResponseType<TestAccessStatus>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public Task<TestAccessStatus> SetTestAccess(Guid id, SetTestAccessRequest request, CancellationToken cancellationToken) =>
+        testAccess.SetAsync(id, request.Granted, cancellationToken);
+
     [HttpPost("{id:guid}/unblock")]
     [RequirePermission(Permissions.MemberBlock)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -161,6 +176,8 @@ public sealed class AdminUsersController(DrammersDbContext db, AccountAdministra
         return NoContent();
     }
 }
+
+public sealed record SetTestAccessRequest(bool Granted);
 
 public sealed record UserSummaryResponse(Guid Id, string Email, string DisplayName, string AccountStatus, DateTime? LastLoginAt);
 

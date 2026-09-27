@@ -1,7 +1,16 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation, useMe, useRoles, useUser, useUserDevices, useUserRoles, type RoleAssignment } from '../api/hooks';
+import {
+  useApiMutation,
+  useMe,
+  useRoles,
+  useTestAccess,
+  useUser,
+  useUserDevices,
+  useUserRoles,
+  type RoleAssignment,
+} from '../api/hooks';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
@@ -255,6 +264,7 @@ export function UserDetailPage() {
           {blocked ? 'Deblokkeren' : 'Blokkeren'}
         </button>
       </section>
+      {user.data.accountStatus !== 'Deleted' ? <TestAccessCard userId={id} name={user.data.displayName} /> : null}
       <ConfirmDialog
         open={confirmBlock}
         title={blocked ? 'Account deblokkeren?' : 'Account blokkeren?'}
@@ -274,5 +284,59 @@ export function UserDetailPage() {
         }
       />
     </>
+  );
+}
+
+/**
+ * Toegang tot de testomgeving (Dev/Acc, B-02): groep Testers + environmentAccess in Entra, in plaats van set-tester.sh.
+ * Alleen zichtbaar waar dat kan; in Prod is er geen toewijzingsplicht.
+ */
+function TestAccessCard({ userId, name }: { userId: string; name: string }) {
+  const api = useApi();
+  const me = useMe();
+  const canManage = (me.data?.permissions ?? []).includes('role.manage');
+  const status = useTestAccess(userId, canManage);
+  const set = useApiMutation(
+    (granted: boolean) => api.PUT('/api/v1/admin/users/{id}/test-access', { params: { path: { id: userId } }, body: { granted } }),
+    [['test-access', userId]],
+  );
+  if (!canManage || (status.data && !status.data.available)) {
+    return null;
+  }
+  const s = status.data;
+  const environment = s?.environment?.toUpperCase() ?? '';
+  return (
+    <section className="card" aria-labelledby="testomgeving">
+      <h2 id="testomgeving">Toegang tot testomgeving</h2>
+      <ProblemAlert error={status.error ?? set.error} />
+      {!s ? (
+        status.isLoading ? <p>Laden…</p> : null
+      ) : !s.hasSignIn ? (
+        <p className="muted">
+          {name} heeft nog geen inlog. Laat eerst een inlog aanmaken in de app of het portal (e-mail + code); de foutmelding die dan
+          volgt is normaal. Daarna kun je hier toegang geven.
+        </p>
+      ) : (
+        <p>
+          {s.hasAccessHere
+            ? `${name} heeft toegang tot ${environment} (${s.environments}).`
+            : `${name} heeft geen toegang tot ${environment}. Toegang geven zet de inlog in de groep Testers met ${s.grant}; daarna opnieuw inloggen.`}
+        </p>
+      )}
+      {s?.available ? (
+        <div className="actions">
+          {s.hasAccessHere || s.inTestersGroup ? (
+            <button type="button" className="button secondary" disabled={set.isPending} onClick={() => set.mutate(false)}>
+              Toegang intrekken
+            </button>
+          ) : null}
+          {!s.hasAccessHere ? (
+            <button type="button" className="button" disabled={set.isPending} onClick={() => set.mutate(true)}>
+              Toegang geven
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   );
 }

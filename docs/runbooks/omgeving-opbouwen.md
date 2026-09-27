@@ -58,6 +58,7 @@ Er komen **geen** GitHub-secrets aan te pas: Azure-toegang loopt via OIDC.
    ```bash
    infra/entra/set-tester.sh <object-id-gebruiker> dev,acc   # toegang
    infra/entra/set-tester.sh <object-id-gebruiker>           # intrekken
+   # Daarna kan het ook in het portal: Gebruikers → persoon → Toegang tot testomgeving (zie runbooks/leden-app.md §5).
    ```
 
 ## 4. Uitrol

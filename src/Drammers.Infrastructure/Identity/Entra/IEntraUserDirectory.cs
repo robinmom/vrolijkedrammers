@@ -24,7 +24,18 @@ public interface IEntraUserDirectory
 
     /// <summary>Verwijdert het account (account verwijderen door het lid); een al verwijderd account is geen fout.</summary>
     Task DeleteAsync(string objectId, CancellationToken cancellationToken);
+
+    /// <summary>Toegang tot Dev/Acc (B-02): lid van de groep Testers en de waarde van het attribuut environmentAccess.</summary>
+    Task<EntraTestAccess> GetTestAccessAsync(string objectId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Zet het attribuut environmentAccess (bijv. <c>dev,acc</c>) en het lidmaatschap van Testers; <c>null</c> trekt beide in.
+    /// Vervangt <c>infra/entra/set-tester.sh</c>.
+    /// </summary>
+    Task SetTestAccessAsync(string objectId, string? environments, CancellationToken cancellationToken);
 }
+
+public sealed record EntraTestAccess(bool InTestersGroup, string? Environments);
 
 /// <summary>Instellingen voor Graph in de External ID-tenant (app settings <c>Graph__*</c>).</summary>
 public sealed class GraphOptions
@@ -44,6 +55,15 @@ public sealed class GraphOptions
     /// is niet mogelijk naar een external tenant (AADSTS700236); het certificaat verlaat Key Vault niet.
     /// </summary>
     public string? CertificateName { get; set; }
+
+    /// <summary>Object-id van de groep Testers (Dev/Acc: "Require user assignment"); leeg in Prod.</summary>
+    public string? TestersGroupId { get; set; }
+
+    /// <summary>Volledige naam van de directory-extensie, bijv. <c>extension_…_environmentAccess</c>; leeg in Prod.</summary>
+    public string? EnvironmentAccessAttribute { get; set; }
+
+    public bool TestAccessConfigured =>
+        IsConfigured && !string.IsNullOrWhiteSpace(TestersGroupId) && !string.IsNullOrWhiteSpace(EnvironmentAccessAttribute);
 
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(TenantId) && !string.IsNullOrWhiteSpace(ClientId)

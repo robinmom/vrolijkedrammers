@@ -147,6 +147,8 @@ public sealed class MemberSync(
                 .Where(u => u.MemberId != null && u.AccountStatus == AccountStatus.Active)
                 .Select(u => u.MemberId!.Value).ToListAsync(cancellationToken)).ToHashSet();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var excluded = (await db.ExcludedMembers.AsNoTracking().Select(e => e.MemberNumber).ToListAsync(cancellationToken))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var consecutiveErrors = 0;
 
             foreach (var reference in references)
@@ -172,6 +174,13 @@ public sealed class MemberSync(
                 if (string.IsNullOrEmpty(number))
                 {
                     await AddItemAsync($"#{source.Id}", null, SyncItemAction.Error, null, "Lid zonder lidnummer in e-Boekhouden.", cancellationToken);
+                    continue;
+                }
+
+                if (excluded.Contains(number))
+                {
+                    // Volledig uit de app verwijderd; staat nog in e-Boekhouden (fase 9b).
+                    await AddItemAsync(number, null, SyncItemAction.Excluded, null, "Uitgesloten: dit lid is uit de app verwijderd.", cancellationToken);
                     continue;
                 }
 

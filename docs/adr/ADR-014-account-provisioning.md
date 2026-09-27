@@ -107,5 +107,5 @@ stateDiagram-v2
 
 **Gevolgen.**
 - Wie geen lid is, kan wél een Entra-inlog maken, maar komt nergens in (403) en ziet geen ledencontent. Kosten: alleen MAU bij inloggen (gratis tot 50.000).
-- In Dev/Acc blijft de groep **Testers** vereist (B-02): een nieuwe inlog moet daar na het aanmaken aan worden toegevoegd (`infra/entra/set-tester.sh`).
+- In Dev/Acc blijft de groep **Testers** vereist (B-02): een nieuwe inlog moet daar na het aanmaken aan worden toegevoegd: in het portal met **Toegang tot testomgeving** (provisioning-app met GroupMember.ReadWrite.All, alleen Dev/Acc), of als noodroute met `infra/entra/set-tester.sh`.
 - Optie B uit "Options considered" is hiermee deels gekozen, met behoud van de goedkeuring vóór toegang. Graph heeft alleen nog `User.ReadWrite.All` nodig voor opzoeken, blokkeren en verwijderen.

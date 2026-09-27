@@ -1,6 +1,6 @@
 # ADR-005: QR-ticketsecurity
 
-- **Status**: Voorgesteld · 2026-09-24
+- **Status**: Voorgesteld · 2026-09-24 · spike OQ-68: voorlopig GO (2026-09-27), metingen op toestellen open
 
 ## Context
 
@@ -50,6 +50,39 @@ Ieder geldig lid krijgt per carnavalsjaar een persoonlijke digitale toegangscode
 7. **Intrekken/heruitgifte**: ticket `Blocked` of `credential_version++` → alle bestaande codes zijn ongeldig (online direct; offline na de bootstrap-delta).
 8. **Printkaart** (geen smartphone): `print_code` = 12 tekens random (base32, ~60 bit), gehasht (SHA-256 + pepper) opgeslagen, als QR met prefix `P:`. Statisch → de scanner toont altijd de naam ter controle; bij de eerste toegang wordt een bandje verplicht. Intrekbaar/vervangbaar.
 9. **Dagkaarten voor gasten (R4)**: gasten zonder app ontvangen een server-signed QR (optie 4) in e-mail/webpagina met geldigheid = de dag; na de eerste scan geldt een bandje. Een geaccepteerd lager beveiligingsniveau (betaald product, eenmalig gebruik, dubbelgebruik zichtbaar).
+
+## Spike-resultaat OQ-68 (fase 9c)
+
+**Vraag:** kan de Expo-app een niet-exporteerbare ECDSA P-256-sleutel in hardware maken en daarmee de QR-payload ondertekenen, en kunnen API en scanner dat controleren?
+
+**Gebouwd (2026-09-27):** eigen Expo-module `apps/mobile/modules/device-key` (Swift ± 150 regels, Kotlin ± 150 regels, zonder externe bibliotheken) en een spikescherm; zie [runbook](../runbooks/hardwaresleutel-spike.md).
+
+| Onderdeel | iOS | Android |
+|---|---|---|
+| Sleutelopslag | Secure Enclave (`kSecAttrTokenIDSecureEnclave`), `WhenUnlockedThisDeviceOnly` + `privateKeyUsage`; simulator: softwaresleutel | Android Keystore, eerst StrongBox (API 28+), anders TEE; `setUnlockedDeviceRequired` |
+| Algoritme | ECDSA P-256 / SHA-256 (`ecdsaSignatureMessageX962SHA256`) | `SHA256withECDSA`, `secp256r1` |
+| Publieke sleutel | X9.63-punt → SubjectPublicKeyInfo (vaste DER-kop) | `PublicKey.encoded` = SubjectPublicKeyInfo |
+| Handtekening | DER → r‖s (64 bytes) | DER → r‖s (64 bytes) |
+| Attestatie | Niet via deze sleutel; App Attest is een aparte API (OQ-73) | Key-attestation-keten met challenge (Google-root), bruikbaar voor OQ-73 |
+
+**Geverifieerd:**
+- De Swift-code compileert voor iOS (toestel en simulator, `swiftc -typecheck`, iOS 16.4+).
+- Vectoren uit hetzelfde Security-framework (macOS) worden door .NET 10 geaccepteerd, ook bij DER-handtekeningen van 70, 71 en 72 bytes; een gewijzigde payload wordt geweigerd (`DeviceKeySignatureTests`).
+- De payload is 97 bytes, dat wordt 146 base45-tekens, en past in **QR-versie 6** (foutcorrectie M), zoals verwacht (`deviceQr.test.ts`).
+
+**Nog te meten op echte toestellen:**
+
+| Meting | Android recent (StrongBox) | Android ouder (TEE) | iPhone (Secure Enclave) |
+|---|---|---|---|
+| "Sleutel in" | open | open | open |
+| Ondertekenen (gem./max., ms) | open | open | open |
+| .NET-verificatie van gedeelde JSON | open | open | open |
+
+Verwachting uit platformdocumentatie: ondertekenen in de TEE of Secure Enclave duurt tientallen milliseconden, in StrongBox tot enkele honderden. Dat is ruim binnen de verversing elke 30 s.
+
+**Voorlopig besluit: GO** voor optie 5 met een eigen module. Er zijn geen blokkerende beperkingen gevonden: beide platformen bieden P-256 in hardware met standaardformaten die .NET direct controleert. Het besluit wordt definitief na de metingen hierboven. **Fallback** blijft optie 4 (server-signed, kortlevend) voor toestellen die alleen `Software` melden. De API registreert het `securityLevel` per device (fase 13, `identity.Device.attestation_status`) en het bestuur kan beslissen of zulke toestellen worden toegelaten.
+
+**Gevolgen voor fase 13:** de module verhuist van spike naar product: tests met Maestro op toestellen, `bind-device` met proof-of-possession (de server ondertekent een challenge), Android-attestatie controleren tegen de Google-root, en voor iOS App Attest (OQ-73).
 
 ## Reasoning
 

@@ -21,4 +21,8 @@
     <ProjectReference Include="..\..\src\Drammers.Api\Drammers.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="DeviceKey\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

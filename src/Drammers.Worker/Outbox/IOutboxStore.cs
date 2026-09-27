@@ -10,6 +10,12 @@ public interface IOutboxStore
 
     /// <summary>Geeft het bericht vrij voor een nieuwe poging na <paramref name="retryAfter"/>.</summary>
     Task MarkFailedAsync(Guid id, string error, TimeSpan retryAfter, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Wanneer het eerstvolgende openstaande bericht verwerkt kan worden (nu, na een nieuwe poging of op een gepland
+    /// moment); <c>null</c> als er niets openstaat.
+    /// </summary>
+    Task<DateTime?> NextDueAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>Geclaimd outbox-bericht; <c>Attempts</c> is inclusief de huidige poging.</summary>

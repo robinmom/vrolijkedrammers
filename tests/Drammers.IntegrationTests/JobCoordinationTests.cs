@@ -40,7 +40,7 @@ public class JobCoordinationTests(SqlServerFixture sql)
         {
             provider = TestServices.Create(connectionString, clock, s => s.AddSingleton(executions));
             return new RecurringJobScheduler(
-                provider.GetRequiredService<IServiceScopeFactory>(), [registration], NullLogger<RecurringJobScheduler>.Instance);
+                provider.GetRequiredService<IServiceScopeFactory>(), [registration], TimeProvider.System, NullLogger<RecurringJobScheduler>.Instance);
         }
 
         var instanceA = CreateInstance(out var providerA);

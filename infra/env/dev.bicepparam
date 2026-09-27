@@ -7,6 +7,10 @@ param appServicePlanId = readEnvironmentVariable('DVD_APP_SERVICE_PLAN_ID')
 param sqlAdminGroupName = 'sg-dvd-sql-admin-dev'
 param sqlAdminGroupObjectId = readEnvironmentVariable('DVD_SQL_ADMIN_GROUP_OBJECT_ID')
 param sqlUseFreeOffer = true
+// Besluit 2026-09-27: bij een opgebruikt tegoed doorgaan tegen betaling in plaats van een maand pauzeren (Dev bleef
+// anders tot de 1e onbereikbaar). Sinds de worker de database bij rust met rust laat, pauzeert hij zelf en zijn de
+// kosten beperkt tot echt gebruik boven het gratis tegoed.
+param sqlFreeLimitExhaustionBehavior = 'BillOverUsage'
 param keyVaultPurgeProtection = false
 param logDailyQuotaGb = 1
 param externalIdAuthority = 'https://vrolijkedrammersapp.ciamlogin.com/260db5a1-e5b6-4388-9f6c-d9b02cb5578b/v2.0'

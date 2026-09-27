@@ -45,7 +45,7 @@ public class FileUploadTests(SqlServerFixture sql) : IAsyncLifetime
 
     private async Task ProcessOutboxAsync(AuthenticatedApiFactory api)
     {
-        var processor = new OutboxProcessor(api.Services.GetRequiredService<IServiceScopeFactory>(), NullLogger<OutboxProcessor>.Instance);
+        var processor = new OutboxProcessor(api.Services.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
         while (await processor.ProcessBatchAsync(default) > 0)
         {
         }

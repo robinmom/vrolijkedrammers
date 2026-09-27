@@ -65,8 +65,9 @@ public static class DependencyInjection
             if (configuration.GetValue("Worker:Enabled", defaultValue: true))
             {
                 services.AddDrammersWorker();
-                services.AddRecurringJob<ContentPublisherJob>(ContentPublisherJob.JobName, ContentPublisherJob.Interval);
-                services.AddRecurringJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Interval);
+                // Alleen op vaste momenten (geen minuutlijkse controles): de serverless database mag de rest pauzeren.
+                services.AddScheduledJob<ContentPublisherJob>(ContentPublisherJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 15), TimeSpan.FromHours(20));
+                services.AddScheduledJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Schedule, TimeSpan.FromHours(20));
             }
         }
 
@@ -126,9 +127,12 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.TryAddScoped<ICurrentActor, SystemActor>();
         services.AddScoped<AuditableInterceptor>();
+        services.TryAddSingleton<OutboxSignal>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<OutboxSignalInterceptor>();
         services.AddDbContext<DrammersDbContext>((provider, db) => db
             .UseSqlServer(connectionString)
-            .AddInterceptors(provider.GetRequiredService<AuditableInterceptor>()));
+            .AddInterceptors(provider.GetRequiredService<AuditableInterceptor>(), provider.GetRequiredService<OutboxSignalInterceptor>()));
 
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IOutbox, EfOutbox>();
@@ -142,6 +146,9 @@ public static class DependencyInjection
         services.AddScoped<ContentAdministration>();
         services.AddScoped<ContentFiles>();
         services.AddScoped<IOutboxMessageHandler, PhotoProcessingHandler>();
+        services.TryAddScoped<ContentPublisherJob>();
+        services.AddScoped<IOutboxMessageHandler, ContentPublishDueHandler>();
+        services.TryAddSingleton<WorkerHeartbeat>();
         services.AddScoped<MemberSync>();
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();

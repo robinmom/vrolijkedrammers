@@ -12,6 +12,7 @@ namespace Drammers.Worker.Scheduling;
 public sealed partial class RecurringJobScheduler(
     IServiceScopeFactory scopeFactory,
     IEnumerable<RecurringJobRegistration> jobs,
+    TimeProvider time,
     ILogger<RecurringJobScheduler> logger) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
@@ -19,6 +20,27 @@ public sealed partial class RecurringJobScheduler(
 
     private async Task RunJobLoopAsync(RecurringJobRegistration job, CancellationToken stoppingToken)
     {
+        if (job.NextRun is { } nextRun)
+        {
+            // Vast moment: wachten tot het zover is (de database wordt tussendoor niet aangeraakt).
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                var wait = nextRun(time.GetUtcNow()) - time.GetUtcNow();
+                try
+                {
+                    await Task.Delay(wait < TimeSpan.Zero ? TimeSpan.Zero : wait, time, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                await RunOnceAsync(job, stoppingToken);
+            }
+
+            return;
+        }
+
         using var timer = new PeriodicTimer(job.Interval);
         do
         {
@@ -42,16 +64,29 @@ public sealed partial class RecurringJobScheduler(
     /// <summary>Eén poging om de job uit te voeren; publiek voor tests.</summary>
     public async Task<bool> RunOnceAsync(RecurringJobRegistration registration, CancellationToken stoppingToken)
     {
-        var (jobName, interval, jobType) = registration;
+        var (jobName, interval, jobType, _, _) = registration;
         if (stoppingToken.IsCancellationRequested)
         {
             return false;
         }
 
         await using var scope = scopeFactory.CreateAsyncScope();
-        var coordinator = scope.ServiceProvider.GetRequiredService<IJobCoordinator>();
         var job = (IRecurringJob)scope.ServiceProvider.GetRequiredService(jobType);
+        if (!registration.Coordinated)
+        {
+            try
+            {
+                await job.ExecuteAsync(stoppingToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                LogJobFailed(logger, ex, jobName);
+            }
 
+            return true;
+        }
+
+        var coordinator = scope.ServiceProvider.GetRequiredService<IJobCoordinator>();
         try
         {
             if (!await coordinator.TryStartAsync(jobName, interval, stoppingToken))

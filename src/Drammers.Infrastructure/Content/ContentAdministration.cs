@@ -353,6 +353,15 @@ public sealed class ContentAdministration(
 
     private async Task SaveWithAuditAsync(string action, string entityType, Guid id, object? values, CancellationToken cancellationToken)
     {
+        // Gepland publiceren: een outbox-bericht op het geplande moment wekt de worker (geen minuutlijkse controle).
+        var now = clock.UtcNow.UtcDateTime;
+        foreach (var publishAt in db.ChangeTracker.Entries<IPublishable>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified && e.Entity.Status == PublicationStatus.Scheduled && e.Entity.PublishAt > now)
+            .Select(e => e.Entity.PublishAt!.Value).Distinct().ToList())
+        {
+            outbox.Enqueue(ContentPublisherJob.MessageType, new { }, notBefore: publishAt);
+        }
+
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry(action, entityType, id.ToString(), null, values is null ? null : JsonSerializer.Serialize(values, Json)), cancellationToken);

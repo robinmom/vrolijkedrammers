@@ -8,14 +8,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Drammers.Infrastructure.Content;
 
 /// <summary>
-/// Zet geplande content op Gepubliceerd zodra het moment bereikt is (elke minuut). Het audience-filter toont geplande
-/// content al vanaf het moment zelf; deze job maakt de status definitief en legt het vast in de auditlog.
+/// Zet geplande content op Gepubliceerd zodra het moment bereikt is. Het audience-filter toont geplande content al vanaf
+/// het moment zelf; deze job maakt de status definitief en legt het vast in de auditlog. Aangestuurd door een
+/// outbox-bericht op het geplande moment (<see cref="MessageType"/>), plus elke nacht een inhaalrun; niet meer elke
+/// minuut, zodat een serverless database kan pauzeren.
 /// </summary>
 public sealed class ContentPublisherJob(DrammersDbContext db, IAuditLogger audit, IClock clock) : IRecurringJob
 {
     public const string JobName = "content-publisher";
 
-    public static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+    public const string MessageType = "content.publish-due";
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -41,4 +43,12 @@ public sealed class ContentPublisherJob(DrammersDbContext db, IAuditLogger audit
             await audit.WriteAsync(new AuditEntry("photo-album.published", "PhotoAlbum", a.Id.ToString(), null, "{\"source\":\"schedule\"}"), cancellationToken);
         }
     }
+}
+
+/// <summary>Voert <see cref="ContentPublisherJob"/> uit op het geplande moment (worker).</summary>
+public sealed class ContentPublishDueHandler(ContentPublisherJob job) : Drammers.Worker.Outbox.IOutboxMessageHandler
+{
+    public string Type => ContentPublisherJob.MessageType;
+
+    public Task HandleAsync(Drammers.Worker.Outbox.OutboxEnvelope message, CancellationToken cancellationToken) => job.ExecuteAsync(cancellationToken);
 }

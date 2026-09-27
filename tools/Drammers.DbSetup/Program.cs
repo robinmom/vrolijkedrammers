@@ -33,8 +33,7 @@ switch (command)
 {
     case "migrate":
         {
-            await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            await using var connection = await OpenWithRetryAsync(connectionString);
             var script = await File.ReadAllTextAsync(args[3]);
             var batches = await SqlScriptRunner.RunAsync(connection, script, CancellationToken.None);
             Console.WriteLine($"Migratiescript uitgevoerd ({batches} batches).");
@@ -43,8 +42,7 @@ switch (command)
 
     case "ensure-user" when args.Length >= 5 && Guid.TryParse(args[4], out var clientId):
         {
-            await using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            await using var connection = await OpenWithRetryAsync(connectionString);
             var roles = args.Skip(5).ToArray();
             var created = await DatabaseUserProvisioner.EnsureEntraUserAsync(connection, args[3], clientId, roles, CancellationToken.None);
             Console.WriteLine($"Databasegebruiker '{args[3]}' {(created ? "aangemaakt" : "bestaat al")}; rollen: {string.Join(", ", roles)}.");
@@ -57,6 +55,28 @@ switch (command)
     default:
         Console.Error.WriteLine($"Onbekend of onvolledig commando: {command}");
         return 2;
+}
+
+// Een gepauzeerde serverless database geeft bij het eerste contact direct fout 40613 ("not currently available") terwijl
+// hij opstart; dan tot ruim twee minuten opnieuw proberen in plaats van de deploy te laten crashen.
+static async Task<SqlConnection> OpenWithRetryAsync(string connectionString)
+{
+    int[] transient = [40613, 40197, 40501, 49918, 49919, 49920, 4060];
+    for (var attempt = 1; ; attempt++)
+    {
+        var connection = new SqlConnection(connectionString);
+        try
+        {
+            await connection.OpenAsync();
+            return connection;
+        }
+        catch (SqlException ex) when (attempt < 8 && transient.Contains(ex.Number))
+        {
+            await connection.DisposeAsync();
+            Console.WriteLine($"Database nog niet beschikbaar ({ex.Number}); poging {attempt}, over 20 s opnieuw.");
+            await Task.Delay(TimeSpan.FromSeconds(20));
+        }
+    }
 }
 
 static async Task<int> BootstrapAdminAsync(string connectionString, string objectId, string email, string displayName)

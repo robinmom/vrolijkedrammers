@@ -2,10 +2,12 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Drammers.Infrastructure.EBoekhouden;
+using Drammers.Infrastructure.Identity;
 using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
+using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Import.Sync;
 using Drammers.Modules.Membership.Members;
 using Microsoft.EntityFrameworkCore;
@@ -138,14 +140,67 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         var second = await SyncAsync();
         Assert.Equal(1, second.Deactivated);
         Assert.Equal(MembershipStatus.Inactive, (await MemberAsync("005")).MembershipStatus);
-        // Rollen en account blijven bewaard.
+        // Rollen blijven bewaard, maar inloggen kan niet meer: account uit, inlog in Entra uit en sessies ingetrokken.
         Assert.Equal(1, await WithDbAsync(db => db.UserRoles.CountAsync(r => r.UserId == lid.UserId)));
+        Assert.Equal(AccountStatus.Disabled, await WithDbAsync(db => db.Users.Where(u => u.Id == lid.UserId).Select(u => u.AccountStatus).SingleAsync()));
+        await RunEntraStateMessagesAsync();
+        Assert.False(_api.Entra.Enabled[lid.ObjectId]);
+        Assert.Contains(lid.ObjectId, _api.Entra.RevokedSessions);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(lid.ObjectId).GetAsync("/api/v1/me")).StatusCode);
 
         _eb.Add("005", "Piet van der Lid5", "lid5@example.com");
         var third = await SyncAsync();
         Assert.Equal(1, third.Reactivated);
         var back = await MemberAsync("005");
         Assert.Equal((MemberSyncState.InSync, MembershipStatus.Active, (DateTime?)null), (back.SyncState, back.MembershipStatus, back.EbMissingSince));
+        await RunEntraStateMessagesAsync();
+        Assert.True(_api.Entra.Enabled[lid.ObjectId]);
+        Assert.Equal(HttpStatusCode.OK, (await _api.ClientFor(lid.ObjectId).GetAsync("/api/v1/me")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Geschorst_lid_kan_niet_inloggen_maar_een_bestuurder_die_lid_is_houdt_zijn_account()
+    {
+        AddMembers(2);
+        await SyncAsync();
+        async Task<(Guid UserId, string ObjectId)> LinkAsync(string number, string role)
+        {
+            var user = await _api.CreateUserAsync($"lid{number}-{role}@example.com", role);
+            await WithDbAsync(async db =>
+            {
+                (await db.Users.SingleAsync(u => u.Id == user.UserId)).MemberId = (await db.Members.SingleAsync(m => m.MemberNumber == number)).Id;
+                return await db.SaveChangesAsync();
+            });
+            return user;
+        }
+
+        var lid = await LinkAsync("001", DefaultRoles.Lid);
+        var bestuurder = await LinkAsync("002", DefaultRoles.Bestuur);
+        foreach (var number in new[] { "001", "002" })
+        {
+            var id = (await MemberAsync(number)).Id;
+            var patch = await _admin.PatchAsJsonAsync($"/api/v1/admin/members/{id}", new { localStatusOverride = "Suspended" });
+            Assert.Equal(HttpStatusCode.NoContent, patch.StatusCode);
+        }
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(lid.ObjectId).GetAsync("/api/v1/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _api.ClientFor(bestuurder.ObjectId).GetAsync("/api/v1/me")).StatusCode);
+
+        // Schorsing opgeheven: weer aan.
+        await _admin.PatchAsJsonAsync($"/api/v1/admin/members/{(await MemberAsync("001")).Id}", new { localStatusOverride = (string?)null });
+        Assert.Equal(HttpStatusCode.OK, (await _api.ClientFor(lid.ObjectId).GetAsync("/api/v1/me")).StatusCode);
+    }
+
+    private async Task RunEntraStateMessagesAsync()
+    {
+        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => m.Type == AccountLifecycle.EntraStateMessageType && m.ProcessedAt == null).OrderBy(m => m.CreatedAt).ToListAsync());
+        await WithDbAsync(db => db.Outbox.Where(m => m.Type == AccountLifecycle.EntraStateMessageType).ExecuteDeleteAsync());
+        using var scope = _api.Services.CreateScope();
+        var handler = ActivatorUtilities.CreateInstance<EntraAccountStateHandler>(scope.ServiceProvider);
+        foreach (var message in messages)
+        {
+            await handler.HandleAsync(new Drammers.Worker.Outbox.OutboxEnvelope(message.Id, message.Type, message.Payload, 1), CancellationToken.None);
+        }
     }
 
     [Fact]

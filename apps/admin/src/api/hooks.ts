@@ -438,3 +438,15 @@ export function useApplication(id: string) {
     refetchInterval: (query) => (['Approved', 'Provisioning'].includes(query.state.data?.status ?? '') ? 5000 : false),
   });
 }
+
+// ----- Fase 9b-2: AVG-verzoeken ----------------------------------------------------------------------------------
+
+export type PrivacyRequest = Schemas['PrivacyRequestResponse'];
+
+export function usePrivacyRequests(page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['privacy-requests', page],
+    queryFn: async () => required((await api.GET('/api/v1/admin/privacy-requests', { params: { query: { page, pageSize: 25 } } })).data),
+  });
+}

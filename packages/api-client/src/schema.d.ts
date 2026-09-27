@@ -3272,6 +3272,204 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/privacy-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfPrivacyRequestResponse"];
+                        "application/json": components["schemas"]["PagedResultOfPrivacyRequestResponse"];
+                        "text/json": components["schemas"]["PagedResultOfPrivacyRequestResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/privacy-export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export namens een lid (bijv. een verzoek per brief of e-mail); de link is 15 minuten geldig. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrivacyExportResponse"];
+                        "application/json": components["schemas"]["PrivacyExportResponse"];
+                        "text/json": components["schemas"]["PrivacyExportResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/privacy-requests/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrivacyExportResponse"];
+                        "application/json": components["schemas"]["PrivacyExportResponse"];
+                        "text/json": components["schemas"]["PrivacyExportResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/erase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Alle app-gegevens van een gebruiker wissen (AVG art. 17); de ledenadministratie in e-Boekhouden blijft. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["EraseRequest"];
+                    "text/json": components["schemas"]["EraseRequest"];
+                    "application/*+json": components["schemas"]["EraseRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ErasureResponse"];
+                        "application/json": components["schemas"]["ErasureResponse"];
+                        "text/json": components["schemas"]["ErasureResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/reports/members": {
         parameters: {
             query?: never;
@@ -5487,6 +5685,21 @@ export interface components {
         };
         /** @enum {unknown} */
         DeviceStatus: "Active" | "Revoked";
+        EraseRequest: {
+            confirmation: string;
+        };
+        ErasureResponse: {
+            /** Format: int32 */
+            applications: number;
+            /** Format: int32 */
+            accountRequests: number;
+            /** Format: int32 */
+            logins: number;
+            /** Format: int32 */
+            guardianRelations: number;
+            /** Format: int32 */
+            devices: number;
+        };
         EventCategoryResponse: {
             /** Format: int32 */
             id: number;
@@ -5938,6 +6151,16 @@ export interface components {
             totalCount: number;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfPrivacyRequestResponse: {
+            items: components["schemas"]["PrivacyRequestResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfSyncJobItemResponse: {
             items: components["schemas"]["SyncJobItemResponse"][];
             /** Format: int32 */
@@ -6020,6 +6243,26 @@ export interface components {
             /** Format: uri */
             downloadUrl: null | string;
         };
+        PrivacyRequestResponse: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["PrivacyRequestType"];
+            status: components["schemas"]["PrivacyRequestStatus"];
+            /** Format: uuid */
+            userId: string;
+            subjectName: null | string;
+            requestedByBoard: null | string;
+            /** Format: date-time */
+            requestedAt: string;
+            /** Format: date-time */
+            completedAt: null | string;
+            /** Format: date-time */
+            downloadableUntil: null | string;
+        };
+        /** @enum {unknown} */
+        PrivacyRequestStatus: "Requested" | "Completed" | "Failed";
+        /** @enum {unknown} */
+        PrivacyRequestType: "Export" | "Erasure";
         ProblemDetails: {
             type?: null | string;
             title?: null | string;

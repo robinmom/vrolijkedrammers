@@ -2,8 +2,8 @@ import { Link, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useMe, useRoles, useUser, useUserDevices, useUserRoles, type RoleAssignment } from '../api/hooks';
-import { ConfirmDialog } from '../components/Dialog';
-import { Checkbox } from '../components/Field';
+import { ConfirmDialog, Dialog } from '../components/Dialog';
+import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { accountStatusLabels, formatDateTime } from '../format';
 
@@ -18,6 +18,19 @@ export function UserDetailPage() {
   const [confirmBlock, setConfirmBlock] = useState(false);
   const me = useMe();
   const canBlock = (me.data?.permissions ?? []).includes('member.block');
+  const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  const [erasing, setErasing] = useState(false);
+  const [eraseConfirmation, setEraseConfirmation] = useState('');
+  const exportData = useApiMutation(async () => {
+    const { data } = await api.POST('/api/v1/admin/users/{id}/privacy-export', { params: { path: { id } } });
+    if (data?.downloadUrl) {
+      window.open(data.downloadUrl, '_blank', 'noopener');
+    }
+  }, [['privacy-requests']]);
+  const erase = useApiMutation(
+    () => api.POST('/api/v1/admin/users/{id}/erase', { params: { path: { id } }, body: { confirmation: eraseConfirmation } }),
+    [['user', id], ['users'], ['privacy-requests']],
+  );
   const devices = useUserDevices(id, canBlock);
   const revokeDevice = useApiMutation(
     (deviceId: string) => api.POST('/api/v1/admin/devices/{id}/revoke', { params: { path: { id: deviceId } } }),
@@ -184,6 +197,52 @@ export function UserDetailPage() {
           ) : null}
         </section>
       ) : null}
+      {canPrivacy && user.data.accountStatus !== 'Deleted' ? (
+        <section className="card" aria-labelledby="privacy">
+          <h2 id="privacy">Privacy (AVG)</h2>
+          <p className="muted">
+            Voor een verzoek van dit lid (per brief of e-mail). Wissen verwijdert het account, de inlog en alle gegevens die alleen de app
+            bewaart; de auditlog blijft. De ledenadministratie in e-Boekhouden past het secretariaat zelf aan.
+          </p>
+          <ProblemAlert error={exportData.error ?? erase.error} />
+          <div className="actions">
+            <button type="button" className="button secondary" disabled={exportData.isPending} onClick={() => exportData.mutate(undefined)}>
+              Gegevens exporteren
+            </button>
+            <button type="button" className="button danger" onClick={() => setErasing(true)}>
+              Alle app-gegevens wissen
+            </button>
+          </div>
+        </section>
+      ) : null}
+      <Dialog open={erasing} title="Alle app-gegevens wissen" onClose={() => setErasing(false)}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            erase.mutate(undefined, {
+              onSuccess: () => {
+                setErasing(false);
+                setMessage('De app-gegevens zijn gewist en het account is verwijderd. Vergeet e-Boekhouden niet.');
+              },
+            });
+          }}
+        >
+          <p>
+            Dit kan niet ongedaan worden gemaakt: het account van {user.data.displayName}, de inlog, aanmeldingen, accountverzoeken,
+            aanmeldhistorie en apparaten worden verwijderd.
+          </p>
+          <Field label="Typ WISSEN ter bevestiging" value={eraseConfirmation} onChange={(e) => setEraseConfirmation(e.target.value)} />
+          <ProblemAlert error={erase.error} />
+          <div className="actions">
+            <button type="button" className="button secondary" onClick={() => setErasing(false)}>
+              Annuleren
+            </button>
+            <button type="submit" className="button danger" disabled={eraseConfirmation !== 'WISSEN' || erase.isPending}>
+              Wissen
+            </button>
+          </div>
+        </form>
+      </Dialog>
       <section className="card" aria-labelledby="toegang">
         <h2 id="toegang">Toegang</h2>
         <p>

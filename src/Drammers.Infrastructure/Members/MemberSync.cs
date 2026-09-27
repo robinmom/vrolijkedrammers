@@ -24,7 +24,7 @@ namespace Drammers.Infrastructure.Members;
 /// </summary>
 public sealed class MemberSync(
     DrammersDbContext db, IEBoekhoudenClient eBoekhouden, MemberSyncSettings settings, IOutbox outbox, IAuditLogger audit,
-    IClock clock, ILogger<MemberSync> logger)
+    IClock clock, ILogger<MemberSync> logger, Identity.AccountLifecycle lifecycle)
 {
     public const string MessageType = "members.sync";
 
@@ -117,6 +117,12 @@ public sealed class MemberSync(
         if (job.Status == SyncJobStatus.Conflict && job.Conflicts > 0)
         {
             logger.LogWarning("Ledensync {JobId} heeft {Conflicts} conflict(en) die beoordeeld moeten worden", job.Id, job.Conflicts);
+        }
+
+        // Inactief geworden leden kunnen niet meer inloggen; weer actieve leden wel (fase 9b).
+        if (!job.DryRun && job.Status != SyncJobStatus.Failed)
+        {
+            await lifecycle.ReconcileAsync(null, cancellationToken);
         }
     }
 

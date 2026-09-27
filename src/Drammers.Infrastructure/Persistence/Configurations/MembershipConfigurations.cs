@@ -107,6 +107,8 @@ internal sealed class PrivacyRequestConfiguration : IEntityTypeConfiguration<Dra
         builder.ToTable("PrivacyRequest", Schemas.Membership);
         builder.Property(r => r.Id).ValueGeneratedNever();
         builder.Property(r => r.FilePath).HasMaxLength(200).IsUnicode(false);
+        builder.Property(r => r.SubjectName).HasMaxLength(200);
+        builder.HasIndex(r => r.RequestedAt);
         builder.HasIndex(r => r.UserId);
         builder.HasIndex(r => r.ExpiresAt).HasFilter("[file_path] IS NOT NULL");
     }

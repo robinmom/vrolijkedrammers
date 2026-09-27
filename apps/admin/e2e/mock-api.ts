@@ -153,6 +153,22 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
 
+  // Fase 9b-2: AVG-verzoeken.
+  privacyRequests: Record<string, unknown>[] = [
+    {
+      id: 'pr-1',
+      type: 'Export',
+      status: 'Completed',
+      userId: 'u-jan',
+      subjectName: 'Jan Lid',
+      requestedByBoard: null,
+      requestedAt: '2026-09-26T10:00:00Z',
+      completedAt: '2026-09-26T10:00:01Z',
+      downloadableUntil: '2026-09-27T10:00:00Z',
+    },
+  ];
+  erased: string[] = [];
+
   // Fase 9b: aanmeldingen (lid worden).
   applications = [
     {
@@ -305,6 +321,7 @@ export class MockApi {
       'member.purge',
       'member.approve',
       'member.block',
+      'member.privacy',
       'import.run',
     ],
   ) {
@@ -564,6 +581,39 @@ export class MockApi {
         errorMessage: null,
       });
       return json({ id }, 202);
+    }
+    if (path === '/admin/privacy-requests') {
+      return json({ items: this.privacyRequests, page: 1, pageSize: 25, totalCount: this.privacyRequests.length });
+    }
+    if ((m = path.match(/^\/admin\/privacy-requests\/([^/]+)\/download$/))) {
+      return json({ id: m[1], expiresAt: '2026-09-27T10:00:00Z', downloadUrl: 'about:blank' });
+    }
+    if ((m = path.match(/^\/admin\/users\/([^/]+)\/privacy-export$/))) {
+      this.privacyRequests.unshift({
+        id: 'pr-new',
+        type: 'Export',
+        status: 'Completed',
+        userId: m[1],
+        subjectName: 'Jan Lid',
+        requestedByBoard: 'Test Bestuurder',
+        requestedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        downloadableUntil: new Date(Date.now() + 86_400_000).toISOString(),
+      });
+      return json({
+        id: 'pr-new',
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+        downloadUrl: 'about:blank',
+      });
+    }
+    if ((m = path.match(/^\/admin\/users\/([^/]+)\/erase$/))) {
+      if (body.confirmation !== 'WISSEN') {
+        return json({ status: 422, detail: "Typ 'WISSEN' om de gegevens te wissen.", code: 'VALIDATION_FAILED' }, 422);
+      }
+      this.erased.push(m[1]!);
+      const user = this.users.find((u) => u.id === m![1])!;
+      user.accountStatus = 'Deleted';
+      return json({ applications: 0, accountRequests: 1, logins: 3, guardianRelations: 0, devices: 1 });
     }
     if (path === '/admin/membership-applications') {
       const status = url.searchParams.get('status');

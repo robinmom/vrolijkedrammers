@@ -33,7 +33,7 @@ public sealed class MemberDataOptions
 /// <summary>Ledenbeheer in het portal (fase 8): lokale velden, bevestigen van verdwenen leden, conflicten en opruimen.</summary>
 public sealed class MemberAdministration(
     DrammersDbContext db, IAuditLogger audit, IClock clock, MemberSyncSettings settings, ConfigurationAdministration configuration,
-    IOptions<MemberDataOptions> dataOptions)
+    IOptions<MemberDataOptions> dataOptions, Identity.AccountLifecycle lifecycle)
 {
     /// <summary>Deze tekst moet letterlijk worden meegestuurd om alle leden te verwijderen.</summary>
     public const string PurgeConfirmation = "LEDEN VERWIJDEREN";
@@ -81,6 +81,7 @@ public sealed class MemberAdministration(
 
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("member.updated", "Member", id.ToString(), before, Snapshot(member)), cancellationToken);
+        await lifecycle.ReconcileAsync([id], cancellationToken);
     }
 
     /// <summary>Een lid dat uit e-Boekhouden verdwenen is, direct op inactief zetten (in plaats van de volgende run af te wachten).</summary>
@@ -95,6 +96,7 @@ public sealed class MemberAdministration(
         member.MembershipStatus = MembershipStatus.Inactive;
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("member.confirmed-inactive", "Member", id.ToString()), cancellationToken);
+        await lifecycle.ReconcileAsync([id], cancellationToken);
     }
 
     public async Task ResolveConflictAsync(Guid id, SyncConflictStatus resolution, string? note, Guid? resolvedBy, CancellationToken cancellationToken)

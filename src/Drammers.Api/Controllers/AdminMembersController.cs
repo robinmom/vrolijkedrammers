@@ -182,6 +182,42 @@ public sealed class AdminMembersController(
         return new MemberPurgeResponse(result.Members, result.SyncJobs, result.UnlinkedAccounts);
     }
 
+    /// <summary>
+    /// Eén lid volledig uit de app verwijderen (recht <c>member.privacy</c>, typ "VERWIJDEREN"): accounts, gegevens en het lid
+    /// zelf; het lidnummer wordt uitgesloten van de sync. e-Boekhouden blijft ongemoeid.
+    /// </summary>
+    [HttpPost("{id:guid}/remove")]
+    [RequirePermission(Permissions.MemberPrivacy)]
+    [ProducesResponseType<MemberRemovalResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<MemberRemovalResponse> Remove(Guid id, MemberRemovalRequest request, CancellationToken cancellationToken)
+    {
+        var result = await members.RemoveCompletelyAsync(id, request.Confirmation, cancellationToken);
+        return new MemberRemovalResponse(result.MemberNumber, result.Accounts, result.Applications);
+    }
+
+    /// <summary>Lidnummers die de sync overslaat (volledig uit de app verwijderd, nog in e-Boekhouden).</summary>
+    [HttpGet("excluded")]
+    [RequirePermission(Permissions.MemberPrivacy)]
+    [ProducesResponseType<IReadOnlyList<ExcludedMemberResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<ExcludedMemberResponse>> Excluded(CancellationToken cancellationToken) =>
+        await db.ExcludedMembers.AsNoTracking().OrderByDescending(e => e.ExcludedAt)
+            .GroupJoin(db.Users, e => e.ExcludedBy, u => u.Id, (e, us) => new { e, us })
+            .SelectMany(x => x.us.DefaultIfEmpty(), (x, u) => new ExcludedMemberResponse(x.e.MemberNumber, x.e.ExcludedAt, u == null ? null : u.DisplayName))
+            .ToListAsync(cancellationToken);
+
+    [HttpDelete("excluded/{memberNumber}")]
+    [RequirePermission(Permissions.MemberPrivacy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> IncludeAgain(string memberNumber, CancellationToken cancellationToken)
+    {
+        await members.IncludeAgainAsync(memberNumber, cancellationToken);
+        return NoContent();
+    }
+
     private IQueryable<Member> Filter(string? search, MembershipStatus? status, MemberSyncState? syncState)
     {
         var query = db.Members.AsNoTracking();
@@ -246,5 +282,11 @@ public sealed record MemberLocalUpdateRequest(
     string? NamePrefix, string? LastName, DateOnly? BirthDate, short? JoinYear);
 
 public sealed record MemberPurgeRequest(string Confirmation);
+
+public sealed record MemberRemovalRequest(string Confirmation);
+
+public sealed record MemberRemovalResponse(string MemberNumber, int Accounts, int Applications);
+
+public sealed record ExcludedMemberResponse(string MemberNumber, DateTime ExcludedAt, string? ExcludedBy);
 
 public sealed record MemberPurgeResponse(int Members, int SyncJobs, int UnlinkedAccounts);

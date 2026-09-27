@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import {
   useApiMutation,
+  useExcludedMembers,
   useFeatureFlags,
   useMe,
   useMemberMapping,
@@ -138,6 +139,7 @@ export function MemberSyncPage() {
       {running ? <RunningJob job={running} /> : null}
 
       <OpenConflicts />
+      <ExcludedMembers />
 
       <DataTable
         caption="Syncruns"
@@ -253,6 +255,52 @@ function RunningJob({ job }: { job: SyncJob }) {
         Gestart om {formatDateTime(job.requestedAt)}
         {job.dryRun ? ' · er wordt niets opgeslagen (dry-run)' : ''} · de pagina ververst vanzelf
       </p>
+    </section>
+  );
+}
+
+/** Lidnummers die volledig uit de app zijn verwijderd; de sync slaat ze over tot ze weer worden toegelaten. */
+function ExcludedMembers() {
+  const api = useApi();
+  const me = useMe();
+  const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  const excluded = useExcludedMembers(canPrivacy);
+  const includeAgain = useApiMutation(
+    (memberNumber: string) => api.DELETE('/api/v1/admin/members/excluded/{memberNumber}', { params: { path: { memberNumber } } }),
+    [['excluded-members']],
+  );
+  if (!excluded.data?.length) {
+    return null;
+  }
+  return (
+    <section className="card" aria-labelledby="uitgesloten">
+      <h2 id="uitgesloten">Uitgesloten leden ({excluded.data.length})</h2>
+      <p className="muted">
+        Deze leden zijn volledig uit de app verwijderd en staan mogelijk nog in e-Boekhouden. De synchronisatie slaat ze over. Weer
+        toelaten haalt het lid bij de volgende synchronisatie opnieuw op (zonder account).
+      </p>
+      <ProblemAlert error={includeAgain.error} />
+      <ul className="list">
+        {excluded.data.map((e) => (
+          <li key={e.memberNumber} className="list-row">
+            <div className="grow">
+              <p>Lidnummer {e.memberNumber}</p>
+              <p className="muted">
+                Verwijderd op {formatDateTime(e.excludedAt)}
+                {e.excludedBy ? ` door ${e.excludedBy}` : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={includeAgain.isPending}
+              onClick={() => includeAgain.mutate(e.memberNumber)}
+            >
+              Weer toelaten
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

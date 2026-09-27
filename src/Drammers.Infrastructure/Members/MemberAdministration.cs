@@ -24,6 +24,8 @@ public sealed record MemberLocalUpdate(
 
 public sealed record MemberPurgeResult(int Members, int SyncJobs, int UnlinkedAccounts);
 
+public sealed record MemberRemovalResult(string MemberNumber, int Accounts, int Applications);
+
 /// <summary>Instellingen rond testdata: leegmaken mag alleen in Dev en Acc (afgeleid van de omgeving).</summary>
 public sealed class MemberDataOptions
 {
@@ -33,10 +35,13 @@ public sealed class MemberDataOptions
 /// <summary>Ledenbeheer in het portal (fase 8): lokale velden, bevestigen van verdwenen leden, conflicten en opruimen.</summary>
 public sealed class MemberAdministration(
     DrammersDbContext db, IAuditLogger audit, IClock clock, MemberSyncSettings settings, ConfigurationAdministration configuration,
-    IOptions<MemberDataOptions> dataOptions, Identity.AccountLifecycle lifecycle)
+    IOptions<MemberDataOptions> dataOptions, Identity.AccountLifecycle lifecycle, Identity.MyAccount accounts, ICurrentActor actor)
 {
     /// <summary>Deze tekst moet letterlijk worden meegestuurd om alle leden te verwijderen.</summary>
     public const string PurgeConfirmation = "LEDEN VERWIJDEREN";
+
+    /// <summary>Deze tekst moet letterlijk worden meegestuurd om één lid volledig te verwijderen.</summary>
+    public const string RemoveConfirmation = "VERWIJDEREN";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -155,6 +160,67 @@ public sealed class MemberAdministration(
             JsonSerializer.Serialize(new { members, syncJobs = jobs, unlinkedAccounts = unlinked }, Json)), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return new MemberPurgeResult(members, jobs, unlinked);
+    }
+
+    /// <summary>
+    /// Verwijdert één lid volledig uit de app (fase 9b): accounts en inlogs die aan het lid hangen (AVG-wissen), het lid
+    /// zelf met groepen, ouderkoppelingen, aanmeldingen, accountverzoeken, doelgroepen in content en syncregels. Het
+    /// lidnummer komt op de uitsluitlijst, zodat de sync het lid niet terugzet zolang het nog in e-Boekhouden staat.
+    /// e-Boekhouden zelf blijft ongemoeid (later: status "opgezegd" zetten).
+    /// </summary>
+    public async Task<MemberRemovalResult> RemoveCompletelyAsync(Guid id, string confirmation, CancellationToken cancellationToken)
+    {
+        if (confirmation != RemoveConfirmation)
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Typ ter bevestiging \"{RemoveConfirmation}\".");
+        }
+
+        var member = await FindAsync(id, cancellationToken);
+        var number = member.MemberNumber;
+        var memberRef = id.ToString();
+
+        // Eerst de accounts: dat kan geweigerd worden (laatste beheerder); dan is er nog niets verwijderd.
+        var userIds = await db.Users.Where(u => u.MemberId == id && u.AccountStatus != Modules.Identity.Users.AccountStatus.Deleted)
+            .Select(u => u.Id).ToListAsync(cancellationToken);
+        var erasedApplications = 0;
+        foreach (var userId in userIds)
+        {
+            erasedApplications += (await accounts.EraseAsync(userId, cancellationToken)).Applications;
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var applications = await db.MembershipApplications.Where(a => a.ResultingMemberId == id).ExecuteDeleteAsync(cancellationToken);
+        await db.AccountRequests.Where(r => r.MemberId == id).ExecuteDeleteAsync(cancellationToken);
+        await db.AccountProvisioning.Where(p => p.MemberId == id).ExecuteDeleteAsync(cancellationToken);
+        await db.Set<Modules.Content.Events.EventAudience>().Where(a => a.AudienceType == Modules.Content.Shared.AudienceType.Member && a.AudienceRef == memberRef).ExecuteDeleteAsync(cancellationToken);
+        await db.Set<Modules.Content.News.NewsAudience>().Where(a => a.AudienceType == Modules.Content.Shared.AudienceType.Member && a.AudienceRef == memberRef).ExecuteDeleteAsync(cancellationToken);
+        await db.Set<Modules.Content.Photos.PhotoAlbumAudience>().Where(a => a.AudienceType == Modules.Content.Shared.AudienceType.Member && a.AudienceRef == memberRef).ExecuteDeleteAsync(cancellationToken);
+        await db.SyncConflicts.Where(c => c.MemberId == id || c.MemberNumber == number).ExecuteDeleteAsync(cancellationToken);
+        await db.SyncJobItems.Where(i => i.MemberId == id || i.MemberNumber == number).ExecuteDeleteAsync(cancellationToken);
+        // Groepslidmaatschappen en ouderkoppelingen gaan mee via cascade.
+        await db.Members.Where(m => m.Id == id).ExecuteDeleteAsync(cancellationToken);
+        if (!await db.ExcludedMembers.AnyAsync(e => e.MemberNumber == number, cancellationToken))
+        {
+            db.ExcludedMembers.Add(new ExcludedMember { MemberNumber = number, ExcludedAt = clock.UtcNow.UtcDateTime, ExcludedBy = actor.UserId });
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        var result = new MemberRemovalResult(number, userIds.Count, erasedApplications + applications);
+        await audit.WriteAsync(new AuditEntry("member.removed", "Member", id.ToString(), null, JsonSerializer.Serialize(result, Json)), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    /// <summary>Uitsluiting opheffen: bij de volgende sync komt het lid (als het nog in e-Boekhouden staat) terug.</summary>
+    public async Task IncludeAgainAsync(string memberNumber, CancellationToken cancellationToken)
+    {
+        var removed = await db.ExcludedMembers.Where(e => e.MemberNumber == memberNumber).ExecuteDeleteAsync(cancellationToken);
+        if (removed == 0)
+        {
+            throw new DomainException(ErrorCodes.MemberNotFound, "Dit lidnummer staat niet op de uitsluitlijst.", DomainErrorKind.NotFound);
+        }
+
+        await audit.WriteAsync(new AuditEntry("member.included-again", "ExcludedMember", memberNumber), cancellationToken);
     }
 
     private async Task<Member> FindAsync(Guid id, CancellationToken cancellationToken) =>

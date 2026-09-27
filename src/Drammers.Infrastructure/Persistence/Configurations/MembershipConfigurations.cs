@@ -160,3 +160,13 @@ internal sealed class GuardianRelationConfiguration : IEntityTypeConfiguration<D
         builder.HasOne<Drammers.Modules.Identity.Users.User>().WithMany().HasForeignKey(g => g.GuardianUserId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+internal sealed class ExcludedMemberConfiguration : IEntityTypeConfiguration<ExcludedMember>
+{
+    public void Configure(EntityTypeBuilder<ExcludedMember> builder)
+    {
+        builder.ToTable("ExcludedMember", Schemas.Membership);
+        builder.HasKey(e => e.MemberNumber);
+        builder.Property(e => e.MemberNumber).HasMaxLength(15);
+    }
+}

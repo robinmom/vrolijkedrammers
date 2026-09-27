@@ -386,3 +386,44 @@ test('fase 9b-2: AVG — export namens een lid en alle app-gegevens wissen', asy
   await expect(page.getByRole('cell', { name: 'Test Bestuurder' })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Het lid zelf (app)' })).toBeVisible();
 });
+
+test('een lid volledig verwijderen en weer toelaten via de ledensync', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'leden/m-2');
+  await page.getByRole('button', { name: 'Lid volledig verwijderen' }).click();
+  const dialog = page.getByRole('dialog');
+  const verwijderen = dialog.getByRole('button', { name: 'Verwijderen' });
+  await expect(verwijderen).toBeDisabled();
+  await dialog.getByLabel('Typ VERWIJDEREN ter bevestiging').fill('VERWIJDEREN');
+  await verwijderen.click();
+  await expect(page).toHaveURL(/\/beheer\/leden$/);
+  expect(api.members.map((x) => x.id)).toEqual(['m-1']);
+
+  await page.goto('/beheer/ledensync');
+  const excluded = page.getByRole('region', { name: /Uitgesloten leden/ });
+  await expect(excluded.getByText('Lidnummer 002')).toBeVisible();
+  await excluded.getByRole('button', { name: 'Weer toelaten' }).click();
+  await expect(excluded).toBeHidden();
+  expect(api.excluded).toEqual([]);
+});
+
+test('toegang tot de testomgeving geven en intrekken (geen set-tester.sh meer)', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'gebruikers/u-jan');
+  const card = page.getByRole('region', { name: 'Toegang tot testomgeving' });
+  await expect(card.getByText(/heeft geen toegang tot DEV/)).toBeVisible();
+  await card.getByRole('button', { name: 'Toegang geven' }).click();
+  await expect(card.getByText(/heeft toegang tot DEV \(dev,acc\)/)).toBeVisible();
+  expect(api.testAccess['u-jan']).toBe('dev,acc');
+  await card.getByRole('button', { name: 'Toegang intrekken' }).click();
+  await expect(card.getByRole('button', { name: 'Toegang geven' })).toBeVisible();
+  expect(api.testAccess['u-jan']).toBeNull();
+});
+
+test('in productie geen kaart voor de testomgeving', async ({ page }) => {
+  const api = new MockApi();
+  api.testAccessAvailable = false;
+  await open(page, api, 'gebruikers/u-jan');
+  await expect(page.getByRole('heading', { name: 'Toegang', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Toegang tot testomgeving' })).toHaveCount(0);
+});

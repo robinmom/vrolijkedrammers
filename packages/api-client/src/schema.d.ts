@@ -1896,6 +1896,172 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/members/{id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eén lid volledig uit de app verwijderen (recht `member.privacy`, typ "VERWIJDEREN"): accounts, gegevens en het lid
+         *     zelf; het lidnummer wordt uitgesloten van de sync. e-Boekhouden blijft ongemoeid.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberRemovalRequest"];
+                    "text/json": components["schemas"]["MemberRemovalRequest"];
+                    "application/*+json": components["schemas"]["MemberRemovalRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberRemovalResponse"];
+                        "application/json": components["schemas"]["MemberRemovalResponse"];
+                        "text/json": components["schemas"]["MemberRemovalResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/excluded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lidnummers die de sync overslaat (volledig uit de app verwijderd, nog in e-Boekhouden). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ExcludedMemberResponse"][];
+                        "application/json": components["schemas"]["ExcludedMemberResponse"][];
+                        "text/json": components["schemas"]["ExcludedMemberResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/excluded/{memberNumber}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberNumber: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/membership-applications": {
         parameters: {
             query?: never;
@@ -4099,6 +4265,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/{id}/test-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Toegang tot de testomgeving (Dev/Acc): groep Testers + environmentAccess, in plaats van set-tester.sh. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TestAccessStatus"];
+                        "application/json": components["schemas"]["TestAccessStatus"];
+                        "text/json": components["schemas"]["TestAccessStatus"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetTestAccessRequest"];
+                    "text/json": components["schemas"]["SetTestAccessRequest"];
+                    "application/*+json": components["schemas"]["SetTestAccessRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TestAccessStatus"];
+                        "application/json": components["schemas"]["TestAccessStatus"];
+                        "text/json": components["schemas"]["TestAccessStatus"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users/{id}/unblock": {
         parameters: {
             query?: never;
@@ -5766,6 +6034,12 @@ export interface components {
             badgeText: null | string;
             imageUrl: null | string;
         };
+        ExcludedMemberResponse: {
+            memberNumber: string;
+            /** Format: date-time */
+            excludedAt: string;
+            excludedBy: null | string;
+        };
         FeatureFlagRequest: {
             enabled: boolean;
             description: null | string;
@@ -5954,6 +6228,16 @@ export interface components {
             syncJobs: number;
             /** Format: int32 */
             unlinkedAccounts: number;
+        };
+        MemberRemovalRequest: {
+            confirmation: string;
+        };
+        MemberRemovalResponse: {
+            memberNumber: string;
+            /** Format: int32 */
+            accounts: number;
+            /** Format: int32 */
+            applications: number;
         };
         /** @description Rollen, leeftijd, inschrijfjaar en groepen tellen alleen actieve leden; status telt alle leden. */
         MemberReportResponse: {
@@ -6381,6 +6665,9 @@ export interface components {
         SetRolePermissionsRequest: {
             permissions: string[];
         };
+        SetTestAccessRequest: {
+            granted: boolean;
+        };
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];
         };
@@ -6406,7 +6693,7 @@ export interface components {
         /** @enum {unknown} */
         SyncConflictType: "DuplicateMemberNumber" | "MemberNumberChanged" | "EmailChangedForActiveAccount" | "MassDeletionGuard";
         /** @enum {unknown} */
-        SyncItemAction: "Created" | "Updated" | "Unchanged" | "Missing" | "Deactivated" | "Reactivated" | "Warning" | "Error" | "Conflict";
+        SyncItemAction: "Created" | "Updated" | "Unchanged" | "Missing" | "Deactivated" | "Reactivated" | "Warning" | "Error" | "Conflict" | "Excluded";
         SyncJobItemResponse: {
             /** Format: int64 */
             id: number;
@@ -6455,6 +6742,15 @@ export interface components {
         SyncJobStatus: "Queued" | "Running" | "Succeeded" | "SucceededWithWarnings" | "Conflict" | "Failed";
         /** @enum {unknown} */
         SyncTrigger: "Scheduled" | "Manual";
+        TestAccessStatus: {
+            available: boolean;
+            environment: null | string;
+            grant: string;
+            hasSignIn: boolean;
+            inTestersGroup: boolean;
+            environments: null | string;
+            hasAccessHere: boolean;
+        };
         UpdateRoleRequest: {
             name: string;
             description: null | string;

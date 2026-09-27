@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Azure.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,8 +9,9 @@ using Microsoft.Extensions.Options;
 namespace Drammers.Infrastructure.Identity.Entra;
 
 /// <summary>
-/// Minimale Graph-client (vijf aanroepen) in plaats van de volledige Graph SDK. Aanmelden als de provisioning-app met
-/// <c>User.ReadWrite.All</c> (application permission) in de External ID-tenant, met een certificaat uit Key Vault.
+/// Minimale Graph-client in plaats van de volledige Graph SDK. Aanmelden als de provisioning-app met
+/// <c>User.ReadWrite.All</c> en (voor testtoegang) <c>GroupMember.ReadWrite.All</c> (application permissions) in de
+/// External ID-tenant, met een certificaat uit Key Vault.
 /// </summary>
 internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialProvider credentials, IOptions<GraphOptions> options) : IEntraUserDirectory
 {
@@ -85,6 +87,62 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
         }
     }
 
+    public async Task<EntraTestAccess> GetTestAccessAsync(string objectId, CancellationToken cancellationToken)
+    {
+        var (groupId, attribute) = TestAccessSettings();
+        var user = Uri.EscapeDataString(objectId);
+
+        using var get = await CreateRequestAsync(HttpMethod.Get, $"users/{user}?$select=id,{attribute}", cancellationToken);
+        using var getResponse = await http.SendAsync(get, cancellationToken);
+        await EnsureSuccessAsync(getResponse, cancellationToken);
+        using var json = await JsonDocument.ParseAsync(await getResponse.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+        var environments = json.RootElement.TryGetProperty(attribute, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+        using var check = await CreateRequestAsync(HttpMethod.Post, $"users/{user}/checkMemberGroups", cancellationToken);
+        check.Content = JsonContent.Create(new { groupIds = new[] { groupId } });
+        using var checkResponse = await http.SendAsync(check, cancellationToken);
+        await EnsureSuccessAsync(checkResponse, cancellationToken);
+        var groups = await checkResponse.Content.ReadFromJsonAsync<GraphIdList>(cancellationToken);
+        return new EntraTestAccess(groups?.Value.Contains(groupId, StringComparer.OrdinalIgnoreCase) == true, environments);
+    }
+
+    public async Task SetTestAccessAsync(string objectId, string? environments, CancellationToken cancellationToken)
+    {
+        var (groupId, attribute) = TestAccessSettings();
+        var current = await GetTestAccessAsync(objectId, cancellationToken);
+
+        using var patch = await CreateRequestAsync(HttpMethod.Patch, $"users/{Uri.EscapeDataString(objectId)}", cancellationToken);
+        patch.Content = JsonContent.Create(new Dictionary<string, string?> { [attribute] = environments });
+        using var patchResponse = await http.SendAsync(patch, cancellationToken);
+        await EnsureSuccessAsync(patchResponse, cancellationToken);
+
+        if (environments is not null && !current.InTestersGroup)
+        {
+            using var add = await CreateRequestAsync(HttpMethod.Post, $"groups/{Uri.EscapeDataString(groupId)}/members/$ref", cancellationToken);
+            add.Content = JsonContent.Create(new Dictionary<string, string> { ["@odata.id"] = $"https://graph.microsoft.com/v1.0/directoryObjects/{objectId}" });
+            using var addResponse = await http.SendAsync(add, cancellationToken);
+            await EnsureSuccessAsync(addResponse, cancellationToken);
+        }
+        else if (environments is null && current.InTestersGroup)
+        {
+            using var remove = await CreateRequestAsync(
+                HttpMethod.Delete, $"groups/{Uri.EscapeDataString(groupId)}/members/{Uri.EscapeDataString(objectId)}/$ref", cancellationToken);
+            using var removeResponse = await http.SendAsync(remove, cancellationToken);
+            if (removeResponse.StatusCode != System.Net.HttpStatusCode.NotFound)
+            {
+                await EnsureSuccessAsync(removeResponse, cancellationToken);
+            }
+        }
+    }
+
+    private (string GroupId, string Attribute) TestAccessSettings()
+    {
+        var graph = options.Value;
+        return graph.TestAccessConfigured
+            ? (graph.TestersGroupId!, graph.EnvironmentAccessAttribute!)
+            : throw new InvalidOperationException("Testtoegang is niet geconfigureerd (Graph__TestersGroupId, Graph__EnvironmentAccessAttribute).");
+    }
+
     private async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string path, CancellationToken cancellationToken)
     {
         var credential = await credentials.GetAsync(cancellationToken);
@@ -109,6 +167,8 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
     private static string Escape(string value) => value.Replace("'", "''", StringComparison.Ordinal);
 
     private sealed record GraphList([property: JsonPropertyName("value")] List<GraphUser> Value);
+
+    private sealed record GraphIdList([property: JsonPropertyName("value")] List<string> Value);
 
     private sealed record GraphUser([property: JsonPropertyName("id")] string Id);
 
@@ -135,6 +195,10 @@ internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
     public Task RevokeSessionsAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
 
     public Task DeleteAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
+
+    public Task<EntraTestAccess> GetTestAccessAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
+
+    public Task SetTestAccessAsync(string objectId, string? environments, CancellationToken cancellationToken) => throw NotConfigured();
 }
 
 /// <summary>

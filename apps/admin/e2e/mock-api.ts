@@ -168,6 +168,9 @@ export class MockApi {
     },
   ];
   erased: string[] = [];
+  testAccess: Record<string, string | null> = {};
+  testAccessAvailable = true;
+  excluded: { memberNumber: string; excludedAt: string; excludedBy: string | null }[] = [];
 
   // Fase 9b: aanmeldingen (lid worden).
   applications = [
@@ -708,6 +711,26 @@ export class MockApi {
       this.provisioning = this.provisioning.filter((p) => p.id !== m![1]);
       return noContent();
     }
+    if (path === '/admin/members/excluded' && method === 'GET') {
+      return json(this.excluded);
+    }
+    if ((m = path.match(/^\/admin\/members\/excluded\/([^/]+)$/)) && method === 'DELETE') {
+      this.excluded = this.excluded.filter((e) => e.memberNumber !== m![1]);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/remove$/)) && method === 'POST') {
+      if (body.confirmation !== 'VERWIJDEREN') {
+        return json({ status: 422, detail: 'Typ ter bevestiging "VERWIJDEREN".', code: 'VALIDATION_FAILED' }, 422);
+      }
+      const member = this.members.find((x) => x.id === m![1])!;
+      this.members = this.members.filter((x) => x !== member);
+      this.excluded.unshift({
+        memberNumber: member.memberNumber,
+        excludedAt: new Date().toISOString(),
+        excludedBy: 'Test Bestuurder',
+      });
+      return json({ memberNumber: member.memberNumber, accounts: member.hasAccount ? 1 : 0, applications: 0 });
+    }
     if ((m = path.match(/^\/admin\/members\/([^/]+)\/account$/)) && method === 'DELETE') {
       const member = this.members.find((x) => x.id === m![1])!;
       member.hasAccount = false;
@@ -729,6 +752,21 @@ export class MockApi {
         completedAt: null,
       });
       return json({ provisioningId: `p-${member.id}` }, 202);
+    }
+    if ((m = path.match(/^\/admin\/users\/([^/]+)\/test-access$/))) {
+      if (method === 'PUT') {
+        this.testAccess[m[1]!] = body.granted ? 'dev,acc' : null;
+      }
+      const environments = this.testAccess[m[1]!] ?? null;
+      return json({
+        available: this.testAccessAvailable,
+        environment: 'dev',
+        grant: 'dev,acc',
+        hasSignIn: true,
+        inTestersGroup: environments !== null,
+        environments,
+        hasAccessHere: environments !== null,
+      });
     }
     if ((m = path.match(/^\/admin\/users\/([^/]+)\/devices$/))) {
       return json(m[1] === 'u-jan' ? this.devices : []);

@@ -291,6 +291,15 @@ export function useSyncJobItems(id: string, action: SyncItemAction | '', page: n
   });
 }
 
+export function useExcludedMembers(enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['excluded-members'],
+    enabled,
+    queryFn: async () => required((await api.GET('/api/v1/admin/members/excluded')).data),
+  });
+}
+
 export function useSyncConflicts(enabled = true) {
   const api = useApi();
   return useQuery({
@@ -409,6 +418,18 @@ export function useUserDevices(id: string, enabled: boolean) {
     queryKey: ['user-devices', id],
     enabled,
     queryFn: async () => required((await api.GET('/api/v1/admin/users/{id}/devices', { params: { path: { id } } })).data),
+  });
+}
+
+export type TestAccessStatus = Schemas['TestAccessStatus'];
+
+export function useTestAccess(id: string, enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['test-access', id],
+    enabled,
+    retry: false,
+    queryFn: async () => required((await api.GET('/api/v1/admin/users/{id}/test-access', { params: { path: { id } } })).data),
   });
 }
 

@@ -2314,6 +2314,208 @@
         }
       }
     },
+    "/api/v1/admin/members/{id}/remove": {
+      "post": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Eén lid volledig uit de app verwijderen (recht `member.privacy`, typ \"VERWIJDEREN\"): accounts, gegevens en het lid\nzelf; het lidnummer wordt uitgesloten van de sync. e-Boekhouden blijft ongemoeid.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRemovalRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRemovalRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRemovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRemovalResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRemovalResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRemovalResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/excluded": {
+      "get": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Lidnummers die de sync overslaat (volledig uit de app verwijderd, nog in e-Boekhouden).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExcludedMemberResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExcludedMemberResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExcludedMemberResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/excluded/{memberNumber}": {
+      "delete": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "parameters": [
+          {
+            "name": "memberNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/membership-applications": {
       "get": {
         "tags": [
@@ -4914,6 +5116,165 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/test-access": {
+      "get": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "summary": "Toegang tot de testomgeving (Dev/Acc): groep Testers + environmentAccess, in plaats van set-tester.sh.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestAccessStatus"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestAccessStatus"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestAccessStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminUsers"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTestAccessRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTestAccessRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTestAccessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestAccessStatus"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestAccessStatus"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestAccessStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "409": {
             "description": "Conflict",
@@ -8145,6 +8506,29 @@
           }
         }
       },
+      "ExcludedMemberResponse": {
+        "required": [
+          "memberNumber",
+          "excludedAt",
+          "excludedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "memberNumber": {
+            "type": "string"
+          },
+          "excludedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "excludedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "FeatureFlagRequest": {
         "required": [
           "enabled",
@@ -8931,6 +9315,38 @@
             "format": "int32"
           },
           "unlinkedAccounts": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MemberRemovalRequest": {
+        "required": [
+          "confirmation"
+        ],
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          }
+        }
+      },
+      "MemberRemovalResponse": {
+        "required": [
+          "memberNumber",
+          "accounts",
+          "applications"
+        ],
+        "type": "object",
+        "properties": {
+          "memberNumber": {
+            "type": "string"
+          },
+          "accounts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "applications": {
             "type": "integer",
             "format": "int32"
           }
@@ -10555,6 +10971,17 @@
           }
         }
       },
+      "SetTestAccessRequest": {
+        "required": [
+          "granted"
+        ],
+        "type": "object",
+        "properties": {
+          "granted": {
+            "type": "boolean"
+          }
+        }
+      },
       "SetUserRolesRequest": {
         "required": [
           "roles"
@@ -10658,7 +11085,8 @@
           "Reactivated",
           "Warning",
           "Error",
-          "Conflict"
+          "Conflict",
+          "Excluded"
         ]
       },
       "SyncJobItemResponse": {
@@ -10820,6 +11248,47 @@
           "Scheduled",
           "Manual"
         ]
+      },
+      "TestAccessStatus": {
+        "required": [
+          "available",
+          "environment",
+          "grant",
+          "hasSignIn",
+          "inTestersGroup",
+          "environments",
+          "hasAccessHere"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "environment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "grant": {
+            "type": "string"
+          },
+          "hasSignIn": {
+            "type": "boolean"
+          },
+          "inTestersGroup": {
+            "type": "boolean"
+          },
+          "environments": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasAccessHere": {
+            "type": "boolean"
+          }
+        }
       },
       "UpdateRoleRequest": {
         "required": [

@@ -67,6 +67,7 @@ export const syncItemActionLabels: Record<string, string> = {
   Warning: 'Waarschuwing',
   Error: 'Fout',
   Conflict: 'Conflict',
+  Excluded: 'Uitgesloten',
 };
 
 export const syncConflictTypeLabels: Record<string, string> = {

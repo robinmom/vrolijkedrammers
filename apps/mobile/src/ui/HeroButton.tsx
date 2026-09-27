@@ -18,10 +18,7 @@ export function HeroButton({ icon, accessibilityLabel, onPress, opacity = 0.22, 
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       hitSlop={4}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: `rgba(255,255,255,${pressed ? opacity + 0.12 : opacity})` },
-      ]}
+      style={({ pressed }) => [styles.button, { backgroundColor: `rgba(255,255,255,${pressed ? opacity + 0.12 : opacity})` }]}
     >
       <Icon name={icon} size={iconSize} color="#FFFFFF" />
     </Pressable>

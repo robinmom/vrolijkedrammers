@@ -14,11 +14,7 @@ export function RichText({ html }: { html: string }) {
         const content = block.spans.map((span, i) => (
           <Text
             key={i}
-            style={[
-              span.bold && styles.bold,
-              span.italic && styles.italic,
-              span.href ? { color: colors.linkText, textDecorationLine: 'underline' } : null,
-            ]}
+            style={[span.bold && styles.bold, span.italic && styles.italic, span.href ? { color: colors.linkText, textDecorationLine: 'underline' } : null]}
             onPress={span.href ? () => Linking.openURL(span.href as string) : undefined}
             accessibilityRole={span.href ? 'link' : undefined}
           >

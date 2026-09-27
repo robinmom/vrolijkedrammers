@@ -10,15 +10,7 @@ interface HeaderAction {
 }
 
 /** Grote paginatitel (Figma 02/03/05) met optionele ondertitel en actie-iconen. */
-export function LargeTitleHeader({
-  title,
-  subtitle,
-  actions = [],
-}: {
-  title: string;
-  subtitle?: string;
-  actions?: HeaderAction[];
-}) {
+export function LargeTitleHeader({ title, subtitle, actions = [] }: { title: string; subtitle?: string; actions?: HeaderAction[] }) {
   const { colors } = useTheme();
   return (
     <View style={styles.container}>

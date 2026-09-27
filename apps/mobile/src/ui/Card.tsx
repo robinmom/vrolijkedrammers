@@ -5,9 +5,7 @@ import { useTheme } from '../theme/ThemeProvider';
 /** Witte kaart met Figma-schaduw (0 4 16, docs/17 §2). */
 export function Card({ style, ...rest }: ViewProps) {
   const { colors } = useTheme();
-  return (
-    <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }, style]} {...rest} />
-  );
+  return <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }, style]} {...rest} />;
 }
 
 const styles = StyleSheet.create({

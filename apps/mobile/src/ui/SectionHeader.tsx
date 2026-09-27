@@ -3,15 +3,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { AppText } from './AppText';
 
 /** Sectiekop met optionele link ("Alles", "Meer"), Figma 01 Home. */
-export function SectionHeader({
-  title,
-  linkLabel,
-  onLinkPress,
-}: {
-  title: string;
-  linkLabel?: string;
-  onLinkPress?: () => void;
-}) {
+export function SectionHeader({ title, linkLabel, onLinkPress }: { title: string; linkLabel?: string; onLinkPress?: () => void }) {
   const { colors } = useTheme();
   return (
     <View style={styles.row}>

@@ -13,11 +13,7 @@ export function OfflineBanner() {
     return null;
   }
   return (
-    <View
-      style={[styles.banner, { paddingTop: insets.top + 6 }]}
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-    >
+    <View style={[styles.banner, { paddingTop: insets.top + 6 }]} accessibilityRole="alert" accessibilityLiveRegion="polite">
       <AppText variant="label" color="#FFFFFF" style={styles.text}>
         Je bent offline. Je ziet de laatst geladen gegevens.
       </AppText>
@@ -26,14 +22,6 @@ export function OfflineBanner() {
 }
 
 const styles = StyleSheet.create({
-  banner: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: brand.navy,
-    paddingBottom: 8,
-    paddingHorizontal: 20,
-  },
+  banner: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: brand.navy, paddingBottom: 8, paddingHorizontal: 20 },
   text: { textAlign: 'center' },
 });

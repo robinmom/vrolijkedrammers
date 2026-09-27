@@ -18,15 +18,8 @@ interface InfoRowProps {
 /** Regel met gekleurd icoonvlak, titel en detail (Figma 06 Activiteit detail). */
 export function InfoRow({ icon, tint, title, detail, onDetailPress, detailAccessibilityLabel }: InfoRowProps) {
   const { colors, mode } = useTheme();
-  const bubble = { red: colors.tintRed, blue: colors.tintBlue, yellow: colors.tintYellow, green: colors.tintGreen }[
-    tint
-  ];
-  const iconColor = {
-    red: brand.red,
-    blue: mode === 'dark' ? '#5AB0E6' : brand.blue,
-    yellow: brand.yellow,
-    green: brand.green,
-  }[tint];
+  const bubble = { red: colors.tintRed, blue: colors.tintBlue, yellow: colors.tintYellow, green: colors.tintGreen }[tint];
+  const iconColor = { red: brand.red, blue: mode === 'dark' ? '#5AB0E6' : brand.blue, yellow: brand.yellow, green: brand.green }[tint];
   return (
     <View style={styles.row}>
       <View style={[styles.bubble, { backgroundColor: bubble }]}>
@@ -35,12 +28,7 @@ export function InfoRow({ icon, tint, title, detail, onDetailPress, detailAccess
       <View style={styles.text}>
         <AppText variant="bodyStrong">{title}</AppText>
         {detail && onDetailPress ? (
-          <Pressable
-            onPress={onDetailPress}
-            accessibilityRole="link"
-            accessibilityLabel={detailAccessibilityLabel ?? detail}
-            hitSlop={10}
-          >
+          <Pressable onPress={onDetailPress} accessibilityRole="link" accessibilityLabel={detailAccessibilityLabel ?? detail} hitSlop={10}>
             <AppText variant="caption" color={colors.linkText} style={styles.link}>
               {detail}
             </AppText>

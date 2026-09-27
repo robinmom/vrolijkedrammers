@@ -21,11 +21,7 @@ export function Screen({ children, onRefresh, refreshing = false, hero }: Screen
         contentContainerStyle={styles.content}
         // Knoppen reageren meteen, ook als het toetsenbord open staat (formulieren).
         keyboardShouldPersistTaps="handled"
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={hero ? '#FFFFFF' : undefined} />
-          ) : undefined
-        }
+        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={hero ? '#FFFFFF' : undefined} /> : undefined}
       >
         {children}
       </ScrollView>

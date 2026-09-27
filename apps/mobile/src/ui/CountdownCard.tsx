@@ -83,13 +83,6 @@ const styles = StyleSheet.create({
   },
   title: { fontFamily: 'Inter_500Medium' },
   row: { flexDirection: 'row', gap: 8 },
-  tile: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderRadius: radius.sm,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
+  tile: { flex: 1, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: radius.sm, paddingVertical: 8, paddingHorizontal: 4 },
   unit: { fontFamily: 'Inter_400Regular', textTransform: 'none' },
 });

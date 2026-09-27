@@ -17,10 +17,7 @@ export function SettingsList({ items }: { items: SettingsItem[] }) {
     <Card style={styles.card}>
       {items.map((item, index) => {
         const last = index === items.length - 1;
-        const rowStyle = [
-          styles.row,
-          !last && { borderBottomWidth: StyleSheet.hairlineWidth * 2, borderBottomColor: colors.border },
-        ];
+        const rowStyle = [styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth * 2, borderBottomColor: colors.border }];
         if (item.type === 'toggle') {
           return (
             <View key={item.key} style={rowStyle}>
@@ -39,14 +36,7 @@ export function SettingsList({ items }: { items: SettingsItem[] }) {
         }
         if (item.type === 'choice') {
           return (
-            <Pressable
-              key={item.key}
-              onPress={item.onPress}
-              accessibilityRole="radio"
-              accessibilityLabel={item.label}
-              accessibilityState={{ checked: item.selected }}
-              style={rowStyle}
-            >
+            <Pressable key={item.key} onPress={item.onPress} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: item.selected }} style={rowStyle}>
               <AppText variant="body" style={styles.label}>
                 {item.label}
               </AppText>

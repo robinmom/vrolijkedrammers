@@ -15,15 +15,7 @@ interface NewsItemProps {
 }
 
 /** Uitgelicht bericht bovenaan Nieuws (Figma 03). */
-export function FeaturedNewsCard({
-  id,
-  title,
-  imageUrl,
-  summary,
-  category,
-  date,
-  onPress,
-}: NewsItemProps & { summary: string | null; category: string | null; date: string }) {
+export function FeaturedNewsCard({ id, title, imageUrl, summary, category, date, onPress }: NewsItemProps & { summary: string | null; category: string | null; date: string }) {
   const { colors } = useTheme();
   return (
     <Card style={styles.featured}>
@@ -55,29 +47,13 @@ export function FeaturedNewsCard({
  * Nieuwsregel. `home` (Figma 01): datum in rood boven de titel, afbeelding 72.
  * `list` (Figma 03): categorie, titel en korte datum, afbeelding 76.
  */
-export function NewsRow({
-  id,
-  title,
-  imageUrl,
-  overline,
-  date,
-  variant,
-  onPress,
-}: NewsItemProps & { overline: string | null; date?: string; variant: 'home' | 'list' }) {
+export function NewsRow({ id, title, imageUrl, overline, date, variant, onPress }: NewsItemProps & { overline: string | null; date?: string; variant: 'home' | 'list' }) {
   const { colors } = useTheme();
   const size = variant === 'home' ? 72 : 76;
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={[overline, title, date].filter(Boolean).join(', ')}
-    >
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={[overline, title, date].filter(Boolean).join(', ')}>
       <Card style={styles.row}>
-        <RemoteImage
-          uri={imageUrl}
-          cacheKey={`news-${id}`}
-          style={{ width: size, height: size, borderRadius: radius.sm }}
-        />
+        <RemoteImage uri={imageUrl} cacheKey={`news-${id}`} style={{ width: size, height: size, borderRadius: radius.sm }} />
         <View style={styles.rowBody}>
           {overline ? (
             <AppText variant="overline" color={colors.accentText}>

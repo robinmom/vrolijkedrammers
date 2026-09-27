@@ -43,15 +43,7 @@ describe.each<ThemeMode>(['light', 'dark'])('snapshots in thema %s', (mode) => {
 
 describe('EventCard', () => {
   it('heeft één toegankelijk label met titel, datum, tijd en locatie', async () => {
-    await renderIn(
-      'light',
-      <EventCard
-        title="Prinsenbal"
-        date={{ weekday: 'ZA', day: '21', month: 'NOV' }}
-        time="20:00 uur"
-        location="Feestzaal De Drammer"
-      />,
-    );
+    await renderIn('light', <EventCard title="Prinsenbal" date={{ weekday: 'ZA', day: '21', month: 'NOV' }} time="20:00 uur" location="Feestzaal De Drammer" />);
     expect(screen.getByRole('button', { name: 'Prinsenbal, ZA 21 NOV, 20:00 uur, Feestzaal De Drammer' })).toBeTruthy();
   });
 });
@@ -108,17 +100,7 @@ describe('tintSvg', () => {
   });
 
   it('bevat alle iconen die de componenten gebruiken', async () => {
-    for (const name of [
-      'home',
-      'programma',
-      'optocht',
-      'nieuws',
-      'meer',
-      'chevron',
-      'klok',
-      'locatie',
-      'plus',
-    ] as const) {
+    for (const name of ['home', 'programma', 'optocht', 'nieuws', 'meer', 'chevron', 'klok', 'locatie', 'plus'] as const) {
       expect(icons[name]).toContain('<svg');
     }
   });

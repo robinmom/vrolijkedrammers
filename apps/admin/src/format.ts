@@ -136,3 +136,28 @@ export const provisioningStepLabels: Record<string, string> = {
   Failed: 'Mislukt',
   EbCreated: 'In e-Boekhouden aangemaakt',
 };
+
+export const applicationStatusLabels: Record<string, string> = {
+  Draft: 'Concept',
+  Submitted: 'Nieuw',
+  InReview: 'In behandeling',
+  Approved: 'Goedgekeurd',
+  Provisioning: 'Wordt verwerkt',
+  ProvisioningFailed: 'Verwerken mislukt',
+  Activated: 'Lid geworden',
+  Rejected: 'Afgewezen',
+  Withdrawn: 'Ingetrokken',
+};
+
+export const applicationStatusTone: Record<string, string> = {
+  Submitted: 'warn',
+  InReview: 'info',
+  Approved: 'info',
+  Provisioning: 'info',
+  ProvisioningFailed: 'error',
+  Activated: 'ok',
+  Rejected: 'neutral',
+  Withdrawn: 'neutral',
+};
+
+export const applicationSourceLabels: Record<string, string> = { App: 'App', Website: 'Website', Portal: 'Beheerportal' };

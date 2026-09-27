@@ -55,7 +55,7 @@
 | OQ-12 | Grens 10 bij loopgroepen | IMPORTANT | 11 | 🟡 |
 | OQ-13 | Onderwerp verplicht | IMPORTANT | 11 | 🟡 |
 | OQ-14 | Verplichte documenten per categorie | IMPORTANT | 11 | 🟡 |
-| OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟡 |
+| OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟢 besloten 2026-09-27: lid vanaf 5 jaar (dansgarde); eigen account vanaf 16, jonger via de ouder/verzorger (rol Ouder) |
 | OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟡 |
 | OQ-21 | Bandjesbeleid | IMPORTANT | 14 | 🟡 |
 | OQ-22 | Pasfoto in scanner | LATER | — | 🟡 |
@@ -69,7 +69,7 @@
 | OQ-42 | Ontbrekende Figma-schermen | IMPORTANT | 6/9/11/13/14 | 🟡 |
 | OQ-43 | Nieuwsbrief e-maildienst | LATER | — | 🟡 |
 | OQ-44 | 4-ogenprincipe push | IMPORTANT | 10 | 🟢 voorstel |
-| OQ-45 | Bot-bescherming openbare formulieren | IMPORTANT | 9 | 🟢 voorstel |
+| OQ-45 | Bot-bescherming openbare formulieren | IMPORTANT | 9 | 🟡 2026-09-27: voorlopig e-mailcode + rate limit + handmatige goedkeuring; Turnstile vóór productie (fase 7) |
 | OQ-50 | Privacyverklaring en verwerkersovereenkomsten | IMPORTANT | 7 (go-live) | 🟡 |
 | OQ-52 | Onderhoud en support | IMPORTANT | 7 (go-live) | 🟡 |
 | OQ-60 | SQL-firewall versus Functions-IP's | → opgelost door B-01 | — | 🟢 |

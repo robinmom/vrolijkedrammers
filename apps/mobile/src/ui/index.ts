@@ -5,6 +5,7 @@ export { Badge } from './Badge';
 export type { BadgeVariant } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
+export { CheckboxRow } from './CheckboxRow';
 export { CountdownCard } from './CountdownCard';
 export { DateBlock } from './DateBlock';
 export { EventCard } from './EventCard';

@@ -16,6 +16,16 @@
 | AVG-export | App → Mijn gegevens → Mijn gegevens downloaden: JSON met alle gegevens, 24 uur te downloaden; na 2 dagen opgeruimd (lifecycle-regel). |
 | Welkomstmail | Azure Communication Services, afzender `DoNotReply@…azurecomm.net` (eigen domein in fase 7). Legt uit: eerste keer "Maak er een" met dit e-mailadres, daarna steeds een code. **De tekst is een concept; het bestuur keurt hem goed** (`MemberAccounts.WelcomeMail`). |
 
+### Lid worden (fase 9b)
+
+| Onderdeel | Werking |
+|---|---|
+| Formulier | In de app (Meer → Lid worden → Aanmelden) en op de webpagina **`/lid-worden`** (bijv. `https://app-dvd-api-dev.azurewebsites.net/lid-worden/`, te linken vanaf de website). Lid worden vanaf 5 jaar; **onder de 16** vult de ouder/verzorger het in en krijgt die het account (rol Ouder). IBAN + doorlopende SEPA-machtiging zijn verplicht. |
+| Bevestigen | Code van 6 cijfers per e-mail (30 minuten, 5 pogingen). Pas daarna staat de aanmelding bij het bestuur. Rate limit per IP; Turnstile volgt vóór productie (OQ-45). |
+| Beoordelen | **Beheerportal → Aanmeldingen** (recht `member.approve`): in behandeling nemen, goedkeuren of afwijzen met reden, interne notities. IBAN alleen gemaskeerd zichtbaar. |
+| Na goedkeuring | Saga: lid in e-Boekhouden (`POST /v1/member`, met machtiging `D`, kenmerk `DVD-…`, vrije velden volgens de mapping), lokaal lid, account (lid of ouder + relatie), welkomstmail. Daarna worden IBAN en rekeninghouder **gewist**. Mislukt een stap: status "Verwerken mislukt" met **Opnieuw proberen** (geen dubbel lid; e-Boekhouden wordt eerst doorzocht op e-mail + naam). |
+| Dev | `EBoekhouden__WriteEnabled` staat uit: de stap e-Boekhouden is **gesimuleerd** (lidnummer `SIM…`), omdat Dev de echte administratie gebruikt (OQ-04). Een ledensync markeert zo'n lid daarna als "ontbreekt in e-Boekhouden". In Acc/Prod aanzetten met een token met schrijfrechten (OQ-03). |
+
 ## 2. Eenmalig inrichten per omgeving (door de beheerder)
 
 1. **Redirect-URI's van de app bijwerken** (voegt in Dev/Acc de doorstuurpagina voor Expo Go toe):

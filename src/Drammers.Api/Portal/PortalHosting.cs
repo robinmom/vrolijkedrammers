@@ -8,6 +8,12 @@ public static class PortalHosting
 {
     public const string BasePath = "/beheer";
 
+    /// <summary>Openbare webpagina "Lid worden" (fase 9b); statisch, praat met dezelfde API.</summary>
+    public const string JoinPath = "/lid-worden";
+
+    private const string JoinContentSecurityPolicy =
+        "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
     // connect-src: de API (zelfde origin) en de inlogpagina van Entra External ID.
     private const string ContentSecurityPolicy =
         "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.ciamlogin.com; " +
@@ -26,6 +32,11 @@ public static class PortalHosting
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
                 headers.XFrameOptions = "DENY";
             }
+            else if (context.Request.Path.StartsWithSegments(JoinPath))
+            {
+                headers.ContentSecurityPolicy = JoinContentSecurityPolicy;
+                headers.XFrameOptions = "DENY";
+            }
             else
             {
                 headers.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
@@ -40,9 +51,9 @@ public static class PortalHosting
         // /beheer → /beheer/ (Vite gebruikt paden onder de base). Geen route: routing negeert de trailing slash.
         app.Use((context, next) =>
         {
-            if (context.Request.Path.Value == BasePath)
+            if (context.Request.Path.Value is BasePath or JoinPath)
             {
-                context.Response.Redirect($"{BasePath}/{context.Request.QueryString}");
+                context.Response.Redirect($"{context.Request.Path.Value}/{context.Request.QueryString}");
                 return Task.CompletedTask;
             }
 

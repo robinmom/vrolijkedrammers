@@ -31,6 +31,10 @@ public class AuthorizationConventionTests
         $"{nameof(AccountRequestsController)}.{nameof(AccountRequestsController.Submit)}",
         $"{nameof(AppAuthController)}.{nameof(AppAuthController.GetConfig)}",
         $"{nameof(AppAuthController)}.{nameof(AppAuthController.Bridge)}",
+        // Fase 9b: lid worden (openbaar formulier; e-mailcode, rate limit, handmatige goedkeuring).
+        $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Start)}",
+        $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Verify)}",
+        $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.ResendCode)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

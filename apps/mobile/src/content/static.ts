@@ -44,9 +44,21 @@ export const lidWorden: Section[] = [
   },
   {
     heading: 'Aanmelden',
-    paragraphs: ['Aanmelden via de app is binnenkort mogelijk. Tot die tijd kun je contact opnemen met het bestuur.'],
+    paragraphs: [
+      'Lid worden kan vanaf 5 jaar, bijvoorbeeld bij de dansgarde. Ben je jonger dan 16, dan meldt je ouder of verzorger je aan. Het bestuur beoordeelt elke aanmelding; daarna hoor je van ons.',
+    ],
   },
 ];
+
+/** Tekst van de doorlopende SEPA-machtiging (gelijk aan de webpagina /lid-worden). */
+export const mandaatTekst =
+  'Ik geef CV De Vrolijke Drammers toestemming om doorlopende incasso-opdrachten te sturen naar mijn bank om de contributie van mijn rekening af te schrijven, en mijn bank om doorlopend een bedrag van mijn rekening af te schrijven overeenkomstig de opdracht van CV De Vrolijke Drammers. Ben ik het niet eens met een afschrijving, dan kan ik die binnen 8 weken via mijn bank laten terugboeken.';
+
+export const privacyTekst =
+  'Ik ga akkoord met de verwerking van deze gegevens voor het lidmaatschap, zoals beschreven in de privacyverklaring van de vereniging.';
+
+export const fotoTekst =
+  "Foto's waarop het lid te zien is, mogen in de app en op de website van de vereniging worden getoond.";
 
 export const optocht = {
   subtitle: 'Het kleurrijke hoogtepunt van carnaval in Loil',

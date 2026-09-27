@@ -21,6 +21,7 @@ export const queryKeys = {
   me: ['me'] as const,
   myMember: ['me', 'member'] as const,
   myDevices: ['me', 'devices'] as const,
+  myChildren: ['me', 'children'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -90,12 +91,22 @@ export const useMe = () => {
   });
 };
 
-/** Eigen lidgegevens uit e-Boekhouden (read-only). */
-export const useMyMember = () => {
+/** Eigen lidgegevens uit e-Boekhouden (read-only); alleen als het account aan een lid is gekoppeld. */
+export const useMyMember = (enabled = true) => {
   const status = useSessionStatus();
   return useQuery({
     queryKey: queryKeys.myMember,
     queryFn: () => unwrap(api.GET('/api/v1/me/member')),
+    enabled: status === 'signedIn' && enabled,
+  });
+};
+
+/** Kinderen waarvan de gebruiker ouder/verzorger is (fase 9b). */
+export const useMyChildren = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myChildren,
+    queryFn: () => unwrap(api.GET('/api/v1/me/children')),
     enabled: status === 'signedIn',
   });
 };

@@ -844,6 +844,13 @@ legend {
   margin: 0;
 }
 
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
 .details {
   display: grid;
   grid-template-columns: 160px 1fr;

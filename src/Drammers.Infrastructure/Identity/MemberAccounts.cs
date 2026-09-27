@@ -210,7 +210,18 @@ public sealed class MemberAccounts(
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(saga.SourceType, saga.SourceId));
+        if (saga.SourceType == ProvisioningSourceType.MembershipApplication)
+        {
+            // Aanmeldingen hebben een eigen saga (lid in e-Boekhouden eerst).
+            outbox.Enqueue(Members.MembershipApplications.ProvisionMessageType, new Members.MembershipApplications.ProvisionMessage(Guid.Parse(saga.SourceId)));
+            await db.MembershipApplications.Where(a => a.Id == Guid.Parse(saga.SourceId) && a.Status == Modules.Membership.Applications.ApplicationStatus.ProvisioningFailed)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.Status, Modules.Membership.Applications.ApplicationStatus.Provisioning), cancellationToken);
+        }
+        else
+        {
+            outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(saga.SourceType, saga.SourceId));
+        }
+
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("provisioning.retried", "AccountProvisioning", saga.Id.ToString(), null, null), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -250,7 +261,7 @@ public sealed class MemberAccounts(
 
             if (saga.UserId is null)
             {
-                saga.UserId = await CreateOrLinkUserAsync(saga.EntraObjectId, member, loginEmail, cancellationToken);
+                saga.UserId = await CreateOrLinkUserAsync(saga.EntraObjectId, loginEmail, member.FullName, member.Id, DefaultRoles.Lid, cancellationToken);
                 saga.Step = ProvisioningStep.MemberCreated;
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -293,10 +304,24 @@ public sealed class MemberAccounts(
         await email.SendAsync(ExistingAccountMail(address.Trim().ToLowerInvariant(), member.FirstName ?? member.FullName), cancellationToken);
     }
 
-    private async Task<Guid> CreateOrLinkUserAsync(string objectId, Member member, string loginEmail, CancellationToken cancellationToken)
+    /// <summary>
+    /// Zorgt voor een account met deze rol voor dit e-mailadres (fase 9b: nieuw lid of ouder/verzorger). Bestaat er al een
+    /// account met dit adres, dan krijgt dat de rol erbij; anders een account dat wacht op de eerste aanmelding.
+    /// </summary>
+    public async Task<Guid> EnsureAccountAsync(string loginEmail, string displayName, Guid? memberId, string roleCode, CancellationToken cancellationToken)
+    {
+        var email = loginEmail.Trim().ToLowerInvariant();
+        var existing = await db.Users.Where(u => u.Email == email && u.AccountStatus != AccountStatus.Deleted)
+            .Select(u => u.ExternalObjectId).FirstOrDefaultAsync(cancellationToken);
+        var objectId = existing ?? await entra.FindByEmailAsync(email, cancellationToken) ?? PendingObjectId.New();
+        return await CreateOrLinkUserAsync(objectId, email, displayName, memberId, roleCode, cancellationToken);
+    }
+
+    private async Task<Guid> CreateOrLinkUserAsync(
+        string objectId, string loginEmail, string displayName, Guid? memberId, string roleCode, CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        var lidRoleId = await db.Roles.Where(r => r.Code == DefaultRoles.Lid).Select(r => r.Id).SingleAsync(cancellationToken);
+        var roleId = await db.Roles.Where(r => r.Code == roleCode).Select(r => r.Id).SingleAsync(cancellationToken);
         var user = await db.Users.Include(u => u.Roles).SingleOrDefaultAsync(u => u.ExternalObjectId == objectId, cancellationToken);
         if (user is null)
         {
@@ -305,17 +330,27 @@ public sealed class MemberAccounts(
                 Id = IdGenerator.NewId(),
                 ExternalObjectId = objectId,
                 Email = loginEmail,
-                DisplayName = member.FullName,
+                DisplayName = displayName,
                 AccountStatus = AccountStatus.Active,
             };
             db.Users.Add(user);
         }
 
-        // Een bestaand account (bijv. een beheerder die ook lid is) wordt gekoppeld en krijgt de rol Lid erbij.
-        user.MemberId ??= member.Id;
-        if (user.Roles.All(r => r.RoleId != lidRoleId))
+        // Een bestaand account (bijv. een beheerder die ook lid is) wordt gekoppeld en krijgt de rol erbij. Eén account
+        // hoort bij hooguit één lid: een adres dat al bij een ander lid hoort, wordt niet stil overgenomen.
+        if (memberId is { } id)
         {
-            user.Roles.Add(new UserRole { UserId = user.Id, RoleId = lidRoleId, AssignedAt = clock.UtcNow.UtcDateTime });
+            if (user.MemberId is { } other && other != id)
+            {
+                throw new DomainException(ErrorCodes.MemberHasAccount, "Dit e-mailadres hoort al bij het app-account van een ander lid.", DomainErrorKind.Conflict);
+            }
+
+            user.MemberId = id;
+        }
+
+        if (user.Roles.All(r => r.RoleId != roleId))
+        {
+            user.Roles.Add(new UserRole { UserId = user.Id, RoleId = roleId, AssignedAt = clock.UtcNow.UtcDateTime });
         }
 
         user.PermissionsVersion++;

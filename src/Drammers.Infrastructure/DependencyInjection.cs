@@ -152,9 +152,13 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, MemberAccountReminderHandler>();
         services.AddScoped<MyAccount>();
         services.AddScoped<AccountLinker>();
+        services.AddScoped<MembershipApplications>();
+        services.AddScoped<IOutboxMessageHandler, MembershipProvisioningHandler>();
         services.TryAddSingleton<IEmailSender, LoggingEmailSender>();
         services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();
         services.TryAddSingleton<IEBoekhoudenClient, UnconfiguredEBoekhoudenClient>();
+        services.TryAddScoped<IEBoekhoudenWriter>(sp => EBoekhoudenWriterSelector.Select(
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EBoekhoudenOptions>>(), sp.GetRequiredService<IEBoekhoudenClient>()));
         services.TryAddSingleton<IMalwareScanner, NoMalwareScanner>();
         services.TryAddSingleton<IFileStore, UnconfiguredFileStore>();
         return services;

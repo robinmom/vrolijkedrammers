@@ -15,6 +15,9 @@ public sealed class FakeEBoekhouden : IEBoekhoudenClient
 
     public int ClosedSessions { get; private set; }
 
+    /// <summary>Via <c>POST /v1/member</c> aangemaakte leden (fase 9b).</summary>
+    public List<EbNewMember> Created { get; } = [];
+
     public EbMember Add(string memberNumber, string name, string? email = null, string? city = "Loil", string? freeText1 = null, string? freeText2 = null, string? freeText3 = null)
     {
         var member = new EbMember(_nextId++, memberNumber, name, null, "m", "Dorpsstraat 1", "6999 AA", city, "NL", null, null, email,
@@ -48,6 +51,18 @@ public sealed class FakeEBoekhouden : IEBoekhoudenClient
             Task.FromResult<IReadOnlyList<EbMemberReference>>([.. owner._members.Values.OrderBy(m => m.Id).Select(m => new EbMemberReference(m.Id, m.MemberNumber))]);
 
         public Task<EbMember> GetMemberAsync(int id, CancellationToken cancellationToken) => Task.FromResult(owner._members[id]);
+
+        public Task<IReadOnlyList<EbMemberReference>> FindMembersByEmailAsync(string email, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<EbMemberReference>>(
+                [.. owner._members.Values.Where(m => string.Equals(m.EmailAddress, email, StringComparison.OrdinalIgnoreCase)).Select(m => new EbMemberReference(m.Id, m.MemberNumber))]);
+
+        public Task<EbMemberReference> CreateMemberAsync(EbNewMember member, CancellationToken cancellationToken)
+        {
+            owner.Created.Add(member);
+            var number = (owner._nextId + 5000).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var created = owner.Add(number, member.Name, member.EmailAddress, member.City);
+            return Task.FromResult(new EbMemberReference(created.Id, created.MemberNumber));
+        }
 
         public ValueTask DisposeAsync()
         {

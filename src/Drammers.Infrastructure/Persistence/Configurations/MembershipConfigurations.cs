@@ -111,3 +111,50 @@ internal sealed class PrivacyRequestConfiguration : IEntityTypeConfiguration<Dra
         builder.HasIndex(r => r.ExpiresAt).HasFilter("[file_path] IS NOT NULL");
     }
 }
+
+internal sealed class MembershipApplicationConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Applications.MembershipApplication>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Applications.MembershipApplication> builder)
+    {
+        builder.ToTable("MembershipApplication", Schemas.Membership);
+        builder.Property(a => a.Id).ValueGeneratedNever();
+        builder.Property(a => a.FirstName).HasMaxLength(50);
+        builder.Property(a => a.NamePrefix).HasMaxLength(20);
+        builder.Property(a => a.LastName).HasMaxLength(60);
+        builder.Property(a => a.Gender).HasMaxLength(1).IsUnicode(false).IsFixedLength();
+        builder.Property(a => a.AddressLine).HasMaxLength(150);
+        builder.Property(a => a.PostalCode).HasMaxLength(10);
+        builder.Property(a => a.City).HasMaxLength(50);
+        builder.Property(a => a.Email).HasMaxLength(150);
+        builder.Property(a => a.Phone).HasMaxLength(30);
+        builder.Property(a => a.GuardianName).HasMaxLength(100);
+        builder.Property(a => a.GuardianEmail).HasMaxLength(150);
+        builder.Property(a => a.GuardianPhone).HasMaxLength(30);
+        builder.Property(a => a.Iban).HasMaxLength(34).IsUnicode(false);
+        builder.Property(a => a.AccountHolder).HasMaxLength(100);
+        builder.Property(a => a.MandateReference).HasMaxLength(35).IsUnicode(false);
+        builder.HasIndex(a => a.MandateReference).IsUnique();
+        builder.Property(a => a.VerificationCodeHash).HasMaxLength(64).IsUnicode(false);
+        builder.Property(a => a.RejectionReason).HasMaxLength(500);
+        builder.Property(a => a.InternalNotes).HasMaxLength(2000);
+        builder.Property(a => a.IpHash).HasMaxLength(64).IsUnicode(false);
+        builder.HasIndex(a => new { a.Status, a.SubmittedAt });
+        builder.HasOne<Member>().WithMany().HasForeignKey(a => a.ResultingMemberId).OnDelete(DeleteBehavior.SetNull);
+        builder.Ignore(a => a.FullName);
+    }
+}
+
+internal sealed class GuardianRelationConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Guardians.GuardianRelation>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Guardians.GuardianRelation> builder)
+    {
+        builder.ToTable("GuardianRelation", Schemas.Membership);
+        builder.Property(g => g.Id).ValueGeneratedNever();
+        builder.Property(g => g.GuardianName).HasMaxLength(100);
+        builder.Property(g => g.GuardianPhone).HasMaxLength(30);
+        builder.HasIndex(g => new { g.MemberId, g.GuardianUserId }).IsUnique();
+        builder.HasIndex(g => g.GuardianUserId);
+        builder.HasOne<Member>().WithMany().HasForeignKey(g => g.MemberId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Drammers.Modules.Identity.Users.User>().WithMany().HasForeignKey(g => g.GuardianUserId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

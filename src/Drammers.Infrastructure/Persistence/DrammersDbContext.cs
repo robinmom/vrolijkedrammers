@@ -44,6 +44,12 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<PrivacyRequest> PrivacyRequests => Set<PrivacyRequest>();
 
+    public DbSet<Drammers.Modules.Membership.Applications.MembershipApplication> MembershipApplications =>
+        Set<Drammers.Modules.Membership.Applications.MembershipApplication>();
+
+    public DbSet<Drammers.Modules.Membership.Guardians.GuardianRelation> GuardianRelations =>
+        Set<Drammers.Modules.Membership.Guardians.GuardianRelation>();
+
     public DbSet<Member> Members => Set<Member>();
 
     public DbSet<Group> Groups => Set<Group>();

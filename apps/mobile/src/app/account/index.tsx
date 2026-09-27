@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
-import { queryKeys, useMe, useMyMember } from '../../api/queries';
+import { queryKeys, useMe, useMyChildren, useMyMember } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { useSessionStatus } from '../../auth/useSession';
 import { groupFunctionLabels, signOut, statusLabels } from '../../features/account';
@@ -19,8 +19,10 @@ export default function MijnGegevensScreen() {
   const status = useSessionStatus();
   const { colors } = useTheme();
   const me = useMe();
-  const member = useMyMember();
-  const { refreshing, onRefresh } = useRefresh([queryKeys.me, queryKeys.myMember]);
+  // Een ouder/verzorger zonder eigen lidmaatschap heeft geen lidgegevens, wel kinderen.
+  const member = useMyMember(me.data ? me.data.memberId !== null : false);
+  const children = useMyChildren();
+  const { refreshing, onRefresh } = useRefresh([queryKeys.me, queryKeys.myMember, queryKeys.myChildren]);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   if (status === 'signedOut') {
@@ -82,6 +84,24 @@ export default function MijnGegevensScreen() {
               Klopt er iets niet? Geef wijzigingen door aan het secretariaat; zij passen het aan in de
               ledenadministratie.
             </AppText>
+          </Card>
+        ) : null}
+
+        {children.data && children.data.length > 0 ? (
+          <Card style={styles.card}>
+            <AppText variant="sectionHeader" accessibilityRole="header">
+              {me.data?.memberId ? 'Mijn kinderen' : 'Je bent ouder/verzorger van'}
+            </AppText>
+            {children.data.map((child) => (
+              <View key={child.memberNumber} style={[styles.row, { borderTopColor: colors.border }]}>
+                <AppText variant="body" style={styles.flex}>
+                  {child.fullName}
+                </AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  lidnummer {child.memberNumber}
+                </AppText>
+              </View>
+            ))}
           </Card>
         ) : null}
 

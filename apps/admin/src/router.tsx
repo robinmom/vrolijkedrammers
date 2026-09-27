@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 import { Layout } from './components/Layout';
 import { RequirePermission } from './components/RequirePermission';
 import { AccountRequestsPage } from './pages/AccountRequestsPage';
+import { ApplicationDetailPage, ApplicationsPage } from './pages/ApplicationsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
 import { ConfigPage } from './pages/ConfigPage';
@@ -42,6 +43,8 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/leden/$id', component: guarded('member.read', MemberDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/ledensync', component: guarded('import.run', MemberSyncPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/ledensync/$id', component: guarded('import.run', SyncJobPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/aanmeldingen', component: guarded('member.approve', ApplicationsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/aanmeldingen/$id', component: guarded('member.approve', ApplicationDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/accountverzoeken', component: guarded('member.approve', AccountRequestsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/groepen', component: guarded('member.read', GroupsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/groepen/$id', component: guarded('member.read', GroupDetailPage) }),

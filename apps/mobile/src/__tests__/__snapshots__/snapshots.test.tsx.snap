@@ -38,6 +38,7 @@ exports[`snapshot dark 01 Home 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -2171,6 +2172,7 @@ exports[`snapshot dark 02 Programma 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -4501,6 +4503,7 @@ exports[`snapshot dark 03 Nieuws 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -5388,6 +5391,7 @@ exports[`snapshot dark 04 Optocht 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -6889,6 +6893,7 @@ exports[`snapshot dark 05 Meer 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
     >
       <View>
         <View
@@ -9562,6 +9567,7 @@ exports[`snapshot dark 06 Activiteit detail 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -10886,6 +10892,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -11624,6 +11631,7 @@ exports[`snapshot light 01 Home 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -13757,6 +13765,7 @@ exports[`snapshot light 02 Programma 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -16087,6 +16096,7 @@ exports[`snapshot light 03 Nieuws 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -16974,6 +16984,7 @@ exports[`snapshot light 04 Optocht 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -18475,6 +18486,7 @@ exports[`snapshot light 05 Meer 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
     >
       <View>
         <View
@@ -21148,6 +21160,7 @@ exports[`snapshot light 06 Activiteit detail 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />
@@ -22472,6 +22485,7 @@ exports[`snapshot light 07 Foto's 1`] = `
           "paddingBottom": 24,
         }
       }
+      keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
     >
       <RCTRefreshControl />

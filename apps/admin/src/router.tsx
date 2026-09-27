@@ -4,6 +4,7 @@ import { RequirePermission } from './components/RequirePermission';
 import { AccountRequestsPage } from './pages/AccountRequestsPage';
 import { ApplicationDetailPage, ApplicationsPage } from './pages/ApplicationsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
+import { PrivacyRequestsPage } from './pages/PrivacyRequestsPage';
 import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -54,6 +55,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/rollen', component: guarded('role.manage', RolesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/carnavalsjaren', component: guarded('config.manage', CarnivalYearsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/configuratie', component: guarded('config.manage', ConfigPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/avg', component: guarded('member.privacy', PrivacyRequestsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/auditlog', component: guarded('audit.read', AuditLogPage) }),
 ]);
 

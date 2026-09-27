@@ -115,6 +115,7 @@ for (const path of [
   'gebruikers',
   'gebruikers/u-jan',
   'rollen',
+  'avg',
   'carnavalsjaren',
   'configuratie',
   'auditlog',
@@ -363,4 +364,25 @@ test('fase 9b: waarschuwing als het e-mailadres al bij een ander lid hoort', asy
   await open(page, api, 'aanmeldingen/ap-1');
   await expect(page.getByText('E-mailadres al in gebruik')).toBeVisible();
   await expect(page.getByText(/hoort al bij het app-account van Robin Mom \(lidnummer 0608\)/)).toBeVisible();
+});
+
+test('fase 9b-2: AVG — export namens een lid en alle app-gegevens wissen', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'gebruikers/u-jan');
+  const popup = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'Gegevens exporteren' }).click();
+  await (await popup).close();
+
+  await page.getByRole('button', { name: 'Alle app-gegevens wissen' }).click();
+  const dialog = page.getByRole('dialog');
+  const wissen = dialog.getByRole('button', { name: 'Wissen' });
+  await expect(wissen).toBeDisabled();
+  await dialog.getByLabel('Typ WISSEN ter bevestiging').fill('WISSEN');
+  await wissen.click();
+  await expect(page.getByText(/De app-gegevens zijn gewist/)).toBeVisible();
+  expect(api.erased).toEqual(['u-jan']);
+
+  await page.goto('/beheer/avg');
+  await expect(page.getByRole('cell', { name: 'Test Bestuurder' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Het lid zelf (app)' })).toBeVisible();
 });

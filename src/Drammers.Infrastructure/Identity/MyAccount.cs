@@ -18,6 +18,8 @@ public sealed record DeviceRegistration(string InstallationId, DevicePlatform Pl
 
 public sealed record PrivacyExportLink(Guid Id, DateTime ExpiresAt, Uri? DownloadUrl);
 
+public sealed record ErasureResult(int Applications, int AccountRequests, int Logins, int GuardianRelations, int Devices);
+
 /// <summary>
 /// Het eigen account van een lid (fase 9): apparaten, account verwijderen en de AVG-export. Beheerders gebruiken
 /// dezelfde apparaatacties via het portal (intrekken met <c>member.block</c>).
@@ -157,6 +159,57 @@ public sealed class MyAccount(
         }
     }
 
+    // ----- AVG: wissen (bestuur) ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Recht op vergetelheid (AVG art. 17) voor de app: account en inlog weg, plus alle persoonsgegevens die alleen de app
+    /// bewaart (aanmeldingen, accountverzoeken, aanmeldhistorie, apparaten, ouderrelaties). De auditlog blijft (wettelijke
+    /// grondslag). De ledenadministratie in e-Boekhouden valt hier buiten; die past het secretariaat zelf aan.
+    /// </summary>
+    public async Task<ErasureResult> EraseAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.UserNotFound, "Gebruiker niet gevonden.", DomainErrorKind.NotFound);
+        var email = user.Email;
+        var memberId = user.MemberId;
+        var now = clock.UtcNow.UtcDateTime;
+
+        // Eerst het account: dat kan geweigerd worden (laatste beheerder); dan is er nog niets gewist.
+        if (user.AccountStatus != AccountStatus.Deleted)
+        {
+            await DeleteAccountAsync(userId, cancellationToken);
+        }
+
+        var applications = await db.MembershipApplications.Where(a => a.Email == email || a.GuardianEmail == email).ExecuteDeleteAsync(cancellationToken);
+        var accountRequests = await db.AccountRequests.Where(r => r.Email == email || (memberId != null && r.MemberId == memberId)).ExecuteDeleteAsync(cancellationToken);
+        var logins = await db.LoginHistory.Where(l => l.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        var guardianships = await db.GuardianRelations.Where(g => g.GuardianUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        var devices = await db.Devices.Where(d => d.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        foreach (var export in await db.PrivacyRequests.Where(r => r.UserId == userId && r.FilePath != null).ToListAsync(cancellationToken))
+        {
+            await files.DeleteAsync(FileContainers.Exports, export.FilePath!, cancellationToken);
+            export.FilePath = null;
+        }
+
+        db.PrivacyRequests.Add(new PrivacyRequest
+        {
+            Id = IdGenerator.NewId(),
+            UserId = userId,
+            RequestedBy = actor.UserId,
+            SubjectName = user.DisplayName,
+            MemberId = memberId,
+            Type = PrivacyRequestType.Erasure,
+            Status = PrivacyRequestStatus.Completed,
+            RequestedAt = now,
+            CompletedAt = now,
+        });
+        await db.SaveChangesAsync(cancellationToken);
+
+        var result = new ErasureResult(applications, accountRequests, logins, guardianships, devices);
+        await audit.WriteAsync(new AuditEntry("privacy.erased", "User", userId.ToString(), null, JsonSerializer.Serialize(result, Json)), cancellationToken);
+        return result;
+    }
+
     // ----- AVG-export ---------------------------------------------------------------------------------------------
 
     /// <summary>
@@ -171,6 +224,8 @@ public sealed class MyAccount(
         {
             Id = IdGenerator.NewId(),
             UserId = userId,
+            RequestedBy = actor.UserId ?? userId,
+            SubjectName = user.DisplayName,
             MemberId = user.MemberId,
             Type = PrivacyRequestType.Export,
             Status = PrivacyRequestStatus.Requested,
@@ -197,12 +252,12 @@ public sealed class MyAccount(
         return new PrivacyExportLink(request.Id, request.ExpiresAt.Value, await files.GetReadUriAsync(FileContainers.Exports, path, cancellationToken));
     }
 
-    /// <summary>Een verse downloadlink voor een eigen export zolang die niet verlopen is.</summary>
-    public async Task<PrivacyExportLink> GetExportAsync(Guid userId, Guid requestId, CancellationToken cancellationToken)
+    /// <summary>Een verse downloadlink voor een export zolang die niet verlopen is; <paramref name="userId"/> <c>null</c> = bestuur.</summary>
+    public async Task<PrivacyExportLink> GetExportAsync(Guid? userId, Guid requestId, CancellationToken cancellationToken)
     {
         var now = clock.UtcNow.UtcDateTime;
         var request = await db.PrivacyRequests.AsNoTracking()
-            .SingleOrDefaultAsync(r => r.Id == requestId && r.UserId == userId && r.Type == PrivacyRequestType.Export, cancellationToken);
+            .SingleOrDefaultAsync(r => r.Id == requestId && (userId == null || r.UserId == userId) && r.Type == PrivacyRequestType.Export, cancellationToken);
         if (request is not { FilePath: { } path, ExpiresAt: { } expiresAt } || expiresAt <= now)
         {
             throw new DomainException(ErrorCodes.PrivacyExportNotFound, "Deze export bestaat niet (meer). Vraag een nieuwe aan.", DomainErrorKind.NotFound);

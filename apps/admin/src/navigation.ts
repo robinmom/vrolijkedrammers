@@ -25,6 +25,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage', icon: 'rollen', section: 'Beheer' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage', icon: 'jaar', section: 'Beheer' },
   { label: 'Configuratie', to: '/configuratie', permission: 'config.manage', icon: 'instellingen', section: 'Beheer' },
+  { label: 'AVG-verzoeken', to: '/avg', permission: 'member.privacy', icon: 'download', section: 'Beheer' },
   { label: 'Auditlog', to: '/auditlog', permission: 'audit.read', icon: 'audit', section: 'Beheer' },
 ];
 

@@ -26,6 +26,14 @@
 | Na goedkeuring | Saga: lid in e-Boekhouden (`POST /v1/member`, met machtiging `D`, kenmerk `DVD-…`, vrije velden volgens de mapping), lokaal lid, account (lid of ouder + relatie), welkomstmail. Daarna worden IBAN en rekeninghouder **gewist**. Mislukt een stap: status "Verwerken mislukt" met **Opnieuw proberen** (geen dubbel lid; e-Boekhouden wordt eerst doorzocht op e-mail + naam). |
 | Dev | `EBoekhouden__WriteEnabled` staat uit: de stap e-Boekhouden is **gesimuleerd** (lidnummer `SIM…`), omdat Dev de echte administratie gebruikt (OQ-04). Een ledensync markeert zo'n lid daarna als "ontbreekt in e-Boekhouden". In Acc/Prod aanzetten met een token met schrijfrechten (OQ-03). |
 
+### Levenscyclus, AVG en opruimen (fase 9b-2)
+
+| Onderdeel | Werking |
+|---|---|
+| Lid niet meer actief | Na een ledensync of een lokale statuswijziging (geschorst, overleden, inactief) gaat het account uit: de app geeft 403, de inlog in Entra wordt uitgezet en sessies worden ingetrokken. Weer actief = weer aan. Een account met een beheerrol blijft aan. |
+| AVG-verzoeken | **Beheerportal → AVG-verzoeken** (recht `member.privacy`). Namens een lid: **Gebruikers → gebruiker → Privacy**: *Gegevens exporteren* (JSON, 24 uur te downloaden) of *Alle app-gegevens wissen* (typ WISSEN). Wissen raakt e-Boekhouden niet: het secretariaat past de ledenadministratie zelf aan. |
+| Opruimen | Elke nacht om 03:30 volgens de bewaartermijnen in **Configuratie** (tabel `config.RetentionPolicy`). De aantallen staan in de auditlog (`retention.completed`). |
+
 ## 2. Eenmalig inrichten per omgeving (door de beheerder)
 
 1. **Redirect-URI's van de app bijwerken** (voegt in Dev/Acc de doorstuurpagina voor Expo Go toe):

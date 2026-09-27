@@ -68,6 +68,7 @@ public static class DependencyInjection
                 // Alleen op vaste momenten (geen minuutlijkse controles): de serverless database mag de rest pauzeren.
                 services.AddScheduledJob<ContentPublisherJob>(ContentPublisherJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 15), TimeSpan.FromHours(20));
                 services.AddScheduledJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Schedule, TimeSpan.FromHours(20));
+                services.AddScheduledJob<DataRetentionJob>(DataRetentionJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 30), TimeSpan.FromHours(20));
             }
         }
 
@@ -160,6 +161,9 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, MemberAccountReminderHandler>();
         services.AddScoped<MyAccount>();
         services.AddScoped<AccountLinker>();
+        services.AddScoped<AccountLifecycle>();
+        services.TryAddScoped<DataRetentionJob>();
+        services.AddScoped<IOutboxMessageHandler, EntraAccountStateHandler>();
         services.AddScoped<MembershipApplications>();
         services.AddScoped<IOutboxMessageHandler, MembershipProvisioningHandler>();
         services.TryAddSingleton<IEmailSender, LoggingEmailSender>();

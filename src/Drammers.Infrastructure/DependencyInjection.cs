@@ -131,7 +131,8 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OutboxSignalInterceptor>();
         services.AddDbContext<DrammersDbContext>((provider, db) => db
-            .UseSqlServer(connectionString)
+            // Eigen verbinding met herhaalpogingen bij het openen (serverless database die opstart); EF sluit hem.
+            .UseSqlServer(SqlConnectionFactory.Create(connectionString), contextOwnsConnection: true)
             .AddInterceptors(provider.GetRequiredService<AuditableInterceptor>(), provider.GetRequiredService<OutboxSignalInterceptor>()));
 
         services.AddScoped<IAuditLogger, AuditLogger>();

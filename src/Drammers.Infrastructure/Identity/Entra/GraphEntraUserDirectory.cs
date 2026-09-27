@@ -15,15 +15,27 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
 {
     private static readonly string[] Scopes = ["https://graph.microsoft.com/.default"];
 
+    /// <summary>Issuer van een inlog met e-mail + eenmalige code (zelf gemaakt): identity <c>federated</c>, issuer <c>mail</c>.</summary>
+    public const string EmailOtpIssuer = "mail";
+
     public async Task<string?> FindByEmailAsync(string email, CancellationToken cancellationToken)
     {
-        var issuer = options.Value.IssuerDomain;
-        var filter = $"identities/any(i:i/issuerAssignedId eq '{Escape(email)}' and i/issuer eq '{Escape(issuer!)}')";
-        using var request = await CreateRequestAsync(HttpMethod.Get, $"users?$select=id&$filter={Uri.EscapeDataString(filter)}", cancellationToken);
-        using var response = await http.SendAsync(request, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
-        var result = await response.Content.ReadFromJsonAsync<GraphList>(cancellationToken);
-        return result?.Value.FirstOrDefault()?.Id;
+        // Twee vormen: een lokaal account met wachtwoord (issuer = eigen domein) en een inlog met e-mail + code (issuer
+        // "mail"). Graph kent geen "or" tussen twee identities/any-filters, dus twee zoekopdrachten.
+        foreach (var issuer in new[] { EmailOtpIssuer, options.Value.IssuerDomain! })
+        {
+            var filter = $"identities/any(i:i/issuerAssignedId eq '{Escape(email)}' and i/issuer eq '{Escape(issuer)}')";
+            using var request = await CreateRequestAsync(HttpMethod.Get, $"users?$select=id&$filter={Uri.EscapeDataString(filter)}", cancellationToken);
+            using var response = await http.SendAsync(request, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<GraphList>(cancellationToken);
+            if (result?.Value.FirstOrDefault()?.Id is { } id)
+            {
+                return id;
+            }
+        }
+
+        return null;
     }
 
     public async Task<string?> GetSignInEmailAsync(string objectId, CancellationToken cancellationToken)
@@ -37,8 +49,16 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
 
         await EnsureSuccessAsync(response, cancellationToken);
         var user = await response.Content.ReadFromJsonAsync<GraphIdentities>(cancellationToken);
-        return user?.Identities.FirstOrDefault(i => i.SignInType == "emailAddress" && i.Issuer == options.Value.IssuerDomain)?.IssuerAssignedId;
+        return user is null ? null : SignInEmail(user.Identities.Select(i => (i.SignInType, i.Issuer, i.IssuerAssignedId)), options.Value.IssuerDomain!);
     }
+
+    /// <summary>
+    /// Het aanmeld-e-mailadres uit de identities: bij een inlog met e-mail + code <c>federated</c>/<c>mail</c> (door de code
+    /// geverifieerd), bij een lokaal account <c>emailAddress</c>/eigen domein. De UPN (<c>…@…onmicrosoft.com</c>) telt niet.
+    /// </summary>
+    internal static string? SignInEmail(IEnumerable<(string SignInType, string Issuer, string IssuerAssignedId)> identities, string issuerDomain) =>
+        identities.FirstOrDefault(i =>
+            (i.SignInType == "federated" && i.Issuer == EmailOtpIssuer) || (i.SignInType == "emailAddress" && i.Issuer == issuerDomain)).IssuerAssignedId;
 
     public async Task SetAccountEnabledAsync(string objectId, bool enabled, CancellationToken cancellationToken)
     {

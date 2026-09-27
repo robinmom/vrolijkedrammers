@@ -51,11 +51,14 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
             ? await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.DisplayName).SingleOrDefaultAsync(cancellationToken)
             : null;
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        var emailInUseBy = !a.IsMinorOn(today) && a.Status is ApplicationStatus.Submitted or ApplicationStatus.InReview
+            ? await applications.EmailInUseAsync(a.Email, cancellationToken)
+            : null;
         return new ApplicationDetailResponse(
             a.Id, a.Status, a.Source, a.FirstName, a.NamePrefix, a.LastName, a.FullName, a.Gender, a.BirthDate, a.AgeOn(today), a.IsMinorOn(today),
             a.AddressLine, a.PostalCode, a.City, a.Email, a.Phone, a.GuardianName, a.GuardianPhone,
             MembershipApplications.MaskIban(a.Iban), a.AccountHolder, a.MandateReference, a.MandateConsentAt, a.ConsentPrivacyAt, a.ConsentPhoto,
-            a.SubmittedAt, handler, a.HandledAt, a.DecisionAt, a.RejectionReason, a.InternalNotes, a.ResultingMemberId, provisioning);
+            a.SubmittedAt, handler, a.HandledAt, a.DecisionAt, a.RejectionReason, a.InternalNotes, a.ResultingMemberId, provisioning, emailInUseBy);
     }
 
     [HttpPost("{id:guid}/start-review")]
@@ -114,7 +117,8 @@ public sealed record ApplicationDetailResponse(
     string? Gender, DateOnly BirthDate, int Age, bool Minor, string AddressLine, string PostalCode, string City, string Email, string? Phone,
     string? GuardianName, string? GuardianPhone, string? IbanMasked, string? AccountHolder, string MandateReference, DateTime? MandateConsentAt,
     DateTime ConsentPrivacyAt, bool ConsentPhoto, DateTime? SubmittedAt, string? HandledBy, DateTime? HandledAt, DateTime? DecisionAt,
-    string? RejectionReason, string? InternalNotes, Guid? ResultingMemberId, ApplicationProvisioningResponse? Provisioning);
+    string? RejectionReason, string? InternalNotes, Guid? ResultingMemberId, ApplicationProvisioningResponse? Provisioning,
+    string? EmailInUseBy);
 
 public sealed record RejectApplicationRequest([param: Required, StringLength(500, MinimumLength = 3)] string Reason);
 

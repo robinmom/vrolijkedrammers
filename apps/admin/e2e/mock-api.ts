@@ -188,6 +188,7 @@ export class MockApi {
       internalNotes: null as string | null,
       resultingMemberId: null as string | null,
       provisioning: null as Record<string, unknown> | null,
+      emailInUseBy: null as string | null,
     },
   ];
 

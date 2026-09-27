@@ -256,6 +256,31 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
     }
 
     [Fact]
+    public async Task Adres_dat_al_bij_een_ander_lid_hoort_blokkeert_goedkeuren_voordat_er_iets_in_e_Boekhouden_komt()
+    {
+        // Bestaand lid met app-account op hetzelfde adres (zoals lid 0608 in Dev).
+        var (userId, _) = await _api.CreateUserAsync("bezet@example.com", DefaultRoles.Lid);
+        await WithDbAsync(async db =>
+        {
+            var member = new Drammers.Modules.Membership.Members.Member { Id = Guid.NewGuid(), MemberNumber = "0608", FullName = "Robin Bestaand" };
+            db.Members.Add(member);
+            await db.SaveChangesAsync();
+            (await db.Users.SingleAsync(u => u.Id == userId)).MemberId = member.Id;
+            return await db.SaveChangesAsync();
+        });
+        var id = await SubmitAsync(Form("bezet@example.com", 30), "bezet@example.com");
+
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
+        Assert.Equal("Robin Bestaand (lidnummer 0608)", detail.GetProperty("emailInUseBy").GetString());
+        var approve = await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/approve", null);
+
+        Assert.Equal(HttpStatusCode.Conflict, approve.StatusCode);
+        Assert.Contains("hoort al bij het app-account van Robin Bestaand", (await approve.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString(), StringComparison.Ordinal);
+        Assert.Equal(ApplicationStatus.Submitted, await WithDbAsync(db => db.MembershipApplications.Where(a => a.Id == id).Select(a => a.Status).SingleAsync()));
+        Assert.Empty(_eb.Created);
+    }
+
+    [Fact]
     public async Task Alleen_met_member_approve()
     {
         var redactie = _api.ClientFor((await _api.CreateUserAsync("redactie@example.com", DefaultRoles.Redactie)).ObjectId);

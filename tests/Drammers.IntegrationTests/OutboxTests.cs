@@ -22,8 +22,8 @@ public class OutboxTests(SqlServerFixture sql)
         await using var provider = TestServices.Create(connectionString, clock, s => s.AddSingleton<IOutboxMessageHandler>(handler));
         await EnqueueAsync(provider, 35);
 
-        var processorA = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<OutboxProcessor>.Instance);
-        var processorB = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<OutboxProcessor>.Instance);
+        var processorA = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
+        var processorB = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
         while ((await Task.WhenAll(processorA.ProcessBatchAsync(default), processorB.ProcessBatchAsync(default))).Sum() > 0)
         {
         }
@@ -50,7 +50,7 @@ public class OutboxTests(SqlServerFixture sql)
             Assert.Single(claimed);
         }
 
-        var processor = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<OutboxProcessor>.Instance);
+        var processor = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
         Assert.Equal(0, await processor.ProcessBatchAsync(default));
 
         clock.Advance(OutboxProcessor.LockDuration + TimeSpan.FromSeconds(1));
@@ -72,7 +72,7 @@ public class OutboxTests(SqlServerFixture sql)
         var handler = new RecordingHandler { FailFirstAttempt = true };
         await using var provider = TestServices.Create(connectionString, clock, s => s.AddSingleton<IOutboxMessageHandler>(handler));
         await EnqueueAsync(provider, 1);
-        var processor = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<OutboxProcessor>.Instance);
+        var processor = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
 
         await processor.ProcessBatchAsync(default);
         Assert.Equal(0, await processor.ProcessBatchAsync(default));
@@ -81,6 +81,78 @@ public class OutboxTests(SqlServerFixture sql)
 
         Assert.Equal(1, Assert.Single(handler.Handled).Value);
         Assert.Equal(0, await CountUnprocessedAsync(provider));
+    }
+
+    [Fact]
+    public async Task Signaal_pas_na_de_commit_en_niet_bij_rollback_of_zonder_bericht()
+    {
+        var connectionString = await sql.CreateMigratedDatabaseAsync();
+        await using var provider = TestServices.Create(connectionString, new FakeClock(DateTimeOffset.UtcNow));
+        var signal = provider.GetRequiredService<OutboxSignal>();
+        async Task<bool> SignaledAsync() => await signal.WaitAsync(TimeSpan.FromMilliseconds(50), default);
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            scope.ServiceProvider.GetRequiredService<IOutbox>().Enqueue(RecordingHandler.MessageType, new { });
+            await db.SaveChangesAsync();
+            Assert.False(await SignaledAsync());
+            await transaction.CommitAsync();
+            Assert.True(await SignaledAsync());
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            scope.ServiceProvider.GetRequiredService<IOutbox>().Enqueue(RecordingHandler.MessageType, new { });
+            await db.SaveChangesAsync();
+            await transaction.RollbackAsync();
+            Assert.False(await SignaledAsync());
+        }
+
+        // Zonder transactie direct; een wijziging zonder outbox-bericht wekt niemand.
+        await EnqueueAsync(provider, 1);
+        Assert.True(await SignaledAsync());
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            db.FeatureFlags.Add(new Drammers.Infrastructure.Configuration.FeatureFlag { Key = "test-flag", Enabled = false, Description = "test" });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.False(await SignaledAsync());
+    }
+
+    [Fact]
+    public async Task Gepland_bericht_wacht_tot_het_moment_en_de_worker_weet_wanneer_dat_is()
+    {
+        var connectionString = await sql.CreateMigratedDatabaseAsync();
+        var clock = new FakeClock(DateTimeOffset.UtcNow);
+        var handler = new RecordingHandler();
+        await using var provider = TestServices.Create(connectionString, clock, s => s.AddSingleton<IOutboxMessageHandler>(handler));
+        var processor = new OutboxProcessor(provider.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
+        async Task<DateTime?> NextDueAsync()
+        {
+            await using var scope = provider.CreateAsyncScope();
+            return await scope.ServiceProvider.GetRequiredService<IOutboxStore>().NextDueAsync(default);
+        }
+
+        Assert.Null(await NextDueAsync());
+        var at = clock.UtcNow.UtcDateTime.AddHours(2);
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            scope.ServiceProvider.GetRequiredService<IOutbox>().Enqueue(RecordingHandler.MessageType, new { }, notBefore: at);
+            await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().SaveChangesAsync();
+        }
+
+        Assert.Equal(0, await processor.ProcessBatchAsync(default));
+        Assert.Equal(at, (await NextDueAsync())!.Value, TimeSpan.FromMilliseconds(10));
+
+        clock.Advance(TimeSpan.FromHours(2) + TimeSpan.FromSeconds(1));
+        Assert.Equal(1, await processor.ProcessBatchAsync(default));
+        Assert.Null(await NextDueAsync());
     }
 
     private static async Task EnqueueAsync(ServiceProvider provider, int count)

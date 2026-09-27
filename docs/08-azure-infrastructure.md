@@ -32,6 +32,8 @@
 | Entra External ID | Eén tenant `dvd`; app-registraties `*-dev`, alleen testers (user assignment + claim `environmentAccess`) | Idem `*-acc` | App-registraties `*-prod`, alle leden/ouders (B-02) |
 | App Service | Gedeeld B1-plan (dev+acc) of F1 | Gedeeld B1-plan | Eigen B1 (S1/P0v3 tijdens carnaval) |
 | SQL | **Free offer** (100k vCore-s/mnd, auto-pause) | Free offer of Basic (5 DTU) | S1 (20 DTU) of serverless GP 1 vCore |
+
+> **Serverless en de worker (2026-09-27).** Het gratis tegoed (100.000 vCore-seconden per maand) is alleen genoeg als de database bij rust kan pauzeren (na 60 minuten). De worker raakt de database daarom niet meer aan zonder werk: de outbox wordt in hetzelfde proces gewekt na het opslaan van een bericht en slaapt anders tot het eerstvolgende geplande of opnieuw te proberen bericht; geplande publicatie loopt via een outbox-bericht op het publicatiemoment; de ledensync en een inhaalrun voor publicatie draaien alleen om 03:00/03:15; de heartbeat staat in het geheugen. Daarvoor pollde de worker elke 5 seconden, waardoor de database nooit pauzeerde en het tegoed na een paar dagen op was (Dev was toen tot de 1e onbereikbaar). Dev staat sindsdien op `sqlFreeLimitExhaustionBehavior = 'BillOverUsage'`: bij een opgebruikt tegoed doorgaan tegen betaling in plaats van een maand pauzeren.
 | Data | Synthetisch (seed) | Geanonimiseerde kopie of synthetisch — **nooit** productie-PII | Echt |
 | Mollie | Test-key | Test-key | Live-key |
 | e-Boekhouden | Mock (WireMock) / testadministratie | Testadministratie (OQ-04) of read-only prod met dry-run | Prod-token |

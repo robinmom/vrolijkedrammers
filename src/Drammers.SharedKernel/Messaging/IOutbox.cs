@@ -6,5 +6,8 @@ namespace Drammers.SharedKernel.Messaging;
 /// </summary>
 public interface IOutbox
 {
-    void Enqueue(string type, object payload);
+    /// <param name="type">Berichttype; bepaalt de handler.</param>
+    /// <param name="payload">Inhoud, als JSON opgeslagen.</param>
+    /// <param name="notBefore">Pas vanaf dit moment (UTC) verwerken, bijv. geplande publicatie; standaard direct.</param>
+    void Enqueue(string type, object payload, DateTime? notBefore = null);
 }

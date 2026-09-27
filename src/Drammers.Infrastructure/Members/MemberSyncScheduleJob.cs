@@ -8,16 +8,18 @@ using Microsoft.EntityFrameworkCore;
 namespace Drammers.Infrastructure.Members;
 
 /// <summary>
-/// Nachtelijke ledensync (ADR-010, OQ-06): vanaf 03:00 (Loil) één keer per dag, alleen als de feature flag
-/// <c>members-sync</c> aan staat. Controleert elk kwartier; de sync zelf loopt via de outbox.
+/// Nachtelijke ledensync (ADR-010, OQ-06): om 03:00 (Loil) één keer per dag, alleen als de feature flag
+/// <c>members-sync</c> aan staat. De sync zelf loopt via de outbox. Draait alleen op dat moment, zodat een serverless
+/// database de rest van de dag kan pauzeren.
 /// </summary>
 public sealed class MemberSyncScheduleJob(DrammersDbContext db, MemberSync sync, IClock clock) : IRecurringJob
 {
     public const string JobName = "member-sync-schedule";
 
-    public static readonly TimeSpan Interval = TimeSpan.FromMinutes(15);
+    public static readonly TimeZoneInfo Loil = TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam");
 
-    private static readonly TimeZoneInfo Loil = TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam");
+    /// <summary>Elke nacht om 03:00 in Loil.</summary>
+    public static readonly Func<DateTimeOffset, DateTimeOffset> Schedule = JobSchedule.DailyAt(Loil, 3, 0);
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -48,7 +50,7 @@ public sealed class MemberSyncScheduleJob(DrammersDbContext db, MemberSync sync,
         }
         catch (DomainException ex) when (ex.Code == ErrorCodes.SyncAlreadyRunning)
         {
-            // Een handmatige run is bezig; het volgende kwartier opnieuw proberen.
+            // Een handmatige run is bezig; die haalt de leden al op.
         }
     }
 }

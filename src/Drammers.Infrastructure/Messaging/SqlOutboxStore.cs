@@ -45,6 +45,20 @@ internal sealed class SqlOutboxStore(DrammersDbContext db, IClock clock) : IOutb
                 .SetProperty(m => m.LastError, error.Length > 2000 ? error[..2000] : error),
             cancellationToken);
 
+    public async Task<DateTime?> NextDueAsync(CancellationToken cancellationToken)
+    {
+        var pending = db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Attempts < OutboxProcessor.MaxAttempts);
+        if (!await pending.AnyAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        return await pending.AnyAsync(m => m.LockedUntil == null, cancellationToken)
+            ? now
+            : await pending.MinAsync(m => m.LockedUntil, cancellationToken);
+    }
+
     private sealed class ClaimedRow
     {
         public Guid Id { get; set; }

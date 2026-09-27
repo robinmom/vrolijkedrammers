@@ -14,6 +14,10 @@ param sqlAdminGroupName string
 param sqlAdminGroupObjectId string
 param sqlUseFreeOffer bool
 
+@description('Wat de gratis SQL-database doet als het maandtegoed op is (zie modules/sql.bicep).')
+@allowed(['AutoPause', 'BillOverUsage'])
+param sqlFreeLimitExhaustionBehavior string = 'AutoPause'
+
 param keyVaultPurgeProtection bool
 param logDailyQuotaGb int
 
@@ -94,6 +98,7 @@ module sql 'modules/sql.bicep' = {
     adminGroupName: sqlAdminGroupName
     adminGroupObjectId: sqlAdminGroupObjectId
     useFreeOffer: sqlUseFreeOffer
+    freeLimitExhaustionBehavior: sqlFreeLimitExhaustionBehavior
   }
 }
 

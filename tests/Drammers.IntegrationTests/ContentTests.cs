@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Drammers.Infrastructure.Content;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
@@ -98,7 +97,7 @@ public class ContentTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Gepland_nieuws_verschijnt_op_het_publicatiemoment_en_de_job_legt_het_vast()
+    public async Task Gepland_nieuws_verschijnt_op_het_publicatiemoment_en_de_worker_legt_het_dan_vast()
     {
         var created = await _admin.PostAsJsonAsync("/api/v1/admin/news", new
         {
@@ -113,11 +112,17 @@ public class ContentTests(SqlServerFixture sql) : IAsyncLifetime
         var guest = _api.CreateClient();
         Assert.Equal(0, (await guest.GetFromJsonAsync<JsonElement>("/api/v1/news")).GetProperty("totalCount").GetInt32());
 
+        // Geen minuutlijkse controle meer: een outbox-bericht op het publicatiemoment wekt de worker.
+        var processor = new Drammers.Worker.Outbox.OutboxProcessor(
+            _api.Services.GetRequiredService<IServiceScopeFactory>(), new Drammers.Worker.Outbox.OutboxSignal(), TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Drammers.Worker.Outbox.OutboxProcessor>.Instance);
+        Assert.Equal(0, await processor.ProcessBatchAsync(default));
+
         _api.Clock.Advance(TimeSpan.FromMinutes(11));
 
         Assert.Equal(1, (await guest.GetFromJsonAsync<JsonElement>("/api/v1/news")).GetProperty("totalCount").GetInt32());
+        Assert.Equal(1, await processor.ProcessBatchAsync(default));
         using var scope = _api.Services.CreateScope();
-        await ActivatorUtilities.CreateInstance<ContentPublisherJob>(scope.ServiceProvider).ExecuteAsync(default);
         var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
         Assert.Equal(PublicationStatus.Published, (await db.News.SingleAsync(n => n.Id == id)).Status);
         Assert.True(await db.AuditLog.AnyAsync(a => a.Action == "news.published" && a.EntityId == id.ToString()));

@@ -10,6 +10,10 @@ param adminGroupObjectId string
 @description('Gebruik het gratis Azure SQL-aanbod (serverless, pauzeert bij opgebruikte limiet).')
 param useFreeOffer bool
 
+@description('Gratis tegoed op: AutoPause = pauzeren tot de volgende maand; BillOverUsage = doorgaan tegen betaling (de database pauzeert bij rust nog steeds).')
+@allowed(['AutoPause', 'BillOverUsage'])
+param freeLimitExhaustionBehavior string = 'AutoPause'
+
 resource server 'Microsoft.Sql/servers@2025-01-01' = {
   name: 'sql-dvd-${environmentName}'
   location: location
@@ -42,7 +46,7 @@ resource database 'Microsoft.Sql/servers/databases@2025-01-01' = {
   }
   properties: {
     useFreeLimit: useFreeOffer
-    freeLimitExhaustionBehavior: useFreeOffer ? 'AutoPause' : null
+    freeLimitExhaustionBehavior: useFreeOffer ? freeLimitExhaustionBehavior : null
     autoPauseDelay: 60
     minCapacity: json('0.5')
     requestedBackupStorageRedundancy: 'Local'

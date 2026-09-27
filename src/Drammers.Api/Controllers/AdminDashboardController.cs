@@ -15,7 +15,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/admin/dashboard")]
 [RequirePermission(Permissions.ReportView)]
-public sealed class AdminDashboardController(DrammersDbContext db, HealthCheckService health, IClock clock) : ControllerBase
+public sealed class AdminDashboardController(DrammersDbContext db, HealthCheckService health, IClock clock, WorkerHeartbeat workerHeartbeat) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<DashboardResponse>(StatusCodes.Status200OK)]
@@ -25,8 +25,7 @@ public sealed class AdminDashboardController(DrammersDbContext db, HealthCheckSe
         var year = await db.CarnivalYears.AsNoTracking().Where(y => y.Active)
             .Select(y => new { y.Name, y.CarnivalStartDate }).SingleOrDefaultAsync(cancellationToken);
         var report = await health.CheckHealthAsync(c => c.Tags.Contains(DependencyInjection.ReadyTag), cancellationToken);
-        var heartbeat = await db.ScheduledJobs.AsNoTracking().Where(j => j.Name == HeartbeatJob.JobName)
-            .Select(j => j.LastSucceededAt).SingleOrDefaultAsync(cancellationToken);
+        var heartbeat = workerHeartbeat.Last?.UtcDateTime;
 
         return new DashboardResponse(
             await db.Users.CountAsync(u => u.AccountStatus == AccountStatus.Active, cancellationToken),

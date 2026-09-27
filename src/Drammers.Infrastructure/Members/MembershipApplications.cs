@@ -154,6 +154,15 @@ public sealed class MembershipApplications(
             throw Decided();
         }
 
+        // Eén account hoort bij hooguit één lid: vóór het aanmaken in e-Boekhouden controleren, niet halverwege de saga.
+        var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        if (!application.IsMinorOn(today) && await EmailInUseAsync(application.Email, cancellationToken) is { } other)
+        {
+            throw new DomainException(ErrorCodes.MemberHasAccount,
+                $"Het e-mailadres {application.Email} hoort al bij het app-account van {other}. Vraag de aanvrager om een eigen e-mailadres (of wijs de aanmelding af).",
+                DomainErrorKind.Conflict);
+        }
+
         var now = clock.UtcNow.UtcDateTime;
         application.Status = ApplicationStatus.Approved;
         application.HandledBy ??= actor.UserId;
@@ -206,6 +215,16 @@ public sealed class MembershipApplications(
         outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(id));
         await SaveWithAuditAsync("membership-application.retried", application, null, cancellationToken);
     }
+
+    /// <summary>
+    /// Naam en lidnummer van het lid wiens app-account dit e-mailadres al gebruikt, of <c>null</c>. Een ouderaccount zonder
+    /// eigen lidmaatschap telt niet: dat account kan de rol Lid er zonder probleem bij krijgen.
+    /// </summary>
+    public async Task<string?> EmailInUseAsync(string email, CancellationToken cancellationToken) =>
+        await db.Users.AsNoTracking()
+            .Where(u => u.Email == email && u.AccountStatus != Modules.Identity.Users.AccountStatus.Deleted && u.MemberId != null)
+            .Join(db.Members, u => u.MemberId, m => m.Id, (u, m) => m.FullName + " (lidnummer " + m.MemberNumber + ")")
+            .FirstOrDefaultAsync(cancellationToken);
 
     // ----- Saga (worker) ------------------------------------------------------------------------------------------
 

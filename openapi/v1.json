@@ -6808,7 +6808,8 @@
           "rejectionReason",
           "internalNotes",
           "resultingMemberId",
-          "provisioning"
+          "provisioning",
+          "emailInUseBy"
         ],
         "type": "object",
         "properties": {
@@ -6967,6 +6968,12 @@
               {
                 "$ref": "#/components/schemas/ApplicationProvisioningResponse"
               }
+            ]
+          },
+          "emailInUseBy": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }

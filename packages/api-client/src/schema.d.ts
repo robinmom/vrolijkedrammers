@@ -5320,6 +5320,7 @@ export interface components {
             /** Format: uuid */
             resultingMemberId: null | string;
             provisioning: null | components["schemas"]["ApplicationProvisioningResponse"];
+            emailInUseBy: null | string;
         };
         ApplicationNotesRequest: {
             notes: null | string;

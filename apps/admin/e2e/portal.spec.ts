@@ -356,3 +356,11 @@ test('fase 9b: aanmelding afwijzen met reden', async ({ page }) => {
   await expect(page.getByText('De aanmelding is afgewezen; de bankgegevens zijn gewist.')).toBeVisible();
   expect(api.applications[0]!.rejectionReason).toBe('Woont buiten de regio');
 });
+
+test('fase 9b: waarschuwing als het e-mailadres al bij een ander lid hoort', async ({ page }) => {
+  const api = new MockApi();
+  api.applications[0]!.emailInUseBy = 'Robin Mom (lidnummer 0608)';
+  await open(page, api, 'aanmeldingen/ap-1');
+  await expect(page.getByText('E-mailadres al in gebruik')).toBeVisible();
+  await expect(page.getByText(/hoort al bij het app-account van Robin Mom \(lidnummer 0608\)/)).toBeVisible();
+});

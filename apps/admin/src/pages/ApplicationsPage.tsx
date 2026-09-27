@@ -5,6 +5,7 @@ import { useApiMutation, useApplication, useApplications, type ApplicationStatus
 import { DataTable, columnHelper } from '../components/DataTable';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
+import { Icon } from '../components/Icon';
 import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import {
@@ -181,6 +182,18 @@ export function ApplicationDetailPage() {
         ) : null}
       </div>
       <SuccessMessage message={message} />
+      {a.emailInUseBy ? (
+        <div className="alert alert-warning banner" role="status">
+          <Icon name="waarschuwing" size={22} />
+          <div className="banner-text">
+            <strong>E-mailadres al in gebruik</strong>
+            <p>
+              {a.email} hoort al bij het app-account van {a.emailInUseBy}. Eén account hoort bij één lid; goedkeuren kan pas met een
+              eigen e-mailadres. Vraag de aanvrager om opnieuw aan te melden met een ander adres, of wijs de aanmelding af.
+            </p>
+          </div>
+        </div>
+      ) : null}
       <ProblemAlert error={startReview.error ?? approve.error ?? reject.error ?? retry.error ?? saveNotes.error} />
 
       <div className="columns">

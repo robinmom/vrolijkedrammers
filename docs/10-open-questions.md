@@ -80,7 +80,7 @@
 | OQ-65 | Malwarescan: Defender for Storage of fallback | IMPORTANT | 5 (eerste upload) | 🟡 |
 | OQ-66 | Contrastaanpassingen design tokens (designer) | IMPORTANT | 0 / 6 | 🟢 toegankelijke varianten |
 | OQ-67 | Custom domains (api./beheer./login.) | IMPORTANT | 7 | 🟡 |
-| OQ-68 | Haalbaarheid hardware-sleutel (Expo native module) | IMPORTANT | 9 (spike) / 13 | 🟡 |
+| OQ-68 | Haalbaarheid hardware-sleutel (Expo native module) | IMPORTANT | 9 (spike) / 13 | 🟡 voorlopig GO (fase 9c), metingen op toestellen open |
 | OQ-69 | Kosten Conditional Access/MFA in external tenant | IMPORTANT | 3 | 🟢 vervallen (B-02-MFA: geen CA) |
 | OQ-70 | Releasevolgorde | → B-07 | 0 | 🟢 n.v.t. (B-07) |
 | OQ-71 | Pronkzitting 2027 via de app | IMPORTANT | 13 | 🟡 |

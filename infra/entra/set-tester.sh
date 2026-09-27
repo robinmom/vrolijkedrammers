@@ -11,12 +11,19 @@ ACCESS="${2:-}"
 [[ -z "$ACCESS" || "$ACCESS" =~ ^(dev|acc)(,(dev|acc))?$ ]] || { echo "Toegestaan: dev, acc of dev,acc" >&2; exit 1; }
 use_ciam_tenant
 
-# Een e-mailadres (bijv. na een eigen inlog met e-mail + code) omzetten naar de object-id.
-if [[ "$USER_ID" == *@* ]]; then
+# Een UPN (…@vrolijkedrammersapp.onmicrosoft.com) of e-mailadres omzetten naar de object-id. Een eigen inlog met
+# e-mail + code staat als identity "federated" met issuer "mail"; een account met wachtwoord onder het eigen domein.
+if [[ "$USER_ID" == *@vrolijkedrammersapp.onmicrosoft.com ]]; then
+  USER_ID="$(graph --method get --url "$GRAPH/users/$USER_ID" --url-parameters "\$select=id" --query id -o tsv)"
+elif [[ "$USER_ID" == *@* ]]; then
   EMAIL="$USER_ID"
-  USER_ID="$(graph --method get --url "$GRAPH/users" \
-    --url-parameters "\$filter=identities/any(i:i/issuerAssignedId eq '$EMAIL' and i/issuer eq 'vrolijkedrammersapp.onmicrosoft.com')" "\$select=id" \
-    --query "value[0].id" -o tsv)"
+  USER_ID=""
+  for ISSUER in mail vrolijkedrammersapp.onmicrosoft.com; do
+    USER_ID="$(graph --method get --url "$GRAPH/users" \
+      --url-parameters "\$filter=identities/any(i:i/issuerAssignedId eq '$EMAIL' and i/issuer eq '$ISSUER')" "\$select=id" \
+      --query "value[0].id" -o tsv)"
+    [[ -n "$USER_ID" ]] && break
+  done
   [[ -n "$USER_ID" ]] || { echo "Geen inlog gevonden voor $EMAIL" >&2; exit 1; }
 fi
 

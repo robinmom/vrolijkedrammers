@@ -57,6 +57,19 @@ public sealed class MeController(AppConfigReader appConfig, DrammersDbContext db
             m.BirthDate, m.JoinYear, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidTo, groups);
     }
 
+    /// <summary>Kinderen waarvan de gebruiker ouder/verzorger is (fase 9b; beheer en meldingen volgen in fase 17).</summary>
+    [HttpGet("children")]
+    [ProducesResponseType<IReadOnlyList<MyChildResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<MyChildResponse>> GetChildren(CancellationToken cancellationToken)
+    {
+        var userId = CurrentUser.Get(HttpContext)!.UserId;
+        return await db.GuardianRelations.AsNoTracking().Where(g => g.GuardianUserId == userId)
+            .Join(db.Members, g => g.MemberId, m => m.Id, (g, m) => new { m.FullName, m.MemberNumber, m.BirthDate, Status = m.LocalStatusOverride ?? m.MembershipStatus })
+            .OrderBy(c => c.FullName)
+            .Select(c => new MyChildResponse(c.FullName, c.MemberNumber, c.BirthDate, c.Status))
+            .ToListAsync(cancellationToken);
+    }
+
     [HttpGet("devices")]
     [ProducesResponseType<IReadOnlyList<DeviceResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<DeviceResponse>> GetDevices(CancellationToken cancellationToken)
@@ -141,6 +154,8 @@ public sealed record MyMemberResponse(
     string MemberNumber, string FullName, string? FirstName, string? AddressLine, string? PostalCode, string? City, string? Email,
     string? Phone, DateOnly? BirthDate, short? JoinYear, MembershipStatus Status, DateOnly? MembershipValidTo,
     IReadOnlyList<MyGroupResponse> Groups);
+
+public sealed record MyChildResponse(string FullName, string MemberNumber, DateOnly? BirthDate, MembershipStatus Status);
 
 public sealed record MyGroupResponse(string Name, Modules.Membership.Groups.GroupFunction Function);
 

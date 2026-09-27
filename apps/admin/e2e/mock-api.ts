@@ -153,6 +153,44 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
 
+  // Fase 9b: aanmeldingen (lid worden).
+  applications = [
+    {
+      id: 'ap-1',
+      status: 'Submitted',
+      source: 'App',
+      firstName: 'Sanne',
+      namePrefix: null as string | null,
+      lastName: 'Jansen',
+      fullName: 'Sanne Jansen',
+      gender: 'v',
+      birthDate: '2018-03-12',
+      age: 8,
+      minor: true,
+      addressLine: 'Dorpsstraat 3',
+      postalCode: '6999 AB',
+      city: 'Loil',
+      email: 'ouder@example.com',
+      phone: null as string | null,
+      guardianName: 'Anja Jansen' as string | null,
+      guardianPhone: '0612345678' as string | null,
+      ibanMasked: 'NL** **** **** 4300' as string | null,
+      accountHolder: 'A. Jansen' as string | null,
+      mandateReference: 'DVD-0123456789ABCDEF0123',
+      mandateConsentAt: '2026-09-27T08:00:00Z',
+      consentPrivacyAt: '2026-09-27T08:00:00Z',
+      consentPhoto: true,
+      submittedAt: '2026-09-27T08:05:00Z' as string | null,
+      handledBy: null as string | null,
+      handledAt: null as string | null,
+      decisionAt: null as string | null,
+      rejectionReason: null as string | null,
+      internalNotes: null as string | null,
+      resultingMemberId: null as string | null,
+      provisioning: null as Record<string, unknown> | null,
+    },
+  ];
+
   // Fase 9: accountverzoeken, provisioning en apparaten.
   accountRequests = [
     {
@@ -525,6 +563,61 @@ export class MockApi {
         errorMessage: null,
       });
       return json({ id }, 202);
+    }
+    if (path === '/admin/membership-applications') {
+      const status = url.searchParams.get('status');
+      const items = this.applications
+        .filter((a) => !status || a.status === status)
+        .map((a) => ({
+          id: a.id,
+          fullName: a.fullName,
+          city: a.city,
+          age: a.age,
+          minor: a.minor,
+          status: a.status,
+          source: a.source,
+          submittedAt: a.submittedAt,
+        }));
+      return json({ items, page: 1, pageSize: 25, totalCount: items.length });
+    }
+    if (
+      (m = path.match(/^\/admin\/membership-applications\/([^/]+)(?:\/(start-review|approve|reject|notes|retry))?$/))
+    ) {
+      const application = this.applications.find((a) => a.id === m![1]);
+      if (!application) {
+        return json({ status: 404, title: 'Niet gevonden', code: 'APPLICATION_NOT_FOUND' }, 404);
+      }
+      switch (m[2]) {
+        case undefined:
+          return json(application);
+        case 'start-review':
+          application.status = 'InReview';
+          application.handledBy = 'Test Bestuurder';
+          return noContent();
+        case 'approve':
+          application.status = 'Activated';
+          application.ibanMasked = null;
+          application.accountHolder = null;
+          application.resultingMemberId = 'm-1';
+          application.provisioning = {
+            id: 'p-a',
+            step: 'Completed',
+            memberNumber: 'SIM123456',
+            attempts: 1,
+            lastError: null,
+          };
+          return noContent();
+        case 'reject':
+          application.status = 'Rejected';
+          application.rejectionReason = body.reason as string;
+          application.ibanMasked = null;
+          return noContent();
+        case 'notes':
+          application.internalNotes = (body.notes as string | null) ?? null;
+          return noContent();
+        default:
+          return noContent();
+      }
     }
     if (path === '/admin/account-requests') {
       const status = url.searchParams.get('status');

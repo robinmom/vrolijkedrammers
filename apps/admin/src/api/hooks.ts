@@ -411,3 +411,30 @@ export function useUserDevices(id: string, enabled: boolean) {
     queryFn: async () => required((await api.GET('/api/v1/admin/users/{id}/devices', { params: { path: { id } } })).data),
   });
 }
+
+// ----- Fase 9b: aanmeldingen (lid worden) ------------------------------------------------------------------------
+
+export type ApplicationSummary = Schemas['ApplicationSummaryResponse'];
+export type ApplicationDetail = Schemas['ApplicationDetailResponse'];
+export type ApplicationStatus = Schemas['ApplicationStatus'];
+
+export function useApplications(status: ApplicationStatus | '', page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['applications', status, page],
+    queryFn: async () =>
+      required(
+        (await api.GET('/api/v1/admin/membership-applications', { params: { query: { status: status || undefined, page, pageSize: 25 } } })).data,
+      ),
+  });
+}
+
+/** Ververst elke 5 s zolang de aanmelding wordt verwerkt (lid in e-Boekhouden, account, mail). */
+export function useApplication(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['application', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/membership-applications/{id}', { params: { path: { id } } })).data),
+    refetchInterval: (query) => (['Approved', 'Provisioning'].includes(query.state.data?.status ?? '') ? 5000 : false),
+  });
+}

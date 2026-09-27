@@ -23,6 +23,12 @@ public sealed class EBoekhoudenOptions
 
     /// <summary>ADR-010: rate limits zijn niet gedocumenteerd, dus conservatief.</summary>
     public int RequestsPerSecond { get; set; } = 5;
+
+    /// <summary>
+    /// Nieuwe leden echt in e-Boekhouden aanmaken (fase 9b). Standaard uit: Dev gebruikt de echte administratie
+    /// (OQ-04), dus daar simuleert de app deze stap. Aan in Acc/Prod met een token met schrijfrechten (OQ-03).
+    /// </summary>
+    public bool WriteEnabled { get; set; }
 }
 
 /// <summary>
@@ -71,12 +77,39 @@ public sealed record EbMember(
 
 public sealed record EbMemberReference(int Id, string? MemberNumber);
 
+/// <summary>
+/// Nieuw lid voor <c>POST /v1/member</c> (geverifieerd tegen <c>/openapi/v1.json</c>, 2026-09-27). Lidnummer laat
+/// e-Boekhouden zelf toekennen. Machtiging: doorlopend (<c>D</c>) met eigen kenmerk en ondertekeningsdatum.
+/// </summary>
+public sealed record EbNewMember(
+    string Name,
+    string? Gender,
+    string Address,
+    string PostalCode,
+    string City,
+    string Country,
+    string? MobilePhoneNumber,
+    string EmailAddress,
+    string? Iban,
+    bool Mandate,
+    string? MandateType,
+    string? MandateId,
+    DateOnly? MandateSignedDate,
+    string? Note,
+    IReadOnlyDictionary<string, string> FreeTexts);
+
 /// <summary>Een geopende sessie; bij <c>DisposeAsync</c> wordt de sessie in e-Boekhouden ingetrokken.</summary>
 public interface IEBoekhoudenSession : IAsyncDisposable
 {
     Task<IReadOnlyList<EbMemberReference>> ListMembersAsync(CancellationToken cancellationToken);
 
     Task<EbMember> GetMemberAsync(int id, CancellationToken cancellationToken);
+
+    /// <summary>Leden met dit e-mailadres (filter <c>email</c>); voor idempotent aanmaken.</summary>
+    Task<IReadOnlyList<EbMemberReference>> FindMembersByEmailAsync(string email, CancellationToken cancellationToken);
+
+    /// <summary><c>POST /v1/member</c>; wordt niet automatisch herhaald (niet idempotent).</summary>
+    Task<EbMemberReference> CreateMemberAsync(EbNewMember member, CancellationToken cancellationToken);
 }
 
 public interface IEBoekhoudenClient
@@ -94,7 +127,10 @@ internal sealed class UnconfiguredEBoekhoudenClient : IEBoekhoudenClient
         throw new EBoekhoudenException("e-Boekhouden is niet geconfigureerd.");
 }
 
-/// <summary>REST-client voor e-Boekhouden API v1 (geverifieerd tegen <c>/openapi/v1.json</c>, ADR-010). Alleen lezen.</summary>
+/// <summary>
+/// REST-client voor e-Boekhouden API v1 (geverifieerd tegen <c>/openapi/v1.json</c>, ADR-010). Lezen voor de sync;
+/// schrijven alleen voor nieuwe leden (fase 9b) en alleen als <see cref="EBoekhoudenOptions.WriteEnabled"/> aan staat.
+/// </summary>
 internal sealed class EBoekhoudenClient(
     HttpClient http, IOptions<EBoekhoudenOptions> options, IServiceProvider services, ILogger<EBoekhoudenClient> logger) : IEBoekhoudenClient
 {
@@ -170,6 +206,51 @@ internal sealed class EBoekhoudenClient(
 
         public Task<EbMember> GetMemberAsync(int id, CancellationToken cancellationToken) =>
             SendAsync<EbMember>($"v1/member/{id}", cancellationToken);
+
+        public async Task<IReadOnlyList<EbMemberReference>> FindMembersByEmailAsync(string email, CancellationToken cancellationToken) =>
+            (await SendAsync<MemberList>($"v1/member?limit=50&email={Uri.EscapeDataString(email)}", cancellationToken)).Items;
+
+        public async Task<EbMemberReference> CreateMemberAsync(EbNewMember member, CancellationToken cancellationToken)
+        {
+            await throttle.WaitAsync(cancellationToken);
+            var body = new Dictionary<string, object?>
+            {
+                ["name"] = member.Name,
+                ["gender"] = member.Gender,
+                ["address"] = member.Address,
+                ["postalCode"] = member.PostalCode,
+                ["city"] = member.City,
+                ["country"] = member.Country,
+                ["mobilePhoneNumber"] = member.MobilePhoneNumber,
+                ["emailAddress"] = member.EmailAddress,
+                ["iban"] = member.Iban,
+                ["mandate"] = member.Mandate,
+                ["mandateType"] = member.MandateType,
+                ["mandateId"] = member.MandateId,
+                ["mandateSignedDate"] = member.MandateSignedDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                ["note"] = member.Note,
+            };
+            foreach (var (field, value) in member.FreeTexts)
+            {
+                body[field] = value;
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "v1/member")
+            {
+                Content = JsonContent.Create(body.Where(kv => kv.Value is not null).ToDictionary(kv => kv.Key, kv => kv.Value)),
+            };
+            request.Headers.TryAddWithoutValidation("Authorization", token);
+            using var response = await http.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                // De foutcodes (MEM_0xx) bevatten geen persoonsgegevens en helpen het bestuur bij het herstellen.
+                var detail = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new EBoekhoudenException($"Lid aanmaken in e-Boekhouden mislukt ({(int)response.StatusCode}): {detail[..Math.Min(detail.Length, 300)]}");
+            }
+
+            return await response.Content.ReadFromJsonAsync<EbMemberReference>(cancellationToken)
+                ?? throw new EBoekhoudenException("e-Boekhouden gaf geen lid terug.");
+        }
 
         public async ValueTask DisposeAsync()
         {

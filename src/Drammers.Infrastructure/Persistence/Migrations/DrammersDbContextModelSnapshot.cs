@@ -2837,6 +2837,211 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Applications.MembershipApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountHolder")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("account_holder");
+
+                    b.Property<string>("AddressLine")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("address_line");
+
+                    b.Property<DateOnly>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("city");
+
+                    b.Property<bool>("ConsentPhoto")
+                        .HasColumnType("bit")
+                        .HasColumnName("consent_photo");
+
+                    b.Property<DateTime>("ConsentPrivacyAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("consent_privacy_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DecisionAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("decision_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTime?>("EmailVerifiedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("email_verified_at");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(1)
+                        .IsUnicode(false)
+                        .HasColumnType("char(1)")
+                        .HasColumnName("gender")
+                        .IsFixedLength();
+
+                    b.Property<string>("GuardianEmail")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("guardian_email");
+
+                    b.Property<string>("GuardianName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("guardian_name");
+
+                    b.Property<string>("GuardianPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("guardian_phone");
+
+                    b.Property<DateTime?>("HandledAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("handled_at");
+
+                    b.Property<Guid?>("HandledBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("handled_by");
+
+                    b.Property<string>("Iban")
+                        .HasMaxLength(34)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(34)")
+                        .HasColumnName("iban");
+
+                    b.Property<string>("InternalNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("internal_notes");
+
+                    b.Property<string>("IpHash")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("ip_hash");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("last_name");
+
+                    b.Property<DateTime?>("MandateConsentAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("mandate_consent_at");
+
+                    b.Property<string>("MandateReference")
+                        .IsRequired()
+                        .HasMaxLength(35)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(35)")
+                        .HasColumnName("mandate_reference");
+
+                    b.Property<string>("NamePrefix")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("name_prefix");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<Guid?>("ProvisioningId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("provisioning_id");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<Guid?>("ResultingMemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("resulting_member_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<int>("VerificationAttempts")
+                        .HasColumnType("int")
+                        .HasColumnName("verification_attempts");
+
+                    b.Property<string>("VerificationCodeHash")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("verification_code_hash");
+
+                    b.Property<DateTime?>("VerificationExpiresAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("verification_expires_at");
+
+                    b.HasKey("Id")
+                        .HasName("PK_MembershipApplication");
+
+                    b.HasIndex("MandateReference")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MembershipApplication_mandate_reference");
+
+                    b.HasIndex("ResultingMemberId")
+                        .HasDatabaseName("IX_MembershipApplication_resulting_member_id");
+
+                    b.HasIndex("Status", "SubmittedAt")
+                        .HasDatabaseName("IX_MembershipApplication_status_submitted_at");
+
+                    b.ToTable("MembershipApplication", "membership", t =>
+                        {
+                            t.HasCheckConstraint("CK_MembershipApplication_source", "[source] IN ('App', 'Website', 'Portal')");
+
+                            t.HasCheckConstraint("CK_MembershipApplication_status", "[status] IN ('Draft', 'Submitted', 'InReview', 'Approved', 'Rejected', 'Provisioning', 'ProvisioningFailed', 'Activated', 'Withdrawn')");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Groups.Group", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2936,6 +3141,52 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_GroupMembership_function", "[function] IN ('Member', 'Lead')");
                         });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Guardians.GuardianRelation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("GuardianName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("guardian_name");
+
+                    b.Property<string>("GuardianPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("guardian_phone");
+
+                    b.Property<Guid>("GuardianUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("guardian_user_id");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("member_id");
+
+                    b.Property<DateTime>("VerifiedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("verified_at");
+
+                    b.HasKey("Id")
+                        .HasName("PK_GuardianRelation");
+
+                    b.HasIndex("GuardianUserId")
+                        .HasDatabaseName("IX_GuardianRelation_guardian_user_id");
+
+                    b.HasIndex("MemberId", "GuardianUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_GuardianRelation_member_id_guardian_user_id");
+
+                    b.ToTable("GuardianRelation", "membership");
                 });
 
             modelBuilder.Entity("Drammers.Modules.Membership.Members.Member", b =>
@@ -3377,6 +3628,14 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Applications.MembershipApplication", b =>
+                {
+                    b.HasOne("Drammers.Modules.Membership.Members.Member", null)
+                        .WithMany()
+                        .HasForeignKey("ResultingMemberId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Groups.Group", b =>
                 {
                     b.HasOne("Drammers.Modules.Content.CarnivalYears.CarnivalYear", null)
@@ -3390,6 +3649,21 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasOne("Drammers.Modules.Membership.Groups.Group", null)
                         .WithMany("Memberships")
                         .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Drammers.Modules.Membership.Members.Member", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Guardians.GuardianRelation", b =>
+                {
+                    b.HasOne("Drammers.Modules.Identity.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("GuardianUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

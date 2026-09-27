@@ -22,7 +22,18 @@ interface EventCardProps {
   testID?: string;
 }
 
-export function EventCard({ title, date, time, location, badge, highlighted, dateVariant = 'tinted', meta = 'lines', onPress, testID }: EventCardProps) {
+export function EventCard({
+  title,
+  date,
+  time,
+  location,
+  badge,
+  highlighted,
+  dateVariant = 'tinted',
+  meta = 'lines',
+  onPress,
+  testID,
+}: EventCardProps) {
   const { colors } = useTheme();
   const label = [title, `${date.weekday} ${date.day} ${date.month}`, time, location].filter(Boolean).join(', ');
   return (

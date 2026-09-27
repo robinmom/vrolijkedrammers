@@ -17,7 +17,11 @@ export function EmptyState({ title, message, icon = 'programma', action }: State
 }
 
 /** Fouttoestand met herstelactie; toont nooit technische details (docs/16 §6). */
-export function ErrorState({ title = 'Er ging iets mis', message = 'Controleer je verbinding en probeer het opnieuw.', action }: Partial<StateMessageProps>) {
+export function ErrorState({
+  title = 'Er ging iets mis',
+  message = 'Controleer je verbinding en probeer het opnieuw.',
+  action,
+}: Partial<StateMessageProps>) {
   return <StateMessage title={title} message={message} icon="meldingen" action={action} tone="error" />;
 }
 

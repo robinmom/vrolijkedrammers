@@ -16,9 +16,19 @@ const photoLabel = (count: number) => (count === 1 ? '1 foto' : `${count} foto's
 /** Albumkaart in de carrousel (Figma 07): 168 × 210, titel op een donkere verloop onderin. */
 export function AlbumCard({ id, title, photoCount, coverUrl, onPress }: AlbumCardProps) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Album ${title}, ${photoLabel(photoCount)}`} style={styles.album} testID="album-card">
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Album ${title}, ${photoLabel(photoCount)}`}
+      style={styles.album}
+      testID="album-card"
+    >
       <RemoteImage uri={coverUrl} cacheKey={`album-${id}`} style={StyleSheet.absoluteFill} />
-      <LinearGradient colors={['rgba(18,48,71,0)', 'rgba(18,48,71,0.9)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={['rgba(18,48,71,0)', 'rgba(18,48,71,0.9)']}
+        locations={[0.4, 1]}
+        style={StyleSheet.absoluteFill}
+      />
       <AppText variant="sectionHeader" color="#FFFFFF" style={styles.albumTitle} numberOfLines={2}>
         {title}
       </AppText>
@@ -49,7 +59,11 @@ export function PhotoGrid({ photos, onPress }: { photos: GridPhoto[]; onPress: (
           testID="photo"
           accessibilityLabel={photo.caption ?? `Foto ${index + 1} van ${photos.length}`}
         >
-          <RemoteImage uri={photo.thumbnailUrl} cacheKey={`photo-thumb-${photo.id}`} style={{ width: size, height: size }} />
+          <RemoteImage
+            uri={photo.thumbnailUrl}
+            cacheKey={`photo-thumb-${photo.id}`}
+            style={{ width: size, height: size }}
+          />
         </Pressable>
       ))}
     </View>
@@ -59,7 +73,15 @@ export function PhotoGrid({ photos, onPress }: { photos: GridPhoto[]; onPress: (
 export { photoLabel };
 
 const styles = StyleSheet.create({
-  album: { width: 168, height: 210, borderRadius: 18, overflow: 'hidden', justifyContent: 'flex-end', padding: 14, gap: 2 },
+  album: {
+    width: 168,
+    height: 210,
+    borderRadius: 18,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    padding: 14,
+    gap: 2,
+  },
   albumTitle: { fontSize: 15 },
   albumCount: { fontFamily: 'Inter_400Regular' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 2 },

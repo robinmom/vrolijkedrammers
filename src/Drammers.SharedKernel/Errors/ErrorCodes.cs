@@ -41,4 +41,8 @@ public static class ErrorCodes
     public const string MemberNotEligible = "MEMBER_NOT_ELIGIBLE";
     public const string ProvisioningNotFound = "PROVISIONING_NOT_FOUND";
     public const string PrivacyExportNotFound = "PRIVACY_EXPORT_NOT_FOUND";
+    public const string ApplicationNotFound = "APPLICATION_NOT_FOUND";
+    public const string ApplicationDecided = "APPLICATION_DECIDED";
+    public const string VerificationCodeInvalid = "VERIFICATION_CODE_INVALID";
+    public const string VerificationCodeExpired = "VERIFICATION_CODE_EXPIRED";
 }

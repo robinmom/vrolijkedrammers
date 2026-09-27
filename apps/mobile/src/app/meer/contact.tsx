@@ -10,7 +10,9 @@ export default function ContactScreen() {
   const email = contact.email ?? (config.data?.supportEmail || null);
   return (
     <InfoPage staticContent title="Contact" sections={[{ paragraphs: [contact.intro] }]}>
-      {email ? <Button label={`Mail ${email}`} icon="contact" onPress={() => Linking.openURL(`mailto:${email}`)} /> : null}
+      {email ? (
+        <Button label={`Mail ${email}`} icon="contact" onPress={() => Linking.openURL(`mailto:${email}`)} />
+      ) : null}
       <Button label="Naar de website" variant="secondary" onPress={() => Linking.openURL(contact.website)} />
     </InfoPage>
   );

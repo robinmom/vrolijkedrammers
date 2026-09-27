@@ -96,6 +96,8 @@ test('redacteur publiceert een event voor iedereen; het staat in de publieke age
 
 for (const path of [
   '',
+  'aanmeldingen',
+  'aanmeldingen/ap-1',
   'accountverzoeken',
   'agenda',
   'agenda/nieuw',
@@ -322,4 +324,35 @@ test('fase 9: app-account van een lid verwijderen na bevestiging', async ({ page
   await expect(page.getByText('Het app-account van Anna Jansen is verwijderd.')).toBeVisible();
   expect(api.members[1]!.hasAccount).toBe(false);
   await expect(page.getByRole('button', { name: 'App-account aanmaken' })).toBeVisible();
+});
+
+test('fase 9b: aanmelding van een kind beoordelen en goedkeuren', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'aanmeldingen');
+  await page.getByRole('link', { name: 'Sanne Jansen' }).click();
+  await expect(page.getByRole('heading', { name: /Sanne Jansen/ })).toBeVisible();
+  await expect(page.getByText('NL** **** **** 4300')).toBeVisible();
+  await expect(page.getByText('Anja Jansen')).toBeVisible();
+
+  await page.getByRole('button', { name: 'In behandeling nemen' }).click();
+  await expect(page.getByText(/behandelaar Test Bestuurder/)).toBeVisible();
+  await page.getByRole('button', { name: 'Goedkeuren' }).click();
+  await expect(page.getByRole('dialog').getByText(/stuurt de ouder een welkomstmail/)).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Goedkeuren' }).click();
+
+  await expect(page.getByText('Goedgekeurd; het lid wordt nu aangemaakt.')).toBeVisible();
+  await expect(page.getByText(/Lid geworden met lidnummer SIM123456/)).toBeVisible();
+  await expect(page.getByText(/Gesimuleerd lidnummer/)).toBeVisible();
+  await expect(page.getByText(/Gewist \(doorgegeven aan e-Boekhouden/)).toBeVisible();
+});
+
+test('fase 9b: aanmelding afwijzen met reden', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'aanmeldingen/ap-1');
+  await page.getByRole('button', { name: 'Afwijzen' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Reden').fill('Woont buiten de regio');
+  await dialog.getByRole('button', { name: 'Afwijzen' }).click();
+  await expect(page.getByText('De aanmelding is afgewezen; de bankgegevens zijn gewist.')).toBeVisible();
+  expect(api.applications[0]!.rejectionReason).toBe('Woont buiten de regio');
 });

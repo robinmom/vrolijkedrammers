@@ -212,6 +212,27 @@ describe('Mijn gegevens', () => {
     expect(call.headers.get('x-device-id')).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it('ouder/verzorger zonder eigen lidmaatschap: kinderen in plaats van een foutmelding', async () => {
+    setSessionForTest('signedIn');
+    const calls = mockApi({
+      ...api,
+      '/api/v1/me': {
+        ...me,
+        displayName: 'Anja Jansen',
+        memberId: null,
+        roles: [{ code: 'ouder', name: 'Ouder/verzorger' }],
+      },
+      '/api/v1/me/children': [
+        { fullName: 'Sanne Jansen', memberNumber: '0701', birthDate: '2018-03-12', status: 'Active' },
+      ],
+    });
+    await renderApp(routes, '/account');
+    expect(await screen.findByText('Je bent ouder/verzorger van')).toBeTruthy();
+    expect(screen.getByText('Sanne Jansen')).toBeTruthy();
+    expect(screen.queryByText('Er ging iets mis')).toBeNull();
+    expect(calls).not.toContain('/api/v1/me/member');
+  });
+
   it('niet ingelogd: door naar inloggen', async () => {
     setSessionForTest('signedOut', null);
     mockApi(api);

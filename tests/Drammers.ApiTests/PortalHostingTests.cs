@@ -25,6 +25,22 @@ public class PortalHostingTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Lid_worden_pagina_met_eigen_CSP_en_zonder_inlogdomein()
+    {
+        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/lid-worden")).StatusCode);
+
+        var response = await _client.GetAsync("/lid-worden/");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Word ook een Drammer!", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.Contains("connect-src 'self';", csp, StringComparison.Ordinal);
+        Assert.DoesNotContain("ciamlogin", csp, StringComparison.Ordinal);
+        Assert.DoesNotContain("unsafe-inline", csp, StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/lid-worden/app.js")).StatusCode);
+    }
+
+    [Fact]
     public async Task Beheer_zonder_slash_wordt_doorgestuurd()
     {
         var response = await _client.GetAsync("/beheer");

@@ -73,6 +73,12 @@ public sealed class DataRetentionJob(DrammersDbContext db, IFileStore files, IAu
             .Where(p => p.LastRegisteredAt < staleBefore || (!p.Enabled && p.InvalidatedAt < invalidBefore))
             .ExecuteDeleteAsync(cancellationToken);
 
+        // Niet-bevestigde optochtinschrijvingen van het webformulier (48 uur, fase 11c).
+        var before48h = now - TimeSpan.FromHours(48);
+        await db.ParadeRegistrations
+            .Where(r => r.Source == Modules.Parade.Registrations.RegistrationSource.WebForm && r.Status == Modules.Parade.Registrations.RegistrationStatus.Draft && r.CreatedAt < before48h)
+            .ExecuteDeleteAsync(cancellationToken);
+
         var result = new RetentionResult(drafts, rejected, requests, logins, exports.Count, outbox, pushDevices);
         await audit.WriteAsync(new AuditEntry("retention.completed", "RetentionPolicy", "*", null, JsonSerializer.Serialize(result)), cancellationToken);
         return result;

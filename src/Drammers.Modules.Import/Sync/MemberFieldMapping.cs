@@ -9,7 +9,8 @@ public sealed record MemberFieldMapping(
     string? JoinYear,
     string? Status,
     string? Category,
-    IReadOnlyList<string> InactiveStatusValues)
+    IReadOnlyList<string> InactiveStatusValues,
+    string? ParadeGroupName = null)
 {
     public static readonly string[] FreeTextFields =
         ["freeText1", "freeText2", "freeText3", "freeText4", "freeText5", "freeText6", "freeText7", "freeText8", "freeText9", "freeText10"];
@@ -20,7 +21,7 @@ public sealed record MemberFieldMapping(
     /// <summary>Foutmelding als de mapping ongeldig is (onbekend veld, of één veld voor twee gegevens); anders <c>null</c>.</summary>
     public string? Validate()
     {
-        string?[] used = [BirthDate, JoinYear, Status, Category];
+        string?[] used = [BirthDate, JoinYear, Status, Category, ParadeGroupName];
         foreach (var field in used.Where(f => f is not null))
         {
             if (!FreeTextFields.Contains(field))

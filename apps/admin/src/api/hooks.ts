@@ -471,6 +471,33 @@ export function useParadeCategories() {
   return useQuery({ queryKey: ['parade-categories'], queryFn: async () => required((await api.GET('/api/v1/admin/parade-categories')).data) });
 }
 
+export type ReviewSummary = Schemas['ReviewSummary'];
+export type AdminRegistration = Schemas['AdminRegistrationResponse'];
+export type ReviewAction = Schemas['ReviewAction'];
+
+export function useParadeRegistrations(status: string, search: string, page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-registrations', status, search, page],
+    queryFn: async () =>
+      required(
+        (
+          await api.GET('/api/v1/admin/parade-registrations', {
+            params: { query: { status: (status || undefined) as Schemas['RegistrationStatus'] | undefined, search: search || undefined, page } },
+          })
+        ).data,
+      ),
+  });
+}
+
+export function useParadeRegistration(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-registration', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade-registrations/{id}', { params: { path: { id } } })).data),
+  });
+}
+
 export type TestAccessStatus = Schemas['TestAccessStatus'];
 
 export function useTestAccess(id: string, enabled: boolean) {

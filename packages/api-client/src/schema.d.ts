@@ -3352,6 +3352,201 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/parade-registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["RegistrationStatus"];
+                    search?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfReviewSummary"];
+                        "application/json": components["schemas"]["PagedResultOfReviewSummary"];
+                        "text/json": components["schemas"]["PagedResultOfReviewSummary"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminRegistrationResponse"];
+                        "application/json": components["schemas"]["AdminRegistrationResponse"];
+                        "text/json": components["schemas"]["AdminRegistrationResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReviewRequest"];
+                    "text/json": components["schemas"]["ReviewRequest"];
+                    "application/*+json": components["schemas"]["ReviewRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/{id}/documents/{documentId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    documentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DocumentLinkResponse"];
+                        "application/json": components["schemas"]["DocumentLinkResponse"];
+                        "text/json": components["schemas"]["DocumentLinkResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/parades": {
         parameters: {
             query?: never;
@@ -6296,6 +6491,258 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/parade/public-registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inschrijven zonder account: alles in één keer; daarna een e-mailcode. Pas na de code een opgavenummer. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PublicRegistrationRequest"];
+                    "text/json": components["schemas"]["PublicRegistrationRequest"];
+                    "application/*+json": components["schemas"]["PublicRegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicRegistrationStartedResponse"];
+                        "application/json": components["schemas"]["PublicRegistrationStartedResponse"];
+                        "text/json": components["schemas"]["PublicRegistrationStartedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/parade/public-registrations/{id}/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["VerifyCodeRequest"];
+                    "text/json": components["schemas"]["VerifyCodeRequest"];
+                    "application/*+json": components["schemas"]["VerifyCodeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicRegistrationSubmittedResponse"];
+                        "application/json": components["schemas"]["PublicRegistrationSubmittedResponse"];
+                        "text/json": components["schemas"]["PublicRegistrationSubmittedResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/parade/public-registrations/{id}/resend-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/parade/public-registrations/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status via de statuslink uit de bevestigingsmail (alleen lezen, zonder contactgegevens). */
+        get: {
+            parameters: {
+                query: {
+                    token: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicStatus"];
+                        "application/json": components["schemas"]["PublicStatus"];
+                        "text/json": components["schemas"]["PublicStatus"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/parade/registrations": {
         parameters: {
             query?: never;
@@ -6649,6 +7096,90 @@ export interface paths {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/parade/build-locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Onthouden bouwlocaties (volgend jaar "zelfde locatie"); de nieuwste eerst. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BuildLocationResponse"][];
+                        "application/json": components["schemas"]["BuildLocationResponse"][];
+                        "text/json": components["schemas"]["BuildLocationResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/parade/build-locations/{locationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    locationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -7370,6 +7901,7 @@ export interface components {
             /** Format: int32 */
             maxDocumentSizeMb: number;
             status: components["schemas"]["ParadeStatus"];
+            infoText: null | string;
         };
         AdminPhotoResponse: {
             /** Format: uuid */
@@ -7379,6 +7911,41 @@ export interface components {
             caption: null | string;
             photographer: null | string;
             thumbnailUrl: null | string;
+        };
+        AdminRegistrationResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            /** Format: int32 */
+            startNumber: null | number;
+            status: components["schemas"]["RegistrationStatus"];
+            source: components["schemas"]["RegistrationSource"];
+            groupName: null | string;
+            contactName: null | string;
+            contactPhone: null | string;
+            contactEmail: null | string;
+            categoryName: null | string;
+            subject: null | string;
+            subjectDescription: null | string;
+            /** Format: int32 */
+            childrenCount: number;
+            /** Format: int32 */
+            adultCount: number;
+            buildAddress: components["schemas"]["AddressDto"];
+            juryInspectionSameAsBuildAddress: boolean;
+            juryAddress: components["schemas"]["AddressDto"];
+            /** Format: double */
+            estimatedLengthMeters: null | number;
+            additionalInformation: null | string;
+            /** Format: date-time */
+            submittedAt: null | string;
+            managers: string[];
+            warnings: string[];
+            allowedActions: components["schemas"]["ReviewAction"][];
+            statusHistory: components["schemas"]["StatusChangeResponse"][];
+            changes: components["schemas"]["FieldChangeResponse"][];
+            documents: components["schemas"]["DocumentResponse"][];
         };
         /** @enum {unknown} */
         AgeGroup: "Adult" | "Youth";
@@ -7579,6 +8146,13 @@ export interface components {
             entityId: string;
             oldValues: null | string;
             newValues: null | string;
+        };
+        BuildLocationResponse: {
+            /** Format: uuid */
+            id: string;
+            address: components["schemas"]["AddressDto"];
+            /** Format: date-time */
+            lastUsedAt: string;
         };
         CarnivalYearRequest: {
             name: string;
@@ -7801,6 +8375,15 @@ export interface components {
             description: null | string;
             hasAudience: boolean;
         };
+        FieldChangeResponse: {
+            field: string;
+            oldValue: null | string;
+            newValue: null | string;
+            changedBy: null | string;
+            source: components["schemas"]["RegistrationSource"];
+            /** Format: date-time */
+            changedAt: string;
+        };
         GroupDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -7955,6 +8538,7 @@ export interface components {
             status: null | string;
             category: null | string;
             inactiveStatusValues: string[];
+            paradeGroupName?: null | string;
         };
         MemberFieldSourcesResponse: {
             birthDateFromEBoekhouden: boolean;
@@ -8305,6 +8889,16 @@ export interface components {
             totalCount: number;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfReviewSummary: {
+            items: components["schemas"]["ReviewSummary"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfSyncJobItemResponse: {
             items: components["schemas"]["SyncJobItemResponse"][];
             /** Format: int32 */
@@ -8374,6 +8968,7 @@ export interface components {
             maxDocumentsPerRegistration: number;
             /** Format: int32 */
             maxDocumentSizeMb: number;
+            infoHtml: null | string;
         };
         ParadeRequest: {
             /** Format: int32 */
@@ -8401,6 +8996,7 @@ export interface components {
             /** Format: int32 */
             maxDocumentSizeMb: number;
             status: components["schemas"]["ParadeStatus"];
+            infoText?: null | string;
         };
         /** @enum {unknown} */
         ParadeStatus: "Planned" | "RegistrationOpen" | "RegistrationClosed" | "Composing" | "Final" | "Completed";
@@ -8544,6 +9140,30 @@ export interface components {
         };
         /** @enum {unknown} */
         PublicationStatus: "Draft" | "Scheduled" | "Published" | "Archived";
+        PublicRegistrationRequest: {
+            registration: components["schemas"]["UpdateRegistrationRequest"];
+            rulesAccepted: boolean;
+        };
+        PublicRegistrationStartedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        PublicRegistrationSubmittedResponse: {
+            /** Format: int32 */
+            registrationNumber: number;
+            statusToken: string;
+        };
+        PublicStatus: {
+            paradeName: string;
+            groupName: null | string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            status: components["schemas"]["RegistrationStatus"];
+            /** Format: int32 */
+            startNumber: null | number;
+            categoryName: null | string;
+            reason: null | string;
+        };
         PushTokenRequest: {
             token: string;
         };
@@ -8595,6 +9215,8 @@ export interface components {
             issues: components["schemas"]["ValidationIssueResponse"][];
         };
         /** @enum {unknown} */
+        RegistrationSource: "App" | "WebForm" | "Portal";
+        /** @enum {unknown} */
         RegistrationStatus: "Draft" | "Submitted" | "UnderReview" | "AdditionalInformationRequired" | "Approved" | "Rejected" | "Withdrawn" | "StartNumberAssigned" | "Final";
         RegistrationSummaryResponse: {
             /** Format: uuid */
@@ -8641,6 +9263,32 @@ export interface components {
             retentionDays: number;
             action: string;
         };
+        /** @enum {unknown} */
+        ReviewAction: "StartReview" | "Approve" | "Reject" | "RequestInformation" | "Reopen";
+        ReviewRequest: {
+            action: components["schemas"]["ReviewAction"];
+            reason: null | string;
+        };
+        ReviewSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            groupName: null | string;
+            categoryName: null | string;
+            status: components["schemas"]["RegistrationStatus"];
+            source: components["schemas"]["RegistrationSource"];
+            contactName: null | string;
+            /** Format: int32 */
+            childrenCount: number;
+            /** Format: int32 */
+            adultCount: number;
+            /** Format: double */
+            estimatedLengthMeters: null | number;
+            /** Format: date-time */
+            submittedAt: null | string;
+            hasWarnings: boolean;
+        };
         RoleAssignmentRequest: {
             roleCode: string;
             /** Format: date */
@@ -8672,6 +9320,14 @@ export interface components {
         };
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];
+        };
+        StatusChangeResponse: {
+            fromStatus: null | components["schemas"]["RegistrationStatus"];
+            toStatus: components["schemas"]["RegistrationStatus"];
+            reason: null | string;
+            actorName: null | string;
+            /** Format: date-time */
+            occurredAt: string;
         };
         SyncConflictResponse: {
             /** Format: uuid */
@@ -8814,6 +9470,9 @@ export interface components {
             };
         };
         VerifyApplicationRequest: {
+            code: string;
+        };
+        VerifyCodeRequest: {
             code: string;
         };
         WithdrawRequest: {

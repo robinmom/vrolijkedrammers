@@ -390,11 +390,12 @@ function ResolveDialog({ conflict, onClose }: { conflict: SyncConflict | null; o
 
 const FREE_TEXT = Array.from({ length: 10 }, (_, i) => `freeText${i + 1}`);
 
-const mappingFields: { key: 'birthDate' | 'joinYear' | 'status' | 'category'; label: string; hint: string }[] = [
+const mappingFields: { key: 'birthDate' | 'joinYear' | 'status' | 'category' | 'paradeGroupName'; label: string; hint: string }[] = [
   { key: 'birthDate', label: 'Geboortedatum', hint: 'Formaat JJJJ-MM-DD (DD-MM-JJJJ wordt ook herkend)' },
   { key: 'joinYear', label: 'Inschrijfjaar', hint: 'Jaartal, bijv. 1995' },
   { key: 'status', label: 'Lidmaatschapsstatus', hint: 'Bijv. actief of opgezegd' },
   { key: 'category', label: 'Categorie', hint: 'Bijv. jeugdlid of gezinslid' },
+  { key: 'paradeGroupName', label: 'Groepsnaam optocht', hint: 'Vult de inschrijving voor de optocht vooraf in (bijv. vrij veld 3)' },
 ];
 
 /** Welk vrij veld in e-Boekhouden welk gegeven bevat (B-06); alleen met config.manage. */

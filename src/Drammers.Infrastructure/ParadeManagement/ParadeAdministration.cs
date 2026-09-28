@@ -25,7 +25,8 @@ public sealed record ParadeInput(
     decimal DefaultSpacingMeters,
     int MaxDocumentsPerRegistration,
     int MaxDocumentSizeMb,
-    ParadeStatus Status);
+    ParadeStatus Status,
+    string? InfoText = null);
 
 public sealed record CategoryInput(
     string Code,
@@ -127,6 +128,7 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
         parade.MaxDocumentsPerRegistration = input.MaxDocumentsPerRegistration;
         parade.MaxDocumentSizeMb = input.MaxDocumentSizeMb;
         parade.Status = input.Status;
+        parade.InfoText = string.IsNullOrWhiteSpace(input.InfoText) ? null : input.InfoText.Trim();
     }
 
     // ----- Categorieën ------------------------------------------------------------------------------------------------

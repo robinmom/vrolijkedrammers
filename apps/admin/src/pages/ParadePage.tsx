@@ -40,6 +40,7 @@ function emptyParade(carnivalYearId: number): ParadeRequest {
     maxDocumentsPerRegistration: 5,
     maxDocumentSizeMb: 10,
     status: 'Planned',
+    infoText: null,
   };
 }
 
@@ -322,6 +323,20 @@ export function ParadePage() {
                 value={editing.form.maxDocumentSizeMb}
                 onChange={(e) => set({ maxDocumentSizeMb: Number(e.target.value) })}
               />
+            </div>
+            <div className="field">
+              <label htmlFor="optocht-info">Informatie over meedoen (Markdown)</label>
+              <textarea
+                id="optocht-info"
+                rows={6}
+                maxLength={8000}
+                aria-describedby="optocht-info-hint"
+                value={editing.form.infoText ?? ''}
+                onChange={(e) => set({ infoText: e.target.value || null })}
+              />
+              <small id="optocht-info-hint" className="muted">
+                Leden zonder de rol Groepsverantwoordelijke zien alleen deze tekst in de app, bijvoorbeeld hoe ze zich als groep kunnen aanmelden.
+              </small>
             </div>
             <Checkbox
               label="Onderwerp verplicht"

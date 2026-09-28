@@ -27,6 +27,7 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.MobilePhone).HasMaxLength(50);
         builder.Property(m => m.EbStatusRaw).HasMaxLength(100);
         builder.Property(m => m.MemberCategory).HasMaxLength(50);
+        builder.Property(m => m.ParadeGroupName).HasMaxLength(100);
         builder.Property(m => m.FirstName).HasMaxLength(100);
         builder.Property(m => m.NamePrefix).HasMaxLength(30);
         builder.Property(m => m.LastName).HasMaxLength(100);

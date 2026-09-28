@@ -48,11 +48,16 @@ stateDiagram-v2
   Draft --> Submitted: definitief indienen\n(opgavenummer toegekend)
   Draft --> [*]: concept verwijderen (geen nummer verbruikt)
   Submitted --> UnderReview: commissie pakt op
+  Submitted --> Approved: commissie keurt direct goed
+  Submitted --> Rejected: reden verplicht
+  Submitted --> AdditionalInformationRequired: aanvulling vragen (reden)
   Submitted --> Withdrawn: groep trekt in
   UnderReview --> AdditionalInformationRequired: aanvulling vragen (reden)
   AdditionalInformationRequired --> UnderReview: groep vult aan / commissie
   UnderReview --> Approved
   UnderReview --> Rejected: reden verplicht
+  AdditionalInformationRequired --> Rejected: reden verplicht
+  Approved --> UnderReview: heropenen (commissie, reden)
   Approved --> StartNumberAssigned: startnummer toegekend + gepubliceerd
   StartNumberAssigned --> Final: optocht vastgesteld
   Approved --> Withdrawn
@@ -63,6 +68,7 @@ stateDiagram-v2
 ```
 
 Regels:
+- **Pas na goedkeuring (`Approved`) door de Optochtcommissie is een inschrijving definitief** (besluit product owner 2026-09-28). Tot die tijd tonen app, mail en statuspagina "Ingediend – wacht op beoordeling" of "In behandeling".
 - Transities zijn gedefinieerd in een domein-statusmachine (code) en worden server-side afgedwongen. De UI toont alleen toegestane acties.
 - Iedere transitie → `ParadeStatusHistory` + eventueel een notificatie (tabel §8).
 - **Withdrawn/Rejected geven het opgavenummer nooit vrij.** Het startnummer wordt bij Withdrawn/Rejected leeggemaakt (gelogd), zodat het beschikbaar komt.

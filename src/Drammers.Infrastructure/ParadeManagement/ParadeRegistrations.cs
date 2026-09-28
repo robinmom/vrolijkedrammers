@@ -52,7 +52,6 @@ public sealed class ParadeRegistrations(
     INotificationService notifications,
     IOutbox outbox,
     IAuditLogger audit,
-    IUserAccessService userAccess,
     ParadeChangeContext changeContext,
     IClock clock)
 {
@@ -110,8 +109,9 @@ public sealed class ParadeRegistrations(
     // ----- Concept ----------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// Nieuw concept voor de huidige optocht, vooringevuld met de eigen contactgegevens. De maker wordt eigenaar en
-    /// krijgt (voor dit carnavalsjaar) de rol Groepsverantwoordelijke, waarmee hij de inschrijving mag bijwerken.
+    /// Nieuw concept voor de huidige optocht, vooringevuld met de eigen contactgegevens, de groepsnaam uit e-Boekhouden
+    /// en de laatst gebruikte bouwlocatie. Alleen voor groepsverantwoordelijken (<c>parade.register</c>, per gebruiker
+    /// aangevinkt in het portal); de maker wordt eigenaar.
     /// </summary>
     public async Task<ParadeRegistration> CreateDraftAsync(UserAccess user, CancellationToken cancellationToken)
     {
@@ -123,8 +123,10 @@ public sealed class ParadeRegistrations(
         }
 
         var member = user.MemberId is { } memberId
-            ? await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => new { m.FullName, m.MobilePhone, m.Phone, m.Email }).SingleOrDefaultAsync(cancellationToken)
+            ? await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => new { m.FullName, m.MobilePhone, m.Phone, m.Email, m.ParadeGroupName }).SingleOrDefaultAsync(cancellationToken)
             : null;
+        var location = await db.ParadeBuildLocations.AsNoTracking().Where(l => l.UserId == user.UserId)
+            .OrderByDescending(l => l.LastUsedAt).FirstOrDefaultAsync(cancellationToken);
         var registration = new ParadeRegistration
         {
             Id = IdGenerator.NewId(),
@@ -136,39 +138,17 @@ public sealed class ParadeRegistrations(
             ContactName = member?.FullName ?? user.DisplayName,
             ContactPhone = PhoneNormalizer.Normalize(member?.MobilePhone ?? member?.Phone),
             ContactEmail = member?.Email ?? user.Email,
+            GroupName = member?.ParadeGroupName,
+            BuildAddress = location is null ? new Address() : CloneAddress(location.Address),
         };
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         db.ParadeRegistrations.Add(registration);
         db.ParadeRegistrationManagers.Add(new ParadeRegistrationManager { RegistrationId = registration.Id, UserId = user.UserId, Role = ManagerRole.Owner, AddedAt = Now });
         db.ParadeStatusHistory.Add(new ParadeStatusHistory { RegistrationId = registration.Id, ToStatus = RegistrationStatus.Draft, ActorUserId = user.UserId, OccurredAt = Now });
-        var roleAdded = await EnsureGroupLeaderRoleAsync(user.UserId, parade.CarnivalYearId, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade-registration.created", "ParadeRegistration", registration.Id.ToString()), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        if (roleAdded)
-        {
-            userAccess.Invalidate(user.ExternalObjectId);
-        }
-
         return registration;
-    }
-
-    /// <summary>Rol Groepsverantwoordelijke tot het einde van het carnavalsjaar, als de gebruiker die nog niet heeft.</summary>
-    private async Task<bool> EnsureGroupLeaderRoleAsync(Guid userId, int carnivalYearId, CancellationToken cancellationToken)
-    {
-        var today = DateOnly.FromDateTime(Now);
-        var roleId = await db.Roles.Where(r => r.Code == DefaultRoles.Groepsverantwoordelijke).Select(r => r.Id).SingleAsync(cancellationToken);
-        var user = await db.Users.Include(u => u.Roles).SingleAsync(u => u.Id == userId, cancellationToken);
-        if (user.Roles.Any(r => r.RoleId == roleId && r.IsValidOn(today)))
-        {
-            return false;
-        }
-
-        var yearEnd = await db.CarnivalYears.Where(y => y.Id == carnivalYearId).Select(y => y.EndDate).SingleAsync(cancellationToken);
-        user.Roles.RemoveAll(r => r.RoleId == roleId);
-        user.Roles.Add(new UserRole { UserId = userId, RoleId = roleId, ValidFrom = today, ValidTo = yearEnd, AssignedAt = Now });
-        user.PermissionsVersion++;
-        return true;
     }
 
     public async Task DeleteDraftAsync(Guid userId, Guid id, CancellationToken cancellationToken)
@@ -282,12 +262,7 @@ public sealed class ParadeRegistrations(
             throw Invalid("Nog niet alles is goed ingevuld.", issues);
         }
 
-        var number = (await db.Database.SqlQuery<int>($"""
-            UPDATE parade.ParadeNumberSequence
-               SET last_registration_number = last_registration_number + 1
-            OUTPUT inserted.last_registration_number AS [Value]
-             WHERE parade_id = {parade.Id}
-            """).ToListAsync(cancellationToken)).Single();
+        var number = await NextNumberAsync(db, parade.Id, cancellationToken);
 
         registration.RegistrationNumber = number;
         registration.Status = RegistrationStatus.Submitted;
@@ -304,9 +279,10 @@ public sealed class ParadeRegistrations(
         var managers = await db.ParadeRegistrationManagers.Where(m => m.RegistrationId == id).Select(m => m.UserId).ToListAsync(cancellationToken);
         await notifications.EnqueueAsync(new SystemNotification(
             $"Inschrijving optocht ontvangen: nr. {number}",
-            $"{registration.GroupName} is ingeschreven met opgavenummer {number}. Dit is de volgorde van binnenkomst, niet jullie startnummer.",
+            $"{registration.GroupName} heeft opgavenummer {number} (volgorde van binnenkomst). De optochtcommissie beoordeelt de inschrijving.",
             NotificationCategory.Parade, new NotificationAudience(UserIds: managers), "drammers://optocht"), cancellationToken);
         outbox.Enqueue(SubmittedMailMessageType, new SubmittedMail(id));
+        await RememberLocationAsync(userId, registration.BuildAddress, cancellationToken);
         changeContext.Source = RegistrationSource.App;
         try
         {
@@ -322,6 +298,18 @@ public sealed class ParadeRegistrations(
         await transaction.CommitAsync(cancellationToken);
         return registration;
     }
+
+    /// <summary>
+    /// Reserveert het volgende opgavenummer (ADR-011): atomaire UPDATE op de teller, binnen de transactie van de aanroeper;
+    /// gelijktijdige inzendingen voor dezelfde optocht wachten op elkaar. Nummers worden nooit hergebruikt.
+    /// </summary>
+    public static async Task<int> NextNumberAsync(DrammersDbContext db, Guid paradeId, CancellationToken cancellationToken) =>
+        (await db.Database.SqlQuery<int>($"""
+            UPDATE parade.ParadeNumberSequence
+               SET last_registration_number = last_registration_number + 1
+            OUTPUT inserted.last_registration_number AS [Value]
+             WHERE parade_id = {paradeId}
+            """).ToListAsync(cancellationToken)).Single();
 
     public async Task<ParadeRegistration> WithdrawAsync(Guid userId, Guid id, string? reason, CancellationToken cancellationToken)
     {
@@ -353,6 +341,39 @@ public sealed class ParadeRegistrations(
         return registration;
     }
 
+    // ----- Onthouden bouwlocaties ------------------------------------------------------------------------------------
+
+    public async Task<IReadOnlyList<ParadeBuildLocation>> LocationsAsync(Guid userId, CancellationToken cancellationToken) =>
+        await db.ParadeBuildLocations.AsNoTracking().Where(l => l.UserId == userId).OrderByDescending(l => l.LastUsedAt).ToListAsync(cancellationToken);
+
+    public async Task DeleteLocationAsync(Guid userId, Guid locationId, CancellationToken cancellationToken)
+    {
+        if (await db.ParadeBuildLocations.Where(l => l.Id == locationId && l.UserId == userId).ExecuteDeleteAsync(cancellationToken) == 0)
+        {
+            throw new DomainException(ErrorCodes.NotFound, "Locatie niet gevonden.", DomainErrorKind.NotFound);
+        }
+    }
+
+    /// <summary>Het bouwadres onthouden voor volgend jaar; hetzelfde adres wordt niet dubbel opgeslagen.</summary>
+    private async Task RememberLocationAsync(Guid userId, Address address, CancellationToken cancellationToken)
+    {
+        if (address.IsEmpty)
+        {
+            return;
+        }
+
+        var existing = (await db.ParadeBuildLocations.Where(l => l.UserId == userId).ToListAsync(cancellationToken))
+            .FirstOrDefault(l => SameAddress(l.Address, address));
+        if (existing is null)
+        {
+            db.ParadeBuildLocations.Add(new ParadeBuildLocation { Id = IdGenerator.NewId(), UserId = userId, Address = CloneAddress(address), CreatedAt = Now, LastUsedAt = Now });
+        }
+        else
+        {
+            existing.LastUsedAt = Now;
+        }
+    }
+
     // ----- Beheerders ------------------------------------------------------------------------------------------------
 
     public async Task<IReadOnlyList<(Guid UserId, string DisplayName, ManagerRole Role)>> ManagersAsync(Guid userId, Guid id, CancellationToken cancellationToken)
@@ -375,16 +396,21 @@ public sealed class ParadeRegistrations(
             throw new DomainException(ErrorCodes.UserNotFound, "Er is geen app-account met dit e-mailadres. Een mede-beheerder moet zelf lid zijn met een account.", DomainErrorKind.NotFound);
         }
 
+        var today = DateOnly.FromDateTime(Now);
+        var leader = await db.Users.Where(u => u.Id == other)
+            .SelectMany(u => u.Roles).Where(r => (r.ValidFrom == null || r.ValidFrom <= today) && (r.ValidTo == null || r.ValidTo >= today))
+            .Join(db.Roles, r => r.RoleId, role => role.Id, (r, role) => role.Code)
+            .AnyAsync(code => code == DefaultRoles.Groepsverantwoordelijke, cancellationToken);
+        if (!leader)
+        {
+            throw new DomainException(ErrorCodes.Forbidden,
+                "Deze persoon is (nog) geen groepsverantwoordelijke. Vraag het bestuur om dat in het portal aan te vinken.", DomainErrorKind.Forbidden);
+        }
+
         if (!await db.ParadeRegistrationManagers.AnyAsync(m => m.RegistrationId == id && m.UserId == other, cancellationToken))
         {
             db.ParadeRegistrationManagers.Add(new ParadeRegistrationManager { RegistrationId = id, UserId = other, Role = ManagerRole.CoManager, AddedAt = Now });
-            var yearId = await db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.CarnivalYearId).SingleAsync(cancellationToken);
-            var roleAdded = await EnsureGroupLeaderRoleAsync(other, yearId, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
-            if (roleAdded)
-            {
-                userAccess.Invalidate(await db.Users.Where(u => u.Id == other).Select(u => u.ExternalObjectId).SingleAsync(cancellationToken));
-            }
 
             await audit.WriteAsync(new AuditEntry("parade-registration.manager-added", "ParadeRegistration", id.ToString(), null, $"{{\"userId\":\"{other}\"}}"), cancellationToken);
         }
@@ -514,6 +540,9 @@ public sealed class ParadeRegistrations(
             issues.Add(new ValidationIssue(RegistrationFields.ContactPhone, "Vul een geldig telefoonnummer in, bijvoorbeeld 06 12345678.", IssueSeverity.Block));
         }
     }
+
+    /// <summary>Invoer overnemen (genormaliseerd: telefoon E.164, postcode, e-mail in kleine letters).</summary>
+    public static ParadeRegistration ApplyInput(ParadeRegistration r, RegistrationInput input) => Apply(r, input);
 
     private static ParadeRegistration Apply(ParadeRegistration r, RegistrationInput input)
     {

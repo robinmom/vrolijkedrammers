@@ -39,8 +39,10 @@ public sealed class ParadeSubmittedMailHandler(DrammersDbContext db, IEmailSende
 
             Bedankt voor de inschrijving van {r.GroupName} voor de {parade.Name} op {date}.
 
-            Jullie opgavenummer is {r.RegistrationNumber}. Dit is de volgorde van binnenkomst, niet jullie startnummer. Het
-            startnummer en de aanrijtijd hoor je later van de optochtcommissie.
+            Jullie opgavenummer is {r.RegistrationNumber}. Dit is de volgorde van binnenkomst, niet jullie startnummer.
+
+            De optochtcommissie beoordeelt de inschrijving; pas na goedkeuring is ze definitief. Je hoort het per e-mail.
+            Het startnummer en de aanrijtijd volgen daarna.
 
             Je kunt de inschrijving bekijken en (binnen de regels) aanpassen in de app, onder Optocht.
 
@@ -51,7 +53,8 @@ public sealed class ParadeSubmittedMailHandler(DrammersDbContext db, IEmailSende
             <p>Beste {WebUtility.HtmlEncode(r.ContactName)},</p>
             <p>Bedankt voor de inschrijving van <strong>{WebUtility.HtmlEncode(r.GroupName)}</strong> voor de {WebUtility.HtmlEncode(parade.Name)} op {date}.</p>
             <p style="font-size:20px">Jullie opgavenummer is <strong>{r.RegistrationNumber}</strong>.</p>
-            <p>Dit is de volgorde van binnenkomst, <strong>niet</strong> jullie startnummer. Het startnummer en de aanrijtijd hoor je later van de optochtcommissie.</p>
+            <p>Dit is de volgorde van binnenkomst, <strong>niet</strong> jullie startnummer.</p>
+            <p>De optochtcommissie beoordeelt de inschrijving; pas na goedkeuring is ze definitief. Je hoort het per e-mail. Het startnummer en de aanrijtijd volgen daarna.</p>
             <p>Je kunt de inschrijving bekijken en (binnen de regels) aanpassen in de app, onder Optocht.</p>
             <p>Groeten,<br>De Vrolijke Drammers</p>
             """;

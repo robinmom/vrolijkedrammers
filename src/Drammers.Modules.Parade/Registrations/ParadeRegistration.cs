@@ -105,6 +105,16 @@ public sealed class ParadeRegistration : IAuditable
 
     public DateTime? ContactEmailVerifiedAt { get; set; }
 
+    /// <summary>Webformulier/gast: hash van de e-mailcode (verloopt na 30 minuten, maximaal 5 pogingen).</summary>
+    public string? VerificationCodeHash { get; set; }
+
+    public DateTime? VerificationExpiresAt { get; set; }
+
+    public int VerificationAttempts { get; set; }
+
+    /// <summary>Webformulier/gast: SHA-256 (hex) van het token van de statuslink (alleen lezen).</summary>
+    public string? StatusTokenHash { get; set; }
+
     public RegistrationSource Source { get; set; }
 
     /// <summary>Herinnering "de inschrijving sluit bijna" is verstuurd (alleen concepten, één keer).</summary>

@@ -50,6 +50,12 @@ public sealed class Parade : IAuditable
 
     public int MaxDocumentSizeMb { get; set; } = 10;
 
+    /// <summary>
+    /// Informatie over de optocht en het inschrijven (Markdown), door het bestuur of de commissie in het portal beheerd;
+    /// leden zonder de rol Groepsverantwoordelijke zien alleen deze pagina.
+    /// </summary>
+    public string? InfoText { get; set; }
+
     public ParadeStatus Status { get; set; }
 
     /// <summary>Optimistic concurrency voor het samenstellen (fase 12, ADR-012).</summary>

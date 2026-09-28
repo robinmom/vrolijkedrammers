@@ -56,6 +56,17 @@ export function UserDetailPage() {
     () => api.PUT('/api/v1/admin/users/{id}/roles', { params: { path: { id } }, body: { roles: assignments } }),
     [['user-roles', id], ['users'], ['me']],
   );
+  /** Rol Groepsverantwoordelijke aan/uit zonder de andere rollen te raken. */
+  const saveLeader = useApiMutation(
+    (enabled: boolean) => {
+      const current = (userRoles.data ?? []).map((r) => ({ roleCode: r.code, validFrom: r.validFrom, validTo: r.validTo }));
+      const roles = enabled
+        ? [...current.filter((r) => r.roleCode !== 'groepsverantwoordelijke'), { roleCode: 'groepsverantwoordelijke', validFrom: null, validTo: null }]
+        : current.filter((r) => r.roleCode !== 'groepsverantwoordelijke');
+      return api.PUT('/api/v1/admin/users/{id}/roles', { params: { path: { id } }, body: { roles } });
+    },
+    [['user-roles', id], ['users']],
+  );
   const blocked = user.data?.accountStatus === 'Blocked';
   const toggleBlock = useApiMutation(
     () =>
@@ -91,6 +102,17 @@ export function UserDetailPage() {
         {formatDateTime(user.data.lastLoginAt)}
       </p>
       <SuccessMessage message={message} />
+      <ParadeLeaderCard
+        assigned={(userRoles.data ?? []).some((r) => r.code === 'groepsverantwoordelijke')}
+        busy={saveLeader.isPending}
+        error={saveLeader.error}
+        onChange={(enabled) =>
+          saveLeader.mutate(enabled, {
+            onSuccess: () =>
+              setMessage(enabled ? 'Mag nu groepen inschrijven voor de optocht.' : 'Mag geen groepen meer inschrijven voor de optocht.'),
+          })
+        }
+      />
       <section className="card" aria-labelledby="rollen">
         <h2 id="rollen">Rollen</h2>
         <form
@@ -337,6 +359,36 @@ function TestAccessCard({ userId, name }: { userId: string; name: string }) {
           ) : null}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+/** Groepsverantwoordelijke optocht (fase 11): per gebruiker aanvinken; alleen dan kan iemand in de app groepen inschrijven. */
+function ParadeLeaderCard({
+  assigned,
+  busy,
+  error,
+  onChange,
+}: {
+  assigned: boolean;
+  busy: boolean;
+  error: unknown;
+  onChange: (enabled: boolean) => void;
+}) {
+  return (
+    <section className="card" aria-labelledby="optocht-rol">
+      <h2 id="optocht-rol">Optocht</h2>
+      <Checkbox
+        label="Groepsverantwoordelijke: mag groepen inschrijven voor de optocht"
+        checked={assigned}
+        disabled={busy}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <p className="muted">
+        Zonder dit vinkje ziet het lid in de app alleen de informatiepagina van de optocht. De groepsnaam komt uit e-Boekhouden (vrij veld,
+        in te stellen bij Ledensync).
+      </p>
+      <ProblemAlert error={error} />
     </section>
   );
 }

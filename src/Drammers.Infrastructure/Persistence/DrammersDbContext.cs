@@ -98,6 +98,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Parade.Registrations.ParadeDocument> ParadeDocuments => Set<Modules.Parade.Registrations.ParadeDocument>();
 
+    public DbSet<Modules.Parade.Registrations.ParadeBuildLocation> ParadeBuildLocations => Set<Modules.Parade.Registrations.ParadeBuildLocation>();
+
     public DbSet<Modules.Parade.Registrations.ParadeStatusEditPolicy> ParadeStatusEditPolicies => Set<Modules.Parade.Registrations.ParadeStatusEditPolicy>();
 
     public DbSet<Modules.Notification.Notifications.Notification> Notifications => Set<Modules.Notification.Notifications.Notification>();

@@ -35,9 +35,8 @@ public static class DefaultRoles
 
     public static readonly IReadOnlyList<RoleDefinition> All =
     [
-        new(1, Lid, "Carnavalist", "Lid van de vereniging (systeemrol)", IsSystem: true, IsAssignableBySync: true,
-            [.. MemberBasics, P.ParadeRegister]),
-        new(2, Groepsverantwoordelijke, "Groepsverantwoordelijke", "Beheert eigen optochtinschrijvingen", false, true,
+        new(1, Lid, "Carnavalist", "Lid van de vereniging (systeemrol)", IsSystem: true, IsAssignableBySync: true, MemberBasics),
+        new(2, Groepsverantwoordelijke, "Groepsverantwoordelijke", "Mag groepen inschrijven voor de optocht (per gebruiker aangevinkt)", false, false,
             [P.NotificationReadOwn, P.ParadeRegister, P.ParadeUpdate]),
         new(3, Kaderlid, "Kaderlid", "Kader; vooral via doelgroepen", false, true, MemberBasics),
         new(4, DansgardeLeiding, "Dansgarde leiding", "Leiding van de dansgarde", false, true,

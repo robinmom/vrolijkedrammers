@@ -487,6 +487,32 @@ export type LineupSummary = Schemas['LineupSummary'];
 export type PublishResult = Schemas['PublishResult'];
 export type Composition = Schemas['Composition'];
 export type TicketSummary = Schemas['TicketSummary'];
+export type MemberAccess = Schemas['MemberAccess'];
+export type AccessResult = Schemas['AccessResult'];
+
+export function useMemberAccess(memberId: string, enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['member-access', memberId],
+    queryFn: async () => required((await api.GET('/api/v1/admin/members/{memberId}/access', { params: { path: { memberId } } })).data),
+    enabled,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useAccessEvents() {
+  const api = useApi();
+  return useQuery({ queryKey: ['access-events'], queryFn: async () => required((await api.GET('/api/v1/admin/access-scans/events')).data) });
+}
+
+export function useAccessScans(eventId: string, page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['access-scans', eventId, page],
+    queryFn: async () => required((await api.GET('/api/v1/admin/access-scans', { params: { query: { eventId, page } } })).data),
+    enabled: Boolean(eventId),
+  });
+}
 export type TicketAction = Schemas['TicketAction'];
 
 export function useTickets(search: string, status: string, page: number) {

@@ -38,3 +38,21 @@ internal sealed class TicketSigningKeyConfiguration : IEntityTypeConfiguration<T
         builder.HasIndex(k => k.Active).IsUnique().HasFilter("[active] = 1");
     }
 }
+
+internal sealed class AccessScanConfiguration : IEntityTypeConfiguration<AccessScan>
+{
+    public void Configure(EntityTypeBuilder<AccessScan> builder)
+    {
+        builder.ToTable("AccessScan", Schemas.Ticketing);
+        builder.Property(a => a.Id).ValueGeneratedNever();
+        builder.Property(a => a.Reason).HasMaxLength(40).IsUnicode(false);
+        builder.Ignore(a => a.Admits);
+        builder.HasIndex(a => new { a.EventId, a.ScannedAt });
+        builder.HasIndex(a => new { a.EventId, a.MemberId });
+        builder.HasOne<Modules.Content.Events.Event>().WithMany().HasForeignKey(a => a.EventId).OnDelete(DeleteBehavior.Restrict);
+        // Geen foreign key naar Ticket: het lid → ticket → scan zou een tweede verwijderpad geven. De scan is een logregel;
+        // bij het verwijderen van een lid wordt de koppeling naar het lid leeggemaakt (AVG).
+        builder.HasIndex(a => a.TicketId);
+        builder.HasOne<Member>().WithMany().HasForeignKey(a => a.MemberId).OnDelete(DeleteBehavior.SetNull);
+    }
+}

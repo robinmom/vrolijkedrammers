@@ -55,6 +55,9 @@ public sealed class Event : IAuditable, IPublishable
 
     public bool IsHighlight { get; set; }
 
+    /// <summary>Toegangscontrole (fase 14): tijdens deze activiteit scant het deurpersoneel QR-codes of checkt leden in.</summary>
+    public bool AccessControl { get; set; }
+
     public string? BadgeText { get; set; }
 
     public List<EventAudience> Audiences { get; set; } = [];

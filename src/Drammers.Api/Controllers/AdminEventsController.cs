@@ -28,7 +28,7 @@ public sealed class AdminEventsController(DrammersDbContext db, ContentAdministr
         }
 
         return await query.OrderBy(e => e.StartAt)
-            .Select(e => new AdminEventSummaryResponse(e.Id, e.Title, e.StartAt, e.Visibility, e.Status, e.PublishAt, e.IsHighlight))
+            .Select(e => new AdminEventSummaryResponse(e.Id, e.Title, e.StartAt, e.Visibility, e.Status, e.PublishAt, e.IsHighlight, e.AccessControl))
             .ToListAsync(cancellationToken);
     }
 
@@ -47,7 +47,7 @@ public sealed class AdminEventsController(DrammersDbContext db, ContentAdministr
 
         return new AdminEventResponse(
             e.Id, e.CategoryId, e.Title, e.Summary, e.Description, e.StartAt, e.EndAt, e.AllDay, e.LocationName, e.LocationAddress,
-            e.Latitude, e.Longitude, e.IsHighlight, e.BadgeText,
+            e.Latitude, e.Longitude, e.IsHighlight, e.BadgeText, e.AccessControl,
             PublicationResponse.From(e.Visibility, e.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), e.Status, e.PublishAt),
             await urls.ForAsync(FileContainers.Content, e.ImageBlobPath, cancellationToken), attachments);
     }
@@ -109,9 +109,9 @@ public sealed class AdminEventsController(DrammersDbContext db, ContentAdministr
 
 public sealed record AdminEventSummaryResponse(
     Guid Id, string Title, DateTime StartAt, Modules.Content.Shared.ContentVisibility Visibility,
-    Modules.Content.Shared.PublicationStatus Status, DateTime? PublishAt, bool IsHighlight);
+    Modules.Content.Shared.PublicationStatus Status, DateTime? PublishAt, bool IsHighlight, bool AccessControl);
 
 public sealed record AdminEventResponse(
     Guid Id, int CategoryId, string Title, string? Summary, string? Description, DateTime StartAt, DateTime? EndAt, bool AllDay,
-    string? LocationName, string? LocationAddress, decimal? Latitude, decimal? Longitude, bool IsHighlight, string? BadgeText,
+    string? LocationName, string? LocationAddress, decimal? Latitude, decimal? Longitude, bool IsHighlight, string? BadgeText, bool AccessControl,
     PublicationResponse Publication, string? ImageUrl, IReadOnlyList<AttachmentResponse> Attachments);

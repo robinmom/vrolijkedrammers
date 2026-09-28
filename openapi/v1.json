@@ -5,6 +5,402 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/v1/access/status": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "De activiteit met toegangscontrole van dit moment (of de volgende) met de tellers.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessStatus"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessStatus"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/access/scan": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/access/scans/{id}/decision": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "\"Toch toelaten\" of \"Weigeren\" bij oranje.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessCounts"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessCounts"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessCounts"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{memberId}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Toegangskaart bij een lid in het portal.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAccess"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAccess"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAccess"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{memberId}/check-in": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Handmatig inchecken (leden zonder smartphone, OQ-23); al binnen → geen record tenzij `force`.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResult"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/access-scans/events": {
+      "get": {
+        "tags": [
+          "AdminAccessScans"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessEventSummary"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessEventSummary"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessEventSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/access-scans": {
+      "get": {
+        "tags": [
+          "AdminAccessScans"
+        ],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfAccessScanRow"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfAccessScanRow"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfAccessScanRow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/account-requests": {
       "post": {
         "tags": [
@@ -10403,6 +10799,306 @@
   },
   "components": {
     "schemas": {
+      "AccessCounts": {
+        "required": [
+          "inside",
+          "scans",
+          "refused"
+        ],
+        "type": "object",
+        "properties": {
+          "inside": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scans": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refused": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AccessDecision": {
+        "enum": [
+          "Admitted",
+          "Refused",
+          null
+        ]
+      },
+      "AccessEvent": {
+        "required": [
+          "id",
+          "title",
+          "startAt",
+          "endAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "AccessEventSummary": {
+        "required": [
+          "id",
+          "title",
+          "startAt",
+          "endAt",
+          "counts"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/AccessCounts"
+          }
+        }
+      },
+      "AccessHistoryItem": {
+        "required": [
+          "at",
+          "method",
+          "outcome",
+          "decision",
+          "eventTitle",
+          "operator"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "method": {
+            "$ref": "#/components/schemas/AccessMethod"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/AccessOutcome"
+          },
+          "decision": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessDecision"
+              }
+            ]
+          },
+          "eventTitle": {
+            "type": "string"
+          },
+          "operator": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "AccessMethod": {
+        "enum": [
+          "Qr",
+          "Manual"
+        ]
+      },
+      "AccessOutcome": {
+        "enum": [
+          "Admitted",
+          "AdmittedAgain",
+          "Warning",
+          "Refused"
+        ],
+        "description": "Uitkomst voor het deurpersoneel: groen, groen-herhaald, oranje (beslissen) of rood."
+      },
+      "AccessResult": {
+        "required": [
+          "scanId",
+          "outcome",
+          "title",
+          "message",
+          "holderName",
+          "previousAt",
+          "needsDecision",
+          "counts"
+        ],
+        "type": "object",
+        "properties": {
+          "scanId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/AccessOutcome"
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "holderName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "previousAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "needsDecision": {
+            "type": "boolean"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/AccessCounts"
+          }
+        },
+        "description": "Wat het deurpersoneel na een scan of inchecken ziet (fase 14, Figma 📷 Toegangscontrole)."
+      },
+      "AccessScanRow": {
+        "required": [
+          "id",
+          "scannedAt",
+          "memberName",
+          "method",
+          "outcome",
+          "reason",
+          "decision",
+          "operatorName",
+          "deviceName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scannedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "memberName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "method": {
+            "$ref": "#/components/schemas/AccessMethod"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/AccessOutcome"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "decision": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessDecision"
+              }
+            ]
+          },
+          "operatorName": {
+            "type": "string"
+          },
+          "deviceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "AccessStatus": {
+        "required": [
+          "current",
+          "next",
+          "counts"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessEvent"
+              }
+            ]
+          },
+          "next": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessEvent"
+              }
+            ]
+          },
+          "counts": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessCounts"
+              }
+            ]
+          }
+        }
+      },
       "AccountRequestAcceptedResponse": {
         "required": [
           "message"
@@ -10741,6 +11437,7 @@
           "longitude",
           "isHighlight",
           "badgeText",
+          "accessControl",
           "publication",
           "imageUrl",
           "attachments"
@@ -10819,6 +11516,9 @@
               "string"
             ]
           },
+          "accessControl": {
+            "type": "boolean"
+          },
           "publication": {
             "$ref": "#/components/schemas/PublicationResponse"
           },
@@ -10844,7 +11544,8 @@
           "visibility",
           "status",
           "publishAt",
-          "isHighlight"
+          "isHighlight",
+          "accessControl"
         ],
         "type": "object",
         "properties": {
@@ -10873,6 +11574,9 @@
             "format": "date-time"
           },
           "isHighlight": {
+            "type": "boolean"
+          },
+          "accessControl": {
             "type": "boolean"
           }
         }
@@ -12370,6 +13074,15 @@
           }
         }
       },
+      "CheckInRequest": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
       "Composition": {
         "required": [
           "version",
@@ -12668,6 +13381,17 @@
             "items": {
               "$ref": "#/components/schemas/HealthEntry"
             }
+          }
+        }
+      },
+      "DecisionRequest": {
+        "required": [
+          "admit"
+        ],
+        "type": "object",
+        "properties": {
+          "admit": {
+            "type": "boolean"
           }
         }
       },
@@ -13073,6 +13797,10 @@
           },
           "publication": {
             "$ref": "#/components/schemas/PublicationRequest"
+          },
+          "accessControl": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -13699,6 +14427,50 @@
               "number"
             ],
             "format": "double"
+          }
+        }
+      },
+      "MemberAccess": {
+        "required": [
+          "current",
+          "inside",
+          "insideSince",
+          "ticketProblem",
+          "history"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessEvent"
+              }
+            ]
+          },
+          "inside": {
+            "type": "boolean"
+          },
+          "insideSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "ticketProblem": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessHistoryItem"
+            }
           }
         }
       },
@@ -15089,6 +15861,36 @@
             "format": "int32"
           }
         }
+      },
+      "PagedResultOfAccessScanRow": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessScanRow"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
       },
       "PagedResultOfAccountRequestResponse": {
         "required": [
@@ -17108,6 +17910,17 @@
           }
         }
       },
+      "ScanRequest": {
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        }
+      },
       "ScheduleRequest": {
         "required": [
           "publishAt"
@@ -18051,6 +18864,12 @@
     }
   },
   "tags": [
+    {
+      "name": "Access"
+    },
+    {
+      "name": "AdminAccessScans"
+    },
     {
       "name": "AccountRequests"
     },

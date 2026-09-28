@@ -1245,3 +1245,9 @@ legend {
   cursor: grab;
   touch-action: none;
 }
+
+/* Toegangscontrole (fase 14). */
+.success-text {
+  color: var(--dvd-success-text);
+  font-weight: 600;
+}

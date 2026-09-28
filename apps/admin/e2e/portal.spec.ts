@@ -693,3 +693,46 @@ test('fase 13: alleen lezen zonder beheerknoppen', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Tickets uitgeven' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Blokkeren/ })).toHaveCount(0);
 });
+
+test('fase 14: deurcontrole checkt een lid in via de ledenlijst; al binnen → toch opnieuw', async ({ page }) => {
+  const api = new MockApi(['member.read', 'ticket.scan']);
+  await open(page, api, 'leden/m-1');
+  const card = page.getByRole('region', { name: 'Toegang' });
+  await expect(card.getByText('Nog niet binnen vanavond.')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await card.getByRole('button', { name: 'Inchecken' }).click();
+  await expect(card.getByText('Piet van der Berg is ingecheckt om 20:58.')).toBeVisible();
+  await expect(card.getByText(/Al binnen sinds/)).toBeVisible();
+  await card.getByRole('button', { name: 'Toch opnieuw inchecken' }).click();
+  await expect
+    .poll(() => api.checkIns)
+    .toEqual([
+      { memberId: 'm-1', force: false },
+      { memberId: 'm-1', force: true },
+    ]);
+});
+
+test('fase 14: zonder ticket.scan geen toegangskaart; toegangslog voor het bestuur', async ({ page }) => {
+  const api = new MockApi(['member.read', 'ticket.read']);
+  await open(page, api, 'leden/m-1');
+  await expect(page.getByRole('heading', { name: 'App-account' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Toegang' })).toHaveCount(0);
+
+  await page.goto('/beheer/toegangslog');
+  await expect(page.getByRole('heading', { name: 'Toegangslog' })).toBeVisible();
+  await expect(page.getByText('Verlopen code')).toBeVisible();
+  await expect(page.getByText('Ingecheckt', { exact: true })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+});
+
+test('fase 14: toegangscontrole aanzetten bij een activiteit', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'agenda');
+  await page.getByRole('link', { name: 'Event toevoegen' }).click();
+  await page.getByLabel('Titel').fill('Carnavalsavond');
+  await page.getByLabel('Begint').fill('2027-02-13T20:00');
+  await page.getByLabel(/Toegangscontrole/).check();
+  await page.getByRole('button', { name: 'Opslaan', exact: true }).click();
+  await expect(page.getByText('Event opgeslagen.')).toBeVisible();
+  expect((api.events[0] as unknown as { accessControl: boolean }).accessControl).toBe(true);
+});

@@ -45,8 +45,9 @@ public static class DefaultRoles
         new(6, Ouder, "Ouder/verzorger", "Ouder of verzorger van een minderjarig lid (systeemrol)", IsSystem: true, IsAssignableBySync: true,
             [P.GuardianReadOwn, P.NotificationReadOwn, P.TicketReadOwn]),
         new(7, RaadVanElf, "Raad van Elf", "Raad van Elf", false, true, [.. MemberBasics, P.ReportView]),
-        new(8, Scanner, "Scanner", "Mag scannen op een trusted device (eventueel tijdelijk)", false, false,
-            [.. MemberBasics, P.TicketScan]),
+        // Deurcontrole (fase 14, OQ-73): QR-codes scannen in de app en leden opzoeken en inchecken in het portal.
+        new(8, Scanner, "Deurcontrole", "Mag bij activiteiten met toegangscontrole QR-codes scannen en leden inchecken", false, false,
+            [.. MemberBasics, P.TicketScan, P.MemberRead]),
         new(9, Optochtcommissie, "Optochtcommissie", "Organisatie van de optocht", false, false,
             [.. MemberBasics, P.NotificationSendGroup, P.ParadeRead, P.ParadeManage, P.ParadeAssignStartNumber,
              P.ParadeImportArrivalTimes, P.ParadeExport, P.ParadeConfig, P.ReportView]),

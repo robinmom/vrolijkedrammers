@@ -4,6 +4,330 @@
  */
 
 export interface paths {
+    "/api/v1/access/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De activiteit met toegangscontrole van dit moment (of de volgende) met de tellers. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessStatus"];
+                        "application/json": components["schemas"]["AccessStatus"];
+                        "text/json": components["schemas"]["AccessStatus"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ScanRequest"];
+                    "text/json": components["schemas"]["ScanRequest"];
+                    "application/*+json": components["schemas"]["ScanRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessResult"];
+                        "application/json": components["schemas"]["AccessResult"];
+                        "text/json": components["schemas"]["AccessResult"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/scans/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Toch toelaten" of "Weigeren" bij oranje. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DecisionRequest"];
+                    "text/json": components["schemas"]["DecisionRequest"];
+                    "application/*+json": components["schemas"]["DecisionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessCounts"];
+                        "application/json": components["schemas"]["AccessCounts"];
+                        "text/json": components["schemas"]["AccessCounts"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{memberId}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Toegangskaart bij een lid in het portal. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberAccess"];
+                        "application/json": components["schemas"]["MemberAccess"];
+                        "text/json": components["schemas"]["MemberAccess"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{memberId}/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Handmatig inchecken (leden zonder smartphone, OQ-23); al binnen → geen record tenzij `force`. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CheckInRequest"];
+                    "text/json": components["schemas"]["CheckInRequest"];
+                    "application/*+json": components["schemas"]["CheckInRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessResult"];
+                        "application/json": components["schemas"]["AccessResult"];
+                        "text/json": components["schemas"]["AccessResult"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/access-scans/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessEventSummary"][];
+                        "application/json": components["schemas"]["AccessEventSummary"][];
+                        "text/json": components["schemas"]["AccessEventSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/access-scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    eventId: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfAccessScanRow"];
+                        "application/json": components["schemas"]["PagedResultOfAccessScanRow"];
+                        "text/json": components["schemas"]["PagedResultOfAccessScanRow"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/account-requests": {
         parameters: {
             query?: never;
@@ -8562,6 +8886,82 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccessCounts: {
+            /** Format: int32 */
+            inside: number;
+            /** Format: int32 */
+            scans: number;
+            /** Format: int32 */
+            refused: number;
+        };
+        /** @enum {unknown} */
+        AccessDecision: "Admitted" | "Refused" | null;
+        AccessEvent: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: null | string;
+        };
+        AccessEventSummary: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: null | string;
+            counts: components["schemas"]["AccessCounts"];
+        };
+        AccessHistoryItem: {
+            /** Format: date-time */
+            at: string;
+            method: components["schemas"]["AccessMethod"];
+            outcome: components["schemas"]["AccessOutcome"];
+            decision: null | components["schemas"]["AccessDecision"];
+            eventTitle: string;
+            operator: null | string;
+        };
+        /** @enum {unknown} */
+        AccessMethod: "Qr" | "Manual";
+        /**
+         * @description Uitkomst voor het deurpersoneel: groen, groen-herhaald, oranje (beslissen) of rood.
+         * @enum {unknown}
+         */
+        AccessOutcome: "Admitted" | "AdmittedAgain" | "Warning" | "Refused";
+        /** @description Wat het deurpersoneel na een scan of inchecken ziet (fase 14, Figma 📷 Toegangscontrole). */
+        AccessResult: {
+            /** Format: uuid */
+            scanId: null | string;
+            outcome: components["schemas"]["AccessOutcome"];
+            title: string;
+            message: string;
+            holderName: null | string;
+            /** Format: date-time */
+            previousAt: null | string;
+            needsDecision: boolean;
+            counts: components["schemas"]["AccessCounts"];
+        };
+        AccessScanRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            scannedAt: string;
+            memberName: null | string;
+            method: components["schemas"]["AccessMethod"];
+            outcome: components["schemas"]["AccessOutcome"];
+            reason: null | string;
+            decision: null | components["schemas"]["AccessDecision"];
+            operatorName: string;
+            deviceName: null | string;
+        };
+        AccessStatus: {
+            current: null | components["schemas"]["AccessEvent"];
+            next: null | components["schemas"]["AccessEvent"];
+            counts: null | components["schemas"]["AccessCounts"];
+        };
         AccountRequestAcceptedResponse: {
             message: string;
         };
@@ -8664,6 +9064,7 @@ export interface components {
             longitude: null | number;
             isHighlight: boolean;
             badgeText: null | string;
+            accessControl: boolean;
             publication: components["schemas"]["PublicationResponse"];
             imageUrl: null | string;
             attachments: components["schemas"]["AttachmentResponse"][];
@@ -8679,6 +9080,7 @@ export interface components {
             /** Format: date-time */
             publishAt: null | string;
             isHighlight: boolean;
+            accessControl: boolean;
         };
         AdminNewsResponse: {
             /** Format: uuid */
@@ -9062,6 +9464,10 @@ export interface components {
         ChallengeResponse: {
             challenge: string;
         };
+        CheckInRequest: {
+            /** @default false */
+            force: boolean;
+        };
         Composition: {
             /** Format: int32 */
             version: number;
@@ -9141,6 +9547,9 @@ export interface components {
             lastHeartbeat: null | string;
             systemStatus: string;
             checks: components["schemas"]["HealthEntry"][];
+        };
+        DecisionRequest: {
+            admit: boolean;
         };
         DeleteAccountRequest: {
             confirmation: string;
@@ -9248,6 +9657,8 @@ export interface components {
             isHighlight: boolean;
             badgeText: null | string;
             publication: components["schemas"]["PublicationRequest"];
+            /** @default false */
+            accessControl: boolean;
         };
         EventSummaryResponse: {
             /** Format: uuid */
@@ -9419,6 +9830,14 @@ export interface components {
         MeasuredLengthRequest: {
             /** Format: double */
             measuredLengthMeters: null | number;
+        };
+        MemberAccess: {
+            current: null | components["schemas"]["AccessEvent"];
+            inside: boolean;
+            /** Format: date-time */
+            insideSince: null | string;
+            ticketProblem: null | string;
+            history: components["schemas"]["AccessHistoryItem"][];
         };
         /** @description App-account van een lid; `AwaitingFirstSignIn`: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27). */
         MemberAccountResponse: {
@@ -9762,6 +10181,16 @@ export interface components {
             failedCount: number;
             /** Format: int32 */
             readCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfAccessScanRow: {
+            items: components["schemas"]["AccessScanRow"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfAccountRequestResponse: {
@@ -10305,6 +10734,9 @@ export interface components {
             /** Format: int32 */
             version: number;
             orderedIds: string[];
+        };
+        ScanRequest: {
+            code: string;
         };
         ScheduleRequest: {
             /** Format: date-time */

@@ -14,6 +14,9 @@ public static class AuthorizationSetup
     /// <summary>Alleen lezen via een statuslink (256-bits token, niet te raden): ruimer, los van de formulierlimiet.</summary>
     public const string AnonymousStatusPolicy = "anonymous-status";
 
+    /// <summary>Scans per toestel/gebruiker: ruim voor een drukke deur (± 1 per 2 seconden), maar begrensd tegen misbruik.</summary>
+    public const string ScannerPolicy = "scanner";
+
     public static IServiceCollection AddDrammersAuthorization(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
@@ -60,6 +63,9 @@ public static class AuthorizationSetup
                     Window = TimeSpan.FromMinutes(10),
                     QueueLimit = 0,
                 }));
+            options.AddPolicy(ScannerPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
+                $"scan:{context.User.FindFirst("oid")?.Value ?? context.Connection.RemoteIpAddress?.ToString()}",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
             options.AddPolicy(AnonymousStatusPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
                 $"status:{context.Connection.RemoteIpAddress}",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));

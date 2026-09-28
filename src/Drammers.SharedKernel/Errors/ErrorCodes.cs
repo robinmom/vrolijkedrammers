@@ -56,6 +56,7 @@ public static class ErrorCodes
     public const string RegistrationExists = "REGISTRATION_EXISTS";
     public const string StartNumberTaken = "START_NUMBER_TAKEN";
     public const string TicketUnavailable = "TICKET_UNAVAILABLE";
+    public const string AccessNotActive = "ACCESS_NOT_ACTIVE";
     public const string TicketRebindLimit = "TICKET_REBIND_LIMIT";
     public const string DeviceKeyInvalid = "DEVICE_KEY_INVALID";
     public const string RegistrationInvalid = "REGISTRATION_INVALID";

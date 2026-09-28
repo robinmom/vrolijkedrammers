@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { NoAccountError, signIn } from '../../auth/session';
+import { enablePush, getPushPermission } from '../../features/push';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, LargeTitleHeader, Screen } from '../../ui';
 
@@ -20,6 +21,10 @@ export default function InloggenScreen() {
     try {
       if ((await signIn()) === 'success') {
         router.replace('/account');
+        // Logisch moment om push te vragen (fase 10): net ingelogd. Eerder geweigerd = niet opnieuw vragen.
+        if ((await getPushPermission().catch(() => 'unavailable')) === 'undetermined') {
+          void enablePush().catch(() => undefined);
+        }
       }
     } catch (error) {
       setMessage(

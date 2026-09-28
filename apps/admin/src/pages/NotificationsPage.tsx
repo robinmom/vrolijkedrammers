@@ -229,7 +229,7 @@ export function NotificationComposerPage() {
             placeholder="drammers://nieuws/…"
             value={deepLink}
             onChange={(e) => setDeepLink(e.target.value)}
-            hint="Begint met drammers://. Leeg: de melding opent de inbox."
+            hint="Bijv. drammers://nieuws/{id}, drammers://activiteit/{id}, drammers://agenda, drammers://optocht of drammers://fotos/{id}. Leeg of onbekend: de melding opent de inbox."
           />
         </div>
 

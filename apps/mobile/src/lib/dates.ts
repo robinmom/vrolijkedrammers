@@ -96,3 +96,18 @@ export const seasonLabel = (name: string) => `Seizoen ${name.replace('/', '–')
 export function formatDateOnly(dateOnly: string): string {
   return dayMonthYear.format(new Date(`${dateOnly}T12:00:00Z`));
 }
+
+const dayKey = fmt({ year: 'numeric', month: '2-digit', day: '2-digit' });
+
+/** Moment van een melding (inbox): "vandaag 14:05", "gisteren 09:10" of "12 nov 2026". */
+export function notificationMoment(iso: string, now: Date): string {
+  const at = new Date(iso);
+  const yesterday = new Date(now.getTime() - 86_400_000);
+  if (dayKey.format(at) === dayKey.format(now)) {
+    return `vandaag ${time.format(at)}`;
+  }
+  if (dayKey.format(at) === dayKey.format(yesterday)) {
+    return `gisteren ${time.format(at)}`;
+  }
+  return shortDate.format(at);
+}

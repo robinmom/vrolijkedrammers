@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useSessionStatus } from '../auth/useSession';
 import { api, unwrap } from './client';
 
@@ -22,6 +22,8 @@ export const queryKeys = {
   myMember: ['me', 'member'] as const,
   myDevices: ['me', 'devices'] as const,
   myChildren: ['me', 'children'] as const,
+  myNotifications: ['me', 'notifications'] as const,
+  myNotificationPreferences: ['me', 'notification-preferences'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -116,6 +118,27 @@ export const useMyDevices = () => {
   return useQuery({
     queryKey: queryKeys.myDevices,
     queryFn: () => unwrap(api.GET('/api/v1/me/devices')),
+    enabled: status === 'signedIn',
+  });
+};
+
+/** Inbox (fase 10): per 30, nieuwste eerst; ook meldingen waarvoor push uit stond. */
+export const useMyNotifications = () => {
+  const status = useSessionStatus();
+  return useInfiniteQuery({
+    queryKey: queryKeys.myNotifications,
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => unwrap(api.GET('/api/v1/me/notifications', { params: { query: { page: pageParam } } })),
+    getNextPageParam: (last, pages) => (last.hasMore ? pages.length + 1 : undefined),
+    enabled: status === 'signedIn',
+  });
+};
+
+export const useMyNotificationPreferences = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myNotificationPreferences,
+    queryFn: () => unwrap(api.GET('/api/v1/me/notification-preferences')),
     enabled: status === 'signedIn',
   });
 };

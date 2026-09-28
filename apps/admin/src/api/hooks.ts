@@ -486,6 +486,23 @@ export type RegistrationFilter = {
 export type LineupSummary = Schemas['LineupSummary'];
 export type PublishResult = Schemas['PublishResult'];
 export type Composition = Schemas['Composition'];
+export type TicketSummary = Schemas['TicketSummary'];
+export type TicketAction = Schemas['TicketAction'];
+
+export function useTickets(search: string, status: string, page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['tickets', search, status, page],
+    queryFn: async () =>
+      required(
+        (
+          await api.GET('/api/v1/admin/tickets', {
+            params: { query: { search: search || undefined, status: (status || undefined) as Schemas['TicketStatus'] | undefined, page } },
+          })
+        ).data,
+      ),
+  });
+}
 export type CompositionCard = Schemas['CompositionCard'];
 export type StartNumberPreview = Schemas['StartNumberPreview'];
 export type StartNumberMode = Schemas['StartNumberMode'];

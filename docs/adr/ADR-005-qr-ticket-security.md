@@ -1,6 +1,6 @@
 # ADR-005: QR-ticketsecurity
 
-- **Status**: Voorgesteld · 2026-09-24 · spike OQ-68: voorlopig GO (2026-09-27), metingen op toestellen open
+- **Status**: Aanvaard · 2026-09-28 (fase 13a) · spike OQ-68: GO met fallback; metingen op toestellen tijdens het testen van fase 13
 
 ## Context
 
@@ -84,6 +84,16 @@ Verwachting uit platformdocumentatie: ondertekenen in de TEE of Secure Enclave d
 **Voorlopig besluit: GO** voor optie 5 met een eigen module. Er zijn geen blokkerende beperkingen gevonden: beide platformen bieden P-256 in hardware met standaardformaten die .NET direct controleert. Het besluit wordt definitief na de metingen hierboven. **Fallback** blijft optie 4 (server-signed, kortlevend) voor toestellen die alleen `Software` melden. De API registreert het `securityLevel` per device (fase 13, `identity.Device.attestation_status`) en het bestuur kan beslissen of zulke toestellen worden toegelaten.
 
 **Gevolgen voor fase 13:** de module verhuist van spike naar product: tests met Maestro op toestellen, `bind-device` met proof-of-possession (de server ondertekent een challenge), Android-attestatie controleren tegen de Google-root, en voor iOS App Attest (OQ-73).
+
+## Uitwerking fase 13a (2026-09-28)
+
+Besluiten product owner: **device-gebonden sleutel met automatische fallback** (OQ-68), **één ledenticket per actief lid per carnavalsjaar, geldig de hele carnavalsperiode** (OQ-20: eerste carnavalsdag 00:00 tot de dag na de laatste 06:00, Europe/Amsterdam; geen vensters per dag, geen gasten) en **geen printkaart** (OQ-23): leden zonder smartphone worden bij de deur in de ledenlijst van het portal opgezocht en ingecheckt (fase 14, zelfde toegangslog als de QR-scans).
+
+- **Ticket** (`ticketing.Ticket`): `public_ref` 16 bytes CSPRNG (uniek), `credential_version`, status Active/Blocked, `bound_device_id`, `rebind_count` (max. 3 per jaar, daarna "Overzetten vrijgeven" door het bestuur). Uitgifte idempotent (uniek op jaar + lid): automatisch bij het openen van Mijn QR, of in bulk in het portal.
+- **Sleutel en koppeling**: `PUT /me/devices/current/key` (SubjectPublicKeyInfo EC P-256 + `securityLevel`); `POST /me/ticket/challenge` en `POST /me/ticket/bind-device` met een handtekening over de challenge (proof-of-possession). Een nieuwe sleutel op hetzelfde toestel ontkoppelt het ticket (telt niet mee).
+- **Fallback (versie 2 van de payload)**: toestellen zonder hardwaresleutel (niveau `Software`/`UnknownSecure`, of Expo Go) halen elke 30 s `GET /me/ticket/code`: dezelfde layout, ondertekend door de server. De server-sleutel (ECDSA P-256) maakt de API zelf aan; de private sleutel staat alleen versleuteld met Data Protection (key ring beschermd door Key Vault) in `ticketing.TicketSigningKey`. Deze codes werken alleen online.
+- **Validatie**: `TicketQrValidator` (module Ticketing, zonder database) — dezelfde regels voor de API en straks de scanner; `TicketValidation` voegt de gegevens uit de database toe. Een afgemeld toestel telt niet meer als koppeling.
+- **Beheer**: portal **Toegang → Ledentickets** (`ticket.read`/`ticket.manage`): blokkeren (met reden), deblokkeren, opnieuw uitgeven (`credential_version++`, ontkoppelen) en overzetten vrijgeven; alles geaudit.
 
 ## Reasoning
 

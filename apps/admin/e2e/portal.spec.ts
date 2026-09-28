@@ -658,3 +658,38 @@ test('fase 12b: slepen met het toetsenbord (spatie, pijltje, spatie)', async ({ 
   await expect(page.getByText('Groep A staat nu op positie 2. Volgorde bewaard.').first()).toBeVisible();
   expect(api.compositionOrder).toEqual(['c-2', 'c-1']);
 });
+
+test('fase 13: ledentickets uitgeven, blokkeren met reden en overzetten vrijgeven', async ({ page }) => {
+  const api = new MockApi(['ticket.read', 'ticket.manage']);
+  await open(page, api, 'tickets');
+  await expect(page.getByRole('heading', { name: 'Ledentickets' })).toBeVisible();
+  await expect(page.getByText('Hardwaresleutel (Secure Enclave)', { exact: false })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByRole('button', { name: 'Tickets uitgeven' }).click();
+  await expect(page.getByText('12 tickets uitgegeven aan actieve leden zonder ticket.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Blokkeren Piet Lid' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('button', { name: 'Blokkeren' })).toBeDisabled();
+  await dialog.getByLabel('Reden').fill('Telefoon gestolen');
+  await dialog.getByRole('button', { name: 'Blokkeren' }).click();
+  await expect(page.locator('.badge', { hasText: 'Geblokkeerd' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Overzetten vrijgeven Piet Lid' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Overzetten vrijgeven' }).click();
+  await expect(page.getByText('0 van 3')).toBeVisible();
+  expect(api.ticketCalls.map((c) => c.body)).toEqual([
+    null,
+    { action: 'Block', reason: 'Telefoon gestolen' },
+    { action: 'ResetRebinds', reason: null },
+  ]);
+});
+
+test('fase 13: alleen lezen zonder beheerknoppen', async ({ page }) => {
+  const api = new MockApi(['ticket.read']);
+  await open(page, api, 'tickets');
+  await expect(page.getByText('Piet Lid')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tickets uitgeven' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Blokkeren/ })).toHaveCount(0);
+});

@@ -41,3 +41,18 @@ jest.mock('expo-notifications', () => ({
   DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
   AndroidImportance: { MIN: 1, LOW: 2, DEFAULT: 3, HIGH: 4, MAX: 5 },
 }));
+
+// Mijn QR (fase 13b): helderheid, schermafdrukken en de QR-weergave zonder native code.
+jest.mock('expo-brightness', () => ({
+  setBrightnessAsync: jest.fn(async () => undefined),
+  restoreSystemBrightnessAsync: jest.fn(async () => undefined),
+}));
+jest.mock('expo-screen-capture', () => ({
+  usePreventScreenCapture: jest.fn(),
+  useScreenshotListener: jest.fn(),
+}));
+jest.mock('react-native-qrcode-svg', () => {
+  const { createElement } = require('react');
+  const { Text } = require('react-native');
+  return ({ value }: { value: string }) => createElement(Text, { testID: 'qr-code' }, value);
+});

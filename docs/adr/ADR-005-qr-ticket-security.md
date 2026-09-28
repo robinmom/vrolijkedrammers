@@ -67,6 +67,7 @@ Ieder geldig lid krijgt per carnavalsjaar een persoonlijke digitale toegangscode
 
 **Geverifieerd:**
 - De Swift-code compileert voor iOS (toestel en simulator, `swiftc -typecheck`, iOS 16.4+).
+- De Kotlin-code compileert: de EAS-build `spike` voor Android is geslaagd (2026-09-27).
 - Vectoren uit hetzelfde Security-framework (macOS) worden door .NET 10 geaccepteerd, ook bij DER-handtekeningen van 70, 71 en 72 bytes; een gewijzigde payload wordt geweigerd (`DeviceKeySignatureTests`).
 - De payload is 97 bytes, dat wordt 146 base45-tekens, en past in **QR-versie 6** (foutcorrectie M), zoals verwacht (`deviceQr.test.ts`).
 

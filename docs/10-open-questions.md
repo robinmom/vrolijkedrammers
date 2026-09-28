@@ -56,10 +56,10 @@
 | OQ-13 | Onderwerp verplicht | IMPORTANT | 11 | 🟢 ja, per optocht uit te zetten (2026-09-28) |
 | OQ-14 | Verplichte documenten per categorie | IMPORTANT | 11 | 🟢 niet verplicht in 2027 (2026-09-28) |
 | OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟢 besloten 2026-09-27: lid vanaf 5 jaar (dansgarde); eigen account vanaf 16, jonger via de ouder/verzorger (rol Ouder) |
-| OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟡 |
+| OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟢 besloten 2026-09-28: één ledenticket per actief lid per carnavalsjaar, geldig de hele carnavalsperiode (geen vensters per dag); gasten niet in de app |
 | OQ-21 | Bandjesbeleid | IMPORTANT | 14 | 🟡 |
 | OQ-22 | Pasfoto in scanner | LATER | — | 🟡 |
-| OQ-23 | Toegang zonder smartphone (printkaart) | IMPORTANT | 13 | 🟢 voorstel |
+| OQ-23 | Toegang zonder smartphone (printkaart) | IMPORTANT | 13 → 14 | 🟢 besloten 2026-09-28: geen printkaart; deurpersoneel zoekt het lid in de ledenlijst van het portal en klikt **Inchecken** (alleen tijdens activiteiten met toegangscontrole; nieuwe rol Deurcontrole); zelfde toegangslog als de QR-scans, gebouwd in fase 14 |
 | OQ-24 | Mollie next-gen webhooks met signatures | LATER | 19 | 🟡 |
 | OQ-25 | Certificate pinning scanner | IMPORTANT | 14 | 🟢 voorstel: nee |
 | OQ-26 | MFA voor gewone leden | IMPORTANT | 3 | 🟢 voorstel: nee |
@@ -80,7 +80,7 @@
 | OQ-65 | Malwarescan: Defender for Storage of fallback | IMPORTANT | 5 (eerste upload) | 🟡 |
 | OQ-66 | Contrastaanpassingen design tokens (designer) | IMPORTANT | 0 / 6 | 🟢 toegankelijke varianten |
 | OQ-67 | Custom domains (api./beheer./login.) | IMPORTANT | 7 | 🟡 |
-| OQ-68 | Haalbaarheid hardware-sleutel (Expo native module) | IMPORTANT | 9 (spike) / 13 | 🟡 voorlopig GO (fase 9c), metingen op toestellen open |
+| OQ-68 | Haalbaarheid hardware-sleutel (Expo native module) | IMPORTANT | 9 (spike) / 13 | 🟢 besloten 2026-09-28: device-gebonden sleutel waar het toestel dat ondersteunt, met automatische fallback op een server-signed kortlevende QR; metingen tijdens het testen van fase 13 |
 | OQ-69 | Kosten Conditional Access/MFA in external tenant | IMPORTANT | 3 | 🟢 vervallen (B-02-MFA: geen CA) |
 | OQ-70 | Releasevolgorde | → B-07 | 0 | 🟢 n.v.t. (B-07) |
 | OQ-71 | Pronkzitting 2027 via de app | IMPORTANT | 13 | 🟡 |

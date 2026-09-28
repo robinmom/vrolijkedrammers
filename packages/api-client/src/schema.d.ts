@@ -5171,6 +5171,149 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    status?: components["schemas"]["TicketStatus"];
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfTicketSummary"];
+                        "application/json": components["schemas"]["PagedResultOfTicketSummary"];
+                        "text/json": components["schemas"]["PagedResultOfTicketSummary"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ledentickets uitgeven aan alle actieve leden die er nog geen hebben (idempotent). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IssueTicketsResponse"];
+                        "application/json": components["schemas"]["IssueTicketsResponse"];
+                        "text/json": components["schemas"]["IssueTicketsResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tickets/{id}/action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TicketActionRequest"];
+                    "text/json": components["schemas"]["TicketActionRequest"];
+                    "application/*+json": components["schemas"]["TicketActionRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -6751,6 +6894,253 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyTicket"];
+                        "application/json": components["schemas"]["MyTicket"];
+                        "text/json": components["schemas"]["MyTicket"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/devices/current/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Publieke sleutel uit de Secure Enclave/Keystore van dit toestel (SubjectPublicKeyInfo, base64). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeviceKeyRequest"];
+                    "text/json": components["schemas"]["DeviceKeyRequest"];
+                    "application/*+json": components["schemas"]["DeviceKeyRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ticket/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ChallengeResponse"];
+                        "application/json": components["schemas"]["ChallengeResponse"];
+                        "text/json": components["schemas"]["ChallengeResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ticket/bind-device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Koppelt het ticket aan dit toestel; met een hardwaresleutel alleen met de handtekening over de challenge. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BindDeviceRequest"];
+                    "text/json": components["schemas"]["BindDeviceRequest"];
+                    "application/*+json": components["schemas"]["BindDeviceRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ticket/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ServerCode"];
+                        "application/json": components["schemas"]["ServerCode"];
+                        "text/json": components["schemas"]["ServerCode"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -8602,6 +8992,10 @@ export interface components {
             oldValues: null | string;
             newValues: null | string;
         };
+        BindDeviceRequest: {
+            challenge: null | string;
+            signature: null | string;
+        };
         BuildLocationResponse: {
             /** Format: uuid */
             id: string;
@@ -8665,6 +9059,9 @@ export interface components {
         };
         /** @enum {unknown} */
         CategoryType: "TowedFloat" | "SelfPropelled" | "TowedOrSelfPropelled" | "WalkingGroupLarge" | "WalkingGroupSmall" | "IndividualDuo";
+        ChallengeResponse: {
+            challenge: string;
+        };
         Composition: {
             /** Format: int32 */
             version: number;
@@ -8747,6 +9144,10 @@ export interface components {
         };
         DeleteAccountRequest: {
             confirmation: string;
+        };
+        DeviceKeyRequest: {
+            publicKey: string;
+            securityLevel: string;
         };
         /** @enum {unknown} */
         DevicePlatform: "Ios" | "Android";
@@ -8979,6 +9380,10 @@ export interface components {
             /** Format: int32 */
             unreadCount: number;
             hasMore: boolean;
+        };
+        IssueTicketsResponse: {
+            /** Format: int32 */
+            issued: number;
         };
         /** @description Totalen voor het overzicht: aantallen per status en per categorie, deelnemers en lengte van de optocht. */
         LineupSummary: {
@@ -9235,6 +9640,26 @@ export interface components {
             membershipValidTo: null | string;
             groups: components["schemas"]["MyGroupResponse"][];
         };
+        /** @description "Mijn QR": alles wat de app nodig heeft om de code te maken (geen persoonsgegevens in de code zelf). */
+        MyTicket: {
+            state: components["schemas"]["TicketState"];
+            message: string;
+            holderName: null | string;
+            carnivalYearName: null | string;
+            /** Format: date-time */
+            validFrom: null | string;
+            /** Format: date-time */
+            validTo: null | string;
+            publicRef: null | string;
+            /** Format: int32 */
+            credentialVersion: number;
+            boundToThisDevice: boolean;
+            boundDeviceName: null | string;
+            /** Format: int32 */
+            rebindsLeft: number;
+            deviceShortId: null | string;
+            deviceHasHardwareKey: boolean;
+        };
         NewsDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -9451,6 +9876,16 @@ export interface components {
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfSyncJobResponse: {
             items: components["schemas"]["SyncJobResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfTicketSummary: {
+            items: components["schemas"]["TicketSummary"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -9875,6 +10310,13 @@ export interface components {
             /** Format: date-time */
             publishAt: string;
         };
+        ServerCode: {
+            code: string;
+            /** Format: int64 */
+            issuedAt: number;
+            /** Format: int32 */
+            validFor: number;
+        };
         SetPreferencesRequest: {
             preferences: components["schemas"]["PreferenceChange"][];
         };
@@ -10000,6 +10442,37 @@ export interface components {
             inTestersGroup: boolean;
             environments: null | string;
             hasAccessHere: boolean;
+        };
+        /** @enum {unknown} */
+        TicketAction: "Block" | "Unblock" | "Reissue" | "ResetRebinds";
+        TicketActionRequest: {
+            action: components["schemas"]["TicketAction"];
+            reason: null | string;
+        };
+        /** @enum {unknown} */
+        TicketState: "None" | "Blocked" | "NotYetValid" | "Valid" | "Ended";
+        /** @enum {unknown} */
+        TicketStatus: "Active" | "Blocked";
+        TicketSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId: string;
+            memberName: string;
+            memberNumber: null | string;
+            membershipActive: boolean;
+            status: components["schemas"]["TicketStatus"];
+            blockedReason: null | string;
+            /** Format: int32 */
+            credentialVersion: number;
+            boundDeviceName: null | string;
+            deviceSecurityLevel: null | string;
+            /** Format: date-time */
+            boundAt: null | string;
+            /** Format: int32 */
+            rebindCount: number;
+            /** Format: date-time */
+            createdAt: string;
         };
         UpdateRegistrationRequest: {
             version: null | string;

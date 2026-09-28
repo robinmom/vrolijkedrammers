@@ -6330,6 +6330,180 @@
         }
       }
     },
+    "/api/v1/admin/tickets": {
+      "get": {
+        "tags": [
+          "AdminTickets"
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TicketStatus"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfTicketSummary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfTicketSummary"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfTicketSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tickets/issue": {
+      "post": {
+        "tags": [
+          "AdminTickets"
+        ],
+        "summary": "Ledentickets uitgeven aan alle actieve leden die er nog geen hebben (idempotent).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTicketsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTicketsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueTicketsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tickets/{id}/action": {
+      "post": {
+        "tags": [
+          "AdminTickets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketActionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketActionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "tags": [
@@ -8190,6 +8364,260 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/ticket": {
+      "get": {
+        "tags": [
+          "MeTicket"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTicket"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTicket"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/devices/current/key": {
+      "put": {
+        "tags": [
+          "MeTicket"
+        ],
+        "summary": "Publieke sleutel uit de Secure Enclave/Keystore van dit toestel (SubjectPublicKeyInfo, base64).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceKeyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceKeyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/ticket/challenge": {
+      "post": {
+        "tags": [
+          "MeTicket"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/ticket/bind-device": {
+      "post": {
+        "tags": [
+          "MeTicket"
+        ],
+        "summary": "Koppelt het ticket aan dit toestel; met een hardwaresleutel alleen met de handtekening over de challenge.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindDeviceRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindDeviceRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindDeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/ticket/code": {
+      "get": {
+        "tags": [
+          "MeTicket"
+        ],
+        "summary": "Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerCode"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerCode"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerCode"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "text/plain": {
                 "schema": {
@@ -11707,6 +12135,27 @@
           }
         }
       },
+      "BindDeviceRequest": {
+        "required": [
+          "challenge",
+          "signature"
+        ],
+        "type": "object",
+        "properties": {
+          "challenge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "signature": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "BuildLocationResponse": {
         "required": [
           "id",
@@ -11909,6 +12358,17 @@
           "WalkingGroupSmall",
           "IndividualDuo"
         ]
+      },
+      "ChallengeResponse": {
+        "required": [
+          "challenge"
+        ],
+        "type": "object",
+        "properties": {
+          "challenge": {
+            "type": "string"
+          }
+        }
       },
       "Composition": {
         "required": [
@@ -12218,6 +12678,21 @@
         "type": "object",
         "properties": {
           "confirmation": {
+            "type": "string"
+          }
+        }
+      },
+      "DeviceKeyRequest": {
+        "required": [
+          "publicKey",
+          "securityLevel"
+        ],
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "type": "string"
+          },
+          "securityLevel": {
             "type": "string"
           }
         }
@@ -13100,6 +13575,18 @@
           },
           "hasMore": {
             "type": "boolean"
+          }
+        }
+      },
+      "IssueTicketsResponse": {
+        "required": [
+          "issued"
+        ],
+        "type": "object",
+        "properties": {
+          "issued": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -14132,6 +14619,91 @@
           }
         }
       },
+      "MyTicket": {
+        "required": [
+          "state",
+          "message",
+          "holderName",
+          "carnivalYearName",
+          "validFrom",
+          "validTo",
+          "publicRef",
+          "credentialVersion",
+          "boundToThisDevice",
+          "boundDeviceName",
+          "rebindsLeft",
+          "deviceShortId",
+          "deviceHasHardwareKey"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/TicketState"
+          },
+          "message": {
+            "type": "string"
+          },
+          "holderName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "carnivalYearName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "validFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "publicRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "credentialVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "boundToThisDevice": {
+            "type": "boolean"
+          },
+          "boundDeviceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rebindsLeft": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deviceShortId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deviceHasHardwareKey": {
+            "type": "boolean"
+          }
+        },
+        "description": "\"Mijn QR\": alles wat de app nodig heeft om de code te maken (geen persoonsgegevens in de code zelf)."
+      },
       "NewsDetailResponse": {
         "required": [
           "id",
@@ -14861,6 +15433,36 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SyncJobResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
+      },
+      "PagedResultOfTicketSummary": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketSummary"
             }
           },
           "page": {
@@ -16518,6 +17120,27 @@
           }
         }
       },
+      "ServerCode": {
+        "required": [
+          "code",
+          "issuedAt",
+          "validFor"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "validFor": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "SetPreferencesRequest": {
         "required": [
           "preferences"
@@ -17001,6 +17624,127 @@
           }
         }
       },
+      "TicketAction": {
+        "enum": [
+          "Block",
+          "Unblock",
+          "Reissue",
+          "ResetRebinds"
+        ]
+      },
+      "TicketActionRequest": {
+        "required": [
+          "action",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TicketAction"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "TicketState": {
+        "enum": [
+          "None",
+          "Blocked",
+          "NotYetValid",
+          "Valid",
+          "Ended"
+        ]
+      },
+      "TicketStatus": {
+        "enum": [
+          "Active",
+          "Blocked"
+        ]
+      },
+      "TicketSummary": {
+        "required": [
+          "id",
+          "memberId",
+          "memberName",
+          "memberNumber",
+          "membershipActive",
+          "status",
+          "blockedReason",
+          "credentialVersion",
+          "boundDeviceName",
+          "deviceSecurityLevel",
+          "boundAt",
+          "rebindCount",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberName": {
+            "type": "string"
+          },
+          "memberNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "membershipActive": {
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "blockedReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "credentialVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "boundDeviceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deviceSecurityLevel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "boundAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "rebindCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "UpdateRegistrationRequest": {
         "required": [
           "version",
@@ -17368,6 +18112,9 @@
       "name": "AdminRoles"
     },
     {
+      "name": "AdminTickets"
+    },
+    {
       "name": "AdminUsers"
     },
     {
@@ -17390,6 +18137,9 @@
     },
     {
       "name": "MeNotifications"
+    },
+    {
+      "name": "MeTicket"
     },
     {
       "name": "News"

@@ -586,6 +586,10 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Functionaliteit.** Tickettypen/validiteiten/AccessWindows (portal). Ledentickets idempotent uitgeven per CarnivalYear (en bij nieuwe activaties). Device-sleutelregistratie (native module uit de spike) + proof-of-possession. Ticket binden aan device (max. 3× per jaar zonder bestuur). "Mijn QR" in de app (ververst elke 30 s, live-indicator, maximale helderheid, werkt offline, screenshot-melding iOS / `FLAG_SECURE` Android). Portal: ticket blokkeren/deblokkeren, heruitgeven (`credential_version++`), printkaart genereren (PDF met statische code) voor leden zonder smartphone. Geen scanner in deze fase; wel een **server-side validatiefunctie** (library + unit-tests) die fase 14 gebruikt.
 
+**Uitvoering (besluiten product owner 2026-09-28).** Fallback: server-signed code voor toestellen zonder hardwaresleutel (OQ-68); ticket geldig de hele carnavalsperiode (OQ-20); geen printkaart maar inchecken via de ledenlijst in fase 14 (OQ-23); eerst een Figma-ontwerp "Mijn QR" (pagina 🎟️ Mijn QR, iOS en Android, 5 toestanden).
+- **13a (2026-09-28)** — backend en portal: tickets, sleutelregistratie, koppelen met proof-of-possession (max. 3× overzetten), fallbackcode, validatiebibliotheek met RFC 9285-vectoren en testvectoren, portal Ledentickets. Zie ADR-005 "Uitwerking fase 13a".
+- **13b** — app: Mijn QR volgens het ontwerp (sleutel in de hardware, verversen elke 30 s, offline, maximale helderheid, schermafdrukbeveiliging), tegel op Home/Meer.
+
 **Technische componenten.** Expo native module (Swift: CryptoKit/Secure Enclave; Kotlin: Android Keystore/StrongBox), `react-native-qrcode-svg`, base45, QuestPDF (printkaart).
 
 **Databasewijzigingen.** `ticketing.TicketType`, `TicketValidity`, `AccessWindow`, `Ticket` (`public_ref`, `bound_device_id`, `credential_version`, `print_code_hash`); `identity.Device` sleutelvelden actief.

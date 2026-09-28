@@ -193,6 +193,25 @@ export class MockApi {
   parades: Record<string, unknown>[] = [];
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];
+  // Fase 13: ledentickets.
+  ticketCalls: { path: string; body: unknown }[] = [];
+  tickets = [
+    {
+      id: 't-1',
+      memberId: 'm-1',
+      memberName: 'Piet Lid',
+      memberNumber: '1001',
+      membershipActive: true,
+      status: 'Active',
+      blockedReason: null as string | null,
+      credentialVersion: 1,
+      boundDeviceName: 'iPhone 15',
+      deviceSecurityLevel: 'SecureEnclave',
+      boundAt: '2026-12-01T10:00:00Z',
+      rebindCount: 1,
+      createdAt: '2026-11-11T10:00:00Z',
+    },
+  ];
   // Fase 12b: samenstellen.
   compositionVersion = 3;
   compositionOrder: string[] = ['c-1'];
@@ -585,6 +604,26 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/parades\/([^/]+)$/)) && method === 'PUT') {
       const index = this.parades.findIndex((p) => p.id === m![1]);
       this.parades[index] = { ...(body as Record<string, unknown>), id: m[1] };
+      return noContent();
+    }
+    if (path === '/admin/tickets') {
+      return json({ items: this.tickets, page: 1, pageSize: 25, totalCount: this.tickets.length });
+    }
+    if (path === '/admin/tickets/issue' && method === 'POST') {
+      this.ticketCalls.push({ path, body: null });
+      return json({ issued: 12 });
+    }
+    if ((m = path.match(/^\/admin\/tickets\/([^/]+)\/action$/)) && method === 'POST') {
+      const request = body as { action: string; reason: string | null };
+      this.ticketCalls.push({ path, body: request });
+      const ticket = this.tickets.find((t) => t.id === m![1])!;
+      if (request.action === 'Block') {
+        ticket.status = 'Blocked';
+        ticket.blockedReason = request.reason;
+      }
+      if (request.action === 'Unblock') ticket.status = 'Active';
+      if (request.action === 'ResetRebinds') ticket.rebindCount = 0;
+      if (request.action === 'Reissue') ticket.credentialVersion += 1;
       return noContent();
     }
     if (path === '/admin/parade-composition') {

@@ -213,6 +213,10 @@ public static class DependencyInjection
         services.AddScoped<ParadeReview>();
         services.AddScoped<ParadeLineup>();
         services.AddScoped<ParadeComposition>();
+        services.AddScoped<Ticketing.TicketSigningKeys>();
+        services.AddScoped<Ticketing.MemberTickets>();
+        services.AddScoped<Ticketing.TicketValidation>();
+        services.AddScoped<Ticketing.TicketAdministration>();
         services.AddScoped<ParadePublicRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeStatusMailHandler>();
         services.TryAddScoped<ParadeDeadlineReminderJob>();

@@ -66,6 +66,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<CarnivalYear> CarnivalYears => Set<CarnivalYear>();
 
+    public DbSet<Modules.Ticketing.Tickets.Ticket> Tickets => Set<Modules.Ticketing.Tickets.Ticket>();
+
+    public DbSet<Modules.Ticketing.Tickets.TicketSigningKey> TicketSigningKeys => Set<Modules.Ticketing.Tickets.TicketSigningKey>();
+
     public DbSet<EventCategory> EventCategories => Set<EventCategory>();
 
     public DbSet<Event> Events => Set<Event>();

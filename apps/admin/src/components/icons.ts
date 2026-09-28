@@ -24,6 +24,7 @@ export const iconPaths = {
   afmelden: { viewBox: "0 0 24 24", body: "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"/><path d=\"m16 17 5-5-5-5\"/><path d=\"M21 12H9\"/>" },
   chevron: { viewBox: "0 0 24 24", body: "<path d=\"m9 18 6-6-6-6\"/>" },
   menu: { viewBox: "0 0 24 24", body: "<path d=\"M4 6h16\"/><path d=\"M4 12h16\"/><path d=\"M4 18h16\"/>" },
+  slepen: { viewBox: "0 0 24 24", body: "<circle cx=\"9\" cy=\"6\" r=\"1\"/><circle cx=\"15\" cy=\"6\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"18\" r=\"1\"/><circle cx=\"15\" cy=\"18\" r=\"1\"/>" },
 } as const;
 
 export type IconName = keyof typeof iconPaths;

@@ -3352,6 +3352,250 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/parade-composition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["Composition"];
+                        "application/json": components["schemas"]["Composition"];
+                        "text/json": components["schemas"]["Composition"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-composition/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Nieuwe volgorde; 412 als iemand anders intussen de volgorde heeft gewijzigd. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveOrderRequest"];
+                    "text/json": components["schemas"]["SaveOrderRequest"];
+                    "application/*+json": components["schemas"]["SaveOrderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CompositionVersionResponse"];
+                        "application/json": components["schemas"]["CompositionVersionResponse"];
+                        "text/json": components["schemas"]["CompositionVersionResponse"];
+                    };
+                };
+                /** @description Precondition Failed */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-composition/start-numbers/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GenerateStartNumbersRequest"];
+                    "text/json": components["schemas"]["GenerateStartNumbersRequest"];
+                    "application/*+json": components["schemas"]["GenerateStartNumbersRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StartNumberPreview"];
+                        "application/json": components["schemas"]["StartNumberPreview"];
+                        "text/json": components["schemas"]["StartNumberPreview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-composition/start-numbers/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApplyStartNumbersRequest"];
+                    "text/json": components["schemas"]["ApplyStartNumbersRequest"];
+                    "application/*+json": components["schemas"]["ApplyStartNumbersRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GenerateStartNumbersResponse"];
+                        "application/json": components["schemas"]["GenerateStartNumbersResponse"];
+                        "text/json": components["schemas"]["GenerateStartNumbersResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/parade-registrations": {
         parameters: {
             query?: never;
@@ -8295,6 +8539,17 @@ export interface components {
             /** Format: date-time */
             submittedAt: null | string;
         };
+        ApplyStartNumbersRequest: {
+            /** Format: int32 */
+            version: number;
+            mode: components["schemas"]["StartNumberMode"];
+            /**
+             * Format: int32
+             * @default 1
+             */
+            startAt: number;
+            confirmation?: null | string;
+        };
         ApproveAccountRequestRequest: {
             /** Format: uuid */
             memberId: string;
@@ -8410,6 +8665,47 @@ export interface components {
         };
         /** @enum {unknown} */
         CategoryType: "TowedFloat" | "SelfPropelled" | "TowedOrSelfPropelled" | "WalkingGroupLarge" | "WalkingGroupSmall" | "IndividualDuo";
+        Composition: {
+            /** Format: int32 */
+            version: number;
+            ordered: components["schemas"]["CompositionCard"][];
+            unassigned: components["schemas"]["CompositionCard"][];
+            /** Format: int32 */
+            participants: number;
+            /** Format: double */
+            lengthMeters: number;
+            /** Format: double */
+            defaultSpacingMeters: number;
+            categories: components["schemas"]["CategoryTotals"][];
+            warnings: string[];
+        };
+        /** @description Kaart in het samenstelscherm (docs/13 §7.3). */
+        CompositionCard: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            /** Format: int32 */
+            startNumber: null | number;
+            groupName: null | string;
+            categoryName: null | string;
+            youth: boolean;
+            hasVehicle: boolean;
+            subject: null | string;
+            /** Format: int32 */
+            participants: number;
+            /** Format: double */
+            lengthMeters: number;
+            lengthMeasured: boolean;
+            additionalInformation: null | string;
+            status: components["schemas"]["RegistrationStatus"];
+            /** Format: int32 */
+            paradeOrder: null | number;
+        };
+        CompositionVersionResponse: {
+            /** Format: int32 */
+            version: number;
+        };
         /**
          * @description Wie content mag zien (docs/07 §4). Beheren gaat via permissions, niet via zichtbaarheid.
          * @enum {unknown}
@@ -8592,6 +8888,18 @@ export interface components {
             source: components["schemas"]["RegistrationSource"];
             /** Format: date-time */
             changedAt: string;
+        };
+        GenerateStartNumbersRequest: {
+            mode: components["schemas"]["StartNumberMode"];
+            /**
+             * Format: int32
+             * @default 1
+             */
+            startAt: number;
+        };
+        GenerateStartNumbersResponse: {
+            /** Format: int32 */
+            changed: number;
         };
         GroupDetailResponse: {
             /** Format: uuid */
@@ -9558,6 +9866,11 @@ export interface components {
             isSystem: boolean;
             permissions: string[];
         };
+        SaveOrderRequest: {
+            /** Format: int32 */
+            version: number;
+            orderedIds: string[];
+        };
         ScheduleRequest: {
             /** Format: date-time */
             publishAt: string;
@@ -9573,6 +9886,26 @@ export interface components {
         };
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];
+        };
+        StartNumberChange: {
+            /** Format: uuid */
+            id: string;
+            groupName: null | string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            /** Format: int32 */
+            oldStartNumber: null | number;
+            /** Format: int32 */
+            newStartNumber: null | number;
+            published: boolean;
+        };
+        /** @enum {unknown} */
+        StartNumberMode: "FillEmpty" | "Renumber";
+        StartNumberPreview: {
+            /** Format: int32 */
+            version: number;
+            changes: components["schemas"]["StartNumberChange"][];
+            affectsPublished: boolean;
         };
         StartNumberRequest: {
             /** Format: int32 */

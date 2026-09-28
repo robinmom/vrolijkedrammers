@@ -392,6 +392,7 @@ public sealed class ParadeRegistrations(
         registration.Status = RegistrationStatus.Withdrawn;
         registration.WithdrawnAt = Now;
         registration.StartNumber = null; // het opgavenummer blijft; het startnummer komt vrij (docs/13 §3)
+        registration.ParadeOrder = null;
         db.ParadeStatusHistory.Add(new ParadeStatusHistory
         {
             RegistrationId = id,

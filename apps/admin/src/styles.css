@@ -1217,3 +1217,31 @@ legend {
   white-space: pre-line;
   margin: 0;
 }
+
+/* Optocht samenstellen (fase 12b). */
+.lineup {
+  padding-left: 0;
+}
+
+.lineup-card {
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--dvd-surface);
+}
+
+.lineup-card.dragging {
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--shadow-card, 0 4px 16px rgba(18, 48, 71, 0.16));
+}
+
+.lineup-position {
+  min-width: 2ch;
+  font-weight: 700;
+  text-align: right;
+}
+
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}

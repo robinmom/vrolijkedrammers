@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react-native';
+import { screen, waitFor, within } from '@testing-library/react-native';
 import * as Notifications from 'expo-notifications';
 import { Text } from 'react-native';
 import TabLayout from '../app/(tabs)/_layout';
@@ -75,8 +75,9 @@ describe('Rode telbolletjes', () => {
   it('belletje op het beginscherm toont het aantal ongelezen meldingen', async () => {
     mockApi(signedInApi);
     await renderApp(routes, '/');
-    expect(await screen.findByRole('button', { name: 'Meldingen, 2 ongelezen' })).toBeTruthy();
-    expect(screen.getByText('2', { includeHiddenElements: true })).toBeTruthy();
+    const bell = await screen.findByRole('button', { name: 'Meldingen, 2 ongelezen' });
+    // Alleen binnen het belletje zoeken: elders op het beginscherm kan ook een "2" staan (aftellen, datums).
+    expect(within(bell).getByText('2', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('Optocht: bolletje op Mijn inschrijving als er een aanvulling gevraagd is', async () => {

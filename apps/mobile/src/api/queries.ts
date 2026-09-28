@@ -30,6 +30,7 @@ export const queryKeys = {
   myRegistration: (id: string) => ['me', 'parade-registrations', id] as const,
   myBuildLocations: ['me', 'build-locations'] as const,
   myRegistrationDocuments: (id: string) => ['me', 'parade-registrations', id, 'documents'] as const,
+  myTicket: ['me', 'ticket'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -191,5 +192,16 @@ export const useRegistrationDocuments = (id: string | undefined) => {
     queryKey: queryKeys.myRegistrationDocuments(id ?? ''),
     queryFn: () => unwrap(api.GET('/api/v1/parade/registrations/{id}/documents', { params: { path: { id: id ?? '' } } })),
     enabled: status === 'signedIn' && Boolean(id),
+  });
+};
+
+/** Ledenticket voor Mijn QR (fase 13); de app bewaart de gegevens ook op het toestel voor gebruik zonder internet. */
+export const useMyTicket = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myTicket,
+    queryFn: () => unwrap(api.GET('/api/v1/me/ticket')),
+    enabled: status === 'signedIn',
+    retry: false,
   });
 };

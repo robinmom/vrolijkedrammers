@@ -92,7 +92,7 @@ export default function HomeScreen() {
         <View style={styles.shortcuts}>
           <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
           <ShortcutTile icon="uitslagen" label="Uitslagen" tint="yellow" onPress={() => router.push('/uitslagen')} />
-          <ShortcutTile icon="meldingen" label="Meldingen" tint="red" onPress={() => router.push('/meldingen')} />
+          <ShortcutTile icon="qr" label="Mijn QR" tint="red" onPress={() => router.push('/mijn-qr')} />
           <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
         </View>
 

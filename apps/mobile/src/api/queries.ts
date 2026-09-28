@@ -31,6 +31,7 @@ export const queryKeys = {
   myBuildLocations: ['me', 'build-locations'] as const,
   myRegistrationDocuments: (id: string) => ['me', 'parade-registrations', id, 'documents'] as const,
   myTicket: ['me', 'ticket'] as const,
+  accessStatus: ['me', 'access-status'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -203,5 +204,16 @@ export const useMyTicket = () => {
     queryFn: () => unwrap(api.GET('/api/v1/me/ticket')),
     enabled: status === 'signedIn',
     retry: false,
+  });
+};
+
+/** Activiteit met toegangscontrole van dit moment en de tellers (fase 14, rol Deurcontrole). */
+export const useAccessStatus = (enabled: boolean) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.accessStatus,
+    queryFn: () => unwrap(api.GET('/api/v1/access/status')),
+    enabled: status === 'signedIn' && enabled,
+    refetchInterval: 30_000,
   });
 };

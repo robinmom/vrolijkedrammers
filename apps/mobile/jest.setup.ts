@@ -56,3 +56,19 @@ jest.mock('react-native-qrcode-svg', () => {
   const { Text } = require('react-native');
   return ({ value }: { value: string }) => createElement(Text, { testID: 'qr-code' }, value);
 });
+
+// Scannen (fase 14b): de camera als knop die een QR "scant" (tests roepen onBarcodeScanned aan), trillen als mock.
+jest.mock('expo-camera', () => {
+  const { createElement } = require('react');
+  const { Pressable, Text } = require('react-native');
+  return {
+    CameraView: ({ onBarcodeScanned }: { onBarcodeScanned: (r: { data: string }) => void }) =>
+      createElement(Pressable, { testID: 'camera', onPress: () => onBarcodeScanned({ data: (globalThis as { __qr?: string }).__qr ?? 'CODE' }) },
+        createElement(Text, null, 'camera')),
+    useCameraPermissions: () => [{ granted: true, canAskAgain: true }, jest.fn()],
+  };
+});
+jest.mock('expo-haptics', () => ({
+  notificationAsync: jest.fn(async () => undefined),
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+}));

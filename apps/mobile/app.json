@@ -50,7 +50,11 @@
       "typedRoutes": true
     },
     "extra": {
-      "appStoreUrl": null
-    }
+      "appStoreUrl": null,
+      "eas": {
+        "projectId": "c47e4952-d3a2-45cc-9e0f-150472c11eeb"
+      }
+    },
+    "owner": "robinmom"
   }
 }

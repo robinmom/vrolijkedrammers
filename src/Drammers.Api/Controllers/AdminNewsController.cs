@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Api.Controllers;
 
-/// <summary>Nieuws beheren, publiceren, plannen en archiveren (docs/05 §6). Push volgt in fase 10.</summary>
+/// <summary>Nieuws beheren, publiceren, plannen en archiveren (docs/05 §6), met push bij publicatie (fase 10).</summary>
 [ApiController]
 [Route("api/v1/admin/news")]
 [RequirePermission(Permissions.NewsManage)]
@@ -31,9 +31,11 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
     {
         var n = await db.News.AsNoTracking().Include(x => x.Audiences).SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new DomainException(ErrorCodes.ContentNotFound, "Niet gevonden.", DomainErrorKind.NotFound);
+        var push = await db.Notifications.AsNoTracking().Where(x => x.SourceType == NewsPush.SourceType && x.SourceId == id)
+            .Select(x => (Modules.Notification.Notifications.NotificationStatus?)x.Status).SingleOrDefaultAsync(cancellationToken);
         return new AdminNewsResponse(n.Id, n.Title, n.Summary, n.Body, n.Category, n.ExpireAt,
             PublicationResponse.From(n.Visibility, n.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), n.Status, n.PublishAt),
-            await urls.ForAsync(FileContainers.Content, n.ImageBlobPath, cancellationToken));
+            await urls.ForAsync(FileContainers.Content, n.ImageBlobPath, cancellationToken), n.PushOnPublish, push);
     }
 
     [HttpPost]
@@ -41,6 +43,7 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<ActionResult<CreatedResponse>> Create(NewsRequest request, CancellationToken cancellationToken)
     {
+        EnsureMayPush(request);
         var id = await content.CreateNewsAsync(request.ToInput(), cancellationToken);
         return Created($"/api/v1/admin/news/{id}", new CreatedResponse(id));
     }
@@ -49,6 +52,7 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(Guid id, NewsRequest request, CancellationToken cancellationToken)
     {
+        EnsureMayPush(request);
         await content.UpdateNewsAsync(id, request.ToInput(), cancellationToken);
         return NoContent();
     }
@@ -95,6 +99,26 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
         await content.SetNewsImageAsync(id, new UploadedFile(file.FileName, file.Length, file.OpenReadStream), cancellationToken);
         return NoContent();
     }
+
+    /// <summary>Push bij publicatie vraagt <c>notification.send</c>; voor openbaar nieuws (= iedereen) ook <c>notification.send.urgent</c>.</summary>
+    private void EnsureMayPush(NewsRequest request)
+    {
+        if (!request.PushOnPublish)
+        {
+            return;
+        }
+
+        var permissions = CurrentUser.Get(HttpContext)?.Permissions ?? new HashSet<string>();
+        var needed = request.Publication.Visibility == ContentVisibility.Public ? Permissions.NotificationSendUrgent : Permissions.NotificationSend;
+        if (!permissions.Contains(Permissions.NotificationSend) || !permissions.Contains(needed))
+        {
+            throw new DomainException(ErrorCodes.Forbidden,
+                request.Publication.Visibility == ContentVisibility.Public
+                    ? "Een push aan iedereen (openbaar nieuws) vraagt het recht notification.send.urgent."
+                    : "Push bij publicatie vraagt het recht notification.send.",
+                DomainErrorKind.Forbidden);
+        }
+    }
 }
 
 public sealed record ScheduleRequest(DateTime PublishAt);
@@ -102,4 +126,5 @@ public sealed record ScheduleRequest(DateTime PublishAt);
 public sealed record AdminNewsSummaryResponse(Guid Id, string Title, ContentVisibility Visibility, PublicationStatus Status, DateTime? PublishAt, DateTime? ExpireAt);
 
 public sealed record AdminNewsResponse(
-    Guid Id, string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationResponse Publication, string? ImageUrl);
+    Guid Id, string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationResponse Publication, string? ImageUrl,
+    bool PushOnPublish, Modules.Notification.Notifications.NotificationStatus? PushStatus);

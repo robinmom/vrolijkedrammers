@@ -8,4 +8,7 @@ public sealed class AzureOptions
     public Uri? KeyVaultUri { get; set; }
 
     public Uri? BlobEndpoint { get; set; }
+
+    /// <summary>Key Vault-sleutel die de Data Protection-sleutelring beschermt (push-tokens, docs/06).</summary>
+    public Uri? DataProtectionKeyUri { get; set; }
 }

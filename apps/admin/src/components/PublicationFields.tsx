@@ -113,7 +113,7 @@ export function PublicationFields({ value, onChange }: { value: Publication; onC
 }
 
 /** Individuele leden als doelgroep: zoeken en toevoegen; geselecteerde leden met naam en een verwijderknop. */
-function MemberPicker({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
+export function MemberPicker({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
   const [search, setSearch] = useState('');
   const results = useMembers({ search, status: 'Active', syncState: '' }, 1);
   const matches = search.trim().length >= 2 ? (results.data?.items ?? []).filter((m) => !selected.includes(m.id)).slice(0, 8) : [];

@@ -4,7 +4,8 @@ import type { IconName } from './components/icons';
 export interface NavItem {
   label: string;
   to: string;
-  permission: string;
+  /** Eén permission, of meerdere waarvan er één volstaat. */
+  permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
   section?: 'Content' | 'Leden' | 'Beheer';
@@ -15,6 +16,13 @@ export const navItems: readonly NavItem[] = [
   { label: 'Agenda', to: '/agenda', permission: 'event.manage', icon: 'agenda', section: 'Content' },
   { label: 'Nieuws', to: '/nieuws', permission: 'news.manage', icon: 'nieuws', section: 'Content' },
   { label: "Foto's", to: '/fotos', permission: 'photo.manage', icon: 'fotos', section: 'Content' },
+  {
+    label: 'Meldingen',
+    to: '/meldingen',
+    permission: ['notification.send', 'notification.send.group'],
+    icon: 'meldingen',
+    section: 'Content',
+  },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   { label: 'Accountverzoeken', to: '/accountverzoeken', permission: 'member.approve', icon: 'gebruiker', section: 'Leden' },
@@ -29,8 +37,12 @@ export const navItems: readonly NavItem[] = [
   { label: 'Auditlog', to: '/auditlog', permission: 'audit.read', icon: 'audit', section: 'Beheer' },
 ];
 
+export function navPermissions(item: NavItem): readonly string[] {
+  return typeof item.permission === 'string' ? [item.permission] : item.permission;
+}
+
 export function visibleNavItems(permissions: readonly string[]): NavItem[] {
-  return navItems.filter((item) => permissions.includes(item.permission));
+  return navItems.filter((item) => navPermissions(item).some((p) => permissions.includes(p)));
 }
 
 /** Zichtbare items gegroepeerd per sectie, in de volgorde van het menu; lege secties vallen weg. */

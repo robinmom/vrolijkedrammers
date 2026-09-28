@@ -3,7 +3,7 @@ using Drammers.SharedKernel.Persistence;
 
 namespace Drammers.Modules.Content.News;
 
-/// <summary>Nieuwsbericht (docs/04 §5). Push bij publicatie volgt in fase 10.</summary>
+/// <summary>Nieuwsbericht (docs/04 §5), met optioneel een pushmelding bij publicatie (fase 10).</summary>
 public sealed class NewsItem : IAuditable, IPublishable
 {
     public Guid Id { get; set; }
@@ -29,6 +29,9 @@ public sealed class NewsItem : IAuditable, IPublishable
     public ContentVisibility Visibility { get; set; }
 
     public PublicationStatus Status { get; set; }
+
+    /// <summary>Bij publicatie (direct of op het geplande moment) één pushmelding aan de doelgroep van het bericht.</summary>
+    public bool PushOnPublish { get; set; }
 
     public List<NewsAudience> Audiences { get; set; } = [];
 

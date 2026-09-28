@@ -116,6 +116,8 @@ public sealed class MyAccount(
         device.RevokedBy = actor.UserId;
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        // Afgemeld apparaat: geen push meer (docs/06); het token wordt verwijderd.
+        await db.PushDevices.Where(p => p.DeviceId == device.Id).ExecuteDeleteAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("device.revoked", "Device", device.Id.ToString(), null, JsonSerializer.Serialize(new { byAdministrator = userId is null }, Json)), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
@@ -184,6 +186,9 @@ public sealed class MyAccount(
         var accountRequests = await db.AccountRequests.Where(r => r.Email == email || (memberId != null && r.MemberId == memberId)).ExecuteDeleteAsync(cancellationToken);
         var logins = await db.LoginHistory.Where(l => l.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         var guardianships = await db.GuardianRelations.Where(g => g.GuardianUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.PushDevices.Where(p => p.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.NotificationPreferences.Where(p => p.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.NotificationRecipients.Where(r => r.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         var devices = await db.Devices.Where(d => d.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         foreach (var export in await db.PrivacyRequests.Where(r => r.UserId == userId && r.FilePath != null).ToListAsync(cancellationToken))
         {
@@ -293,6 +298,13 @@ public sealed class MyAccount(
         var privacyRequests = await db.PrivacyRequests.AsNoTracking().Where(r => r.UserId == user.Id)
             .Select(r => new { type = r.Type.ToString(), status = r.Status.ToString(), r.RequestedAt, r.CompletedAt })
             .ToListAsync(cancellationToken);
+        var notifications = await db.NotificationRecipients.AsNoTracking().Where(r => r.UserId == user.Id)
+            .Join(db.Notifications, r => r.NotificationId, n => n.Id, (r, n) => new { n.Title, n.Body, category = n.Category.ToString(), n.SentAt, r.ReadAt })
+            .OrderByDescending(n => n.SentAt).ToListAsync(cancellationToken);
+        var notificationPreferences = await db.NotificationPreferences.AsNoTracking().Where(p => p.UserId == user.Id)
+            .Select(p => new { category = p.Category.ToString(), p.Enabled }).ToListAsync(cancellationToken);
+        var pushDevices = await db.PushDevices.AsNoTracking().Where(p => p.UserId == user.Id)
+            .Select(p => new { p.Platform, p.Enabled, p.LastRegisteredAt }).ToListAsync(cancellationToken);
 
         var export = new
         {
@@ -328,6 +340,9 @@ public sealed class MyAccount(
             logins,
             accountRequests,
             privacyRequests,
+            notifications,
+            notificationPreferences,
+            pushDevices,
         };
         return JsonSerializer.Serialize(export, Json);
     }

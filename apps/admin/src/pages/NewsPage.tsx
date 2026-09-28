@@ -1,14 +1,14 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useAdminNews, useAdminNewsItem, useApiMutation, type NewsRequest } from '../api/hooks';
+import { useAdminNews, useAdminNewsItem, useApiMutation, useMe, type NewsRequest } from '../api/hooks';
 import { upload } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog } from '../components/Dialog';
-import { Field } from '../components/Field';
+import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { PublicationFields, defaultPublication } from '../components/PublicationFields';
-import { formatDateTime, fromLocalInput, statusLabels, toLocalInput, visibilityLabels } from '../format';
+import { formatDateTime, fromLocalInput, notificationStatusLabels, statusLabels, toLocalInput, visibilityLabels } from '../format';
 
 export function NewsPage() {
   const news = useAdminNews();
@@ -52,7 +52,15 @@ export function NewsPage() {
   );
 }
 
-const emptyNews: NewsRequest = { title: '', summary: null, body: '', category: null, expireAt: null, publication: defaultPublication };
+const emptyNews: NewsRequest = {
+  title: '',
+  summary: null,
+  body: '',
+  category: null,
+  expireAt: null,
+  publication: defaultPublication,
+  pushOnPublish: false,
+};
 
 export function NewsEditorPage() {
   const { id } = useParams({ from: '/nieuws/$id' });
@@ -65,11 +73,23 @@ export function NewsEditorPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [fileError, setFileError] = useState<unknown>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const me = useMe();
+  const permissions = me.data?.permissions ?? [];
+  const canPush =
+    permissions.includes('notification.send') && (form.publication.visibility !== 'Public' || permissions.includes('notification.send.urgent'));
 
   useEffect(() => {
     const n = existing.data;
     if (n) {
-      setForm({ title: n.title, summary: n.summary, body: n.body, category: n.category, expireAt: n.expireAt, publication: n.publication });
+      setForm({
+        title: n.title,
+        summary: n.summary,
+        body: n.body,
+        category: n.category,
+        expireAt: n.expireAt,
+        publication: n.publication,
+        pushOnPublish: n.pushOnPublish,
+      });
     }
   }, [existing.data]);
 
@@ -127,6 +147,28 @@ export function NewsEditorPage() {
           <Field label="Zichtbaar tot" type="datetime-local" value={toLocalInput(form.expireAt)} onChange={(e) => set({ expireAt: fromLocalInput(e.target.value) })} />
         </div>
         <PublicationFields value={form.publication} onChange={(publication) => set({ publication })} />
+        <fieldset>
+          <legend>Pushmelding</legend>
+          {existing.data?.pushStatus ? (
+            <p>Pushmelding: {notificationStatusLabels[existing.data.pushStatus] ?? existing.data.pushStatus}. Er gaat per bericht maar één melding uit.</p>
+          ) : (
+            <>
+              <Checkbox
+                label="Pushmelding bij publicatie (aan dezelfde doelgroep)"
+                checked={form.pushOnPublish ?? false}
+                disabled={!canPush}
+                onChange={(e) => set({ pushOnPublish: e.target.checked })}
+              />
+              {!canPush ? (
+                <p className="muted">
+                  {form.publication.visibility === 'Public'
+                    ? 'Een push aan iedereen (openbaar bericht) mag alleen met het recht voor dringende meldingen.'
+                    : 'Push bij publicatie vraagt het recht om meldingen te versturen.'}
+                </p>
+              ) : null}
+            </>
+          )}
+        </fieldset>
         <ProblemAlert error={save.error ?? remove.error} />
         <div className="actions">
           {!isNew ? (

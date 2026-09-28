@@ -27,6 +27,18 @@ resource vault 'Microsoft.KeyVault/vaults@2024-11-01' = {
   }
 }
 
+// Beschermt de Data Protection-sleutelring van de API (push-tokens, docs/06). Aangemaakt via ARM (control plane);
+// de API mag er alleen mee wrappen/unwrappen (role-assignments.bicep).
+resource dataProtectionKey 'Microsoft.KeyVault/vaults/keys@2024-11-01' = {
+  parent: vault
+  name: 'dataprotection'
+  properties: {
+    kty: 'RSA'
+    keySize: 2048
+    keyOps: ['wrapKey', 'unwrapKey']
+  }
+}
+
 // Nieuwste versie die categoryGroup ondersteunt.
 #disable-next-line use-recent-api-versions
 resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
@@ -40,3 +52,4 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
 
 output name string = vault.name
 output uri string = vault.properties.vaultUri
+output dataProtectionKeyUri string = dataProtectionKey.properties.keyUri

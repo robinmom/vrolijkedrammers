@@ -421,6 +421,39 @@ export function useUserDevices(id: string, enabled: boolean) {
   });
 }
 
+// ----- Fase 10: pushmeldingen ----------------------------------------------------------------------------------
+
+export type NotificationSummary = Schemas['NotificationSummaryResponse'];
+export type NotificationDetail = Schemas['NotificationDetailResponse'];
+export type NotificationAudience = Schemas['NotificationAudience'];
+export type NotificationCategory = Schemas['NotificationCategory'];
+export type CreateNotificationRequest = Schemas['CreateNotificationRequest'];
+export type AudiencePreview = Schemas['AudiencePreview'];
+
+export function useNotifications(page: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['notifications', page],
+    queryFn: async () => required((await api.GET('/api/v1/admin/notifications', { params: { query: { page } } })).data),
+  });
+}
+
+export function useNotificationAudienceOptions() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['notification-audience-options'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/notifications/audience-options')).data),
+  });
+}
+
+export function useNotification(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['notification', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/notifications/{id}', { params: { path: { id } } })).data),
+  });
+}
+
 export type TestAccessStatus = Schemas['TestAccessStatus'];
 
 export function useTestAccess(id: string, enabled: boolean) {

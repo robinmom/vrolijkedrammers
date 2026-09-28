@@ -28,6 +28,14 @@ Push is een kernfunctie: optochtmeldingen, programmawijzigingen, nieuws, dansgar
 - Android-notification channels per categorie (Dringend, Optocht, Programma, Nieuws, …) → gebruikers kunnen per categorie in het OS dempen; "Dringend" met hoge prioriteit.
 - Payload bevat alleen titel, korte body en een `notificationId`/deeplink; details worden via de API opgehaald.
 
+### Uitwerking (fase 10a, 2026-09-28)
+
+- `IPushSender` met `ExpoPushSender` (access token uit Key Vault, secret `expo-push-access-token`) en `SimulatedPushSender` (standaard tot het token er is). Keuze via `Push__Provider`.
+- Per melding: ontvangers (`NotificationRecipient`, basis voor inbox en gelezen) en per apparaat een aflevering (`NotificationDelivery`, ticket en receipt). De doelgroep wordt bij verzending uitgerold (niet bij opstellen), zodat een geplande melding de actuele leden en voorkeuren gebruikt.
+- Android-kanaal = categorie in kleine letters (`urgent`, `program`, `news`, …); Dringend met hoge prioriteit. Payload-data: `notificationId` en optioneel `url` (deeplink).
+- Ouders/verzorgers ontvangen meldingen aan groepen en leden met "Namens [voornaam]: " voor de titel (docs/02 §5.3); alleen de voornaam, geen andere gegevens.
+- At-least-once: crasht de worker tussen versturen en opslaan van een batch, dan kan die batch één keer dubbel aankomen.
+
 ## Reasoning
 
 - Nul kosten en de minste code bij een Expo-app; receipts geven voldoende delivery-inzicht.

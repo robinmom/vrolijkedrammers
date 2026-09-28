@@ -47,4 +47,7 @@ public static class ErrorCodes
     public const string VerificationCodeExpired = "VERIFICATION_CODE_EXPIRED";
     public const string TestAccessUnavailable = "TEST_ACCESS_UNAVAILABLE";
     public const string NoSignIn = "NO_SIGN_IN";
+    public const string NotificationNotFound = "NOTIFICATION_NOT_FOUND";
+    public const string NotificationNotCancelable = "NOTIFICATION_NOT_CANCELABLE";
+    public const string InvalidPushToken = "INVALID_PUSH_TOKEN";
 }

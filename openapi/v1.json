@@ -3706,6 +3706,322 @@
         }
       }
     },
+    "/api/v1/admin/notifications": {
+      "get": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfNotificationSummaryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfNotificationSummaryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResultOfNotificationSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/{id}": {
+      "get": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationDetailResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationDetailResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/audience-options": {
+      "get": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "summary": "Keuzelijsten voor de doelgroep: rollen en groepen (met alleen het groepsrecht: de eigen groepen, geen rollen).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAudienceOptionsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAudienceOptionsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAudienceOptionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/preview-audience": {
+      "post": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudiencePreviewRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudiencePreviewRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudiencePreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudiencePreview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudiencePreview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudiencePreview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/{id}/cancel": {
+      "post": {
+        "tags": [
+          "AdminNotifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/photo-albums": {
       "get": {
         "tags": [
@@ -6348,6 +6664,299 @@
         }
       }
     },
+    "/api/v1/me/devices/{id}/push-token": {
+      "put": {
+        "tags": [
+          "MeNotifications"
+        ],
+        "summary": "Registreert of ververst het Expo-push-token van een eigen, actief apparaat.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "tags": [
+          "MeNotifications"
+        ],
+        "summary": "De inbox toont ook meldingen als push is uitgezet of geweigerd.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxPage"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxPage"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications/{id}/read": {
+      "post": {
+        "tags": [
+          "MeNotifications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications/read-all": {
+      "post": {
+        "tags": [
+          "MeNotifications"
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/notification-preferences": {
+      "get": {
+        "tags": [
+          "MeNotifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryPreference"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryPreference"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryPreference"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "MeNotifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPreferencesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPreferencesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryPreference"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryPreference"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryPreference"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/news": {
       "get": {
         "tags": [
@@ -6656,6 +7265,100 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/push-devices/anonymous": {
+      "post": {
+        "tags": [
+          "PushDevices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnonymousPushRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnonymousPushRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnonymousPushRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/push-devices/anonymous/{installId}": {
+      "delete": {
+        "tags": [
+          "PushDevices"
+        ],
+        "parameters": [
+          {
+            "name": "installId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -7086,7 +7789,9 @@
           "category",
           "expireAt",
           "publication",
-          "imageUrl"
+          "imageUrl",
+          "pushOnPublish",
+          "pushStatus"
         ],
         "type": "object",
         "properties": {
@@ -7126,6 +7831,19 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "pushOnPublish": {
+            "type": "boolean"
+          },
+          "pushStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotificationStatus"
+              }
             ]
           }
         }
@@ -7246,6 +7964,25 @@
           },
           "publication": {
             "$ref": "#/components/schemas/PublicationRequest"
+          }
+        }
+      },
+      "AnonymousPushRequest": {
+        "required": [
+          "installId",
+          "platform",
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "installId": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
           }
         }
       },
@@ -7867,6 +8604,64 @@
           }
         }
       },
+      "AudiencePreview": {
+        "required": [
+          "accounts",
+          "guests",
+          "pushDevices",
+          "optedOut"
+        ],
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "guests": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pushDevices": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "optedOut": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Aantallen vóór verzending (docs/02 §5.3 stap 3); gelijk aan wat de worker daadwerkelijk aanmaakt."
+      },
+      "AudiencePreviewRequest": {
+        "required": [
+          "audience",
+          "category"
+        ],
+        "type": "object",
+        "properties": {
+          "audience": {
+            "$ref": "#/components/schemas/NotificationAudience"
+          },
+          "category": {
+            "$ref": "#/components/schemas/NotificationCategory"
+          }
+        }
+      },
+      "AudienceRoleOption": {
+        "required": [
+          "code",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "AuditLogEntryResponse": {
         "required": [
           "id",
@@ -7996,6 +8791,25 @@
           }
         }
       },
+      "CategoryPreference": {
+        "required": [
+          "category",
+          "enabled",
+          "canDisable"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/NotificationCategory"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "canDisable": {
+            "type": "boolean"
+          }
+        }
+      },
       "ContentVisibility": {
         "enum": [
           "Public",
@@ -8013,6 +8827,44 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "CreateNotificationRequest": {
+        "required": [
+          "title",
+          "body",
+          "category",
+          "audience",
+          "deepLink",
+          "scheduledAt"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/NotificationCategory"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/NotificationAudience"
+          },
+          "deepLink": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "scheduledAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -8801,6 +9653,73 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/IFormFile"
+        }
+      },
+      "InboxItem": {
+        "required": [
+          "id",
+          "title",
+          "body",
+          "category",
+          "deepLink",
+          "sentAt",
+          "readAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/NotificationCategory"
+          },
+          "deepLink": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "InboxPage": {
+        "required": [
+          "items",
+          "unreadCount",
+          "hasMore"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InboxItem"
+            }
+          },
+          "unreadCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
         }
       },
       "Maintenance": {
@@ -9816,6 +10735,10 @@
           },
           "publication": {
             "$ref": "#/components/schemas/PublicationRequest"
+          },
+          "pushOnPublish": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -9858,6 +10781,249 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "NotificationAudience": {
+        "type": "object",
+        "properties": {
+          "everyone": {
+            "type": "boolean",
+            "default": false
+          },
+          "members": {
+            "type": "boolean",
+            "default": false
+          },
+          "roles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "groups": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "memberIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "Doelgroep (docs/02 §5.3). bool NotificationAudience.Everyone = alle accounts plus gasten met push-toestemming;\nbool NotificationAudience.Members = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en\nleden ontvangen ook de ouders/verzorgers (\"Namens …\")."
+      },
+      "NotificationAudienceOptionsResponse": {
+        "required": [
+          "anyAudience",
+          "urgent",
+          "roles",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "anyAudience": {
+            "type": "boolean",
+            "description": "Mag naar elke doelgroep (`notification.send`); anders alleen de eigen groepen."
+          },
+          "urgent": {
+            "type": "boolean",
+            "description": "Mag Dringend en Iedereen gebruiken."
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudienceRoleOption"
+            },
+            "description": "Rollen als doelgroep (leeg met alleen het groepsrecht)."
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudienceOptionResponse"
+            },
+            "description": "Groepen als doelgroep."
+          }
+        }
+      },
+      "NotificationCategory": {
+        "enum": [
+          "Urgent",
+          "Program",
+          "News",
+          "Parade",
+          "DanceGuard",
+          "Kader",
+          "Tickets",
+          "Reminder",
+          "System"
+        ],
+        "description": "Categorie van een melding (docs/04 §6); bepaalt het Android-kanaal en de voorkeur van de ontvanger."
+      },
+      "NotificationDetailResponse": {
+        "required": [
+          "summary",
+          "body",
+          "deepLink",
+          "audience",
+          "audienceLabels",
+          "sourceType",
+          "sourceId",
+          "optedOut",
+          "noDevice"
+        ],
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/NotificationSummaryResponse"
+          },
+          "body": {
+            "type": "string"
+          },
+          "deepLink": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "audience": {
+            "$ref": "#/components/schemas/NotificationAudience"
+          },
+          "audienceLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "optedOut": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "noDevice": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "NotificationStatus": {
+        "enum": [
+          "Scheduled",
+          "Sending",
+          "Sent",
+          "PartiallyFailed",
+          "Failed",
+          "Canceled",
+          null
+        ]
+      },
+      "NotificationSummaryResponse": {
+        "required": [
+          "id",
+          "title",
+          "category",
+          "status",
+          "createdAt",
+          "scheduledAt",
+          "sentAt",
+          "senderName",
+          "sourceType",
+          "recipientCount",
+          "pushCount",
+          "deliveredCount",
+          "failedCount",
+          "readCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/NotificationCategory"
+          },
+          "status": {
+            "$ref": "#/components/schemas/NotificationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduledAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "sentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "senderName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recipientCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pushCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deliveredCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "readCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -10024,6 +11190,36 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/NewsSummaryResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
+      },
+      "PagedResultOfNotificationSummaryResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationSummaryResponse"
             }
           },
           "page": {
@@ -10374,6 +11570,21 @@
           },
           "apiScope": {
             "type": "string"
+          }
+        }
+      },
+      "PreferenceChange": {
+        "required": [
+          "category",
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/NotificationCategory"
+          },
+          "enabled": {
+            "type": "boolean"
           }
         }
       },
@@ -10738,6 +11949,17 @@
           "Archived"
         ]
       },
+      "PushTokenRequest": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "RegisterDeviceRequest": {
         "required": [
           "installationId",
@@ -10954,6 +12176,20 @@
           "publishAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "SetPreferencesRequest": {
+        "required": [
+          "preferences"
+        ],
+        "type": "object",
+        "properties": {
+          "preferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreferenceChange"
+            }
           }
         }
       },
@@ -11467,6 +12703,9 @@
       "name": "AdminNews"
     },
     {
+      "name": "AdminNotifications"
+    },
+    {
       "name": "AdminPhotoAlbums"
     },
     {
@@ -11500,6 +12739,9 @@
       "name": "MembershipApplications"
     },
     {
+      "name": "MeNotifications"
+    },
+    {
       "name": "News"
     },
     {
@@ -11507,6 +12749,9 @@
     },
     {
       "name": "PortalConfig"
+    },
+    {
+      "name": "PushDevices"
     }
   ]
 }

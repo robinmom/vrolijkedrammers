@@ -427,3 +427,54 @@ test('in productie geen kaart voor de testomgeving', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Toegang', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Toegang tot testomgeving' })).toHaveCount(0);
 });
+
+const pushPermissions = ['news.manage', 'notification.send', 'notification.send.urgent'];
+
+test('fase 10: melding aan een rol versturen met het aantal ontvangers vooraf', async ({ page }) => {
+  const api = new MockApi(pushPermissions);
+  await open(page, api, 'meldingen');
+  await openMenuIfMobile(page);
+  await expect(page.getByRole('link', { name: 'Meldingen' }).first()).toBeVisible();
+  await page.getByRole('link', { name: 'Melding versturen' }).click();
+
+  await page.getByLabel('Titel').fill('Kaderavond vrijdag');
+  await page.getByLabel('Tekst').fill('Om 20:00 uur in het clubhuis.');
+  await page.getByLabel('Kaderlid').check();
+  await expect(page.getByRole('status').filter({ hasText: '8 ontvangers' })).toBeVisible();
+  await page.getByRole('button', { name: 'Versturen' }).click();
+
+  await expect(page).toHaveURL(/\/beheer\/meldingen\/n-1$/);
+  await expect(page.getByRole('heading', { name: /Kaderavond vrijdag/ })).toBeVisible();
+  await expect(page.getByText('Rol: Kaderlid')).toBeVisible();
+  expect(api.notifications[0]!.audience).toMatchObject({ everyone: false, members: false, roles: ['kaderlid'] });
+  await expectNoSeriousA11yIssues(page);
+});
+
+test('fase 10: melding aan iedereen vraagt bevestiging, gepland kan worden geannuleerd', async ({ page }) => {
+  const api = new MockApi(pushPermissions);
+  await open(page, api, 'meldingen/nieuw');
+  await page.getByLabel('Titel').fill('Optocht verplaatst');
+  await page.getByLabel('Tekst').fill('De optocht begint een uur later.');
+  await page.getByLabel('Categorie').selectOption('Urgent');
+  await page.getByLabel('Iedereen (ook gasten met push aan)').check();
+  await page.getByLabel('Later versturen').check();
+  await page.getByRole('button', { name: 'Inplannen' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText(/135 ontvangers/)).toBeVisible();
+  await dialog.getByRole('button', { name: 'Inplannen' }).click();
+  await expect(page.getByText('Gepland', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Melding annuleren' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Ja, niet versturen' }).click();
+  await expect(page.getByText('De melding is geannuleerd.')).toBeVisible();
+  expect(api.notifications[0]!.status).toBe('Canceled');
+});
+
+test('fase 10: zonder urgent-recht geen Dringend en geen Iedereen', async ({ page }) => {
+  const api = new MockApi(['notification.send']);
+  api.urgent = false;
+  await open(page, api, 'meldingen/nieuw');
+  await expect(page.getByLabel('Alle leden')).toBeVisible();
+  await expect(page.getByLabel('Iedereen (ook gasten met push aan)')).toHaveCount(0);
+  await expect(page.getByLabel('Categorie').locator('option', { hasText: 'Dringend' })).toHaveCount(0);
+});

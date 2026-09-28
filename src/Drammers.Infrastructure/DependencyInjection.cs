@@ -13,6 +13,7 @@ using Drammers.Infrastructure.Identity;
 using Drammers.Infrastructure.Identity.Entra;
 using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Messaging;
+using Drammers.Infrastructure.Notifications;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Scheduling;
 using Drammers.SharedKernel.Auditing;
@@ -20,6 +21,7 @@ using Drammers.SharedKernel.Messaging;
 using Drammers.Worker;
 using Drammers.Worker.Outbox;
 using Drammers.Worker.Scheduling;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -88,6 +90,24 @@ public static class DependencyInjection
         else
         {
             services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();
+        }
+
+        // Data Protection (push-tokens): in Azure een gedeelde sleutelring in Blob, beschermd door een Key Vault-sleutel;
+        // lokaal en in tests de standaardopslag van ASP.NET.
+        var dataProtection = services.AddDataProtection().SetApplicationName("drammers");
+        if (options.BlobEndpoint is not null && options.DataProtectionKeyUri is not null)
+        {
+            dataProtection
+                .PersistKeysToAzureBlobStorage(new Uri(options.BlobEndpoint, "dataprotection/keys.xml"), credential)
+                .ProtectKeysWithAzureKeyVault(options.DataProtectionKeyUri, credential);
+        }
+
+        // Push (ADR-009): Expo met het access token uit Key Vault, anders gesimuleerd.
+        var push = configuration.GetSection(PushOptions.SectionName);
+        services.Configure<PushOptions>(push);
+        if ((push.Get<PushOptions>() ?? new PushOptions()).UseExpo)
+        {
+            services.AddHttpClient<IPushSender, ExpoPushSender>(http => http.Timeout = TimeSpan.FromSeconds(30));
         }
 
         // E-mail via Azure Communication Services met de managed identity; lokaal alleen een logregel.
@@ -171,6 +191,15 @@ public static class DependencyInjection
         services.TryAddScoped<DataRetentionJob>();
         services.AddScoped<IOutboxMessageHandler, EntraAccountStateHandler>();
         services.AddScoped<MembershipApplications>();
+        services.AddDataProtection();
+        services.AddSingleton<PushTokenProtector>();
+        services.AddScoped<NotificationAudienceResolver>();
+        services.AddScoped<NotificationAdministration>();
+        services.AddScoped<Modules.Notification.Notifications.INotificationService>(sp => sp.GetRequiredService<NotificationAdministration>());
+        services.AddScoped<MyNotifications>();
+        services.AddScoped<IOutboxMessageHandler, NotificationDispatchHandler>();
+        services.AddScoped<IOutboxMessageHandler, NotificationReceiptsHandler>();
+        services.TryAddScoped<IPushSender, SimulatedPushSender>();
         services.AddScoped<IOutboxMessageHandler, MembershipProvisioningHandler>();
         services.TryAddSingleton<IEmailSender, LoggingEmailSender>();
         services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();

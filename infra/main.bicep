@@ -46,6 +46,10 @@ param graphCertificateName string
 param testersGroupId string = ''
 param environmentAccessAttribute string = ''
 
+@description('Push (ADR-009): Expo zodra het access token in Key Vault staat (infra/push/set-expo-token.sh), anders Simulated.')
+@allowed(['Simulated', 'Expo'])
+param pushProvider string = 'Simulated'
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -130,6 +134,8 @@ module api 'modules/appservice.bicep' = {
       ConnectionStrings__Drammers: 'Server=tcp:${sql.outputs.serverFqdn},1433;Database=${sql.outputs.databaseName};Authentication=Active Directory Managed Identity;Encrypt=True;TrustServerCertificate=False;Connect Timeout=60'
       Azure__KeyVaultUri: keyVault.outputs.uri
       Azure__BlobEndpoint: storage.outputs.blobEndpoint
+      Azure__DataProtectionKeyUri: keyVault.outputs.dataProtectionKeyUri
+      Push__Provider: pushProvider
       Email__Endpoint: email.outputs.endpoint
       Email__SenderDomain: email.outputs.senderDomain
       Auth__Authority: externalIdAuthority

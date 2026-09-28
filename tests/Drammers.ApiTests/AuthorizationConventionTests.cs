@@ -35,6 +35,9 @@ public class AuthorizationConventionTests
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Start)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Verify)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.ResendCode)}",
+        // Fase 10: push voor gasten (alleen meldingen aan iedereen; rate limit, token versleuteld).
+        $"{nameof(PushDevicesController)}.{nameof(PushDevicesController.Register)}",
+        $"{nameof(PushDevicesController)}.{nameof(PushDevicesController.Remove)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

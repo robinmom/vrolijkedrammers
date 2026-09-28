@@ -13,7 +13,8 @@ namespace Drammers.Infrastructure.Content;
 /// outbox-bericht op het geplande moment (<see cref="MessageType"/>), plus elke nacht een inhaalrun; niet meer elke
 /// minuut, zodat een serverless database kan pauzeren.
 /// </summary>
-public sealed class ContentPublisherJob(DrammersDbContext db, IAuditLogger audit, IClock clock) : IRecurringJob
+public sealed class ContentPublisherJob(
+    DrammersDbContext db, IAuditLogger audit, IClock clock, Modules.Notification.Notifications.INotificationService notifications) : IRecurringJob
 {
     public const string JobName = "content-publisher";
 
@@ -29,9 +30,10 @@ public sealed class ContentPublisherJob(DrammersDbContext db, IAuditLogger audit
             await audit.WriteAsync(new AuditEntry("event.published", "Event", e.Id.ToString(), null, "{\"source\":\"schedule\"}"), cancellationToken);
         }
 
-        foreach (var n in await db.News.Where(x => x.Status == PublicationStatus.Scheduled && x.PublishAt <= now).ToListAsync(cancellationToken))
+        foreach (var n in await db.News.Include(x => x.Audiences).Where(x => x.Status == PublicationStatus.Scheduled && x.PublishAt <= now).ToListAsync(cancellationToken))
         {
             n.Status = PublicationStatus.Published;
+            await NewsPush.EnqueueIfLiveAsync(notifications, n, now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
             await audit.WriteAsync(new AuditEntry("news.published", "News", n.Id.ToString(), null, "{\"source\":\"schedule\"}"), cancellationToken);
         }

@@ -168,6 +168,27 @@ export class MockApi {
     },
   ];
   erased: string[] = [];
+  // Fase 10: pushmeldingen.
+  notifications: {
+    id: string;
+    title: string;
+    body: string;
+    category: string;
+    status: string;
+    createdAt: string;
+    scheduledAt: string | null;
+    sentAt: string | null;
+    senderName: string | null;
+    sourceType: string | null;
+    recipientCount: number;
+    pushCount: number;
+    deliveredCount: number;
+    failedCount: number;
+    readCount: number;
+    deepLink: string | null;
+    audience: Record<string, unknown>;
+  }[] = [];
+  urgent = true;
   testAccess: Record<string, string | null> = {};
   testAccessAvailable = true;
   excluded: { memberNumber: string; excludedAt: string; excludedBy: string | null }[] = [];
@@ -492,6 +513,83 @@ export class MockApi {
         page: 1,
         pageSize: 25,
         totalCount: items.length,
+      });
+    }
+    if (path === '/admin/notifications/audience-options') {
+      return json({
+        anyAudience: true,
+        urgent: this.urgent,
+        roles: [
+          { code: 'lid', name: 'Carnavalist' },
+          { code: 'kaderlid', name: 'Kaderlid' },
+        ],
+        groups: [{ id: 'g-1', name: 'Dansgarde' }],
+      });
+    }
+    if (path === '/admin/notifications/preview-audience' && method === 'POST') {
+      const audience = body.audience as { everyone: boolean; members: boolean; roles: string[] };
+      const accounts = audience.everyone ? 120 : audience.members ? 100 : 8;
+      return json({ accounts, guests: audience.everyone ? 15 : 0, pushDevices: accounts - 20, optedOut: 3 });
+    }
+    if (path === '/admin/notifications' && method === 'POST') {
+      const id = `n-${this.notifications.length + 1}`;
+      const scheduled = (body.scheduledAt as string | null) ?? null;
+      this.notifications.unshift({
+        id,
+        title: body.title as string,
+        body: body.body as string,
+        category: body.category as string,
+        status: scheduled ? 'Scheduled' : 'Sent',
+        createdAt: new Date().toISOString(),
+        scheduledAt: scheduled,
+        sentAt: scheduled ? null : new Date().toISOString(),
+        senderName: 'Test Bestuurder',
+        sourceType: null,
+        recipientCount: scheduled ? 0 : 100,
+        pushCount: scheduled ? 0 : 80,
+        deliveredCount: 0,
+        failedCount: 0,
+        readCount: 0,
+        deepLink: (body.deepLink as string | null) ?? null,
+        audience: body.audience as Record<string, unknown>,
+      });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/notifications') {
+      const items = this.notifications.map((n) => {
+        const summary: Partial<typeof n> = { ...n };
+        delete summary.body;
+        delete summary.deepLink;
+        delete summary.audience;
+        return summary;
+      });
+      return json({ items, page: 1, pageSize: 25, totalCount: items.length });
+    }
+    if ((m = path.match(/^\/admin\/notifications\/([^/]+)\/cancel$/))) {
+      const n = this.notifications.find((x) => x.id === m![1])!;
+      n.status = 'Canceled';
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/notifications\/([^/]+)$/))) {
+      const n = this.notifications.find((x) => x.id === m![1]);
+      if (!n) {
+        return json({ status: 404, detail: 'Melding niet gevonden.', code: 'NOTIFICATION_NOT_FOUND' }, 404);
+      }
+      const { body: text, deepLink, audience, ...summary } = n;
+      return json({
+        summary,
+        body: text,
+        deepLink,
+        audience,
+        audienceLabels: audience.everyone
+          ? ['Iedereen (ook gasten)']
+          : audience.members
+            ? ['Alle leden']
+            : ['Rol: Kaderlid'],
+        sourceType: null,
+        sourceId: null,
+        optedOut: 3,
+        noDevice: 17,
       });
     }
     if (path === '/admin/news') {

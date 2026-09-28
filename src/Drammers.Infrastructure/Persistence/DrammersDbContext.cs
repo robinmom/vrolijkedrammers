@@ -82,6 +82,16 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
 
+    public DbSet<Modules.Notification.Notifications.Notification> Notifications => Set<Modules.Notification.Notifications.Notification>();
+
+    public DbSet<Modules.Notification.Notifications.NotificationRecipient> NotificationRecipients => Set<Modules.Notification.Notifications.NotificationRecipient>();
+
+    public DbSet<Modules.Notification.Notifications.NotificationDelivery> NotificationDeliveries => Set<Modules.Notification.Notifications.NotificationDelivery>();
+
+    public DbSet<Modules.Notification.Notifications.PushDevice> PushDevices => Set<Modules.Notification.Notifications.PushDevice>();
+
+    public DbSet<Modules.Notification.Notifications.NotificationPreference> NotificationPreferences => Set<Modules.Notification.Notifications.NotificationPreference>();
+
     public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
 
     public DbSet<AppConfigurationSetting> AppConfiguration => Set<AppConfigurationSetting>();

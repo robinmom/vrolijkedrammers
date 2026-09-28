@@ -165,4 +165,91 @@ public class ParadeLineupTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(30m, summary.GetProperty("lineupLengthMeters").GetDecimal());
         Assert.Equal(2, summary.GetProperty("categories").GetArrayLength());
     }
+
+    // ----- Fase 12b: samenstellen ---------------------------------------------------------------------------------
+
+    private async Task<JsonElement> CompositionAsync() => await _commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-composition");
+
+    private async Task<int> SaveOrderAsync(int version, params Guid[] ids) =>
+        (await JsonAsync(await _commissie.PutAsJsonAsync("/api/v1/admin/parade-composition/order", new { version, orderedIds = ids }))).GetProperty("version").GetInt32();
+
+    private static IEnumerable<string?> Groups(JsonElement cards) => cards.EnumerateArray().Select(c => c.GetProperty("groupName").GetString());
+
+    [Fact]
+    public async Task Volgorde_opslaan_met_totalen_en_een_tweede_commissielid_krijgt_412()
+    {
+        var a = await ApprovedAsync("a@example.com", "Groep A", length: 12.5m);
+        var b = await ApprovedAsync("b@example.com", "Groep B", category: 4, adults: 4, length: 6m);
+        await ApprovedAsync("c@example.com", "Groep C");
+
+        var start = await CompositionAsync();
+        Assert.Equal(3, start.GetProperty("unassigned").GetArrayLength());
+        var version = await SaveOrderAsync(start.GetProperty("version").GetInt32(), b, a);
+
+        var composition = await CompositionAsync();
+        Assert.Equal(["Groep B", "Groep A"], Groups(composition.GetProperty("ordered")));
+        Assert.Equal(["Groep C"], Groups(composition.GetProperty("unassigned")));
+        // 6 + 12,5 + 2 × 5 m tussenruimte.
+        Assert.Equal(28.5m, composition.GetProperty("lengthMeters").GetDecimal());
+        Assert.Equal(version, composition.GetProperty("version").GetInt32());
+
+        var stale = await _commissie.PutAsJsonAsync("/api/v1/admin/parade-composition/order", new { version = version - 1, orderedIds = new[] { a } });
+        Assert.Equal(HttpStatusCode.PreconditionFailed, stale.StatusCode);
+        Assert.Null(await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == a).Select(r => r.StartNumber).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Alleen_lege_startnummers_invullen_raakt_bestaande_nummers_niet()
+    {
+        var a = await ApprovedAsync("a@example.com", "Groep A");
+        var b = await ApprovedAsync("b@example.com", "Groep B");
+        var c = await ApprovedAsync("c@example.com", "Groep C");
+        await JsonAsync(await StartNumberAsync(a, 1), HttpStatusCode.NoContent);
+        var version = await SaveOrderAsync((await CompositionAsync()).GetProperty("version").GetInt32(), b, a, c);
+
+        var preview = await JsonAsync(await _commissie.PostAsJsonAsync("/api/v1/admin/parade-composition/start-numbers/preview", new { mode = "FillEmpty", startAt = 1 }));
+        Assert.Equal([("Groep B", 2), ("Groep C", 3)],
+            preview.GetProperty("changes").EnumerateArray().Select(x => (x.GetProperty("groupName").GetString(), x.GetProperty("newStartNumber").GetInt32())));
+        await JsonAsync(await _commissie.PostAsJsonAsync("/api/v1/admin/parade-composition/start-numbers/apply", new { version, mode = "FillEmpty", startAt = 1 }));
+
+        var numbers = await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == a || r.Id == b || r.Id == c).ToDictionaryAsync(r => r.Id, r => r.StartNumber));
+        Assert.Equal((1, 2, 3), (numbers[a], numbers[b], numbers[c]));
+    }
+
+    [Fact]
+    public async Task Hernummeren_na_publiceren_vraagt_HERNUMMER_en_meldt_de_groep()
+    {
+        var a = await ApprovedAsync("a@example.com", "Groep A");
+        var b = await ApprovedAsync("b@example.com", "Groep B");
+        await JsonAsync(await StartNumberAsync(a, 1), HttpStatusCode.NoContent);
+        await JsonAsync(await StartNumberAsync(b, 2), HttpStatusCode.NoContent);
+        await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade-registrations/publish-start-numbers", null));
+        var version = await SaveOrderAsync((await CompositionAsync()).GetProperty("version").GetInt32(), b, a);
+
+        var preview = await JsonAsync(await _commissie.PostAsJsonAsync("/api/v1/admin/parade-composition/start-numbers/preview", new { mode = "Renumber", startAt = 1 }));
+        Assert.True(preview.GetProperty("affectsPublished").GetBoolean());
+        var body = new { version, mode = "Renumber", startAt = 1, confirmation = (string?)null };
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _commissie.PostAsJsonAsync("/api/v1/admin/parade-composition/start-numbers/apply", body)).StatusCode);
+        Assert.Equal(HttpStatusCode.PreconditionFailed,
+            (await _commissie.PostAsJsonAsync("/api/v1/admin/parade-composition/start-numbers/apply", body with { version = version - 1, confirmation = "HERNUMMER" })).StatusCode);
+
+        var applied = await JsonAsync(await _commissie.PostAsJsonAsync("/api/v1/admin/parade-composition/start-numbers/apply", body with { confirmation = "HERNUMMER" }));
+        Assert.Equal(2, applied.GetProperty("changed").GetInt32());
+        var numbers = await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == a || r.Id == b).ToDictionaryAsync(r => r.Id, r => r.StartNumber));
+        Assert.Equal((2, 1), (numbers[a], numbers[b]));
+        Assert.Equal(2, await WithDbAsync(db => db.Notifications.CountAsync(n => n.Title == "Startnummer optocht gewijzigd")));
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(l => l.Action == "parade.start-numbers-generated")));
+    }
+
+    [Fact]
+    public async Task Drie_groepen_uit_dezelfde_categorie_achter_elkaar_geeft_een_waarschuwing()
+    {
+        var a = await ApprovedAsync("a@example.com", "Groep A");
+        var b = await ApprovedAsync("b@example.com", "Groep B");
+        var c = await ApprovedAsync("c@example.com", "Groep C");
+        await SaveOrderAsync((await CompositionAsync()).GetProperty("version").GetInt32(), a, b, c);
+
+        var warning = Assert.Single((await CompositionAsync()).GetProperty("warnings").EnumerateArray());
+        Assert.StartsWith("3 × Volwassenen Loopgroepen groot (10+) achter elkaar", warning.GetString(), StringComparison.Ordinal);
+    }
 }

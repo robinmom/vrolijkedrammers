@@ -212,6 +212,7 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, ParadeSubmittedMailHandler>();
         services.AddScoped<ParadeReview>();
         services.AddScoped<ParadeLineup>();
+        services.AddScoped<ParadeComposition>();
         services.AddScoped<ParadePublicRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeStatusMailHandler>();
         services.TryAddScoped<ParadeDeadlineReminderJob>();

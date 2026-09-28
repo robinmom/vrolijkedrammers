@@ -193,6 +193,48 @@ export class MockApi {
   parades: Record<string, unknown>[] = [];
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];
+  // Fase 12b: samenstellen.
+  compositionVersion = 3;
+  compositionOrder: string[] = ['c-1'];
+  compositionConflict = false;
+  compositionCards = [
+    {
+      id: 'c-1',
+      registrationNumber: 1,
+      startNumber: 1,
+      groupName: 'Groep A',
+      categoryName: 'Praalwagens',
+      youth: false,
+      hasVehicle: true,
+    },
+    {
+      id: 'c-2',
+      registrationNumber: 2,
+      startNumber: null,
+      groupName: 'Groep B',
+      categoryName: 'Loopgroep groot',
+      youth: false,
+      hasVehicle: false,
+    },
+    {
+      id: 'c-3',
+      registrationNumber: 3,
+      startNumber: null,
+      groupName: 'Groep C',
+      categoryName: 'Jeugd',
+      youth: true,
+      hasVehicle: false,
+    },
+  ].map((c) => ({
+    ...c,
+    subject: null,
+    participants: 12,
+    lengthMeters: 10,
+    lengthMeasured: false,
+    additionalInformation: null as string | null,
+    status: 'Approved',
+    paradeOrder: null as number | null,
+  }));
   /** Fase 12a: een ander groep heeft startnummer 17 (voor "bezet" en "Wisselen"). */
   takenStartNumber = 17;
   registration = {
@@ -544,6 +586,58 @@ export class MockApi {
       const index = this.parades.findIndex((p) => p.id === m![1]);
       this.parades[index] = { ...(body as Record<string, unknown>), id: m[1] };
       return noContent();
+    }
+    if (path === '/admin/parade-composition') {
+      const ordered = this.compositionOrder.map((id) => this.compositionCards.find((c) => c.id === id)!);
+      return json({
+        version: this.compositionVersion,
+        ordered,
+        unassigned: this.compositionCards.filter((c) => !this.compositionOrder.includes(c.id)),
+        participants: ordered.length * 12,
+        lengthMeters: ordered.length * 15,
+        defaultSpacingMeters: 5,
+        categories: [],
+        warnings: [],
+      });
+    }
+    if (path === '/admin/parade-composition/order' && method === 'PUT') {
+      const request = body as { version: number; orderedIds: string[] };
+      this.lineupCalls.push({ path, body: request });
+      if (this.compositionConflict || request.version !== this.compositionVersion) {
+        return json(
+          {
+            status: 412,
+            code: 'REGISTRATION_CHANGED',
+            detail: 'De volgorde is intussen door iemand anders gewijzigd.',
+          },
+          412,
+        );
+      }
+      this.compositionOrder = request.orderedIds;
+      this.compositionVersion += 1;
+      return json({ version: this.compositionVersion });
+    }
+    if (path === '/admin/parade-composition/start-numbers/preview' && method === 'POST') {
+      this.lineupCalls.push({ path, body });
+      return json({
+        version: this.compositionVersion,
+        affectsPublished: (body as { mode: string }).mode === 'Renumber',
+        changes: [
+          {
+            id: 'c-2',
+            groupName: 'Groep B',
+            registrationNumber: 2,
+            oldStartNumber: null,
+            newStartNumber: 2,
+            published: false,
+          },
+        ],
+      });
+    }
+    if (path === '/admin/parade-composition/start-numbers/apply' && method === 'POST') {
+      this.lineupCalls.push({ path, body });
+      this.compositionCards[1]!.startNumber = 2 as never;
+      return json({ changed: 1 });
     }
     if (path.startsWith('/admin/parade-registrations')) {
       const r = this.registration;

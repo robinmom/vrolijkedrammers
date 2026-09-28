@@ -216,6 +216,12 @@ public sealed class ParadeReview(
             registration.StartNumber = null;
         }
 
+        // Wie de optocht (goedgekeurd) verlaat, gaat ook uit de volgorde van het samenstellen.
+        if (!ParadeLineup.InLineup.Contains(to))
+        {
+            registration.ParadeOrder = null;
+        }
+
         db.ParadeStatusHistory.Add(new ParadeStatusHistory
         {
             RegistrationId = id,

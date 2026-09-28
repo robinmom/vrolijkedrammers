@@ -30,6 +30,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden' },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },
+  { label: 'Samenstellen', to: '/optocht/samenstellen', permission: 'parade.read', icon: 'audit', section: 'Optocht' },
   { label: 'Optocht en categorieën', to: '/optocht', permission: 'parade.config', icon: 'instellingen', section: 'Optocht' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage', icon: 'gebruiker', section: 'Beheer' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage', icon: 'rollen', section: 'Beheer' },

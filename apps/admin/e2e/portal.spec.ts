@@ -601,3 +601,60 @@ test('fase 12a: filters en snelle weergaven, zonder recht geen publiceerknop', a
   await page.getByLabel('Doelgroep').selectOption('Youth');
   await youth;
 });
+
+test('fase 12b: groepen indelen en verplaatsen, startnummers genereren met voorbeeld', async ({ page }) => {
+  const api = new MockApi(['parade.read', 'parade.manage', 'parade.assign-start-number']);
+  await open(page, api, 'optocht/samenstellen');
+  await expect(page.getByRole('heading', { name: 'Volgorde (1)' })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByRole('button', { name: 'Toevoegen Groep B' }).click();
+  await expect(page.getByText('Groep B is achteraan toegevoegd. Volgorde bewaard.').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Omhoog Groep B' }).click();
+  await expect(page.getByText('Groep B staat nu op positie 1. Volgorde bewaard.').first()).toBeVisible();
+  expect(api.compositionOrder).toEqual(['c-2', 'c-1']);
+  expect(
+    api.lineupCalls.filter((c) => c.path.endsWith('/order')).map((c) => (c.body as { version: number }).version),
+  ).toEqual([3, 4]);
+
+  await page.getByRole('button', { name: 'Voorbeeld tonen' }).click();
+  await expect(page.getByRole('table', { name: /Voorbeeld: 1 wijzigingen/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Toepassen' }).click();
+  await expect(page.getByText('1 startnummers aangepast.', { exact: false })).toBeVisible();
+
+  await page.getByLabel('Alle ingedeelde groepen opnieuw nummeren').check();
+  await page.getByRole('button', { name: 'Voorbeeld tonen' }).click();
+  await expect(page.getByRole('button', { name: 'Toepassen' })).toBeDisabled();
+  await page.getByLabel(/Typ HERNUMMER/).fill('HERNUMMER');
+  await expect(page.getByRole('button', { name: 'Toepassen' })).toBeEnabled();
+});
+
+test('fase 12b: gelijktijdig gewijzigd geeft een melding en opnieuw laden; alleen lezen zonder knoppen', async ({
+  page,
+}) => {
+  const api = new MockApi(['parade.read', 'parade.manage']);
+  api.compositionConflict = true;
+  await open(page, api, 'optocht/samenstellen');
+  await page.getByRole('button', { name: 'Toevoegen Groep C' }).click();
+  await expect(page.getByText('Iemand anders heeft de volgorde intussen gewijzigd.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Startnummers genereren uit de volgorde' })).toHaveCount(0);
+  api.compositionConflict = false;
+  await page.getByRole('button', { name: 'Opnieuw laden' }).click();
+  await expect(page.getByRole('button', { name: 'Toevoegen Groep C' })).toBeVisible();
+});
+
+test('fase 12b: slepen met het toetsenbord (spatie, pijltje, spatie)', async ({ page }) => {
+  const api = new MockApi(['parade.read', 'parade.manage']);
+  api.compositionOrder = ['c-1', 'c-2'];
+  await open(page, api, 'optocht/samenstellen');
+  const handle = page.getByRole('button', { name: 'Verplaats Groep A' });
+  await handle.focus();
+  // dnd-kit meet de posities tussen de toetsaanslagen; geef het de tijd zoals een gebruiker dat ook doet.
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(250);
+  await page.keyboard.press('ArrowDown');
+  await page.waitForTimeout(250);
+  await page.keyboard.press('Space');
+  await expect(page.getByText('Groep A staat nu op positie 2. Volgorde bewaard.').first()).toBeVisible();
+  expect(api.compositionOrder).toEqual(['c-2', 'c-1']);
+});

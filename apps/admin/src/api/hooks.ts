@@ -485,6 +485,19 @@ export type RegistrationFilter = {
 };
 export type LineupSummary = Schemas['LineupSummary'];
 export type PublishResult = Schemas['PublishResult'];
+export type Composition = Schemas['Composition'];
+export type CompositionCard = Schemas['CompositionCard'];
+export type StartNumberPreview = Schemas['StartNumberPreview'];
+export type StartNumberMode = Schemas['StartNumberMode'];
+
+export function useParadeComposition() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-composition'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade-composition')).data),
+    retry: false,
+  });
+}
 
 /** Overzicht voor de commissie: één ruime pagina (tot 100), sorteren gebeurt in de tabel. */
 export function useParadeRegistrations(filter: RegistrationFilter, page: number) {

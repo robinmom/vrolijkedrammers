@@ -1,4 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import OptochtScreen from '../app/(tabs)/optocht';
 import InschrijvingScreen from '../app/optocht/[id]';
 import OptochtInfoScreen from '../app/optocht/info';
@@ -105,6 +106,7 @@ const bodyOf = async (path: string) => {
 };
 
 beforeEach(() => (globalThis.fetch as jest.Mock).mockClear());
+afterEach(() => jest.restoreAllMocks());
 
 describe('Optocht inschrijven (fase 11)', () => {
   it('gast: knop zichtbaar, lege velden, code en opgavenummer', async () => {
@@ -170,34 +172,18 @@ describe('Optocht inschrijven (fase 11)', () => {
     expect(screen.getByText('Een groep inschrijven')).toBeTruthy();
   });
 
-  it('groepsverantwoordelijke: vooringevuld concept, zelfde bouwlocatie en mijn inschrijvingen', async () => {
+  it('groepsverantwoordelijke zonder inschrijving: vooringevuld concept en zelfde bouwlocatie', async () => {
     setSessionForTest('signedIn');
     const saved = { ...draft, version: 'v2' };
     mockApi({
       ...paradeApi,
       '/api/v1/me': me(['parade.register']),
-      '/api/v1/parade/registrations': (method: string) =>
-        method === 'POST'
-          ? { status: 201, body: draft }
-          : [
-              {
-                id: 'r-9',
-                groupName: 'De Knotjes',
-                status: 'Submitted',
-                registrationNumber: 12,
-                startNumber: null,
-                submittedAt: null,
-                createdAt: '2026-12-01T10:00:00Z',
-              },
-            ],
+      '/api/v1/parade/registrations': (method: string) => (method === 'POST' ? { status: 201, body: draft } : []),
       '/api/v1/parade/registrations/r-1': saved,
       '/api/v1/parade/build-locations': [{ id: 'l-1', address, lastUsedAt: '2026-02-01T10:00:00Z' }],
     });
     await renderApp(routes, '/optocht');
-    expect(await screen.findByText('De Knotjes')).toBeTruthy();
-    expect(screen.getByText('Ingediend – wacht op beoordeling')).toBeTruthy();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Aanmelden optocht' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Aanmelden optocht' }));
     expect((await screen.findByLabelText('Groepsnaam')).props.value).toBe('De Knotwilgen');
     await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
     expect(await screen.findByText('Concept opgeslagen')).toBeTruthy();
@@ -272,5 +258,57 @@ describe('Optocht inschrijven (fase 11)', () => {
       ([input]) => new URL(typeof input === 'string' ? input : input.url).pathname,
     );
     expect(paths).toContain('/api/v1/parade/registrations/r-1/submit');
+  });
+
+  it('tabblad: starttijd en route uit het portal, geen deelnemers', async () => {
+    setSessionForTest('signedOut', null);
+    mockApi({ ...paradeApi, '/api/v1/parade/current': { ...parade, startLocation: 'Kerkplein', routeLengthKm: 3.2 } });
+    await renderApp(routes, '/optocht');
+    expect(await screen.findByLabelText('Start: 13:30 uur')).toBeTruthy();
+    expect(screen.getByLabelText('Route: 3,2 km')).toBeTruthy();
+    expect(screen.getByText('Kerkplein')).toBeTruthy();
+    expect(screen.queryByText('Deelnemers')).toBeNull();
+  });
+
+  it('met een inschrijving wordt de knop Mijn inschrijving; een concept is te verwijderen', async () => {
+    setSessionForTest('signedIn');
+    const calls = mockApi({
+      ...paradeApi,
+      '/api/v1/me': me(['parade.register']),
+      '/api/v1/parade/registrations': [
+        {
+          id: 'r-1',
+          groupName: 'De Knotwilgen',
+          status: 'Draft',
+          registrationNumber: null,
+          startNumber: null,
+          submittedAt: null,
+          createdAt: '2026-12-01T10:00:00Z',
+        },
+      ],
+      '/api/v1/parade/registrations/r-1': (method: string) => (method === 'DELETE' ? { status: 204 } : draft),
+    });
+    jest
+      .spyOn(Alert, 'alert')
+      .mockImplementation((_title, _message, buttons) => buttons?.find((b) => b.style === 'destructive')?.onPress?.());
+    await renderApp(routes, '/optocht');
+    expect(await screen.findByText('De Knotwilgen: concept')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Aanmelden optocht' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Mijn inschrijving' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Concept verwijderen' }));
+    await waitFor(() =>
+      expect(calls.filter((c) => c === '/api/v1/parade/registrations/r-1').length).toBeGreaterThan(1),
+    );
+  });
+
+  it('buiten de inschrijfperiode geen aanmeldknop', async () => {
+    setSessionForTest('signedOut', null);
+    mockApi({
+      ...paradeApi,
+      '/api/v1/parade/current': { ...parade, registrationOpen: false, registrationOpensAt: '2099-12-01T09:00:00Z' },
+    });
+    await renderApp(routes, '/optocht');
+    expect(await screen.findByText(/De inschrijving opent op/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Aanmelden optocht' })).toBeNull();
   });
 });

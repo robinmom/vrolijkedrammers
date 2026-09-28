@@ -195,11 +195,12 @@ describe("07 Foto's", () => {
 });
 
 describe('04 Optocht en 05 Meer', () => {
-  it('optochtdatum volgt uit het carnavalsjaar', async () => {
+  it('zonder optocht in het portal volgt de datum uit het carnavalsjaar, zonder vaste tijden', async () => {
     mockApi(api);
     await renderApp(routes, '/optocht');
     expect(await screen.findByText('ZONDAG 7 FEBRUARI 2027')).toBeTruthy();
-    expect(screen.getByText('Tijdlijn')).toBeTruthy();
+    expect(screen.getByLabelText('Start: nog niet bekend')).toBeTruthy();
+    expect(screen.queryByRole('header', { name: 'Programma' })).toBeNull();
   });
 
   it('Meer toont de zes tegels en past de weergave aan', async () => {

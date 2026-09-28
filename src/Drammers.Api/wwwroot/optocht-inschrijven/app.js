@@ -110,15 +110,19 @@
     const [paradeResponse, categoryResponse] = await Promise.all([fetch(`${api}/current`).catch(() => null), fetch(`${api}/categories`).catch(() => null)]);
     if (!paradeResponse?.ok) {
       text('gesloten-tekst', paradeResponse?.status === 404 ? 'Er is nog geen optocht bekend. Kijk later nog eens.' : 'De gegevens ophalen lukt nu niet. Probeer het later opnieuw.');
+      if (paradeResponse?.status !== 404) text('titel-gesloten', 'Inschrijven lukt nu niet');
       return show('gesloten');
     }
     const parade = await paradeResponse.json();
     text('optocht-naam', `Inschrijven: ${parade.name}`);
     if (!parade.registrationOpen) {
       const opens = new Date(parade.registrationOpensAt);
-      text('gesloten-tekst', opens > new Date()
-        ? `De inschrijving opent op ${opens.toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })}.`
-        : 'De inschrijving voor deze optocht is gesloten.');
+      if (opens > new Date()) {
+        text('gesloten-tekst', `De inschrijving voor de ${parade.name} opent op ${opens.toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })}.`);
+      } else {
+        text('titel-gesloten', 'Inschrijven is gesloten');
+        text('gesloten-tekst', `De inschrijving voor de ${parade.name} is gesloten.`);
+      }
       return show('gesloten');
     }
     // De API zet de Markdown om naar veilige HTML (alleen opmaak, links en lijsten).

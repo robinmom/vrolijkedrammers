@@ -466,6 +466,26 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Een_inschrijving_per_persoon_concept_verwijderen_of_intrekken_maakt_weer_ruimte()
+    {
+        var (_, lid) = await LidAsync("piet@example.com");
+        var first = await DraftAsync(lid);
+        var conflict = await lid.PostAsync("/api/v1/parade/registrations", null);
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+        Assert.Contains("al een inschrijving", await conflict.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await lid.DeleteAsync($"/api/v1/parade/registrations/{first.GetProperty("id").GetGuid()}")).StatusCode);
+        var second = await DraftAsync(lid);
+        var id = second.GetProperty("id").GetGuid();
+        await SaveAsync(lid, second, Complete(second.GetProperty("version").GetString()!));
+        await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{id}/submit", null));
+        Assert.Equal(HttpStatusCode.Conflict, (await lid.PostAsync("/api/v1/parade/registrations", null)).StatusCode);
+
+        await JsonAsync(await lid.PostAsJsonAsync($"/api/v1/parade/registrations/{id}/withdraw", new { reason = (string?)null }));
+        await DraftAsync(lid);
+    }
+
+    [Fact]
     public async Task Gast_schrijft_in_zonder_account_pas_na_de_e_mailcode_een_opgavenummer_en_een_statuslink()
     {
         var guest = _api.CreateClient();

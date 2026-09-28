@@ -64,13 +64,6 @@ export const optocht = {
   subtitle: 'Het kleurrijke hoogtepunt van carnaval in Loil',
   /** De optocht is op carnavalszondag: de dag na de start van carnaval. */
   dayOffset: 1,
-  startTime: '13:30',
-  routeLength: '3,2 km',
-  timeline: [
-    { time: '12:30', title: 'Opstellen deelnemers', place: 'Kerkstraat', color: 'blue' },
-    { time: '13:30', title: 'Start optocht', place: 'Dorpsplein Loil', color: 'red' },
-    { time: '14:15', title: 'Passage centrum', place: 'Dorpsstraat', color: 'yellow' },
-    { time: '15:30', title: 'Finish & prijsuitreiking', place: 'Feesttent Loil', color: 'green' },
-  ] as const,
+  /** Kaartzoekopdracht zolang er in het portal geen startlocatie is ingevuld. */
   routeQuery: 'Dorpsplein, Loil',
 };

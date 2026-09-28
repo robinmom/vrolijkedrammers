@@ -28,7 +28,7 @@ public sealed record EventInput(
     string? LocationName, string? LocationAddress, decimal? Latitude, decimal? Longitude, bool IsHighlight, string? BadgeText,
     PublicationInput Publication);
 
-public sealed record NewsInput(string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication);
+public sealed record NewsInput(string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false);
 
 public sealed record AlbumInput(string Title, DateOnly? AlbumDate, string? Description, Guid? EventId, PublicationInput Publication);
 
@@ -39,7 +39,8 @@ public sealed record UploadedFile(string FileName, long Length, Func<Stream> Ope
 /// lopen via de upload-pijplijn (<see cref="ContentFiles"/>).
 /// </summary>
 public sealed class ContentAdministration(
-    DrammersDbContext db, ContentFiles contentFiles, IFileStore files, IOutbox outbox, IAuditLogger audit, ICurrentActor actor, IClock clock)
+    DrammersDbContext db, ContentFiles contentFiles, IFileStore files, IOutbox outbox, IAuditLogger audit, ICurrentActor actor, IClock clock,
+    Modules.Notification.Notifications.INotificationService notifications)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -137,7 +138,7 @@ public sealed class ContentAdministration(
 
     public async Task SetNewsStatusAsync(Guid id, PublicationStatus status, DateTime? publishAt, CancellationToken cancellationToken)
     {
-        var n = await db.News.SingleOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw NotFound();
+        var n = await db.News.Include(x => x.Audiences).SingleOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw NotFound();
         n.Status = status;
         n.PublishAt = status switch
         {
@@ -312,7 +313,7 @@ public sealed class ContentAdministration(
 
     private void Apply(NewsItem n, NewsInput input)
     {
-        (n.Title, n.Summary, n.Body, n.Category, n.ExpireAt) = (input.Title, input.Summary, input.Body, input.Category, input.ExpireAt);
+        (n.Title, n.Summary, n.Body, n.Category, n.ExpireAt, n.PushOnPublish) = (input.Title, input.Summary, input.Body, input.Category, input.ExpireAt, input.PushOnPublish);
         (n.Visibility, n.Status, n.PublishAt) = Publication(input.Publication);
         n.Audiences.Clear();
         n.Audiences.AddRange(Audiences(input.Publication).Select(r => new NewsAudience { NewsId = n.Id, AudienceType = r.Type, AudienceRef = r.Ref }));
@@ -360,6 +361,11 @@ public sealed class ContentAdministration(
             .Select(e => e.Entity.PublishAt!.Value).Distinct().ToList())
         {
             outbox.Enqueue(ContentPublisherJob.MessageType, new { }, notBefore: publishAt);
+        }
+
+        foreach (var news in db.ChangeTracker.Entries<NewsItem>().Where(e => e.State is EntityState.Added or EntityState.Modified).Select(e => e.Entity).ToList())
+        {
+            await NewsPush.EnqueueIfLiveAsync(notifications, news, now, cancellationToken);
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);

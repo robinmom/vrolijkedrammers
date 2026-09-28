@@ -14,6 +14,7 @@ import { MemberDetailPage } from './pages/MemberDetailPage';
 import { MembersPage } from './pages/MembersPage';
 import { MemberSyncPage, SyncJobPage } from './pages/MemberSyncPage';
 import { NewsEditorPage, NewsPage } from './pages/NewsPage';
+import { NotificationComposerPage, NotificationDetailPage, NotificationsPage } from './pages/NotificationsPage';
 import { AlbumEditorPage, PhotosPage } from './pages/PhotosPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { RolesPage } from './pages/RolesPage';
@@ -22,7 +23,10 @@ import { UsersPage } from './pages/UsersPage';
 
 const rootRoute = createRootRoute({ component: Layout });
 
-function guarded(permission: string, Page: () => React.ReactNode) {
+/** Meldingen: met notification.send (elke doelgroep) of notification.send.group (eigen groepen). */
+const NOTIFY = ['notification.send', 'notification.send.group'] as const;
+
+function guarded(permission: string | readonly string[], Page: () => React.ReactNode) {
   return function GuardedPage() {
     return (
       <RequirePermission permission={permission}>
@@ -42,6 +46,9 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/fotos/$id', component: guarded('photo.manage', AlbumEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/leden', component: guarded('member.read', MembersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/leden/$id', component: guarded('member.read', MemberDetailPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/meldingen', component: guarded(NOTIFY, NotificationsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/meldingen/nieuw', component: guarded(NOTIFY, NotificationComposerPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/meldingen/$id', component: guarded(NOTIFY, NotificationDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/ledensync', component: guarded('import.run', MemberSyncPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/ledensync/$id', component: guarded('import.run', SyncJobPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/aanmeldingen', component: guarded('member.approve', ApplicationsPage) }),

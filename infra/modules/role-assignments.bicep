@@ -6,6 +6,7 @@ param communicationServiceName string
 
 var roles = {
   keyVaultSecretsUser: '4633458b-17de-408a-b874-0445c86b69e6'
+  keyVaultCryptoServiceEncryptionUser: 'e147488a-f6f5-4113-8e2d-b22465e65bf6'
   storageBlobDataContributor: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
   storageBlobDelegator: 'db58b8e5-c6ad-4a2a-8342-4190687cbf4a'
   communicationEmailServiceOwner: '09976791-48a7-449e-bb21-39d1a415f350'
@@ -30,6 +31,17 @@ resource vaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' =
     principalId: principalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.keyVaultSecretsUser)
+  }
+}
+
+// Data Protection: sleutelring wrappen/unwrappen met de sleutel 'dataprotection'.
+resource vaultCryptoUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(vault.id, principalId, roles.keyVaultCryptoServiceEncryptionUser)
+  scope: vault
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.keyVaultCryptoServiceEncryptionUser)
   }
 }
 

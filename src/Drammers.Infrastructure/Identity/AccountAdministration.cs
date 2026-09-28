@@ -130,6 +130,7 @@ public sealed class AccountAdministration(
         user.Email = $"verwijderd-{user.Id:N}@invalid";
         user.DisplayName = "Verwijderd account";
         user.PermissionsVersion++;
+        await db.PushDevices.Where(p => p.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Devices.Where(d => d.UserId == userId && d.Status == Modules.Identity.Devices.DeviceStatus.Active)
             .ExecuteUpdateAsync(s => s.SetProperty(d => d.Status, Modules.Identity.Devices.DeviceStatus.Revoked).SetProperty(d => d.RevokedAt, now), cancellationToken);
         // Afgeronde provisioning van dit account vervalt, zodat het lid later opnieuw een account kan krijgen.

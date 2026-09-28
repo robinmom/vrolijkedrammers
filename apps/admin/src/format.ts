@@ -162,3 +162,24 @@ export const applicationStatusTone: Record<string, string> = {
 };
 
 export const applicationSourceLabels: Record<string, string> = { App: 'App', Website: 'Website', Portal: 'Beheerportal' };
+
+export const notificationCategoryLabels: Record<string, string> = {
+  Urgent: 'Dringend',
+  Program: 'Programma',
+  News: 'Nieuws',
+  Parade: 'Optocht',
+  DanceGuard: 'Dansgarde',
+  Kader: 'Kader',
+  Tickets: 'Tickets',
+  Reminder: 'Herinnering',
+  System: 'Systeem',
+};
+
+export const notificationStatusLabels: Record<string, string> = {
+  Scheduled: 'Gepland',
+  Sending: 'Wordt verstuurd',
+  Sent: 'Verstuurd',
+  PartiallyFailed: 'Deels mislukt',
+  Failed: 'Mislukt',
+  Canceled: 'Geannuleerd',
+};

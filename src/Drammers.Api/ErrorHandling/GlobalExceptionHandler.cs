@@ -20,6 +20,7 @@ public sealed partial class GlobalExceptionHandler(
             {
                 DomainErrorKind.NotFound => StatusCodes.Status404NotFound,
                 DomainErrorKind.Conflict => StatusCodes.Status409Conflict,
+                DomainErrorKind.Forbidden => StatusCodes.Status403Forbidden,
                 _ => StatusCodes.Status422UnprocessableEntity,
             };
             httpContext.Response.StatusCode = status;

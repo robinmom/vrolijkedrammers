@@ -42,9 +42,10 @@ public sealed record NewsRequest(
     [Required, StringLength(50000)] string Body,
     [StringLength(50)] string? Category,
     DateTime? ExpireAt,
-    [Required] PublicationRequest Publication)
+    [Required] PublicationRequest Publication,
+    bool PushOnPublish = false)
 {
-    public NewsInput ToInput() => new(Title, Summary, Body, Category, ExpireAt?.ToUniversalTime(), Publication.ToInput());
+    public NewsInput ToInput() => new(Title, Summary, Body, Category, ExpireAt?.ToUniversalTime(), Publication.ToInput(), PushOnPublish);
 }
 
 public sealed record AlbumRequest(

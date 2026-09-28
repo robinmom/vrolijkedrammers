@@ -16,4 +16,7 @@ public enum DomainErrorKind
     Validation,
     NotFound,
     Conflict,
+
+    /// <summary>Wel het recht op de actie, maar niet voor deze inhoud (bijv. een doelgroep buiten de eigen groepen).</summary>
+    Forbidden,
 }

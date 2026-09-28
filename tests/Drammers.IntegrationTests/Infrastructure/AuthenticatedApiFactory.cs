@@ -5,6 +5,7 @@ using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.Modules.Identity.Users;
 using Drammers.SharedKernel.Identifiers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -21,6 +22,9 @@ public sealed class AuthenticatedApiFactory(
 
     /// <summary>Verstuurde e-mails (welkomstmail).</summary>
     public RecordingEmailSender Emails { get; } = new();
+
+    /// <summary>Verstuurde pushberichten (fase 10); batches van 2 om het batchen te testen.</summary>
+    public RecordingPushSender Push { get; } = new();
 
     /// <summary>Limiet voor anonieme formulieren; alle testrequests delen één IP, dus standaard ruim.</summary>
     public int AnonymousFormsLimit { get; init; } = 1000;
@@ -44,6 +48,8 @@ public sealed class AuthenticatedApiFactory(
         {
             services.AddSingleton<IEntraUserDirectory>(Entra);
             services.AddSingleton<Drammers.Infrastructure.Email.IEmailSender>(Emails);
+            services.AddSingleton<Drammers.Infrastructure.Notifications.IPushSender>(Push);
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.AddSingleton<Drammers.SharedKernel.Time.IClock>(Clock);
             configure?.Invoke(services);
             services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>

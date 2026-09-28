@@ -3086,6 +3086,272 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PagedResultOfNotificationSummaryResponse"];
+                        "application/json": components["schemas"]["PagedResultOfNotificationSummaryResponse"];
+                        "text/json": components["schemas"]["PagedResultOfNotificationSummaryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateNotificationRequest"];
+                    "text/json": components["schemas"]["CreateNotificationRequest"];
+                    "application/*+json": components["schemas"]["CreateNotificationRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NotificationDetailResponse"];
+                        "application/json": components["schemas"]["NotificationDetailResponse"];
+                        "text/json": components["schemas"]["NotificationDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/audience-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Keuzelijsten voor de doelgroep: rollen en groepen (met alleen het groepsrecht: de eigen groepen, geen rollen). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NotificationAudienceOptionsResponse"];
+                        "application/json": components["schemas"]["NotificationAudienceOptionsResponse"];
+                        "text/json": components["schemas"]["NotificationAudienceOptionsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/preview-audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AudiencePreviewRequest"];
+                    "text/json": components["schemas"]["AudiencePreviewRequest"];
+                    "application/*+json": components["schemas"]["AudiencePreviewRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AudiencePreview"];
+                        "application/json": components["schemas"]["AudiencePreview"];
+                        "text/json": components["schemas"]["AudiencePreview"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notifications/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/photo-albums": {
         parameters: {
             query?: never;
@@ -5294,6 +5560,264 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/devices/{id}/push-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Registreert of ververst het Expo-push-token van een eigen, actief apparaat. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PushTokenRequest"];
+                    "text/json": components["schemas"]["PushTokenRequest"];
+                    "application/*+json": components["schemas"]["PushTokenRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De inbox toont ook meldingen als push is uitgezet of geweigerd. */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InboxPage"];
+                        "application/json": components["schemas"]["InboxPage"];
+                        "text/json": components["schemas"]["InboxPage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CategoryPreference"][];
+                        "application/json": components["schemas"]["CategoryPreference"][];
+                        "text/json": components["schemas"]["CategoryPreference"][];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetPreferencesRequest"];
+                    "text/json": components["schemas"]["SetPreferencesRequest"];
+                    "application/*+json": components["schemas"]["SetPreferencesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CategoryPreference"][];
+                        "application/json": components["schemas"]["CategoryPreference"][];
+                        "text/json": components["schemas"]["CategoryPreference"][];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/news": {
         parameters: {
             query?: never;
@@ -5561,6 +6085,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/push-devices/anonymous": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AnonymousPushRequest"];
+                    "text/json": components["schemas"]["AnonymousPushRequest"];
+                    "application/*+json": components["schemas"]["AnonymousPushRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/push-devices/anonymous/{installId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    installId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5683,6 +6303,8 @@ export interface components {
             expireAt: null | string;
             publication: components["schemas"]["PublicationResponse"];
             imageUrl: null | string;
+            pushOnPublish: boolean;
+            pushStatus: null | components["schemas"]["NotificationStatus"];
         };
         AdminNewsSummaryResponse: {
             /** Format: uuid */
@@ -5712,6 +6334,11 @@ export interface components {
             /** Format: uuid */
             eventId: null | string;
             publication: components["schemas"]["PublicationRequest"];
+        };
+        AnonymousPushRequest: {
+            installId: string;
+            platform: string;
+            token: string;
         };
         AppAuthConfigResponse: {
             clientId: string;
@@ -5863,6 +6490,25 @@ export interface components {
             id: string;
             name: string;
         };
+        /** @description Aantallen vóór verzending (docs/02 §5.3 stap 3); gelijk aan wat de worker daadwerkelijk aanmaakt. */
+        AudiencePreview: {
+            /** Format: int32 */
+            accounts: number;
+            /** Format: int32 */
+            guests: number;
+            /** Format: int32 */
+            pushDevices: number;
+            /** Format: int32 */
+            optedOut: number;
+        };
+        AudiencePreviewRequest: {
+            audience: components["schemas"]["NotificationAudience"];
+            category: components["schemas"]["NotificationCategory"];
+        };
+        AudienceRoleOption: {
+            code: string;
+            name: string;
+        };
         AuditLogEntryResponse: {
             /** Format: int64 */
             id: number;
@@ -5902,6 +6548,11 @@ export interface components {
             /** Format: date */
             carnivalEndDate: string;
         };
+        CategoryPreference: {
+            category: components["schemas"]["NotificationCategory"];
+            enabled: boolean;
+            canDisable: boolean;
+        };
         /**
          * @description Wie content mag zien (docs/07 §4). Beheren gaat via permissions, niet via zichtbaarheid.
          * @enum {unknown}
@@ -5910,6 +6561,15 @@ export interface components {
         CreatedResponse: {
             /** Format: uuid */
             id: string;
+        };
+        CreateNotificationRequest: {
+            title: string;
+            body: string;
+            category: components["schemas"]["NotificationCategory"];
+            audience: components["schemas"]["NotificationAudience"];
+            deepLink: null | string;
+            /** Format: date-time */
+            scheduledAt: null | string;
         };
         CreateRoleRequest: {
             code: string;
@@ -6111,6 +6771,24 @@ export interface components {
         /** Format: binary */
         IFormFile: string;
         IFormFileCollection: components["schemas"]["IFormFile"][];
+        InboxItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            body: string;
+            category: components["schemas"]["NotificationCategory"];
+            deepLink: null | string;
+            /** Format: date-time */
+            sentAt: string;
+            /** Format: date-time */
+            readAt: null | string;
+        };
+        InboxPage: {
+            items: components["schemas"]["InboxItem"][];
+            /** Format: int32 */
+            unreadCount: number;
+            hasMore: boolean;
+        };
         Maintenance: {
             enabled: boolean;
             message: null | string;
@@ -6353,6 +7031,8 @@ export interface components {
             /** Format: date-time */
             expireAt: null | string;
             publication: components["schemas"]["PublicationRequest"];
+            /** @default false */
+            pushOnPublish: boolean;
         };
         NewsSummaryResponse: {
             /** Format: uuid */
@@ -6363,6 +7043,76 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
             imageUrl: null | string;
+        };
+        /**
+         * @description Doelgroep (docs/02 §5.3). bool NotificationAudience.Everyone = alle accounts plus gasten met push-toestemming;
+         *     bool NotificationAudience.Members = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en
+         *     leden ontvangen ook de ouders/verzorgers ("Namens …").
+         */
+        NotificationAudience: {
+            /** @default false */
+            everyone: boolean;
+            /** @default false */
+            members: boolean;
+            roles?: null | string[];
+            groups?: null | string[];
+            memberIds?: null | string[];
+        };
+        NotificationAudienceOptionsResponse: {
+            /** @description Mag naar elke doelgroep (`notification.send`); anders alleen de eigen groepen. */
+            anyAudience: boolean;
+            /** @description Mag Dringend en Iedereen gebruiken. */
+            urgent: boolean;
+            /** @description Rollen als doelgroep (leeg met alleen het groepsrecht). */
+            roles: components["schemas"]["AudienceRoleOption"][];
+            /** @description Groepen als doelgroep. */
+            groups: components["schemas"]["AudienceOptionResponse"][];
+        };
+        /**
+         * @description Categorie van een melding (docs/04 §6); bepaalt het Android-kanaal en de voorkeur van de ontvanger.
+         * @enum {unknown}
+         */
+        NotificationCategory: "Urgent" | "Program" | "News" | "Parade" | "DanceGuard" | "Kader" | "Tickets" | "Reminder" | "System";
+        NotificationDetailResponse: {
+            summary: components["schemas"]["NotificationSummaryResponse"];
+            body: string;
+            deepLink: null | string;
+            audience: components["schemas"]["NotificationAudience"];
+            audienceLabels: string[];
+            sourceType: null | string;
+            /** Format: uuid */
+            sourceId: null | string;
+            /** Format: int32 */
+            optedOut: number;
+            /** Format: int32 */
+            noDevice: number;
+        };
+        /** @enum {unknown} */
+        NotificationStatus: "Scheduled" | "Sending" | "Sent" | "PartiallyFailed" | "Failed" | "Canceled" | null;
+        NotificationSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            category: components["schemas"]["NotificationCategory"];
+            status: components["schemas"]["NotificationStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            scheduledAt: null | string;
+            /** Format: date-time */
+            sentAt: null | string;
+            senderName: null | string;
+            sourceType: null | string;
+            /** Format: int32 */
+            recipientCount: number;
+            /** Format: int32 */
+            pushCount: number;
+            /** Format: int32 */
+            deliveredCount: number;
+            /** Format: int32 */
+            failedCount: number;
+            /** Format: int32 */
+            readCount: number;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfAccountRequestResponse: {
@@ -6417,6 +7167,16 @@ export interface components {
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfNewsSummaryResponse: {
             items: components["schemas"]["NewsSummaryResponse"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+        };
+        /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
+        PagedResultOfNotificationSummaryResponse: {
+            items: components["schemas"]["NotificationSummaryResponse"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -6519,6 +7279,10 @@ export interface components {
             authority: string;
             apiScope: string;
         };
+        PreferenceChange: {
+            category: components["schemas"]["NotificationCategory"];
+            enabled: boolean;
+        };
         PrivacyExportResponse: {
             /** Format: uuid */
             id: string;
@@ -6605,6 +7369,9 @@ export interface components {
         };
         /** @enum {unknown} */
         PublicationStatus: "Draft" | "Scheduled" | "Published" | "Archived";
+        PushTokenRequest: {
+            token: string;
+        };
         RegisterDeviceRequest: {
             installationId: string;
             platform: components["schemas"]["DevicePlatform"];
@@ -6661,6 +7428,9 @@ export interface components {
         ScheduleRequest: {
             /** Format: date-time */
             publishAt: string;
+        };
+        SetPreferencesRequest: {
+            preferences: components["schemas"]["PreferenceChange"][];
         };
         SetRolePermissionsRequest: {
             permissions: string[];

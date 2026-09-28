@@ -268,11 +268,6 @@ export default function InschrijvenScreen() {
           ) : (
             <>
               <Button label="Naar mijn inschrijving" onPress={() => router.replace(`/optocht/${registration!.id}`)} />
-              <Button
-                label="Nog een groep inschrijven"
-                variant="secondary"
-                onPress={() => router.replace('/optocht/inschrijven')}
-              />
             </>
           )}
         </View>

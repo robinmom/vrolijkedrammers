@@ -146,7 +146,8 @@ test('optocht inschrijven: blokkerende meldingen van de API en een gesloten insc
   await page.unrouteAll();
   await serve(page, closed);
   await page.goto('/optocht-inschrijven/');
-  await expect(page.getByRole('heading', { name: 'Inschrijven kan nu niet' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Inschrijven nog niet mogelijk' })).toBeVisible();
+  await expect(page.getByText(/opent op/)).toBeVisible();
 
   await page.goto('/optocht-inschrijven/?status=fout');
   await expect(page.getByText('Deze statuslink is niet (meer) geldig.')).toBeVisible();

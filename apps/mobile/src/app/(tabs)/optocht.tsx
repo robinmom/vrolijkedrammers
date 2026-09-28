@@ -1,13 +1,13 @@
 import { brand, radius } from '@drammers/design-tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Image, Pressable, Share, StyleSheet, View } from 'react-native';
+import { Image, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { queryKeys, useCarnivalYear, useMe, useMyRegistrations, useParade } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
-import { statusBadge, statusLabels } from '../../features/parade';
+import { statusLabels } from '../../features/parade';
 import { useRefresh } from '../../api/useRefresh';
-import { optocht, placeholder } from '../../content/static';
+import { optocht } from '../../content/static';
 import { carnivalMidnight, fullDate } from '../../lib/dates';
 import { openInMaps } from '../../lib/calendar';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -17,12 +17,12 @@ import { AppText, Badge, Button, Card, HeroButton, Screen } from '../../ui';
 const hero = require('../../../assets/images/optocht-hero.jpg');
 
 const DAY = 24 * 60 * 60 * 1000;
-const dotColors = { blue: brand.blue, red: brand.red, yellow: brand.yellow, green: brand.green } as const;
 
 /**
- * 04 Optocht (Figma 5:174). Publieke optochtinformatie; de datum volgt uit het actieve carnavalsjaar.
- * Tijden en route zijn voorlopig (content/static.ts). Inschrijven (fase 11): groepsverantwoordelijken en gasten zien
- * "Aanmelden optocht"; leden zonder dat recht gaan naar de informatiepagina uit het portal.
+ * 04 Optocht (Figma 5:174). Datum, starttijd, startlocatie en route komen uit het portal (Optocht en categorieën); zonder
+ * optocht valt de datum terug op het carnavalsjaar. Inschrijven (fase 11): één inschrijving per persoon, dus met een
+ * inschrijving wordt de knop "Mijn inschrijving"; "Aanmelden optocht" (groepsverantwoordelijken en gasten) alleen tijdens de
+ * inschrijfperiode; leden zonder dat recht gaan naar de informatiepagina uit het portal.
  */
 export default function OptochtScreen() {
   useHeroStatusBar();
@@ -38,14 +38,21 @@ export default function OptochtScreen() {
   const guest = session === 'signedOut';
   const open = parade.data?.registrationOpen ?? false;
 
-  const register = () => {
-    if (session === 'signedIn' && !canRegister) {
-      router.push('/optocht/info');
-    } else {
-      router.push(guest ? { pathname: '/optocht/inschrijven', params: { gast: '1' } } : '/optocht/inschrijven');
-    }
-  };
-  const registerLabel = session === 'signedIn' && !canRegister ? 'Meedoen aan de optocht' : 'Aanmelden optocht';
+  const mine = canRegister ? registrations.data?.find((r) => r.status !== 'Withdrawn') : undefined;
+  const p = parade.data;
+
+  // Eén knop, afhankelijk van de situatie; buiten de inschrijfperiode geen aanmeldknop.
+  const action = mine
+    ? { label: 'Mijn inschrijving', icon: 'optocht' as const, onPress: () => router.push(`/optocht/${mine.id}`) }
+    : session === 'signedIn' && me.data && !canRegister
+      ? { label: 'Meedoen aan de optocht', icon: 'megafoon' as const, onPress: () => router.push('/optocht/info') }
+      : open && (guest || canRegister) && (guest || registrations.isSuccess)
+        ? {
+            label: 'Aanmelden optocht',
+            icon: 'plus' as const,
+            onPress: () => router.push(guest ? { pathname: '/optocht/inschrijven', params: { gast: '1' } } : '/optocht/inschrijven'),
+          }
+        : null;
   const registrationNote = !parade.data
     ? null
     : open
@@ -55,10 +62,19 @@ export default function OptochtScreen() {
         : 'De inschrijving is gesloten.';
 
   // Midden op de dag rekenen, zodat de tijdzone de datum nooit verschuift.
-  const date = year.data ? fullDate(new Date(carnivalMidnight(year.data.carnivalStartDate).getTime() + optocht.dayOffset * DAY + DAY / 2).toISOString()) : null;
+  const date = p
+    ? fullDate(`${p.paradeDate}T12:00:00Z`)
+    : year.data
+      ? fullDate(new Date(carnivalMidnight(year.data.carnivalStartDate).getTime() + optocht.dayOffset * DAY + DAY / 2).toISOString())
+      : null;
+  const startTime = p ? p.startTime.slice(0, 5) : null;
+  const routeLength = p?.routeLengthKm != null ? `${String(p.routeLengthKm).replace('.', ',')} km` : null;
+  const routeQuery = p?.startLocation ? `${p.startLocation}, Loil` : optocht.routeQuery;
 
   const share = () =>
-    Share.share({ message: `Optocht Loil${date ? ` op ${date.toLowerCase()}` : ''}, start ${optocht.startTime} uur. Alaaf! – De Vrolijke Drammers` });
+    Share.share({
+      message: `${p?.name ?? 'Optocht Loil'}${date ? ` op ${date.toLowerCase()}` : ''}${startTime ? `, start ${startTime} uur` : ''}. Alaaf! – De Vrolijke Drammers`,
+    });
 
   return (
     <Screen hero {...refresh}>
@@ -79,7 +95,7 @@ export default function OptochtScreen() {
             </View>
           ) : null}
           <AppText variant="largeTitle" color="#FFFFFF" style={styles.title} accessibilityRole="header">
-            Optocht Loil
+            {p?.name ?? 'Optocht Loil'}
           </AppText>
           <AppText variant="body" color="rgba(255,255,255,0.9)">
             {optocht.subtitle}
@@ -89,90 +105,59 @@ export default function OptochtScreen() {
 
       <View style={styles.content}>
         <Card style={styles.stats}>
-          <Stat value={optocht.startTime} label="Start" />
+          <Stat value={startTime ?? '–'} label="Start" accessibilityLabel={startTime ? `Start: ${startTime} uur` : 'Start: nog niet bekend'} />
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <Stat value="–" label="Deelnemers" accent accessibilityLabel="Deelnemers: nog niet bekend" />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <Stat value={optocht.routeLength} label="Route" />
+          <Stat value={routeLength ?? '–'} label="Route" accessibilityLabel={routeLength ? `Route: ${routeLength}` : 'Route: nog niet bekend'} />
         </Card>
 
         <View style={styles.buttons}>
-          <View style={styles.flex}>
-            <Button
-              label={registerLabel}
-              icon="plus"
-              onPress={register}
-              disabled={session === 'loading' || (registerLabel === 'Aanmelden optocht' && !open)}
-            />
-          </View>
-          <Button label="Route" icon="locatie" variant="secondary" onPress={() => openInMaps(optocht.routeQuery)} />
+          {action ? (
+            <View style={styles.flex}>
+              <Button label={action.label} icon={action.icon} onPress={action.onPress} />
+            </View>
+          ) : null}
+          <Button label="Route" icon="locatie" variant="secondary" onPress={() => openInMaps(routeQuery)} />
         </View>
-        {registrationNote ? (
+        {mine ? (
+          <AppText variant="caption" color={colors.textSecondary}>
+            {mine.groupName ?? 'Jullie groep'}: {statusLabels[mine.status].toLowerCase()}
+            {mine.registrationNumber ? ` · opgavenummer ${mine.registrationNumber}` : ''}
+          </AppText>
+        ) : registrationNote ? (
           <AppText variant="caption" color={colors.textSecondary}>
             {registrationNote}
           </AppText>
         ) : null}
 
-        {canRegister && registrations.data && registrations.data.length > 0 ? (
+        {p ? (
           <>
             <AppText variant="sectionHeader" accessibilityRole="header">
-              Mijn inschrijvingen
+              Programma
             </AppText>
-            {registrations.data.map((r) => (
-              <Pressable
-                key={r.id}
-                onPress={() => router.push(`/optocht/${r.id}`)}
-                accessibilityRole="button"
-                accessibilityLabel={`${r.groupName ?? 'Groep zonder naam'}, ${statusLabels[r.status]}${r.registrationNumber ? `, opgavenummer ${r.registrationNumber}` : ''}`}
-              >
-                <Card style={styles.registration}>
-                  <View style={styles.registrationTop}>
-                    <AppText variant="bodyStrong" style={styles.flex}>
-                      {r.groupName ?? 'Groep zonder naam'}
+            <Card style={styles.timeline}>
+              <View style={styles.step} accessible accessibilityLabel={`${startTime} uur, start optocht${p.startLocation ? `, ${p.startLocation}` : ''}`}>
+                <View style={[styles.dot, { backgroundColor: `${brand.red}40` }]}>
+                  <View style={[styles.dotInner, { backgroundColor: brand.red }]} />
+                </View>
+                <View style={styles.flex}>
+                  <AppText variant="bodyStrong">Start optocht</AppText>
+                  {p.startLocation ? (
+                    <AppText variant="caption" color={colors.textSecondary}>
+                      {p.startLocation}
                     </AppText>
-                    <Badge label={statusLabels[r.status]} variant={statusBadge(r.status)} />
-                  </View>
-                  <AppText variant="caption" color={colors.textSecondary}>
-                    {r.registrationNumber
-                      ? `Opgavenummer ${r.registrationNumber} · startnummer ${r.startNumber ?? 'volgt na de indeling'}`
-                      : 'Nog niet ingediend: je krijgt pas een opgavenummer na het indienen.'}
-                  </AppText>
-                </Card>
-              </Pressable>
-            ))}
-          </>
-        ) : null}
-
-        <AppText variant="sectionHeader" accessibilityRole="header">
-          Tijdlijn
-        </AppText>
-        <Card style={styles.timeline}>
-          {optocht.timeline.map((step, index) => (
-            <View
-              key={step.title}
-              style={[styles.step, index < optocht.timeline.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
-              accessible
-              accessibilityLabel={`${step.time} uur, ${step.title}, ${step.place}`}
-            >
-              <View style={[styles.dot, { backgroundColor: `${dotColors[step.color]}40` }]}>
-                <View style={[styles.dotInner, { backgroundColor: dotColors[step.color] }]} />
-              </View>
-              <View style={styles.flex}>
-                <AppText variant="bodyStrong">{step.title}</AppText>
-                <AppText variant="caption" color={colors.textSecondary}>
-                  {step.place}
+                  ) : null}
+                </View>
+                <AppText variant="bodyStrong" style={styles.time}>
+                  {startTime}
                 </AppText>
               </View>
-              <AppText variant="bodyStrong" style={styles.time}>
-                {step.time}
-              </AppText>
-            </View>
-          ))}
-        </Card>
-        {placeholder ? (
-          <AppText variant="label" color={colors.textSecondary} style={styles.note}>
-            Voorlopige tijden; het definitieve schema volgt.
-          </AppText>
+              {p.routeDescription ? (
+                <AppText variant="body" color={colors.textSecondary} style={[styles.route, { borderTopColor: colors.border }]}>
+                  {p.routeDescription}
+                </AppText>
+              ) : null}
+            </Card>
+          </>
         ) : null}
       </View>
     </Screen>
@@ -208,13 +193,11 @@ const styles = StyleSheet.create({
   divider: { width: 1, height: 36 },
   buttons: { flexDirection: 'row', gap: 10 },
   flex: { flex: 1 },
-  registration: { padding: 14, gap: 6 },
-  registrationTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  route: { borderTopWidth: 1, paddingVertical: 10 },
   timeline: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.md },
   step: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
   // Figma: stip van 14 met een rand van 4 op 25 %; als halo met een volle kern van 6.
   dot: { width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   dotInner: { width: 6, height: 6, borderRadius: 3 },
   time: { fontFamily: 'Poppins_700Bold' },
-  note: { textAlign: 'center' },
 });

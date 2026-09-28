@@ -135,6 +135,13 @@ public sealed class ParadeRegistrations(
         var member = user.MemberId is { } memberId
             ? await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => new { m.FullName, m.MobilePhone, m.Phone, m.Email, m.ParadeGroupName }).SingleOrDefaultAsync(cancellationToken)
             : null;
+        // Eén inschrijving per persoon per optocht (besluit product owner 2026-09-28); na intrekken mag het opnieuw.
+        if (await db.ParadeRegistrations.AnyAsync(r => r.ParadeId == parade.Id && r.OwnerUserId == user.UserId && r.Status != RegistrationStatus.Withdrawn, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.RegistrationExists,
+                "Je hebt al een inschrijving voor deze optocht. Open die via Mijn inschrijving.", DomainErrorKind.Conflict);
+        }
+
         var location = await db.ParadeBuildLocations.AsNoTracking().Where(l => l.UserId == user.UserId)
             .OrderByDescending(l => l.LastUsedAt).FirstOrDefaultAsync(cancellationToken);
         var registration = new ParadeRegistration

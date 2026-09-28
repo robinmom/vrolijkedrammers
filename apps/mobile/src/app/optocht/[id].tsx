@@ -19,6 +19,28 @@ export default function InschrijvingScreen() {
   const [error, setError] = useState<string | null>(null);
   const r = registration.data;
 
+  const removeDraft = () =>
+    Alert.alert(
+      'Concept verwijderen',
+      'Weet je het zeker? Het concept en de toegevoegde documenten worden verwijderd.',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: async () => {
+            const { error: problem, response } = await api.DELETE('/api/v1/parade/registrations/{id}', {
+              params: { path: { id } },
+            });
+            if (!response.ok) return setError(problemFrom(response.status, problem).message);
+            queryClient.removeQueries({ queryKey: queryKeys.myRegistration(id) });
+            await queryClient.invalidateQueries({ queryKey: queryKeys.myRegistrations });
+            router.back();
+          },
+        },
+      ],
+    );
+
   const withdraw = () =>
     Alert.alert(
       'Inschrijving intrekken',
@@ -103,6 +125,9 @@ export default function InschrijvingScreen() {
               }
               onPress={() => router.push({ pathname: '/optocht/inschrijven', params: { id: r.id } })}
             />
+          ) : null}
+          {r.status === 'Draft' ? (
+            <Button label="Concept verwijderen" variant="secondary" onPress={removeDraft} />
           ) : null}
           {r.canWithdraw ? <Button label="Intrekken" variant="secondary" onPress={withdraw} /> : null}
         </View>

@@ -31,7 +31,9 @@ public class AuthenticationTests(SqlServerFixture sql) : IAsyncLifetime
 
         Assert.Equal("lid", body.RootElement.GetProperty("roles")[0].GetProperty("code").GetString());
         var permissions = body.RootElement.GetProperty("permissions").EnumerateArray().Select(p => p.GetString()).ToList();
-        Assert.Contains(Permissions.ParadeRegister, permissions);
+        Assert.Contains(Permissions.MemberReadOwn, permissions);
+        // Fase 11: inschrijven voor de optocht alleen met de per gebruiker aangevinkte rol Groepsverantwoordelijke.
+        Assert.DoesNotContain(Permissions.ParadeRegister, permissions);
         Assert.DoesNotContain(Permissions.RoleManage, permissions);
     }
 

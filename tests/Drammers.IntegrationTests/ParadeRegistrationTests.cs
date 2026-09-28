@@ -56,9 +56,10 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         return await action(scope.ServiceProvider.GetRequiredService<DrammersDbContext>());
     }
 
+    /// <summary>Groepsverantwoordelijke (per gebruiker aangevinkt; alleen die mag inschrijven).</summary>
     private async Task<(Guid UserId, HttpClient Client)> LidAsync(string email)
     {
-        var (userId, oid) = await _api.CreateUserAsync(email, DefaultRoles.Lid);
+        var (userId, oid) = await _api.CreateUserAsync(email, DefaultRoles.Lid, DefaultRoles.Groepsverantwoordelijke);
         return (userId, _api.ClientFor(oid));
     }
 
@@ -94,7 +95,8 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
 
     private async Task RunOutboxAsync()
     {
-        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == ParadeRegistrations.SubmittedMailMessageType).ToListAsync());
+        string[] types = [ParadeRegistrations.SubmittedMailMessageType, ParadeReview.StatusMailMessageType];
+        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && types.Contains(m.Type)).ToListAsync());
         foreach (var message in messages)
         {
             using var scope = _api.Services.CreateScope();
@@ -138,7 +140,7 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Contains("opgavenummer 1", mail.Subject);
         Assert.Contains("niet jullie startnummer", mail.PlainText);
         Assert.True(await WithDbAsync(db => db.Notifications.AnyAsync(n => n.Title.Contains("nr. 1"))));
-        Assert.True(await WithDbAsync(db => db.UserRoles.AnyAsync(r => r.UserId == userId && db.Roles.Any(x => x.Id == r.RoleId && x.Code == DefaultRoles.Groepsverantwoordelijke))));
+        Assert.Equal("6999 AA", (await WithDbAsync(db => db.ParadeBuildLocations.SingleAsync(l => l.UserId == userId))).Address.PostalCode);
         Assert.Equal(HttpStatusCode.Conflict, (await lid.DeleteAsync($"/api/v1/parade/registrations/{draft.GetProperty("id").GetGuid()}")).StatusCode);
     }
 
@@ -340,5 +342,134 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
 
         var (_, lid) = await LidAsync("piet@example.com");
         Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/parades")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Een_gewoon_lid_zonder_de_rol_mag_niet_inschrijven_en_ziet_de_informatie()
+    {
+        var (_, oid) = await _api.CreateUserAsync("gewoon@example.com", DefaultRoles.Lid);
+        var gewoon = _api.ClientFor(oid);
+        Assert.Equal(HttpStatusCode.Forbidden, (await gewoon.PostAsync("/api/v1/parade/registrations", null)).StatusCode);
+
+        var parade = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/parades/{_paradeId}");
+        var body = JsonSerializer.SerializeToNode(parade)!;
+        body["infoText"] = "## Meedoen?\nVraag het bestuur om je als **groepsverantwoordelijke** aan te melden.";
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync($"/api/v1/admin/parades/{_paradeId}", body)).StatusCode);
+        var info = await gewoon.GetFromJsonAsync<JsonElement>("/api/v1/parade/current");
+        Assert.Contains("<strong>groepsverantwoordelijke</strong>", info.GetProperty("infoHtml").GetString());
+    }
+
+    [Fact]
+    public async Task Concept_is_vooringevuld_met_de_groepsnaam_uit_e_Boekhouden_en_de_laatste_bouwlocatie()
+    {
+        var (userId, lid) = await LidAsync("piet@example.com");
+        await WithDbAsync(async db =>
+        {
+            var member = new Drammers.Modules.Membership.Members.Member
+            {
+                Id = Drammers.SharedKernel.Identifiers.IdGenerator.NewId(),
+                MemberNumber = "777",
+                FullName = "Piet Lid",
+                ParadeGroupName = "De Knotwilgen",
+                MembershipStatus = Drammers.Modules.Membership.Members.MembershipStatus.Active,
+            };
+            db.Members.Add(member);
+            await db.SaveChangesAsync();
+            (await db.Users.SingleAsync(u => u.Id == userId)).MemberId = member.Id;
+            db.ParadeBuildLocations.Add(new ParadeBuildLocation
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                LastUsedAt = DateTime.UtcNow,
+                Address = new Address { Street = "Schuurweg", HouseNumber = "4", PostalCode = "6999 AB", City = "Loil" },
+            });
+            return await db.SaveChangesAsync();
+        });
+
+        var draft = await DraftAsync(lid);
+
+        Assert.Equal(("De Knotwilgen", "Schuurweg"), (draft.GetProperty("groupName").GetString(), draft.GetProperty("buildAddress").GetProperty("street").GetString()));
+        var locations = await lid.GetFromJsonAsync<JsonElement>("/api/v1/parade/build-locations");
+        var location = Assert.Single(locations.EnumerateArray());
+        Assert.Equal(HttpStatusCode.NoContent, (await lid.DeleteAsync($"/api/v1/parade/build-locations/{location.GetProperty("id").GetGuid()}")).StatusCode);
+        Assert.Empty((await lid.GetFromJsonAsync<JsonElement>("/api/v1/parade/build-locations")).EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Commissie_neemt_in_behandeling_vraagt_aanvulling_en_keurt_goed_de_groep_hoort_het()
+    {
+        var (_, lid) = await LidAsync("piet@example.com");
+        var draft = await DraftAsync(lid);
+        var id = draft.GetProperty("id").GetGuid();
+        await SaveAsync(lid, draft, Complete(draft.GetProperty("version").GetString()!));
+        await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{id}/submit", null));
+        var (_, commissieOid) = await _api.CreateUserAsync("commissie@example.com", DefaultRoles.Lid, DefaultRoles.Optochtcommissie);
+        var commissie = _api.ClientFor(commissieOid);
+
+        var list = await commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-registrations?status=Submitted");
+        Assert.Equal(1, list.GetProperty("totalCount").GetInt32());
+        async Task<HttpResponseMessage> ActAsync(string action, string? reason = null) =>
+            await commissie.PostAsJsonAsync($"/api/v1/admin/parade-registrations/{id}/review", new { action, reason });
+
+        Assert.Equal(HttpStatusCode.NoContent, (await ActAsync("StartReview")).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await ActAsync("RequestInformation")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await ActAsync("RequestInformation", "Stuur een tekening van de wagen mee.")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await ActAsync("StartReview")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await ActAsync("Approve")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await ActAsync("Approve")).StatusCode);
+
+        var detail = await commissie.GetFromJsonAsync<JsonElement>($"/api/v1/admin/parade-registrations/{id}");
+        Assert.Equal("Approved", detail.GetProperty("status").GetString());
+        Assert.Equal(["Submitted", "UnderReview", "AdditionalInformationRequired", "UnderReview", "Approved"],
+            detail.GetProperty("statusHistory").EnumerateArray().Skip(1).Select(h => h.GetProperty("toStatus").GetString()));
+        Assert.Equal("Approved", (await lid.GetFromJsonAsync<JsonElement>($"/api/v1/parade/registrations/{id}")).GetProperty("status").GetString());
+
+        await RunOutboxAsync();
+        Assert.Contains(_api.Emails.Sent, m => m.Subject.Contains("goedgekeurd") && m.PlainText.Contains("definitief"));
+        Assert.Contains(_api.Emails.Sent, m => m.Subject.StartsWith("Aanvulling nodig") && m.PlainText.Contains("tekening van de wagen"));
+        Assert.True(await WithDbAsync(db => db.Notifications.AnyAsync(n => n.Title == "Inschrijving optocht goedgekeurd")));
+
+        var (_, lidOid) = await _api.CreateUserAsync("gewoon@example.com", DefaultRoles.Lid);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(lidOid).GetAsync("/api/v1/admin/parade-registrations")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Gast_schrijft_in_zonder_account_pas_na_de_e_mailcode_een_opgavenummer_en_een_statuslink()
+    {
+        var guest = _api.CreateClient();
+        var body = JsonSerializer.SerializeToNode(Complete("", group: "Buurtvereniging Oost"))!;
+        body["contactEmail"] = "gast@example.com";
+        var missing = await guest.PostAsJsonAsync("/api/v1/parade/public-registrations", new { registration = body, rulesAccepted = false });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, missing.StatusCode);
+
+        var started = await JsonAsync(await guest.PostAsJsonAsync("/api/v1/parade/public-registrations", new { registration = body, rulesAccepted = true }), HttpStatusCode.Created);
+        var id = started.GetProperty("id").GetGuid();
+        Assert.Null(await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.RegistrationNumber).SingleAsync()));
+        var code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "gast@example.com").PlainText, @"\b\d{6}\b").Value;
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code = code == "000000" ? "111111" : "000000" })).StatusCode);
+        var verified = await JsonAsync(await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code }));
+        Assert.Equal(1, verified.GetProperty("registrationNumber").GetInt32());
+        var token = verified.GetProperty("statusToken").GetString();
+        Assert.Contains(_api.Emails.Sent, m => m.To == "gast@example.com" && m.PlainText.Contains($"?status={token}"));
+
+        var status = await guest.GetFromJsonAsync<JsonElement>($"/api/v1/parade/public-registrations/status?token={token}");
+        Assert.Equal(("Buurtvereniging Oost", 1, "Submitted"), (status.GetProperty("groupName").GetString(), status.GetProperty("registrationNumber").GetInt32(), status.GetProperty("status").GetString()));
+        Assert.False(status.TryGetProperty("contactEmail", out _));
+        Assert.Equal(HttpStatusCode.NotFound, (await guest.GetAsync("/api/v1/parade/public-registrations/status?token=onzin")).StatusCode);
+        Assert.Equal(RegistrationSource.WebForm, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.Source).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Mede_beheerder_moet_zelf_groepsverantwoordelijke_zijn()
+    {
+        var (_, eigenaar) = await LidAsync("piet@example.com");
+        await _api.CreateUserAsync("gewoon@example.com", DefaultRoles.Lid);
+        var id = (await DraftAsync(eigenaar)).GetProperty("id").GetGuid();
+
+        var response = await eigenaar.PostAsJsonAsync($"/api/v1/parade/registrations/{id}/managers", new { email = "gewoon@example.com" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

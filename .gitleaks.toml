@@ -4,6 +4,11 @@
 useDefault = true
 
 [allowlist]
-description = "Publieke ID's van ingebouwde Azure-roldefinities (geen geheimen), bijv. Key Vault Secrets User"
+description = "Publieke ID's van ingebouwde Azure-roldefinities en portalroutes in e2e-tests (geen geheimen)"
 regexTarget = "match"
-regexes = ['''4633458b-17de-408a-b874-0445c86b69e6''']
+regexes = [
+  # Azure-rol Key Vault Secrets User.
+  '''4633458b-17de-408a-b874-0445c86b69e6''',
+  # Portalroute in e2e: `open(page, api, 'optocht/inschrijvingen')` lijkt voor generic-api-key op "api = <sleutel>".
+  '''api, 'optocht/inschrijvingen''',
+]

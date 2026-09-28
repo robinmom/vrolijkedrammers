@@ -505,3 +505,28 @@ test('fase 11a: optocht instellen en een categorie aanpassen', async ({ page }) 
   await expect(page.getByText('Categorie opgeslagen.')).toBeVisible();
   expect(api.paradeCategories[1]!.active).toBe(false);
 });
+
+test('fase 11: de optochtcommissie neemt een inschrijving in behandeling en keurt hem goed', async ({ page }) => {
+  const api = new MockApi(['parade.read', 'parade.manage']);
+  await open(page, api, 'optocht/inschrijvingen');
+  await page.getByRole('link', { name: 'De Bouwers' }).click();
+  await expect(page.getByRole('heading', { name: /De Bouwers/ })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await page.getByRole('button', { name: 'In behandeling nemen' }).click();
+  await expect(page.getByText('In behandeling nemen: gelukt. De groep is ingelicht.')).toBeVisible();
+  await page.getByRole('button', { name: 'Aanvulling vragen' }).click();
+  await page.getByRole('dialog').getByLabel(/Reden/).fill('Graag de lengte controleren.');
+  await page.getByRole('dialog').getByRole('button', { name: 'Aanvulling vragen' }).click();
+  await expect(page.getByText('Graag de lengte controleren.')).toBeVisible();
+  expect(api.reviews).toEqual([
+    { action: 'StartReview', reason: null },
+    { action: 'RequestInformation', reason: 'Graag de lengte controleren.' },
+  ]);
+});
+
+test('fase 11: met alleen parade.read zijn er geen beoordelingsknoppen', async ({ page }) => {
+  const api = new MockApi(['parade.read']);
+  await open(page, api, 'optocht/inschrijvingen/r-1');
+  await expect(page.getByRole('heading', { name: /De Bouwers/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Goedkeuren' })).toHaveCount(0);
+});

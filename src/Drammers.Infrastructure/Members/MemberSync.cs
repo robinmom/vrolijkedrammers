@@ -375,6 +375,11 @@ public sealed class MemberSync(
                 member.MemberCategory = Clip(source.FreeText(categoryField)?.Trim(), 50);
             }
 
+            if (mapping.ParadeGroupName is { } groupField)
+            {
+                member.ParadeGroupName = Clip(source.FreeText(groupField)?.Trim(), 100);
+            }
+
             if ((isNew || oldFullName != member.FullName) && !member.NameCorrectedManually)
             {
                 var name = DutchNameParser.Parse(member.FullName);
@@ -403,7 +408,8 @@ public sealed class MemberSync(
                 mapping.JoinYear is null ? null : source.FreeText(mapping.JoinYear),
                 mapping.Status is null ? null : source.FreeText(mapping.Status),
                 mapping.Category is null ? null : source.FreeText(mapping.Category),
-                string.Join('|', mapping.BirthDate, mapping.JoinYear, mapping.Status, mapping.Category),
+                mapping.ParadeGroupName is null ? null : source.FreeText(mapping.ParadeGroupName),
+                string.Join('|', mapping.BirthDate, mapping.JoinYear, mapping.Status, mapping.Category, mapping.ParadeGroupName),
             ];
             return SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(values)));
         }

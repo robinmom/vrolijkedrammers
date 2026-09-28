@@ -6010,7 +6010,7 @@ exports[`snapshot dark 04 Optocht 1`] = `
                   {
                     "busy": undefined,
                     "checked": undefined,
-                    "disabled": false,
+                    "disabled": true,
                     "expanded": undefined,
                     "selected": undefined,
                   }
@@ -6049,7 +6049,9 @@ exports[`snapshot dark 04 Optocht 1`] = `
                     {
                       "backgroundColor": "#ED0012",
                     },
-                    undefined,
+                    {
+                      "opacity": 0.7,
+                    },
                   ]
                 }
               >
@@ -6155,7 +6157,7 @@ exports[`snapshot dark 04 Optocht 1`] = `
                     ]
                   }
                 >
-                  Groep inschrijven
+                  Aanmelden optocht
                 </Text>
               </View>
             </View>
@@ -17758,7 +17760,7 @@ exports[`snapshot light 04 Optocht 1`] = `
                   {
                     "busy": undefined,
                     "checked": undefined,
-                    "disabled": false,
+                    "disabled": true,
                     "expanded": undefined,
                     "selected": undefined,
                   }
@@ -17797,7 +17799,9 @@ exports[`snapshot light 04 Optocht 1`] = `
                     {
                       "backgroundColor": "#ED0012",
                     },
-                    undefined,
+                    {
+                      "opacity": 0.7,
+                    },
                   ]
                 }
               >
@@ -17903,7 +17907,7 @@ exports[`snapshot light 04 Optocht 1`] = `
                     ]
                   }
                 >
-                  Groep inschrijven
+                  Aanmelden optocht
                 </Text>
               </View>
             </View>

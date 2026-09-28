@@ -41,6 +41,21 @@ public class PortalHostingTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Optocht_inschrijven_pagina_met_dezelfde_CSP_als_lid_worden()
+    {
+        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/optocht-inschrijven")).StatusCode);
+
+        var response = await _client.GetAsync("/optocht-inschrijven/?status=abc");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Inschrijven voor de optocht", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.Contains("connect-src 'self';", csp, StringComparison.Ordinal);
+        Assert.DoesNotContain("unsafe-inline", csp, StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/optocht-inschrijven/app.js")).StatusCode);
+    }
+
+    [Fact]
     public async Task Beheer_zonder_slash_wordt_doorgestuurd()
     {
         var response = await _client.GetAsync("/beheer");

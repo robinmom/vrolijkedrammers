@@ -84,21 +84,22 @@ public sealed record ParadeRequest(
     [Range(0, 50)] decimal DefaultSpacingMeters,
     [Range(0, 20)] int MaxDocumentsPerRegistration,
     [Range(1, 25)] int MaxDocumentSizeMb,
-    ParadeStatus Status)
+    ParadeStatus Status,
+    [StringLength(8000)] string? InfoText = null)
 {
     public ParadeInput ToInput() => new(CarnivalYearId, Name, ParadeDate, StartTime, StartLocation, RouteDescription, RouteLengthKm,
         RegistrationOpensAt.ToUniversalTime(), RegistrationClosesAt.ToUniversalTime(), EditDeadlineAt?.ToUniversalTime(), SubjectRequired,
-        DefaultSpacingMeters, MaxDocumentsPerRegistration, MaxDocumentSizeMb, Status);
+        DefaultSpacingMeters, MaxDocumentsPerRegistration, MaxDocumentSizeMb, Status, InfoText);
 }
 
 public sealed record AdminParadeResponse(
     Guid Id, int CarnivalYearId, string Name, DateOnly ParadeDate, TimeOnly StartTime, string? StartLocation, string? RouteDescription,
     decimal? RouteLengthKm, DateTime RegistrationOpensAt, DateTime RegistrationClosesAt, DateTime? EditDeadlineAt, bool SubjectRequired,
-    decimal DefaultSpacingMeters, int MaxDocumentsPerRegistration, int MaxDocumentSizeMb, ParadeStatus Status)
+    decimal DefaultSpacingMeters, int MaxDocumentsPerRegistration, int MaxDocumentSizeMb, ParadeStatus Status, string? InfoText)
 {
     public static AdminParadeResponse From(Parade p) => new(p.Id, p.CarnivalYearId, p.Name, p.ParadeDate, p.StartTime, p.StartLocation, p.RouteDescription,
         p.RouteLengthKm, p.RegistrationOpensAt, p.RegistrationClosesAt, p.EditDeadlineAt, p.SubjectRequired, p.DefaultSpacingMeters,
-        p.MaxDocumentsPerRegistration, p.MaxDocumentSizeMb, p.Status);
+        p.MaxDocumentsPerRegistration, p.MaxDocumentSizeMb, p.Status, p.InfoText);
 }
 
 public sealed record CategoryRequest(

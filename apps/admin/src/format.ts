@@ -200,3 +200,17 @@ export const countBasisLabels: Record<string, string> = {
 };
 
 export const validationModeLabels: Record<string, string> = { Block: 'Blokkeren', Warn: 'Waarschuwen', None: 'Geen controle' };
+
+export const registrationStatusLabels: Record<string, string> = {
+  Draft: 'Concept',
+  Submitted: 'Ingediend',
+  UnderReview: 'In behandeling',
+  AdditionalInformationRequired: 'Aanvulling gevraagd',
+  Approved: 'Goedgekeurd',
+  Rejected: 'Afgewezen',
+  Withdrawn: 'Ingetrokken',
+  StartNumberAssigned: 'Startnummer toegekend',
+  Final: 'Definitief',
+};
+
+export const registrationSourceLabels: Record<string, string> = { App: 'App (lid)', WebForm: 'Formulier (gast)', Portal: 'Portal' };

@@ -24,6 +24,12 @@ export const queryKeys = {
   myChildren: ['me', 'children'] as const,
   myNotifications: ['me', 'notifications'] as const,
   myNotificationPreferences: ['me', 'notification-preferences'] as const,
+  parade: ['parade'] as const,
+  paradeCategories: ['parade', 'categories'] as const,
+  myRegistrations: ['me', 'parade-registrations'] as const,
+  myRegistration: (id: string) => ['me', 'parade-registrations', id] as const,
+  myBuildLocations: ['me', 'build-locations'] as const,
+  myRegistrationDocuments: (id: string) => ['me', 'parade-registrations', id, 'documents'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -140,5 +146,50 @@ export const useMyNotificationPreferences = () => {
     queryKey: queryKeys.myNotificationPreferences,
     queryFn: () => unwrap(api.GET('/api/v1/me/notification-preferences')),
     enabled: status === 'signedIn',
+  });
+};
+
+/** Huidige optocht met datum, inschrijfperiode en de informatietekst uit het portal (fase 11). 404 = nog geen optocht. */
+export const useParade = () =>
+  useQuery({ queryKey: queryKeys.parade, queryFn: () => unwrap(api.GET('/api/v1/parade/current')) });
+
+export const useParadeCategories = () =>
+  useQuery({ queryKey: queryKeys.paradeCategories, queryFn: () => unwrap(api.GET('/api/v1/parade/categories')) });
+
+/** Eigen inschrijvingen (als beheerder of mede-beheerder); alleen met het recht parade.register. */
+export const useMyRegistrations = (enabled: boolean) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myRegistrations,
+    queryFn: () => unwrap(api.GET('/api/v1/parade/registrations')),
+    enabled: status === 'signedIn' && enabled,
+  });
+};
+
+export const useMyRegistration = (id: string | undefined) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myRegistration(id ?? ''),
+    queryFn: () => unwrap(api.GET('/api/v1/parade/registrations/{id}', { params: { path: { id: id ?? '' } } })),
+    enabled: status === 'signedIn' && Boolean(id),
+  });
+};
+
+/** Bewaarde bouwlocaties: "zelfde locatie" of een nieuwe; oude kunnen weg. */
+export const useMyBuildLocations = (enabled: boolean) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myBuildLocations,
+    queryFn: () => unwrap(api.GET('/api/v1/parade/build-locations')),
+    enabled: status === 'signedIn' && enabled,
+  });
+};
+
+export const useRegistrationDocuments = (id: string | undefined) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myRegistrationDocuments(id ?? ''),
+    queryFn: () => unwrap(api.GET('/api/v1/parade/registrations/{id}/documents', { params: { path: { id: id ?? '' } } })),
+    enabled: status === 'signedIn' && Boolean(id),
   });
 };

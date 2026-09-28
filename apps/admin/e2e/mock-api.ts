@@ -191,6 +191,43 @@ export class MockApi {
   urgent = true;
   // Fase 11: optocht.
   parades: Record<string, unknown>[] = [];
+  reviews: { action: string; reason: string | null }[] = [];
+  registration = {
+    id: 'r-1',
+    registrationNumber: 1,
+    startNumber: null,
+    status: 'Submitted',
+    source: 'WebForm',
+    groupName: 'De Bouwers',
+    contactName: 'Piet Test',
+    contactPhone: '+31612345678',
+    contactEmail: 'piet@example.com',
+    categoryName: 'Volwassenen Loopgroepen groot (10+)',
+    subject: 'Zwerm bijen',
+    subjectDescription: null,
+    childrenCount: 2,
+    adultCount: 12,
+    buildAddress: { street: 'Dorpsstraat', houseNumber: '1', addition: null, postalCode: '6999 AA', city: 'Loil' },
+    juryInspectionSameAsBuildAddress: true,
+    juryAddress: { street: null, houseNumber: null, addition: null, postalCode: null, city: null },
+    estimatedLengthMeters: 20,
+    additionalInformation: null,
+    submittedAt: '2026-12-02T10:00:00Z',
+    managers: [] as string[],
+    warnings: [] as string[],
+    allowedActions: ['StartReview', 'Approve', 'Reject', 'RequestInformation'],
+    statusHistory: [
+      {
+        fromStatus: 'Draft',
+        toStatus: 'Submitted',
+        occurredAt: '2026-12-02T10:00:00Z',
+        actorName: null as string | null,
+        reason: null as string | null,
+      },
+    ],
+    changes: [] as unknown[],
+    documents: [] as unknown[],
+  };
   paradeCategories = [
     {
       id: 3,
@@ -503,6 +540,40 @@ export class MockApi {
       const index = this.parades.findIndex((p) => p.id === m![1]);
       this.parades[index] = { ...(body as Record<string, unknown>), id: m[1] };
       return noContent();
+    }
+    if (path.startsWith('/admin/parade-registrations')) {
+      const r = this.registration;
+      if (path === '/admin/parade-registrations') {
+        return json({ items: [{ ...r, hasWarnings: false }], page: 1, pageSize: 25, totalCount: 1 });
+      }
+      if (path.endsWith('/review') && method === 'POST') {
+        const review = body as { action: string; reason: string | null };
+        this.reviews.push(review);
+        const next: Record<string, string> = {
+          StartReview: 'UnderReview',
+          Approve: 'Approved',
+          Reject: 'Rejected',
+          RequestInformation: 'AdditionalInformationRequired',
+          Reopen: 'UnderReview',
+        };
+        const from = r.status;
+        r.status = next[review.action]!;
+        r.statusHistory.push({
+          fromStatus: from,
+          toStatus: r.status,
+          occurredAt: new Date().toISOString(),
+          actorName: 'Commissie',
+          reason: review.reason,
+        });
+        r.allowedActions =
+          r.status === 'UnderReview'
+            ? ['Approve', 'Reject', 'RequestInformation']
+            : r.status === 'Approved'
+              ? ['Reopen']
+              : ['Reopen'];
+        return json(r);
+      }
+      return json(r);
     }
     if (path === '/admin/parade-categories') {
       return json(this.paradeCategories);

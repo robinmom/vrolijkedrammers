@@ -62,6 +62,9 @@ public sealed class Member : IAuditable
 
     public string? MemberCategory { get; set; }
 
+    /// <summary>Naam van de optochtgroep van dit lid (vrij veld uit e-Boekhouden, fase 11); vult de inschrijving vooraf in.</summary>
+    public string? ParadeGroupName { get; set; }
+
     // --- Afgeleid ---
     public string? FirstName { get; set; }
 

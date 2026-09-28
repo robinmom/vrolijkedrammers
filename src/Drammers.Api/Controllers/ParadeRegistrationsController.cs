@@ -79,6 +79,21 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
     public async Task<RegistrationResponse> Withdraw(Guid id, WithdrawRequest request, CancellationToken cancellationToken) =>
         await ResponseAsync(await registrations.WithdrawAsync(UserId, id, request.Reason, cancellationToken), [], cancellationToken);
 
+    /// <summary>Onthouden bouwlocaties (volgend jaar "zelfde locatie"); de nieuwste eerst.</summary>
+    [HttpGet("/api/v1/parade/build-locations")]
+    [ProducesResponseType<IReadOnlyList<BuildLocationResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<BuildLocationResponse>> Locations(CancellationToken cancellationToken) =>
+        [.. (await registrations.LocationsAsync(UserId, cancellationToken)).Select(l => new BuildLocationResponse(l.Id, AddressDto.From(l.Address), l.LastUsedAt))];
+
+    [HttpDelete("/api/v1/parade/build-locations/{locationId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteLocation(Guid locationId, CancellationToken cancellationToken)
+    {
+        await registrations.DeleteLocationAsync(UserId, locationId, cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}/managers")]
     [ProducesResponseType<IReadOnlyList<ManagerResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<ManagerResponse>> Managers(Guid id, CancellationToken cancellationToken) =>
@@ -191,6 +206,8 @@ public sealed record RegistrationResponse(
 
 public sealed record RegistrationSummaryResponse(
     Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt);
+
+public sealed record BuildLocationResponse(Guid Id, AddressDto Address, DateTime LastUsedAt);
 
 public sealed record WithdrawRequest([StringLength(1000)] string? Reason);
 

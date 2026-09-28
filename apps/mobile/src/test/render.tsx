@@ -4,7 +4,7 @@ import { renderRouter } from 'expo-router/testing-library';
 import type { ComponentType, ReactNode } from 'react';
 import { ThemeProvider, type ThemeMode } from '../theme/ThemeProvider';
 
-type Body = unknown | { status: number; body?: unknown };
+type Body = unknown | { status: number; body?: unknown } | ((method: string) => unknown);
 
 /**
  * Laat `fetch` antwoorden per API-pad (zonder querystring). Onbekende paden geven 404, zodat een test
@@ -12,12 +12,14 @@ type Body = unknown | { status: number; body?: unknown };
  */
 export function mockApi(routes: Record<string, Body>): string[] {
   const calls: string[] = [];
-  (globalThis.fetch as jest.Mock).mockImplementation(async (input: Request | string) => {
+  (globalThis.fetch as jest.Mock).mockImplementation(async (input: Request | string, init?: RequestInit) => {
     const path = new URL(typeof input === 'string' ? input : input.url).pathname;
     calls.push(path);
-    const route = routes[path];
+    const method = typeof input === 'string' ? (init?.method ?? 'GET') : input.method;
+    // Een functie kiest het antwoord per HTTP-methode (bijv. GET-lijst en POST-nieuw op hetzelfde pad).
+    const route = typeof routes[path] === 'function' ? (routes[path] as (method: string) => unknown)(method) : routes[path];
     const { status, body } =
-      route && typeof route === 'object' && 'status' in route ? (route as { status: number; body?: unknown }) : { status: route === undefined ? 404 : 200, body: route };
+      route && typeof route === 'object' && typeof (route as { status?: unknown }).status === 'number' ? (route as { status: number; body?: unknown }) : { status: route === undefined ? 404 : 200, body: route };
     return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
   });
   return calls;

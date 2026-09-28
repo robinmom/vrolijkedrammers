@@ -210,6 +210,9 @@ public static class DependencyInjection
         services.AddScoped<ParadeAdministration>();
         services.AddScoped<ParadeRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeSubmittedMailHandler>();
+        services.AddScoped<ParadeReview>();
+        services.AddScoped<ParadePublicRegistrations>();
+        services.AddScoped<IOutboxMessageHandler, ParadeStatusMailHandler>();
         services.TryAddScoped<ParadeDeadlineReminderJob>();
         services.AddScoped<IOutboxMessageHandler, MembershipProvisioningHandler>();
         services.TryAddSingleton<IEmailSender, LoggingEmailSender>();

@@ -18,6 +18,7 @@ internal sealed class ParadeConfiguration : IEntityTypeConfiguration<Parade>
         builder.Property(p => p.RouteLengthKm).HasPrecision(5, 2);
         builder.Property(p => p.DefaultSpacingMeters).HasPrecision(5, 2);
         builder.Property(p => p.RowVersion).IsRowVersion();
+        builder.Property(p => p.InfoText).HasMaxLength(8000);
         builder.HasOne<Modules.Content.CarnivalYears.CarnivalYear>().WithMany().HasForeignKey(p => p.CarnivalYearId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.CarnivalYearId).IsUnique();
         builder.ToTable(t => t.HasCheckConstraint("CK_Parade_registration_period", "[registration_closes_at] > [registration_opens_at]"));
@@ -78,6 +79,9 @@ internal sealed class ParadeRegistrationConfiguration : IEntityTypeConfiguration
         builder.Property(r => r.MeasuredLengthMeters).HasPrecision(5, 2);
         builder.Property(r => r.SpacingAfterMeters).HasPrecision(5, 2);
         builder.Property(r => r.RowVersion).IsRowVersion();
+        builder.Property(r => r.VerificationCodeHash).HasMaxLength(64).IsUnicode(false);
+        builder.Property(r => r.StatusTokenHash).HasMaxLength(64).IsUnicode(false);
+        builder.HasIndex(r => r.StatusTokenHash).IsUnique().HasFilter("[status_token_hash] IS NOT NULL");
         builder.Property<int>("TotalParticipants").HasComputedColumnSql("[children_count] + [adult_count]");
         OwnsAddress(builder, r => r.BuildAddress, "build_address");
         OwnsAddress(builder, r => r.JuryInspectionAddress, "jury_inspection_address");
@@ -103,6 +107,28 @@ internal sealed class ParadeRegistrationConfiguration : IEntityTypeConfiguration
             a.Property(x => x.Country).HasColumnName($"{prefix}_country").HasMaxLength(2).IsUnicode(false);
         });
         builder.Navigation(navigation!).IsRequired();
+    }
+}
+
+internal sealed class ParadeBuildLocationConfiguration : IEntityTypeConfiguration<ParadeBuildLocation>
+{
+    public void Configure(EntityTypeBuilder<ParadeBuildLocation> builder)
+    {
+        builder.ToTable("ParadeBuildLocation", Schemas.Parade);
+        builder.Property(l => l.Id).ValueGeneratedNever();
+        builder.OwnsOne(l => l.Address, a =>
+        {
+            a.Property<Guid>("ParadeBuildLocationId").HasColumnName("id");
+            a.Property(x => x.Street).HasColumnName("street").HasMaxLength(100);
+            a.Property(x => x.HouseNumber).HasColumnName("house_number").HasMaxLength(5).IsUnicode(false);
+            a.Property(x => x.Addition).HasColumnName("addition").HasMaxLength(10);
+            a.Property(x => x.PostalCode).HasColumnName("postal_code").HasMaxLength(10).IsUnicode(false);
+            a.Property(x => x.City).HasColumnName("city").HasMaxLength(60);
+            a.Property(x => x.Country).HasColumnName("country").HasMaxLength(2).IsUnicode(false);
+        });
+        builder.Navigation(l => l.Address).IsRequired();
+        builder.HasOne<Modules.Identity.Users.User>().WithMany().HasForeignKey(l => l.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(l => l.UserId);
     }
 }
 

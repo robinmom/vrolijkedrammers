@@ -11,6 +11,9 @@ public static class PortalHosting
     /// <summary>Openbare webpagina "Lid worden" (fase 9b); statisch, praat met dezelfde API.</summary>
     public const string JoinPath = "/lid-worden";
 
+    /// <summary>Openbare webpagina "Inschrijven optocht" (fase 11c) voor iedereen zonder account; zelfde CSP als lid worden.</summary>
+    public const string ParadePath = "/optocht-inschrijven";
+
     private const string JoinContentSecurityPolicy =
         "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
@@ -32,7 +35,7 @@ public static class PortalHosting
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
                 headers.XFrameOptions = "DENY";
             }
-            else if (context.Request.Path.StartsWithSegments(JoinPath))
+            else if (context.Request.Path.StartsWithSegments(JoinPath) || context.Request.Path.StartsWithSegments(ParadePath))
             {
                 headers.ContentSecurityPolicy = JoinContentSecurityPolicy;
                 headers.XFrameOptions = "DENY";
@@ -51,7 +54,7 @@ public static class PortalHosting
         // /beheer → /beheer/ (Vite gebruikt paden onder de base). Geen route: routing negeert de trailing slash.
         app.Use((context, next) =>
         {
-            if (context.Request.Path.Value is BasePath or JoinPath)
+            if (context.Request.Path.Value is BasePath or JoinPath or ParadePath)
             {
                 context.Response.Redirect($"{context.Request.Path.Value}/{context.Request.QueryString}");
                 return Task.CompletedTask;

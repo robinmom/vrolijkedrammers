@@ -63,8 +63,14 @@ jest.mock('expo-camera', () => {
   const { Pressable, Text } = require('react-native');
   return {
     CameraView: ({ onBarcodeScanned }: { onBarcodeScanned: (r: { data: string }) => void }) =>
-      createElement(Pressable, { testID: 'camera', onPress: () => onBarcodeScanned({ data: (globalThis as { __qr?: string }).__qr ?? 'CODE' }) },
-        createElement(Text, null, 'camera')),
+      createElement(
+        Pressable,
+        {
+          testID: 'camera',
+          onPress: () => onBarcodeScanned({ data: (globalThis as { __qr?: string }).__qr ?? 'CODE' }),
+        },
+        createElement(Text, null, 'camera'),
+      ),
     useCameraPermissions: () => [{ granted: true, canAskAgain: true }, jest.fn()],
   };
 });

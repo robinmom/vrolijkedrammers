@@ -46,8 +46,7 @@ param graphCertificateName string
 param testersGroupId string = ''
 param environmentAccessAttribute string = ''
 
-@description('Push (ADR-009): Expo zodra het access token in Key Vault staat (infra/push/set-expo-token.sh), anders Simulated.')
-@allowed(['Simulated', 'Expo'])
+@description('Push (ADR-009): Expo zodra het access token in Key Vault staat (infra/push/set-expo-token.sh), anders Simulated. Leeg (GitHub-variabele niet gezet) = Simulated.')
 param pushProvider string = 'Simulated'
 
 param budgetAmount int
@@ -135,7 +134,7 @@ module api 'modules/appservice.bicep' = {
       Azure__KeyVaultUri: keyVault.outputs.uri
       Azure__BlobEndpoint: storage.outputs.blobEndpoint
       Azure__DataProtectionKeyUri: keyVault.outputs.dataProtectionKeyUri
-      Push__Provider: pushProvider
+      Push__Provider: pushProvider == 'Expo' ? 'Expo' : 'Simulated'
       Email__Endpoint: email.outputs.endpoint
       Email__SenderDomain: email.outputs.senderDomain
       Auth__Authority: externalIdAuthority

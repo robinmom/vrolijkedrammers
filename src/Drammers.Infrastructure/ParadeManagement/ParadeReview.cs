@@ -4,6 +4,7 @@ using Drammers.Infrastructure.Email;
 using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Notification.Notifications;
+using Drammers.Modules.Parade.Categories;
 using Drammers.Modules.Parade.Registrations;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
@@ -24,9 +25,37 @@ public enum ReviewAction
 }
 
 public sealed record ReviewSummary(
-    Guid Id, int? RegistrationNumber, string? GroupName, string? CategoryName, RegistrationStatus Status, RegistrationSource Source,
-    string? ContactName, int ChildrenCount, int AdultCount, decimal? EstimatedLengthMeters, DateTime? SubmittedAt, bool HasWarnings,
-    bool SupplementReceived = false);
+    Guid Id, int? RegistrationNumber, int? StartNumber, string? GroupName, string? CategoryName, bool Youth, bool HasVehicle,
+    RegistrationStatus Status, RegistrationSource Source, string? ContactName, string? ContactPhone, string? ContactEmail, string? Subject,
+    int ChildrenCount, int AdultCount, decimal? EstimatedLengthMeters, decimal? MeasuredLengthMeters, bool JuryElsewhere,
+    string? AdditionalInformation, DateTime? SubmittedAt, DateTime? UpdatedAt, bool HasWarnings, bool SupplementReceived);
+
+/// <summary>Ontbrekende of afwijkende gegevens (filter in het overzicht, docs/13 §7.1).</summary>
+public enum MissingData
+{
+    StartNumber,
+    MeasuredLength,
+    Warnings,
+    JuryElsewhere,
+    Documents,
+}
+
+public enum RegistrationSort
+{
+    RegistrationNumber,
+    StartNumber,
+    GroupName,
+    Category,
+    Participants,
+    Length,
+    Status,
+    SubmittedAt,
+}
+
+/// <summary>Filters en sortering van het overzicht voor de commissie.</summary>
+public sealed record RegistrationFilter(
+    RegistrationStatus? Status = null, string? Search = null, int? CategoryId = null, AgeGroup? AgeGroup = null, bool? HasVehicle = null,
+    MissingData? Missing = null, RegistrationSort Sort = RegistrationSort.RegistrationNumber, bool Descending = false);
 
 /// <summary>
 /// Beoordeling door de Optochtcommissie (fase 11, <c>parade.manage</c>): elke inschrijving wordt in behandeling genomen en
@@ -56,32 +85,89 @@ public sealed class ParadeReview(
         [.. Transitions.Where(t => t.Value.From.Contains(status)).Select(t => t.Key)];
 
     public async Task<(IReadOnlyList<ReviewSummary> Items, int Total)> SearchAsync(
-        RegistrationStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken)
+        RegistrationFilter filter, int page, int pageSize, CancellationToken cancellationToken)
     {
         var parade = await db.Parades.AsNoTracking().Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active)).Select(p => (Guid?)p.Id).SingleOrDefaultAsync(cancellationToken);
-        var query = db.ParadeRegistrations.AsNoTracking().Where(r => r.ParadeId == parade && r.Status != RegistrationStatus.Draft);
-        if (status is { } s)
+        var query =
+            from r in db.ParadeRegistrations.AsNoTracking()
+            where r.ParadeId == parade && r.Status != RegistrationStatus.Draft
+            join c in db.ParadeCategories on r.CategoryId equals c.Id into cs
+            from c in cs.DefaultIfEmpty()
+            select new { r, c };
+        if (filter.Status is { } s)
         {
-            query = query.Where(r => r.Status == s);
+            query = query.Where(x => x.r.Status == s);
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(filter.Search))
         {
-            var term = search.Trim();
+            var term = filter.Search.Trim();
             query = int.TryParse(term, out var number)
-                ? query.Where(r => r.RegistrationNumber == number)
-                : query.Where(r => r.GroupName!.Contains(term) || r.ContactName!.Contains(term) || r.Subject!.Contains(term));
+                ? query.Where(x => x.r.RegistrationNumber == number || x.r.StartNumber == number)
+                : query.Where(x => x.r.GroupName!.Contains(term) || x.r.ContactName!.Contains(term) || x.r.Subject!.Contains(term) || x.r.ContactEmail!.Contains(term));
         }
+
+        if (filter.CategoryId is { } category)
+        {
+            query = query.Where(x => x.r.CategoryId == category);
+        }
+
+        if (filter.AgeGroup is { } age)
+        {
+            query = query.Where(x => x.c != null && x.c.AgeGroup == age);
+        }
+
+        if (filter.HasVehicle is { } vehicle)
+        {
+            query = query.Where(x => x.c != null && x.c.HasVehicle == vehicle);
+        }
+
+        query = filter.Missing switch
+        {
+            MissingData.StartNumber => query.Where(x => x.r.StartNumber == null),
+            MissingData.MeasuredLength => query.Where(x => x.r.MeasuredLengthMeters == null),
+            MissingData.Warnings => query.Where(x => x.r.ValidationWarnings != null),
+            MissingData.JuryElsewhere => query.Where(x => !x.r.JuryInspectionSameAsBuildAddress),
+            MissingData.Documents => query.Where(x => !db.ParadeDocuments.Any(d => d.RegistrationId == x.r.Id)),
+            _ => query,
+        };
 
         var total = await query.CountAsync(cancellationToken);
-        var items = await query.OrderBy(r => r.RegistrationNumber).Skip((page - 1) * pageSize).Take(pageSize)
-            .GroupJoin(db.ParadeCategories, r => r.CategoryId, c => c.Id, (r, cs) => new { r, cs })
-            .SelectMany(x => x.cs.DefaultIfEmpty(), (x, c) => new ReviewSummary(
-                x.r.Id, x.r.RegistrationNumber, x.r.GroupName, c == null ? null : c.Name, x.r.Status, x.r.Source, x.r.ContactName,
-                x.r.ChildrenCount, x.r.AdultCount, x.r.EstimatedLengthMeters, x.r.SubmittedAt, x.r.ValidationWarnings != null,
-                x.r.Status == RegistrationStatus.UnderReview && db.ParadeStatusHistory.Where(h => h.RegistrationId == x.r.Id)
-                    .OrderByDescending(h => h.OccurredAt).ThenByDescending(h => h.Id).Select(h => h.Reason).FirstOrDefault() == SupplementReason))
+        var sorted = (filter.Sort, filter.Descending) switch
+        {
+            (RegistrationSort.StartNumber, false) => query.OrderBy(x => x.r.StartNumber == null).ThenBy(x => x.r.StartNumber),
+            (RegistrationSort.StartNumber, true) => query.OrderBy(x => x.r.StartNumber == null).ThenByDescending(x => x.r.StartNumber),
+            (RegistrationSort.GroupName, false) => query.OrderBy(x => x.r.GroupName),
+            (RegistrationSort.GroupName, true) => query.OrderByDescending(x => x.r.GroupName),
+            (RegistrationSort.Category, false) => query.OrderBy(x => x.c!.SortOrder).ThenBy(x => x.r.RegistrationNumber),
+            (RegistrationSort.Category, true) => query.OrderByDescending(x => x.c!.SortOrder).ThenBy(x => x.r.RegistrationNumber),
+            (RegistrationSort.Participants, false) => query.OrderBy(x => x.r.ChildrenCount + x.r.AdultCount),
+            (RegistrationSort.Participants, true) => query.OrderByDescending(x => x.r.ChildrenCount + x.r.AdultCount),
+            (RegistrationSort.Length, false) => query.OrderBy(x => x.r.MeasuredLengthMeters ?? x.r.EstimatedLengthMeters),
+            (RegistrationSort.Length, true) => query.OrderByDescending(x => x.r.MeasuredLengthMeters ?? x.r.EstimatedLengthMeters),
+            (RegistrationSort.Status, false) => query.OrderBy(x => x.r.Status).ThenBy(x => x.r.RegistrationNumber),
+            (RegistrationSort.Status, true) => query.OrderByDescending(x => x.r.Status).ThenBy(x => x.r.RegistrationNumber),
+            (RegistrationSort.SubmittedAt, false) => query.OrderBy(x => x.r.SubmittedAt),
+            (RegistrationSort.SubmittedAt, true) => query.OrderByDescending(x => x.r.SubmittedAt),
+            (_, true) => query.OrderByDescending(x => x.r.RegistrationNumber),
+            _ => query.OrderBy(x => x.r.RegistrationNumber),
+        };
+        var rows = await sorted.Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(x => new
+            {
+                x.r,
+                Category = x.c == null ? null : x.c.Name,
+                Youth = x.c != null && x.c.AgeGroup == AgeGroup.Youth,
+                HasVehicle = x.c != null && x.c.HasVehicle,
+                Supplement = x.r.Status == RegistrationStatus.UnderReview && db.ParadeStatusHistory.Where(h => h.RegistrationId == x.r.Id)
+                    .OrderByDescending(h => h.OccurredAt).ThenByDescending(h => h.Id).Select(h => h.Reason).FirstOrDefault() == SupplementReason,
+            })
             .ToListAsync(cancellationToken);
+        var items = rows.Select(x => new ReviewSummary(
+            x.r.Id, x.r.RegistrationNumber, x.r.StartNumber, x.r.GroupName, x.Category, x.Youth, x.HasVehicle, x.r.Status, x.r.Source,
+            x.r.ContactName, x.r.ContactPhone is null ? null : PhoneNormalizer.Display(x.r.ContactPhone), x.r.ContactEmail, x.r.Subject,
+            x.r.ChildrenCount, x.r.AdultCount, x.r.EstimatedLengthMeters, x.r.MeasuredLengthMeters, !x.r.JuryInspectionSameAsBuildAddress,
+            x.r.AdditionalInformation, x.r.SubmittedAt, x.r.UpdatedAt, x.r.ValidationWarnings != null, x.Supplement)).ToList();
         return (items, total);
     }
 
@@ -186,6 +272,9 @@ public sealed class ParadeStatusMailHandler(DrammersDbContext db, IEmailSender e
             RegistrationStatus.UnderReview => ($"Inschrijving {parade.Name} in behandeling", $"De optochtcommissie bekijkt jullie inschrijving (opgavenummer {r.RegistrationNumber}). Je hoort van ons zodra ze is beoordeeld."),
             RegistrationStatus.Approved => ($"Inschrijving {parade.Name} goedgekeurd", $"Goed nieuws: {r.GroupName} is goedgekeurd voor de {parade.Name}. De inschrijving is nu definitief. Het startnummer en de aanrijtijd volgen na de indeling."),
             RegistrationStatus.Rejected => ($"Inschrijving {parade.Name} afgewezen", $"Helaas is de inschrijving van {r.GroupName} afgewezen.\n\nReden: {mail.Reason}\n\nVragen? Neem contact op met de optochtcommissie."),
+            RegistrationStatus.StartNumberAssigned => (
+                mail.Reason == "gewijzigd" ? $"Startnummer {parade.Name} gewijzigd: {r.StartNumber}" : $"Startnummer {parade.Name}: {r.StartNumber}",
+                $"Het startnummer van {r.GroupName} voor de {parade.Name} is {r.StartNumber}.{(mail.Reason == "gewijzigd" ? " Dit vervangt het eerder doorgegeven nummer." : "")}\n\nDe aanrijtijd en de opstelplaats volgen nog."),
             RegistrationStatus.AdditionalInformationRequired => ($"Aanvulling nodig: inschrijving {parade.Name}", $"De optochtcommissie heeft een aanvulling nodig op de inschrijving van {r.GroupName}:\n\n{mail.Reason}\n\n{(r.Source == RegistrationSource.WebForm ? "Neem hiervoor contact op met de optochtcommissie." : "Vul de aanvulling in de app in (Optocht → jullie inschrijving) en dien hem opnieuw in; daarna beoordeelt de commissie de inschrijving opnieuw.")}"),
             _ => ($"Inschrijving {parade.Name} gewijzigd", $"De status van de inschrijving van {r.GroupName} is gewijzigd."),
         };

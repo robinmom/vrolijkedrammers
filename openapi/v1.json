@@ -4043,6 +4043,52 @@
             }
           },
           {
+            "name": "categoryId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "ageGroup",
+            "in": "query",
+            "schema": {
+              "pattern": "^(Adult|Youth)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasVehicle",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "missing",
+            "in": "query",
+            "schema": {
+              "pattern": "^(StartNumber|MeasuredLength|Warnings|JuryElsewhere|Documents)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "pattern": "^(RegistrationNumber|StartNumber|GroupName|Category|Participants|Length|Status|SubmittedAt)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "descending",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "schema": {
@@ -4076,6 +4122,213 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfReviewSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade-registrations/summary": {
+      "get": {
+        "tags": [
+          "AdminParadeRegistrations"
+        ],
+        "summary": "Totalen: per status en categorie, deelnemers en de lengte van de optocht (inclusief tussenruimte).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineupSummary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineupSummary"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineupSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade-registrations/{id}/start-number": {
+      "put": {
+        "tags": [
+          "AdminParadeRegistrations"
+        ],
+        "summary": "Startnummer toekennen of leegmaken; bezet → 409 `START_NUMBER_TAKEN`, met `swap` wisselen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartNumberRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartNumberRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartNumberRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade-registrations/{id}/measured-length": {
+      "put": {
+        "tags": [
+          "AdminParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasuredLengthRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasuredLengthRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasuredLengthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade-registrations/publish-start-numbers": {
+      "post": {
+        "tags": [
+          "AdminParadeRegistrations"
+        ],
+        "summary": "Publiceert de toegekende startnummers: status \"Startnummer toegekend\", push en e-mail aan elke groep.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResult"
                 }
               }
             }
@@ -10149,6 +10402,7 @@
           "juryInspectionSameAsBuildAddress",
           "juryAddress",
           "estimatedLengthMeters",
+          "measuredLengthMeters",
           "additionalInformation",
           "submittedAt",
           "managers",
@@ -10244,6 +10498,13 @@
             "$ref": "#/components/schemas/AddressDto"
           },
           "estimatedLengthMeters": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "measuredLengthMeters": {
             "type": [
               "null",
               "number"
@@ -11269,6 +11530,32 @@
           }
         }
       },
+      "CategoryTotals": {
+        "required": [
+          "name",
+          "registrations",
+          "participants",
+          "lengthMeters"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "registrations": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "participants": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lengthMeters": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "CategoryType": {
         "enum": [
           "TowedFloat",
@@ -12286,6 +12573,59 @@
           }
         }
       },
+      "LineupSummary": {
+        "required": [
+          "active",
+          "approved",
+          "withStartNumber",
+          "published",
+          "participants",
+          "lineupLengthMeters",
+          "perStatus",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "approved": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withStartNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "published": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "participants": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lineupLengthMeters": {
+            "type": "number",
+            "format": "double"
+          },
+          "perStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryTotals"
+            }
+          }
+        },
+        "description": "Totalen voor het overzicht: aantallen per status en per categorie, deelnemers en lengte van de optocht."
+      },
       "Maintenance": {
         "required": [
           "enabled",
@@ -12329,6 +12669,21 @@
           "Owner",
           "CoManager"
         ]
+      },
+      "MeasuredLengthRequest": {
+        "required": [
+          "measuredLengthMeters"
+        ],
+        "type": "object",
+        "properties": {
+          "measuredLengthMeters": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
       },
       "MemberAccountResponse": {
         "required": [
@@ -14941,6 +15296,23 @@
           }
         }
       },
+      "PublishResult": {
+        "required": [
+          "published",
+          "withoutStartNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "published": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutStartNumber": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "PushTokenRequest": {
         "required": [
           "token"
@@ -15376,16 +15748,27 @@
         "required": [
           "id",
           "registrationNumber",
+          "startNumber",
           "groupName",
           "categoryName",
+          "youth",
+          "hasVehicle",
           "status",
           "source",
           "contactName",
+          "contactPhone",
+          "contactEmail",
+          "subject",
           "childrenCount",
           "adultCount",
           "estimatedLengthMeters",
+          "measuredLengthMeters",
+          "juryElsewhere",
+          "additionalInformation",
           "submittedAt",
-          "hasWarnings"
+          "updatedAt",
+          "hasWarnings",
+          "supplementReceived"
         ],
         "type": "object",
         "properties": {
@@ -15394,6 +15777,13 @@
             "format": "uuid"
           },
           "registrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "startNumber": {
             "type": [
               "null",
               "integer"
@@ -15412,6 +15802,12 @@
               "string"
             ]
           },
+          "youth": {
+            "type": "boolean"
+          },
+          "hasVehicle": {
+            "type": "boolean"
+          },
           "status": {
             "$ref": "#/components/schemas/RegistrationStatus"
           },
@@ -15419,6 +15815,24 @@
             "$ref": "#/components/schemas/RegistrationSource"
           },
           "contactName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "subject": {
             "type": [
               "null",
               "string"
@@ -15439,7 +15853,30 @@
             ],
             "format": "double"
           },
+          "measuredLengthMeters": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "juryElsewhere": {
+            "type": "boolean"
+          },
+          "additionalInformation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
             "type": [
               "null",
               "string"
@@ -15450,8 +15887,7 @@
             "type": "boolean"
           },
           "supplementReceived": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           }
         }
       },
@@ -15582,6 +16018,25 @@
             "items": {
               "$ref": "#/components/schemas/RoleAssignmentRequest"
             }
+          }
+        }
+      },
+      "StartNumberRequest": {
+        "required": [
+          "startNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "swap": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

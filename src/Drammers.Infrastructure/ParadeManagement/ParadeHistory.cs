@@ -97,7 +97,7 @@ internal sealed class ParadeHistoryInterceptor(IClock clock, ICurrentActor actor
         _ => value.ToString(),
     };
 
-    private static string Label(string field) => field switch
+    internal static string Label(string field) => field switch
     {
         nameof(ParadeRegistration.GroupName) => "Groepsnaam",
         nameof(ParadeRegistration.ContactName) => "Contactpersoon",

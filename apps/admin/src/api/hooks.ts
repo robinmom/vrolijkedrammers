@@ -475,18 +475,50 @@ export type ReviewSummary = Schemas['ReviewSummary'];
 export type AdminRegistration = Schemas['AdminRegistrationResponse'];
 export type ReviewAction = Schemas['ReviewAction'];
 
-export function useParadeRegistrations(status: string, search: string, page: number) {
+export type RegistrationFilter = {
+  status?: string;
+  search?: string;
+  categoryId?: number;
+  ageGroup?: string;
+  hasVehicle?: boolean;
+  missing?: string;
+};
+export type LineupSummary = Schemas['LineupSummary'];
+export type PublishResult = Schemas['PublishResult'];
+
+/** Overzicht voor de commissie: één ruime pagina (tot 100), sorteren gebeurt in de tabel. */
+export function useParadeRegistrations(filter: RegistrationFilter, page: number) {
   const api = useApi();
   return useQuery({
-    queryKey: ['parade-registrations', status, search, page],
+    queryKey: ['parade-registrations', filter, page],
     queryFn: async () =>
       required(
         (
           await api.GET('/api/v1/admin/parade-registrations', {
-            params: { query: { status: (status || undefined) as Schemas['RegistrationStatus'] | undefined, search: search || undefined, page } },
+            params: {
+              query: {
+                status: (filter.status || undefined) as Schemas['RegistrationStatus'] | undefined,
+                search: filter.search || undefined,
+                categoryId: filter.categoryId,
+                ageGroup: filter.ageGroup || undefined,
+                hasVehicle: filter.hasVehicle,
+                missing: filter.missing || undefined,
+                page,
+                pageSize: 100,
+              },
+            },
           })
         ).data,
       ),
+  });
+}
+
+export function useParadeLineupSummary() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-registrations', 'summary'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade-registrations/summary')).data),
+    retry: false,
   });
 }
 

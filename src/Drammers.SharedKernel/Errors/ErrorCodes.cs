@@ -54,6 +54,7 @@ public static class ErrorCodes
     public const string RegistrationClosed = "REGISTRATION_CLOSED";
     public const string RegistrationNotFound = "REGISTRATION_NOT_FOUND";
     public const string RegistrationExists = "REGISTRATION_EXISTS";
+    public const string StartNumberTaken = "START_NUMBER_TAKEN";
     public const string RegistrationInvalid = "REGISTRATION_INVALID";
     public const string RegistrationChanged = "REGISTRATION_CHANGED";
     public const string FieldNotEditable = "FIELD_NOT_EDITABLE";

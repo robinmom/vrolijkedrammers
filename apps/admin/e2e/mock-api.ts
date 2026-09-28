@@ -192,10 +192,14 @@ export class MockApi {
   // Fase 11: optocht.
   parades: Record<string, unknown>[] = [];
   reviews: { action: string; reason: string | null }[] = [];
+  lineupCalls: { path: string; body: unknown }[] = [];
+  /** Fase 12a: een ander groep heeft startnummer 17 (voor "bezet" en "Wisselen"). */
+  takenStartNumber = 17;
   registration = {
     id: 'r-1',
     registrationNumber: 1,
-    startNumber: null,
+    startNumber: null as number | null,
+    measuredLengthMeters: null as number | null,
     status: 'Submitted',
     source: 'WebForm',
     groupName: 'De Bouwers',
@@ -211,7 +215,7 @@ export class MockApi {
     juryInspectionSameAsBuildAddress: true,
     juryAddress: { street: null, houseNumber: null, addition: null, postalCode: null, city: null },
     estimatedLengthMeters: 20,
-    additionalInformation: null,
+    additionalInformation: null as string | null,
     submittedAt: '2026-12-02T10:00:00Z',
     managers: [] as string[],
     warnings: [] as string[],
@@ -543,6 +547,48 @@ export class MockApi {
     }
     if (path.startsWith('/admin/parade-registrations')) {
       const r = this.registration;
+      if (path === '/admin/parade-registrations/summary') {
+        const approved = ['Approved', 'StartNumberAssigned'].includes(r.status) ? 1 : 0;
+        return json({
+          active: 1,
+          approved,
+          withStartNumber: approved && r.startNumber ? 1 : 0,
+          published: r.status === 'StartNumberAssigned' ? 1 : 0,
+          participants: r.adultCount + r.childrenCount,
+          lineupLengthMeters: approved ? (r.measuredLengthMeters ?? r.estimatedLengthMeters) + 5 : 0,
+          perStatus: { [r.status]: 1 },
+          categories: [{ name: r.categoryName, registrations: 1, participants: 14, lengthMeters: 20 }],
+        });
+      }
+      if (path === '/admin/parade-registrations/publish-start-numbers' && method === 'POST') {
+        this.lineupCalls.push({ path, body: null });
+        const published = r.status === 'Approved' && r.startNumber ? 1 : 0;
+        if (published) r.status = 'StartNumberAssigned';
+        return json({ published, withoutStartNumber: 0 });
+      }
+      if (path.endsWith('/start-number') && method === 'PUT') {
+        const request = body as { startNumber: number | null; swap: boolean };
+        this.lineupCalls.push({ path, body: request });
+        if (request.startNumber === this.takenStartNumber && !request.swap) {
+          return json(
+            {
+              status: 409,
+              code: 'START_NUMBER_TAKEN',
+              detail:
+                'Startnummer 17 is al toegekend aan De Knotwilgen (opgavenummer 2). Kies Wisselen om de nummers om te ruilen.',
+            },
+            409,
+          );
+        }
+        r.startNumber = request.startNumber;
+        return noContent();
+      }
+      if (path.endsWith('/measured-length') && method === 'PUT') {
+        const request = body as { measuredLengthMeters: number | null };
+        this.lineupCalls.push({ path, body: request });
+        r.measuredLengthMeters = request.measuredLengthMeters;
+        return noContent();
+      }
       if (path === '/admin/parade-registrations') {
         return json({
           items: [

@@ -552,6 +552,11 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 2. **Import** van een Excel-bestand dat per groep het **startnummer**, de **aanrijtijd** en de **vertrektijd** vult. Groepen worden herkend (sleutel volgt, waarschijnlijk het opgavenummer), met eerst een voorbeeld (preview) van de wijzigingen en daarna toepassen; het bestandsformaat levert de product owner later aan. Hiervoor komen `ParadeRegistration.arrival_time` en `departure_time` erbij (naast `start_number`).
 3. De **groepsverantwoordelijke** ziet startnummer, aanrijtijd en vertrektijd in de app op de **tijdlijn** van het Optocht-tabblad (bij "Mijn inschrijving"), met een push zodra ze gepubliceerd zijn.
 
+**Uitvoering (besluit product owner 2026-09-28).** Samenstellen kan **beide**: slepen in het portal én via Excel-import. In drie delen:
+- **12a (2026-09-28)** — overzicht met extra kolommen (startnummer, onderwerp, contact, deelnemers, gemeten/geschatte lengte, extra info), filters (status, categorie, jeugd/volwassenen, voertuig, ontbrekend of afwijkend: startnummer, gemeten lengte, waarschuwingen, jury elders, documenten) en snelle weergaven; totalen (inschrijvingen, goedgekeurd, met startnummer, gepubliceerd, deelnemers, lengte incl. tussenruimte, per categorie). Detail: extra info als opvallend blok, **startnummer** handmatig (`parade.assign-start-number`, alleen goedgekeurd; bezet → 409 `START_NUMBER_TAKEN` met de naam van de andere groep, **Wisselen** in één databaseopdracht met veldhistorie oud → nieuw) en **gemeten lengte** (`parade.manage`, max. 1 decimaal). **Startnummers publiceren** → `StartNumberAssigned`, push en e-mail per groep; wijzigt een gepubliceerd nummer later, dan krijgt de groep direct bericht.
+- **12b** — samenstellen door slepen (`parade_order`, `composition_version`), live totalen en waarschuwingen, "Startnummers genereren uit volgorde" met preview/apply.
+- **12c** — export (Excel/CSV) en import van startnummer, aanrijtijd en vertrektijd; wacht op het formaat van de product owner.
+
 **Technische componenten.** TanStack Table, dnd-kit (toetsenbord-toegankelijk), ClosedXML, CsvHelper, SQL-view `reporting.vParadeLengthSummary`.
 
 **Databasewijzigingen.** `ParadeRegistration.parade_order`, `Parade.composition_version` (als die nog niet in fase 11 zijn aangemaakt), view `reporting.vParadeLengthSummary`, reportingrechten.

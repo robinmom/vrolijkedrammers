@@ -3364,6 +3364,12 @@ export interface paths {
                 query?: {
                     status?: components["schemas"]["RegistrationStatus"];
                     search?: string;
+                    categoryId?: number;
+                    ageGroup?: string;
+                    hasVehicle?: boolean;
+                    missing?: string;
+                    sort?: string;
+                    descending?: boolean;
                     page?: number;
                     pageSize?: number;
                 };
@@ -3388,6 +3394,198 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Totalen: per status en categorie, deelnemers en de lengte van de optocht (inclusief tussenruimte). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LineupSummary"];
+                        "application/json": components["schemas"]["LineupSummary"];
+                        "text/json": components["schemas"]["LineupSummary"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/{id}/start-number": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Startnummer toekennen of leegmaken; bezet → 409 `START_NUMBER_TAKEN`, met `swap` wisselen. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["StartNumberRequest"];
+                    "text/json": components["schemas"]["StartNumberRequest"];
+                    "application/*+json": components["schemas"]["StartNumberRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/{id}/measured-length": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MeasuredLengthRequest"];
+                    "text/json": components["schemas"]["MeasuredLengthRequest"];
+                    "application/*+json": components["schemas"]["MeasuredLengthRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/publish-start-numbers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publiceert de toegekende startnummers: status "Startnummer toegekend", push en e-mail aan elke groep. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublishResult"];
+                        "application/json": components["schemas"]["PublishResult"];
+                        "text/json": components["schemas"]["PublishResult"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7937,6 +8135,8 @@ export interface components {
             juryAddress: components["schemas"]["AddressDto"];
             /** Format: double */
             estimatedLengthMeters: null | number;
+            /** Format: double */
+            measuredLengthMeters: null | number;
             additionalInformation: null | string;
             /** Format: date-time */
             submittedAt: null | string;
@@ -8198,6 +8398,15 @@ export interface components {
             active: boolean;
             /** Format: int32 */
             sortOrder: number;
+        };
+        CategoryTotals: {
+            name: string;
+            /** Format: int32 */
+            registrations: number;
+            /** Format: int32 */
+            participants: number;
+            /** Format: double */
+            lengthMeters: number;
         };
         /** @enum {unknown} */
         CategoryType: "TowedFloat" | "SelfPropelled" | "TowedOrSelfPropelled" | "WalkingGroupLarge" | "WalkingGroupSmall" | "IndividualDuo";
@@ -8463,6 +8672,25 @@ export interface components {
             unreadCount: number;
             hasMore: boolean;
         };
+        /** @description Totalen voor het overzicht: aantallen per status en per categorie, deelnemers en lengte van de optocht. */
+        LineupSummary: {
+            /** Format: int32 */
+            active: number;
+            /** Format: int32 */
+            approved: number;
+            /** Format: int32 */
+            withStartNumber: number;
+            /** Format: int32 */
+            published: number;
+            /** Format: int32 */
+            participants: number;
+            /** Format: double */
+            lineupLengthMeters: number;
+            perStatus: {
+                [key: string]: number;
+            };
+            categories: components["schemas"]["CategoryTotals"][];
+        };
         Maintenance: {
             enabled: boolean;
             message: null | string;
@@ -8475,6 +8703,10 @@ export interface components {
         };
         /** @enum {unknown} */
         ManagerRole: "Owner" | "CoManager";
+        MeasuredLengthRequest: {
+            /** Format: double */
+            measuredLengthMeters: null | number;
+        };
         /** @description App-account van een lid; `AwaitingFirstSignIn`: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27). */
         MemberAccountResponse: {
             /** Format: uuid */
@@ -9164,6 +9396,12 @@ export interface components {
             categoryName: null | string;
             reason: null | string;
         };
+        PublishResult: {
+            /** Format: int32 */
+            published: number;
+            /** Format: int32 */
+            withoutStartNumber: number;
+        };
         PushTokenRequest: {
             token: string;
         };
@@ -9275,21 +9513,33 @@ export interface components {
             id: string;
             /** Format: int32 */
             registrationNumber: null | number;
+            /** Format: int32 */
+            startNumber: null | number;
             groupName: null | string;
             categoryName: null | string;
+            youth: boolean;
+            hasVehicle: boolean;
             status: components["schemas"]["RegistrationStatus"];
             source: components["schemas"]["RegistrationSource"];
             contactName: null | string;
+            contactPhone: null | string;
+            contactEmail: null | string;
+            subject: null | string;
             /** Format: int32 */
             childrenCount: number;
             /** Format: int32 */
             adultCount: number;
             /** Format: double */
             estimatedLengthMeters: null | number;
+            /** Format: double */
+            measuredLengthMeters: null | number;
+            juryElsewhere: boolean;
+            additionalInformation: null | string;
             /** Format: date-time */
             submittedAt: null | string;
+            /** Format: date-time */
+            updatedAt: null | string;
             hasWarnings: boolean;
-            /** @default false */
             supplementReceived: boolean;
         };
         RoleAssignmentRequest: {
@@ -9323,6 +9573,12 @@ export interface components {
         };
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];
+        };
+        StartNumberRequest: {
+            /** Format: int32 */
+            startNumber: null | number;
+            /** @default false */
+            swap: boolean;
         };
         StatusChangeResponse: {
             fromStatus: null | components["schemas"]["RegistrationStatus"];

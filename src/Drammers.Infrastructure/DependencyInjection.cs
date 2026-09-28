@@ -14,6 +14,7 @@ using Drammers.Infrastructure.Identity.Entra;
 using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Messaging;
 using Drammers.Infrastructure.Notifications;
+using Drammers.Infrastructure.ParadeManagement;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Scheduling;
 using Drammers.SharedKernel.Auditing;
@@ -71,6 +72,7 @@ public static class DependencyInjection
                 services.AddScheduledJob<ContentPublisherJob>(ContentPublisherJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 15), TimeSpan.FromHours(20));
                 services.AddScheduledJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Schedule, TimeSpan.FromHours(20));
                 services.AddScheduledJob<DataRetentionJob>(DataRetentionJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 30), TimeSpan.FromHours(20));
+                services.AddScheduledJob<ParadeDeadlineReminderJob>(ParadeDeadlineReminderJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 18, 0), TimeSpan.FromHours(20));
             }
         }
 
@@ -156,10 +158,15 @@ public static class DependencyInjection
         services.TryAddSingleton<OutboxSignal>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<OutboxSignalInterceptor>();
+        services.AddScoped<ParadeChangeContext>();
+        services.AddScoped<ParadeHistoryInterceptor>();
         services.AddDbContext<DrammersDbContext>((provider, db) => db
             // Eigen verbinding met herhaalpogingen bij het openen (serverless database die opstart); EF sluit hem.
             .UseSqlServer(SqlConnectionFactory.Create(connectionString), contextOwnsConnection: true)
-            .AddInterceptors(provider.GetRequiredService<AuditableInterceptor>(), provider.GetRequiredService<OutboxSignalInterceptor>()));
+            .AddInterceptors(
+                provider.GetRequiredService<AuditableInterceptor>(),
+                provider.GetRequiredService<OutboxSignalInterceptor>(),
+                provider.GetRequiredService<ParadeHistoryInterceptor>()));
 
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IOutbox, EfOutbox>();
@@ -200,6 +207,10 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, NotificationDispatchHandler>();
         services.AddScoped<IOutboxMessageHandler, NotificationReceiptsHandler>();
         services.TryAddScoped<IPushSender, SimulatedPushSender>();
+        services.AddScoped<ParadeAdministration>();
+        services.AddScoped<ParadeRegistrations>();
+        services.AddScoped<IOutboxMessageHandler, ParadeSubmittedMailHandler>();
+        services.TryAddScoped<ParadeDeadlineReminderJob>();
         services.AddScoped<IOutboxMessageHandler, MembershipProvisioningHandler>();
         services.TryAddSingleton<IEmailSender, LoggingEmailSender>();
         services.TryAddSingleton<IEntraUserDirectory, UnconfiguredEntraUserDirectory>();

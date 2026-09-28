@@ -131,6 +131,11 @@ public sealed class NotificationAdministration(DrammersDbContext db, IOutbox out
         {
             throw new DomainException(ErrorCodes.Validation, "Kies een doelgroep.");
         }
+
+        if ((audience.UserIds?.Count ?? 0) > 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Losse accounts zijn alleen voor meldingen van de app zelf.");
+        }
     }
 
     private async Task AuthorizeAsync(NotificationDraft draft, UserAccess sender, CancellationToken cancellationToken)

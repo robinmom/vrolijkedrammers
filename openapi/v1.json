@@ -4022,6 +4022,437 @@
         }
       }
     },
+    "/api/v1/admin/parades": {
+      "get": {
+        "tags": [
+          "AdminParades"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminParadeResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminParadeResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminParadeResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminParades"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParadeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParadeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parades/{id}": {
+      "get": {
+        "tags": [
+          "AdminParades"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminParadeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminParadeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminParadeResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminParades"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParadeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParadeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade-categories": {
+      "get": {
+        "tags": [
+          "AdminParades"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParadeCategoryResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParadeCategoryResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParadeCategoryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminParades"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeCategoryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeCategoryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeCategoryResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade-categories/{id}": {
+      "put": {
+        "tags": [
+          "AdminParades"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeCategoryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeCategoryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeCategoryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/photo-albums": {
       "get": {
         "tags": [
@@ -7064,6 +7495,946 @@
         }
       }
     },
+    "/api/v1/parade/current": {
+      "get": {
+        "tags": [
+          "Parade"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeInfoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeInfoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParadeInfoResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/categories": {
+      "get": {
+        "tags": [
+          "Parade"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParadeCategoryResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParadeCategoryResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParadeCategoryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations": {
+      "get": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistrationSummaryResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistrationSummaryResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistrationSummaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}": {
+      "get": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "summary": "Autosave van de wizard; `version` uit de vorige respons, anders 412.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRegistrationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRegistrationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/validate": {
+      "post": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationIssueResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationIssueResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ValidationIssueResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/submit": {
+      "post": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "summary": "Definitief indienen: opgavenummer (volgorde van binnenkomst). Nogmaals indienen geeft hetzelfde nummer.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/withdraw": {
+      "post": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/managers": {
+      "get": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagerResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagerResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManagerResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddManagerRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddManagerRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddManagerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/managers/{userId}": {
+      "delete": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/documents": {
+      "get": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "$ref": "#/components/schemas/DocumentType"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "$ref": "#/components/schemas/IFormFile"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/documents/{documentId}": {
+      "delete": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/parade/registrations/{id}/documents/{documentId}/download": {
+      "get": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentLinkResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentLinkResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/photo-albums": {
       "get": {
         "tags": [
@@ -7493,6 +8864,66 @@
           "Duplicate"
         ]
       },
+      "AddManagerRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "AddressDto": {
+        "required": [
+          "street",
+          "houseNumber",
+          "addition",
+          "postalCode",
+          "city",
+          "country"
+        ],
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "houseNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "addition": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AdminAlbumResponse": {
         "required": [
           "id",
@@ -7888,6 +9319,100 @@
           }
         }
       },
+      "AdminParadeResponse": {
+        "required": [
+          "id",
+          "carnivalYearId",
+          "name",
+          "paradeDate",
+          "startTime",
+          "startLocation",
+          "routeDescription",
+          "routeLengthKm",
+          "registrationOpensAt",
+          "registrationClosesAt",
+          "editDeadlineAt",
+          "subjectRequired",
+          "defaultSpacingMeters",
+          "maxDocumentsPerRegistration",
+          "maxDocumentSizeMb",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "carnivalYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "time"
+          },
+          "startLocation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeLengthKm": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "registrationOpensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registrationClosesAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editDeadlineAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "subjectRequired": {
+            "type": "boolean"
+          },
+          "defaultSpacingMeters": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxDocumentsPerRegistration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxDocumentSizeMb": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ParadeStatus"
+          }
+        }
+      },
       "AdminPhotoResponse": {
         "required": [
           "id",
@@ -7928,6 +9453,12 @@
             ]
           }
         }
+      },
+      "AgeGroup": {
+        "enum": [
+          "Adult",
+          "Youth"
+        ]
       },
       "AlbumRequest": {
         "required": [
@@ -8810,6 +10341,76 @@
           }
         }
       },
+      "CategoryRequest": {
+        "required": [
+          "code",
+          "name",
+          "ageGroup",
+          "type",
+          "minimumParticipants",
+          "maximumParticipants",
+          "participantCountBasis",
+          "validationMode",
+          "hasVehicle",
+          "active",
+          "sortOrder"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ageGroup": {
+            "$ref": "#/components/schemas/AgeGroup"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CategoryType"
+          },
+          "minimumParticipants": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "maximumParticipants": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "participantCountBasis": {
+            "$ref": "#/components/schemas/ParticipantCountBasis"
+          },
+          "validationMode": {
+            "$ref": "#/components/schemas/ValidationMode"
+          },
+          "hasVehicle": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CategoryType": {
+        "enum": [
+          "TowedFloat",
+          "SelfPropelled",
+          "TowedOrSelfPropelled",
+          "WalkingGroupLarge",
+          "WalkingGroupSmall",
+          "IndividualDuo"
+        ]
+      },
       "ContentVisibility": {
         "enum": [
           "Public",
@@ -9026,6 +10627,60 @@
         "enum": [
           "Active",
           "Revoked"
+        ]
+      },
+      "DocumentLinkResponse": {
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "DocumentResponse": {
+        "required": [
+          "id",
+          "documentType",
+          "fileName",
+          "contentType",
+          "sizeBytes",
+          "uploadedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DocumentType": {
+        "enum": [
+          "Insurance",
+          "VehicleInspection",
+          "Drawing",
+          "Other"
         ]
       },
       "EraseRequest": {
@@ -9739,6 +11394,32 @@
             ]
           }
         }
+      },
+      "ManagerResponse": {
+        "required": [
+          "userId",
+          "displayName",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ManagerRole"
+          }
+        }
+      },
+      "ManagerRole": {
+        "enum": [
+          "Owner",
+          "CoManager"
+        ]
       },
       "MemberAccountResponse": {
         "required": [
@@ -10823,6 +12504,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "userIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "description": "Doelgroep (docs/02 §5.3). bool NotificationAudience.Everyone = alle accounts plus gasten met push-toestemming;\nbool NotificationAudience.Members = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en\nleden ontvangen ook de ouders/verzorgers (\"Namens …\")."
@@ -11386,6 +13077,254 @@
           }
         },
         "description": "Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100."
+      },
+      "ParadeCategoryResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "ageGroup",
+          "type",
+          "minimumParticipants",
+          "maximumParticipants",
+          "participantCountBasis",
+          "validationMode",
+          "hasVehicle",
+          "active",
+          "sortOrder"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ageGroup": {
+            "$ref": "#/components/schemas/AgeGroup"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CategoryType"
+          },
+          "minimumParticipants": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "maximumParticipants": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "participantCountBasis": {
+            "$ref": "#/components/schemas/ParticipantCountBasis"
+          },
+          "validationMode": {
+            "$ref": "#/components/schemas/ValidationMode"
+          },
+          "hasVehicle": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ParadeInfoResponse": {
+        "required": [
+          "id",
+          "name",
+          "paradeDate",
+          "startTime",
+          "startLocation",
+          "routeDescription",
+          "routeLengthKm",
+          "registrationOpensAt",
+          "registrationClosesAt",
+          "registrationOpen",
+          "subjectRequired",
+          "maxDocumentsPerRegistration",
+          "maxDocumentSizeMb"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "time"
+          },
+          "startLocation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeLengthKm": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "registrationOpensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registrationClosesAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registrationOpen": {
+            "type": "boolean"
+          },
+          "subjectRequired": {
+            "type": "boolean"
+          },
+          "maxDocumentsPerRegistration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxDocumentSizeMb": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ParadeRequest": {
+        "required": [
+          "carnivalYearId",
+          "name",
+          "paradeDate",
+          "startTime",
+          "startLocation",
+          "routeDescription",
+          "routeLengthKm",
+          "registrationOpensAt",
+          "registrationClosesAt",
+          "editDeadlineAt",
+          "subjectRequired",
+          "defaultSpacingMeters",
+          "maxDocumentsPerRegistration",
+          "maxDocumentSizeMb",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "time"
+          },
+          "startLocation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "routeLengthKm": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "registrationOpensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registrationClosesAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editDeadlineAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "subjectRequired": {
+            "type": "boolean"
+          },
+          "defaultSpacingMeters": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxDocumentsPerRegistration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxDocumentSizeMb": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ParadeStatus"
+          }
+        }
+      },
+      "ParadeStatus": {
+        "enum": [
+          "Planned",
+          "RegistrationOpen",
+          "RegistrationClosed",
+          "Composing",
+          "Final",
+          "Completed"
+        ]
+      },
+      "ParticipantCountBasis": {
+        "enum": [
+          "Total",
+          "ChildrenOnly",
+          "AdultsOnly"
+        ],
+        "description": "Welke deelnemers tellen voor de grenzen (OQ-10: alleen de doelgroep)."
       },
       "PermissionResponse": {
         "required": [
@@ -11989,6 +13928,243 @@
           }
         }
       },
+      "RegistrationResponse": {
+        "required": [
+          "id",
+          "version",
+          "status",
+          "registrationNumber",
+          "startNumber",
+          "groupName",
+          "contactName",
+          "contactPhone",
+          "contactPhoneDisplay",
+          "contactEmail",
+          "categoryId",
+          "subject",
+          "subjectDescription",
+          "childrenCount",
+          "adultCount",
+          "buildAddress",
+          "juryInspectionSameAsBuildAddress",
+          "juryInspectionAddress",
+          "estimatedLengthMeters",
+          "additionalInformation",
+          "submittedAt",
+          "withdrawnAt",
+          "editableFields",
+          "canWithdraw",
+          "warnings",
+          "issues"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          },
+          "registrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactPhoneDisplay": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "subject": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "subjectDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "childrenCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "adultCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "buildAddress": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "juryInspectionSameAsBuildAddress": {
+            "type": "boolean"
+          },
+          "juryInspectionAddress": {
+            "$ref": "#/components/schemas/AddressDto"
+          },
+          "estimatedLengthMeters": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "additionalInformation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "withdrawnAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "editableFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "canWithdraw": {
+            "type": "boolean"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueResponse"
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssueResponse"
+            }
+          }
+        },
+        "description": "Inschrijving met `Version` (meesturen bij de volgende opslag), `EditableFields` (statusbeleid),\n`Warnings` (blokkeren indienen niet) en `Issues` (alle meldingen van deze opslag, bij een concept ook blokkerende)."
+      },
+      "RegistrationStatus": {
+        "enum": [
+          "Draft",
+          "Submitted",
+          "UnderReview",
+          "AdditionalInformationRequired",
+          "Approved",
+          "Rejected",
+          "Withdrawn",
+          "StartNumberAssigned",
+          "Final"
+        ]
+      },
+      "RegistrationSummaryResponse": {
+        "required": [
+          "id",
+          "groupName",
+          "status",
+          "registrationNumber",
+          "startNumber",
+          "submittedAt",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          },
+          "registrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "RejectAccountRequestRequest": {
         "required": [
           "reason"
@@ -12526,6 +14702,121 @@
           }
         }
       },
+      "UpdateRegistrationRequest": {
+        "required": [
+          "version",
+          "groupName",
+          "contactName",
+          "contactPhone",
+          "contactEmail",
+          "categoryId",
+          "subject",
+          "subjectDescription",
+          "childrenCount",
+          "adultCount",
+          "buildAddress",
+          "juryInspectionSameAsBuildAddress",
+          "juryInspectionAddress",
+          "estimatedLengthMeters",
+          "additionalInformation"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contactEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "subject": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "subjectDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "childrenCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "adultCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "buildAddress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AddressDto"
+              }
+            ]
+          },
+          "juryInspectionSameAsBuildAddress": {
+            "type": "boolean"
+          },
+          "juryInspectionAddress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AddressDto"
+              }
+            ]
+          },
+          "estimatedLengthMeters": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "additionalInformation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "UpdateRoleRequest": {
         "required": [
           "name",
@@ -12607,6 +14898,32 @@
           }
         }
       },
+      "ValidationIssueResponse": {
+        "required": [
+          "field",
+          "message",
+          "severity"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationMode": {
+        "enum": [
+          "Block",
+          "Warn",
+          "None"
+        ]
+      },
       "ValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -12662,6 +14979,20 @@
             "type": "string"
           }
         }
+      },
+      "WithdrawRequest": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
       }
     }
   },
@@ -12706,6 +15037,9 @@
       "name": "AdminNotifications"
     },
     {
+      "name": "AdminParades"
+    },
+    {
       "name": "AdminPhotoAlbums"
     },
     {
@@ -12743,6 +15077,12 @@
     },
     {
       "name": "News"
+    },
+    {
+      "name": "Parade"
+    },
+    {
+      "name": "ParadeRegistrations"
     },
     {
       "name": "PhotoAlbums"

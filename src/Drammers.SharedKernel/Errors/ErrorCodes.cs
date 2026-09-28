@@ -50,4 +50,13 @@ public static class ErrorCodes
     public const string NotificationNotFound = "NOTIFICATION_NOT_FOUND";
     public const string NotificationNotCancelable = "NOTIFICATION_NOT_CANCELABLE";
     public const string InvalidPushToken = "INVALID_PUSH_TOKEN";
+    public const string ParadeNotFound = "PARADE_NOT_FOUND";
+    public const string RegistrationClosed = "REGISTRATION_CLOSED";
+    public const string RegistrationNotFound = "REGISTRATION_NOT_FOUND";
+    public const string RegistrationInvalid = "REGISTRATION_INVALID";
+    public const string RegistrationChanged = "REGISTRATION_CHANGED";
+    public const string FieldNotEditable = "FIELD_NOT_EDITABLE";
+    public const string InvalidStatusTransition = "INVALID_STATUS_TRANSITION";
+    public const string TooManyDocuments = "TOO_MANY_DOCUMENTS";
+    public const string CategoryCodeTaken = "CATEGORY_CODE_TAKEN";
 }

@@ -50,11 +50,11 @@
 | OQ-04 | Testadministratie e-Boekhouden | IMPORTANT | 8 | 🟢 besloten: tijdelijk het echte ledenbestand in Dev, met opruimfunctie (2026-09-25) |
 | OQ-05 | Nieuwe leden automatisch in e-Boekhouden aanmaken | → B-05 | 9 | 🟢 besloten: automatisch na goedkeuring (ADR-014) |
 | OQ-06 | Syncfrequentie | IMPORTANT | 8 | 🟢 voorstel |
-| OQ-10 | Deelnemersregel versus categorie | IMPORTANT | 11 | 🟡 |
+| OQ-10 | Deelnemersregel versus categorie | IMPORTANT | 11 | 🟢 alleen de doelgroep telt (2026-09-28) |
 | OQ-11 | Wie mag inschrijven voor de optocht | → B-05 | 3 | 🟢 besloten (B-05) |
-| OQ-12 | Grens 10 bij loopgroepen | IMPORTANT | 11 | 🟡 |
-| OQ-13 | Onderwerp verplicht | IMPORTANT | 11 | 🟡 |
-| OQ-14 | Verplichte documenten per categorie | IMPORTANT | 11 | 🟡 |
+| OQ-12 | Grens 10 bij loopgroepen | IMPORTANT | 11 | 🟢 10 = groot, klein = 3-9 (2026-09-28) |
+| OQ-13 | Onderwerp verplicht | IMPORTANT | 11 | 🟢 ja, per optocht uit te zetten (2026-09-28) |
+| OQ-14 | Verplichte documenten per categorie | IMPORTANT | 11 | 🟢 niet verplicht in 2027 (2026-09-28) |
 | OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟢 besloten 2026-09-27: lid vanaf 5 jaar (dansgarde); eigen account vanaf 16, jonger via de ouder/verzorger (rol Ouder) |
 | OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟡 |
 | OQ-21 | Bandjesbeleid | IMPORTANT | 14 | 🟡 |
@@ -270,10 +270,10 @@ Dit bepaalt het `User`-model, de standaardrollen en het activatieproces (fase 3)
 | OQ-04 | Testadministratie e-Boekhouden voor Acc | Gratis proefadministratie met fictieve leden; anders WireMock in Dev en een dry-run tegen prod in Acc | 8 |
 | OQ-05 | Nieuwe leden via API aanmaken in e-Boekhouden | **Besloten (B-05/ADR-014)**: automatisch na goedkeuring via `POST /v1/member`; handmatige terugvaloptie per aanvraag | 9 |
 | OQ-06 | Syncfrequentie | Nachtelijk 03:00 + handmatig; 2× per dag tijdens carnaval | 8 |
-| OQ-10 | Deelnemersregel | Totaal = kinderen + volwassenen; `validation_mode` per categorie; waarschuwing bij jeugd met meer volwassenen | 11 |
-| OQ-12 | Grens 10 | Beide categorieën toestaan bij 10 | 11 |
-| OQ-13 | Onderwerp verplicht | Ja (configureerbaar) | 11 |
-| OQ-14 | Verplichte documenten | Geen verplichting in 2027; configureerbaar later | 11 |
+| OQ-10 | Deelnemersregel | **Besloten 2026-09-28:** alleen de doelgroep telt (volwassenen bij volwassenencategorieën, kinderen bij jeugd); `validation_mode` per categorie | 11 |
+| OQ-12 | Grens 10 | **Besloten 2026-09-28:** 10 is groot; klein = 3-9 | 11 |
+| OQ-13 | Onderwerp verplicht | **Besloten 2026-09-28:** ja, per optocht uit te zetten | 11 |
+| OQ-14 | Verplichte documenten | **Besloten 2026-09-28:** geen verplichting in 2027; later per categorie | 11 |
 | OQ-15 | Minimumleeftijd account | 16 jaar; jonger via het account van de ouder/verzorger (rol Ouder, ADR-014) | 9 |
 | OQ-20 | Carnavalstoegang | AccessWindow per carnavalsdag; één ledenticket per lid per jaar; gasten via dagkaart (na MVP) of papieren toegang | 13 |
 | OQ-21 | Bandjes | Kleur per dag; geen herscan bij geldig bandje; configureerbaar | 14 |

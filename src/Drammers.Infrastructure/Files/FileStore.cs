@@ -16,7 +16,10 @@ public static class FileContainers
     /// <summary>Exports (AVG, ledenlijsten); een lifecycle-regel ruimt ze op (docs/08 §3).</summary>
     public const string Exports = "exports";
 
-    public static readonly string[] All = [Quarantine, PhotosOriginal, PhotosDerived, Content, Exports];
+    /// <summary>Documenten bij optochtinschrijvingen (private, alleen via een korte link).</summary>
+    public const string ParadeDocuments = "parade-documents";
+
+    public static readonly string[] All = [Quarantine, PhotosOriginal, PhotosDerived, Content, Exports, ParadeDocuments];
 }
 
 /// <summary>Opslag van bestanden; paden worden altijd door de server bepaald, nooit door de uploader.</summary>

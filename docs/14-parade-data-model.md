@@ -65,14 +65,14 @@ erDiagram
 | 10 | ADULT_TOWED | Volwassenen Getrokken wagens | Adult | TowedFloat | 1 | — | 1 | Warn |
 | 20 | ADULT_SELF | Volwassenen Zelfrijdende voertuigen | Adult | SelfPropelled | 1 | — | 1 | Warn |
 | 30 | ADULT_WALK_L | Volwassenen Loopgroepen groot (10+) | Adult | WalkingGroupLarge | 10 | — | 0 | Block |
-| 40 | ADULT_WALK_S | Volwassenen Loopgroepen klein (3-10) | Adult | WalkingGroupSmall | 3 | 10 | 0 | Block |
+| 40 | ADULT_WALK_S | Volwassenen Loopgroepen klein (3-9) | Adult | WalkingGroupSmall | 3 | 9 | 0 | Block |
 | 50 | ADULT_INDIV | Volwassenen Individueel of duo (1-2) | Adult | IndividualDuo | 1 | 2 | 0 | Block |
 | 60 | YOUTH_FLOAT | Jeugd Getrokken en zelfrijdende wagens | Youth | TowedOrSelfPropelled | 1 | — | 1 | Warn |
 | 70 | YOUTH_WALK_L | Jeugd Loopgroepen groot (10+) | Youth | WalkingGroupLarge | 10 | — | 0 | Block |
-| 80 | YOUTH_WALK_S | Jeugd Loopgroepen klein (3-10) | Youth | WalkingGroupSmall | 3 | 10 | 0 | Block |
+| 80 | YOUTH_WALK_S | Jeugd Loopgroepen klein (3-9) | Youth | WalkingGroupSmall | 3 | 9 | 0 | Block |
 | 90 | YOUTH_INDIV | Jeugd Individueel of duo (1-2) | Youth | IndividualDuo | 1 | 2 | 0 | Block |
 
-> Let op de overlap: "Loopgroep klein (3-10)" en "Loopgroep groot (10+)" delen de waarde 10. Dat is toegestaan (een groep van 10 mag kiezen); zie OQ-12.
+> Geen overlap (besluit OQ-12, 2026-09-28): een loopgroep van 10 is **groot**; klein is 3-9. `participant_count_basis`: volwassenencategorieën `AdultsOnly`, jeugdcategorieën `ChildrenOnly` (besluit OQ-10).
 
 ## 4. ParadeRegistration
 
@@ -181,14 +181,14 @@ Wordt gevuld door een EF Core `SaveChanges`-interceptor op ParadeRegistration (p
 
 ## 8. Businessregel deelnemers ↔ categorie (§28)
 
-**Voorgestelde regel (te bevestigen, OQ-10):**
+**Regel (besluit OQ-10, 2026-09-28): alleen de doelgroep telt.**
 
-1. `aantal = children_count + adult_count` (basis `Total`). Configureerbaar per categorie via `participant_count_basis`.
-2. `aantal ≥ 1` altijd (een inschrijving zonder deelnemers is ongeldig: **Block**).
+1. `aantal` = volwassenen bij volwassenencategorieën (`AdultsOnly`), kinderen bij jeugdcategorieën (`ChildrenOnly`); begeleiders tellen niet mee. Per categorie instelbaar via `participant_count_basis` (`Total` blijft mogelijk).
+2. `aantal ≥ 1` altijd (een inschrijving zonder deelnemers in de doelgroep is ongeldig: **Block**).
 3. Als `minimum_participants` gevuld is en `aantal < minimum` → melding.
 4. Als `maximum_participants` gevuld is en `aantal > maximum` → melding.
 5. De ernst volgt uit `validation_mode`: `Block` (niet indienen/opslaan na indienen), `Warn` (wel indienen, waarschuwing zichtbaar in beheer en opgeslagen in `validation_warnings`), `None`.
-6. **Jeugdcategorie en volwassenen**: begeleiders tellen mee in het totaal. Een waarschuwing (Warn, niet configureerbaar als Block) volgt als `adult_count > children_count` in een jeugdcategorie ("Controleer categorie: meer volwassenen dan kinderen"). Aanname, OQ-10.
+6. **Begeleiders**: volwassenen bij een jeugdgroep (en kinderen bij een volwassenengroep) worden wel opgegeven maar tellen niet mee voor de grenzen.
 7. Validatie draait bij elke opslag (voor waarschuwingen in de UI) en is hard bij submit en bij wijzigingen na submit.
 
 Voorbeelden (seed):
@@ -196,11 +196,11 @@ Voorbeelden (seed):
 | Categorie | Kinderen | Volwassenen | Resultaat |
 |---|---|---|---|
 | Volwassenen Loopgroep groot (10+) | 0 | 8 | ❌ Block: "Deze categorie vereist minimaal 10 deelnemers (nu 8)." |
-| Volwassenen Loopgroep klein (3-10) | 5 | 15 | ❌ Block: "Deze categorie staat maximaal 10 deelnemers toe (nu 20)." |
+| Volwassenen Loopgroep klein (3-9) | 5 | 12 | ❌ Block: "Deze categorie staat maximaal 9 deelnemers toe (nu 12)." |
 | Individueel of duo (1-2) | 0 | 2 | ✅ |
-| Individueel of duo (1-2) | 1 | 2 | ❌ Block: max 2 |
+| Individueel of duo (1-2) | 1 | 2 | ✅ (alleen de 2 volwassenen tellen) |
 | Getrokken wagens | 0 | 0 | ❌ Block: minimaal 1 deelnemer |
-| Jeugd Loopgroep klein | 2 | 6 | ⚠ Warn: meer volwassenen dan kinderen |
+| Jeugd Loopgroep klein (3-9) | 2 | 6 | ❌ Block: "Deze categorie vereist minimaal 3 deelnemers (nu 2)." (alleen kinderen tellen) |
 
 ## 9. Overige tabellen
 

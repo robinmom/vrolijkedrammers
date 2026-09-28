@@ -21,14 +21,17 @@ public sealed partial class GlobalExceptionHandler(
                 DomainErrorKind.NotFound => StatusCodes.Status404NotFound,
                 DomainErrorKind.Conflict => StatusCodes.Status409Conflict,
                 DomainErrorKind.Forbidden => StatusCodes.Status403Forbidden,
+                DomainErrorKind.PreconditionFailed => StatusCodes.Status412PreconditionFailed,
                 _ => StatusCodes.Status422UnprocessableEntity,
             };
             httpContext.Response.StatusCode = status;
-            return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+            var problem = new ProblemDetails { Status = status, Detail = domain.Message, Extensions = { ["code"] = domain.Code } };
+            if (domain.Issues is { Count: > 0 } issues)
             {
-                HttpContext = httpContext,
-                ProblemDetails = new ProblemDetails { Status = status, Detail = domain.Message, Extensions = { ["code"] = domain.Code } },
-            });
+                problem.Extensions["issues"] = issues;
+            }
+
+            return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext { HttpContext = httpContext, ProblemDetails = problem });
         }
 
         LogUnhandledException(logger, httpContext.Request.Method, httpContext.Request.Path, exception);

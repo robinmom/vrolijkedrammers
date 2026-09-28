@@ -454,6 +454,23 @@ export function useNotification(id: string) {
   });
 }
 
+// ----- Fase 11: optocht --------------------------------------------------------------------------------------------
+
+export type AdminParade = Schemas['AdminParadeResponse'];
+export type ParadeRequest = Schemas['ParadeRequest'];
+export type ParadeCategory = Schemas['ParadeCategoryResponse'];
+export type CategoryRequest = Schemas['CategoryRequest'];
+
+export function useAdminParades() {
+  const api = useApi();
+  return useQuery({ queryKey: ['admin-parades'], queryFn: async () => required((await api.GET('/api/v1/admin/parades')).data) });
+}
+
+export function useParadeCategories() {
+  const api = useApi();
+  return useQuery({ queryKey: ['parade-categories'], queryFn: async () => required((await api.GET('/api/v1/admin/parade-categories')).data) });
+}
+
 export type TestAccessStatus = Schemas['TestAccessStatus'];
 
 export function useTestAccess(id: string, enabled: boolean) {

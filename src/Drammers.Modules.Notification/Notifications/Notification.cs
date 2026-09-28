@@ -92,10 +92,12 @@ public sealed record NotificationAudience(
     bool Members = false,
     IReadOnlyList<string>? Roles = null,
     IReadOnlyList<Guid>? Groups = null,
-    IReadOnlyList<Guid>? MemberIds = null)
+    IReadOnlyList<Guid>? MemberIds = null,
+    IReadOnlyList<Guid>? UserIds = null)
 {
     [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsEmpty => !Everyone && !Members && (Roles?.Count ?? 0) == 0 && (Groups?.Count ?? 0) == 0 && (MemberIds?.Count ?? 0) == 0;
+    public bool IsEmpty =>
+        !Everyone && !Members && (Roles?.Count ?? 0) == 0 && (Groups?.Count ?? 0) == 0 && (MemberIds?.Count ?? 0) == 0 && (UserIds?.Count ?? 0) == 0;
 }
 
 public enum DeliveryStatus

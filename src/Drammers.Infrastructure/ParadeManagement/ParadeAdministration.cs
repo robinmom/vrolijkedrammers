@@ -1,0 +1,197 @@
+using System.Text.Json;
+using Drammers.Infrastructure.Persistence;
+using Drammers.Modules.Parade.Categories;
+using Drammers.Modules.Parade.Parades;
+using Drammers.SharedKernel.Auditing;
+using Drammers.SharedKernel.Errors;
+using Drammers.SharedKernel.Identifiers;
+using Drammers.SharedKernel.Time;
+using Microsoft.EntityFrameworkCore;
+
+namespace Drammers.Infrastructure.ParadeManagement;
+
+public sealed record ParadeInput(
+    int CarnivalYearId,
+    string Name,
+    DateOnly ParadeDate,
+    TimeOnly StartTime,
+    string? StartLocation,
+    string? RouteDescription,
+    decimal? RouteLengthKm,
+    DateTime RegistrationOpensAt,
+    DateTime RegistrationClosesAt,
+    DateTime? EditDeadlineAt,
+    bool SubjectRequired,
+    decimal DefaultSpacingMeters,
+    int MaxDocumentsPerRegistration,
+    int MaxDocumentSizeMb,
+    ParadeStatus Status);
+
+public sealed record CategoryInput(
+    string Code,
+    string Name,
+    AgeGroup AgeGroup,
+    CategoryType Type,
+    int? MinimumParticipants,
+    int? MaximumParticipants,
+    ParticipantCountBasis ParticipantCountBasis,
+    ValidationMode ValidationMode,
+    bool HasVehicle,
+    bool Active,
+    int SortOrder);
+
+/// <summary>
+/// Optocht en categorieën configureren (fase 11, <c>parade.config</c>). Eén optocht per carnavalsjaar; bij het aanmaken
+/// ontstaat de teller voor opgavenummers (ADR-011). Categorieën worden niet verwijderd maar gedeactiveerd, zodat
+/// inschrijvingen hun categorie houden.
+/// </summary>
+public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audit, IClock clock)
+{
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    /// <summary>De optocht van het actieve carnavalsjaar, of <c>null</c>.</summary>
+    public async Task<Parade?> CurrentAsync(CancellationToken cancellationToken) =>
+        await db.Parades.AsNoTracking()
+            .Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<Parade> CreateAsync(ParadeInput input, CancellationToken cancellationToken)
+    {
+        await ValidateAsync(input, null, cancellationToken);
+        var parade = new Parade { Id = IdGenerator.NewId(), Name = input.Name.Trim() };
+        Apply(parade, input);
+        db.Parades.Add(parade);
+        db.ParadeNumberSequences.Add(new ParadeNumberSequence { ParadeId = parade.Id, LastRegistrationNumber = 0 });
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade.created", "Parade", parade.Id.ToString(), null, JsonSerializer.Serialize(input, Json)), cancellationToken);
+        return parade;
+    }
+
+    public async Task UpdateAsync(Guid id, ParadeInput input, CancellationToken cancellationToken)
+    {
+        var parade = await db.Parades.SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Optocht niet gevonden.", DomainErrorKind.NotFound);
+        await ValidateAsync(input, id, cancellationToken);
+        Apply(parade, input);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade.updated", "Parade", id.ToString(), null, JsonSerializer.Serialize(input, Json)), cancellationToken);
+    }
+
+    private async Task ValidateAsync(ParadeInput input, Guid? id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(input.Name) || input.Name.Trim().Length > 100)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De naam is verplicht (maximaal 100 tekens).");
+        }
+
+        if (input.RegistrationClosesAt <= input.RegistrationOpensAt)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De inschrijving moet sluiten na het openen.");
+        }
+
+        if (input.EditDeadlineAt is { } deadline && deadline < input.RegistrationOpensAt)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De wijzigingsdeadline ligt vóór het openen van de inschrijving.");
+        }
+
+        if (input.MaxDocumentsPerRegistration is < 0 or > 20 || input.MaxDocumentSizeMb is < 1 or > 25)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Documenten: maximaal 20 per inschrijving en 1 tot 25 MB per bestand.");
+        }
+
+        if (!await db.CarnivalYears.AnyAsync(y => y.Id == input.CarnivalYearId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.CarnivalYearNotFound, "Carnavalsjaar niet gevonden.");
+        }
+
+        if (await db.Parades.AnyAsync(p => p.CarnivalYearId == input.CarnivalYearId && p.Id != id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Er is al een optocht voor dit carnavalsjaar.", DomainErrorKind.Conflict);
+        }
+    }
+
+    private static void Apply(Parade parade, ParadeInput input)
+    {
+        parade.CarnivalYearId = input.CarnivalYearId;
+        parade.Name = input.Name.Trim();
+        parade.ParadeDate = input.ParadeDate;
+        parade.StartTime = input.StartTime;
+        parade.StartLocation = Clean(input.StartLocation);
+        parade.RouteDescription = Clean(input.RouteDescription);
+        parade.RouteLengthKm = input.RouteLengthKm;
+        parade.RegistrationOpensAt = input.RegistrationOpensAt;
+        parade.RegistrationClosesAt = input.RegistrationClosesAt;
+        parade.EditDeadlineAt = input.EditDeadlineAt;
+        parade.SubjectRequired = input.SubjectRequired;
+        parade.DefaultSpacingMeters = input.DefaultSpacingMeters;
+        parade.MaxDocumentsPerRegistration = input.MaxDocumentsPerRegistration;
+        parade.MaxDocumentSizeMb = input.MaxDocumentSizeMb;
+        parade.Status = input.Status;
+    }
+
+    // ----- Categorieën ------------------------------------------------------------------------------------------------
+
+    /// <summary>Kiesbare categorieën voor een optocht: de globale, waarbij een eigen categorie van de optocht met dezelfde code voorgaat.</summary>
+    public async Task<IReadOnlyList<ParadeCategory>> CategoriesForAsync(Guid? paradeId, bool activeOnly, CancellationToken cancellationToken)
+    {
+        var all = await db.ParadeCategories.AsNoTracking()
+            .Where(c => c.ParadeId == null || c.ParadeId == paradeId)
+            .ToListAsync(cancellationToken);
+        return [.. all.GroupBy(c => c.Code)
+            .Select(g => g.OrderByDescending(c => c.ParadeId.HasValue).First())
+            .Where(c => !activeOnly || c.Active)
+            .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)];
+    }
+
+    public async Task<ParadeCategory> SaveCategoryAsync(int? id, CategoryInput input, CancellationToken cancellationToken)
+    {
+        var code = input.Code.Trim().ToUpperInvariant();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(code, "^[A-Z0-9_]{2,40}$") || string.IsNullOrWhiteSpace(input.Name) || input.Name.Length > 100)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Code (2–40 tekens: hoofdletters, cijfers, _) en naam (maximaal 100 tekens) zijn verplicht.");
+        }
+
+        if (input.MinimumParticipants is < 0 || input.MaximumParticipants is < 1
+            || (input.MinimumParticipants is { } min && input.MaximumParticipants is { } max && min > max))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het minimum mag niet groter zijn dan het maximum.");
+        }
+
+        if (await db.ParadeCategories.AnyAsync(c => c.ParadeId == null && c.Code == code && c.Id != id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.CategoryCodeTaken, "Er is al een categorie met deze code.", DomainErrorKind.Conflict);
+        }
+
+        ParadeCategory category;
+        if (id is { } existing)
+        {
+            category = await db.ParadeCategories.SingleOrDefaultAsync(c => c.Id == existing, cancellationToken)
+                ?? throw new DomainException(ErrorCodes.CategoryNotFound, "Categorie niet gevonden.", DomainErrorKind.NotFound);
+        }
+        else
+        {
+            category = new ParadeCategory { Code = code, Name = input.Name.Trim() };
+            db.ParadeCategories.Add(category);
+        }
+
+        category.Code = code;
+        category.Name = input.Name.Trim();
+        category.AgeGroup = input.AgeGroup;
+        category.Type = input.Type;
+        category.MinimumParticipants = input.MinimumParticipants;
+        category.MaximumParticipants = input.MaximumParticipants;
+        category.ParticipantCountBasis = input.ParticipantCountBasis;
+        category.ValidationMode = input.ValidationMode;
+        category.HasVehicle = input.HasVehicle;
+        category.Active = input.Active;
+        category.SortOrder = input.SortOrder;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry(id is null ? "parade-category.created" : "parade-category.updated", "ParadeCategory",
+            category.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), null, JsonSerializer.Serialize(input, Json)), cancellationToken);
+        return category;
+    }
+
+    public DateTime Now => clock.UtcNow.UtcDateTime;
+
+    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}

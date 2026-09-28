@@ -28,7 +28,13 @@ internal static class ModelConventions
 
             foreach (var property in entityType.GetProperties())
             {
-                property.SetColumnName(ToSnakeCase(property.Name));
+                // Owned types (bijv. adressen van een optochtinschrijving) delen de tabel van de eigenaar en krijgen hun
+                // kolomnamen expliciet met een prefix; die niet overschrijven.
+                if (!entityType.IsOwned())
+                {
+                    property.SetColumnName(ToSnakeCase(property.Name));
+                }
+
                 ApplyEnumConvention(entityType, property);
             }
 

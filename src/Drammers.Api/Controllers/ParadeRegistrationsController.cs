@@ -156,7 +156,8 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
             r.ChildrenCount, r.AdultCount, AddressDto.From(r.BuildAddress), r.JuryInspectionSameAsBuildAddress, AddressDto.From(r.JuryInspectionAddress),
             r.EstimatedLengthMeters, r.AdditionalInformation, r.SubmittedAt, r.WithdrawnAt,
             [.. fields.Order(StringComparer.Ordinal)], canWithdraw,
-            [.. warnings.Select(w => w with { Severity = "Warn" })], [.. issues.Select(ValidationIssueResponse.From)]);
+            [.. warnings.Select(w => w with { Severity = "Warn" })], [.. issues.Select(ValidationIssueResponse.From)],
+            await registrations.ReviewReasonAsync(r, cancellationToken));
     }
 }
 
@@ -202,7 +203,8 @@ public sealed record RegistrationResponse(
     string? ContactPhone, string? ContactPhoneDisplay, string? ContactEmail, int? CategoryId, string? Subject, string? SubjectDescription,
     int ChildrenCount, int AdultCount, AddressDto BuildAddress, bool JuryInspectionSameAsBuildAddress, AddressDto JuryInspectionAddress,
     decimal? EstimatedLengthMeters, string? AdditionalInformation, DateTime? SubmittedAt, DateTime? WithdrawnAt,
-    IReadOnlyList<string> EditableFields, bool CanWithdraw, IReadOnlyList<ValidationIssueResponse> Warnings, IReadOnlyList<ValidationIssueResponse> Issues);
+    IReadOnlyList<string> EditableFields, bool CanWithdraw, IReadOnlyList<ValidationIssueResponse> Warnings, IReadOnlyList<ValidationIssueResponse> Issues,
+    string? ReviewReason);
 
 public sealed record RegistrationSummaryResponse(
     Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt);

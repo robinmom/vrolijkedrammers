@@ -435,6 +435,37 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Groep_vult_gevraagde_aanvulling_aan_en_dient_opnieuw_in_de_commissie_ziet_het()
+    {
+        var (_, lid) = await LidAsync("piet@example.com");
+        var draft = await DraftAsync(lid);
+        var id = draft.GetProperty("id").GetGuid();
+        await SaveAsync(lid, draft, Complete(draft.GetProperty("version").GetString()!));
+        await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{id}/submit", null));
+        var (_, commissieOid) = await _api.CreateUserAsync("commissie@example.com", DefaultRoles.Lid, DefaultRoles.Optochtcommissie);
+        var commissie = _api.ClientFor(commissieOid);
+        Assert.Equal(HttpStatusCode.NoContent, (await commissie.PostAsJsonAsync($"/api/v1/admin/parade-registrations/{id}/review",
+            new { action = "RequestInformation", reason = "Kies een andere groepsnaam." })).StatusCode);
+
+        var asked = await lid.GetFromJsonAsync<JsonElement>($"/api/v1/parade/registrations/{id}");
+        Assert.Equal("Kies een andere groepsnaam.", asked.GetProperty("reviewReason").GetString());
+        Assert.Contains("groupName", asked.GetProperty("editableFields").EnumerateArray().Select(f => f.GetString()));
+        var saved = await SaveAsync(lid, asked, Complete(asked.GetProperty("version").GetString()!, group: "De Knotwilgen 2027"));
+        Assert.Equal("De Knotwilgen 2027", saved.GetProperty("groupName").GetString());
+
+        var resubmitted = await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{id}/submit", null));
+        Assert.Equal("UnderReview", resubmitted.GetProperty("status").GetString());
+        Assert.Equal(1, resubmitted.GetProperty("registrationNumber").GetInt32());
+
+        var item = Assert.Single((await commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-registrations?status=UnderReview")).GetProperty("items").EnumerateArray());
+        Assert.True(item.GetProperty("supplementReceived").GetBoolean());
+        var last = (await commissie.GetFromJsonAsync<JsonElement>($"/api/v1/admin/parade-registrations/{id}")).GetProperty("statusHistory").EnumerateArray().Last();
+        Assert.Equal(("AdditionalInformationRequired", "UnderReview", ParadeReview.SupplementReason),
+            (last.GetProperty("fromStatus").GetString(), last.GetProperty("toStatus").GetString(), last.GetProperty("reason").GetString()));
+        Assert.True(await WithDbAsync(db => db.Notifications.AnyAsync(n => n.Title == "Aanvulling optocht ontvangen")));
+    }
+
+    [Fact]
     public async Task Gast_schrijft_in_zonder_account_pas_na_de_e_mailcode_een_opgavenummer_en_een_statuslink()
     {
         var guest = _api.CreateClient();

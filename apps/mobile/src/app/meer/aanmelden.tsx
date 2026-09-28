@@ -180,7 +180,6 @@ export default function AanmeldenScreen() {
             </AppText>
             <AppText variant="body" color={colors.textSecondary}>
               Je aanmelding is ontvangen. Het bestuur beoordeelt hem zo snel mogelijk; daarna krijg je een e-mail.
-              Alaaf!
             </AppText>
           </Card>
         ) : step === 'code' ? (

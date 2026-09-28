@@ -11,6 +11,9 @@ public static class AuthorizationSetup
     /// <summary>Strenge limiet voor anonieme formulieren (accountverzoek, later lid worden): 5 per 10 minuten per IP.</summary>
     public const string AnonymousFormsPolicy = "anonymous-forms";
 
+    /// <summary>Alleen lezen via een statuslink (256-bits token, niet te raden): ruimer, los van de formulierlimiet.</summary>
+    public const string AnonymousStatusPolicy = "anonymous-status";
+
     public static IServiceCollection AddDrammersAuthorization(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
@@ -57,6 +60,9 @@ public static class AuthorizationSetup
                     Window = TimeSpan.FromMinutes(10),
                     QueueLimit = 0,
                 }));
+            options.AddPolicy(AnonymousStatusPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
+                $"status:{context.Connection.RemoteIpAddress}",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
         });
 
         return services;

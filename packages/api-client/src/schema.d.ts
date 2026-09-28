@@ -9213,6 +9213,7 @@ export interface components {
             canWithdraw: boolean;
             warnings: components["schemas"]["ValidationIssueResponse"][];
             issues: components["schemas"]["ValidationIssueResponse"][];
+            reviewReason: null | string;
         };
         /** @enum {unknown} */
         RegistrationSource: "App" | "WebForm" | "Portal";
@@ -9288,6 +9289,8 @@ export interface components {
             /** Format: date-time */
             submittedAt: null | string;
             hasWarnings: boolean;
+            /** @default false */
+            supplementReceived: boolean;
         };
         RoleAssignmentRequest: {
             roleCode: string;

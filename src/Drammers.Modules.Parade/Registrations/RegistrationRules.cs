@@ -130,9 +130,9 @@ public static partial class RegistrationRules
 
         if (r.EstimatedLengthMeters is { } length)
         {
-            if (length <= 0 || length > MaxLengthMeters || decimal.Round(length, 2) != length)
+            if (length <= 0 || length > MaxLengthMeters || decimal.Round(length, 1) != length)
             {
-                Block(RegistrationFields.EstimatedLength, $"De lengte is groter dan 0 en hoogstens {MaxLengthMeters} meter, met maximaal 2 decimalen.");
+                Block(RegistrationFields.EstimatedLength, $"De lengte is groter dan 0 en hoogstens {MaxLengthMeters} meter, met maximaal 1 decimaal.");
             }
         }
         else if (forSubmit)
@@ -285,7 +285,8 @@ public static class DefaultEditPolicy
             Add(RegistrationStatus.Draft, ActorScope.Owner, All, false);
             Add(RegistrationStatus.Submitted, ActorScope.Owner, SubmittedOwner, true);
             Add(RegistrationStatus.UnderReview, ActorScope.Owner, string.Join(',', Contact, RegistrationFields.AdditionalInformation, RegistrationFields.Documents), true);
-            Add(RegistrationStatus.AdditionalInformationRequired, ActorScope.Owner, SubmittedOwner, true);
+            // De commissie vraagt om een aanvulling: de groep mag dan alles aanpassen en dient de aanvulling opnieuw in.
+            Add(RegistrationStatus.AdditionalInformationRequired, ActorScope.Owner, All, true);
             Add(RegistrationStatus.Approved, ActorScope.Owner, string.Join(',', Contact, RegistrationFields.Documents), true);
             Add(RegistrationStatus.StartNumberAssigned, ActorScope.Owner, Contact, true);
             Add(RegistrationStatus.Final, ActorScope.Owner, "", false);

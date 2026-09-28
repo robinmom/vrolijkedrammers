@@ -4,6 +4,7 @@ import InschrijvingScreen from '../app/optocht/[id]';
 import OptochtInfoScreen from '../app/optocht/info';
 import InschrijvenScreen from '../app/optocht/inschrijven';
 import { setSessionForTest } from '../auth/session';
+import { lengthInput } from '../features/parade';
 import { api } from '../test/api-fixture';
 import { mockApi, renderApp } from '../test/render';
 
@@ -82,6 +83,7 @@ const draft = {
   canWithdraw: false,
   warnings: [],
   issues: [],
+  reviewReason: null,
 };
 const me = (permissions: string[]) => ({
   id: 'u-1',
@@ -135,7 +137,9 @@ describe('Optocht inschrijven (fase 11)', () => {
     await fireEvent.changeText(screen.getByLabelText('Straat'), 'Kerkstraat');
     await fireEvent.changeText(screen.getByLabelText('Plaats'), 'Loil');
     await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
-    await fireEvent.press(await screen.findByRole('button', { name: 'Volgende' }));
+    await fireEvent.changeText(await screen.findByLabelText('Geschatte lengte (meter)'), '12.55');
+    expect(screen.getByLabelText('Geschatte lengte (meter)').props.value).toBe('12,5');
+    await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
 
     expect(await screen.findByText('STAP 7 VAN 7 · OPTOCHT')).toBeTruthy();
     await fireEvent.press(screen.getByRole('checkbox', { name: /optochtreglement/ }));
@@ -216,5 +220,57 @@ describe('Optocht inschrijven (fase 11)', () => {
     expect(screen.getByRole('button', { name: 'Verwijder Dorpsstraat 12, 6999 AA Loil' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('radio', { name: '+ Nieuwe locatie toevoegen' }));
     expect((await screen.findByLabelText('Straat')).props.value).toBe('');
+  });
+
+  it('lengte: hoogstens 1 decimaal, komma of punt', () => {
+    expect(lengthInput('12.55')).toBe('12,5');
+    expect(lengthInput('12,')).toBe('12,');
+    expect(lengthInput('1234')).toBe('123');
+    expect(lengthInput('8 m')).toBe('8');
+  });
+
+  it('aanvulling gevraagd: alles wijzigen, aanvulling indienen, opnieuw beoordelen', async () => {
+    setSessionForTest('signedIn');
+    const asked = {
+      ...draft,
+      status: 'AdditionalInformationRequired',
+      registrationNumber: 7,
+      categoryId: 3,
+      subject: 'Wilde westen',
+      adultCount: 12,
+      estimatedLengthMeters: 12.5,
+      reviewReason: 'Graag een ander onderwerp: dit thema is al vergeven.',
+    };
+    mockApi({
+      ...paradeApi,
+      '/api/v1/me': me(['parade.register']),
+      '/api/v1/parade/registrations/r-1': asked,
+      '/api/v1/parade/registrations/r-1/submit': { ...asked, status: 'UnderReview' },
+      '/api/v1/parade/registrations/r-1/documents': [],
+      '/api/v1/parade/build-locations': [],
+    });
+    await renderApp(routes, '/optocht/r-1');
+    expect(await screen.findByText('Graag een ander onderwerp: dit thema is al vergeven.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Aanvulling invullen' }));
+    expect(await screen.findByText('Gevraagd door de optochtcommissie')).toBeTruthy();
+    for (const step of ['Groepsgegevens', 'Contactpersoon', 'Categorie en deelnemers']) {
+      await screen.findByRole('header', { name: step });
+      await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
+    }
+    await fireEvent.changeText(await screen.findByLabelText('Onderwerp'), 'Ruimtevaart');
+    for (const step of ['Onderwerp', 'Bouwlocatie', 'Lengte en extra informatie', 'Documenten']) {
+      await screen.findByRole('header', { name: step });
+      await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
+    }
+    await fireEvent.press(await screen.findByRole('button', { name: 'Aanvulling indienen' }));
+    expect(await screen.findByText('Aanvulling ingediend')).toBeTruthy();
+    expect(await bodyOf('/api/v1/parade/registrations/r-1')).toMatchObject({
+      subject: 'Ruimtevaart',
+      estimatedLengthMeters: 12.5,
+    });
+    const paths = (globalThis.fetch as jest.Mock).mock.calls.map(
+      ([input]) => new URL(typeof input === 'string' ? input : input.url).pathname,
+    );
+    expect(paths).toContain('/api/v1/parade/registrations/r-1/submit');
   });
 });

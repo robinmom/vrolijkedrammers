@@ -18,6 +18,7 @@ import {
   emptyForm,
   formatAddress,
   formFromRegistration,
+  lengthInput,
   problemFrom,
   sameAddress,
   stepFields,
@@ -66,11 +67,14 @@ export default function InschrijvenScreen() {
   const [code, setCode] = useState('');
   const [number, setNumber] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [supplemented, setSupplemented] = useState(false);
   const started = useRef(false);
 
   const steps = stepsFor(guest);
   const step = steps[Math.min(stepIndex, steps.length - 1)]!;
   const draft = !registration || registration.status === 'Draft';
+  // De commissie vroeg om een aanvulling: alles is te wijzigen en de groep dient de aanvulling opnieuw in.
+  const supplement = registration?.status === 'AdditionalInformationRequired';
   const subjectRequired = parade.data?.subjectRequired ?? true;
   const set = <K extends keyof RegistrationForm>(key: K, value: RegistrationForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -157,7 +161,7 @@ export default function InschrijvenScreen() {
         return;
       }
       if (!(await save()) || !registration) return;
-      if (!draft) {
+      if (!draft && !supplement) {
         // Een ingediende inschrijving aanpassen: opslaan is genoeg (de commissie ziet de wijzigingen).
         queryClient.invalidateQueries({ queryKey: queryKeys.myRegistrations });
         return router.back();
@@ -166,6 +170,7 @@ export default function InschrijvenScreen() {
         params: { path: { id: registration.id } },
       });
       if (!data) return setProblem(problemFrom(response.status, error));
+      setSupplemented(supplement);
       setRegistration(data);
       setNumber(data.registrationNumber ?? null);
       setPhase('done');
@@ -235,10 +240,12 @@ export default function InschrijvenScreen() {
         <View style={styles.content}>
           <Card style={styles.card}>
             <AppText variant="largeTitle" accessibilityRole="header">
-              Ingeschreven!
+              {supplemented ? 'Aanvulling ingediend' : 'Ingeschreven!'}
             </AppText>
             <AppText variant="body" color={colors.textSecondary}>
-              {form.groupName} is aangemeld voor de {parade.data?.name ?? 'optocht'}.
+              {supplemented
+                ? `De optochtcommissie beoordeelt de inschrijving van ${form.groupName} opnieuw. Je krijgt bericht zodra dat is gebeurd.`
+                : `${form.groupName} is aangemeld voor de ${parade.data?.name ?? 'optocht'}.`}
             </AppText>
             <AppText variant="label" color={colors.textSecondary}>
               JULLIE OPGAVENUMMER
@@ -334,6 +341,14 @@ export default function InschrijvenScreen() {
         <AppText variant="largeTitle" accessibilityRole="header">
           {stepTitles[step]}
         </AppText>
+        {supplement && registration?.reviewReason ? (
+          <Card style={styles.card}>
+            <AppText variant="bodyStrong">Gevraagd door de optochtcommissie</AppText>
+            <AppText variant="body" color={colors.textSecondary}>
+              {registration.reviewReason}
+            </AppText>
+          </Card>
+        ) : null}
 
         {step === 'group' ? (
           <Card style={styles.card}>
@@ -444,9 +459,9 @@ export default function InschrijvenScreen() {
             </AppText>
             <TextField
               label="Geschatte lengte (meter)"
-              hint="Inclusief trekkend voertuig en eventuele aanhanger. Maximaal 100 m."
+              hint="Inclusief trekkend voertuig en eventuele aanhanger. Maximaal 100 m, 1 decimaal (bijv. 12,5)."
               value={form.estimatedLength}
-              onChangeText={(v) => set('estimatedLength', v)}
+              onChangeText={(v) => set('estimatedLength', lengthInput(v))}
               keyboardType="decimal-pad"
               maxLength={6}
             />
@@ -474,6 +489,7 @@ export default function InschrijvenScreen() {
             rulesAccepted={rulesAccepted}
             onRules={setRulesAccepted}
             draft={draft}
+            supplement={supplement}
           />
         ) : null}
 
@@ -493,7 +509,15 @@ export default function InschrijvenScreen() {
           <View style={styles.flex}>
             {step === 'review' ? (
               <Button
-                label={busy ? 'Even geduld…' : draft ? 'Inschrijving indienen' : 'Wijzigingen opslaan'}
+                label={
+                  busy
+                    ? 'Even geduld…'
+                    : draft
+                      ? 'Inschrijving indienen'
+                      : supplement
+                        ? 'Aanvulling indienen'
+                        : 'Wijzigingen opslaan'
+                }
                 onPress={submit}
                 disabled={busy || (draft && !rulesAccepted)}
               />
@@ -923,6 +947,7 @@ function ReviewStep({
   rulesAccepted,
   onRules,
   draft,
+  supplement,
 }: {
   form: RegistrationForm;
   steps: StepKey[];
@@ -931,6 +956,7 @@ function ReviewStep({
   rulesAccepted: boolean;
   onRules: (v: boolean) => void;
   draft: boolean;
+  supplement: boolean;
 }) {
   const { colors } = useTheme();
   const category = categories.find((c) => c.id === form.categoryId);
@@ -959,7 +985,9 @@ function ReviewStep({
       <AppText variant="body" color={colors.textSecondary}>
         {draft
           ? 'Klopt alles? Na het indienen krijgen jullie een opgavenummer; daarna beoordeelt de optochtcommissie de inschrijving.'
-          : 'Controleer je wijzigingen en sla ze op.'}
+          : supplement
+            ? 'Klopt alles? Na het indienen van de aanvulling beoordeelt de optochtcommissie de inschrijving opnieuw.'
+            : 'Controleer je wijzigingen en sla ze op.'}
       </AppText>
       <Card style={styles.card}>
         {rows

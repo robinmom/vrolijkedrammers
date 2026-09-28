@@ -107,7 +107,7 @@ export function toRequest(form: RegistrationForm, version: string | null): Schem
     buildAddress: addressDto(form.build),
     juryInspectionSameAsBuildAddress: form.jurySame,
     juryInspectionAddress: form.jurySame ? null : addressDto(form.jury),
-    estimatedLengthMeters: form.estimatedLength.trim() && Number.isFinite(length) ? length : null,
+    estimatedLengthMeters: form.estimatedLength.trim() && Number.isFinite(length) ? Math.round(length * 10) / 10 : null,
     additionalInformation: form.additionalInformation.trim() || null,
   };
 }
@@ -157,6 +157,15 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const filled = (a: AddressForm) =>
   Boolean(a.street.trim() && a.houseNumber.trim() && a.postalCode.trim() && a.city.trim());
 
+/** Lengte-invoer: alleen cijfers en één komma, met hoogstens 1 decimaal (bijv. "12,5"). */
+export function lengthInput(value: string): string {
+  const [whole = '', ...rest] = value
+    .replace('.', ',')
+    .replace(/[^0-9,]/g, '')
+    .split(',');
+  return rest.length ? `${whole.slice(0, 3)},${rest.join('').slice(0, 1)}` : whole.slice(0, 3);
+}
+
 /** Minimale controle vóór "Volgende"; de API controleert alles (ook categorieregels) bij opslaan en indienen. */
 export function stepMissing(step: StepKey, form: RegistrationForm, subjectRequired: boolean): string | null {
   switch (step) {
@@ -170,6 +179,11 @@ export function stepMissing(step: StepKey, form: RegistrationForm, subjectRequir
       return form.adultCount + form.childrenCount > 0 ? null : 'Vul het aantal deelnemers in.';
     case 'subject':
       return subjectRequired && !form.subject.trim() ? 'Vul het onderwerp in.' : null;
+    case 'length': {
+      const length = Number(form.estimatedLength.replace(',', '.'));
+      if (!form.estimatedLength.trim()) return 'Vul de geschatte lengte in.';
+      return length > 0 && length <= 100 ? null : 'De lengte is groter dan 0 en hoogstens 100 meter.';
+    }
     case 'location':
       if (!filled(form.build)) return 'Vul het bouwadres volledig in.';
       return form.jurySame || filled(form.jury) ? null : 'Vul het adres voor de jury volledig in.';

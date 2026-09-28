@@ -25,7 +25,8 @@ public enum ReviewAction
 
 public sealed record ReviewSummary(
     Guid Id, int? RegistrationNumber, string? GroupName, string? CategoryName, RegistrationStatus Status, RegistrationSource Source,
-    string? ContactName, int ChildrenCount, int AdultCount, decimal? EstimatedLengthMeters, DateTime? SubmittedAt, bool HasWarnings);
+    string? ContactName, int ChildrenCount, int AdultCount, decimal? EstimatedLengthMeters, DateTime? SubmittedAt, bool HasWarnings,
+    bool SupplementReceived = false);
 
 /// <summary>
 /// Beoordeling door de Optochtcommissie (fase 11, <c>parade.manage</c>): elke inschrijving wordt in behandeling genomen en
@@ -36,6 +37,9 @@ public sealed class ParadeReview(
     DrammersDbContext db, IFileStore files, INotificationService notifications, IOutbox outbox, IAuditLogger audit, ParadeChangeContext changeContext, IClock clock)
 {
     public const string StatusMailMessageType = "parade.status-mail";
+
+    /// <summary>Reden in de statushistorie wanneer de groep de gevraagde aanvulling indient (weer "In behandeling").</summary>
+    public const string SupplementReason = "Aanvulling ingediend door de groep – opnieuw beoordelen";
 
     public sealed record StatusMail(Guid RegistrationId, RegistrationStatus Status, string? Reason);
 
@@ -74,7 +78,9 @@ public sealed class ParadeReview(
             .GroupJoin(db.ParadeCategories, r => r.CategoryId, c => c.Id, (r, cs) => new { r, cs })
             .SelectMany(x => x.cs.DefaultIfEmpty(), (x, c) => new ReviewSummary(
                 x.r.Id, x.r.RegistrationNumber, x.r.GroupName, c == null ? null : c.Name, x.r.Status, x.r.Source, x.r.ContactName,
-                x.r.ChildrenCount, x.r.AdultCount, x.r.EstimatedLengthMeters, x.r.SubmittedAt, x.r.ValidationWarnings != null))
+                x.r.ChildrenCount, x.r.AdultCount, x.r.EstimatedLengthMeters, x.r.SubmittedAt, x.r.ValidationWarnings != null,
+                x.r.Status == RegistrationStatus.UnderReview && db.ParadeStatusHistory.Where(h => h.RegistrationId == x.r.Id)
+                    .OrderByDescending(h => h.OccurredAt).ThenByDescending(h => h.Id).Select(h => h.Reason).FirstOrDefault() == SupplementReason))
             .ToListAsync(cancellationToken);
         return (items, total);
     }
@@ -180,7 +186,7 @@ public sealed class ParadeStatusMailHandler(DrammersDbContext db, IEmailSender e
             RegistrationStatus.UnderReview => ($"Inschrijving {parade.Name} in behandeling", $"De optochtcommissie bekijkt jullie inschrijving (opgavenummer {r.RegistrationNumber}). Je hoort van ons zodra ze is beoordeeld."),
             RegistrationStatus.Approved => ($"Inschrijving {parade.Name} goedgekeurd", $"Goed nieuws: {r.GroupName} is goedgekeurd voor de {parade.Name}. De inschrijving is nu definitief. Het startnummer en de aanrijtijd volgen na de indeling."),
             RegistrationStatus.Rejected => ($"Inschrijving {parade.Name} afgewezen", $"Helaas is de inschrijving van {r.GroupName} afgewezen.\n\nReden: {mail.Reason}\n\nVragen? Neem contact op met de optochtcommissie."),
-            RegistrationStatus.AdditionalInformationRequired => ($"Aanvulling nodig: inschrijving {parade.Name}", $"De optochtcommissie heeft een aanvulling nodig op de inschrijving van {r.GroupName}:\n\n{mail.Reason}\n\nPas de inschrijving aan in de app, of antwoord op deze e-mail."),
+            RegistrationStatus.AdditionalInformationRequired => ($"Aanvulling nodig: inschrijving {parade.Name}", $"De optochtcommissie heeft een aanvulling nodig op de inschrijving van {r.GroupName}:\n\n{mail.Reason}\n\n{(r.Source == RegistrationSource.WebForm ? "Neem hiervoor contact op met de optochtcommissie." : "Vul de aanvulling in de app in (Optocht → jullie inschrijving) en dien hem opnieuw in; daarna beoordeelt de commissie de inschrijving opnieuw.")}"),
             _ => ($"Inschrijving {parade.Name} gewijzigd", $"De status van de inschrijving van {r.GroupName} is gewijzigd."),
         };
         var plain = $"Beste {r.ContactName},\n\n{text}\n\nGroeten,\nDe Vrolijke Drammers";

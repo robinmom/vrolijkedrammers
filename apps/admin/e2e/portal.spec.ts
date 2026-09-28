@@ -530,3 +530,22 @@ test('fase 11: met alleen parade.read zijn er geen beoordelingsknoppen', async (
   await expect(page.getByRole('heading', { name: /De Bouwers/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Goedkeuren' })).toHaveCount(0);
 });
+
+test('fase 11: een ingediende aanvulling valt op in de lijst en het detail', async ({ page }) => {
+  const api = new MockApi(['parade.read', 'parade.manage']);
+  api.registration.status = 'UnderReview';
+  api.registration.allowedActions = ['Approve', 'Reject', 'RequestInformation'];
+  api.registration.statusHistory.push({
+    fromStatus: 'AdditionalInformationRequired',
+    toStatus: 'UnderReview',
+    occurredAt: '2026-12-05T10:00:00Z',
+    actorName: 'Piet Test',
+    reason: 'Aanvulling ingediend door de groep – opnieuw beoordelen',
+  });
+  await open(page, api, 'optocht/inschrijvingen');
+  await expect(page.getByText('Aanvulling ontvangen')).toBeVisible();
+  await page.getByRole('link', { name: 'De Bouwers' }).click();
+  await expect(
+    page.getByText('De groep heeft de gevraagde aanvulling ingediend. Beoordeel de inschrijving opnieuw.'),
+  ).toBeVisible();
+});

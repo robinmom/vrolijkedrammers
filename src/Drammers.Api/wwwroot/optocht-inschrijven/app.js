@@ -80,8 +80,13 @@
   async function showStatus(token) {
     const response = await fetch(`${api}/public-registrations/status?token=${encodeURIComponent(token)}`).catch(() => null);
     if (!response?.ok) {
-      text('gesloten-tekst', response?.status === 404 ? 'Deze statuslink is niet (meer) geldig.' : 'De status ophalen lukt nu niet. Probeer het later opnieuw.');
-      document.getElementById('titel-gesloten').textContent = 'Status niet gevonden';
+      const notFound = response?.status === 404;
+      text('gesloten-tekst', notFound
+        ? 'Deze statuslink is niet (meer) geldig. Gebruik de link uit de meest recente bevestigingsmail.'
+        : response?.status === 429
+          ? 'Te veel verzoeken vanaf dit netwerk. Probeer het over een paar minuten opnieuw.'
+          : 'De status ophalen lukt nu niet. Probeer het later opnieuw.');
+      document.getElementById('titel-gesloten').textContent = notFound ? 'Status niet gevonden' : 'Status nu niet beschikbaar';
       return show('gesloten');
     }
     const s = await response.json();
@@ -161,7 +166,7 @@
       buildAddress: address('build'),
       juryInspectionSameAsBuildAddress: f.jurySame.checked,
       juryInspectionAddress: f.jurySame.checked ? null : address('jury'),
-      estimatedLengthMeters: length ? Number(length) : null,
+      estimatedLengthMeters: length ? Math.round(Number(length) * 10) / 10 : null,
       additionalInformation: f.additionalInformation.value || null,
     };
     const button = form.querySelector('button[type=submit]');

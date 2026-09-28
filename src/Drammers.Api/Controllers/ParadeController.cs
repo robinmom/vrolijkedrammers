@@ -75,7 +75,7 @@ public sealed class ParadeController(ParadeAdministration parades, ParadePublicR
 
     /// <summary>Status via de statuslink uit de bevestigingsmail (alleen lezen, zonder contactgegevens).</summary>
     [HttpGet("public-registrations/status")]
-    [EnableRateLimiting(Authorization.AuthorizationSetup.AnonymousFormsPolicy)]
+    [EnableRateLimiting(Authorization.AuthorizationSetup.AnonymousStatusPolicy)]
     [ProducesResponseType<PublicStatus>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public Task<PublicStatus> PublicStatus([FromQuery, Required] string token, CancellationToken cancellationToken) =>

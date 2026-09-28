@@ -442,13 +442,19 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 **Afhankelijkheden.** Fase 8 (ledenkopie, e-Boekhouden-client, groepen); B-05/ADR-014, B-06; OQ-03, OQ-15, OQ-42, OQ-45.
 
 **Acceptatiecriteria.**
-- [ ] Een bestaand lid vraagt met lidnummer + het e-mailadres uit e-Boekhouden een account aan, ontvangt een welkomstmail, logt in met een e-mailcode en ziet ledencontent en de eigen gegevens.
-- [ ] Een aanvraag met een onjuist lidnummer of e-mailadres geeft dezelfde melding als een juiste; er ontstaat geen Entra-account en het verzoek staat in de wachtrij van het bestuur.
-- [ ] Een nieuwe aanmelding verschijnt pas na e-mailverificatie in de wachtrij; zonder goedkeuring bestaat er geen lid in e-Boekhouden en geen Entra-account.
-- [ ] Na goedkeuring staat het lid (met lidnummer en vrije velden) in e-Boekhouden, lokaal en in Entra ID, en is de welkomstmail verstuurd; bij een minderjarige ook het ouderaccount met de relatie.
-- [ ] Een provisioning die halverwege faalt, is in het portal zichtbaar en slaagt na "opnieuw proberen" zonder dubbele leden of accounts.
-- [ ] Een lid ziet de eigen apparaten, kan er één afmelden, en dat apparaat is daarna uitgelogd.
-- [ ] Het spike-rapport voor OQ-68 is opgeleverd met een go/no-go voor ADR-005.
+- [x] Een bestaand lid vraagt met lidnummer + het e-mailadres uit e-Boekhouden een account aan, ontvangt een welkomstmail, logt in met een e-mailcode en ziet ledencontent en de eigen gegevens. *(test `Exacte_match_geeft_account_welkomstmail_en_eigen_gegevens`; 2026-09-27 door de product owner doorlopen in Dev met Expo Go)*
+- [x] Een aanvraag met een onjuist lidnummer of e-mailadres geeft dezelfde melding als een juiste; er ontstaat geen Entra-account en het verzoek staat in de wachtrij van het bestuur. *(test `Mismatch_geeft_hetzelfde_antwoord_geen_account_en_komt_in_de_wachtrij`; sinds ADR-014 herzien maakt de API nooit zelf een Entra-account, test `Zelf_gemaakte_inlog_zonder_goedkeuring_blijft_onbekend`)*
+- [x] Een nieuwe aanmelding verschijnt pas na e-mailverificatie in de wachtrij; zonder goedkeuring bestaat er geen lid in e-Boekhouden en geen Entra-account. *(tests `Code_verloopt_…`, `Alleen_met_member_approve`)*
+- [x] Na goedkeuring staat het lid (met lidnummer en vrije velden) in e-Boekhouden, lokaal en in Entra ID, en is de welkomstmail verstuurd; bij een minderjarige ook het ouderaccount met de relatie. *(tests `Volwassene_meldt_zich_aan_…`, `Minderjarige_ouder_krijgt_het_account_…`, `Met_schrijven_aan_gaat_het_lid_met_machtiging_naar_e_Boekhouden_…` tegen een nagebootste e-Boekhouden-API. In Dev is schrijven uit (gesimuleerd lidnummer `SIM…`); de echte `POST /v1/member` volgt in Acc met een token met schrijfrechten, OQ-03. Entra: de inlog maakt het lid zelf, de API koppelt die, ADR-014 herzien)*
+- [x] Een provisioning die halverwege faalt, is in het portal zichtbaar en slaagt na "opnieuw proberen" zonder dubbele leden of accounts. *(test `Provisioning_die_halverwege_faalt_is_zichtbaar_en_slaagt_na_opnieuw_proberen_zonder_dubbelen`)*
+- [x] Een lid ziet de eigen apparaten, kan er één afmelden, en dat apparaat is daarna uitgelogd. *(test `Apparaat_aanmelden_hernoemen_en_afmelden_waarna_dat_apparaat_is_uitgelogd`)*
+- [x] Het spike-rapport voor OQ-68 is opgeleverd met een go/no-go voor ADR-005. *(ADR-005 §Spike-resultaat: voorlopig GO; de module compileert op iOS en Android, .NET verifieert de handtekeningen. De metingen op toestellen lopen en worden aan ADR-005 toegevoegd.)*
+
+**Status (2026-09-28): Done** (tag `phase-09-done`). Open punten, geen blokkade voor volgende fasen:
+- OQ-68: metingen op Android-toestellen (loopt) en op een iPhone (vraagt het Apple Developer Program, fase 7).
+- Aanvullende DoD: teksten van verificatie-, welkomst- en herinneringsmails ter goedkeuring bij het bestuur; Figma-ontwerpen voor inloggen, account aanvragen, lid worden en Mijn gegevens (OQ-42); e-Boekhouden-token met schrijfrechten (OQ-03) bij het inrichten van Acc.
+- Turnstile (OQ-45) en app-attestatie: fase 7.
+- Knop "Toegang tot testomgeving": werkt na `register-provisioning-app.sh dev|acc` en de variabelen `DVD_TESTERS_GROUP_ID` / `DVD_ENVIRONMENT_ACCESS_ATTRIBUTE` (runbook leden-app §5).
 
 ---
 

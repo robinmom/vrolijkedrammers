@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Zet het Expo-access-token (push, ADR-009) in Key Vault. Het token wordt gevraagd zonder echo en komt niet in de
 # shellgeschiedenis of in deze repository.
-#   Maak het token op expo.dev → Account settings → Access tokens (type "Robot" of persoonlijk), en zet in het project
-#   onder Credentials → "Enhanced security for push notifications" aan.
+#   Maak het token op https://expo.dev/settings/access-tokens en zet daar ook "Enhanced Security for Push
+#   Notifications" aan.
 #   az login (werkabonnement, niet Giftnation) && infra/push/set-expo-token.sh dev
 # Daarna: GitHub-environmentvariabele DVD_PUSH_PROVIDER = Expo en opnieuw deployen.
 set -euo pipefail

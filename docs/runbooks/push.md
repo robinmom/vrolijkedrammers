@@ -8,14 +8,18 @@ Zonder Expo-token staat `Push__Provider` op `Simulated`: alles werkt behalve dat
 
 ## Echte push aanzetten (per omgeving)
 
-1. **Expo-access-token**: expo.dev → project *vrolijkedrammers* → Credentials → zet **Enhanced security for push notifications** aan. Maak daarna onder Account settings → Access tokens een token (bij voorkeur een robot-token).
+1. **Expo-access-token**: ga naar <https://expo.dev/settings/access-tokens> (ingelogd als `robinmom`). Zet daar **Enhanced Security for Push Notifications** aan en maak met **Create token** een token (bij voorkeur een robot-token). Kopieer het token: het is maar één keer zichtbaar.
 2. Token in Key Vault (het token gaat niet via chat of repository):
    ```sh
    az login            # werkabonnement, niet Giftnation
    infra/push/set-expo-token.sh dev
    ```
-3. GitHub → Settings → Environments → `dev` → variabele **`DVD_PUSH_PROVIDER` = `Expo`**, en deploy opnieuw.
-4. **Android (FCM)**: Firebase-project aanmaken, Android-app `nl.vrolijkedrammers.app` toevoegen, een serviceaccount-sleutel (FCM V1) downloaden en uploaden met `cd apps/mobile && npx eas-cli@latest credentials` → Android → Push Notifications (FCM V1). De sleutel gaat niet via chat of repository. Nodig zodra de app (fase 10b) tokens registreert.
+3. GitHub → repository → **Settings** → **Environments** → `dev` → **Environment variables** → **Add variable**: `DVD_PUSH_PROVIDER` = `Expo`. Deploy daarna opnieuw (Actions → Deploy → **Run workflow**, of een nieuwe merge).
+4. **Android (FCM)**, nodig zodra de app tokens registreert (fase 10b):
+   1. <https://console.firebase.google.com> → **Project toevoegen** (bijv. "Vrolijke Drammers").
+   2. In het project: **Android-app toevoegen** met pakketnaam `nl.vrolijkedrammers.app`; download `google-services.json` (die verwerkt fase 10b in de app-configuratie).
+   3. **Projectinstellingen** (tandwiel) → **Serviceaccounts** → **Nieuwe privésleutel genereren** → **Sleutel genereren**. Bewaar het JSON-bestand veilig; het gaat niet via chat of repository.
+   4. Uploaden: expo.dev → project *vrolijkedrammers* → **Credentials** → Android `nl.vrolijkedrammers.app` → **Service Credentials** → **FCM V1 service account key** → **Add a service account key**. Of met de CLI: `cd apps/mobile && npx eas-cli@latest credentials` → Android → production → Google Service Account → *Manage your Google Service Account Key for Push Notifications (FCM V1)* → *Upload a new service account key*.
 5. **iOS (APNs)**: via EAS zodra het Apple Developer Program er is (fase 7).
 
 ## Eenmalig bij de eerste deploy van fase 10a

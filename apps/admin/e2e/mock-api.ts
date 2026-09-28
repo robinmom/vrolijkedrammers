@@ -544,7 +544,18 @@ export class MockApi {
     if (path.startsWith('/admin/parade-registrations')) {
       const r = this.registration;
       if (path === '/admin/parade-registrations') {
-        return json({ items: [{ ...r, hasWarnings: false }], page: 1, pageSize: 25, totalCount: 1 });
+        return json({
+          items: [
+            {
+              ...r,
+              hasWarnings: false,
+              supplementReceived: r.statusHistory.at(-1)?.reason?.startsWith('Aanvulling ingediend') ?? false,
+            },
+          ],
+          page: 1,
+          pageSize: 25,
+          totalCount: 1,
+        });
       }
       if (path.endsWith('/review') && method === 'POST') {
         const review = body as { action: string; reason: string | null };

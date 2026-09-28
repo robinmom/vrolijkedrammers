@@ -15008,7 +15008,8 @@
           "editableFields",
           "canWithdraw",
           "warnings",
-          "issues"
+          "issues",
+          "reviewReason"
         ],
         "type": "object",
         "properties": {
@@ -15149,6 +15150,12 @@
             "items": {
               "$ref": "#/components/schemas/ValidationIssueResponse"
             }
+          },
+          "reviewReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "Inschrijving met `Version` (meesturen bij de volgende opslag), `EditableFields` (statusbeleid),\n`Warnings` (blokkeren indienen niet) en `Issues` (alle meldingen van deze opslag, bij een concept ook blokkerende)."
@@ -15441,6 +15448,10 @@
           },
           "hasWarnings": {
             "type": "boolean"
+          },
+          "supplementReceived": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

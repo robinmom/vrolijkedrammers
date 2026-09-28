@@ -50,7 +50,7 @@ export default function InschrijvingScreen() {
     Submitted: 'De optochtcommissie gaat jullie inschrijving beoordelen. Pas na goedkeuring is hij definitief.',
     UnderReview: 'De optochtcommissie beoordeelt jullie inschrijving.',
     AdditionalInformationRequired:
-      'De optochtcommissie heeft meer informatie nodig; je hebt hierover een melding en een e-mail gekregen.',
+      'De optochtcommissie heeft meer informatie nodig. Pas de inschrijving aan en dien de aanvulling in; daarna wordt ze opnieuw beoordeeld.',
     Approved: 'Goedgekeurd: jullie inschrijving is definitief. Het startnummer en de aanrijtijd volgen.',
     Rejected: 'De inschrijving is afgewezen; de reden staat in de e-mail van de commissie.',
     Withdrawn: 'Deze inschrijving is ingetrokken.',
@@ -84,9 +84,23 @@ export default function InschrijvingScreen() {
               {error}
             </AppText>
           ) : null}
+          {r.status === 'AdditionalInformationRequired' && r.reviewReason ? (
+            <Card style={styles.card}>
+              <AppText variant="bodyStrong">Gevraagd door de optochtcommissie</AppText>
+              <AppText variant="body" color={colors.textSecondary}>
+                {r.reviewReason}
+              </AppText>
+            </Card>
+          ) : null}
           {r.editableFields.length > 0 ? (
             <Button
-              label={r.status === 'Draft' ? 'Verder invullen' : 'Gegevens wijzigen'}
+              label={
+                r.status === 'Draft'
+                  ? 'Verder invullen'
+                  : r.status === 'AdditionalInformationRequired'
+                    ? 'Aanvulling invullen'
+                    : 'Gegevens wijzigen'
+              }
               onPress={() => router.push({ pathname: '/optocht/inschrijven', params: { id: r.id } })}
             />
           ) : null}

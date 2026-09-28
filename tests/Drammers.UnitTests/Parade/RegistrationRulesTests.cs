@@ -56,6 +56,19 @@ public class RegistrationRulesTests
         Assert.Empty(Blocks(Complete(children: 1, adults: 2), "ADULT_INDIV"));
     }
 
+    [Theory]
+    [InlineData("12.5", true)]
+    [InlineData("100", true)]
+    [InlineData("12.55", false)]
+    [InlineData("100.1", false)]
+    public void Lengte_heeft_hoogstens_1_decimaal(string length, bool valid)
+    {
+        var r = Complete();
+        r.EstimatedLengthMeters = decimal.Parse(length, System.Globalization.CultureInfo.InvariantCulture);
+
+        Assert.Equal(valid, !Blocks(r, "ADULT_WALK_L").Any(i => i.Field == RegistrationFields.EstimatedLength));
+    }
+
     [Fact]
     public void Wagens_geven_een_waarschuwing_en_geen_blokkade()
     {

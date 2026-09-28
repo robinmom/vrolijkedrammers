@@ -55,6 +55,7 @@ const columns = [
     cell: (info) => (
       <>
         <StatusBadge status={info.getValue()} />
+        {info.row.original.supplementReceived ? <span className="badge warn">Aanvulling ontvangen</span> : null}
         {info.row.original.hasWarnings ? <span className="badge warn">Let op</span> : null}
       </>
     ),
@@ -208,6 +209,11 @@ export function ParadeRegistrationDetailPage() {
     return <>{registration.error ? <ProblemAlert error={registration.error} /> : <p>Laden…</p>}</>;
   }
   const r = registration.data;
+  const last = r.statusHistory[r.statusHistory.length - 1];
+  const supplemented =
+    r.status === 'UnderReview' &&
+    last?.fromStatus === 'AdditionalInformationRequired' &&
+    Boolean(last.reason?.startsWith('Aanvulling ingediend'));
   const address = (a: typeof r.buildAddress) =>
     [
       a.street && `${a.street} ${a.houseNumber ?? ''}${a.addition ?? ''}`.trim(),
@@ -249,6 +255,11 @@ export function ParadeRegistrationDetailPage() {
       </div>
       <SuccessMessage message={message} />
       <ProblemAlert error={act.error} />
+      {supplemented ? (
+        <div className="alert alert-warning" role="status">
+          De groep heeft de gevraagde aanvulling ingediend. Beoordeel de inschrijving opnieuw.
+        </div>
+      ) : null}
       {r.warnings.length ? (
         <div className="alert alert-warning" role="status">
           {r.warnings.join(' ')}

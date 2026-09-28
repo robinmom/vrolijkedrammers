@@ -88,6 +88,7 @@ async function fillForm(page: Page) {
   await build.getByLabel('Huisnummer').fill('1');
   await build.getByLabel('Postcode').fill('6999 AA');
   await build.getByLabel('Plaats').fill('Loil');
+  await page.getByLabel(/Geschatte lengte/).fill('12.5');
   await page.getByLabel(/optochtreglement/).check();
 }
 
@@ -115,6 +116,7 @@ test('optocht inschrijven via de webpagina: formulier, code, opgavenummer en sta
       categoryId: 3,
       adultCount: 12,
       childrenCount: 2,
+      estimatedLengthMeters: 12.5,
       juryInspectionSameAsBuildAddress: true,
       juryInspectionAddress: null,
       buildAddress: { street: 'Dorpsstraat', houseNumber: '1', postalCode: '6999 AA', city: 'Loil' },

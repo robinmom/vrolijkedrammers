@@ -98,13 +98,23 @@ public sealed class ParadeRegistrations(
 
         // Na de wijzigingsdeadline (standaard: sluiting van de inschrijving) alleen nog contactgegevens.
         var parade = await db.Parades.AsNoTracking().SingleAsync(p => p.Id == registration.ParadeId, cancellationToken);
-        if (registration.Status != RegistrationStatus.Draft && Now >= (parade.EditDeadlineAt ?? parade.RegistrationClosesAt))
+        // Uitzondering: om een aanvulling gevraagd door de commissie mag ook na de deadline.
+        if (registration.Status is not (RegistrationStatus.Draft or RegistrationStatus.AdditionalInformationRequired)
+            && Now >= (parade.EditDeadlineAt ?? parade.RegistrationClosesAt))
         {
             fields.IntersectWith([RegistrationFields.ContactName, RegistrationFields.ContactPhone, RegistrationFields.ContactEmail]);
         }
 
         return (fields, policy.CanWithdraw);
     }
+
+    /// <summary>Toelichting van de commissie bij "Aanvulling gevraagd" of "Afgewezen" (voor de app); anders <c>null</c>.</summary>
+    public async Task<string?> ReviewReasonAsync(ParadeRegistration registration, CancellationToken cancellationToken) =>
+        registration.Status is RegistrationStatus.AdditionalInformationRequired or RegistrationStatus.Rejected
+            ? await db.ParadeStatusHistory.AsNoTracking()
+                .Where(h => h.RegistrationId == registration.Id && h.ToStatus == registration.Status)
+                .OrderByDescending(h => h.OccurredAt).ThenByDescending(h => h.Id).Select(h => h.Reason).FirstOrDefaultAsync(cancellationToken)
+            : null;
 
     // ----- Concept ----------------------------------------------------------------------------------------------------
 
@@ -243,6 +253,13 @@ public sealed class ParadeRegistrations(
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         var registration = await TrackedAsync(userId, id, cancellationToken);
+        if (registration.Status == RegistrationStatus.AdditionalInformationRequired)
+        {
+            await SubmitSupplementAsync(userId, registration, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return registration;
+        }
+
         if (registration.Status != RegistrationStatus.Draft)
         {
             return registration;
@@ -297,6 +314,48 @@ public sealed class ParadeRegistrations(
             JsonSerializer.Serialize(new { registrationNumber = number }, Json)), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return registration;
+    }
+
+    /// <summary>
+    /// De groep dient de gevraagde aanvulling in: weer <c>UnderReview</c> (zelfde opgavenummer), met in de statushistorie
+    /// <see cref="ParadeReview.SupplementReason"/>, zodat de commissie ziet dat er opnieuw beoordeeld moet worden.
+    /// De commissie en de beheerders krijgen een melding.
+    /// </summary>
+    private async Task SubmitSupplementAsync(Guid userId, ParadeRegistration registration, CancellationToken cancellationToken)
+    {
+        var issues = await ValidateAsync(userId, registration.Id, cancellationToken);
+        if (issues.Any(i => i.Severity == IssueSeverity.Block))
+        {
+            throw Invalid("Nog niet alles is goed ingevuld.", issues);
+        }
+
+        registration.Status = RegistrationStatus.UnderReview;
+        registration.ValidationWarnings = Warnings(issues);
+        db.ParadeStatusHistory.Add(new ParadeStatusHistory
+        {
+            RegistrationId = registration.Id,
+            FromStatus = RegistrationStatus.AdditionalInformationRequired,
+            ToStatus = RegistrationStatus.UnderReview,
+            ActorUserId = userId,
+            Reason = ParadeReview.SupplementReason,
+            OccurredAt = Now,
+        });
+        var managers = await db.ParadeRegistrationManagers.Where(m => m.RegistrationId == registration.Id).Select(m => m.UserId).ToListAsync(cancellationToken);
+        await notifications.EnqueueAsync(new SystemNotification(
+            "Aanvulling optocht ontvangen",
+            $"{registration.GroupName} (nr. {registration.RegistrationNumber}) heeft de gevraagde aanvulling ingediend en wacht op een nieuwe beoordeling.",
+            NotificationCategory.Parade, new NotificationAudience(Roles: [DefaultRoles.Optochtcommissie], UserIds: managers), "drammers://optocht"), cancellationToken);
+        changeContext.Source = RegistrationSource.App;
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw Changed();
+        }
+
+        await audit.WriteAsync(new AuditEntry("parade-registration.supplemented", "ParadeRegistration", registration.Id.ToString(), null, null), cancellationToken);
     }
 
     /// <summary>

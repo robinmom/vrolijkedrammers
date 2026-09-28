@@ -38,6 +38,9 @@ public class AuthorizationConventionTests
         // Fase 10: push voor gasten (alleen meldingen aan iedereen; rate limit, token versleuteld).
         $"{nameof(PushDevicesController)}.{nameof(PushDevicesController.Register)}",
         $"{nameof(PushDevicesController)}.{nameof(PushDevicesController.Remove)}",
+        // Fase 11: openbare optochtinfo en categorieën (Figma 04).
+        $"{nameof(ParadeController)}.{nameof(ParadeController.Current)}",
+        $"{nameof(ParadeController)}.{nameof(ParadeController.Categories)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

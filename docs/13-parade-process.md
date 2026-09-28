@@ -97,9 +97,8 @@ UX-details:
 | contact_email | verplicht, geldig formaat, max 254 | Block |
 | category_id | verplicht, exact één, actieve categorie | Block |
 | children_count / adult_count | geheel getal ≥ 0 | Block |
-| totaal | ≥ 1 | Block |
-| totaal vs categorie | min/max volgens ParadeCategory | per `validation_mode` |
-| jeugdcategorie met meer volwassenen | — | Warn |
+| aantal in de doelgroep | ≥ 1 (volwassenen bij volwassenencategorieën, kinderen bij jeugd; OQ-10) | Block |
+| aantal vs categorie | min/max volgens ParadeCategory (`participant_count_basis`) | per `validation_mode` |
 | subject | verplicht als `subject_required` | Block |
 | build_address | straat, huisnummer, postcode, plaats verplicht | Block |
 | jury_inspection_address | verplicht als same_as = false | Block |

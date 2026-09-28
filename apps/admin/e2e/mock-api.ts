@@ -189,6 +189,38 @@ export class MockApi {
     audience: Record<string, unknown>;
   }[] = [];
   urgent = true;
+  // Fase 11: optocht.
+  parades: Record<string, unknown>[] = [];
+  paradeCategories = [
+    {
+      id: 3,
+      code: 'ADULT_WALK_L',
+      name: 'Volwassenen Loopgroepen groot (10+)',
+      ageGroup: 'Adult',
+      type: 'WalkingGroupLarge',
+      minimumParticipants: 10,
+      maximumParticipants: null as number | null,
+      participantCountBasis: 'AdultsOnly',
+      validationMode: 'Block',
+      hasVehicle: false,
+      active: true,
+      sortOrder: 30,
+    },
+    {
+      id: 4,
+      code: 'ADULT_WALK_S',
+      name: 'Volwassenen Loopgroepen klein (3-9)',
+      ageGroup: 'Adult',
+      type: 'WalkingGroupSmall',
+      minimumParticipants: 3,
+      maximumParticipants: 9 as number | null,
+      participantCountBasis: 'AdultsOnly',
+      validationMode: 'Block',
+      hasVehicle: false,
+      active: true,
+      sortOrder: 40,
+    },
+  ];
   testAccess: Record<string, string | null> = {};
   testAccessAvailable = true;
   excluded: { memberNumber: string; excludedAt: string; excludedBy: string | null }[] = [];
@@ -458,6 +490,27 @@ export class MockApi {
     }
     if (path === '/admin/config/retention') {
       return json([{ dataType: 'login_history', retentionDays: 365, action: 'Delete' }]);
+    }
+    if (path === '/admin/parades') {
+      if (method === 'POST') {
+        const id = `p-${this.parades.length + 1}`;
+        this.parades.push({ ...(body as Record<string, unknown>), id });
+        return json({ id }, 201);
+      }
+      return json(this.parades);
+    }
+    if ((m = path.match(/^\/admin\/parades\/([^/]+)$/)) && method === 'PUT') {
+      const index = this.parades.findIndex((p) => p.id === m![1]);
+      this.parades[index] = { ...(body as Record<string, unknown>), id: m[1] };
+      return noContent();
+    }
+    if (path === '/admin/parade-categories') {
+      return json(this.paradeCategories);
+    }
+    if ((m = path.match(/^\/admin\/parade-categories\/(\d+)$/)) && method === 'PUT') {
+      const index = this.paradeCategories.findIndex((c) => c.id === Number(m![1]));
+      this.paradeCategories[index] = { ...(body as (typeof this.paradeCategories)[number]), id: Number(m[1]) };
+      return json(this.paradeCategories[index]);
     }
     if (path === '/admin/carnival-years') {
       if (method === 'POST') {

@@ -183,3 +183,20 @@ export const notificationStatusLabels: Record<string, string> = {
   Failed: 'Mislukt',
   Canceled: 'Geannuleerd',
 };
+
+export const paradeStatusLabels: Record<string, string> = {
+  Planned: 'Gepland',
+  RegistrationOpen: 'Inschrijving open',
+  RegistrationClosed: 'Inschrijving gesloten',
+  Composing: 'Samenstellen',
+  Final: 'Definitief',
+  Completed: 'Afgerond',
+};
+
+export const countBasisLabels: Record<string, string> = {
+  AdultsOnly: 'Alleen volwassenen',
+  ChildrenOnly: 'Alleen kinderen',
+  Total: 'Kinderen + volwassenen',
+};
+
+export const validationModeLabels: Record<string, string> = { Block: 'Blokkeren', Warn: 'Waarschuwen', None: 'Geen controle' };

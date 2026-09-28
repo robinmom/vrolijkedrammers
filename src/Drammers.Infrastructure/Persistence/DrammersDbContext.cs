@@ -82,6 +82,24 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
 
+    public DbSet<Modules.Parade.Parades.Parade> Parades => Set<Modules.Parade.Parades.Parade>();
+
+    public DbSet<Modules.Parade.Parades.ParadeNumberSequence> ParadeNumberSequences => Set<Modules.Parade.Parades.ParadeNumberSequence>();
+
+    public DbSet<Modules.Parade.Categories.ParadeCategory> ParadeCategories => Set<Modules.Parade.Categories.ParadeCategory>();
+
+    public DbSet<Modules.Parade.Registrations.ParadeRegistration> ParadeRegistrations => Set<Modules.Parade.Registrations.ParadeRegistration>();
+
+    public DbSet<Modules.Parade.Registrations.ParadeRegistrationManager> ParadeRegistrationManagers => Set<Modules.Parade.Registrations.ParadeRegistrationManager>();
+
+    public DbSet<Modules.Parade.Registrations.ParadeStatusHistory> ParadeStatusHistory => Set<Modules.Parade.Registrations.ParadeStatusHistory>();
+
+    public DbSet<Modules.Parade.Registrations.ParadeRegistrationHistory> ParadeRegistrationHistory => Set<Modules.Parade.Registrations.ParadeRegistrationHistory>();
+
+    public DbSet<Modules.Parade.Registrations.ParadeDocument> ParadeDocuments => Set<Modules.Parade.Registrations.ParadeDocument>();
+
+    public DbSet<Modules.Parade.Registrations.ParadeStatusEditPolicy> ParadeStatusEditPolicies => Set<Modules.Parade.Registrations.ParadeStatusEditPolicy>();
+
     public DbSet<Modules.Notification.Notifications.Notification> Notifications => Set<Modules.Notification.Notifications.Notification>();
 
     public DbSet<Modules.Notification.Notifications.NotificationRecipient> NotificationRecipients => Set<Modules.Notification.Notifications.NotificationRecipient>();

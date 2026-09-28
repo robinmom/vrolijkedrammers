@@ -478,3 +478,30 @@ test('fase 10: zonder urgent-recht geen Dringend en geen Iedereen', async ({ pag
   await expect(page.getByLabel('Iedereen (ook gasten met push aan)')).toHaveCount(0);
   await expect(page.getByLabel('Categorie').locator('option', { hasText: 'Dringend' })).toHaveCount(0);
 });
+
+test('fase 11a: optocht instellen en een categorie aanpassen', async ({ page }) => {
+  const api = new MockApi(['parade.config']);
+  await open(page, api, 'optocht');
+  await expect(page.getByRole('heading', { name: 'Categorieën' })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await page.getByRole('button', { name: /Optocht .* toevoegen/ }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Naam').fill('Optocht Loil 2027');
+  await dialog.getByLabel('Datum').fill('2027-02-07');
+  await dialog.getByLabel('Inschrijving opent').fill('2026-12-01T09:00');
+  await dialog.getByLabel('Inschrijving sluit').fill('2027-01-20T23:59');
+  await dialog.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByRole('heading', { name: /Optocht Loil 2027/ })).toBeVisible();
+  expect(api.parades[0]).toMatchObject({
+    name: 'Optocht Loil 2027',
+    paradeDate: '2027-02-07',
+    subjectRequired: true,
+    carnivalYearId: 1,
+  });
+
+  await page.getByRole('button', { name: 'Wijzigen Volwassenen Loopgroepen klein (3-9)' }).click();
+  await page.getByRole('dialog').getByLabel('Actief (kiesbaar)').uncheck();
+  await page.getByRole('dialog').getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Categorie opgeslagen.')).toBeVisible();
+  expect(api.paradeCategories[1]!.active).toBe(false);
+});

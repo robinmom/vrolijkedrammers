@@ -60,6 +60,16 @@ public sealed class NotificationAudienceResolver(DrammersDbContext db, IClock cl
             }
         }
 
+        // Specifieke accounts (systeemmeldingen, bijv. de beheerders van een optochtinschrijving).
+        var userIds = (audience.UserIds ?? []).ToList();
+        if (userIds.Count > 0)
+        {
+            foreach (var id in await active.Where(u => userIds.Contains(u.Id)).Select(u => u.Id).ToListAsync(cancellationToken))
+            {
+                Add(id, null);
+            }
+        }
+
         var memberIds = (audience.MemberIds ?? []).ToHashSet();
         var groupIds = (audience.Groups ?? []).ToList();
         if (groupIds.Count > 0)

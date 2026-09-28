@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Leden' | 'Beheer';
+  section?: 'Content' | 'Leden' | 'Optocht' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -29,6 +29,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden' },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
+  { label: 'Optocht en categorieën', to: '/optocht', permission: 'parade.config', icon: 'optocht', section: 'Optocht' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage', icon: 'gebruiker', section: 'Beheer' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage', icon: 'rollen', section: 'Beheer' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage', icon: 'jaar', section: 'Beheer' },

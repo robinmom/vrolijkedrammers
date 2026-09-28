@@ -12,6 +12,7 @@ var roles = {
 // De rollen die main.bicep (modules/role-assignments.bicep) toekent.
 var delegatableRoles = [
   '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
+  'e147488a-f6f5-4113-8e2d-b22465e65bf6' // Key Vault Crypto Service Encryption User (Data Protection, fase 10)
   'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
   'db58b8e5-c6ad-4a2a-8342-4190687cbf4a' // Storage Blob Delegator
   '09976791-48a7-449e-bb21-39d1a415f350' // Communication and Email Service Owner

@@ -24,6 +24,14 @@ Zonder Expo-token staat `Push__Provider` op `Simulated`: alles werkt behalve dat
 
 ## Eenmalig bij de eerste deploy van fase 10a
 
+**Eerst de bootstrap opnieuw** (Owner op de subscription): de pipeline mag alleen de rollen uit `infra/bootstrap/environment-access.bicep` toekennen, en daar is *Key Vault Crypto Service Encryption User* bij gekomen. Zonder deze stap faalt de uitrol met `roleAssignments/write … does not have permission`.
+
+```sh
+az login --tenant <tenant-id-vereniging>
+AZURE_SUBSCRIPTION_ID=<id> DVD_LOCATION=swedencentral infra/bootstrap/bootstrap-nonprod.sh
+```
+
+
 Bicep maakt in Key Vault de sleutel `dataprotection` aan (wrap/unwrap) en geeft de API de rol *Key Vault Crypto Service Encryption User*. De sleutelring staat in de container `dataprotection`. Wordt de sleutel of de ring verwijderd, dan zijn opgeslagen push-tokens onleesbaar; de app registreert ze bij de volgende start opnieuw.
 
 ## Problemen oplossen

@@ -91,8 +91,11 @@ public sealed class MyNotifications(DrammersDbContext db, PushTokenProtector tok
 
     // ----- Inbox ----------------------------------------------------------------------------------------------------
 
-    private IQueryable<NotificationRecipient> Inbox(Guid userId) =>
-        db.NotificationRecipients.AsNoTracking().Where(r => r.UserId == userId
+    private IQueryable<NotificationRecipient> Inbox(Guid userId) => InboxOf(db, [userId]);
+
+    /// <summary>Wat in de inbox staat (niet ingepland en niet geannuleerd); ook gebruikt voor het telbolletje in een push.</summary>
+    public static IQueryable<NotificationRecipient> InboxOf(DrammersDbContext db, IReadOnlyCollection<Guid> userIds) =>
+        db.NotificationRecipients.AsNoTracking().Where(r => r.UserId != null && userIds.Contains(r.UserId.Value)
             && db.Notifications.Any(n => n.Id == r.NotificationId && n.Status != NotificationStatus.Scheduled && n.Status != NotificationStatus.Canceled));
 
     public async Task<InboxPage> GetInboxAsync(Guid userId, int page, CancellationToken cancellationToken)

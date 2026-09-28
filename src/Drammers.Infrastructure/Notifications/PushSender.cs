@@ -8,8 +8,11 @@ using Microsoft.Extensions.Options;
 
 namespace Drammers.Infrastructure.Notifications;
 
-/// <summary>Eén pushbericht naar één token. De payload bevat alleen titel, tekst en het id (geen persoonsgegevens).</summary>
-public sealed record PushMessage(string Token, string Title, string Body, string ChannelId, bool HighPriority, IReadOnlyDictionary<string, string> Data);
+/// <summary>
+/// Eén pushbericht naar één token. De payload bevat alleen titel, tekst en het id (geen persoonsgegevens). <c>Badge</c> is
+/// het aantal ongelezen meldingen voor het rode bolletje op het app-icoon (iOS); <c>null</c> = niet wijzigen (gasten).
+/// </summary>
+public sealed record PushMessage(string Token, string Title, string Body, string ChannelId, bool HighPriority, IReadOnlyDictionary<string, string> Data, int? Badge = null);
 
 /// <summary>Resultaat per bericht, in dezelfde volgorde: een ticket-id of een foutcode (bijv. <c>DeviceNotRegistered</c>).</summary>
 public sealed record PushTicket(string? TicketId, string? ErrorCode);
@@ -55,7 +58,7 @@ internal sealed class ExpoPushSender(HttpClient http, IServiceProvider services,
 
     public async Task<IReadOnlyList<PushTicket>> SendAsync(IReadOnlyList<PushMessage> messages, CancellationToken cancellationToken)
     {
-        var body = messages.Select(m => new ExpoMessage(m.Token, m.Title, m.Body, m.Data, m.ChannelId, m.HighPriority ? "high" : "default", "default"));
+        var body = messages.Select(m => new ExpoMessage(m.Token, m.Title, m.Body, m.Data, m.ChannelId, m.HighPriority ? "high" : "default", "default", m.Badge));
         using var request = await CreateRequestAsync(SendUri, body, cancellationToken);
         using var response = await http.SendAsync(request, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
@@ -109,7 +112,8 @@ internal sealed class ExpoPushSender(HttpClient http, IServiceProvider services,
         [property: JsonPropertyName("data")] IReadOnlyDictionary<string, string> Data,
         [property: JsonPropertyName("channelId")] string ChannelId,
         [property: JsonPropertyName("priority")] string Priority,
-        [property: JsonPropertyName("sound")] string Sound);
+        [property: JsonPropertyName("sound")] string Sound,
+        [property: JsonPropertyName("badge"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Badge);
 
     private sealed record ExpoResponse<T>([property: JsonPropertyName("data")] T? Data);
 

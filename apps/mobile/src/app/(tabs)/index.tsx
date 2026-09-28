@@ -5,6 +5,7 @@ import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { queryKeys, useCarnivalYear, useEvents, useNews } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { useUnreadCount } from '../../features/badges';
 import { carnivalMidnight, dateBlockParts, greeting, newsDateLong, startTime } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
 import { useHeroStatusBar } from '../../theme/useHeroStatusBar';
@@ -23,7 +24,8 @@ export default function HomeScreen() {
   const year = useCarnivalYear();
   const events = useEvents();
   const news = useNews();
-  const refresh = useRefresh([queryKeys.carnivalYear, queryKeys.events, queryKeys.news]);
+  const refresh = useRefresh([queryKeys.carnivalYear, queryKeys.events, queryKeys.news, queryKeys.myNotifications]);
+  const unread = useUnreadCount();
   // Moment van openen: voor de groet en of carnaval al voorbij is (de countdown tikt zelf).
   const [openedAt] = useState(() => new Date());
 
@@ -48,7 +50,7 @@ export default function HomeScreen() {
               Loil · sinds 1958
             </AppText>
           </View>
-          <HeroButton icon="meldingen" iconSize={22} opacity={0.16} accessibilityLabel="Meldingen" onPress={() => router.push('/meldingen')} />
+          <HeroButton icon="meldingen" iconSize={22} opacity={0.16} accessibilityLabel="Meldingen" badge={unread} onPress={() => router.push('/meldingen')} />
         </View>
 
         <View style={styles.greetingRow}>

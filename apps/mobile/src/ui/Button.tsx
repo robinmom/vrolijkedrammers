@@ -2,6 +2,7 @@ import { brand, radius } from '@drammers/design-tokens';
 import { Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { AppText } from './AppText';
+import { CountBadge, withCount } from './CountBadge';
 import { Icon, type IconName } from './Icon';
 
 interface ButtonProps {
@@ -11,9 +12,12 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
   icon?: IconName;
   disabled?: boolean;
+  /** Rood telbolletje op de hoek, bijv. een openstaande actie ("1 actie nodig"). */
+  badge?: number;
+  badgeLabel?: string;
 }
 
-export function Button({ label, onPress, variant = 'primary', icon, disabled }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', icon, disabled, badge = 0, badgeLabel = 'actie nodig' }: ButtonProps) {
   const { colors } = useTheme();
   const primary = variant === 'primary';
   const foreground = primary ? colors.onActionPrimary : colors.linkText;
@@ -23,6 +27,7 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled }: 
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled: Boolean(disabled) }}
+      accessibilityLabel={badge > 0 ? withCount(label, badge, badgeLabel) : undefined}
       style={({ pressed }) => [
         styles.button,
         primary ? { backgroundColor: brand.red } : { borderWidth: 1.5, borderColor: colors.linkText },
@@ -33,6 +38,7 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled }: 
       <AppText variant="bodyStrong" color={foreground}>
         {label}
       </AppText>
+      <CountBadge count={badge} />
     </Pressable>
   );
 }

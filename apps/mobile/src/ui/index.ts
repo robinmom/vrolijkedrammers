@@ -6,6 +6,7 @@ export type { BadgeVariant } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
 export { CheckboxRow } from './CheckboxRow';
+export { CountBadge, withCount } from './CountBadge';
 export { CountdownCard } from './CountdownCard';
 export { DateBlock } from './DateBlock';
 export { EventCard } from './EventCard';

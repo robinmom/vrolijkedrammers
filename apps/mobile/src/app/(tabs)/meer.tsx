@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useMe } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
+import { useUnreadCount } from '../../features/badges';
 import { themeLabels } from '../../theme/labels';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, Card, Icon, LargeTitleHeader, Screen, SettingsList, ShortcutTile, type SettingsItem } from '../../ui';
@@ -18,6 +19,7 @@ export default function MeerScreen() {
   const { colors, preference } = useTheme();
   const status = useSessionStatus();
   const me = useMe();
+  const unread = useUnreadCount();
   const settings: SettingsItem[] = [
     {
       type: 'link',
@@ -48,7 +50,7 @@ export default function MeerScreen() {
     <Screen>
       <LargeTitleHeader
         title="Meer"
-        actions={[{ icon: 'meldingen', accessibilityLabel: 'Meldingen', onPress: () => router.push('/meldingen') }]}
+        actions={[{ icon: 'meldingen', accessibilityLabel: 'Meldingen', badge: unread, onPress: () => router.push('/meldingen') }]}
       />
       <View style={styles.content}>
         <AccountCard signedIn={status === 'signedIn'} name={me.data?.displayName} />

@@ -17,7 +17,11 @@ Zonder Expo-token staat `Push__Provider` op `Simulated`: alles werkt behalve dat
 3. GitHub → repository → **Settings** → **Environments** → `dev` → **Environment variables** → **Add variable**: `DVD_PUSH_PROVIDER` = `Expo`. Deploy daarna opnieuw (Actions → Deploy → **Run workflow**, of een nieuwe merge).
 4. **Android (FCM)**, nodig zodra de app tokens registreert (fase 10b):
    1. <https://console.firebase.google.com> → **Project toevoegen** (bijv. "Vrolijke Drammers").
-   2. In het project: **Android-app toevoegen** met pakketnaam `nl.vrolijkedrammers.app`; download `google-services.json` (die verwerkt fase 10b in de app-configuratie).
+   2. In het project: **Android-app toevoegen** met pakketnaam `nl.vrolijkedrammers.app`; download `google-services.json`. Dat bestand komt niet in de (openbare) repository, maar als geheime bestandsvariabele in EAS; `app.config.js` leest hem tijdens de build:
+      ```sh
+      cd apps/mobile
+      npx eas-cli@latest env:create --environment preview --name GOOGLE_SERVICES_JSON --type file --value /pad/naar/google-services.json --visibility secret
+      ```
    3. **Projectinstellingen** (tandwiel) → **Serviceaccounts** → **Nieuwe privésleutel genereren** → **Sleutel genereren**. Bewaar het JSON-bestand veilig; het gaat niet via chat of repository.
    4. Uploaden: expo.dev → project *vrolijkedrammers* → **Credentials** → Android `nl.vrolijkedrammers.app` → **Service Credentials** → **FCM V1 service account key** → **Add a service account key**. Of met de CLI: `cd apps/mobile && npx eas-cli@latest credentials` → Android → production → Google Service Account → *Manage your Google Service Account Key for Push Notifications (FCM V1)* → *Upload a new service account key*.
 5. **iOS (APNs)**: via EAS zodra het Apple Developer Program er is (fase 7).
@@ -43,3 +47,20 @@ Bicep maakt in Key Vault de sleutel `dataprotection` aan (wrap/unwrap) en geeft 
 | Alle berichten mislukken, log "Expo Push mislukt (401)" | Access token ongeldig of enhanced security zonder token | Stap 1–2 opnieuw |
 | "Dringende meldingen en meldingen aan iedereen vragen het recht …" | Rol zonder `notification.send.urgent` | Bestuur verstuurt, of het recht toekennen (Rollen en rechten) |
 | Nieuwsvinkje "Pushmelding bij publicatie" uitgeschakeld | Openbaar bericht zonder urgent-recht, of geen `notification.send` | Idem, of het bericht alleen voor leden publiceren |
+
+## Testen op een toestel (fase 10b)
+
+Push werkt niet in Expo Go op Android. Maak een testbuild (APK) met het profiel `preview`:
+
+```sh
+cd apps/mobile
+npx eas-cli@latest build --profile preview --platform android
+```
+
+Installeer de APK, open **Meldingen** (bel rechtsboven op Meer) → **Pushmeldingen aanzetten**, of log in: na het inloggen vraagt de app om toestemming. Verstuur daarna in het portal een melding aan jezelf (Selectie → Leden, of je rol). Tik op de melding: de app opent de link en markeert hem als gelezen; in het portal loopt "Gelezen" op.
+
+| Symptoom | Oorzaak | Oplossing |
+|---|---|---|
+| Build faalt: `google-services.json` ontbreekt of FCM-fout bij token | Bestandsvariabele niet gezet voor de omgeving `preview` | `eas env:create` hierboven |
+| App vraagt geen toestemming | Eerder geweigerd | Meldingen → **Instellingen openen**, of de app opnieuw installeren |
+| Token wel, geen melding | `Push__Provider` nog `Simulated`, of de FCM V1-sleutel ontbreekt in EAS | Stappen 1–4 hierboven; in het portal staat dan "Afgeleverd" zonder dat er iets aankomt |

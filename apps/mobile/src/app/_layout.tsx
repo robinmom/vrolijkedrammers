@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { QueryProvider } from '../api/QueryProvider';
 import { restoreSession } from '../auth/session';
+import { usePushNotifications } from '../features/usePushNotifications';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import { OfflineBanner } from '../ui';
@@ -50,6 +51,7 @@ export default function RootLayout() {
 
 function Shell() {
   const { colors } = useTheme();
+  usePushNotifications();
   return (
     <View style={[styles.flex, { backgroundColor: colors.canvas }]}>
       <AppGate>

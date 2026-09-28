@@ -11,6 +11,14 @@
       },
       "env": {
         "EXPO_PUBLIC_DEVICE_KEY_SPIKE": "1"
+      },
+      "environment": "preview"
+    },
+    "preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "android": {
+        "buildType": "apk"
       }
     }
   }

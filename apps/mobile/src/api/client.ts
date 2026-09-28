@@ -17,6 +17,7 @@ export type Photo = Schemas['PhotoResponse'];
 export type Me = Schemas['MeResponse'];
 export type MyMember = Schemas['MyMemberResponse'];
 export type MyDevice = Schemas['DeviceResponse'];
+export type NotificationCategory = Schemas['NotificationCategory'];
 
 /** Fout van de API met de HTTP-status; schermen tonen nooit technische details (docs/16 §6). */
 export class ApiError extends Error {

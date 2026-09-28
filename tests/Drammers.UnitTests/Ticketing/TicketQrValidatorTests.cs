@@ -95,4 +95,19 @@ public sealed class TicketQrValidatorTests : IDisposable
         Assert.Equal(QrCheck.OutsideValidity, later.Result);
         Assert.Equal(QrCheck.UnknownTicket, TicketQrValidator.Validate(Code(_device), Now, _ => null, []).Result);
     }
+
+    [Fact]
+    public void Code_met_een_spatie_aan_begin_of_eind_blijft_leesbaar()
+    {
+        // Eerste bytepaar 0x01 0x05: n = 261 en 261 % 45 = 36, het teken voor de spatie.
+        var bytes = new byte[QrPayload.Length];
+        bytes[0] = QrPayload.DeviceSigned;
+        bytes[1] = 5;
+        var text = Base45.Encode(bytes);
+        Assert.Equal(' ', text[0]);
+
+        var payload = QrPayload.TryDecode(text + "\n");
+        Assert.NotNull(payload);
+        Assert.Equal(5, payload!.Ref[0]);
+    }
 }

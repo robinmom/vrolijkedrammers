@@ -42,7 +42,8 @@ public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, 
     /// <returns>De payload, of <c>null</c> als het geen geldige QR van De Vrolijke Drammers is.</returns>
     public static QrPayload? TryDecode(string text)
     {
-        var bytes = Base45.TryDecode(text.Trim());
+        // Geen Trim(): de spatie is een geldig base45-teken en kan aan het begin of eind van een code staan.
+        var bytes = Base45.TryDecode(text.Trim('\r', '\n', '\t'));
         if (bytes is not { Length: Length } || bytes[0] is not (DeviceSigned or ServerSigned))
         {
             return null;

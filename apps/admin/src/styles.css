@@ -1206,3 +1206,14 @@ legend {
   font-size: 13px;
   font-weight: 500;
 }
+
+/* Optocht (fase 12a): extra informatie van de groep als opvallend notitieblok. */
+.alert-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.pre-line {
+  white-space: pre-line;
+  margin: 0;
+}

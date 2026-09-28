@@ -549,3 +549,55 @@ test('fase 11: een ingediende aanvulling valt op in de lijst en het detail', asy
     page.getByText('De groep heeft de gevraagde aanvulling ingediend. Beoordeel de inschrijving opnieuw.'),
   ).toBeVisible();
 });
+
+test('fase 12a: startnummer toekennen, bezet → wisselen, gemeten lengte en publiceren', async ({ page }) => {
+  const api = new MockApi(['parade.read', 'parade.manage', 'parade.assign-start-number']);
+  api.registration.status = 'Approved';
+  api.registration.allowedActions = ['Reopen'];
+  api.registration.additionalInformation = 'Wij rijden met een aggregaat.';
+  await open(page, api, 'optocht/inschrijvingen/r-1');
+  await expect(page.getByRole('heading', { name: 'Extra informatie van de groep' })).toBeVisible();
+  await expect(page.getByText('Wij rijden met een aggregaat.')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByLabel('Startnummer', { exact: true }).fill('17');
+  await page.getByRole('button', { name: 'Startnummer opslaan' }).click();
+  await expect(page.getByText(/al toegekend aan De Knotwilgen/)).toBeVisible();
+  await page.getByRole('button', { name: 'Wisselen' }).click();
+  await expect(page.getByText('Startnummers gewisseld.')).toBeVisible();
+
+  await page.getByLabel('Gemeten lengte (meter)').fill('14,5');
+  await page.getByRole('button', { name: 'Lengte opslaan' }).click();
+  await expect(page.getByText('Gemeten lengte opgeslagen.')).toBeVisible();
+  expect(api.lineupCalls.map((c) => c.body)).toEqual([
+    { startNumber: 17, swap: false },
+    { startNumber: 17, swap: true },
+    { measuredLengthMeters: 14.5 },
+  ]);
+
+  await page.getByRole('link', { name: 'Optochtinschrijvingen' }).first().click();
+  await page.getByRole('button', { name: 'Startnummers publiceren (1)' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Publiceren' }).click();
+  await expect(page.getByText('1 startnummers gepubliceerd. De groepen zijn ingelicht.')).toBeVisible();
+  expect(api.registration.status).toBe('StartNumberAssigned');
+});
+
+test('fase 12a: filters en snelle weergaven, zonder recht geen publiceerknop', async ({ page }) => {
+  const api = new MockApi(['parade.read']);
+  await open(page, api, 'optocht/inschrijvingen');
+  await expect(page.getByRole('link', { name: 'De Bouwers' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Startnummers publiceren/ })).toHaveCount(0);
+  await expect(page.getByText('Deelnemers', { exact: true }).first()).toBeVisible();
+  const request = page.waitForRequest(
+    (r) => r.url().includes('missing=StartNumber') && r.url().includes('status=Approved'),
+  );
+  await page.getByRole('button', { name: 'Goedgekeurd zonder startnummer' }).click();
+  await request;
+  await expect(page.getByRole('button', { name: 'Goedgekeurd zonder startnummer' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  const youth = page.waitForRequest((r) => r.url().includes('ageGroup=Youth'));
+  await page.getByLabel('Doelgroep').selectOption('Youth');
+  await youth;
+});

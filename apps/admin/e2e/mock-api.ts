@@ -193,6 +193,9 @@ export class MockApi {
   parades: Record<string, unknown>[] = [];
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];
+  // Fase 14: toegangscontrole.
+  accessInside: string | null = null;
+  checkIns: { memberId: string; force: boolean }[] = [];
   // Fase 13: ledentickets.
   ticketCalls: { path: string; body: unknown }[] = [];
   tickets = [
@@ -605,6 +608,100 @@ export class MockApi {
       const index = this.parades.findIndex((p) => p.id === m![1]);
       this.parades[index] = { ...(body as Record<string, unknown>), id: m[1] };
       return noContent();
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/access$/))) {
+      return json({
+        current: {
+          id: 'ev-1',
+          title: 'Carnavalsavond',
+          startAt: '2027-02-13T19:00:00Z',
+          endAt: '2027-02-14T01:00:00Z',
+        },
+        inside: this.accessInside !== null,
+        insideSince: this.accessInside,
+        ticketProblem: null,
+        history: this.accessInside
+          ? [
+              {
+                at: this.accessInside,
+                method: 'Manual',
+                outcome: 'Admitted',
+                decision: null,
+                eventTitle: 'Carnavalsavond',
+                operator: 'Test Bestuurder',
+              },
+            ]
+          : [],
+      });
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/check-in$/)) && method === 'POST') {
+      const force = (body as { force: boolean }).force;
+      this.checkIns.push({ memberId: m[1]!, force });
+      if (this.accessInside && !force) {
+        return json({
+          scanId: null,
+          outcome: 'Warning',
+          title: 'Al binnen',
+          message: 'Al binnen.',
+          holderName: null,
+          previousAt: this.accessInside,
+          needsDecision: true,
+          counts: { inside: 1, scans: 1, refused: 0 },
+        });
+      }
+      this.accessInside ??= '2027-02-13T19:58:00Z';
+      return json({
+        scanId: 's-1',
+        outcome: this.checkIns.length > 1 ? 'AdmittedAgain' : 'Admitted',
+        title: 'Ingecheckt',
+        message: 'Piet van der Berg is ingecheckt om 20:58.',
+        holderName: 'Piet van der Berg',
+        previousAt: null,
+        needsDecision: false,
+        counts: { inside: 1, scans: this.checkIns.length, refused: 0 },
+      });
+    }
+    if (path === '/admin/access-scans/events') {
+      return json([
+        {
+          id: 'ev-1',
+          title: 'Carnavalsavond',
+          startAt: '2027-02-13T19:00:00Z',
+          endAt: '2027-02-14T01:00:00Z',
+          counts: { inside: 1, scans: 2, refused: 1 },
+        },
+      ]);
+    }
+    if (path === '/admin/access-scans') {
+      return json({
+        items: [
+          {
+            id: 's-2',
+            scannedAt: '2027-02-13T20:10:00Z',
+            memberName: null,
+            method: 'Qr',
+            outcome: 'Refused',
+            reason: 'Expired',
+            decision: null,
+            operatorName: 'Marieke',
+            deviceName: 'Pixel 8',
+          },
+          {
+            id: 's-1',
+            scannedAt: '2027-02-13T19:58:00Z',
+            memberName: 'Piet van der Berg',
+            method: 'Manual',
+            outcome: 'Admitted',
+            reason: null,
+            decision: null,
+            operatorName: 'Jan',
+            deviceName: null,
+          },
+        ],
+        page: 1,
+        pageSize: 25,
+        totalCount: 2,
+      });
     }
     if (path === '/admin/tickets') {
       return json({ items: this.tickets, page: 1, pageSize: 25, totalCount: this.tickets.length });

@@ -30,10 +30,11 @@ public sealed record EventRequest(
     [Range(-180, 180)] decimal? Longitude,
     bool IsHighlight,
     [StringLength(40)] string? BadgeText,
-    [Required] PublicationRequest Publication)
+    [Required] PublicationRequest Publication,
+    bool AccessControl = false)
 {
     public EventInput ToInput() => new(CategoryId, Title, Summary, Description, StartAt.ToUniversalTime(), EndAt?.ToUniversalTime(), AllDay,
-        LocationName, LocationAddress, Latitude, Longitude, IsHighlight, BadgeText, Publication.ToInput());
+        LocationName, LocationAddress, Latitude, Longitude, IsHighlight, BadgeText, Publication.ToInput(), AccessControl);
 }
 
 public sealed record NewsRequest(

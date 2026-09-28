@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useMe, useMember, useMemberHistory, type MemberDetail, type MembershipStatus } from '../api/hooks';
+import { AccessCard } from '../components/AccessCard';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
@@ -55,6 +56,7 @@ export function MemberDetailPage() {
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
   const canApprove = (me.data?.permissions ?? []).includes('member.approve');
   const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  const canCheckIn = (me.data?.permissions ?? []).includes('ticket.scan');
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
   const [removeConfirmation, setRemoveConfirmation] = useState('');
@@ -275,6 +277,7 @@ export function MemberDetailPage() {
         </div>
 
         <div>
+          {canCheckIn ? <AccessCard memberId={id} /> : null}
           <section className="card" aria-labelledby="account">
             <h2 id="account">App-account</h2>
             {m.account ? (

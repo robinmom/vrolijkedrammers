@@ -70,6 +70,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Ticketing.Tickets.TicketSigningKey> TicketSigningKeys => Set<Modules.Ticketing.Tickets.TicketSigningKey>();
 
+    public DbSet<Modules.Ticketing.Tickets.AccessScan> AccessScans => Set<Modules.Ticketing.Tickets.AccessScan>();
+
     public DbSet<EventCategory> EventCategories => Set<EventCategory>();
 
     public DbSet<Event> Events => Set<Event>();

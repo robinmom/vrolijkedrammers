@@ -43,6 +43,7 @@ export function EventsPage() {
                     {e.title}
                   </Link>
                   {e.isHighlight ? <span className="badge">Hoogtepunt</span> : null}
+                  {e.accessControl ? <span className="badge info">Toegangscontrole</span> : null}
                 </td>
                 <td>{visibilityLabels[e.visibility]}</td>
                 <td>{statusLabels[e.status]}</td>
@@ -64,7 +65,7 @@ export function EventsPage() {
 
 const emptyEvent: EventRequest = {
   categoryId: 1, title: '', summary: null, description: null, startAt: '', endAt: null, allDay: false, locationName: null,
-  locationAddress: null, latitude: null, longitude: null, isHighlight: false, badgeText: null, publication: defaultPublication,
+  locationAddress: null, latitude: null, longitude: null, isHighlight: false, badgeText: null, publication: defaultPublication, accessControl: false,
 };
 
 export function EventEditorPage() {
@@ -86,7 +87,7 @@ export function EventEditorPage() {
       setForm({
         categoryId: e.categoryId, title: e.title, summary: e.summary, description: e.description, startAt: e.startAt, endAt: e.endAt,
         allDay: e.allDay, locationName: e.locationName, locationAddress: e.locationAddress, latitude: e.latitude, longitude: e.longitude,
-        isHighlight: e.isHighlight, badgeText: e.badgeText, publication: e.publication,
+        isHighlight: e.isHighlight, badgeText: e.badgeText, publication: e.publication, accessControl: e.accessControl,
       });
     }
   }, [existing.data]);
@@ -154,6 +155,11 @@ export function EventEditorPage() {
         </div>
         <Checkbox label="Hele dag" checked={form.allDay} onChange={(e) => set({ allDay: e.target.checked })} />
         <Checkbox label="Hoogtepunt" checked={form.isHighlight} onChange={(e) => set({ isHighlight: e.target.checked })} />
+        <Checkbox
+          label="Toegangscontrole: bij deze activiteit scant het deurpersoneel QR-codes en checkt het leden in"
+          checked={form.accessControl ?? false}
+          onChange={(e) => set({ accessControl: e.target.checked })}
+        />
         <Field label="Korte samenvatting" maxLength={500} value={form.summary ?? ''} onChange={(e) => set({ summary: e.target.value || null })} />
         <div className="field">
           <label htmlFor="omschrijving">Omschrijving (Markdown)</label>

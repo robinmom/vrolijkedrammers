@@ -26,7 +26,7 @@ public sealed record PublicationInput(
 public sealed record EventInput(
     int CategoryId, string Title, string? Summary, string? Description, DateTime StartAt, DateTime? EndAt, bool AllDay,
     string? LocationName, string? LocationAddress, decimal? Latitude, decimal? Longitude, bool IsHighlight, string? BadgeText,
-    PublicationInput Publication);
+    PublicationInput Publication, bool AccessControl = false);
 
 public sealed record NewsInput(string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false);
 
@@ -306,6 +306,7 @@ public sealed class ContentAdministration(
             (input.CategoryId, input.Title, input.Summary, input.Description, input.StartAt, input.EndAt, input.AllDay);
         (e.LocationName, e.LocationAddress, e.Latitude, e.Longitude, e.IsHighlight, e.BadgeText) =
             (input.LocationName, input.LocationAddress, input.Latitude, input.Longitude, input.IsHighlight, input.BadgeText);
+        e.AccessControl = input.AccessControl;
         (e.Visibility, e.Status, e.PublishAt) = Publication(input.Publication);
         e.Audiences.Clear();
         e.Audiences.AddRange(Audiences(input.Publication).Select(r => new EventAudience { EventId = e.Id, AudienceType = r.Type, AudienceRef = r.Ref }));

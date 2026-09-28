@@ -1,12 +1,15 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { AppText } from './AppText';
+import { CountBadge, withCount } from './CountBadge';
 import { Icon, type IconName } from './Icon';
 
 interface HeaderAction {
   icon: IconName;
   accessibilityLabel: string;
   onPress: () => void;
+  /** Rood telbolletje, bijv. het aantal ongelezen meldingen. */
+  badge?: number;
 }
 
 /** Grote paginatitel (Figma 02/03/05) met optionele ondertitel en actie-iconen. */
@@ -24,11 +27,12 @@ export function LargeTitleHeader({ title, subtitle, actions = [] }: { title: str
               key={action.icon}
               onPress={action.onPress}
               accessibilityRole="button"
-              accessibilityLabel={action.accessibilityLabel}
+              accessibilityLabel={withCount(action.accessibilityLabel, action.badge ?? 0)}
               hitSlop={10}
               style={styles.action}
             >
               <Icon name={action.icon} size={24} color={colors.textPrimary} />
+              <CountBadge count={action.badge ?? 0} style={styles.actionBadge} />
             </Pressable>
           ))}
         </View>
@@ -47,5 +51,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   actions: { flexDirection: 'row', gap: 16 },
   action: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  actionBadge: { top: 2, right: 0 },
   subtitle: { fontSize: 14 },
 });

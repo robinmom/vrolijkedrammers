@@ -107,6 +107,16 @@ public sealed class NotificationDispatchHandler(
             var deviceIds = batch.Select(d => d.PushDeviceId).Distinct().ToList();
             var devices = await db.PushDevices.Where(p => deviceIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, cancellationToken);
             var recipientIds = batch.Select(d => d.RecipientId).Distinct().ToList();
+            // Telbolletje op het app-icoon: ongelezen meldingen per ontvanger (inclusief deze).
+            var recipientUsers = await db.NotificationRecipients.AsNoTracking()
+                .Where(r => recipientIds.Contains(r.Id) && r.UserId != null)
+                .ToDictionaryAsync(r => r.Id, r => r.UserId!.Value, cancellationToken);
+            var userIds = recipientUsers.Values.Distinct().ToList();
+            var unread = userIds.Count == 0
+                ? []
+                : await MyNotifications.InboxOf(db, userIds).Where(r => r.ReadAt == null)
+                    .GroupBy(r => r.UserId!.Value).Select(g => new { UserId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
             var onBehalf = await db.NotificationRecipients.AsNoTracking()
                 .Where(r => recipientIds.Contains(r.Id) && r.OnBehalfOfMemberId != null)
                 .ToDictionaryAsync(r => r.Id, r => r.OnBehalfOfMemberId!.Value, cancellationToken);
@@ -132,7 +142,8 @@ public sealed class NotificationDispatchHandler(
                     : notification.Title;
                 sendable.Add((delivery, new PushMessage(
                     tokens.Unprotect(device.ProtectedToken), title, notification.Body, ChannelId(notification.Category),
-                    notification.Category == NotificationCategory.Urgent, Data(notification))));
+                    notification.Category == NotificationCategory.Urgent, Data(notification),
+                    recipientUsers.TryGetValue(delivery.RecipientId, out var user) ? unread.GetValueOrDefault(user) : null)));
             }
 
             if (sendable.Count > 0)

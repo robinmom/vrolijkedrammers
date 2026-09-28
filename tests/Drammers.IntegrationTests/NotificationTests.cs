@@ -115,6 +115,12 @@ public class NotificationTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Empty(PushedTitlesTo(lid.Token));
         var message = _api.Push.Sent.Single();
         Assert.Equal(("kader", id.ToString(), "drammers://agenda"), (message.ChannelId, message.Data["notificationId"], message.Data["url"]));
+        Assert.Equal(1, message.Badge);
+
+        var tweede = await IdAsync(await SendAsync(redactie.Client, "Kaderavond verplaatst", Audience(roles: [DefaultRoles.Kaderlid]), "Kader"));
+        await RunOutboxAsync();
+        Assert.Equal(2, _api.Push.Sent.Single(m => m.Data["notificationId"] == tweede.ToString()).Badge);
+        Assert.Equal(HttpStatusCode.NoContent, (await kader.Client.PostAsync($"/api/v1/me/notifications/{tweede}/read", null)).StatusCode);
 
         var inbox = await kader.Client.GetFromJsonAsync<JsonElement>("/api/v1/me/notifications");
         Assert.Equal(1, inbox.GetProperty("unreadCount").GetInt32());

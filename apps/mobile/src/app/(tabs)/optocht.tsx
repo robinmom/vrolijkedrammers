@@ -113,7 +113,13 @@ export default function OptochtScreen() {
         <View style={styles.buttons}>
           {action ? (
             <View style={styles.flex}>
-              <Button label={action.label} icon={action.icon} onPress={action.onPress} />
+              <Button
+                label={action.label}
+                icon={action.icon}
+                onPress={action.onPress}
+                badge={mine?.status === 'AdditionalInformationRequired' ? 1 : 0}
+                badgeLabel="aanvulling gevraagd"
+              />
             </View>
           ) : null}
           <Button label="Route" icon="locatie" variant="secondary" onPress={() => openInMaps(routeQuery)} />

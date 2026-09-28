@@ -1,6 +1,7 @@
-import { fontFamily } from '@drammers/design-tokens';
+import { brand, fontFamily } from '@drammers/design-tokens';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
+import { useParadeActionCount } from '../../features/badges';
 import { useTheme } from '../../theme/ThemeProvider';
 import { Icon, type IconName } from '../../ui';
 
@@ -27,6 +28,8 @@ const tabs: { name: string; title: string; icon: IconName }[] = [
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  // Rood bolletje op Optocht als de optochtcommissie om een aanvulling vraagt.
+  const paradeActions = useParadeActionCount();
   return (
     <Tabs
       screenOptions={{
@@ -43,6 +46,9 @@ export default function TabLayout() {
           name={tab.name}
           options={{
             title: tab.title,
+            ...(tab.name === 'optocht' && paradeActions > 0
+              ? { tabBarBadge: paradeActions, tabBarBadgeStyle: { backgroundColor: brand.red, color: '#FFFFFF', fontFamily: fontFamily.body.semibold } }
+              : {}),
             // De tintkleuren komen uit onze tokens en zijn dus altijd strings.
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name={tab.icon} color={typeof color === 'string' ? color : colors.textTertiary} focused={focused} />

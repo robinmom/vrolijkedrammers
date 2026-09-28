@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { api } from '../api/client';
 import { queryKeys } from '../api/queries';
 import { useSessionStatus } from '../auth/useSession';
+import { useUnreadCount } from './badges';
 import { configureNotifications, registerPushToken, routeForLink } from './push';
 
 /**
@@ -27,6 +28,23 @@ export function usePushNotifications() {
       registerPushToken().catch(() => undefined);
     }
   }, [status]);
+
+  // Komt er een melding binnen terwijl de app open is: inbox (telbolletje) en inschrijvingen (status) verversen.
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(() => {
+      client.invalidateQueries({ queryKey: queryKeys.myNotifications }).catch(() => undefined);
+      client.invalidateQueries({ queryKey: queryKeys.myRegistrations }).catch(() => undefined);
+    });
+    return () => subscription.remove();
+  }, [client]);
+
+  // Het rode bolletje op het app-icoon volgt het aantal ongelezen meldingen (de API zet het ook mee in elke push).
+  const unread = useUnreadCount();
+  useEffect(() => {
+    if (status !== 'loading') {
+      Notifications.setBadgeCountAsync(unread).catch(() => undefined);
+    }
+  }, [unread, status]);
 
   useEffect(() => {
     if (!lastResponse || lastResponse.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {

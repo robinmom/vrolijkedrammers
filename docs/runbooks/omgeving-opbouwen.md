@@ -37,7 +37,7 @@ Het script maakt de drie resource groups, het plan, de identiteiten met federati
 
 **GitHub** (repository → Settings):
 1. *Environments* → maak `dev` en `acc` aan. Zet bij allebei *Deployment branches and tags* op **Selected: `main`**. Zet bij `acc` ook *Required reviewers* aan.
-2. Vul per environment de *Environment variables* in die het script toont (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DVD_APP_SERVICE_PLAN_ID`, `DVD_SQL_ADMIN_GROUP_OBJECT_ID`), eventueel ook `DVD_BUDGET_EMAIL`.
+2. Vul per environment de waarden in die het script toont. De repository is openbaar en Actions-logs zijn voor iedereen leesbaar; GitHub maskeert alleen **secrets**. Daarom als *Environment secrets*: `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DVD_APP_SERVICE_PLAN_ID`, `DVD_SQL_ADMIN_GROUP_OBJECT_ID`, `DVD_TESTERS_GROUP_ID`, `DVD_BUDGET_EMAIL`, `DVD_BOOTSTRAP_ADMIN` (op repository-niveau ook `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DVD_APP_SERVICE_PLAN_ID`, `DVD_DEV_SQL_ADMIN_GROUP_OBJECT_ID` voor de what-if in CI). Als *Environment variable*: `AZURE_CLIENT_ID` (een client-ID is niet gevoelig, en de CI-voorwaarde kan geen secrets lezen).
 3. *Secrets and variables → Actions → Variables*: vul de repository-variabelen voor what-if in pull requests in.
 4. Vanaf fase 3 per environment ook `DVD_PORTAL_CLIENT_ID`, `DVD_GRAPH_CLIENT_ID` + `DVD_GRAPH_CERTIFICATE_NAME` (provisioning-app) en eenmalig `DVD_BOOTSTRAP_ADMIN` (zie [entra-external-id §3b](entra-external-id.md#3b-fase-3-provisioning-en-eerste-beheerder)).
 5. Zet daarna de repository-variabele `DVD_DEPLOY_ENABLED` = `true`. Zonder die variabele slaat de workflow *Deploy* zichzelf over.

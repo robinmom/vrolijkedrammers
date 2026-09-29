@@ -87,7 +87,7 @@ export function AccessCard({ memberId }: { memberId: string }) {
           ) : null}
         </>
       ) : (
-        <p className="muted">Er is nu geen activiteit met toegangscontrole; inchecken kan tijdens zo'n activiteit.</p>
+        <p className="muted">Inchecken kan tijdens carnaval en tijdens een activiteit met toegangscontrole.</p>
       )}
       {a && a.history.length ? (
         <ul className="list small-text">

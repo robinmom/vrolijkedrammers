@@ -28,7 +28,7 @@ public enum TicketState
 public sealed record MyTicket(
     TicketState State, string Message, string? HolderName, string? CarnivalYearName, DateTimeOffset? ValidFrom, DateTimeOffset? ValidTo,
     string? PublicRef, int CredentialVersion, bool BoundToThisDevice, string? BoundDeviceName, int RebindsLeft, string? DeviceShortId,
-    bool DeviceHasHardwareKey);
+    bool DeviceHasHardwareKey, string? AccessTitle = null);
 
 public sealed record ServerCode(string Code, long IssuedAt, int ValidFor);
 
@@ -37,7 +37,7 @@ public sealed record ServerCode(string Code, long IssuedAt, int ValidFor);
 /// na een nieuwe activatie). Toestellen met een hardwaresleutel ondertekenen de QR zelf; zonder hardwaresleutel
 /// (of in Expo Go) haalt de app elke 30 seconden een door de server ondertekende code op (fallback, OQ-68).
 /// </summary>
-public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, IAuditLogger audit, IClock clock)
+public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, AccessWindows windows, IAuditLogger audit, IClock clock)
 {
     public static readonly TimeSpan ChallengeLifetime = TimeSpan.FromMinutes(5);
     public static readonly HashSet<string> HardwareLevels = ["SecureEnclave", "StrongBox", "TrustedEnvironment"];
@@ -125,12 +125,15 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
             : null;
         var (from, to) = Validity(year);
         var now = clock.UtcNow;
+        // QR en scannen volgen dezelfde regels: geldig tijdens carnaval én tijdens een activiteit met toegangscontrole.
+        var access = now < from || now > to ? await windows.CurrentAsync(cancellationToken) : null;
         var (state, text) = member.MembershipStatus != MembershipStatus.Active
             ? (TicketState.None, "Je lidmaatschap is niet actief. Klopt dit niet? Neem contact op met het bestuur.")
             : ticket.Status == TicketStatus.Blocked
                 ? (TicketState.Blocked, "Je ticket is geblokkeerd. Neem contact op met het bestuur.")
-                : now < from ? (TicketState.NotYetValid, "Je QR verschijnt bij carnaval.")
-                : now > to ? (TicketState.Ended, "Carnaval is voorbij; tot volgend jaar!")
+                : access is { EventId: not null } ? (TicketState.Valid, $"Geldig bij {access.Title}.")
+                : now < from ? (TicketState.NotYetValid, "Je QR verschijnt bij carnaval of bij een activiteit met toegangscontrole.")
+                : now > to ? (TicketState.Ended, "Carnaval is voorbij; je QR verschijnt weer bij een activiteit met toegangscontrole.")
                 : (TicketState.Valid, "Geldig ticket.");
         return new MyTicket(
             state, text, member.FullName, year.Name, from, to,
@@ -138,7 +141,8 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
             ticket.CredentialVersion, device is not null && ticket.BoundDeviceId == device.Id, bound,
             Math.Max(0, Ticket.MaxRebinds - ticket.RebindCount),
             device is null ? null : Convert.ToBase64String(QrPayload.ShortDeviceId(device.Id)),
-            device?.PublicKey is not null && HardwareLevels.Contains(device.AttestationStatus ?? ""));
+            device?.PublicKey is not null && HardwareLevels.Contains(device.AttestationStatus ?? ""),
+            access is { EventId: not null } && state == TicketState.Valid ? access.Title : null);
     }
 
     /// <summary>Registreert de publieke hardwaresleutel van dit toestel (SubjectPublicKeyInfo, EC P-256).</summary>

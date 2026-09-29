@@ -56,7 +56,7 @@
 | OQ-13 | Onderwerp verplicht | IMPORTANT | 11 | 🟢 ja, per optocht uit te zetten (2026-09-28) |
 | OQ-14 | Verplichte documenten per categorie | IMPORTANT | 11 | 🟢 niet verplicht in 2027 (2026-09-28) |
 | OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟢 besloten 2026-09-27: lid vanaf 5 jaar (dansgarde); eigen account vanaf 16, jonger via de ouder/verzorger (rol Ouder) |
-| OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟢 besloten 2026-09-28: één ledenticket per actief lid per carnavalsjaar, geldig de hele carnavalsperiode (geen vensters per dag); gasten niet in de app |
+| OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟢 besloten 2026-09-28: één ledenticket per actief lid per carnavalsjaar, geldig de hele carnavalsperiode (geen vensters per dag); gasten niet in de app. Aanvulling 2026-09-29: QR en scannen volgen dezelfde regels — geldig tijdens de carnavalsperiode én tijdens elke activiteit met toegangscontrole (ook buiten carnaval); scans horen bij de activiteit of anders bij de carnavalsdag (tot 06:00) |
 | OQ-21 | Bandjesbeleid | IMPORTANT | 14 | 🟢 besloten 2026-09-28: geen bandjes; alleen scannen of inchecken, herhaalde toegang is zichtbaar als "al eerder gescand" |
 | OQ-22 | Pasfoto in scanner | LATER | — | 🟡 |
 | OQ-23 | Toegang zonder smartphone (printkaart) | IMPORTANT | 13 → 14 | 🟢 besloten 2026-09-28: geen printkaart; deurpersoneel zoekt het lid in de ledenlijst van het portal en klikt **Inchecken** (alleen tijdens activiteiten met toegangscontrole; nieuwe rol Deurcontrole); zelfde toegangslog als de QR-scans, gebouwd in fase 14 |

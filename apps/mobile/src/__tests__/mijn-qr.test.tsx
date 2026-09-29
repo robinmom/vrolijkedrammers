@@ -104,4 +104,16 @@ describe('Mijn QR (fase 13b)', () => {
     expect(screen.getByText('Je ticket is geblokkeerd. Neem contact op met het bestuur.')).toBeTruthy();
     expect(screen.queryByTestId('qr-code')).toBeNull();
   });
+
+  it('buiten carnaval bij een activiteit met toegangscontrole: geldig bij die activiteit', async () => {
+    setSessionForTest('signedIn');
+    mockApi({
+      ...api,
+      '/api/v1/me/ticket': { ...ticket, accessTitle: 'Pronkzitting' },
+      '/api/v1/me/ticket/code': { code: 'DVD-PRONK', issuedAt: Math.floor(Date.now() / 1000), validFor: 45 },
+    });
+    await renderApp(routes, '/mijn-qr');
+    expect(await screen.findByText('Geldig bij Pronkzitting')).toBeTruthy();
+    expect((await screen.findByTestId('qr-code')).props.children).toBe('DVD-PRONK');
+  });
 });

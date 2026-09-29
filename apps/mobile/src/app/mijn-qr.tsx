@@ -265,6 +265,8 @@ export default function MijnQrScreen() {
 }
 
 interface Holder {
+  /** Buiten carnaval: de activiteit met toegangscontrole waarvoor de QR nu geldt. */
+  accessTitle?: string | null;
   holderName: string | null;
   carnivalYearName: string | null;
   validFrom: string | null;
@@ -283,7 +285,11 @@ function TicketCard({ ticket, muted, children }: { ticket: Holder; muted?: boole
           {ticket.holderName ?? 'Lid'}
         </AppText>
         <AppText variant="caption" color="rgba(255,255,255,0.85)">
-          {muted ? 'Niet geldig' : `Geldig van ${validityText(ticket.validFrom, ticket.validTo)}`}
+          {muted
+            ? 'Niet geldig'
+            : ticket.accessTitle
+              ? `Geldig bij ${ticket.accessTitle}`
+              : `Geldig van ${validityText(ticket.validFrom, ticket.validTo)}`}
         </AppText>
       </View>
       <View style={styles.zone}>{children}</View>

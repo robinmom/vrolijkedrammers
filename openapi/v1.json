@@ -352,12 +352,13 @@
         ],
         "parameters": [
           {
-            "name": "eventId",
+            "name": "key",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "maxLength": 40,
+              "minLength": 0,
+              "type": "string"
             }
           },
           {
@@ -10830,16 +10831,31 @@
       },
       "AccessEvent": {
         "required": [
-          "id",
+          "key",
+          "eventId",
+          "carnivalDay",
           "title",
           "startAt",
           "endAt"
         ],
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
+          "key": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
+          },
+          "carnivalDay": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           },
           "title": {
             "type": "string"
@@ -10855,11 +10871,12 @@
             ],
             "format": "date-time"
           }
-        }
+        },
+        "description": "Toegangsmoment: een activiteit met toegangscontrole (Guid? AccessEvent.EventId) of anders een carnavalsdag\n(DateOnly? AccessEvent.CarnivalDay). string AccessEvent.Key is de sleutel in het portal (\"dag-2027-02-13\" of de event-id)."
       },
       "AccessEventSummary": {
         "required": [
-          "id",
+          "key",
           "title",
           "startAt",
           "endAt",
@@ -10867,9 +10884,8 @@
         ],
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
+          "key": {
+            "type": "string"
           },
           "title": {
             "type": "string"
@@ -15472,6 +15488,12 @@
           },
           "deviceHasHardwareKey": {
             "type": "boolean"
+          },
+          "accessTitle": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "\"Mijn QR\": alles wat de app nodig heeft om de code te maken (geen persoonsgegevens in de code zelf)."

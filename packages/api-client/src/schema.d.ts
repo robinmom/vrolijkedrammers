@@ -297,7 +297,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
-                    eventId: string;
+                    key: string;
                     page?: number;
                     pageSize?: number;
                 };
@@ -8896,9 +8896,16 @@ export interface components {
         };
         /** @enum {unknown} */
         AccessDecision: "Admitted" | "Refused" | null;
+        /**
+         * @description Toegangsmoment: een activiteit met toegangscontrole (Guid? AccessEvent.EventId) of anders een carnavalsdag
+         *     (DateOnly? AccessEvent.CarnivalDay). string AccessEvent.Key is de sleutel in het portal ("dag-2027-02-13" of de event-id).
+         */
         AccessEvent: {
+            key: string;
             /** Format: uuid */
-            id: string;
+            eventId: null | string;
+            /** Format: date */
+            carnivalDay: null | string;
             title: string;
             /** Format: date-time */
             startAt: string;
@@ -8906,8 +8913,7 @@ export interface components {
             endAt: null | string;
         };
         AccessEventSummary: {
-            /** Format: uuid */
-            id: string;
+            key: string;
             title: string;
             /** Format: date-time */
             startAt: string;
@@ -10078,6 +10084,7 @@ export interface components {
             rebindsLeft: number;
             deviceShortId: null | string;
             deviceHasHardwareKey: boolean;
+            accessTitle?: null | string;
         };
         NewsDetailResponse: {
             /** Format: uuid */

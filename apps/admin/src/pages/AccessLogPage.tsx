@@ -63,13 +63,13 @@ const columns = [
  */
 export function AccessLogPage() {
   const events = useAccessEvents();
-  const [eventId, setEventId] = useState('');
+  const [key, setKey] = useState('');
   const [page, setPage] = useState(1);
-  const scans = useAccessScans(eventId, page);
+  const scans = useAccessScans(key, page);
   useEffect(() => {
-    if (!eventId && events.data?.[0]) setEventId(events.data[0].id);
-  }, [events.data, eventId]);
-  const selected = events.data?.find((e) => e.id === eventId);
+    if (!key && events.data?.[0]) setKey(events.data[0].key);
+  }, [events.data, key]);
+  const selected = events.data?.find((e) => e.key === key);
 
   return (
     <>
@@ -84,22 +84,22 @@ export function AccessLogPage() {
       </div>
       <ProblemAlert error={events.error} />
       {events.data && events.data.length === 0 ? (
-        <p className="muted">Nog geen activiteiten met toegangscontrole.</p>
+        <p className="muted">Nog geen carnavalsdagen of activiteiten met toegangscontrole.</p>
       ) : null}
       {events.data && events.data.length > 0 ? (
         <div className="toolbar">
           <div className="field grow-field">
-            <label htmlFor="toegang-activiteit">Activiteit</label>
+            <label htmlFor="toegang-activiteit">Carnavalsdag of activiteit</label>
             <select
               id="toegang-activiteit"
-              value={eventId}
+              value={key}
               onChange={(e) => {
-                setEventId(e.target.value);
+                setKey(e.target.value);
                 setPage(1);
               }}
             >
               {events.data.map((e) => (
-                <option key={e.id} value={e.id}>
+                <option key={e.key} value={e.key}>
                   {e.title} · {formatDateTime(e.startAt)}
                 </option>
               ))}
@@ -127,7 +127,7 @@ export function AccessLogPage() {
         </section>
       ) : null}
       <ProblemAlert error={scans.error} />
-      {eventId ? (
+      {key ? (
         <DataTable
           caption="Toegangslog"
           columns={columns}

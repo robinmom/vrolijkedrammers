@@ -188,10 +188,16 @@ public class ParadeExchangeTests(SqlServerFixture sql) : IAsyncLifetime
             "volwassenen", "Muziek", "Bouw adres", "Stalling voor jury", "Lengte", "Extra info", "Tekst",
         ];
         Assert.Equal(headers, Enumerable.Range(1, 18).Select(c => sheet.Cell(1, c).GetString()));
-        Assert.Equal(("", 1, "Geluidswagen", "Ja"), (sheet.Cell(2, 1).GetString(), sheet.Cell(2, 2).GetValue<int>(), sheet.Cell(2, 3).GetString(), sheet.Cell(2, 13).GetString()));
-        Assert.Equal("Het Convent van \"de Vrolijke Drammers\"", sheet.Cell(4, 3).GetString());
+        // Opmaak zoals het bronbestand: regel 2 leeg, vaste plekken op 3–5, regel 6 leeg, kolom E (adres) verborgen, Arial 10.
+        Assert.True(sheet.Row(2).IsEmpty());
+        Assert.Equal(("", 1, "Geluidswagen", "Ja"), (sheet.Cell(3, 1).GetString(), sheet.Cell(3, 2).GetValue<int>(), sheet.Cell(3, 3).GetString(), sheet.Cell(3, 13).GetString()));
+        Assert.Equal("Het Convent van \"de Vrolijke Drammers\"", sheet.Cell(5, 3).GetString());
+        Assert.True(sheet.Row(6).IsEmpty());
+        Assert.True(sheet.Column(5).IsHidden);
+        Assert.Equal(("Arial", 10d), (sheet.Cell(7, 3).Style.Font.FontName, sheet.Cell(7, 3).Style.Font.FontSize));
+        Assert.Equal(5d, sheet.Column(1).Width, 1);
 
-        var knotwilgen = sheet.Row(5);
+        var knotwilgen = sheet.Row(7);
         Assert.Equal(1, knotwilgen.Cell(1).GetValue<int>());
         Assert.Equal("De Knotwilgen", knotwilgen.Cell(3).GetString());
         Assert.Equal("Kerkstraat 3, 6999 AB Loil", knotwilgen.Cell(5).GetString());
@@ -200,9 +206,9 @@ public class ParadeExchangeTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal((2, 12, "Ja"), (knotwilgen.Cell(11).GetValue<int>(), knotwilgen.Cell(12).GetValue<int>(), knotwilgen.Cell(13).GetString()));
         Assert.Equal(("Truisweg 4", "nvt", 12.5m), (knotwilgen.Cell(14).GetString(), knotwilgen.Cell(15).GetString(), knotwilgen.Cell(16).GetValue<decimal>()));
         Assert.Equal(("Lopen achter de Duuvels", "Cowboys en indianen trekken door Loil."), (knotwilgen.Cell(17).GetString(), knotwilgen.Cell(18).GetString()));
-        var bouwers = sheet.Row(6);
+        var bouwers = sheet.Row(8);
         Assert.Equal(("De Bouwers", "Nee", "Paltsweg 5"), (bouwers.Cell(3).GetString(), bouwers.Cell(13).GetString(), bouwers.Cell(15).GetString()));
-        Assert.True(sheet.Row(7).IsEmpty());
+        Assert.True(sheet.Row(9).IsEmpty());
         Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "parade.exported")));
     }
 
@@ -217,11 +223,11 @@ public class ParadeExchangeTests(SqlServerFixture sql) : IAsyncLifetime
 
         using var workbook = await ExportAsync();
         var sheet = workbook.Worksheet(1);
-        // Rij 5 = opgave 1, rij 6 = opgave 2, rij 7 = opgave 3 (ingediend, niet goedgekeurd).
-        sheet.Cell(5, 2).Value = 2;          // vaste plek
-        sheet.Cell(6, 2).Value = "tien";     // geen nummer
-        sheet.Cell(7, 2).Value = 9;          // niet goedgekeurd
-        sheet.Cell(8, 1).Value = 42;         // onbekende opgave
+        // Rij 7 = opgave 1, rij 8 = opgave 2, rij 9 = opgave 3 (ingediend, niet goedgekeurd).
+        sheet.Cell(7, 2).Value = 2;          // vaste plek
+        sheet.Cell(8, 2).Value = "tien";     // geen nummer
+        sheet.Cell(9, 2).Value = 9;          // niet goedgekeurd
+        sheet.Cell(10, 1).Value = 42;        // onbekende opgave
         var preview = await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade/start-numbers/import/preview", File(workbook)));
         var errors = preview.GetProperty("errors").EnumerateArray().Select(e => e.GetProperty("message").GetString()!).ToList();
         Assert.Equal(4, errors.Count);
@@ -234,14 +240,14 @@ public class ParadeExchangeTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.False(await WithDbAsync(db => db.ParadeRegistrations.AnyAsync(r => r.StartNumber != null)));
 
         // Dubbel startnummer wordt ook gevonden.
-        sheet.Cell(8, 1).Clear();
-        sheet.Cell(7, 2).Clear();
-        sheet.Cell(5, 2).Value = 7;
-        sheet.Cell(6, 2).Value = 7;
+        sheet.Cell(10, 1).Clear();
+        sheet.Cell(9, 2).Clear();
+        sheet.Cell(7, 2).Value = 7;
+        sheet.Cell(8, 2).Value = 7;
         var duplicate = await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade/start-numbers/import/preview", File(workbook)));
         Assert.Contains("Startnummer 7 komt meer dan eens voor", duplicate.GetProperty("errors")[0].GetProperty("message").GetString(), StringComparison.Ordinal);
 
-        sheet.Cell(6, 2).Value = 4;
+        sheet.Cell(8, 2).Value = 4;
         var ok = await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade/start-numbers/import/preview", File(workbook)));
         Assert.Empty(ok.GetProperty("errors").EnumerateArray());
         Assert.Equal([(2, 4), (1, 7)], ok.GetProperty("changes").EnumerateArray().Select(x => (x.GetProperty("registrationNumber").GetInt32(), x.GetProperty("newStartNumber").GetInt32())));

@@ -46,6 +46,13 @@ public sealed record MyChild(
     Guid MemberId, string FullName, string? FirstName, string MemberNumber, DateOnly? BirthDate, int? Age, MembershipStatus Status,
     bool OwnAccount, bool CanShowQr, IReadOnlyList<string> Groups);
 
+/// <summary>Optochtinschrijving waarin het kind meeloopt: de groep uit e-Boekhouden (vrij veld groep) staat erop.</summary>
+public sealed record ChildParadeEntry(string ParadeName, DateOnly ParadeDate, string GroupName, int? StartNumber, string Status);
+
+public sealed record MyChildDetail(
+    MyChild Child, string? Group, IReadOnlyList<string> Guardians, IReadOnlyList<Notifications.InboxItem> Notifications,
+    IReadOnlyList<ChildParadeEntry> Parade);
+
 public sealed record MyGuardianRequest(Guid Id, string ChildFirstName, string ChildLastName, GuardianLinkRequestStatus Status, DateTime CreatedAt, DateTime? DecidedAt);
 
 /// <summary>
@@ -57,6 +64,7 @@ public sealed class Guardians(
     DrammersDbContext db,
     MemberAccounts accounts,
     INotificationService notifications,
+    Notifications.MyNotifications inbox,
     IEmailSender email,
     IUserAccessService userAccess,
     IAuditLogger audit,
@@ -428,6 +436,37 @@ public sealed class Guardians(
             c.Id, c.FullName, c.FirstName, c.MemberNumber, c.BirthDate, AgeOn(c.BirthDate, today), c.EffectiveStatus,
             withAccount.Contains(c.Id), !withAccount.Contains(c.Id) && c.EffectiveStatus == MembershipStatus.Active,
             [.. groups[c.Id].OrderBy(n => n, StringComparer.CurrentCulture)]))];
+    }
+
+    /// <summary>Kind-detail voor de ouder: gegevens, gekoppelde ouders, de laatste meldingen namens het kind en de optocht.</summary>
+    public async Task<MyChildDetail> ChildDetailAsync(Guid userId, Guid childMemberId, CancellationToken cancellationToken)
+    {
+        var child = (await ChildrenOfAsync(userId, cancellationToken)).FirstOrDefault(c => c.MemberId == childMemberId)
+            ?? throw new DomainException(ErrorCodes.MemberNotFound, "Kind niet gevonden.", DomainErrorKind.NotFound);
+        var group = await db.Members.AsNoTracking().Where(m => m.Id == childMemberId).Select(m => m.ParadeGroupName).SingleAsync(cancellationToken);
+        var parents = await db.GuardianRelations.AsNoTracking().Where(g => g.MemberId == childMemberId).OrderBy(g => g.CreatedAt)
+            .Join(db.Users, g => g.GuardianUserId, u => u.Id, (g, u) => u.DisplayName).ToListAsync(cancellationToken);
+        var parade = new List<ChildParadeEntry>();
+        if (!string.IsNullOrWhiteSpace(group))
+        {
+            Modules.Parade.Registrations.RegistrationStatus[] shown =
+            [
+                Modules.Parade.Registrations.RegistrationStatus.Approved,
+                Modules.Parade.Registrations.RegistrationStatus.StartNumberAssigned,
+                Modules.Parade.Registrations.RegistrationStatus.Final,
+            ];
+            var rows = await db.ParadeRegistrations.AsNoTracking()
+                .Where(r => r.GroupName == group && shown.Contains(r.Status))
+                .Join(db.CarnivalYears.Where(y => y.Active), r => r.CarnivalYearId, y => y.Id, (r, _) => r)
+                .Join(db.Parades, r => r.ParadeId, p => p.Id, (r, p) => new { p.Name, p.ParadeDate, p.Status, r.GroupName, r.StartNumber, RegistrationStatus = r.Status })
+                .ToListAsync(cancellationToken);
+            parade.AddRange(rows.Select(r => new ChildParadeEntry(
+                r.Name, r.ParadeDate, r.GroupName!,
+                r.Status is Modules.Parade.Parades.ParadeStatus.Final or Modules.Parade.Parades.ParadeStatus.Completed ? r.StartNumber : null,
+                r.RegistrationStatus.ToString())));
+        }
+
+        return new MyChildDetail(child, group, parents, await inbox.ForChildAsync(userId, childMemberId, 5, cancellationToken), parade);
     }
 
     // ----- Intern ------------------------------------------------------------------------------------------------

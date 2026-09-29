@@ -302,6 +302,13 @@ public sealed class MemberAccounts(
                 saga.UserId = await CreateOrLinkUserAsync(saga.EntraObjectId, loginEmail, member.FullName, member.Id, DefaultRoles.Lid, cancellationToken);
                 saga.Step = ProvisioningStep.MemberCreated;
                 await db.SaveChangesAsync(cancellationToken);
+                if (message.SourceId.StartsWith("own:", StringComparison.Ordinal))
+                {
+                    // Eigen account (fase 17): de QR staat niet meer op de telefoon van de ouder; opnieuw koppelen op de
+                    // eigen telefoon telt niet mee voor het maximum aantal keer overzetten.
+                    await db.Tickets.Where(t => t.MemberId == member.Id && t.BoundDeviceId != null)
+                        .ExecuteUpdateAsync(s => s.SetProperty(t => t.BoundDeviceId, (Guid?)null), cancellationToken);
+                }
             }
 
             if (saga.Step is not (ProvisioningStep.WelcomeSent or ProvisioningStep.Completed))

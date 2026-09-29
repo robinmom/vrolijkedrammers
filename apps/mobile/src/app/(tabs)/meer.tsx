@@ -54,6 +54,9 @@ export default function MeerScreen() {
       />
       <View style={styles.content}>
         <AccountCard signedIn={status === 'signedIn'} name={me.data?.displayName} />
+        {status === 'signedIn' ? (
+          <Button label="Mijn kinderen" icon="vereniging" variant="secondary" onPress={() => router.push('/kinderen')} />
+        ) : null}
         {me.data?.permissions.includes('ticket.scan') ? (
           <Button label="Scannen bij de deur" icon="qr" onPress={() => router.push('/scannen')} />
         ) : null}

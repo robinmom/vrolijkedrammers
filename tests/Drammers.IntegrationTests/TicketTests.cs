@@ -221,4 +221,71 @@ public sealed class TicketTests(SqlServerFixture sql) : IAsyncLifetime, IDisposa
         var lid = _api.ClientFor((await _api.CreateUserAsync("gewoon@example.com", DefaultRoles.Lid)).ObjectId);
         Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/tickets")).StatusCode);
     }
+
+    [Fact]
+    public async Task Ouder_toont_de_QR_van_een_kind_op_de_eigen_telefoon_tot_het_kind_een_eigen_account_heeft()
+    {
+        var (_, parentOid) = await MemberAsync("ouder@example.com");
+        var parentId = await WithDbAsync(db => db.Users.Where(u => u.ExternalObjectId == parentOid).Select(u => u.Id).SingleAsync());
+        await WithDbAsync(db => db.Users.Where(u => u.Id == parentId).ExecuteUpdateAsync(s => s.SetProperty(u => u.DisplayName, "Robin Mom")));
+        var childId = IdGenerator.NewId();
+        var strangerChild = IdGenerator.NewId();
+        await WithDbAsync(async db =>
+        {
+            db.Members.Add(new Member { Id = childId, MemberNumber = "1042", FullName = "Lot Mom", FirstName = "Lot", BirthDate = new DateOnly(2016, 5, 1), MembershipStatus = MembershipStatus.Active });
+            db.Members.Add(new Member { Id = strangerChild, MemberNumber = "1043", FullName = "Ander Kind", BirthDate = new DateOnly(2016, 5, 1), MembershipStatus = MembershipStatus.Active });
+            db.GuardianRelations.Add(new Modules.Membership.Guardians.GuardianRelation
+            {
+                Id = IdGenerator.NewId(),
+                MemberId = childId,
+                GuardianUserId = parentId,
+                GuardianName = "Robin Mom",
+                VerifiedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+            });
+            return await db.SaveChangesAsync();
+        });
+        var ouderRole = await WithDbAsync(db => db.Roles.Where(r => r.Code == DefaultRoles.Ouder).Select(r => r.Id).SingleAsync());
+        await WithDbAsync(async db =>
+        {
+            db.Set<Modules.Identity.Users.UserRole>().Add(new Modules.Identity.Users.UserRole { UserId = parentId, RoleId = ouderRole, AssignedAt = DateTime.UtcNow });
+            return await db.SaveChangesAsync();
+        });
+
+        var phone = await DeviceAsync(parentOid, "installatie-ouder-0001");
+        var key = await RegisterKeyAsync(phone);
+        var detail = await JsonAsync(await phone.GetAsync($"/api/v1/me/children/{childId}"));
+        Assert.Equal("Lot Mom", detail.GetProperty("child").GetProperty("fullName").GetString());
+        Assert.Equal(["Robin Mom"], detail.GetProperty("guardians").EnumerateArray().Select(g => g.GetString()));
+        Assert.Equal(HttpStatusCode.NotFound, (await phone.GetAsync($"/api/v1/me/children/{strangerChild}/ticket")).StatusCode);
+
+        // Eigen QR van de ouder en die van het kind op hetzelfde toestel.
+        var challenge = (await JsonAsync(await phone.PostAsync($"/api/v1/me/children/{childId}/ticket/challenge", null))).GetProperty("challenge").GetString()!;
+        var signature = key.SignData(Convert.FromBase64String(challenge), HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+        await JsonAsync(await phone.PostAsJsonAsync($"/api/v1/me/children/{childId}/ticket/bind-device", new { challenge, signature = Convert.ToBase64String(signature) }), HttpStatusCode.NoContent);
+        await JsonAsync(await BindAsync(phone, key), HttpStatusCode.NoContent);
+        ToCarnival();
+        var childTicket = await JsonAsync(await phone.GetAsync($"/api/v1/me/children/{childId}/ticket"));
+        Assert.Equal(("Valid", "Lot Mom", true), (childTicket.GetProperty("state").GetString(), childTicket.GetProperty("holderName").GetString(), childTicket.GetProperty("boundToThisDevice").GetBoolean()));
+        var valid = await ValidateAsync(DeviceCode(childTicket, key, _api.Clock.UtcNow));
+        Assert.Equal((QrCheck.Valid, "Lot Mom"), (valid.Result, valid.Ticket!.HolderName));
+        var own = await TicketAsync(phone);
+        Assert.Equal((QrCheck.Valid, "Piet Lid"), ((await ValidateAsync(DeviceCode(own, key, _api.Clock.UtcNow))).Result, (await ValidateAsync(DeviceCode(own, key, _api.Clock.UtcNow))).Ticket!.HolderName));
+
+        // Eigen account voor het kind: de QR is niet meer bij de ouder; opnieuw koppelen telt niet mee.
+        await WithDbAsync(db => db.Members.Where(m => m.Id == childId).ExecuteUpdateAsync(s => s.SetProperty(m => m.BirthDate, new DateOnly(2011, 1, 1))));
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsJsonAsync($"/api/v1/admin/members/{childId}/own-account", new { email = "lot@example.com" })).StatusCode);
+        foreach (var message in await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => m.Type == Drammers.Infrastructure.Identity.MemberAccounts.ProvisionMessageType).ToListAsync()))
+        {
+            using var scope = _api.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Identity.MemberAccounts>().RunProvisioningAsync(
+                JsonSerializer.Deserialize<Drammers.Infrastructure.Identity.MemberAccounts.ProvisionMessage>(message.Payload, JsonSerializerOptions.Web)!, default);
+        }
+
+        Assert.Equal(HttpStatusCode.Conflict, (await phone.GetAsync($"/api/v1/me/children/{childId}/ticket")).StatusCode);
+        Assert.Equal(QrCheck.WrongDevice, (await ValidateAsync(DeviceCode(childTicket, key, _api.Clock.UtcNow))).Result);
+        var ticket = await WithDbAsync(db => db.Tickets.AsNoTracking().SingleAsync(t => t.MemberId == childId));
+        Assert.Equal((null, 0), (ticket.BoundDeviceId, ticket.RebindCount));
+        Assert.False(Assert.Single((await JsonAsync(await phone.GetAsync("/api/v1/me/children"))).EnumerateArray()).GetProperty("canShowQr").GetBoolean());
+    }
 }

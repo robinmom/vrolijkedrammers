@@ -64,10 +64,37 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
             : await db.Devices.SingleOrDefaultAsync(d => d.UserId == userId && d.InstallationId == installationId && d.Status == DeviceStatus.Active, cancellationToken)
               ?? throw new DomainException(ErrorCodes.Validation, "Dit toestel is niet aangemeld. Log opnieuw in.");
 
-    /// <summary>Zoekt of maakt (idempotent) het ticket van het lid voor het actieve carnavalsjaar.</summary>
-    private async Task<(Ticket? Ticket, Member? Member, CarnivalYear? Year)> TicketAsync(Guid userId, bool create, CancellationToken cancellationToken)
+    /// <summary>
+    /// Het lid waarvan de gebruiker het ticket toont: het eigen lid, of (fase 17) een kind waarvan de gebruiker
+    /// ouder/verzorger is, zolang het kind jonger dan 18 is en geen eigen account heeft.
+    /// </summary>
+    private async Task<Guid?> HolderAsync(Guid userId, Guid? childMemberId, CancellationToken cancellationToken)
     {
-        var memberId = await db.Users.Where(u => u.Id == userId).Select(u => u.MemberId).SingleOrDefaultAsync(cancellationToken);
+        if (childMemberId is not { } childId)
+        {
+            return await db.Users.Where(u => u.Id == userId).Select(u => u.MemberId).SingleOrDefaultAsync(cancellationToken);
+        }
+
+        var child = await db.GuardianRelations.AsNoTracking().Where(g => g.GuardianUserId == userId && g.MemberId == childId)
+            .Join(db.Members, g => g.MemberId, m => m.Id, (g, m) => new { m.Id, m.BirthDate }).SingleOrDefaultAsync(cancellationToken);
+        if (child is null || !Members.Guardians.IsMinor(child.BirthDate, DateOnly.FromDateTime(Now)))
+        {
+            throw new DomainException(ErrorCodes.MemberNotFound, "Kind niet gevonden.", DomainErrorKind.NotFound);
+        }
+
+        if (await db.Users.AnyAsync(u => u.MemberId == childId && u.AccountStatus != Modules.Identity.Users.AccountStatus.Deleted, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.TicketUnavailable, "Je kind heeft een eigen account; de QR staat op de eigen telefoon.", DomainErrorKind.Conflict);
+        }
+
+        return child.Id;
+    }
+
+    /// <summary>Zoekt of maakt (idempotent) het ticket van het lid voor het actieve carnavalsjaar.</summary>
+    private async Task<(Ticket? Ticket, Member? Member, CarnivalYear? Year)> TicketAsync(
+        Guid userId, bool create, CancellationToken cancellationToken, Guid? childMemberId = null)
+    {
+        var memberId = await HolderAsync(userId, childMemberId, cancellationToken);
         var member = memberId is null ? null : await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == memberId, cancellationToken);
         var year = await db.CarnivalYears.AsNoTracking().SingleOrDefaultAsync(y => y.Active, cancellationToken);
         if (member is null || year is null)
@@ -106,9 +133,9 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
         CreatedAt = Now,
     };
 
-    public async Task<MyTicket> GetAsync(Guid userId, string? installationId, CancellationToken cancellationToken)
+    public async Task<MyTicket> GetAsync(Guid userId, string? installationId, CancellationToken cancellationToken, Guid? childMemberId = null)
     {
-        var (ticket, member, year) = await TicketAsync(userId, create: true, cancellationToken);
+        var (ticket, member, year) = await TicketAsync(userId, create: true, cancellationToken, childMemberId);
         if (ticket is null || member is null || year is null)
         {
             var message = member is null
@@ -185,9 +212,9 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
     }
 
     /// <summary>Challenge voor proof-of-possession: de app ondertekent die met de hardwaresleutel bij het koppelen.</summary>
-    public async Task<string> ChallengeAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<string> ChallengeAsync(Guid userId, CancellationToken cancellationToken, Guid? childMemberId = null)
     {
-        var (ticket, _, _) = await TicketAsync(userId, create: true, cancellationToken);
+        var (ticket, _, _) = await TicketAsync(userId, create: true, cancellationToken, childMemberId);
         if (ticket is null)
         {
             throw new DomainException(ErrorCodes.TicketUnavailable, "Je hebt geen ledenticket.", DomainErrorKind.Conflict);
@@ -204,10 +231,11 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
     /// Koppelt het ticket aan dit toestel. Met een hardwaresleutel alleen met een geldige handtekening over de challenge.
     /// Overzetten van een ander toestel kan <see cref="Ticket.MaxRebinds"/> keer per carnavalsjaar; daarna via het bestuur.
     /// </summary>
-    public async Task BindAsync(Guid userId, string? installationId, string? challenge, string? signature, CancellationToken cancellationToken)
+    public async Task BindAsync(
+        Guid userId, string? installationId, string? challenge, string? signature, CancellationToken cancellationToken, Guid? childMemberId = null)
     {
         var device = await CurrentDeviceAsync(userId, installationId, cancellationToken);
-        var (ticket, member, _) = await TicketAsync(userId, create: true, cancellationToken);
+        var (ticket, member, _) = await TicketAsync(userId, create: true, cancellationToken, childMemberId);
         if (ticket is null || member?.MembershipStatus != MembershipStatus.Active || ticket.Status == TicketStatus.Blocked)
         {
             throw new DomainException(ErrorCodes.TicketUnavailable, "Je hebt geen geldig ledenticket.", DomainErrorKind.Conflict);
@@ -255,10 +283,10 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
     }
 
     /// <summary>Door de server ondertekende code voor toestellen zonder hardwaresleutel (alleen online, 45 seconden geldig).</summary>
-    public async Task<ServerCode> ServerCodeAsync(Guid userId, string? installationId, CancellationToken cancellationToken)
+    public async Task<ServerCode> ServerCodeAsync(Guid userId, string? installationId, CancellationToken cancellationToken, Guid? childMemberId = null)
     {
         var device = await CurrentDeviceAsync(userId, installationId, cancellationToken);
-        var ticket = await GetAsync(userId, installationId, cancellationToken);
+        var ticket = await GetAsync(userId, installationId, cancellationToken, childMemberId);
         if (ticket.State != TicketState.Valid || !ticket.BoundToThisDevice)
         {
             throw new DomainException(ErrorCodes.TicketUnavailable,

@@ -22,6 +22,9 @@ export const queryKeys = {
   myMember: ['me', 'member'] as const,
   myDevices: ['me', 'devices'] as const,
   myChildren: ['me', 'children'] as const,
+  child: (id: string) => ['me', 'children', id] as const,
+  childTicket: (id: string) => ['me', 'children', id, 'ticket'] as const,
+  myGuardianRequests: ['me', 'guardian-requests'] as const,
   myNotifications: ['me', 'notifications'] as const,
   myNotificationPreferences: ['me', 'notification-preferences'] as const,
   parade: ['parade'] as const,
@@ -113,12 +116,32 @@ export const useMyMember = (enabled = true) => {
   });
 };
 
-/** Kinderen waarvan de gebruiker ouder/verzorger is (fase 9b). */
+/** Kinderen waarvan de gebruiker ouder/verzorger is (fase 9b; fase 17: tot 18, met QR en eigen account). */
 export const useMyChildren = () => {
   const status = useSessionStatus();
   return useQuery({
     queryKey: queryKeys.myChildren,
     queryFn: () => unwrap(api.GET('/api/v1/me/children')),
+    enabled: status === 'signedIn',
+  });
+};
+
+/** Kind-detail voor de ouder (fase 17): gegevens, ouders, meldingen namens het kind en de optocht. */
+export const useChild = (id: string) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.child(id),
+    queryFn: () => unwrap(api.GET('/api/v1/me/children/{memberId}', { params: { path: { memberId: id } } })),
+    enabled: status === 'signedIn',
+  });
+};
+
+/** Koppelverzoeken van deze ouder (fase 17); het bestuur beoordeelt ze in het portal. */
+export const useMyGuardianRequests = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myGuardianRequests,
+    queryFn: () => unwrap(api.GET('/api/v1/me/guardian-requests')),
     enabled: status === 'signedIn',
   });
 };
@@ -199,12 +222,23 @@ export const useRegistrationDocuments = (id: string | undefined) => {
 };
 
 /** Ledenticket voor Mijn QR (fase 13); de app bewaart de gegevens ook op het toestel voor gebruik zonder internet. */
-export const useMyTicket = () => {
+export const useMyTicket = (enabled = true) => {
   const status = useSessionStatus();
   return useQuery({
     queryKey: queryKeys.myTicket,
     queryFn: () => unwrap(api.GET('/api/v1/me/ticket')),
-    enabled: status === 'signedIn',
+    enabled: status === 'signedIn' && enabled,
+    retry: false,
+  });
+};
+
+/** Het ticket van een kind, getoond op de telefoon van de ouder (fase 17). */
+export const useChildTicket = (id: string | null) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.childTicket(id ?? ''),
+    queryFn: () => unwrap(api.GET('/api/v1/me/children/{memberId}/ticket', { params: { path: { memberId: id ?? '' } } })),
+    enabled: status === 'signedIn' && Boolean(id),
     retry: false,
   });
 };

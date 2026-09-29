@@ -204,6 +204,7 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         _mollie.SetStatus(_mollie.Payments.Keys.Single(), "paid");
         await WebhookAsync(_mollie.Payments.Keys.Single());
 
+        Assert.True(await WithDbAsync(db => db.Notifications.AnyAsync(n => n.Title == "Je kaarten staan klaar")));
         var mine = await JsonAsync(await lid.GetAsync("/api/v1/me/orders"));
         var order = Assert.Single(mine.EnumerateArray());
         Assert.Equal(created.GetProperty("number").GetString(), order.GetProperty("number").GetString());
@@ -271,5 +272,56 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         var (_, kassaOid) = await _api.CreateUserAsync("kassa@example.com", DefaultRoles.Kassa);
         Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(kassaOid).GetAsync("/api/v1/admin/sales/orders")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await _bestuur.GetAsync("/api/v1/admin/sales/groups")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Kaarten_delen_met_een_lid_van_dezelfde_groep()
+    {
+        var zaterdag = await ProductAsync("Pronkzitting", "Pronkzitting zaterdag", 1250, capacity: 300, date: "2027-02-06");
+        var mendy = await MemberAsync("mendy@example.com", "Kruumels", otherMembers: 5);
+        var ruby = await MemberAsync("ruby@example.com", "Kruumels");
+        var piet = await MemberAsync("piet@example.com", "Snotapen");
+        var created = await JsonAsync(await mendy.PostAsJsonAsync("/api/v1/sales/orders", Order(zaterdag, paid: 0, member: 7, name: null, email: null)), HttpStatusCode.Created);
+        var mine = await JsonAsync(await mendy.GetAsync("/api/v1/me/orders"));
+        var ticket = mine[0].GetProperty("tickets")[0];
+        Assert.Equal(7, ticket.GetProperty("quantity").GetInt32());
+        Assert.True(ticket.GetProperty("canShare").GetBoolean());
+        var ticketId = ticket.GetProperty("id").GetGuid();
+
+        var candidates = await JsonAsync(await mendy.GetAsync($"/api/v1/me/orders/tickets/{ticketId}/share-candidates"));
+        var rubyCandidate = candidates.EnumerateArray().Single(c => c.GetProperty("name").GetString() == "Lid ruby@");
+        Assert.True(rubyCandidate.GetProperty("hasAccount").GetBoolean());
+        Assert.DoesNotContain(candidates.EnumerateArray(), c => c.GetProperty("name").GetString() == "Lid piet@");
+        var rubyId = rubyCandidate.GetProperty("memberId").GetGuid();
+        var pietId = await WithDbAsync(db => db.Members.Where(m => m.Email == "piet@example.com").Select(m => m.Id).SingleAsync());
+
+        // Niet met iemand uit een andere groep, en niet alle kaarten.
+        Assert.Equal(HttpStatusCode.Conflict, (await mendy.PostAsJsonAsync($"/api/v1/me/orders/tickets/{ticketId}/share", new { memberId = pietId, quantity = 1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await mendy.PostAsJsonAsync($"/api/v1/me/orders/tickets/{ticketId}/share", new { memberId = rubyId, quantity = 7 })).StatusCode);
+        // Alleen de besteller kan delen.
+        Assert.Equal(HttpStatusCode.NotFound, (await ruby.PostAsJsonAsync($"/api/v1/me/orders/tickets/{ticketId}/share", new { memberId = rubyId, quantity = 1 })).StatusCode);
+
+        await JsonAsync(await mendy.PostAsJsonAsync($"/api/v1/me/orders/tickets/{ticketId}/share", new { memberId = rubyId, quantity = 1 }), HttpStatusCode.NoContent);
+        mine = await JsonAsync(await mendy.GetAsync("/api/v1/me/orders"));
+        var own = Assert.Single(mine[0].GetProperty("tickets").EnumerateArray());
+        Assert.Equal(6, own.GetProperty("quantity").GetInt32());
+        Assert.Equal(1, mine[0].GetProperty("sharedWith")[0].GetProperty("quantity").GetInt32());
+
+        var rubys = await JsonAsync(await ruby.GetAsync("/api/v1/me/orders"));
+        var received = Assert.Single(rubys.EnumerateArray());
+        Assert.Equal("Lid mendy", received.GetProperty("sharedBy").GetString());
+        var rubyTicket = Assert.Single(received.GetProperty("tickets").EnumerateArray());
+        Assert.Equal(1, rubyTicket.GetProperty("quantity").GetInt32());
+        Assert.False(rubyTicket.GetProperty("canShare").GetBoolean());
+        Assert.NotEqual(own.GetProperty("code").GetString(), rubyTicket.GetProperty("code").GetString());
+        Assert.True(await WithDbAsync(db => db.Notifications.AnyAsync(n => n.Title == "Er is een kaart met je gedeeld")));
+
+        // De webpagina toont de QR van de besteller als SVG.
+        var token = created.GetProperty("token").GetString();
+        var svg = await _guest.GetAsync($"/api/v1/sales/orders/{created.GetProperty("orderId").GetGuid()}/tickets/{ticketId}/qr.svg?t={token}");
+        Assert.Equal(HttpStatusCode.OK, svg.StatusCode);
+        Assert.Equal("image/svg+xml", svg.Content.Headers.ContentType!.MediaType);
+        Assert.Contains("<svg", await svg.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.NotFound, (await _guest.GetAsync($"/api/v1/sales/orders/{created.GetProperty("orderId").GetGuid()}/tickets/{ticketId}/qr.svg?t=fout")).StatusCode);
     }
 }

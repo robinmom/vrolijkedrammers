@@ -7,6 +7,7 @@ namespace Drammers.Modules.Ticketing.Qr;
 /// <c>| v 1 | ref 16 | cv 2 | did 8 | iat 4 | exp 2 | sig 64 |</c>. Versie 1 is ondertekend met de hardwaresleutel van
 /// het toestel, versie 2 door de server (fallback). Versie 3 is een gekochte kaart (fase 19): door de server ondertekend,
 /// zonder toestel en zonder verlooptijd (<c>did</c> en <c>exp</c> zijn 0); de QR vervalt na één keer scannen.
+/// Versie 4 en 5 zijn de munten-QR van een lid (fase 19b): zoals 1 en 2, maar alleen geldig bij de kassa.
 /// De handtekening is ECDSA P-256/SHA-256 als r‖s over de eerste 33 bytes.
 /// </summary>
 public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, byte[] DeviceId, long IssuedAt, int ValidFor, byte[] Signature)
@@ -14,6 +15,8 @@ public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, 
     public const byte DeviceSigned = 1;
     public const byte ServerSigned = 2;
     public const byte OrderTicket = 3;
+    public const byte DeviceSignedTokens = 4;
+    public const byte ServerSignedTokens = 5;
     public const int UnsignedLength = 33;
     public const int SignatureLength = 64;
     public const int Length = UnsignedLength + SignatureLength;
@@ -38,6 +41,12 @@ public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, 
         return bytes;
     }
 
+    /// <summary>Ondertekend met de hardwaresleutel van het toestel (Mijn QR of de munten-QR).</summary>
+    public bool IsDeviceSigned => Version is DeviceSigned or DeviceSignedTokens;
+
+    /// <summary>De munten-QR: alleen bij de kassa, niet bij de ingang.</summary>
+    public bool IsTokens => Version is DeviceSignedTokens or ServerSignedTokens;
+
     public byte[] UnsignedBytes() => Unsigned(Version, Ref, CredentialVersion, DeviceId, IssuedAt, ValidFor);
 
     public string Encode() => Base45.Encode([.. UnsignedBytes(), .. Signature]);
@@ -47,7 +56,7 @@ public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, 
     {
         // Geen Trim(): de spatie is een geldig base45-teken en kan aan het begin of eind van een code staan.
         var bytes = Base45.TryDecode(text.Trim('\r', '\n', '\t'));
-        if (bytes is not { Length: Length } || bytes[0] is not (DeviceSigned or ServerSigned or OrderTicket))
+        if (bytes is not { Length: Length } || bytes[0] is < DeviceSigned or > ServerSignedTokens)
         {
             return null;
         }

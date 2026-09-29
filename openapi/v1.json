@@ -12196,7 +12196,16 @@
         "tags": [
           "MeTicket"
         ],
-        "summary": "Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel.",
+        "summary": "Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. Met `purpose=Tokens` de\nmunten-QR voor de kassa (fase 19b).",
+        "parameters": [
+          {
+            "name": "purpose",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/QrPurpose"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -14260,6 +14269,60 @@
         }
       }
     },
+    "/api/v1/sales/orders/{id}/tickets/{ticketId}/qr.svg": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "De QR als afbeelding (SVG) voor de webpagina; geen scriptbibliotheek nodig in de browser.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "image/svg+xml": { }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "image/svg+xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sales/orders/{id}/pay": {
       "get": {
         "tags": [
@@ -14463,6 +14526,238 @@
                   "items": {
                     "$ref": "#/components/schemas/OrderView"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/orders/tickets/{ticketId}/share-candidates": {
+      "get": {
+        "tags": [
+          "MeOrders"
+        ],
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareCandidate"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareCandidate"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShareCandidate"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/orders/tickets/{ticketId}/share": {
+      "post": {
+        "tags": [
+          "MeOrders"
+        ],
+        "parameters": [
+          {
+            "name": "ticketId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareTicketRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareTicketRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -21430,7 +21725,8 @@
           "id",
           "quantity",
           "status",
-          "code"
+          "code",
+          "canShare"
         ],
         "type": "object",
         "properties": {
@@ -21450,9 +21746,12 @@
               "null",
               "string"
             ]
+          },
+          "canShare": {
+            "type": "boolean"
           }
         },
-        "description": "Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR)."
+        "description": "Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).\nbool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b)."
       },
       "OrderView": {
         "required": [
@@ -21469,7 +21768,9 @@
           "buyerName",
           "createdAt",
           "holdUntil",
-          "tickets"
+          "tickets",
+          "sharedBy",
+          "sharedWith"
         ],
         "type": "object",
         "properties": {
@@ -21532,6 +21833,18 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OrderTicketView"
+            }
+          },
+          "sharedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sharedWith": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SharedTicket"
             }
           }
         },
@@ -23183,6 +23496,13 @@
           }
         }
       },
+      "QrPurpose": {
+        "enum": [
+          "Access",
+          "Tokens"
+        ],
+        "description": "Waar de code gescand wordt: bij de ingang (Mijn QR) of bij de kassa (munten-QR)."
+      },
       "ReasonCount": {
         "required": [
           "reason",
@@ -24367,6 +24687,65 @@
             "items": {
               "$ref": "#/components/schemas/RoleAssignmentRequest"
             }
+          }
+        }
+      },
+      "ShareCandidate": {
+        "required": [
+          "memberId",
+          "name",
+          "hasAccount",
+          "hasTicket"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "hasAccount": {
+            "type": "boolean"
+          },
+          "hasTicket": {
+            "type": "boolean"
+          }
+        },
+        "description": "Een lid van dezelfde groep met wie gedeeld kan worden; zonder account ziet het lid de kaart niet in de app."
+      },
+      "SharedTicket": {
+        "required": [
+          "name",
+          "quantity"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Kaarten die de besteller met een groepslid heeft gedeeld; die hebben een eigen QR bij de ontvanger."
+      },
+      "ShareTicketRequest": {
+        "required": [
+          "memberId",
+          "quantity"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

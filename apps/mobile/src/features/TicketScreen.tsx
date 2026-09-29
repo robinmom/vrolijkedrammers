@@ -21,6 +21,7 @@ import {
   syncDeviceKey,
   type CachedTicket,
   type MyTicket,
+  type QrPurpose,
   validityText,
 } from './ticket';
 import { useTheme } from '../theme/ThemeProvider';
@@ -35,7 +36,22 @@ const useOnline = () =>
  * ondertekende code op. Zolang het scherm open is: maximale helderheid en geen schermafdrukken (Android), met een
  * melding bij een schermafdruk op iOS.
  */
-export function TicketScreen({ childId, childName }: { childId?: string; childName?: string }) {
+export function TicketScreen({
+  childId,
+  childName,
+  purpose = 'Access',
+  tokens,
+  before,
+}: {
+  childId?: string;
+  childName?: string;
+  /** 'Tokens': de munten-QR voor de kassa (fase 19b), met de nog af te halen munten. */
+  purpose?: QrPurpose;
+  tokens?: number;
+  /** Extra inhoud boven het ticket (munten kopen). */
+  before?: React.ReactNode;
+}) {
+  const forTokens = purpose === 'Tokens';
   const { colors } = useTheme();
   const status = useSessionStatus();
   const own = useMyTicket(!childId);
@@ -54,7 +70,9 @@ export function TicketScreen({ childId, childName }: { childId?: string; childNa
     if (Platform.OS === 'ios') {
       Alert.alert(
         'Schermafdruk werkt niet',
-        'Bij de ingang werkt alleen de live code: die verandert elke 30 seconden.',
+        forTokens
+          ? 'Bij de kassa werkt alleen de live code: die verandert elke 30 seconden. De munten-QR is niet te delen.'
+          : 'Bij de ingang werkt alleen de live code: die verandert elke 30 seconden.',
       );
     }
   });
@@ -110,7 +128,8 @@ export function TicketScreen({ childId, childName }: { childId?: string; childNa
   const header = (
     <>
       <BackLink label={childId ? (childName ?? 'Terug') : 'Home'} />
-      <LargeTitleHeader title={childId ? `QR van ${childName ?? 'je kind'}` : 'Mijn QR'} />
+      <LargeTitleHeader title={forTokens ? 'Munten' : childId ? `QR van ${childName ?? 'je kind'}` : 'Mijn QR'} />
+      {before}
     </>
   );
 
@@ -122,8 +141,12 @@ export function TicketScreen({ childId, childName }: { childId?: string; childNa
           <Notice
             icon="🔑"
             tint={brand.blue}
-            title="Mijn QR is voor leden"
-            body="Log in met je ledenaccount; daarna staat je ledenticket voor carnaval hier."
+            title={forTokens ? 'Munten zijn voor leden' : 'Mijn QR is voor leden'}
+            body={
+              forTokens
+                ? 'Log in met je ledenaccount om munten te kopen en op te halen. De aankoop is persoonsgebonden.'
+                : 'Log in met je ledenaccount; daarna staat je ledenticket voor carnaval hier.'
+            }
             action={{ label: 'Inloggen', onPress: () => router.push('/meer/inloggen') }}
           />
         </View>
@@ -138,7 +161,7 @@ export function TicketScreen({ childId, childName }: { childId?: string; childNa
       <Screen>
         {header}
         <View style={styles.content}>
-          <LiveTicket holder={cached} source="device" cached={cached} childId={childId} />
+          <LiveTicket holder={cached} source="device" cached={cached} childId={childId} purpose={purpose} tokens={tokens} />
         </View>
       </Screen>
     );
@@ -178,7 +201,7 @@ export function TicketScreen({ childId, childName }: { childId?: string; childNa
           <TicketCard ticket={data} muted>
             <Notice icon="🎉" tint={brand.yellow} title="Carnaval is voorbij" body={data.message} />
           </TicketCard>
-        ) : data.state === 'NotYetValid' ? (
+        ) : data.state === 'NotYetValid' && !(forTokens && data.boundToThisDevice) ? (
           <>
             <TicketCard ticket={data}>
               <Notice
@@ -219,6 +242,8 @@ export function TicketScreen({ childId, childName }: { childId?: string; childNa
             source={data.deviceHasHardwareKey ? 'device' : 'server'}
             cached={cached}
             childId={childId}
+            purpose={purpose}
+            tokens={tokens}
           />
         ) : data.boundDeviceName ? (
           <>
@@ -286,12 +311,25 @@ interface Holder {
 }
 
 /** Het ticket (Figma): donkerblauwe kop met naam en geldigheid, daaronder de QR-zone of een melding. */
-function TicketCard({ ticket, muted, children }: { ticket: Holder; muted?: boolean; children: React.ReactNode }) {
+function TicketCard({
+  ticket,
+  muted,
+  tokens,
+  children,
+}: {
+  ticket: Holder;
+  muted?: boolean;
+  /** De munten-QR: het aantal munten dat nog af te halen is. */
+  tokens?: number;
+  children: React.ReactNode;
+}) {
   return (
     <Card style={styles.ticket}>
       <View style={[styles.head, { backgroundColor: muted ? '#5B6C7B' : brand.navy }]}>
         <AppText variant="label" color={brand.yellow}>
-          LEDENTICKET · CARNAVAL {ticket.carnivalYearName?.split('/').pop() ?? ''}
+          {tokens !== undefined
+            ? 'MUNTEN · PERSOONSGEBONDEN'
+            : `LEDENTICKET · CARNAVAL ${ticket.carnivalYearName?.split('/').pop() ?? ''}`}
         </AppText>
         <AppText variant="sectionHeader" color="#FFFFFF">
           {ticket.holderName ?? 'Lid'}
@@ -299,9 +337,13 @@ function TicketCard({ ticket, muted, children }: { ticket: Holder; muted?: boole
         <AppText variant="caption" color="rgba(255,255,255,0.85)">
           {muted
             ? 'Niet geldig'
-            : ticket.accessTitle
-              ? `Geldig bij ${ticket.accessTitle}`
-              : `Geldig van ${validityText(ticket.validFrom, ticket.validTo)}`}
+            : tokens !== undefined
+              ? tokens > 0
+                ? `${tokens} munten betaald · nog af te halen`
+                : 'Geen munten af te halen'
+              : ticket.accessTitle
+                ? `Geldig bij ${ticket.accessTitle}`
+                : `Geldig van ${validityText(ticket.validFrom, ticket.validTo)}`}
         </AppText>
       </View>
       <View style={styles.zone}>{children}</View>
@@ -374,12 +416,17 @@ function LiveTicket({
   source,
   cached,
   childId,
+  purpose = 'Access',
+  tokens,
 }: {
   holder: Holder | MyTicket;
   source: 'device' | 'server';
   cached: CachedTicket | null;
   childId?: string;
+  purpose?: QrPurpose;
+  tokens?: number;
 }) {
+  const forTokens = purpose === 'Tokens';
   const { colors } = useTheme();
   const online = useOnline();
   const [code, setCode] = useState<{ code: string; issuedAt: number } | null>(null);
@@ -397,7 +444,7 @@ function LiveTicket({
   useEffect(() => {
     if (!due || busy.current) return;
     busy.current = true;
-    const next = source === 'device' && cached ? deviceCode(cached, new Date()) : serverCode(childId);
+    const next = source === 'device' && cached ? deviceCode(cached, new Date(), purpose) : serverCode(childId, purpose);
     next
       .then((result) => {
         setFailed(!result);
@@ -407,7 +454,7 @@ function LiveTicket({
       .finally(() => {
         busy.current = false;
       });
-  }, [due, source, cached, childId]);
+  }, [due, source, cached, childId, purpose]);
 
   const remaining = code ? Math.max(0, Math.ceil(REFRESH_SECONDS - age)) : 0;
   const offline = !online;
@@ -421,11 +468,15 @@ function LiveTicket({
 
   return (
     <>
-      <TicketCard ticket={holder}>
+      <TicketCard ticket={holder} tokens={forTokens ? (tokens ?? 0) : undefined}>
         <View
           style={styles.qr}
           accessible
-          accessibilityLabel="QR-code van je ledenticket. Laat deze scannen bij de ingang."
+          accessibilityLabel={
+            forTokens
+              ? 'Munten-QR. Laat deze scannen bij de kassa.'
+              : 'QR-code van je ledenticket. Laat deze scannen bij de ingang.'
+          }
         >
           {code && !(failed && source === 'server') ? (
             <QRCode value={code.code} size={240} ecl="M" color={brand.navy} backgroundColor="#FFFFFF" quietZone={0} />
@@ -444,14 +495,20 @@ function LiveTicket({
         </View>
       </TicketCard>
       <InfoRows
-        rows={[
-          childId ? 'Op jouw telefoon, als ouder/verzorger' : 'Gekoppeld aan dit toestel',
-          source === 'device' ? 'Werkt ook zonder internet' : 'Code van de server: internet nodig',
-          'Scherm staat op maximale helderheid',
-        ]}
+        rows={
+          forTokens
+            ? ['Gekoppeld aan dit toestel', 'Niet te delen: alleen jij kunt afhalen', 'Scherm staat op maximale helderheid']
+            : [
+                childId ? 'Op jouw telefoon, als ouder/verzorger' : 'Gekoppeld aan dit toestel',
+                source === 'device' ? 'Werkt ook zonder internet' : 'Code van de server: internet nodig',
+                'Scherm staat op maximale helderheid',
+              ]
+        }
       />
       <AppText variant="caption" color={colors.textSecondary}>
-        Laat de code scannen bij de ingang. Een screenshot werkt niet: de code verandert elke 30 seconden.
+        {forTokens
+          ? 'Laat deze code scannen bij de kassa. Je krijgt je munten zodra de kassa de bestelling uitgeeft. Een screenshot werkt niet.'
+          : 'Laat de code scannen bij de ingang. Een screenshot werkt niet: de code verandert elke 30 seconden.'}
       </AppText>
     </>
   );

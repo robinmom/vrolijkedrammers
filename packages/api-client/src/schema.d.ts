@@ -10108,10 +10108,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. */
+        /**
+         * Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. Met `purpose=Tokens` de
+         *     munten-QR voor de kassa (fase 19b).
+         */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    purpose?: components["schemas"]["QrPurpose"];
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -11776,6 +11781,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sales/orders/{id}/tickets/{ticketId}/qr.svg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De QR als afbeelding (SVG) voor de webpagina; geen scriptbibliotheek nodig in de browser. */
+        get: {
+            parameters: {
+                query: {
+                    t: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                    ticketId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/svg+xml": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/svg+xml": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales/orders/{id}/pay": {
         parameters: {
             query?: never;
@@ -11968,6 +12023,163 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders/tickets/{ticketId}/share-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ticketId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ShareCandidate"][];
+                        "application/json": components["schemas"]["ShareCandidate"][];
+                        "text/json": components["schemas"]["ShareCandidate"][];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders/tickets/{ticketId}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ticketId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ShareTicketRequest"];
+                    "text/json": components["schemas"]["ShareTicketRequest"];
+                    "application/*+json": components["schemas"]["ShareTicketRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -13797,7 +14009,10 @@ export interface components {
         };
         /** @enum {unknown} */
         OrderTicketStatus: "Active" | "Used" | "Cancelled";
-        /** @description Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR). */
+        /**
+         * @description Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
+         *     bool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b).
+         */
         OrderTicketView: {
             /** Format: uuid */
             id: string;
@@ -13805,6 +14020,7 @@ export interface components {
             quantity: number;
             status: components["schemas"]["OrderTicketStatus"];
             code: null | string;
+            canShare: boolean;
         };
         /** @description De bestelling zoals de koper hem ziet (na betalen of via de link in de e-mail). */
         OrderView: {
@@ -13829,6 +14045,8 @@ export interface components {
             /** Format: date-time */
             holdUntil: null | string;
             tickets: components["schemas"]["OrderTicketView"][];
+            sharedBy: null | string;
+            sharedWith: components["schemas"]["SharedTicket"][];
         };
         /**
          * @description Eigen account van een lid: vanaf 15 kan het bestuur een eigen account geven (DateOnly? OwnAccountInfo.AvailableFrom); tot 18 blijven
@@ -14292,6 +14510,11 @@ export interface components {
         PushTokenRequest: {
             token: string;
         };
+        /**
+         * @description Waar de code gescand wordt: bij de ingang (Mijn QR) of bij de kassa (munten-QR).
+         * @enum {unknown}
+         */
+        QrPurpose: "Access" | "Tokens";
         ReasonCount: {
             reason: string;
             /** Format: int32 */
@@ -14594,6 +14817,26 @@ export interface components {
         };
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];
+        };
+        /** @description Een lid van dezelfde groep met wie gedeeld kan worden; zonder account ziet het lid de kaart niet in de app. */
+        ShareCandidate: {
+            /** Format: uuid */
+            memberId: string;
+            name: string;
+            hasAccount: boolean;
+            hasTicket: boolean;
+        };
+        /** @description Kaarten die de besteller met een groepslid heeft gedeeld; die hebben een eigen QR bij de ontvanger. */
+        SharedTicket: {
+            name: string;
+            /** Format: int32 */
+            quantity: number;
+        };
+        ShareTicketRequest: {
+            /** Format: uuid */
+            memberId: string;
+            /** Format: int32 */
+            quantity: number;
         };
         StartNumberChange: {
             /** Format: uuid */

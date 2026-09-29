@@ -43,10 +43,19 @@ public sealed record ProductStock(int Sold, int Held, int? Remaining, bool SoldO
 public sealed record OrderView(
     Guid Id, string Number, SaleOrderStatus Status, SaleProductKind Kind, string ProductName, DateOnly? Date, string? GroupName,
     int MemberQuantity, int PaidQuantity, int AmountCents, string BuyerName, DateTime CreatedAt, DateTime? HoldUntil,
-    IReadOnlyList<OrderTicketView> Tickets);
+    IReadOnlyList<OrderTicketView> Tickets, string? SharedBy, IReadOnlyList<SharedTicket> SharedWith);
 
-/// <summary>Een QR bij de bestelling; <see cref="Code"/> alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).</summary>
-public sealed record OrderTicketView(Guid Id, int Quantity, OrderTicketStatus Status, string? Code);
+/// <summary>
+/// Een QR bij de bestelling; <see cref="Code"/> alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
+/// <see cref="CanShare"/>: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b).
+/// </summary>
+public sealed record OrderTicketView(Guid Id, int Quantity, OrderTicketStatus Status, string? Code, bool CanShare);
+
+/// <summary>Kaarten die de besteller met een groepslid heeft gedeeld; die hebben een eigen QR bij de ontvanger.</summary>
+public sealed record SharedTicket(string Name, int Quantity);
+
+/// <summary>Een lid van dezelfde groep met wie gedeeld kan worden; zonder account ziet het lid de kaart niet in de app.</summary>
+public sealed record ShareCandidate(Guid MemberId, string Name, bool HasAccount, bool HasTicket);
 
 public enum PortalPayment
 {
@@ -378,7 +387,9 @@ public sealed partial class TicketSales(
         try
         {
             var payment = await mollie.CreatePaymentAsync(new MollieNewPayment(
-                order.AmountCents, $"{product.Name} · bestelling {order.Number}", OrderLink(baseUrl, order.Id, token), WebhookUrl(baseUrl), order.Id,
+                order.AmountCents, $"{product.Name} · bestelling {order.Number}",
+                // Vanuit de app: de bestelpagina toont na betalen een knop terug naar de app.
+                OrderLink(baseUrl, order.Id, token) + (order.Channel == SaleChannel.App ? "&app=1" : ""), WebhookUrl(baseUrl), order.Id,
                 $"{order.Id:N}-{Now.Ticks}"), cancellationToken);
             await db.SaleOrders.Where(o => o.Id == order.Id).ExecuteUpdateAsync(s => s.SetProperty(o => o.MolliePaymentId, payment.Id), cancellationToken);
             order.MolliePaymentId = payment.Id;
@@ -481,7 +492,7 @@ public sealed partial class TicketSales(
         await SendAsync(SaleMails.Confirmation(order, product, OrderLink(baseUrl, order.Id, _tokens.Unprotect(order.AccessTokenProtected))), cancellationToken);
         if (order.BuyerUserId is { } userId)
         {
-            await notifications.EnqueueAsync(new SystemNotification(
+            await NotifyAsync(new SystemNotification(
                 "Je kaarten staan klaar", $"{product.Name}: {order.Quantity} kaart(en), bestelling {order.Number}.",
                 NotificationCategory.Tickets, new NotificationAudience(UserIds: [userId]), "drammers://kaarten"), cancellationToken);
         }
@@ -527,6 +538,10 @@ public sealed partial class TicketSales(
     public async Task<OrderView> ViewByTokenAsync(Guid orderId, string token, CancellationToken cancellationToken) =>
         await ViewAsync(await OrderByTokenAsync(orderId, token, cancellationToken), cancellationToken);
 
+    /// <summary>
+    /// Mijn kaarten: bestellingen van de gebruiker (zonder de kaarten die gedeeld zijn) en kaarten die een groepslid
+    /// met dit lid heeft gedeeld (alleen die QR).
+    /// </summary>
     public async Task<IReadOnlyList<OrderView>> MineAsync(Guid userId, Guid? memberId, CancellationToken cancellationToken)
     {
         var orders = await db.SaleOrders.AsNoTracking()
@@ -536,26 +551,171 @@ public sealed partial class TicketSales(
         var result = new List<OrderView>();
         foreach (var o in orders)
         {
-            result.Add(await ViewAsync(o, cancellationToken));
+            result.Add(await ViewAsync(o, cancellationToken, memberId));
+        }
+
+        if (memberId is { } me)
+        {
+            var received = await (
+                from t in db.OrderTickets.AsNoTracking()
+                where t.HolderMemberId == me && t.SharedFromTicketId != null && t.Status != OrderTicketStatus.Cancelled
+                join o in db.SaleOrders.AsNoTracking() on t.OrderId equals o.Id
+                where o.Status == SaleOrderStatus.Confirmed
+                select o).Distinct().ToListAsync(cancellationToken);
+            foreach (var o in received.Where(r => result.All(x => x.Id != r.Id)))
+            {
+                result.Add(await ViewAsync(o, cancellationToken, me, received: true));
+            }
         }
 
         return result;
     }
 
-    private async Task<OrderView> ViewAsync(SaleOrder order, CancellationToken cancellationToken)
+    /// <summary>
+    /// De bestelling voor de koper. <paramref name="viewer"/> is het lid dat kijkt (voor delen); met
+    /// <paramref name="received"/> heeft dat lid kaarten uit deze bestelling gekregen en ziet het alleen die QR.
+    /// </summary>
+    private async Task<OrderView> ViewAsync(SaleOrder order, CancellationToken cancellationToken, Guid? viewer = null, bool received = false)
     {
         var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
-        var tickets = await db.OrderTickets.AsNoTracking().Where(t => t.OrderId == order.Id).OrderBy(t => t.CreatedAt).ToListAsync(cancellationToken);
+        var all = await db.OrderTickets.AsNoTracking().Where(t => t.OrderId == order.Id).OrderBy(t => t.CreatedAt).ToListAsync(cancellationToken);
+        var tickets = received
+            ? all.Where(t => t.HolderMemberId == viewer && t.SharedFromTicketId != null).ToList()
+            : all.Where(t => t.SharedFromTicketId == null).ToList();
+        var canShareOrder = !received && viewer is not null && order.BuyerMemberId == viewer && product.Kind == SaleProductKind.Pronkzitting
+            && order.Status == SaleOrderStatus.Confirmed;
         var views = new List<OrderTicketView>();
         foreach (var t in tickets)
         {
             var code = t.Status == OrderTicketStatus.Active && product.Kind != SaleProductKind.Tokens ? await CodeAsync(t, cancellationToken) : null;
-            views.Add(new OrderTicketView(t.Id, t.Quantity, t.Status, code));
+            views.Add(new OrderTicketView(t.Id, t.Quantity, t.Status, code, canShareOrder && t.Status == OrderTicketStatus.Active && t.Quantity > 1));
+        }
+
+        var shared = new List<SharedTicket>();
+        if (!received)
+        {
+            var sharedTickets = all.Where(t => t.SharedFromTicketId != null && t.Status != OrderTicketStatus.Cancelled).ToList();
+            var holderIds = sharedTickets.Select(t => t.HolderMemberId).OfType<Guid>().ToList();
+            var names = await db.Members.AsNoTracking().Where(m => holderIds.Contains(m.Id)).ToDictionaryAsync(m => m.Id, m => m.FirstName ?? m.FullName, cancellationToken);
+            shared.AddRange(sharedTickets.Select(t => new SharedTicket(t.HolderMemberId is { } h && names.TryGetValue(h, out var n) ? n : "groepslid", t.Quantity)));
         }
 
         return new OrderView(
             order.Id, order.Number, order.Status, product.Kind, product.Name, product.Date, order.GroupName, order.MemberQuantity, order.PaidQuantity,
-            order.AmountCents, order.BuyerName, order.CreatedAt, order.Status == SaleOrderStatus.AwaitingPayment ? order.HoldUntil : null, views);
+            order.AmountCents, order.BuyerName, order.CreatedAt, order.Status == SaleOrderStatus.AwaitingPayment ? order.HoldUntil : null, views,
+            received ? order.BuyerName : null, shared);
+    }
+
+    /// <summary>De code van een QR bij een bestelling, voor de webpagina (met het token van de koper).</summary>
+    public async Task<string> TicketCodeByTokenAsync(Guid orderId, string token, Guid ticketId, CancellationToken cancellationToken)
+    {
+        var order = await OrderByTokenAsync(orderId, token, cancellationToken);
+        var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
+        var ticket = await db.OrderTickets.AsNoTracking()
+            .SingleOrDefaultAsync(t => t.Id == ticketId && t.OrderId == order.Id && t.SharedFromTicketId == null && t.Status == OrderTicketStatus.Active, cancellationToken);
+        if (ticket is null || product.Kind == SaleProductKind.Tokens)
+        {
+            throw new DomainException(ErrorCodes.OrderNotFound, "Deze QR bestaat niet (meer).", DomainErrorKind.NotFound);
+        }
+
+        return await CodeAsync(ticket, cancellationToken);
+    }
+
+    // ---- Delen -----------------------------------------------------------------------------------------------------
+
+    /// <summary>De QR van de besteller die gedeeld mag worden: eigen pronkzittingbestelling, betaald, nog niet gescand.</summary>
+    private async Task<(OrderTicket Ticket, SaleOrder Order, string Group)> ShareableAsync(Guid ticketId, Guid memberId, CancellationToken cancellationToken)
+    {
+        var row = await (
+            from t in db.OrderTickets
+            where t.Id == ticketId
+            join o in db.SaleOrders on t.OrderId equals o.Id
+            join p in db.SaleProducts on o.ProductId equals p.Id
+            select new { t, o, p.Kind }).SingleOrDefaultAsync(cancellationToken);
+        if (row is null || row.o.BuyerMemberId != memberId || row.t.SharedFromTicketId != null)
+        {
+            throw new DomainException(ErrorCodes.OrderNotFound, "Kaart niet gevonden.", DomainErrorKind.NotFound);
+        }
+
+        if (row.Kind != SaleProductKind.Pronkzitting || row.o.Status != SaleOrderStatus.Confirmed || row.t.Status != OrderTicketStatus.Active)
+        {
+            throw new DomainException(ErrorCodes.OrderInvalid, "Deze kaarten kunnen niet (meer) gedeeld worden.", DomainErrorKind.Conflict);
+        }
+
+        var group = await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => m.ParadeGroupName).SingleOrDefaultAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(group))
+        {
+            throw new DomainException(ErrorCodes.GroupLimit, "Delen kan alleen met leden van je eigen groep, en je staat bij geen groep ingeschreven.", DomainErrorKind.Conflict);
+        }
+
+        return (row.t, row.o, group.Trim());
+    }
+
+    /// <summary>Leden van de eigen groep (vrij veld 3) met wie gedeeld kan worden.</summary>
+    public async Task<IReadOnlyList<ShareCandidate>> ShareCandidatesAsync(Guid ticketId, Guid memberId, CancellationToken cancellationToken)
+    {
+        var (_, order, group) = await ShareableAsync(ticketId, memberId, cancellationToken);
+        var members = await db.Members.AsNoTracking()
+            .Where(m => m.Id != memberId && m.ParadeGroupName == group && (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active)
+            .Select(m => new
+            {
+                m.Id,
+                m.FullName,
+                HasAccount = db.Users.Any(u => u.MemberId == m.Id),
+                HasTicket = db.OrderTickets.Any(t => t.HolderMemberId == m.Id && t.Status != OrderTicketStatus.Cancelled
+                    && db.SaleOrders.Any(o => o.Id == t.OrderId && o.ProductId == order.ProductId && o.Status == SaleOrderStatus.Confirmed)),
+            })
+            .ToListAsync(cancellationToken);
+        return [.. members.OrderBy(m => m.FullName, StringComparer.CurrentCultureIgnoreCase).Select(m => new ShareCandidate(m.Id, m.FullName, m.HasAccount, m.HasTicket))];
+    }
+
+    /// <summary>
+    /// Kaarten uit de groeps-QR delen met een lid van dezelfde groep: die krijgt een eigen QR en de kaarten verdwijnen
+    /// uit de QR van de besteller (fase 19b). De besteller houdt altijd minstens één kaart.
+    /// </summary>
+    public async Task ShareAsync(Guid ticketId, Guid memberId, Guid recipientMemberId, int quantity, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        var (ticket, order, group) = await ShareableAsync(ticketId, memberId, cancellationToken);
+        if (quantity < 1 || quantity >= ticket.Quantity)
+        {
+            throw Invalid($"Je kunt 1 tot {ticket.Quantity - 1} kaart(en) delen; minstens één blijft in je eigen QR.");
+        }
+
+        var recipient = await db.Members.AsNoTracking()
+            .SingleOrDefaultAsync(m => m.Id == recipientMemberId && m.Id != memberId && (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active, cancellationToken);
+        if (recipient is null || !string.Equals(recipient.ParadeGroupName?.Trim(), group, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DomainException(ErrorCodes.GroupLimit, $"Delen kan alleen met een lid van de {group}.", DomainErrorKind.Conflict);
+        }
+
+        ticket.Quantity -= quantity;
+        db.OrderTickets.Add(new OrderTicket
+        {
+            Id = IdGenerator.NewId(),
+            OrderId = order.Id,
+            PublicRef = RandomNumberGenerator.GetBytes(16),
+            Quantity = quantity,
+            HolderMemberId = recipient.Id,
+            SharedFromTicketId = ticket.Id,
+            Status = OrderTicketStatus.Active,
+            CreatedAt = Now,
+        });
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("order-ticket.shared", "OrderTicket", ticket.Id.ToString(), null,
+            JsonSerializer.Serialize(new { order.Number, recipient = recipient.Id, quantity, left = ticket.Quantity })), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        db.ChangeTracker.Clear();
+
+        var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
+        var users = await db.Users.AsNoTracking().Where(u => u.MemberId == recipient.Id).Select(u => u.Id).ToListAsync(cancellationToken);
+        if (users.Count > 0)
+        {
+            await NotifyAsync(new SystemNotification(
+                "Er is een kaart met je gedeeld",
+                $"{order.BuyerName} heeft {quantity} kaart{(quantity == 1 ? "" : "en")} voor {product.Name} met je gedeeld. Je QR staat onder Mijn kaarten.",
+                NotificationCategory.Tickets, new NotificationAudience(UserIds: users), "drammers://kaarten/mijn"), cancellationToken);
+        }
     }
 
     /// <summary>De QR van een gekochte kaart: versie 3, door de server ondertekend, zonder toestel en verlooptijd.</summary>
@@ -730,7 +890,7 @@ public sealed partial class TicketSales(
         var token = await FinishNewOrderAsync(order, product, baseUrl, sendPaymentLink: true, cancellationToken);
         if (entry.BuyerUserId is { } userId)
         {
-            await notifications.EnqueueAsync(new SystemNotification(
+            await NotifyAsync(new SystemNotification(
                 "Er is plek voor je",
                 order.Status == SaleOrderStatus.Confirmed
                     ? $"{product.Name}: je {order.Quantity} kaart(en) van de wachtlijst staan klaar."
@@ -765,6 +925,13 @@ public sealed partial class TicketSales(
     }
 
     // ---- Hulpmiddelen ----------------------------------------------------------------------------------------------
+
+    /// <summary>Melding in de wachtrij zetten en direct opslaan (EnqueueAsync voegt alleen toe).</summary>
+    private async Task NotifyAsync(SystemNotification notification, CancellationToken cancellationToken)
+    {
+        await notifications.EnqueueAsync(notification, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+    }
 
     private async Task IssueTicketAsync(SaleOrder order, CancellationToken cancellationToken)
     {

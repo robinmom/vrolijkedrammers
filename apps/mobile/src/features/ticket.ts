@@ -2,9 +2,12 @@ import type { components } from '@drammers/api-client';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceKey } from '../../modules/device-key';
 import { api } from '../api/client';
-import { base45, fromBase64, signedPayload, toBase64, unsignedPayload } from './deviceQr';
+import { base45, fromBase64, QR_VERSION, QR_VERSION_TOKENS, signedPayload, toBase64, unsignedPayload } from './deviceQr';
 
 export type MyTicket = components['schemas']['MyTicket'];
+
+/** Mijn QR (ingang) of de munten-QR (kassa, fase 19b). */
+export type QrPurpose = 'Access' | 'Tokens';
 
 /** Sleutel in de Secure Enclave/Keystore voor het ledenticket (ADR-005). */
 export const TICKET_KEY_ALIAS = 'dvd-ticket-key';
@@ -161,7 +164,11 @@ export async function bindThisDevice(childId?: string): Promise<{ ok: true } | {
 }
 
 /** Code met de hardwaresleutel van dit toestel (werkt zonder internet). */
-export async function deviceCode(ticket: CachedTicket, now: Date): Promise<{ code: string; issuedAt: number }> {
+export async function deviceCode(
+  ticket: CachedTicket,
+  now: Date,
+  purpose: QrPurpose = 'Access',
+): Promise<{ code: string; issuedAt: number }> {
   const issuedAt = Math.floor(now.getTime() / 1000);
   const unsigned = unsignedPayload({
     ref: fromBase64(ticket.publicRef),
@@ -169,16 +176,20 @@ export async function deviceCode(ticket: CachedTicket, now: Date): Promise<{ cod
     deviceId: fromBase64(ticket.deviceShortId),
     issuedAt,
     validFor: VALID_FOR,
+    version: purpose === 'Tokens' ? QR_VERSION_TOKENS : QR_VERSION,
   });
   const signature = await DeviceKey!.signAsync(TICKET_KEY_ALIAS, toBase64(unsigned));
   return { code: base45(signedPayload(unsigned, fromBase64(signature))), issuedAt };
 }
 
 /** Door de server ondertekende code voor toestellen zonder hardwaresleutel (alleen met internet). */
-export async function serverCode(childId?: string): Promise<{ code: string; issuedAt: number } | null> {
+export async function serverCode(
+  childId?: string,
+  purpose: QrPurpose = 'Access',
+): Promise<{ code: string; issuedAt: number } | null> {
   const { data } = childId
     ? await api.GET('/api/v1/me/children/{memberId}/ticket/code', { params: { path: { memberId: childId } } })
-    : await api.GET('/api/v1/me/ticket/code');
+    : await api.GET('/api/v1/me/ticket/code', { params: { query: { purpose } } });
   return data ? { code: data.code, issuedAt: data.issuedAt } : null;
 }
 

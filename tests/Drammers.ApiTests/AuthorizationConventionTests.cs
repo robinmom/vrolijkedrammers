@@ -51,6 +51,7 @@ public class AuthorizationConventionTests
         $"{nameof(SalesController)}.{nameof(SalesController.Order)}",
         $"{nameof(SalesController)}.{nameof(SalesController.Get)}",
         $"{nameof(SalesController)}.{nameof(SalesController.Pay)}",
+        $"{nameof(SalesController)}.{nameof(SalesController.QrImage)}",
         $"{nameof(SalesController)}.{nameof(SalesController.Waitlist)}",
         $"{nameof(MollieWebhookController)}.{nameof(MollieWebhookController.Webhook)}",
     ];

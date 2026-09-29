@@ -162,6 +162,11 @@ export function routeForLink(link: string | null | undefined): Href {
       return '/programma';
     case 'optocht':
       return '/optocht';
+    case 'kaarten':
+      // Fase 19: drammers://kaarten en drammers://kaarten/mijn openen Mijn kaarten.
+      return id === undefined || id === 'mijn' ? '/kaarten/mijn' : '/meldingen';
+    case 'munten':
+      return '/munten';
     case 'fotos':
       return id ? (isGuid(id) ? { pathname: '/fotos/[id]', params: { id } } : '/meldingen') : '/fotos';
     default:

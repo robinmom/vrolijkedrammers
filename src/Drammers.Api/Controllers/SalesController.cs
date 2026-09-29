@@ -73,6 +73,22 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
     public Task<OrderView> Get(Guid id, [FromQuery, Required] string t, CancellationToken cancellationToken) =>
         sales.ViewByTokenAsync(id, t, cancellationToken);
 
+    /// <summary>De QR als afbeelding (SVG) voor de webpagina; geen scriptbibliotheek nodig in de browser.</summary>
+    [HttpGet("orders/{id:guid}/tickets/{ticketId:guid}/qr.svg")]
+    [EnableRateLimiting(Authorization.AuthorizationSetup.AnonymousStatusPolicy)]
+    [Produces("image/svg+xml")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> QrImage(Guid id, Guid ticketId, [FromQuery, Required] string t, CancellationToken cancellationToken)
+    {
+        var code = await sales.TicketCodeByTokenAsync(id, t, ticketId, cancellationToken);
+        using var generator = new QRCoder.QRCodeGenerator();
+        using var data = generator.CreateQrCode(code, QRCoder.QRCodeGenerator.ECCLevel.M);
+        var svg = new QRCoder.SvgQRCode(data).GetGraphic(8, "#123047", "#FFFFFF", drawQuietZones: true);
+        Response.Headers.CacheControl = "no-store";
+        return Content(svg, "image/svg+xml");
+    }
+
     /// <summary>De betaallink uit de e-mail: stuurt door naar een nieuwe betaling bij Mollie.</summary>
     [HttpGet("orders/{id:guid}/pay")]
     [EnableRateLimiting(Authorization.AuthorizationSetup.AnonymousStatusPolicy)]
@@ -137,12 +153,18 @@ public sealed class MollieWebhookController(TicketSales sales) : ControllerBase
     }
 }
 
-/// <summary>Mijn bestellingen (fase 19): kaarten en munten van de ingelogde gebruiker.</summary>
+/// <summary>
+/// Mijn bestellingen (fase 19): kaarten en munten van de ingelogde gebruiker, en kaarten uit de groeps-QR delen met een
+/// lid van dezelfde groep (fase 19b).
+/// </summary>
 [ApiController]
 [Route("api/v1/me/orders")]
 [RequirePermission(Drammers.SharedKernel.Authorization.Permissions.TicketReadOwn)]
 public sealed class MeOrdersController(TicketSales sales) : ControllerBase
 {
+    private Guid MemberId => CurrentUser.Get(HttpContext)!.MemberId
+        ?? throw new DomainException(ErrorCodes.MembersOnly, "Delen kan alleen als je als lid bent ingelogd.", DomainErrorKind.Forbidden);
+
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<OrderView>>(StatusCodes.Status200OK)]
     public Task<IReadOnlyList<OrderView>> Mine(CancellationToken cancellationToken)
@@ -150,7 +172,29 @@ public sealed class MeOrdersController(TicketSales sales) : ControllerBase
         var user = CurrentUser.Get(HttpContext)!;
         return sales.MineAsync(user.UserId, user.MemberId, cancellationToken);
     }
+
+    [HttpGet("tickets/{ticketId:guid}/share-candidates")]
+    [ProducesResponseType<IReadOnlyList<ShareCandidate>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public Task<IReadOnlyList<ShareCandidate>> ShareCandidates(Guid ticketId, CancellationToken cancellationToken) =>
+        sales.ShareCandidatesAsync(ticketId, MemberId, cancellationToken);
+
+    [HttpPost("tickets/{ticketId:guid}/share")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Share(Guid ticketId, ShareTicketRequest request, CancellationToken cancellationToken)
+    {
+        await sales.ShareAsync(ticketId, MemberId, request.MemberId, request.Quantity, cancellationToken);
+        return NoContent();
+    }
 }
+
+public sealed record ShareTicketRequest(Guid MemberId, [Range(1, 500)] int Quantity);
 
 public sealed record OrderRequest(
     Guid ProductId,

@@ -816,13 +816,27 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - Munten: wie heeft gekocht, betaald en afgehaald.
 - Rechten: `sale.manage` (bestuur) en `sale.collect` (nieuwe rol Kassa, 19c).
 
-**19b — app en webpagina.**
-- Home: de tegel Munten (geldzakje) staat op de oude plek van Mijn QR; "QR code" staat op de plek van Uitslagen.
-- Kaarten kopen: gast of lid met de optie "Ben je lid? Log in", checkout in een in-app browser.
-- Vrijdag vol: kies zaterdag of de wachtlijst.
-- Mijn kaarten met de groeps-QR en kaarten delen met een groepslid.
-- Munten kopen en de munten-QR.
-- Webpagina `/kaarten` voor bestellen en de bestelling met de QR.
+**19b — app en webpagina (gebouwd).**
+- **App, beginscherm:** de tegel "QR code" staat op de plek van Uitslagen (Uitslagen staat onder Meer). "Munten" (geldzakje) staat op de oude plek van Mijn QR. Onder Meer staat een knop Kaarten.
+- **App, kaarten kopen:**
+  - Kaarten: alles wat te koop is, voor iedereen.
+  - Pronkzitting: een avond kiezen, groepskaarten voor een ingelogd lid en losse kaarten. Is de avond vol, dan kiest de koper de andere avond of de wachtlijst.
+  - Dagkaarten en kaarten per activiteit.
+  - Afrekenen: gasten met naam en e-mail, en "Ben je lid? Log in". Betalen met iDEAL in de browser (`openAuthSessionAsync`). De bestelpagina stuurt met `drammers://kaarten/bestelling` terug naar de app.
+  - Bestellingen van gasten onthoudt de app versleuteld in SecureStore.
+- **App, Mijn kaarten:** één QR per bestelling (`react-native-qrcode-svg`), met "x gedeeld met …".
+- **App, delen:**
+  - Via `POST /me/orders/tickets/{id}/share` gaan kaarten naar een lid van dezelfde groep (vrij veld 3).
+  - Het lid krijgt een eigen QR en een melding; de kaarten verdwijnen uit de QR van de besteller.
+  - De besteller houdt minstens één kaart. Een gedeelde kaart kan niet verder gedeeld worden.
+- **Munten-QR:** payloadversie 4 (met de sleutel van het toestel) of 5 (door de server ondertekend, `GET /me/ticket/code?purpose=Tokens`).
+  - Gekoppeld aan het toestel en elke 30 seconden nieuw, net als Mijn QR.
+  - Ook te gebruiken vóór carnaval, bijvoorbeeld op de pronkzitting.
+  - De validatie weigert de munten-QR bij de ingang en Mijn QR bij de kassa (`WrongPurpose`).
+- **Webpagina `/kaarten`:**
+  - Producten (geen munten), bestellen en betalen via Mollie. Is het vol, dan de wachtlijst.
+  - `/kaarten/bestelling/?id&t` toont de status en de QR als SVG van de server (`qr.svg`, QRCoder). Er is geen scriptbibliotheek in de browser nodig.
+  - Dezelfde CSP als Lid worden.
 
 **19c — scanner en Kassa.**
 - Gekochte kaarten scannen: alle overgebleven personen gaan tegelijk naar binnen, daarna is de QR geblokkeerd.

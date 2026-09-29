@@ -21,13 +21,20 @@ public sealed class AdminParadeExchangeController(ParadeExchange exchange, IAudi
 
     public const string XlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-    /// <summary>De kolommen van het deelnemersbestand, met de breedtes van het voorbeeldbestand.</summary>
+    /// <summary>
+    /// De kolommen van het deelnemersbestand met de breedtes van het bronbestand van de optochtcommissie
+    /// ("Opgaven optocht 2026 … DEF.xlsx"); kolom E (adres) is daar verborgen.
+    /// </summary>
     private static readonly (string Header, double Width)[] Columns =
     [
-        ("Opgave", 7), ("Startnummer", 11), ("Naam groep", 28), ("contactpersoon", 20), ("adres", 30), ("tel nr", 14), ("mail adres", 28),
-        ("Categorie", 30), ("Soort", 13), ("onderwerp", 45), ("kinderen", 9), ("volwassenen", 12), ("Muziek", 8), ("Bouw adres", 26),
-        ("Stalling voor jury", 24), ("Lengte", 8), ("Extra info", 45), ("Tekst", 80),
+        ("Opgave", 5), ("Startnummer", 8.86), ("Naam groep", 23.14), ("contactpersoon", 18.86), ("adres", 24.29), ("tel nr", 12.71),
+        ("mail adres", 25), ("Categorie", 26.57), ("Soort", 13.29), ("onderwerp", 49.71), ("kinderen", 4.57), ("volwassenen", 4.29),
+        ("Muziek", 4.29), ("Bouw adres", 23.86), ("Stalling voor jury", 22), ("Lengte", 5.43), ("Extra info", 37.57), ("Tekst", 255.57),
     ];
+
+    private const int AddressColumn = 5;
+
+    private const int TextColumn = 18;
 
     [HttpGet("export")]
     [RequirePermission(Permissions.ParadeExport)]
@@ -39,16 +46,29 @@ public sealed class AdminParadeExchangeController(ParadeExchange exchange, IAudi
         var export = await exchange.ExportAsync(cancellationToken);
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet($"deelnemersbestand {export.Year}");
+        // Opmaak zoals het bronbestand: Arial 10, kop zonder opmaak, adres verborgen, Tekst met terugloop.
+        sheet.Style.Font.FontName = "Arial";
+        sheet.Style.Font.FontSize = 10;
         for (var c = 0; c < Columns.Length; c++)
         {
             sheet.Cell(1, c + 1).Value = Columns[c].Header;
             sheet.Column(c + 1).Width = Columns[c].Width;
         }
 
-        sheet.Row(1).Style.Font.Bold = true;
-        var row = 2;
+        sheet.Column(AddressColumn).Hide();
+        sheet.Column(TextColumn).Style.Alignment.WrapText = true;
+
+        // Regel 2 leeg, dan de vaste plekken, een lege regel en de inschrijvingen.
+        var row = 3;
+        var previousFixed = export.Rows.FirstOrDefault()?.Fixed ?? false;
         foreach (var r in export.Rows)
         {
+            if (previousFixed && !r.Fixed)
+            {
+                row++;
+            }
+
+            previousFixed = r.Fixed;
             object?[] values =
             [
                 r.RegistrationNumber, r.StartNumber, r.GroupName, r.ContactName, r.ContactAddress, r.Phone, r.Email, r.Category, r.Kind, r.Subject,
@@ -75,16 +95,10 @@ public sealed class AdminParadeExchangeController(ParadeExchange exchange, IAudi
                 }
             }
 
-            if (r.Fixed)
-            {
-                sheet.Row(row).Style.Font.Italic = true;
-            }
-
             row++;
         }
 
         sheet.Range(1, 1, Math.Max(row - 1, 1), Columns.Length).SetAutoFilter();
-        sheet.SheetView.FreezeRows(1);
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         await audit.WriteAsync(new AuditEntry("parade.exported", "Parade", export.ParadeName, null, $"{{\"rows\":{export.Rows.Count}}}"), cancellationToken);

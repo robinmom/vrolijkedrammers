@@ -1,17 +1,27 @@
 import { brand } from '@drammers/design-tokens';
 import type { components } from '@drammers/api-client';
-import { useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../api/client';
-import { queryKeys, useAccessStatus, useMe } from '../api/queries';
+import { queryKeys, useAccessStatus, useMe, useOfflinePack } from '../api/queries';
+import { checkOffline, enqueue, flushQueue, queueLength } from '../features/offlineScan';
 import { AppText } from '../ui';
 
 type AccessResult = components['schemas']['AccessResult'];
+
+/** Resultaat op het scherm: online van de server, of offline gecontroleerd met de controlelijst. */
+type ShownResult = Pick<AccessResult, 'outcome' | 'title' | 'message' | 'holderName' | 'needsDecision'> & {
+  scanId: string | null;
+  offline: boolean;
+};
+
+/** Online eerst; duurt het langer dan dit, dan offline controleren (ADR-006). */
+const ONLINE_TIMEOUT_MS = 1500;
 type AccessCounts = components['schemas']['AccessCounts'];
 
 const dayTime = new Intl.DateTimeFormat('nl-NL', {
@@ -43,6 +53,8 @@ const haptic: Record<AccessResult['outcome'], Haptics.NotificationFeedbackType> 
  * Scannen bij de deur (fase 14b, rol Deurcontrole): camera op de QR-code in Mijn QR, daarna groen/oranje/rood met
  * de naam en de reden. Bij oranje beslist het deurpersoneel ("Toch toelaten" of "Weigeren"). Alleen tijdens een
  * activiteit met toegangscontrole; de teller toont binnen / scans / geweigerd.
+ * Offline (fase 15, lichte variant): lukt het online niet binnen 1,5 s, dan controleert de app zelf met de
+ * controlelijst in het geheugen ("Offline gecontroleerd") en zet de scan in een wachtrij die vanzelf wordt verstuurd.
  */
 export default function ScannenScreen() {
   const insets = useSafeAreaInsets();
@@ -52,12 +64,33 @@ export default function ScannenScreen() {
   const queryClient = useQueryClient();
   const [permission, requestPermission] = useCameraPermissions();
   const [torch, setTorch] = useState(false);
-  const [result, setResult] = useState<AccessResult | null>(null);
+  const [result, setResult] = useState<ShownResult | null>(null);
+  const pack = useOfflinePack(canScan);
+  const [queued, setQueued] = useState(0);
+  const seenHere = useRef(new Map<string, Date>());
+
+  // Wachtrij versturen zodra er internet is (en bij openen).
+  const flush = useCallback(async () => {
+    if ((await queueLength()) === 0) return;
+    const rest = await flushQueue().catch(() => null);
+    if (rest !== null) {
+      setQueued(rest);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accessStatus });
+    }
+  }, [queryClient]);
+  useEffect(() => {
+    void queueLength().then(setQueued);
+    // flush() zet de state pas na een await (netwerk), niet synchroon in deze effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void flush();
+    return onlineManager.subscribe((online) => (online ? void flush() : undefined));
+  }, [flush]);
   const [counts, setCounts] = useState<AccessCounts | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
 
-  const current = status.data?.current;
+  // Zonder internet: het toegangsmoment uit de controlelijst.
+  const current = status.data?.current ?? (status.isError ? pack.data?.current : undefined);
   const shownCounts = counts ?? status.data?.counts ?? null;
 
   async function onScanned(code: string) {
@@ -65,17 +98,35 @@ export default function ScannenScreen() {
     busy.current = true;
     setError(null);
     try {
-      const { data, error: problem, response } = await api.POST('/api/v1/access/scan', { body: { code } });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ONLINE_TIMEOUT_MS);
+      const {
+        data,
+        error: problem,
+        response,
+      } = await api
+        .POST('/api/v1/access/scan', { body: { code }, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
       if (data) {
-        setResult(data);
+        setResult({ ...data, scanId: data.scanId ?? null, offline: false });
         setCounts(data.counts);
         void Haptics.notificationAsync(haptic[data.outcome]).catch(() => undefined);
+        void flush();
       } else {
         setError((problem as { detail?: string } | undefined)?.detail ?? `Scannen lukt nu niet (${response.status}).`);
         if (response.status === 409) void queryClient.invalidateQueries({ queryKey: queryKeys.accessStatus });
       }
     } catch {
-      setError('Geen verbinding. Scannen werkt alleen met internet.');
+      // Geen (snel) antwoord: offline controleren met de controlelijst en in de wachtrij zetten.
+      if (pack.data) {
+        const now = new Date();
+        const local = checkOffline(pack.data, code, now, seenHere.current);
+        setResult({ ...local, needsDecision: false, scanId: null, offline: true });
+        setQueued(await enqueue(code, local.outcome, now));
+        void Haptics.notificationAsync(haptic[local.outcome]).catch(() => undefined);
+      } else {
+        setError('Geen internet en nog geen controlelijst. Open de scanner eerst één keer met internet.');
+      }
     } finally {
       busy.current = false;
     }
@@ -104,7 +155,7 @@ export default function ScannenScreen() {
     );
   }
 
-  if (status.isPending || !permission) {
+  if ((status.isPending && !pack.data) || !permission) {
     return (
       <View style={[styles.fill, styles.center, { backgroundColor: '#0B1620' }]}>
         <ActivityIndicator color="#FFFFFF" accessibilityLabel="Laden" />
@@ -146,6 +197,13 @@ export default function ScannenScreen() {
           <AppText variant="largeTitle" color={look.foreground} style={styles.centerText}>
             {result.title}
           </AppText>
+          {result.offline ? (
+            <View style={[styles.offlineBadge, { borderColor: look.foreground }]}>
+              <AppText variant="caption" color={look.foreground}>
+                Offline gecontroleerd
+              </AppText>
+            </View>
+          ) : null}
           {result.holderName ? (
             <AppText variant="sectionHeader" color={look.foreground} style={styles.centerText}>
               {result.holderName}
@@ -246,6 +304,13 @@ export default function ScannenScreen() {
               />
             </View>
           )}
+          {queued > 0 ? (
+            <View style={styles.queue} accessibilityLiveRegion="polite">
+              <AppText variant="caption" color="#FFFFFF">
+                {queued === 1 ? '1 offline scan wacht op verzending' : `${queued} offline scans wachten op verzending`}
+              </AppText>
+            </View>
+          ) : null}
           {error ? (
             <AppText variant="bodyStrong" color="#FFB4B4" style={styles.centerText} accessibilityRole="alert">
               {error}
@@ -380,4 +445,6 @@ const styles = StyleSheet.create({
   actions: { gap: 12 },
   button: { minHeight: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.8 },
+  offlineBadge: { borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
+  queue: { backgroundColor: 'rgba(244,185,66,0.3)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
 });

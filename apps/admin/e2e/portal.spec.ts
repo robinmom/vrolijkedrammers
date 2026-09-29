@@ -721,6 +721,8 @@ test('fase 14: zonder ticket.scan geen toegangskaart; toegangslog voor het bestu
   await page.goto('/beheer/toegangslog');
   await expect(page.getByRole('heading', { name: 'Toegangslog' })).toBeVisible();
   await expect(page.getByText('Verlopen code')).toBeVisible();
+  await expect(page.getByText('QR (offline)')).toBeVisible();
+  await expect(page.getByText('Offline toegelaten')).toBeVisible();
   await expect(page.getByText('Ingecheckt', { exact: true })).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });

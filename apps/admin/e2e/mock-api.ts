@@ -685,6 +685,8 @@ export class MockApi {
             decision: null,
             operatorName: 'Marieke',
             deviceName: 'Pixel 8',
+            offline: true,
+            offlineOutcome: 'Admitted',
           },
           {
             id: 's-1',

@@ -51,6 +51,7 @@ internal sealed class AccessScanConfiguration : IEntityTypeConfiguration<AccessS
         builder.HasIndex(a => new { a.EventId, a.ScannedAt });
         builder.HasIndex(a => new { a.EventId, a.MemberId });
         builder.HasIndex(a => new { a.CarnivalDay, a.MemberId });
+        builder.HasIndex(a => a.ClientScanId).IsUnique().HasFilter("[client_scan_id] IS NOT NULL");
         builder.HasOne<Modules.Content.Events.Event>().WithMany().HasForeignKey(a => a.EventId).OnDelete(DeleteBehavior.Restrict);
         // Geen foreign key naar Ticket: het lid → ticket → scan zou een tweede verwijderpad geven. De scan is een logregel;
         // bij het verwijderen van een lid wordt de koppeling naar het lid leeggemaakt (AVG).

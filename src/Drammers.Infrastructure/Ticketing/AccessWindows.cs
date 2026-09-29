@@ -61,13 +61,18 @@ public sealed class AccessWindows(DrammersDbContext db, IClock clock)
     public async Task<CarnivalYear?> ActiveYearAsync(CancellationToken cancellationToken) =>
         await db.CarnivalYears.AsNoTracking().SingleOrDefaultAsync(y => y.Active, cancellationToken);
 
-    /// <summary>De lopende activiteit met toegangscontrole, of anders de carnavalsdag; <c>null</c> buiten beide.</summary>
-    public async Task<AccessEvent?> CurrentAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// De lopende activiteit met toegangscontrole, of anders de carnavalsdag; <c>null</c> buiten beide.
+    /// <paramref name="at"/>: een ander moment dan nu (offline scans worden gecontroleerd op het moment van scannen).
+    /// </summary>
+    public async Task<AccessEvent?> CurrentAsync(CancellationToken cancellationToken, DateTimeOffset? at = null)
     {
-        var from = Now + OpensBefore;
-        var events = await ControlledEvents.Where(e => e.StartAt <= from && e.StartAt >= Now - TimeSpan.FromDays(2))
+        var moment = at ?? clock.UtcNow;
+        var utc = moment.UtcDateTime;
+        var from = utc + OpensBefore;
+        var events = await ControlledEvents.Where(e => e.StartAt <= from && e.StartAt >= utc - TimeSpan.FromDays(2))
             .OrderByDescending(e => e.StartAt).ToListAsync(cancellationToken);
-        var running = events.Select(ForEvent).FirstOrDefault(e => Now <= Window(e).To);
+        var running = events.Select(ForEvent).FirstOrDefault(e => Window(e).From <= utc && utc <= Window(e).To);
         if (running is not null)
         {
             return running;
@@ -80,13 +85,12 @@ public sealed class AccessWindows(DrammersDbContext db, IClock clock)
         }
 
         var (carnivalFrom, carnivalTo) = MemberTickets.Validity(year);
-        var now = clock.UtcNow;
-        if (now < carnivalFrom || now > carnivalTo)
+        if (moment < carnivalFrom || moment > carnivalTo)
         {
             return null;
         }
 
-        var local = TimeZoneInfo.ConvertTimeFromUtc(Now, Loil) - DayBoundary;
+        var local = TimeZoneInfo.ConvertTimeFromUtc(utc, Loil) - DayBoundary;
         var day = DateOnly.FromDateTime(local);
         return ForCarnivalDay(day < year.CarnivalStartDate ? year.CarnivalStartDate : day > year.CarnivalEndDate ? year.CarnivalEndDate : day);
     }

@@ -13,8 +13,10 @@ namespace Drammers.Infrastructure.Ticketing;
 /// </summary>
 public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys keys, AccessWindows windows, IClock clock)
 {
-    public async Task<QrValidation> ValidateAsync(string code, CancellationToken cancellationToken)
+    /// <summary>Controleert een code; <paramref name="at"/> is het moment van scannen (standaard nu; offline: het moment op het toestel).</summary>
+    public async Task<QrValidation> ValidateAsync(string code, CancellationToken cancellationToken, DateTimeOffset? at = null)
     {
+        var moment = at ?? clock.UtcNow;
         var payload = QrPayload.TryDecode(code);
         TicketSnapshot? snapshot = null;
         if (payload is not null)
@@ -31,8 +33,7 @@ public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys key
             {
                 var (from, to) = MemberTickets.Validity(row.y);
                 // Buiten carnaval geldt het ticket tijdens een activiteit met toegangscontrole (QR en scannen gelijk).
-                var now = clock.UtcNow;
-                if ((now < from || now > to) && await windows.CurrentAsync(cancellationToken) is { EventId: not null } access)
+                if ((moment < from || moment > to) && await windows.CurrentAsync(cancellationToken, moment) is { EventId: not null } access)
                 {
                     var (start, end) = AccessWindows.Window(access);
                     (from, to) = (new DateTimeOffset(start, TimeSpan.Zero), new DateTimeOffset(end, TimeSpan.Zero));
@@ -47,6 +48,6 @@ public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys key
         }
 
         var serverKeys = payload?.Version == QrPayload.ServerSigned ? await keys.PublicKeysAsync(cancellationToken) : [];
-        return TicketQrValidator.Validate(code, clock.UtcNow, _ => snapshot, serverKeys);
+        return TicketQrValidator.Validate(code, moment, _ => snapshot, serverKeys);
     }
 }

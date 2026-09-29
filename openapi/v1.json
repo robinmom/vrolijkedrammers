@@ -104,6 +104,86 @@
         }
       }
     },
+    "/api/v1/access/offline-pack": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Controlelijst voor offline scannen (fase 15, lichte variant); de app houdt die alleen in het geheugen.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflinePack"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflinePack"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflinePack"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/access/offline-scans": {
+      "post": {
+        "tags": [
+          "Access"
+        ],
+        "summary": "Offline scans uit de wachtrij (idempotent op `clientScanId`).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfflineScansRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfflineScansRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfflineScansRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineSyncResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineSyncResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineSyncResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/access/scans/{id}/decision": {
       "post": {
         "tags": [
@@ -11024,7 +11104,9 @@
           "reason",
           "decision",
           "operatorName",
-          "deviceName"
+          "deviceName",
+          "offline",
+          "offlineOutcome"
         ],
         "type": "object",
         "properties": {
@@ -11071,6 +11153,19 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "offline": {
+            "type": "boolean"
+          },
+          "offlineOutcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessOutcome"
+              }
             ]
           }
         }
@@ -15883,6 +15978,169 @@
             "format": "int32"
           }
         }
+      },
+      "OfflinePack": {
+        "required": [
+          "generatedAt",
+          "current",
+          "validFrom",
+          "validTo",
+          "serverKeys",
+          "tickets"
+        ],
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "current": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessEvent"
+              }
+            ]
+          },
+          "validFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "serverKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfflineTicket"
+            }
+          }
+        }
+      },
+      "OfflineScan": {
+        "required": [
+          "clientScanId",
+          "code",
+          "scannedAt",
+          "localOutcome"
+        ],
+        "type": "object",
+        "properties": {
+          "clientScanId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "scannedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localOutcome": {
+            "$ref": "#/components/schemas/AccessOutcome"
+          }
+        },
+        "description": "Een offline scan uit de wachtrij van de scanner; DateTime OfflineScan.ScannedAt is de tijd op het toestel."
+      },
+      "OfflineScansRequest": {
+        "required": [
+          "scans"
+        ],
+        "type": "object",
+        "properties": {
+          "scans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfflineScan"
+            }
+          }
+        }
+      },
+      "OfflineSyncResult": {
+        "required": [
+          "accepted",
+          "duplicates",
+          "skipped",
+          "conflicts"
+        ],
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicates": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "conflicts": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "OfflineTicket": {
+        "required": [
+          "ref",
+          "credentialVersion",
+          "blocked",
+          "membershipActive",
+          "deviceShortId",
+          "devicePublicKey",
+          "holderName"
+        ],
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "credentialVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blocked": {
+            "type": "boolean"
+          },
+          "membershipActive": {
+            "type": "boolean"
+          },
+          "deviceShortId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "devicePublicKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "holderName": {
+            "type": "string"
+          }
+        },
+        "description": "Controlelijst voor offline scannen (fase 15, lichte variant): alleen in het geheugen van de scanner."
       },
       "PagedResultOfAccessScanRow": {
         "required": [

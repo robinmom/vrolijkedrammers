@@ -32,6 +32,8 @@ export const queryKeys = {
   myRegistrationDocuments: (id: string) => ['me', 'parade-registrations', id, 'documents'] as const,
   myTicket: ['me', 'ticket'] as const,
   accessStatus: ['me', 'access-status'] as const,
+  /** Alleen in het geheugen (sleutels onder 'me' worden niet bewaard, zie QueryProvider). */
+  offlinePack: ['me', 'offline-pack'] as const,
 };
 
 const PAGE = { page: 1, pageSize: 100 };
@@ -215,5 +217,17 @@ export const useAccessStatus = (enabled: boolean) => {
     queryFn: () => unwrap(api.GET('/api/v1/access/status')),
     enabled: status === 'signedIn' && enabled,
     refetchInterval: 30_000,
+  });
+};
+
+/** Controlelijst voor offline scannen (fase 15, lichte variant): alleen in het geheugen, elke 5 minuten ververst. */
+export const useOfflinePack = (enabled: boolean) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.offlinePack,
+    queryFn: () => unwrap(api.GET('/api/v1/access/offline-pack')),
+    enabled: status === 'signedIn' && enabled,
+    refetchInterval: 5 * 60_000,
+    gcTime: 0,
   });
 };

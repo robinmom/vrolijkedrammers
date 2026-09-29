@@ -57,6 +57,17 @@ public sealed class AccessScan
 
     public DateTime? DecidedAt { get; set; }
 
+    /// <summary>Offline gescand (fase 15): later gesynchroniseerd; <see cref="ScannedAt"/> is de tijd op het toestel.</summary>
+    public bool Offline { get; set; }
+
+    /// <summary>Id die de scanner bij een offline scan maakt; maakt opnieuw versturen idempotent.</summary>
+    public Guid? ClientScanId { get; set; }
+
+    /// <summary>Wat het toestel offline toonde; wijkt dit af van <see cref="Outcome"/>, dan is dat een offline-conflict.</summary>
+    public AccessOutcome? OfflineOutcome { get; set; }
+
+    public DateTime? SyncedAt { get; set; }
+
     /// <summary>Telt als "binnen": groen, of oranje met "Toch toelaten".</summary>
     public bool Admits => Outcome is AccessOutcome.Admitted or AccessOutcome.AdmittedAgain
         || (Outcome == AccessOutcome.Warning && Decision == AccessDecision.Admitted);

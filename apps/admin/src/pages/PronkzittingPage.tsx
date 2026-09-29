@@ -1,30 +1,11 @@
 import { useState } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation } from '../api/hooks';
-import {
-  SALES_KEYS,
-  useEvenings,
-  useSaleProducts,
-  useWaitlist,
-  type Evening,
-  type EveningRow,
-  type PortalPayment,
-  type SaleProduct,
-  type WaitlistRow,
-} from '../api/sales';
+import { kindPages, useEvenings, useSaleProducts, type Evening, type EveningRow, type SaleProduct } from '../api/sales';
 import { DataTable, columnHelper } from '../components/DataTable';
-import { Dialog } from '../components/Dialog';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { SaleProductDialog } from '../components/SaleDialogs';
-import { formatDate, formatDateTime } from '../format';
-
-const waitlistLabels: Record<WaitlistRow['status'], string> = {
-  Waiting: 'Wacht',
-  Invited: 'Uitgenodigd',
-  Granted: 'Toegekend',
-  Expired: 'Verlopen',
-  Withdrawn: 'Ingetrokken',
-};
+import { OrderButtons, OrdersCard, ProductsCard, SalesKpis, WaitlistCard } from '../components/SaleSections';
+import { formatDate } from '../format';
 
 /** Export voor de tafelindeling: één tabblad per avond. */
 function ExportSeating() {
@@ -118,33 +99,18 @@ function EveningCard({
 }
 
 /**
- * Pronkzitting (fase 19, Figma "Pronkzitting – overzicht per avond" en "wachtlijst en toekennen"): per avond de groepen
- * met het aantal personen en losse kaarten op naam, de export voor de tafelindeling en de wachtlijst. Uitnodigen gaat
- * op volgorde; het bestuur kan ook zelf toekennen, buiten de volgorde.
+ * Pronkzitting onder Verkoop (fase 19, Figma "Pronkzitting – overzicht per avond" en "wachtlijst en toekennen"): per
+ * avond de groepen met het aantal personen en losse kaarten op naam, de export voor de tafelindeling, de wachtlijst, de
+ * avonden (plaatsen per avond) en alle bestellingen.
  */
 export function PronkzittingPage() {
-  const api = useApi();
   const evenings = useEvenings();
   const products = useSaleProducts();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<SaleProduct | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [granting, setGranting] = useState<WaitlistRow | null>(null);
-  const [payment, setPayment] = useState<PortalPayment>('PaymentLink');
   const selected = evenings.data?.find((e) => e.productId === selectedId) ?? evenings.data?.[0] ?? null;
-  const waitlist = useWaitlist(selected?.productId ?? null);
-  const grant = useApiMutation(
-    (v: { id: string; payment: PortalPayment }) =>
-      api.POST('/api/v1/admin/sales/waitlist/{id}/grant', {
-        params: { path: { id: v.id } },
-        body: { payment: v.payment },
-      }),
-    SALES_KEYS,
-  );
-  const withdraw = useApiMutation(
-    (id: string) => api.DELETE('/api/v1/admin/sales/waitlist/{id}', { params: { path: { id } } }),
-    SALES_KEYS,
-  );
+  const selectedProduct = products.data?.find((p) => p.id === selected?.productId) ?? null;
 
   const rowHelper = columnHelper<EveningRow>();
   const rowColumns = [
@@ -184,104 +150,21 @@ export function PronkzittingPage() {
     rowHelper.accessor('remarks', { header: 'Opmerking / wensen', cell: (info) => info.getValue() ?? '' }),
   ];
 
-  const waitHelper = columnHelper<WaitlistRow>();
-  const waitColumns = [
-    waitHelper.accessor('position', { header: '#', cell: (info) => info.getValue() || '' }),
-    waitHelper.accessor('buyerName', {
-      header: 'Groep of besteller',
-      cell: (info) => {
-        const w = info.row.original;
-        return (
-          <>
-            <strong>{w.groupName ?? w.buyerName}</strong>
-            <div className="muted small-text">
-              {w.groupName ? `groep · via ${w.buyerName}` : 'losse kaarten'}
-              {w.buyerIsMember ? ' (lid)' : ' · gast'}
-            </div>
-          </>
-        );
-      },
-    }),
-    waitHelper.display({
-      id: 'aantal',
-      header: 'Aantal',
-      cell: (info) => info.row.original.memberQuantity + info.row.original.paidQuantity,
-    }),
-    waitHelper.accessor('createdAt', { header: 'Sinds', cell: (info) => formatDateTime(info.getValue()) }),
-    waitHelper.display({
-      id: 'status',
-      header: 'Status',
-      cell: (info) => {
-        const w = info.row.original;
-        if (w.status !== 'Waiting')
-          return (
-            <span className="badge">
-              {waitlistLabels[w.status]}
-              {w.orderNumber ? ` · ${w.orderNumber}` : ''}
-            </span>
-          );
-        return w.fits ? <span className="badge ok">Past</span> : <span className="badge warn">Past niet</span>;
-      },
-    }),
-    waitHelper.display({
-      id: 'acties',
-      header: 'Acties',
-      cell: (info) => {
-        const w = info.row.original;
-        if (w.status !== 'Waiting') return null;
-        return (
-          <div className="actions">
-            <button
-              type="button"
-              className="button small"
-              disabled={!w.fits}
-              onClick={() => {
-                grant.reset();
-                setPayment('PaymentLink');
-                setGranting(w);
-              }}
-            >
-              Toekennen <span className="visually-hidden">{w.groupName ?? w.buyerName}</span>
-            </button>
-            <button
-              type="button"
-              className="button ghost small"
-              onClick={() =>
-                withdraw.mutate(w.id, {
-                  onSuccess: () => setMessage(`${w.buyerName} is van de wachtlijst gehaald.`),
-                })
-              }
-            >
-              Verwijderen <span className="visually-hidden">{w.groupName ?? w.buyerName}</span>
-            </button>
-          </div>
-        );
-      },
-    }),
-  ];
-
-  const free = selected?.capacity != null ? selected.capacity - selected.sold - selected.held : null;
   return (
     <>
       <div className="page-header">
         <div className="page-title">
           <h1>Pronkzitting</h1>
-          <p className="page-subtitle">
-            Wie komt er per avond: groepen met het aantal personen en losse kaarten op naam. Uitnodigen van de wachtlijst
-            gaat op volgorde; het bestuur kan een plek ook zelf toekennen.
-          </p>
+          <p className="page-subtitle">{kindPages.Pronkzitting.subtitle}</p>
         </div>
         <div className="actions">
           <ExportSeating />
+          <OrderButtons kind="Pronkzitting" onMessage={setMessage} />
         </div>
       </div>
       <SuccessMessage message={message} />
-      <ProblemAlert error={evenings.error ?? withdraw.error} />
-      {evenings.data && evenings.data.length === 0 ? (
-        <p className="muted">
-          Nog geen pronkzittingavonden. Voeg ze toe onder Kaartverkoop met + Product (soort Pronkzitting).
-        </p>
-      ) : null}
+      <SalesKpis kind="Pronkzitting" />
+      <ProblemAlert error={evenings.error} />
       <div className="grid-2">
         {(evenings.data ?? []).map((e) => (
           <EveningCard
@@ -313,92 +196,27 @@ export function PronkzittingPage() {
               emptyText="Nog geen bestellingen voor deze avond."
             />
           </section>
-
-          <section className="card" aria-labelledby="wachtlijst-kop">
-            <h2 id="wachtlijst-kop">
-              Wachtlijst {selected.date ? formatDate(selected.date) : selected.name} ({selected.waiting})
-            </h2>
-            <p className="card-hint">
-              {free === null ? 'Onbeperkt aantal plaatsen.' : `Nog ${Math.max(0, free)} plaats(en) vrij.`} Toekennen:
-              groepskaarten voor leden zijn direct geldig; losse kaarten krijgen een betaallink die 48 uur geldig is, of
-              je boekt ze contant.
-            </p>
-            <ProblemAlert error={waitlist.error} />
-            <DataTable
-              caption={`Wachtlijst ${selected.name}`}
-              columns={waitColumns}
-              data={waitlist.data ?? []}
-              emptyText="Niemand op de wachtlijst."
+          {selectedProduct ? (
+            <WaitlistCard
+              product={selectedProduct}
+              title={`Wachtlijst ${selected.date ? formatDate(selected.date) : selected.name}`}
+              onMessage={setMessage}
             />
-          </section>
+          ) : null}
         </>
       ) : null}
+
+      <ProductsCard kind="Pronkzitting" title="Avonden" onMessage={setMessage} />
+      <OrdersCard kind="Pronkzitting" onMessage={setMessage} />
 
       <SaleProductDialog
         open={editing !== null}
         product={editing}
+        initialKind="Pronkzitting"
+        fixedKind
         onClose={() => setEditing(null)}
         onSaved={setMessage}
       />
-      <Dialog
-        open={granting !== null}
-        title={granting ? `Toekennen: ${granting.groupName ?? granting.buyerName}` : ''}
-        onClose={() => setGranting(null)}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!granting) return;
-            grant.mutate(
-              { id: granting.id, payment },
-              {
-                onSuccess: () => {
-                  setMessage(`${granting.buyerName} heeft de plaatsen gekregen en krijgt een e-mail.`);
-                  setGranting(null);
-                },
-              },
-            );
-          }}
-        >
-          <p>
-            {granting ? granting.memberQuantity + granting.paidQuantity : 0} plaats(en)
-            {granting && granting.memberQuantity > 0 ? `, waarvan ${granting.memberQuantity} gratis groepskaarten` : ''}.
-            {granting?.buyerIsMember ? ' De besteller krijgt ook een melding in de app.' : ''}
-          </p>
-          {granting && granting.paidQuantity > 0 ? (
-            <fieldset>
-              <legend>Losse kaarten ({granting.paidQuantity})</legend>
-              <label className="checkbox">
-                <input
-                  type="radio"
-                  name="toekennen-betaling"
-                  checked={payment === 'PaymentLink'}
-                  onChange={() => setPayment('PaymentLink')}
-                />{' '}
-                Uitnodigen met een betaallink (48 uur geldig)
-              </label>
-              <label className="checkbox">
-                <input
-                  type="radio"
-                  name="toekennen-betaling"
-                  checked={payment === 'Cash'}
-                  onChange={() => setPayment('Cash')}
-                />{' '}
-                Contant ontvangen
-              </label>
-            </fieldset>
-          ) : null}
-          <ProblemAlert error={grant.error} />
-          <div className="actions">
-            <button type="button" className="button secondary" onClick={() => setGranting(null)}>
-              Annuleren
-            </button>
-            <button type="submit" className="button" disabled={grant.isPending}>
-              Toekennen
-            </button>
-          </div>
-        </form>
-      </Dialog>
     </>
   );
 }

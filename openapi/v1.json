@@ -8536,6 +8536,15 @@
         "tags": [
           "AdminSales"
         ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SaleProductKind"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -8783,6 +8792,13 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SaleProductKind"
             }
           },
           {
@@ -18959,6 +18975,7 @@
         "required": [
           "groupName",
           "activeMembers",
+          "persons",
           "ordered",
           "remaining"
         ],
@@ -18971,6 +18988,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "persons": {
+            "type": "integer",
+            "format": "int32"
+          },
           "ordered": {
             "type": "integer",
             "format": "int32"
@@ -18980,7 +19001,7 @@
             "format": "int32"
           }
         },
-        "description": "Kaarten die een groep (vrij veld 3) nog gratis kan bestellen: actieve leden min wat al besteld is (beide avonden)."
+        "description": "Kaarten die een groep (vrij veld 3) nog gratis kan bestellen: het aantal personen van de actieve leden (een\ntweepersoonslid telt 2, zie MembershipWeights) min wat al besteld is (beide avonden)."
       },
       "GroupDetailResponse": {
         "required": [
@@ -19965,6 +19986,8 @@
           "joinYear",
           "ebStatusRaw",
           "memberCategory",
+          "paradeGroupName",
+          "persons",
           "syncedStatus",
           "localStatusOverride",
           "effectiveStatus",
@@ -20097,6 +20120,16 @@
               "null",
               "string"
             ]
+          },
+          "paradeGroupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "persons": {
+            "type": "integer",
+            "format": "int32"
           },
           "syncedStatus": {
             "$ref": "#/components/schemas/MembershipStatus"
@@ -24352,9 +24385,9 @@
           "Pronkzitting",
           "DayTicket",
           "EventTicket",
-          "Tokens"
-        ],
-        "description": "Wat er te koop is (fase 19)."
+          "Tokens",
+          null
+        ]
       },
       "SaleProductRequest": {
         "required": [
@@ -24529,6 +24562,7 @@
       "SalesSummary": {
         "required": [
           "revenueCents",
+          "sold",
           "openPaymentLinks",
           "openAmountCents",
           "tokensToCollect",
@@ -24537,6 +24571,10 @@
         "type": "object",
         "properties": {
           "revenueCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sold": {
             "type": "integer",
             "format": "int32"
           },

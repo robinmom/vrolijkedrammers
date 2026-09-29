@@ -60,12 +60,15 @@ export function SaleProductDialog({
   open,
   product,
   initialKind = 'Pronkzitting',
+  fixedKind = false,
   onClose,
   onSaved,
 }: {
   open: boolean;
   product: SaleProduct | null;
   initialKind?: SaleProductKind;
+  /** Op een pagina per soort (Verkoop) ligt de soort vast. */
+  fixedKind?: boolean;
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
@@ -110,6 +113,7 @@ export function SaleProductDialog({
   return (
     <Dialog open={open} title={product ? `Instellen: ${product.name}` : 'Nieuw product'} onClose={onClose}>
       <form onSubmit={submit}>
+        {fixedKind ? null : (
         <div className="field">
           <label htmlFor="product-soort">Soort</label>
           <select
@@ -125,6 +129,7 @@ export function SaleProductDialog({
             ))}
           </select>
         </div>
+        )}
         <div className="field">
           <label htmlFor="product-naam">Naam</label>
           <input
@@ -250,11 +255,14 @@ export function SaleProductDialog({
  */
 export function NewOrderDialog({
   open,
+  kind,
   paymentLinkOnly,
   onClose,
   onSaved,
 }: {
   open: boolean;
+  /** Alleen producten van deze soort (de pagina onder Verkoop). */
+  kind?: SaleProductKind;
   paymentLinkOnly: boolean;
   onClose: () => void;
   onSaved: (message: string) => void;
@@ -335,7 +343,9 @@ export function NewOrderDialog({
           <label htmlFor="bestelling-product">Product</label>
           <select id="bestelling-product" required value={productId} onChange={(e) => setProductId(e.target.value)}>
             <option value="">Kies een product</option>
-            {(products.data ?? []).map((p) => (
+            {(products.data ?? [])
+              .filter((p) => !kind || p.kind === kind)
+              .map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
                 {p.remaining !== null ? ` (nog ${p.remaining} vrij)` : ''}
@@ -352,7 +362,7 @@ export function NewOrderDialog({
                 <option value="">Geen groepskaarten</option>
                 {(groups.data ?? []).map((g) => (
                   <option key={g.groupName} value={g.groupName}>
-                    {g.groupName} (nog {g.remaining} van {g.activeMembers})
+                    {g.groupName} (nog {g.remaining} van {g.persons} personen)
                   </option>
                 ))}
               </select>
@@ -369,7 +379,7 @@ export function NewOrderDialog({
                   onChange={(e) => setMemberQuantity(e.target.value)}
                 />
                 <small className="muted">
-                  Hooguit het aantal actieve leden van de groep, beide avonden samen. Dat is geen reservering.
+                  Hooguit het aantal personen van de groep (tweepersoonslid telt 2), beide avonden samen. Dat is geen reservering.
                 </small>
               </div>
             ) : null}

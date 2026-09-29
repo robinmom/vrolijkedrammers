@@ -15,7 +15,7 @@ public sealed record SaleProductInput(
 
 public sealed record SaleProductRow(SaleProduct Product, ProductStock Stock, int RevenueCents, int Waiting);
 
-public sealed record SalesSummary(int RevenueCents, int OpenPaymentLinks, int OpenAmountCents, int TokensToCollect, int TokensSold);
+public sealed record SalesSummary(int RevenueCents, int Sold, int OpenPaymentLinks, int OpenAmountCents, int TokensToCollect, int TokensSold);
 
 public sealed record SaleOrderRow(
     Guid Id, string Number, Guid ProductId, string ProductName, SaleOrderStatus Status, SalePaymentMethod PaymentMethod, SaleChannel Channel,
@@ -56,12 +56,14 @@ public sealed class SaleAdministration(DrammersDbContext db, TicketSales sales, 
         return [.. products.Select(p => new SaleProductRow(p, stock[p.Id], revenue.GetValueOrDefault(p.Id), waiting.GetValueOrDefault(p.Id)))];
     }
 
-    public async Task<SalesSummary> SummaryAsync(CancellationToken cancellationToken)
+    /// <summary>Kerncijfers van het carnavalsjaar, of van één soort product (één pagina onder Verkoop).</summary>
+    public async Task<SalesSummary> SummaryAsync(CancellationToken cancellationToken, SaleProductKind? kind = null)
     {
         var year = await ActiveYearAsync(cancellationToken);
         var now = Now;
-        var orders = db.SaleOrders.AsNoTracking().Where(o => o.CarnivalYearId == year);
+        var orders = OfKind(db.SaleOrders.AsNoTracking().Where(o => o.CarnivalYearId == year), kind);
         var revenue = await orders.Where(o => o.Status == SaleOrderStatus.Confirmed).SumAsync(o => o.AmountCents, cancellationToken);
+        var sold = await orders.Where(o => o.Status == SaleOrderStatus.Confirmed).SumAsync(o => o.MemberQuantity + o.PaidQuantity, cancellationToken);
         var open = await orders.Where(o => o.Status == SaleOrderStatus.AwaitingPayment && o.HoldUntil > now)
             .GroupBy(_ => 1).Select(g => new { Count = g.Count(), Sum = g.Sum(o => o.AmountCents) }).SingleOrDefaultAsync(cancellationToken);
         var tokens = await (
@@ -70,9 +72,12 @@ public sealed class SaleAdministration(DrammersDbContext db, TicketSales sales, 
             where p.Kind == SaleProductKind.Tokens && o.Status == SaleOrderStatus.Confirmed
             join t in db.OrderTickets.AsNoTracking() on o.Id equals t.OrderId
             select new { t.Quantity, t.Status }).ToListAsync(cancellationToken);
-        return new SalesSummary(revenue, open?.Count ?? 0, open?.Sum ?? 0,
+        return new SalesSummary(revenue, sold, open?.Count ?? 0, open?.Sum ?? 0,
             tokens.Where(t => t.Status == OrderTicketStatus.Active).Sum(t => t.Quantity), tokens.Sum(t => t.Quantity));
     }
+
+    private IQueryable<SaleOrder> OfKind(IQueryable<SaleOrder> orders, SaleProductKind? kind) =>
+        kind is { } k ? orders.Where(o => db.SaleProducts.Any(p => p.Id == o.ProductId && p.Kind == k)) : orders;
 
     public async Task<SaleProduct> CreateProductAsync(SaleProductInput input, CancellationToken cancellationToken)
     {
@@ -166,10 +171,11 @@ public sealed class SaleAdministration(DrammersDbContext db, TicketSales sales, 
     });
 
     public async Task<(IReadOnlyList<SaleOrderRow> Items, int Total)> OrdersAsync(
-        Guid? productId, SaleOrderStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken)
+        Guid? productId, SaleOrderStatus? status, string? search, int page, int pageSize, CancellationToken cancellationToken,
+        SaleProductKind? kind = null)
     {
         var year = await ActiveYearAsync(cancellationToken);
-        var query = db.SaleOrders.AsNoTracking().Where(o => o.CarnivalYearId == year);
+        var query = OfKind(db.SaleOrders.AsNoTracking().Where(o => o.CarnivalYearId == year), kind);
         if (productId is { } p)
         {
             query = query.Where(o => o.ProductId == p);

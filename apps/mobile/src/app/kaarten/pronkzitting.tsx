@@ -104,7 +104,7 @@ export default function PronkzittingScreen() {
                   </AppText>
                 </View>
                 <AppText variant="caption" color={colors.textSecondary}>
-                  {group.activeMembers} leden · {group.ordered} al besteld door de groep. Plaatsen worden niet vastgehouden:
+                  {group.persons} personen ({group.activeMembers} leden) · {group.ordered} al besteld door de groep. Plaatsen worden niet vastgehouden:
                   is de avond vol, dan kun je op de wachtlijst.
                 </AppText>
                 <SaleStepperRow

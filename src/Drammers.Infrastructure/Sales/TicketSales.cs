@@ -33,8 +33,11 @@ public sealed record OrderInput(
 
 public sealed record OrderCreated(Guid OrderId, string Number, string Token, SaleOrderStatus Status, string? CheckoutUrl);
 
-/// <summary>Kaarten die een groep (vrij veld 3) nog gratis kan bestellen: actieve leden min wat al besteld is (beide avonden).</summary>
-public sealed record GroupAllowance(string GroupName, int ActiveMembers, int Ordered, int Remaining);
+/// <summary>
+/// Kaarten die een groep (vrij veld 3) nog gratis kan bestellen: het aantal personen van de actieve leden (een
+/// tweepersoonslid telt 2, zie <see cref="Members.MembershipWeights"/>) min wat al besteld is (beide avonden).
+/// </summary>
+public sealed record GroupAllowance(string GroupName, int ActiveMembers, int Persons, int Ordered, int Remaining);
 
 /// <summary>Stand van een product: verkocht (betaald of gratis), vastgehouden voor een openstaande betaling, nog vrij.</summary>
 public sealed record ProductStock(int Sold, int Held, int? Remaining, bool SoldOut);
@@ -153,7 +156,14 @@ public sealed partial class TicketSales(
         }
 
         var name = groupName.Trim();
-        var active = await db.Members.AsNoTracking().CountAsync(m => m.ParadeGroupName == name && (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active, cancellationToken);
+        // SQL Server vergelijkt zonder hoofdlettergevoeligheid en zonder spaties achteraan, zoals MembershipWeights.
+        var members = await db.Members.AsNoTracking()
+            .Where(m => m.ParadeGroupName == name && (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active)
+            .GroupBy(_ => 1)
+            .Select(g => new { Count = g.Count(), Persons = g.Sum(m => m.MemberCategory == Members.MembershipWeights.TwoPersons ? 2 : 1) })
+            .SingleOrDefaultAsync(cancellationToken);
+        var active = members?.Count ?? 0;
+        var persons = members?.Persons ?? 0;
         var now = Now;
         var ordered = await (
             from o in db.SaleOrders.AsNoTracking()
@@ -161,7 +171,7 @@ public sealed partial class TicketSales(
             where o.CarnivalYearId == year && p.Kind == SaleProductKind.Pronkzitting && o.GroupName == name
                 && (o.Status == SaleOrderStatus.Confirmed || (o.Status == SaleOrderStatus.AwaitingPayment && o.HoldUntil > now))
             select o.MemberQuantity).SumAsync(cancellationToken);
-        return new GroupAllowance(name, active, ordered, Math.Max(0, active - ordered));
+        return new GroupAllowance(name, active, persons, ordered, Math.Max(0, persons - ordered));
     }
 
     // ---- Bestellen -------------------------------------------------------------------------------------------------
@@ -284,7 +294,7 @@ public sealed partial class TicketSales(
             if (allowance is null || draft.MemberQuantity > allowance.Remaining)
             {
                 throw new DomainException(ErrorCodes.GroupLimit,
-                    $"De {group} kan nog {allowance?.Remaining ?? 0} gratis kaart(en) bestellen ({allowance?.ActiveMembers ?? 0} actieve leden, {allowance?.Ordered ?? 0} al besteld, beide avonden samen).",
+                    $"De {group} kan nog {allowance?.Remaining ?? 0} gratis kaart(en) bestellen ({allowance?.Persons ?? 0} personen, {allowance?.Ordered ?? 0} al besteld, beide avonden samen).",
                     DomainErrorKind.Conflict);
             }
         }

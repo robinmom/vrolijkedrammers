@@ -14,6 +14,15 @@ public static class PortalHosting
     /// <summary>Openbare webpagina "Inschrijven optocht" (fase 11c) voor iedereen zonder account; zelfde CSP als lid worden.</summary>
     public const string ParadePath = "/optocht-inschrijven";
 
+    /// <summary>
+    /// Openbare aanrijtijdenlijst (fase 16). Mag worden ingesloten op de website van de vereniging (iframe), verder niet.
+    /// </summary>
+    public const string ArrivalsPath = "/aanrijtijden";
+
+    private const string ArrivalsContentSecurityPolicy =
+        "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors https://vrolijkedrammers.nl https://www.vrolijkedrammers.nl; " +
+        "base-uri 'self'; form-action 'none'; object-src 'none'";
+
     private const string JoinContentSecurityPolicy =
         "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
@@ -35,6 +44,10 @@ public static class PortalHosting
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
                 headers.XFrameOptions = "DENY";
             }
+            else if (context.Request.Path.StartsWithSegments(ArrivalsPath))
+            {
+                headers.ContentSecurityPolicy = ArrivalsContentSecurityPolicy;
+            }
             else if (context.Request.Path.StartsWithSegments(JoinPath) || context.Request.Path.StartsWithSegments(ParadePath))
             {
                 headers.ContentSecurityPolicy = JoinContentSecurityPolicy;
@@ -54,7 +67,7 @@ public static class PortalHosting
         // /beheer → /beheer/ (Vite gebruikt paden onder de base). Geen route: routing negeert de trailing slash.
         app.Use((context, next) =>
         {
-            if (context.Request.Path.Value is BasePath or JoinPath or ParadePath)
+            if (context.Request.Path.Value is BasePath or JoinPath or ParadePath or ArrivalsPath)
             {
                 context.Response.Redirect($"{context.Request.Path.Value}/{context.Request.QueryString}");
                 return Task.CompletedTask;

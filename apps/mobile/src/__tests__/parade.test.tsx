@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import OptochtScreen from '../app/(tabs)/optocht';
 import InschrijvingScreen from '../app/optocht/[id]';
+import AanrijtijdenScreen from '../app/optocht/aanrijtijden';
 import OptochtInfoScreen from '../app/optocht/info';
 import InschrijvenScreen from '../app/optocht/inschrijven';
 import { setSessionForTest } from '../auth/session';
@@ -14,6 +15,7 @@ const routes = {
   'optocht/inschrijven': InschrijvenScreen,
   'optocht/info': OptochtInfoScreen,
   'optocht/[id]': InschrijvingScreen,
+  'optocht/aanrijtijden': AanrijtijdenScreen,
 };
 
 const parade = {
@@ -312,5 +314,58 @@ describe('Optocht inschrijven (fase 11)', () => {
     await renderApp(routes, '/optocht');
     expect(await screen.findByText(/De inschrijving opent op/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Aanmelden optocht' })).toBeNull();
+  });
+
+  it('aanrijtijden: knop op het tabblad na publiceren, openbare lijst en de eigen tijd bij Mijn inschrijving', async () => {
+    setSessionForTest('signedIn');
+    mockApi({
+      ...paradeApi,
+      '/api/v1/me': me(['parade.register']),
+      '/api/v1/me/parade-registrations': [],
+      '/api/v1/parade/arrival-times': {
+        published: true,
+        paradeName: 'Optocht Loil 2027',
+        paradeDate: '2027-02-07',
+        location: 'Rotonde Holthuizen',
+        rows: [
+          { startNumber: 5, category: 'Getrokken wagens', groupName: 'De Snotapen', arrivalTime: '10:30' },
+          { startNumber: 7, category: 'Zelfrijdend voertuigen', groupName: 'De Sökkels', arrivalTime: '10:34' },
+        ],
+      },
+      '/api/v1/parade/registrations/r-1': {
+        ...draft,
+        status: 'StartNumberAssigned',
+        registrationNumber: 12,
+        startNumber: 5,
+        arrivalTime: '10:30',
+        arrivalLocation: 'Rotonde Holthuizen',
+      },
+    });
+    await renderApp(routes, '/optocht');
+    await fireEvent.press(await screen.findByRole('button', { name: 'Aanrijtijden wagens' }));
+    expect(await screen.findByText(/Tijd waarop de wagen bij Rotonde Holthuizen moet zijn/)).toBeTruthy();
+    expect(screen.getByLabelText('Startnummer 7, De Sökkels, Zelfrijdend voertuigen: 10:34 uur')).toBeTruthy();
+
+    await renderApp(routes, '/optocht/r-1');
+    expect(await screen.findByText('10:30 uur · Rotonde Holthuizen')).toBeTruthy();
+  });
+
+  it('aanrijtijden nog niet gepubliceerd: geen knop en een melding op de lijst', async () => {
+    setSessionForTest('signedOut', null);
+    mockApi({
+      ...paradeApi,
+      '/api/v1/parade/arrival-times': {
+        published: false,
+        paradeName: 'Optocht Loil 2027',
+        paradeDate: '2027-02-07',
+        location: null,
+        rows: [],
+      },
+    });
+    await renderApp(routes, '/optocht');
+    expect(await screen.findByText('Optocht Loil 2027')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Aanrijtijden wagens' })).toBeNull();
+    await renderApp(routes, '/optocht/aanrijtijden');
+    expect(await screen.findByText('Nog niet bekend')).toBeTruthy();
   });
 });

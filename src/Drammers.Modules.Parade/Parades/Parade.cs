@@ -64,6 +64,12 @@ public sealed class Parade : IAuditable
     /// </summary>
     public List<ParadeFixedEntry> FixedEntries { get; set; } = [];
 
+    /// <summary>Meldplek voor de wagens (fase 16), bijv. "Rotonde Holthuizen"; kolomkop van de aanrijtijdenlijst.</summary>
+    public string? ArrivalLocation { get; set; }
+
+    /// <summary>Aanrijtijden gepubliceerd: groepen, de app en de openbare lijst zien ze vanaf dan.</summary>
+    public DateTime? ArrivalTimesPublishedAt { get; set; }
+
     /// <summary>Het eerste startnummer dat een groep kan krijgen.</summary>
     public int FirstGroupStartNumber => FixedEntries.Count + 1;
 

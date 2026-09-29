@@ -41,6 +41,7 @@ public class AuthorizationConventionTests
         // Fase 11: openbare optochtinfo en categorieën (Figma 04).
         $"{nameof(ParadeController)}.{nameof(ParadeController.Current)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.Categories)}",
+        $"{nameof(ParadeController)}.{nameof(ParadeController.ArrivalTimes)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.StartPublic)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.VerifyPublic)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.ResendPublic)}",

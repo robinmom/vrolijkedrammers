@@ -59,7 +59,7 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
     public async Task<Parade> CreateAsync(ParadeInput input, CancellationToken cancellationToken)
     {
         await ValidateAsync(input, null, cancellationToken);
-        var parade = new Parade { Id = IdGenerator.NewId(), Name = input.Name.Trim(), FixedEntries = ParadeFixedEntry.Defaults() };
+        var parade = new Parade { Id = IdGenerator.NewId(), Name = input.Name.Trim(), FixedEntries = ParadeFixedEntry.Defaults(), ArrivalLocation = "Rotonde Holthuizen" };
         Apply(parade, input);
         db.Parades.Add(parade);
         db.ParadeNumberSequences.Add(new ParadeNumberSequence { ParadeId = parade.Id, LastRegistrationNumber = 0 });

@@ -4650,6 +4650,344 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/parade/arrival-times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArrivalList"];
+                        "application/json": components["schemas"]["ArrivalList"];
+                        "text/json": components["schemas"]["ArrivalList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/arrival-times/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ArrivalLocationRequest"];
+                    "text/json": components["schemas"]["ArrivalLocationRequest"];
+                    "application/*+json": components["schemas"]["ArrivalLocationRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/arrival-times/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GenerateArrivalsRequest"];
+                    "text/json": components["schemas"]["GenerateArrivalsRequest"];
+                    "application/*+json": components["schemas"]["GenerateArrivalsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArrivalChangedResponse"];
+                        "application/json": components["schemas"]["ArrivalChangedResponse"];
+                        "text/json": components["schemas"]["ArrivalChangedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/arrival-times/{registrationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    registrationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetArrivalRequest"];
+                    "text/json": components["schemas"]["SetArrivalRequest"];
+                    "application/*+json": components["schemas"]["SetArrivalRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/arrival-times/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArrivalChangedResponse"];
+                        "application/json": components["schemas"]["ArrivalChangedResponse"];
+                        "text/json": components["schemas"]["ArrivalChangedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/arrival-times/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArrivalImportPreview"];
+                        "application/json": components["schemas"]["ArrivalImportPreview"];
+                        "text/json": components["schemas"]["ArrivalImportPreview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/arrival-times/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArrivalChangedResponse"];
+                        "application/json": components["schemas"]["ArrivalChangedResponse"];
+                        "text/json": components["schemas"]["ArrivalChangedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/parade-composition": {
         parameters: {
             query?: never;
@@ -9190,6 +9528,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/parade/arrival-times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Openbare aanrijtijdenlijst (fase 16, zoals op de website): alleen wagens, pas na publiceren. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicArrivals"];
+                        "application/json": components["schemas"]["PublicArrivals"];
+                        "text/json": components["schemas"]["PublicArrivals"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/parade/categories": {
         parameters: {
             query?: never;
@@ -10974,6 +11350,55 @@ export interface components {
             /** Format: uuid */
             memberId: string;
         };
+        ArrivalChange: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            startNumber: number;
+            groupName: null | string;
+            /** Format: time */
+            oldTime: null | string;
+            /** Format: time */
+            newTime: null | string;
+        };
+        ArrivalChangedResponse: {
+            /** Format: int32 */
+            changed: number;
+        };
+        ArrivalImportPreview: {
+            /** Format: int32 */
+            version: number;
+            location: null | string;
+            changes: components["schemas"]["ArrivalChange"][];
+            errors: components["schemas"]["ImportIssue"][];
+        };
+        ArrivalList: {
+            location: null | string;
+            /** Format: date-time */
+            publishedAt: null | string;
+            /** Format: date */
+            paradeDate: string;
+            /** Format: time */
+            paradeStartTime: string;
+            /** Format: int32 */
+            version: number;
+            rows: components["schemas"]["ArrivalRow"][];
+        };
+        ArrivalLocationRequest: {
+            location: null | string;
+        };
+        ArrivalRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            startNumber: null | number;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            category: null | string;
+            groupName: null | string;
+            /** Format: time */
+            arrivalTime: null | string;
+        };
         AssignDanceGroupRequest: {
             /** Format: uuid */
             groupId: null | string;
@@ -11423,6 +11848,13 @@ export interface components {
             /** Format: int32 */
             childrenCount: number;
             hasMusic: boolean;
+        };
+        GenerateArrivalsRequest: {
+            /** Format: time */
+            first: string;
+            /** Format: int32 */
+            intervalMinutes: number;
+            onlyEmpty: boolean;
         };
         GenerateStartNumbersRequest: {
             mode: components["schemas"]["StartNumberMode"];
@@ -12479,6 +12911,22 @@ export interface components {
             displayName: string;
             roles: string[];
         };
+        /** @description De openbare aanrijtijdenlijst (zoals op de website): alleen na publiceren. */
+        PublicArrivalRow: {
+            /** Format: int32 */
+            startNumber: null | number;
+            category: null | string;
+            groupName: null | string;
+            arrivalTime: null | string;
+        };
+        PublicArrivals: {
+            published: boolean;
+            paradeName: null | string;
+            /** Format: date */
+            paradeDate: null | string;
+            location: null | string;
+            rows: components["schemas"]["PublicArrivalRow"][];
+        };
         PublicationRequest: {
             visibility: components["schemas"]["ContentVisibility"];
             audienceRoles: null | string[];
@@ -12585,6 +13033,8 @@ export interface components {
             issues: components["schemas"]["ValidationIssueResponse"][];
             reviewReason: null | string;
             hasMusic: null | boolean;
+            arrivalTime: null | string;
+            arrivalLocation: null | string;
         };
         /** @enum {unknown} */
         RegistrationSource: "App" | "WebForm" | "Portal";
@@ -12712,6 +13162,10 @@ export interface components {
             issuedAt: number;
             /** Format: int32 */
             validFor: number;
+        };
+        SetArrivalRequest: {
+            /** Format: time */
+            arrivalTime: null | string;
         };
         SetPreferencesRequest: {
             preferences: components["schemas"]["PreferenceChange"][];

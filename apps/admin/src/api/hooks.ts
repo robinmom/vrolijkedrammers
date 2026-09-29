@@ -718,3 +718,15 @@ export function useDanceGroups() {
   const api = useApi();
   return useQuery({ queryKey: ['dance-groups'], queryFn: async () => required((await api.GET('/api/v1/admin/dansgarde/groups')).data) });
 }
+
+// ----- Fase 16: aanrijtijden -----
+
+export type ArrivalList = Schemas['ArrivalList'];
+
+export function useArrivalTimes() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['arrival-times'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade/arrival-times')).data),
+  });
+}

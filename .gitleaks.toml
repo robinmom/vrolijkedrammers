@@ -9,6 +9,7 @@ regexTarget = "match"
 regexes = [
   # Azure-rol Key Vault Secrets User.
   '''4633458b-17de-408a-b874-0445c86b69e6''',
-  # Portalroute in e2e: `open(page, api, 'optocht/inschrijvingen')` lijkt voor generic-api-key op "api = <sleutel>".
-  '''api, 'optocht/inschrijvingen''',
+  # Portalroutes in e2e: `open(page, api, 'optocht/inschrijvingen')` lijkt voor generic-api-key op "api = <sleutel>".
+  # Alleen kleine letters, cijfers, / en - (routes); echte sleutels hebben hoofdletters of andere tekens.
+  '''api, '[a-z][a-z0-9/-]*''',
 ]

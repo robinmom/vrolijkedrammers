@@ -150,6 +150,7 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
         var warnings = r.ValidationWarnings is null
             ? []
             : JsonSerializer.Deserialize<List<ValidationIssueResponse>>(r.ValidationWarnings, JsonSerializerOptions.Web) ?? [];
+        var (arrivalTime, arrivalLocation) = await registrations.ArrivalAsync(r, cancellationToken);
         return new RegistrationResponse(
             r.Id, Convert.ToBase64String(r.RowVersion), r.Status, r.RegistrationNumber, r.StartNumber, r.GroupName, r.ContactName, r.ContactPhone,
             r.ContactPhone is null ? null : PhoneNormalizer.Display(r.ContactPhone), r.ContactEmail, r.CategoryId, r.Subject, r.SubjectDescription,
@@ -157,7 +158,7 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
             r.EstimatedLengthMeters, r.AdditionalInformation, r.SubmittedAt, r.WithdrawnAt,
             [.. fields.Order(StringComparer.Ordinal)], canWithdraw,
             [.. warnings.Select(w => w with { Severity = "Warn" })], [.. issues.Select(ValidationIssueResponse.From)],
-            await registrations.ReviewReasonAsync(r, cancellationToken), r.HasMusic);
+            await registrations.ReviewReasonAsync(r, cancellationToken), r.HasMusic, arrivalTime, arrivalLocation);
     }
 }
 
@@ -206,7 +207,7 @@ public sealed record RegistrationResponse(
     int ChildrenCount, int AdultCount, AddressDto BuildAddress, bool JuryInspectionSameAsBuildAddress, AddressDto JuryInspectionAddress,
     decimal? EstimatedLengthMeters, string? AdditionalInformation, DateTime? SubmittedAt, DateTime? WithdrawnAt,
     IReadOnlyList<string> EditableFields, bool CanWithdraw, IReadOnlyList<ValidationIssueResponse> Warnings, IReadOnlyList<ValidationIssueResponse> Issues,
-    string? ReviewReason, bool? HasMusic);
+    string? ReviewReason, bool? HasMusic, string? ArrivalTime, string? ArrivalLocation);
 
 public sealed record RegistrationSummaryResponse(
     Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt);

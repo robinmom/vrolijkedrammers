@@ -29,6 +29,7 @@ export const queryKeys = {
   myNotificationPreferences: ['me', 'notification-preferences'] as const,
   parade: ['parade'] as const,
   paradeCategories: ['parade', 'categories'] as const,
+  arrivalTimes: ['parade', 'arrival-times'] as const,
   myRegistrations: ['me', 'parade-registrations'] as const,
   myRegistration: (id: string) => ['me', 'parade-registrations', id] as const,
   myBuildLocations: ['me', 'build-locations'] as const,
@@ -179,6 +180,10 @@ export const useMyNotificationPreferences = () => {
 /** Huidige optocht met datum, inschrijfperiode en de informatietekst uit het portal (fase 11). 404 = nog geen optocht. */
 export const useParade = () =>
   useQuery({ queryKey: queryKeys.parade, queryFn: () => unwrap(api.GET('/api/v1/parade/current')) });
+
+/** Openbare aanrijtijdenlijst (fase 16): alleen wagens, pas na publiceren. */
+export const useArrivalTimes = () =>
+  useQuery({ queryKey: queryKeys.arrivalTimes, queryFn: () => unwrap(api.GET('/api/v1/parade/arrival-times')) });
 
 export const useParadeCategories = () =>
   useQuery({ queryKey: queryKeys.paradeCategories, queryFn: () => unwrap(api.GET('/api/v1/parade/categories')) });

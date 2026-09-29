@@ -30,6 +30,12 @@ public sealed class ParadeController(ParadeAdministration parades, ParadePublicR
             MarkdownRenderer.ToSafeHtml(p.InfoText));
     }
 
+    /// <summary>Openbare aanrijtijdenlijst (fase 16, zoals op de website): alleen wagens, pas na publiceren.</summary>
+    [HttpGet("arrival-times")]
+    [ProducesResponseType<PublicArrivals>(StatusCodes.Status200OK)]
+    public Task<PublicArrivals> ArrivalTimes([FromServices] ParadeArrivals arrivals, CancellationToken cancellationToken) =>
+        arrivals.PublicAsync(cancellationToken);
+
     [HttpGet("categories")]
     [ProducesResponseType<IReadOnlyList<ParadeCategoryResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<ParadeCategoryResponse>> Categories(CancellationToken cancellationToken)

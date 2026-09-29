@@ -191,6 +191,32 @@ export class MockApi {
   urgent = true;
   // Fase 11: optocht.
   parades: Record<string, unknown>[] = [];
+  // Fase 16: aanrijtijden.
+  arrivals = {
+    location: 'Rotonde Holthuizen' as string | null,
+    publishedAt: null as string | null,
+    paradeDate: '2027-02-07',
+    paradeStartTime: '13:30:00',
+    version: 1,
+    rows: [
+      {
+        id: 'r-5',
+        startNumber: 5,
+        registrationNumber: 3,
+        category: 'Getrokken wagens',
+        groupName: 'De Snotapen',
+        arrivalTime: null as string | null,
+      },
+      {
+        id: 'r-7',
+        startNumber: 7,
+        registrationNumber: 8,
+        category: 'Zelfrijdend voertuigen',
+        groupName: 'De Sökkels',
+        arrivalTime: null as string | null,
+      },
+    ],
+  };
   // Fase 12c: voorbeeld van een startnummerimport.
   importPreview: {
     version: number;
@@ -676,6 +702,36 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/parades\/([^/]+)\/fixed-entries$/)) && method === 'PUT') {
       const parade = this.parades.find((p) => p.id === m![1])!;
       parade.fixedEntries = (body as { entries: unknown[] }).entries;
+      this.lineupCalls.push({ path, body });
+      return noContent();
+    }
+    if (path === '/admin/parade/arrival-times' && method === 'GET') {
+      return json(this.arrivals);
+    }
+    if (path === '/admin/parade/arrival-times/generate') {
+      const b = body as { first: string; intervalMinutes: number };
+      const [h, mi] = b.first.split(':').map(Number) as [number, number];
+      this.arrivals.rows.forEach((row, i) => {
+        const minutes = h * 60 + mi + i * b.intervalMinutes;
+        row.arrivalTime = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:00`;
+      });
+      this.lineupCalls.push({ path, body });
+      return json({ changed: this.arrivals.rows.length });
+    }
+    if (path === '/admin/parade/arrival-times/location') {
+      this.arrivals.location = (body as { location: string | null }).location;
+      this.lineupCalls.push({ path, body });
+      return noContent();
+    }
+    if (path === '/admin/parade/arrival-times/publish') {
+      this.arrivals.publishedAt = '2026-09-29T12:00:00Z';
+      this.lineupCalls.push({ path, body: null });
+      return json({ changed: this.arrivals.rows.filter((r) => r.arrivalTime).length });
+    }
+    if ((m = path.match(/^\/admin\/parade\/arrival-times\/(r-\d+)$/)) && method === 'PUT') {
+      this.arrivals.rows.find((r) => r.id === m![1])!.arrivalTime = (
+        body as { arrivalTime: string | null }
+      ).arrivalTime;
       this.lineupCalls.push({ path, body });
       return noContent();
     }

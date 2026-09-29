@@ -109,6 +109,7 @@ internal sealed class ParadeHistoryInterceptor(IClock clock, ICurrentActor actor
         nameof(ParadeRegistration.ChildrenCount) => "Aantal kinderen",
         nameof(ParadeRegistration.AdultCount) => "Aantal volwassenen",
         nameof(ParadeRegistration.HasMusic) => "Muziek",
+        nameof(ParadeRegistration.ArrivalTime) => "Aanrijtijd",
         nameof(ParadeRegistration.JuryInspectionSameAsBuildAddress) => "Stalling jury gelijk aan bouwadres",
         nameof(ParadeRegistration.EstimatedLengthMeters) => "Geschatte lengte",
         nameof(ParadeRegistration.MeasuredLengthMeters) => "Gemeten lengte",

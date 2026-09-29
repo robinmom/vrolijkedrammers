@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aanrijtijden optocht – De Vrolijke Drammers</title>
+    <meta name="description" content="Aanrijtijden van de wagens voor de carnavalsoptocht van De Vrolijke Drammers in Loil." />
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="hero">
+      <img src="logo.png" alt="" width="64" height="64" />
+      <div>
+        <p class="eyebrow">CV De Vrolijke Drammers · Loil</p>
+        <h1 id="titel">Aanrijtijden optocht</h1>
+        <p id="datum" class="eyebrow"></p>
+      </div>
+    </header>
+    <main>
+      <p id="status" role="status">Laden…</p>
+      <div id="lijst" class="table-wrap" hidden>
+        <table class="aanrij-table">
+          <caption id="uitleg" class="muted"></caption>
+          <thead>
+            <tr>
+              <th scope="col">Stnr.</th>
+              <th scope="col">Categorie</th>
+              <th scope="col">Naam</th>
+              <th scope="col" id="plek">Aanrijtijd</th>
+            </tr>
+          </thead>
+          <tbody id="rijen"></tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

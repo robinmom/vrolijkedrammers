@@ -94,6 +94,12 @@ export default function InschrijvingScreen() {
             </AppText>
             <Row label="Opgavenummer" value={r.registrationNumber ? String(r.registrationNumber) : 'Na het indienen'} />
             <Row label="Startnummer" value={r.startNumber ? String(r.startNumber) : 'Volgt na de indeling'} />
+            {r.arrivalTime ? (
+              <Row
+                label="Aanrijtijd"
+                value={`${r.arrivalTime} uur${r.arrivalLocation ? ` · ${r.arrivalLocation}` : ''}`}
+              />
+            ) : null}
             <Row
               label="Categorie"
               value={`${categories.data?.find((c) => c.id === r.categoryId)?.name ?? '–'} · ${r.adultCount + r.childrenCount} deelnemers`}

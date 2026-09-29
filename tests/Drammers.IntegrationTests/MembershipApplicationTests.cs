@@ -42,27 +42,27 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
 
     private object Form(
         string email, int age, string firstName = "Piet", string? guardian = null, string iban = ValidIban, bool mandate = true, string membershipType = "Individual") => new
-    {
-        firstName,
-        namePrefix = "van der",
-        lastName = "Berg",
-        gender = "m",
-        birthDate = Today.AddYears(-age).AddDays(-10),
-        addressLine = "Dorpsstraat 1",
-        postalCode = "6999 aa",
-        city = "Loil",
-        email,
-        phone = "0612345678",
-        guardianName = guardian,
-        guardianPhone = guardian is null ? null : "0698765432",
-        iban,
-        accountHolder = guardian ?? "P. van der Berg",
-        mandateConsent = mandate,
-        privacyConsent = true,
-        photoConsent = false,
-        source = "App",
-        membershipType,
-    };
+        {
+            firstName,
+            namePrefix = "van der",
+            lastName = "Berg",
+            gender = "m",
+            birthDate = Today.AddYears(-age).AddDays(-10),
+            addressLine = "Dorpsstraat 1",
+            postalCode = "6999 aa",
+            city = "Loil",
+            email,
+            phone = "0612345678",
+            guardianName = guardian,
+            guardianPhone = guardian is null ? null : "0698765432",
+            iban,
+            accountHolder = guardian ?? "P. van der Berg",
+            mandateConsent = mandate,
+            privacyConsent = true,
+            photoConsent = false,
+            source = "App",
+            membershipType,
+        };
 
     [GeneratedRegex(@"\b\d{6}\b")]
     private static partial Regex CodePattern();

@@ -488,6 +488,33 @@ export type PublishResult = Schemas['PublishResult'];
 export type Composition = Schemas['Composition'];
 export type TicketSummary = Schemas['TicketSummary'];
 export type MemberAccess = Schemas['MemberAccess'];
+export type AccessStats = Schemas['AccessStats'];
+export type AccessDashboard = Schemas['AccessDashboard'];
+
+export function useAccessDashboard(enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['access-stats', 'dashboard'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/access-stats/dashboard')).data),
+    enabled,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useAccessStats(key: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['access-stats', key],
+    queryFn: async () => required((await api.GET('/api/v1/admin/access-stats', { params: { query: { key } } })).data),
+    enabled: Boolean(key),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useAccessOverview() {
+  const api = useApi();
+  return useQuery({ queryKey: ['access-stats', 'overview'], queryFn: async () => required((await api.GET('/api/v1/admin/access-stats/overview')).data) });
+}
 export type AccessResult = Schemas['AccessResult'];
 
 export function useMemberAccess(memberId: string, enabled: boolean) {

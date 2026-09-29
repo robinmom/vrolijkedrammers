@@ -727,6 +727,36 @@ test('fase 14: zonder ticket.scan geen toegangskaart; toegangslog voor het bestu
   await expectNoSeriousA11yIssues(page);
 });
 
+test('toegang: dashboardblok tussen aandacht en activiteiten, alleen met ticket.read', async ({ page }) => {
+  const api = new MockApi(['report.view', 'ticket.read', 'event.manage']);
+  await open(page, api);
+  const card = page.getByRole('region', { name: 'Toegang' });
+  await expect(card.getByText('Carnaval · zaterdag 13 februari')).toBeVisible();
+  await expect(card.getByRole('img', { name: /Binnen: 90 \(75%\)/ })).toBeVisible();
+  await expect(card.getByText('23 nog niet')).toBeVisible();
+  const order = await page.locator('section.card h2').allTextContents();
+  expect(order.indexOf('Toegang')).toBe(order.indexOf('Aandacht nodig') + 1);
+  expect(order.indexOf('Eerstvolgende activiteiten')).toBe(order.indexOf('Toegang') + 1);
+  await expectNoSeriousA11yIssues(page);
+
+  const zonder = new MockApi(['report.view', 'event.manage']);
+  await open(page, zonder);
+  await expect(page.getByRole('heading', { name: 'Eerstvolgende activiteiten' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Toegang' })).toHaveCount(0);
+});
+
+test('toegang: statistieken per moment en vergelijking', async ({ page }) => {
+  const api = new MockApi(['ticket.read']);
+  await open(page, api, 'toegang/statistieken');
+  await expect(page.getByRole('heading', { name: 'Toegangsstatistieken' })).toBeVisible();
+  await expect(page.getByText('75% van 120 actieve leden')).toBeVisible();
+  await expect(page.getByRole('img', { name: /Aankomsten per uur/ })).toBeVisible();
+  await expect(page.getByText('Verlopen code')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await page.getByRole('button', { name: 'Pronkzitting' }).click();
+  await expect(page.getByText('50% van 120 actieve leden')).toBeVisible();
+});
+
 test('fase 14: toegangscontrole aanzetten bij een activiteit', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'agenda');

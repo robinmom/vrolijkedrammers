@@ -1251,3 +1251,119 @@ legend {
   color: var(--dvd-success-text);
   font-weight: 600;
 }
+
+/* Grafieken (toegangsstatistieken). */
+.chart {
+  margin: 0;
+}
+
+.pie-chart {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.legend-row {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 180px;
+  overflow-x: auto;
+}
+
+.bar-column {
+  flex: 1 0 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  font-size: 12px;
+}
+
+.bar-stack {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bar {
+  width: 70%;
+  border-radius: 4px 4px 0 0;
+  position: absolute;
+  bottom: 0;
+}
+
+.bar.primary {
+  background: var(--dvd-link-text);
+  width: 50%;
+}
+
+.bar.secondary {
+  background: var(--dvd-tint-blue);
+}
+
+.bar-value {
+  font-weight: 600;
+}
+
+.bar-label {
+  color: var(--dvd-text-secondary);
+}
+
+.access-overview {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 16px;
+  margin: 0;
+}
+
+.mini-kpis dt {
+  font-size: 13px;
+  color: var(--dvd-text-secondary);
+}
+
+.mini-kpis dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.subheading {
+  font-size: 15px;
+  margin: 16px 0 4px;
+}

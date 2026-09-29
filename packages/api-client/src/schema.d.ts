@@ -475,6 +475,133 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/access-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Statistieken van één carnavalsdag (`dag-2027-02-13`) of activiteit (event-id). */
+        get: {
+            parameters: {
+                query: {
+                    key: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessStats"];
+                        "application/json": components["schemas"]["AccessStats"];
+                        "text/json": components["schemas"]["AccessStats"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/access-stats/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alle carnavalsdagen en activiteiten met toegangscontrole naast elkaar. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessStats"][];
+                        "application/json": components["schemas"]["AccessStats"][];
+                        "text/json": components["schemas"]["AccessStats"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/access-stats/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Blok op het dashboard: lopende (of laatste) dag/activiteit en "klaar voor de deur". */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AccessDashboard"];
+                        "application/json": components["schemas"]["AccessDashboard"];
+                        "text/json": components["schemas"]["AccessDashboard"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/account-requests": {
         parameters: {
             query?: never;
@@ -8976,6 +9103,11 @@ export interface components {
             /** Format: int32 */
             refused: number;
         };
+        AccessDashboard: {
+            live: boolean;
+            stats: null | components["schemas"]["AccessStats"];
+            readiness: components["schemas"]["DoorReadiness"];
+        };
         /** @enum {unknown} */
         AccessDecision: "Admitted" | "Refused" | null;
         /**
@@ -9046,6 +9178,32 @@ export interface components {
             deviceName: null | string;
             offline: boolean;
             offlineOutcome: null | components["schemas"]["AccessOutcome"];
+        };
+        /** @description Statistieken van één toegangsmoment (carnavalsdag of activiteit met toegangscontrole). */
+        AccessStats: {
+            moment: components["schemas"]["AccessEvent"];
+            /** Format: int32 */
+            activeMembers: number;
+            /** Format: int32 */
+            inside: number;
+            /** Format: int32 */
+            scans: number;
+            /** Format: int32 */
+            repeatsSameDevice: number;
+            /** Format: int32 */
+            repeatsOtherDevice: number;
+            /** Format: int32 */
+            refused: number;
+            /** Format: int32 */
+            viaQr: number;
+            /** Format: int32 */
+            viaCheckIn: number;
+            /** Format: int32 */
+            offlineScans: number;
+            /** Format: int32 */
+            offlineConflicts: number;
+            perHour: components["schemas"]["HourBucket"][];
+            refusalReasons: components["schemas"]["ReasonCount"][];
         };
         AccessStatus: {
             current: null | components["schemas"]["AccessEvent"];
@@ -9683,6 +9841,20 @@ export interface components {
         };
         /** @enum {unknown} */
         DocumentType: "Insurance" | "VehicleInspection" | "Drawing" | "Other";
+        /**
+         * @description "Klaar voor de deur": hoeveel actieve leden hun ledenticket aan een telefoon hebben gekoppeld (Mijn QR) en hoeveel
+         *     niet — die laatsten moeten bij de deur via de ledenlijst worden ingecheckt.
+         */
+        DoorReadiness: {
+            /** Format: int32 */
+            activeMembers: number;
+            /** Format: int32 */
+            bound: number;
+            /** Format: int32 */
+            boundWithHardwareKey: number;
+            /** Format: int32 */
+            notBound: number;
+        };
         EraseRequest: {
             confirmation: string;
         };
@@ -9860,6 +10032,15 @@ export interface components {
         HealthEntry: {
             name: string;
             status: string;
+        };
+        /** @description Aankomsten en scans in één uur (begin van het uur in UTC; het portal toont Loil-tijd). */
+        HourBucket: {
+            /** Format: date-time */
+            hourStart: string;
+            /** Format: int32 */
+            arrivals: number;
+            /** Format: int32 */
+            scans: number;
         };
         /** Format: binary */
         IFormFile: string;
@@ -10711,6 +10892,11 @@ export interface components {
         };
         PushTokenRequest: {
             token: string;
+        };
+        ReasonCount: {
+            reason: string;
+            /** Format: int32 */
+            count: number;
         };
         RegisterDeviceRequest: {
             installationId: string;

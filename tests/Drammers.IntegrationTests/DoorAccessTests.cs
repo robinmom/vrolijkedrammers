@@ -368,4 +368,42 @@ public sealed class DoorAccessTests(SqlServerFixture sql) : IAsyncLifetime, IDis
         var row = await WithDbAsync(db => db.AccessScans.SingleAsync(s => s.MemberId == memberId));
         Assert.Equal((Modules.Ticketing.Tickets.AccessOutcome.Refused, Modules.Ticketing.Tickets.AccessOutcome.Admitted, "Blocked"), (row.Outcome, row.OfflineOutcome!.Value, row.Reason));
     }
+
+    // ----- Statistieken ----------------------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Statistieken_per_avond_en_dashboardblok_met_klaar_voor_de_deur()
+    {
+        var eventId = await EventAsync();
+        ToEvening();
+        var (_, piet) = await MemberWithQrAsync("piet@example.com");
+        var (marie, _) = await MemberAsync("marie@example.com");
+        await MemberAsync("jan@example.com");
+        var deur = await DoorAsync("deur@example.com", "installatie-deur-een-0001");
+
+        await ScanAsync(deur, await piet());
+        await ScanAsync(deur, await piet());
+        await ScanAsync(deur, "GEEN CODE");
+        _api.Clock.Advance(TimeSpan.FromMinutes(70));
+        await JsonAsync(await deur.PostAsJsonAsync($"/api/v1/admin/members/{marie}/check-in", new { force = false }));
+
+        var stats = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/access-stats?key={eventId}");
+        Assert.Equal((3, 2, 4, 1, 1, 1, 1),
+            (stats.GetProperty("activeMembers").GetInt32(), stats.GetProperty("inside").GetInt32(), stats.GetProperty("scans").GetInt32(),
+             stats.GetProperty("repeatsSameDevice").GetInt32(), stats.GetProperty("refused").GetInt32(),
+             stats.GetProperty("viaQr").GetInt32(), stats.GetProperty("viaCheckIn").GetInt32()));
+        Assert.Equal("Unreadable", stats.GetProperty("refusalReasons")[0].GetProperty("reason").GetString());
+        Assert.Equal([1, 1], stats.GetProperty("perHour").EnumerateArray().Select(h => h.GetProperty("arrivals").GetInt32()));
+
+        var dashboard = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/access-stats/dashboard");
+        Assert.True(dashboard.GetProperty("live").GetBoolean());
+        Assert.Equal(2, dashboard.GetProperty("stats").GetProperty("inside").GetInt32());
+        var ready = dashboard.GetProperty("readiness");
+        Assert.Equal((3, 1, 1, 2), (ready.GetProperty("activeMembers").GetInt32(), ready.GetProperty("bound").GetInt32(),
+            ready.GetProperty("boundWithHardwareKey").GetInt32(), ready.GetProperty("notBound").GetInt32()));
+
+        var overview = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/access-stats/overview");
+        Assert.Contains(overview.EnumerateArray(), o => o.GetProperty("moment").GetProperty("title").GetString() == "Carnavalsavond");
+        Assert.Equal(HttpStatusCode.Forbidden, (await deur.GetAsync("/api/v1/admin/access-stats/dashboard")).StatusCode);
+    }
 }

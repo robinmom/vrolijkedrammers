@@ -661,6 +661,42 @@ export class MockApi {
         counts: { inside: 1, scans: this.checkIns.length, refused: 0 },
       });
     }
+    if (path.startsWith('/admin/access-stats')) {
+      const stats = (key: string, title: string, startAt: string, inside: number) => ({
+        moment: { key, eventId: null, carnivalDay: null, title, startAt, endAt: null },
+        activeMembers: 120,
+        inside,
+        scans: inside + 7,
+        repeatsSameDevice: 4,
+        repeatsOtherDevice: 1,
+        refused: 2,
+        viaQr: inside - 5,
+        viaCheckIn: 5,
+        offlineScans: 3,
+        offlineConflicts: 1,
+        perHour: [
+          { hourStart: '2027-02-13T19:00:00Z', arrivals: 30, scans: 32 },
+          { hourStart: '2027-02-13T20:00:00Z', arrivals: inside - 30, scans: inside - 25 },
+        ],
+        refusalReasons: [
+          { reason: 'Expired', count: 1 },
+          { reason: 'MembershipInactive', count: 1 },
+        ],
+      });
+      const overview = [
+        stats('dag-2027-02-13', 'Carnaval · zaterdag 13 februari', '2027-02-12T23:00:00Z', 90),
+        stats('ev-1', 'Pronkzitting', '2027-01-16T19:00:00Z', 60),
+      ];
+      if (path === '/admin/access-stats/dashboard') {
+        return json({
+          live: true,
+          stats: overview[0],
+          readiness: { activeMembers: 120, bound: 97, boundWithHardwareKey: 90, notBound: 23 },
+        });
+      }
+      if (path === '/admin/access-stats/overview') return json(overview);
+      return json(overview.find((o) => o.moment.key === url.searchParams.get('key')) ?? overview[0]);
+    }
     if (path === '/admin/access-scans/events') {
       return json([
         {

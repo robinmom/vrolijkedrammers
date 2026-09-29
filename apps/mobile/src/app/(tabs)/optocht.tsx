@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Image, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { queryKeys, useCarnivalYear, useMe, useMyRegistrations, useParade } from '../../api/queries';
+import { queryKeys, useArrivalTimes, useCarnivalYear, useMe, useMyRegistrations, useParade } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
 import { statusLabels } from '../../features/parade';
 import { useRefresh } from '../../api/useRefresh';
@@ -33,6 +33,7 @@ export default function OptochtScreen() {
   const session = useSessionStatus();
   const me = useMe();
   const parade = useParade();
+  const arrivals = useArrivalTimes();
   const canRegister = (me.data?.permissions ?? []).includes('parade.register');
   const registrations = useMyRegistrations(canRegister);
   const guest = session === 'signedOut';
@@ -124,6 +125,14 @@ export default function OptochtScreen() {
           ) : null}
           <Button label="Route" icon="locatie" variant="secondary" onPress={() => openInMaps(routeQuery)} />
         </View>
+        {arrivals.data?.published ? (
+          <Button
+            label="Aanrijtijden wagens"
+            icon="klok"
+            variant="secondary"
+            onPress={() => router.push('/optocht/aanrijtijden')}
+          />
+        ) : null}
         {mine ? (
           <AppText variant="caption" color={colors.textSecondary}>
             {mine.groupName ?? 'Jullie groep'}: {statusLabels[mine.status].toLowerCase()}

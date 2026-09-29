@@ -110,6 +110,19 @@ public sealed class ParadeRegistrations(
     }
 
     /// <summary>Toelichting van de commissie bij "Aanvulling gevraagd" of "Afgewezen" (voor de app); anders <c>null</c>.</summary>
+    /// <summary>Aanrijtijd en meldplek voor de groep (fase 16), alleen na publiceren van de aanrijtijden.</summary>
+    public async Task<(string? Time, string? Location)> ArrivalAsync(ParadeRegistration registration, CancellationToken cancellationToken)
+    {
+        if (registration.ArrivalTime is not { } time)
+        {
+            return (null, null);
+        }
+
+        var parade = await db.Parades.AsNoTracking().Where(p => p.Id == registration.ParadeId)
+            .Select(p => new { p.ArrivalTimesPublishedAt, p.ArrivalLocation }).SingleAsync(cancellationToken);
+        return parade.ArrivalTimesPublishedAt is null ? (null, null) : (ParadeArrivals.Format(time), parade.ArrivalLocation);
+    }
+
     public async Task<string?> ReviewReasonAsync(ParadeRegistration registration, CancellationToken cancellationToken) =>
         registration.Status is RegistrationStatus.AdditionalInformationRequired or RegistrationStatus.Rejected
             ? await db.ParadeStatusHistory.AsNoTracking()

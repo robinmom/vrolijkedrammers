@@ -190,6 +190,7 @@ public static class DependencyInjection
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();
         services.AddScoped<ParadeManagement.ParadeExchange>();
+        services.AddScoped<ParadeManagement.ParadeArrivals>();
         services.AddScoped<Dansgarde>();
         services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
         services.AddScoped<MemberAccounts>();

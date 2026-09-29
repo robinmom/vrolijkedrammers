@@ -19,6 +19,7 @@ internal sealed class ParadeConfiguration : IEntityTypeConfiguration<Parade>
         builder.Property(p => p.DefaultSpacingMeters).HasPrecision(5, 2);
         builder.Property(p => p.RowVersion).IsRowVersion();
         builder.Property(p => p.InfoText).HasMaxLength(8000);
+        builder.Property(p => p.ArrivalLocation).HasMaxLength(100);
         builder.OwnsMany(p => p.FixedEntries, e =>
         {
             e.ToJson("fixed_entries");

@@ -5560,6 +5560,376 @@
         }
       }
     },
+    "/api/v1/admin/parade/arrival-times": {
+      "get": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalList"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalList"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/arrival-times/location": {
+      "put": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrivalLocationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrivalLocationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrivalLocationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/arrival-times/generate": {
+      "post": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateArrivalsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateArrivalsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateArrivalsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/arrival-times/{registrationId}": {
+      "put": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetArrivalRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetArrivalRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetArrivalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/arrival-times/publish": {
+      "post": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/arrival-times/import/preview": {
+      "post": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalImportPreview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalImportPreview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalImportPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/arrival-times/import": {
+      "post": {
+        "tags": [
+          "AdminParadeArrivals"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArrivalChangedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/parade-composition": {
       "get": {
         "tags": [
@@ -11097,6 +11467,36 @@
         }
       }
     },
+    "/api/v1/parade/arrival-times": {
+      "get": {
+        "tags": [
+          "Parade"
+        ],
+        "summary": "Openbare aanrijtijdenlijst (fase 16, zoals op de website): alleen wagens, pas na publiceren.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicArrivals"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicArrivals"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicArrivals"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/parade/categories": {
       "get": {
         "tags": [
@@ -14749,6 +15149,199 @@
           }
         }
       },
+      "ArrivalChange": {
+        "required": [
+          "id",
+          "startNumber",
+          "groupName",
+          "oldTime",
+          "newTime"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "oldTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "newTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          }
+        }
+      },
+      "ArrivalChangedResponse": {
+        "required": [
+          "changed"
+        ],
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ArrivalImportPreview": {
+        "required": [
+          "version",
+          "location",
+          "changes",
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArrivalChange"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportIssue"
+            }
+          }
+        }
+      },
+      "ArrivalList": {
+        "required": [
+          "location",
+          "publishedAt",
+          "paradeDate",
+          "paradeStartTime",
+          "version",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "paradeStartTime": {
+            "type": "string",
+            "format": "time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArrivalRow"
+            }
+          }
+        }
+      },
+      "ArrivalLocationRequest": {
+        "required": [
+          "location"
+        ],
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ArrivalRow": {
+        "required": [
+          "id",
+          "startNumber",
+          "registrationNumber",
+          "category",
+          "groupName",
+          "arrivalTime"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "registrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "category": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "arrivalTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          }
+        }
+      },
       "AssignDanceGroupRequest": {
         "required": [
           "groupId"
@@ -16392,6 +16985,27 @@
             "format": "int32"
           },
           "hasMusic": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GenerateArrivalsRequest": {
+        "required": [
+          "first",
+          "intervalMinutes",
+          "onlyEmpty"
+        ],
+        "type": "object",
+        "properties": {
+          "first": {
+            "type": "string",
+            "format": "time"
+          },
+          "intervalMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "onlyEmpty": {
             "type": "boolean"
           }
         }
@@ -20274,6 +20888,83 @@
           }
         }
       },
+      "PublicArrivalRow": {
+        "required": [
+          "startNumber",
+          "category",
+          "groupName",
+          "arrivalTime"
+        ],
+        "type": "object",
+        "properties": {
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "category": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "arrivalTime": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "De openbare aanrijtijdenlijst (zoals op de website): alleen na publiceren."
+      },
+      "PublicArrivals": {
+        "required": [
+          "published",
+          "paradeName",
+          "paradeDate",
+          "location",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "published": {
+            "type": "boolean"
+          },
+          "paradeName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paradeDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicArrivalRow"
+            }
+          }
+        }
+      },
       "PublicationRequest": {
         "required": [
           "visibility",
@@ -20578,7 +21269,9 @@
           "warnings",
           "issues",
           "reviewReason",
-          "hasMusic"
+          "hasMusic",
+          "arrivalTime",
+          "arrivalLocation"
         ],
         "type": "object",
         "properties": {
@@ -20730,6 +21423,18 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "arrivalTime": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "arrivalLocation": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         },
@@ -21234,6 +21939,21 @@
           "validFor": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "SetArrivalRequest": {
+        "required": [
+          "arrivalTime"
+        ],
+        "type": "object",
+        "properties": {
+          "arrivalTime": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
           }
         }
       },
@@ -22250,6 +22970,9 @@
     },
     {
       "name": "AdminNotifications"
+    },
+    {
+      "name": "AdminParadeArrivals"
     },
     {
       "name": "AdminParadeComposition"

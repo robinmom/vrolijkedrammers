@@ -34,6 +34,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Dansgroepen', to: '/dansgarde/groepen', permission: 'member.read', icon: 'groepen', section: 'Dansgarde' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },
   { label: 'Samenstellen', to: '/optocht/samenstellen', permission: 'parade.read', icon: 'audit', section: 'Optocht' },
+  { label: 'Aanrijtijden', to: '/optocht/aanrijtijden', permission: 'parade.import-arrival-times', icon: 'agenda', section: 'Optocht' },
   { label: 'Optocht en categorieën', to: '/optocht', permission: 'parade.config', icon: 'instellingen', section: 'Optocht' },
   { label: 'Ledentickets', to: '/tickets', permission: 'ticket.read', icon: 'rollen', section: 'Toegang' },
   { label: 'Toegangslog', to: '/toegangslog', permission: 'ticket.read', icon: 'audit', section: 'Toegang' },

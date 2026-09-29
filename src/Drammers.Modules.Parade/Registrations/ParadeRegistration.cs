@@ -81,6 +81,9 @@ public sealed class ParadeRegistration : IAuditable
     /// <summary>Muziek bij de groep (fase 12c, kolom Muziek in de export); leeg bij inschrijvingen van vóór deze vraag.</summary>
     public bool? HasMusic { get; set; }
 
+    /// <summary>Aanrijtijd bij de meldplek van de optocht (fase 16, alleen wagens); zichtbaar na publiceren.</summary>
+    public TimeOnly? ArrivalTime { get; set; }
+
     public Address BuildAddress { get; set; } = new();
 
     public bool JuryInspectionSameAsBuildAddress { get; set; } = true;

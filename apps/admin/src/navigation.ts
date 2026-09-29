@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Beheer';
+  section?: 'Content' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Kaartverkoop' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -39,6 +39,9 @@ export const navItems: readonly NavItem[] = [
   { label: 'Ledentickets', to: '/tickets', permission: 'ticket.read', icon: 'rollen', section: 'Toegang' },
   { label: 'Toegangslog', to: '/toegangslog', permission: 'ticket.read', icon: 'audit', section: 'Toegang' },
   { label: 'Statistieken', to: '/toegang/statistieken', permission: 'ticket.read', icon: 'rapport', section: 'Toegang' },
+  { label: 'Kaartverkoop', to: '/kaartverkoop', permission: 'sale.manage', icon: 'ticket', section: 'Kaartverkoop' },
+  { label: 'Pronkzitting', to: '/kaartverkoop/pronkzitting', permission: 'sale.manage', icon: 'agenda', section: 'Kaartverkoop' },
+  { label: 'Munten', to: '/kaartverkoop/munten', permission: 'sale.manage', icon: 'munten', section: 'Kaartverkoop' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage', icon: 'gebruiker', section: 'Beheer' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage', icon: 'rollen', section: 'Beheer' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage', icon: 'jaar', section: 'Beheer' },

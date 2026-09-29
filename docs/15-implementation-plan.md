@@ -37,7 +37,7 @@
 | 16 | Arrival Times | 13 | Na QR: klein en weinig risico; QR is complexer en krijgt voorrang |
 | 17 | Dansgarde / Guardian Relationships | 16 | — |
 | 18 | Carnaval Readiness: Acceptance / Security / Production | 18 | Restant na afsplitsing van fase 7 |
-| 19 | Mollie / Day Tickets | 15 | Buiten het MVP; vereist een werkende scanner (OQ-71) |
+| 19 | **Kaartverkoop** (Mollie, pronkzitting, dagkaarten, munten) | 15 | **Naar de eerste versie gehaald** (besluit 29-09-2026); in drie delen: 19a backend + portal, 19b app + webpagina, 19c scanner/Kassa |
 | 20 | Reporting & Jubilees | 17 | Buiten het MVP; basisrapportages zitten al in fase 8/12/14/15 |
 
 ```mermaid
@@ -778,31 +778,91 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 ---
 
-### Fase 19 — Mollie / Day Tickets (buiten MVP)
+### Fase 19 — Kaartverkoop (eerste versie)
 
-**Doel.** Betaalde dagkaarten en pronkzittingkaarten via Mollie, veilig en idempotent.
+**Doel.** Kaarten en munten verkopen aan iedereen, ook zonder account (app, webpagina en portal), veilig en idempotent betaald via Mollie. Ontwerp: Figma-pagina "🎫 Kaartverkoop" (goedgekeurd 29-09-2026).
 
-**Functionaliteit.** Ticketverkoop (TicketType met prijs, capaciteit, verkoopperiode), order + capaciteitsreservering (15 min hold), `POST /v2/payments` server-side, checkout in een in-app browser, webhook (alleen `id` → status ophalen), tickets uitgeven na `paid` (idempotent), statussen mislukt/geannuleerd/verlopen (capaciteit vrijgeven), refunds (ticket geblokkeerd), gast-QR (server-signed, ADR-005 punt 9) per e-mail/webpagina, scanner-ondersteuning voor gast-QR, melding "kaartverkoop geopend", Figma 06-CTA "Tickets bestellen" + voortgang ("82 % verkocht"). Portal: orders, betalingen, refunds, verkoopcijfers.
+**Besluiten.**
+- Producten: pronkzitting (vrijdag en zaterdag, plaatsen per avond instelbaar), dagkaarten carnaval (voor gasten; leden hebben Mijn QR), kaarten per activiteit (bij een activiteit uit de agenda) en consumptiemunten.
+- Nooit terugbetalen. Het bestuur kan annuleren: de QR vervalt en de plaatsen komen vrij.
+- Pronkzitting voor groepen:
+  - Elk lid van een groep (e-Boekhouden vrij veld 3) mag voor de groep bestellen.
+  - Het maximum is het aantal actieve leden van de groep, beide avonden samen.
+  - Dat maximum is **geen reservering**. Wat de groep nog niet besteld heeft, blijft vrij voor anderen.
+  - Is de avond vol, dan komt een latere bestelling op de wachtlijst.
+- Leden bestellen groepskaarten gratis (in de contributie). Niet-leden betalen altijd met iDEAL. Alleen het portal kan contant boeken of een betaallink per e-mail sturen, ook los voor de vrije verkoop.
+- Vrijdag vol: de koper kiest zaterdag of de wachtlijst. De wachtlijst wordt op volgorde uitgenodigd (betaallink, 48 uur geldig), maar het bestuur kan ook zelf toekennen, buiten de volgorde.
+- Eén QR per bestelling. Een kaart delen met een lid van dezelfde groep geeft die kaart een eigen QR, en de kaart verdwijnt bij de besteller (19b). Bij het scannen gaan alle overgebleven personen tegelijk naar binnen en is de QR geblokkeerd (19c).
+- Munten zijn alleen voor leden en persoonsgebonden, en pas af te halen na betaling. Ze gaan via een aparte munten-QR (aan het toestel gekoppeld, steeds vernieuwd) die niet te delen is. Nieuwe rol **Kassa** scant, ziet de bestelling en drukt op "Bestelling uitgegeven". Alles komt in de Kassalog (19c).
 
-**Technische componenten.** Mollie API v2 (REST), `Idempotency-Key`, QuestPDF/e-mail-ticket.
+**19a — backend en portal (gebouwd).**
+- Datamodel: `ticketing.SaleProduct`, `payments.SaleOrder` (volgnummer per jaar, bijv. `2027-0142`), `payments.SaleOrderSequence`, `ticketing.OrderTicket` (QR-referentie van 128 bit) en `ticketing.WaitlistEntry`.
+- Capaciteit:
+  - De productregel wordt met `UPDLOCK` vergrendeld.
+  - Een onbetaalde bestelling houdt de plaatsen vast tot `hold_until`: 30 minuten in de app of op de webpagina, 48 uur bij een betaallink.
+  - Groepskaarten worden per groep geserialiseerd met `sp_getapplock`.
+- Mollie Payments API v2 met iDEAL:
+  - De API-sleutel staat in Key Vault (`mollie-api-key`).
+  - Een nieuwe betaling krijgt een `Idempotency-Key`.
+  - De webhook bevat alleen het id; de status wordt altijd bij Mollie opgehaald.
+  - Het bedrag wordt gecontroleerd.
+- De QR van een gekochte kaart is payloadversie 3: door de server ondertekend, zonder toestel en zonder verlooptijd.
+- De koper opent de bestelling met een geheim token. Dat staat versleuteld (Data Protection) in de database, zodat latere e-mails dezelfde link sturen.
+- E-mails: bevestiging, betaallink, wachtlijst en "er is plek". Een pushmelding voor ingelogde kopers.
+- Nachtelijke job `sale-expiry`: zet verlopen bestellingen op Verlopen, kijkt eerst bij Mollie en markeert verlopen uitnodigingen. De serverless database kan de rest van de tijd pauzeren; de capaciteit hangt niet van de job af.
+- Portal: eigen menukop Kaartverkoop met de pagina's Kaartverkoop, Pronkzitting en Munten.
+  - Kaartverkoop: kerncijfers, producten instellen, bestellingen met contant ontvangen, link opnieuw en annuleren, een nieuwe bestelling en een betaallink maken.
+  - Pronkzitting: per avond de groepen en losse kaarten op naam, de wachtlijst met toekennen, en de Excel-export voor de tafelindeling.
+  - Munten: wie heeft gekocht, betaald en afgehaald.
+- Rechten: `sale.manage` (bestuur) en `sale.collect` (nieuwe rol Kassa, 19c).
 
-**Databasewijzigingen.** `payments.Order`, `OrderLine`, `Payment`, `PaymentWebhook`, `Refund`; capaciteitstellers op TicketType.
+**19b — app en webpagina.**
+- Home: de tegel Munten (geldzakje) staat op de oude plek van Mijn QR; "QR code" staat op de plek van Uitslagen.
+- Kaarten kopen: gast of lid met de optie "Ben je lid? Log in", checkout in een in-app browser.
+- Vrijdag vol: kies zaterdag of de wachtlijst.
+- Mijn kaarten met de groeps-QR en kaarten delen met een groepslid.
+- Munten kopen en de munten-QR.
+- Webpagina `/kaarten` voor bestellen en de bestelling met de QR.
 
-**API-endpoints.** `GET /ticket-types/on-sale`, `POST /orders`, `GET /orders/{id}` (+ gast-token), `POST /payments/mollie/webhook/{secretSlug}`, `GET /me/orders`, `GET /me/tickets`, `GET /admin/orders`, `GET /admin/payments`, `POST /admin/payments/{id}/refund`.
+**19c — scanner en Kassa.**
+- Gekochte kaarten scannen: alle overgebleven personen gaan tegelijk naar binnen, daarna is de QR geblokkeerd.
+- De rol Kassa scant de munten-QR, ziet de bestelling en drukt op "Bestelling uitgegeven".
+- Kassalog in het portal.
 
-**Security requirements.** Zie [06 §6](06-security.md#6-mollie-betalingen); de prijs komt alleen van de server; de redirect wordt nooit vertrouwd; webhook altijd `200` + server-side verificatie; API-key alleen in Key Vault; test-key in non-prod; refunds alleen met `payment.manage`.
+**API-endpoints (19a).**
+- Openbaar:
+  - `GET /sales/products`
+  - `POST /sales/orders`
+  - `GET /sales/orders/{id}?t=`
+  - `GET /sales/orders/{id}/pay?t=` (betaallink)
+  - `POST /sales/waitlist`
+  - `POST /payments/mollie/webhook`
+- Ingelogd: `GET /me/orders`.
+- Portal (`sale.manage`):
+  - `GET /admin/sales/summary|products|orders|groups|pronkzitting|pronkzitting/export|tokens`
+  - `POST|PUT /admin/sales/products`
+  - `POST /admin/sales/orders`
+  - `POST /admin/sales/orders/{id}/paid-cash|cancel|resend-link`
+  - `GET /admin/sales/products/{id}/waitlist`
+  - `POST /admin/sales/waitlist/{id}/grant`
+  - `DELETE /admin/sales/waitlist/{id}`
 
-**Tests.** Alle Mollie-tests uit 12 §2 (incl. 50 gelijktijdige orders voor de laatste 10 plaatsen → exact 10); handmatige iDEAL-test in de Mollie-testmodus.
+**Tests (19a).**
+- Een gast koopt en betaalt; een vervalste webhook geeft geen kaarten.
+- 25 gelijktijdige bestellingen voor 10 plaatsen geven er precies 10.
+- Een mislukte betaling geeft de plaats vrij.
+- Groepskaarten tellen tot het aantal actieve leden over beide avonden.
+- Munten zijn alleen voor leden.
+- Wachtlijst: toekennen met een betaallink, dan contant.
+- De export heeft een tabblad per avond.
+- Portal: e2e met axe.
 
-**Aanvullende DoD.** Verwerkersovereenkomst met Mollie getekend; privacyverklaring bijgewerkt (betalingen, gastgegevens); een financiële reconciliatie (Mollie-dashboard ↔ orders) is getest met de penningmeester.
-
-**Afhankelijkheden.** Fase 18; OQ-24.
-
-**Acceptatiecriteria.**
-- [ ] Een gast koopt een dagkaart, betaalt (testmodus) en ontvangt een QR per mail; de scanner accepteert die.
-- [ ] Een vervalste webhook-body "paid" geeft geen ticket.
-- [ ] Een refund blokkeert het ticket; de scanner toont ROOD.
-- [ ] Er wordt nooit meer verkocht dan de capaciteit.
+**Aanvullende DoD.**
+- Een verwerkersovereenkomst met Mollie is getekend.
+- De privacyverklaring is bijgewerkt (betalingen, gastgegevens).
+- De live-sleutel staat alleen in productie; Dev en Acc gebruiken een test-sleutel.
+- Een iDEAL-test in de testmodus is gedaan.
+- De reconciliatie Mollie ↔ bestellingen is gecontroleerd met de penningmeester.
 
 ---
 

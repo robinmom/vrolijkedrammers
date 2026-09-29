@@ -74,4 +74,16 @@ public static class ErrorCodes
     public const string OwnAccountNotAllowed = "OWN_ACCOUNT_NOT_ALLOWED";
     public const string EmailInUse = "EMAIL_IN_USE";
     public const string NotDansgarde = "NOT_DANSGARDE";
+    public const string PaymentsNotConfigured = "PAYMENTS_NOT_CONFIGURED";
+    public const string PaymentFailed = "PAYMENT_FAILED";
+    public const string ProductNotFound = "PRODUCT_NOT_FOUND";
+    public const string ProductNotOnSale = "PRODUCT_NOT_ON_SALE";
+    public const string SoldOut = "SOLD_OUT";
+    public const string NotSoldOut = "NOT_SOLD_OUT";
+    public const string GroupLimit = "GROUP_LIMIT";
+    public const string MembersOnly = "MEMBERS_ONLY";
+    public const string OrderInvalid = "ORDER_INVALID";
+    public const string OrderNotFound = "ORDER_NOT_FOUND";
+    public const string OrderNotPayable = "ORDER_NOT_PAYABLE";
+    public const string WaitlistNotFound = "WAITLIST_NOT_FOUND";
 }

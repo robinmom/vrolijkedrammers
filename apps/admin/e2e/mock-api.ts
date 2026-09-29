@@ -233,6 +233,116 @@ export class MockApi {
   } = { version: 4, rows: 2, changes: [], errors: [] };
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];
+  // Fase 19: kaartverkoop.
+  salesCalls: { method: string; path: string; body: unknown }[] = [];
+  saleProducts: Record<string, unknown>[] = [
+    {
+      id: 'sp-vr',
+      kind: 'Pronkzitting',
+      name: 'Pronkzitting vrijdag',
+      description: null,
+      eventId: null,
+      date: '2027-02-05',
+      priceCents: 1250,
+      capacity: 300,
+      maxPerOrder: 10,
+      saleOpensAt: null,
+      saleClosesAt: null,
+      onSale: true,
+      sortOrder: 0,
+      sold: 300,
+      held: 0,
+      remaining: 0,
+      revenueCents: 125000,
+      waiting: 2,
+    },
+    {
+      id: 'sp-za',
+      kind: 'Pronkzitting',
+      name: 'Pronkzitting zaterdag',
+      description: null,
+      eventId: null,
+      date: '2027-02-06',
+      priceCents: 1250,
+      capacity: 300,
+      maxPerOrder: 10,
+      saleOpensAt: null,
+      saleClosesAt: null,
+      onSale: true,
+      sortOrder: 1,
+      sold: 250,
+      held: 8,
+      remaining: 42,
+      revenueCents: 91250,
+      waiting: 0,
+    },
+    {
+      id: 'sp-mu',
+      kind: 'Tokens',
+      name: 'Consumptiemunten',
+      description: null,
+      eventId: null,
+      date: null,
+      priceCents: 250,
+      capacity: null,
+      maxPerOrder: 100,
+      saleOpensAt: null,
+      saleClosesAt: null,
+      onSale: true,
+      sortOrder: 5,
+      sold: 1120,
+      held: 0,
+      remaining: null,
+      revenueCents: 280000,
+      waiting: 0,
+    },
+  ];
+  saleOrders: Record<string, unknown>[] = [
+    {
+      id: 'so-1',
+      number: '2027-0142',
+      productId: 'sp-za',
+      productName: 'Pronkzitting zaterdag',
+      status: 'AwaitingPayment',
+      paymentMethod: 'Mollie',
+      channel: 'Portal',
+      groupName: null,
+      memberQuantity: 0,
+      paidQuantity: 2,
+      amountCents: 2500,
+      buyerName: 'Jan Jansen',
+      buyerEmail: 'jan@example.com',
+      buyerPhone: '0612345678',
+      remark: null,
+      buyerIsMember: false,
+      createdAt: '2026-10-12T18:00:00Z',
+      holdUntil: '2026-10-14T18:00:00Z',
+      paidAt: null,
+      collected: false,
+    },
+    {
+      id: 'so-2',
+      number: '2027-0101',
+      productId: 'sp-mu',
+      productName: 'Consumptiemunten',
+      status: 'Confirmed',
+      paymentMethod: 'Mollie',
+      channel: 'App',
+      groupName: null,
+      memberQuantity: 0,
+      paidQuantity: 20,
+      amountCents: 5000,
+      buyerName: 'Mendy Mom',
+      buyerEmail: 'mendy@example.com',
+      buyerPhone: null,
+      remark: null,
+      buyerIsMember: true,
+      createdAt: '2026-10-10T18:00:00Z',
+      holdUntil: null,
+      paidAt: '2026-10-10T18:01:00Z',
+      collected: false,
+    },
+  ];
   // Fase 17: ouders/verzorgers en dansgarde.
   guardianCalls: { method: string; path: string; body: unknown }[] = [];
   memberGuardians: Record<string, Record<string, unknown>> = {};
@@ -691,6 +801,147 @@ export class MockApi {
     }
     if (path === '/admin/config/retention') {
       return json([{ dataType: 'login_history', retentionDays: 365, action: 'Delete' }]);
+    }
+    if (path.startsWith('/admin/sales')) {
+      if (method !== 'GET') this.salesCalls.push({ method, path, body });
+      if (path === '/admin/sales/summary') {
+        return json({
+          revenueCents: 348250,
+          openPaymentLinks: 4,
+          openAmountCents: 8750,
+          tokensToCollect: 640,
+          tokensSold: 1120,
+        });
+      }
+      if (path === '/admin/sales/products' && method === 'GET') return json(this.saleProducts);
+      if (path === '/admin/sales/products' && method === 'POST') return json('sp-new', 201);
+      if ((m = path.match(/^\/admin\/sales\/products\/([^/]+)$/)) && method === 'PUT') return noContent();
+      if ((m = path.match(/^\/admin\/sales\/products\/([^/]+)\/waitlist$/))) {
+        return json(
+          m[1] === 'sp-vr'
+            ? [
+                {
+                  id: 'w-1',
+                  position: 1,
+                  status: 'Waiting',
+                  groupName: 'De Snotapen',
+                  memberQuantity: 10,
+                  paidQuantity: 0,
+                  buyerName: 'Piet Lid',
+                  buyerEmail: 'piet@example.com',
+                  buyerPhone: null,
+                  buyerIsMember: true,
+                  remark: null,
+                  createdAt: '2026-10-12T18:14:00Z',
+                  invitedAt: null,
+                  orderNumber: null,
+                  fits: false,
+                },
+                {
+                  id: 'w-2',
+                  position: 2,
+                  status: 'Waiting',
+                  groupName: null,
+                  memberQuantity: 0,
+                  paidQuantity: 2,
+                  buyerName: 'Jan Jansen',
+                  buyerEmail: 'jan@example.com',
+                  buyerPhone: null,
+                  buyerIsMember: false,
+                  remark: null,
+                  createdAt: '2026-10-13T07:40:00Z',
+                  invitedAt: null,
+                  orderNumber: null,
+                  fits: true,
+                },
+              ]
+            : [],
+        );
+      }
+      if (path === '/admin/sales/orders' && method === 'GET') {
+        return json({ items: this.saleOrders, page: 1, pageSize: 25, totalCount: this.saleOrders.length });
+      }
+      if (path === '/admin/sales/orders' && method === 'POST') {
+        return json(
+          { id: 'so-new', number: '2027-0200', status: body.payment === 'Cash' ? 'Confirmed' : 'AwaitingPayment' },
+          201,
+        );
+      }
+      if (path.match(/^\/admin\/sales\/orders\/[^/]+\/(paid-cash|cancel|resend-link)$/)) return noContent();
+      if (path === '/admin/sales/groups') {
+        return json([
+          { groupName: 'De Kruumels', activeMembers: 13, ordered: 8, remaining: 5 },
+          { groupName: 'De Snotapen', activeMembers: 12, ordered: 0, remaining: 12 },
+        ]);
+      }
+      if ((m = path.match(/^\/admin\/sales\/waitlist\/([^/]+)\/grant$/))) {
+        return json({
+          id: 'so-w',
+          number: '2027-0201',
+          status: body.payment === 'Cash' ? 'Confirmed' : 'AwaitingPayment',
+        });
+      }
+      if (path.match(/^\/admin\/sales\/waitlist\/[^/]+$/) && method === 'DELETE') return noContent();
+      if (path === '/admin/sales/pronkzitting') {
+        return json([
+          {
+            productId: 'sp-vr',
+            name: 'Pronkzitting vrijdag',
+            date: '2027-02-05',
+            capacity: 300,
+            sold: 300,
+            held: 0,
+            waiting: 2,
+            rows: [
+              {
+                name: 'De Kruumels',
+                isGroup: true,
+                quantity: 4,
+                orderers: 'Mendy Mom',
+                phones: '06 3333 4444',
+                emails: 'mendy@example.com',
+                membership: 'Lid',
+                paid: 'Gratis (contributie)',
+                remarks: '1 rolstoelplek',
+                orderNumbers: ['2027-0011'],
+              },
+              {
+                name: 'Jan Jansen',
+                isGroup: false,
+                quantity: 2,
+                orderers: 'Jan Jansen',
+                phones: '06 5555 6666',
+                emails: 'jan@example.com',
+                membership: 'Niet-lid',
+                paid: 'Betaald (iDEAL)',
+                remarks: 'Bij De Kruumels zitten',
+                orderNumbers: ['2027-0012'],
+              },
+            ],
+          },
+          {
+            productId: 'sp-za',
+            name: 'Pronkzitting zaterdag',
+            date: '2027-02-06',
+            capacity: 300,
+            sold: 250,
+            held: 8,
+            waiting: 0,
+            rows: [],
+          },
+        ]);
+      }
+      if (path === '/admin/sales/pronkzitting/export') {
+        return route.fulfill({
+          status: 200,
+          headers: {
+            'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'content-disposition': "attachment; filename*=UTF-8''Pronkzitting%20tafelindeling%2029-9-2026.xlsx",
+          },
+          body: 'xlsx',
+        });
+      }
+      if (path === '/admin/sales/tokens') return json(this.saleOrders.filter((o) => o.productId === 'sp-mu'));
     }
     if (path === '/admin/parades') {
       if (method === 'POST') {

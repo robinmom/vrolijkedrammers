@@ -25,6 +25,8 @@ export const iconPaths = {
   chevron: { viewBox: "0 0 24 24", body: "<path d=\"m9 18 6-6-6-6\"/>" },
   menu: { viewBox: "0 0 24 24", body: "<path d=\"M4 6h16\"/><path d=\"M4 12h16\"/><path d=\"M4 18h16\"/>" },
   slepen: { viewBox: "0 0 24 24", body: "<circle cx=\"9\" cy=\"6\" r=\"1\"/><circle cx=\"15\" cy=\"6\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"18\" r=\"1\"/><circle cx=\"15\" cy=\"18\" r=\"1\"/>" },
+  ticket: { viewBox: "0 0 24 24", body: "<path d=\"M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z\"/><path d=\"M14 5v2\"/><path d=\"M14 11v2\"/><path d=\"M14 17v2\"/>" },
+  munten: { viewBox: "0 0 24 24", body: "<path d=\"M9 3h6l-1.5 3.5h-3z\"/><path d=\"M10.5 6.5C6 9 4 13 4 16c0 3.5 3 5 8 5s8-1.5 8-5c0-3-2-7-6.5-9.5\"/><path d=\"M13.8 11.2c-.5-.6-1.1-.8-1.8-.8-1.1 0-1.8.6-1.8 1.4 0 1.8 3.6 1 3.6 2.9 0 .8-.8 1.4-1.8 1.4-.8 0-1.5-.3-2-.9M12 9.2v1.2M12 16.1v1.2\"/>" },
 } as const;
 
 export type IconName = keyof typeof iconPaths;

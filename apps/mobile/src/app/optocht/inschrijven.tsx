@@ -409,6 +409,7 @@ export default function InschrijvenScreen() {
             categories={categories.data ?? []}
             onCategory={(id) => set('categoryId', id)}
             onCount={set}
+            onMusic={(v) => set('hasMusic', v)}
           />
         ) : null}
 
@@ -593,11 +594,13 @@ function CategoryStep({
   categories,
   onCategory,
   onCount,
+  onMusic,
 }: {
   form: RegistrationForm;
   categories: ParadeCategory[];
   onCategory: (id: number) => void;
   onCount: (key: 'adultCount' | 'childrenCount', value: number) => void;
+  onMusic: (value: boolean) => void;
 }) {
   const { colors } = useTheme();
   const chosen = categories.find((c) => c.id === form.categoryId);
@@ -677,6 +680,34 @@ function CategoryStep({
           Deze categorie is voor {categoryRule(chosen)} (nu {counted}).
         </AppText>
       ) : null}
+      <AppText variant="label" color={colors.textSecondary}>
+        MUZIEK
+      </AppText>
+      <View style={styles.row} accessibilityRole="radiogroup" accessibilityLabel="Hebben jullie muziek bij je?">
+        {(
+          [
+            [true, 'Ja, met muziek'],
+            [false, 'Nee, zonder muziek'],
+          ] as const
+        ).map(([value, label]) => {
+          const selected = form.hasMusic === value;
+          return (
+            <Pressable
+              key={label}
+              onPress={() => onMusic(value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              style={[
+                styles.option,
+                styles.flex,
+                { borderColor: selected ? colors.linkText : colors.border, backgroundColor: colors.surface },
+              ]}
+            >
+              <AppText variant="bodyStrong">{label}</AppText>
+            </Pressable>
+          );
+        })}
+      </View>
     </>
   );
 }
@@ -965,7 +996,9 @@ function ReviewStep({
     {
       step: 'category',
       label: 'Categorie en deelnemers',
-      value: `${category?.name ?? '–'} · ${form.adultCount} volwassenen, ${form.childrenCount} kinderen`,
+      value: `${category?.name ?? '–'} · ${form.adultCount} volwassenen, ${form.childrenCount} kinderen · ${
+        form.hasMusic === null ? 'muziek niet opgegeven' : form.hasMusic ? 'met muziek' : 'zonder muziek'
+      }`,
     },
     { step: 'subject', label: 'Onderwerp', value: form.subject || '–' },
     {

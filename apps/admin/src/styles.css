@@ -611,9 +611,11 @@ legend {
   margin-bottom: 16px;
 }
 
+/* Donkere tekst: rood op de rode tint haalt net geen 4,5:1 (WCAG AA). */
 .alert-error {
   background: var(--dvd-tint-red);
-  color: var(--dvd-accent-text);
+  color: var(--dvd-text-primary);
+  border-left: 4px solid var(--dvd-accent-text);
 }
 
 /* Donkere tekst: groen op de groene tint haalt net geen 4,5:1 (WCAG AA). */

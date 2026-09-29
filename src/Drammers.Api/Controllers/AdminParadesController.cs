@@ -48,6 +48,20 @@ public sealed class AdminParadesController(DrammersDbContext db, ParadeAdministr
         return NoContent();
     }
 
+    /// <summary>Vaste plekken vooraan (startnummer 1 … n), bijv. geluidswagen, verenigingswagen en het Convent.</summary>
+    [HttpPut("parades/{id:guid}/fixed-entries")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetFixedEntries(Guid id, FixedEntriesRequest request, CancellationToken cancellationToken)
+    {
+        await parades.SetFixedEntriesAsync(id,
+            [.. request.Entries.Select(e => new ParadeFixedEntry { Name = e.Name, AdultCount = e.AdultCount, ChildrenCount = e.ChildrenCount, HasMusic = e.HasMusic })],
+            cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("parade-categories")]
     [ProducesResponseType<IReadOnlyList<ParadeCategoryResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<ParadeCategoryResponse>> Categories(CancellationToken cancellationToken) =>
@@ -95,12 +109,18 @@ public sealed record ParadeRequest(
 public sealed record AdminParadeResponse(
     Guid Id, int CarnivalYearId, string Name, DateOnly ParadeDate, TimeOnly StartTime, string? StartLocation, string? RouteDescription,
     decimal? RouteLengthKm, DateTime RegistrationOpensAt, DateTime RegistrationClosesAt, DateTime? EditDeadlineAt, bool SubjectRequired,
-    decimal DefaultSpacingMeters, int MaxDocumentsPerRegistration, int MaxDocumentSizeMb, ParadeStatus Status, string? InfoText)
+    decimal DefaultSpacingMeters, int MaxDocumentsPerRegistration, int MaxDocumentSizeMb, ParadeStatus Status, string? InfoText,
+    IReadOnlyList<FixedEntryDto> FixedEntries)
 {
     public static AdminParadeResponse From(Parade p) => new(p.Id, p.CarnivalYearId, p.Name, p.ParadeDate, p.StartTime, p.StartLocation, p.RouteDescription,
         p.RouteLengthKm, p.RegistrationOpensAt, p.RegistrationClosesAt, p.EditDeadlineAt, p.SubjectRequired, p.DefaultSpacingMeters,
-        p.MaxDocumentsPerRegistration, p.MaxDocumentSizeMb, p.Status, p.InfoText);
+        p.MaxDocumentsPerRegistration, p.MaxDocumentSizeMb, p.Status, p.InfoText,
+        [.. p.FixedEntries.Select(e => new FixedEntryDto(e.Name, e.AdultCount, e.ChildrenCount, e.HasMusic))]);
 }
+
+public sealed record FixedEntryDto([Required, StringLength(100)] string Name, [Range(0, 1000)] int AdultCount, [Range(0, 1000)] int ChildrenCount, bool HasMusic);
+
+public sealed record FixedEntriesRequest([Required, MaxLength(ParadeFixedEntry.MaxCount)] IReadOnlyList<FixedEntryDto> Entries);
 
 public sealed record CategoryRequest(
     [Required, StringLength(40, MinimumLength = 2)] string Code,

@@ -20,6 +20,8 @@ export interface RegistrationForm {
   subjectDescription: string;
   adultCount: number;
   childrenCount: number;
+  /** Muziek bij de groep (fase 12c); `null` = nog niet gekozen. */
+  hasMusic: boolean | null;
   build: AddressForm;
   jurySame: boolean;
   jury: AddressForm;
@@ -47,6 +49,7 @@ export const emptyForm: RegistrationForm = {
   subjectDescription: '',
   adultCount: 0,
   childrenCount: 0,
+  hasMusic: null,
   build: emptyAddress,
   jurySame: true,
   jury: emptyAddress,
@@ -82,6 +85,7 @@ export function formFromRegistration(r: Registration): RegistrationForm {
     subjectDescription: r.subjectDescription ?? '',
     adultCount: r.adultCount,
     childrenCount: r.childrenCount,
+    hasMusic: r.hasMusic ?? null,
     build: addressForm(r.buildAddress),
     jurySame: r.juryInspectionSameAsBuildAddress,
     jury: addressForm(r.juryInspectionAddress),
@@ -104,6 +108,7 @@ export function toRequest(form: RegistrationForm, version: string | null): Schem
     subjectDescription: form.subjectDescription.trim() || null,
     childrenCount: form.childrenCount,
     adultCount: form.adultCount,
+    hasMusic: form.hasMusic,
     buildAddress: addressDto(form.build),
     juryInspectionSameAsBuildAddress: form.jurySame,
     juryInspectionAddress: form.jurySame ? null : addressDto(form.jury),
@@ -145,7 +150,7 @@ export const stepsFor = (guest: boolean): StepKey[] =>
 export const stepFields: Record<StepKey, string[]> = {
   group: ['groupName'],
   contact: ['contactName', 'contactPhone', 'contactEmail'],
-  category: ['categoryId', 'adultCount', 'childrenCount'],
+  category: ['categoryId', 'adultCount', 'childrenCount', 'hasMusic'],
   subject: ['subject', 'subjectDescription'],
   location: ['buildAddress', 'juryInspection'],
   length: ['estimatedLengthMeters', 'additionalInformation'],

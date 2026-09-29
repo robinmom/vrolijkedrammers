@@ -19,6 +19,11 @@ internal sealed class ParadeConfiguration : IEntityTypeConfiguration<Parade>
         builder.Property(p => p.DefaultSpacingMeters).HasPrecision(5, 2);
         builder.Property(p => p.RowVersion).IsRowVersion();
         builder.Property(p => p.InfoText).HasMaxLength(8000);
+        builder.OwnsMany(p => p.FixedEntries, e =>
+        {
+            e.ToJson("fixed_entries");
+            e.Property(x => x.Name).HasMaxLength(100);
+        });
         builder.HasOne<Modules.Content.CarnivalYears.CarnivalYear>().WithMany().HasForeignKey(p => p.CarnivalYearId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.CarnivalYearId).IsUnique();
         builder.ToTable(t => t.HasCheckConstraint("CK_Parade_registration_period", "[registration_closes_at] > [registration_opens_at]"));

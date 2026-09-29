@@ -157,7 +157,7 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
             r.EstimatedLengthMeters, r.AdditionalInformation, r.SubmittedAt, r.WithdrawnAt,
             [.. fields.Order(StringComparer.Ordinal)], canWithdraw,
             [.. warnings.Select(w => w with { Severity = "Warn" })], [.. issues.Select(ValidationIssueResponse.From)],
-            await registrations.ReviewReasonAsync(r, cancellationToken));
+            await registrations.ReviewReasonAsync(r, cancellationToken), r.HasMusic);
     }
 }
 
@@ -183,10 +183,12 @@ public sealed record UpdateRegistrationRequest(
     bool JuryInspectionSameAsBuildAddress,
     AddressDto? JuryInspectionAddress,
     decimal? EstimatedLengthMeters,
-    [StringLength(4000)] string? AdditionalInformation)
+    [StringLength(4000)] string? AdditionalInformation,
+    bool? HasMusic = null)
 {
     public RegistrationInput ToInput() => new(GroupName, ContactName, ContactPhone, ContactEmail, CategoryId, Subject, SubjectDescription,
-        ChildrenCount, AdultCount, BuildAddress?.ToInput(), JuryInspectionSameAsBuildAddress, JuryInspectionAddress?.ToInput(), EstimatedLengthMeters, AdditionalInformation);
+        ChildrenCount, AdultCount, BuildAddress?.ToInput(), JuryInspectionSameAsBuildAddress, JuryInspectionAddress?.ToInput(), EstimatedLengthMeters, AdditionalInformation,
+        HasMusic);
 }
 
 public sealed record ValidationIssueResponse(string Field, string Message, string Severity)
@@ -204,7 +206,7 @@ public sealed record RegistrationResponse(
     int ChildrenCount, int AdultCount, AddressDto BuildAddress, bool JuryInspectionSameAsBuildAddress, AddressDto JuryInspectionAddress,
     decimal? EstimatedLengthMeters, string? AdditionalInformation, DateTime? SubmittedAt, DateTime? WithdrawnAt,
     IReadOnlyList<string> EditableFields, bool CanWithdraw, IReadOnlyList<ValidationIssueResponse> Warnings, IReadOnlyList<ValidationIssueResponse> Issues,
-    string? ReviewReason);
+    string? ReviewReason, bool? HasMusic);
 
 public sealed record RegistrationSummaryResponse(
     Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt);

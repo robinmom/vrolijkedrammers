@@ -55,3 +55,5 @@ textarea:focus-visible { outline: 3px solid var(--blauw); outline-offset: 2px; }
 dl.gegevens { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 16px 0; }
 dl.gegevens dt { font-weight: 600; }
 dl.gegevens dd { margin: 0; }
+fieldset.inline { margin: 0 0 12px; }
+legend.sub { font-size: 1rem; font-weight: 600; }

@@ -4894,6 +4894,174 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/parade/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/start-numbers/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Voorbeeld van een startnummerimport: wijzigingen oud → nieuw en alle fouten; er wordt nog niets opgeslagen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StartNumberImportPreview"];
+                        "application/json": components["schemas"]["StartNumberImportPreview"];
+                        "text/json": components["schemas"]["StartNumberImportPreview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade/start-numbers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Leest de startnummers in (alles of niets); `version` uit het voorbeeld, anders 412. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    } & {
+                        /** Format: int32 */
+                        version?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StartNumberImportResult"];
+                        "application/json": components["schemas"]["StartNumberImportResult"];
+                        "text/json": components["schemas"]["StartNumberImportResult"];
+                    };
+                };
+                /** @description Precondition Failed */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/parade-registrations": {
         parameters: {
             query?: never;
@@ -5438,6 +5606,81 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parades/{id}/fixed-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Vaste plekken vooraan (startnummer 1 … n), bijv. geluidswagen, verenigingswagen en het Convent. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FixedEntriesRequest"];
+                    "text/json": components["schemas"]["FixedEntriesRequest"];
+                    "application/*+json": components["schemas"]["FixedEntriesRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
                 };
                 /** @description Unprocessable Entity */
                 422: {
@@ -10512,6 +10755,7 @@ export interface components {
             maxDocumentSizeMb: number;
             status: components["schemas"]["ParadeStatus"];
             infoText: null | string;
+            fixedEntries: components["schemas"]["FixedEntryDto"][];
         };
         AdminPhotoResponse: {
             /** Format: uuid */
@@ -10558,6 +10802,7 @@ export interface components {
             statusHistory: components["schemas"]["StatusChangeResponse"][];
             changes: components["schemas"]["FieldChangeResponse"][];
             documents: components["schemas"]["DocumentResponse"][];
+            hasMusic: null | boolean;
         };
         /** @enum {unknown} */
         AgeGroup: "Adult" | "Youth";
@@ -10878,6 +11123,9 @@ export interface components {
             defaultSpacingMeters: number;
             categories: components["schemas"]["CategoryTotals"][];
             warnings: string[];
+            fixedEntries: string[];
+            /** Format: int32 */
+            firstStartNumber: number;
         };
         /** @description Kaart in het samenstelscherm (docs/13 §7.3). */
         CompositionCard: {
@@ -11165,6 +11413,17 @@ export interface components {
             /** Format: date-time */
             changedAt: string;
         };
+        FixedEntriesRequest: {
+            entries: components["schemas"]["FixedEntryDto"][];
+        };
+        FixedEntryDto: {
+            name: string;
+            /** Format: int32 */
+            adultCount: number;
+            /** Format: int32 */
+            childrenCount: number;
+            hasMusic: boolean;
+        };
         GenerateStartNumbersRequest: {
             mode: components["schemas"]["StartNumberMode"];
             /**
@@ -11326,6 +11585,21 @@ export interface components {
         /** Format: binary */
         IFormFile: string;
         IFormFileCollection: components["schemas"]["IFormFile"][];
+        ImportChange: {
+            /** Format: int32 */
+            registrationNumber: number;
+            groupName: null | string;
+            /** Format: int32 */
+            oldStartNumber: null | number;
+            /** Format: int32 */
+            newStartNumber: null | number;
+            published: boolean;
+        };
+        ImportIssue: {
+            /** Format: int32 */
+            row: number;
+            message: string;
+        };
         InboxItem: {
             /** Format: uuid */
             id: string;
@@ -12310,6 +12584,7 @@ export interface components {
             warnings: components["schemas"]["ValidationIssueResponse"][];
             issues: components["schemas"]["ValidationIssueResponse"][];
             reviewReason: null | string;
+            hasMusic: null | boolean;
         };
         /** @enum {unknown} */
         RegistrationSource: "App" | "WebForm" | "Portal";
@@ -12461,6 +12736,19 @@ export interface components {
             /** Format: int32 */
             newStartNumber: null | number;
             published: boolean;
+        };
+        /** @description Voorbeeld vóór bevestigen: alle wijzigingen en alle fouten (bij één fout wordt niets ingelezen). */
+        StartNumberImportPreview: {
+            /** Format: int32 */
+            version: number;
+            /** Format: int32 */
+            rows: number;
+            changes: components["schemas"]["ImportChange"][];
+            errors: components["schemas"]["ImportIssue"][];
+        };
+        StartNumberImportResult: {
+            /** Format: int32 */
+            changed: number;
         };
         /** @enum {unknown} */
         StartNumberMode: "FillEmpty" | "Renumber";
@@ -12615,6 +12903,7 @@ export interface components {
             /** Format: double */
             estimatedLengthMeters: null | number;
             additionalInformation: null | string;
+            hasMusic?: null | boolean;
         };
         UpdateRoleRequest: {
             name: string;

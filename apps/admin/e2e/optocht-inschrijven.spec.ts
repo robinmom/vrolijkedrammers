@@ -83,6 +83,7 @@ async function fillForm(page: Page) {
   await page.getByLabel('Onderwerp', { exact: true }).fill('Zwerm bijen');
   await page.getByLabel('Volwassenen', { exact: true }).fill('12');
   await page.getByLabel('Kinderen (tot 16 jaar)').fill('2');
+  await page.getByRole('group', { name: 'Hebben jullie muziek bij je?' }).getByLabel('Ja').check();
   const build = page.getByRole('group', { name: 'Bouwlocatie' });
   await build.getByLabel('Straat').fill('Dorpsstraat');
   await build.getByLabel('Huisnummer').fill('1');
@@ -116,6 +117,7 @@ test('optocht inschrijven via de webpagina: formulier, code, opgavenummer en sta
       categoryId: 3,
       adultCount: 12,
       childrenCount: 2,
+      hasMusic: true,
       estimatedLengthMeters: 12.5,
       juryInspectionSameAsBuildAddress: true,
       juryInspectionAddress: null,

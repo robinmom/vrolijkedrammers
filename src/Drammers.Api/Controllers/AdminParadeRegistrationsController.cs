@@ -95,7 +95,7 @@ public sealed class AdminParadeRegistrationsController(DrammersDbContext db, Par
             r.ContactEmail, category, r.Subject, r.SubjectDescription, r.ChildrenCount, r.AdultCount, AddressDto.From(r.BuildAddress),
             r.JuryInspectionSameAsBuildAddress, AddressDto.From(r.EffectiveJuryAddress), r.EstimatedLengthMeters, r.MeasuredLengthMeters, r.AdditionalInformation, r.SubmittedAt,
             managers, [.. warnings.Select(w => w.Message)], [.. ParadeReview.AllowedActions(r.Status)], statuses, changes,
-            [.. (await review.DocumentsAsync(id, cancellationToken)).Select(DocumentResponse.From)]);
+            [.. (await review.DocumentsAsync(id, cancellationToken)).Select(DocumentResponse.From)], r.HasMusic);
     }
 
     [HttpPost("{id:guid}/review")]
@@ -130,4 +130,5 @@ public sealed record AdminRegistrationResponse(
     string? ContactPhone, string? ContactEmail, string? CategoryName, string? Subject, string? SubjectDescription, int ChildrenCount, int AdultCount,
     AddressDto BuildAddress, bool JuryInspectionSameAsBuildAddress, AddressDto JuryAddress, decimal? EstimatedLengthMeters, decimal? MeasuredLengthMeters, string? AdditionalInformation,
     DateTime? SubmittedAt, IReadOnlyList<string> Managers, IReadOnlyList<string> Warnings, IReadOnlyList<ReviewAction> AllowedActions,
-    IReadOnlyList<StatusChangeResponse> StatusHistory, IReadOnlyList<FieldChangeResponse> Changes, IReadOnlyList<DocumentResponse> Documents);
+    IReadOnlyList<StatusChangeResponse> StatusHistory, IReadOnlyList<FieldChangeResponse> Changes, IReadOnlyList<DocumentResponse> Documents,
+    bool? HasMusic);

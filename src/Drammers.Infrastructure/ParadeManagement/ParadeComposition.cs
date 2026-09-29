@@ -25,7 +25,8 @@ public sealed record CompositionCard(
 
 public sealed record Composition(
     int Version, IReadOnlyList<CompositionCard> Ordered, IReadOnlyList<CompositionCard> Unassigned, int Participants, decimal LengthMeters,
-    decimal DefaultSpacingMeters, IReadOnlyList<CategoryTotals> Categories, IReadOnlyList<string> Warnings);
+    decimal DefaultSpacingMeters, IReadOnlyList<CategoryTotals> Categories, IReadOnlyList<string> Warnings,
+    IReadOnlyList<string> FixedEntries, int FirstStartNumber);
 
 public sealed record StartNumberChange(Guid Id, string? GroupName, int? RegistrationNumber, int? OldStartNumber, int? NewStartNumber, bool Published);
 
@@ -75,7 +76,8 @@ public sealed class ParadeComposition(DrammersDbContext db, ParadeLineup lineup,
             parade.DefaultSpacingMeters,
             [.. ordered.GroupBy(c => c.CategoryName ?? "Zonder categorie").OrderBy(g => g.Key, StringComparer.CurrentCulture)
                 .Select(g => new CategoryTotals(g.Key, g.Count(), g.Sum(c => c.Participants), g.Sum(c => c.LengthMeters)))],
-            Warnings(ordered));
+            Warnings(ordered),
+            [.. parade.FixedEntries.Select(e => e.Name)], parade.FirstGroupStartNumber);
     }
 
     /// <summary>Signalen voor de commissie, bijv. drie wagens of drie groepen uit dezelfde categorie achter elkaar.</summary>
@@ -195,6 +197,12 @@ public sealed class ParadeComposition(DrammersDbContext db, ParadeLineup lineup,
         if (startAt is < 1 or > 9999)
         {
             throw new DomainException(ErrorCodes.Validation, "Het eerste startnummer is een getal van 1 tot en met 9999.");
+        }
+
+        if (startAt < parade.FirstGroupStartNumber)
+        {
+            throw new DomainException(ErrorCodes.Validation,
+                $"Startnummer 1 tot en met {parade.FixedEntries.Count} zijn van de vaste plekken; begin bij {parade.FirstGroupStartNumber} of later.");
         }
 
         var rows = (await LineupAsync(parade.Id, cancellationToken)).Select(x => x.Registration).ToList();

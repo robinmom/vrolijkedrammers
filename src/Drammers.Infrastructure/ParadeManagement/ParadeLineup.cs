@@ -95,6 +95,8 @@ public sealed class ParadeLineup(
             return;
         }
 
+        await EnsureNotReservedAsync(registration.ParadeId, startNumber, cancellationToken);
+
         var other = startNumber is null
             ? null
             : await db.ParadeRegistrations.AsNoTracking().SingleOrDefaultAsync(r => r.ParadeId == registration.ParadeId && r.StartNumber == startNumber && r.Id != id, cancellationToken);
@@ -115,6 +117,22 @@ public sealed class ParadeLineup(
         await audit.WriteAsync(new AuditEntry(other is null ? "parade-registration.start-number" : "parade-registration.start-number-swapped", "ParadeRegistration", id.ToString(),
             JsonSerializer.Serialize(new { startNumber = registration.StartNumber }),
             JsonSerializer.Serialize(new { startNumber, swappedWith = other?.Id })), cancellationToken);
+    }
+
+    /// <summary>Startnummers 1 … n zijn van de vaste plekken vooraan (fase 12c).</summary>
+    internal async Task EnsureNotReservedAsync(Guid paradeId, int? startNumber, CancellationToken cancellationToken)
+    {
+        if (startNumber is not { } number)
+        {
+            return;
+        }
+
+        var parade = await db.Parades.AsNoTracking().SingleAsync(p => p.Id == paradeId, cancellationToken);
+        if (number < parade.FirstGroupStartNumber)
+        {
+            throw new DomainException(ErrorCodes.Validation,
+                $"Startnummer {number} is van de vaste plek \"{parade.FixedEntries[number - 1].Name}\". Groepen beginnen bij {parade.FirstGroupStartNumber}.");
+        }
     }
 
     /// <summary>

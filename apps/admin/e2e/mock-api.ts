@@ -191,6 +191,19 @@ export class MockApi {
   urgent = true;
   // Fase 11: optocht.
   parades: Record<string, unknown>[] = [];
+  // Fase 12c: voorbeeld van een startnummerimport.
+  importPreview: {
+    version: number;
+    rows: number;
+    changes: {
+      registrationNumber: number;
+      groupName: string;
+      oldStartNumber: number | null;
+      newStartNumber: number | null;
+      published: boolean;
+    }[];
+    errors: { row: number; message: string }[];
+  } = { version: 4, rows: 2, changes: [], errors: [] };
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];
   // Fase 17: ouders/verzorgers en dansgarde.
@@ -328,6 +341,7 @@ export class MockApi {
     subjectDescription: null,
     childrenCount: 2,
     adultCount: 12,
+    hasMusic: true as boolean | null,
     buildAddress: { street: 'Dorpsstraat', houseNumber: '1', addition: null, postalCode: '6999 AA', city: 'Loil' },
     juryInspectionSameAsBuildAddress: true,
     juryAddress: { street: null, houseNumber: null, addition: null, postalCode: null, city: null },
@@ -566,7 +580,9 @@ export class MockApi {
     const url = new URL(request.url());
     const path = url.pathname.replace('/api/v1', '');
     const method = request.method();
-    const body = request.postData() ? (JSON.parse(request.postData()!) as Record<string, unknown>) : {};
+    // Multipart-uploads (bijv. een import) zijn geen JSON.
+    const isJson = (request.headers()['content-type'] ?? '').includes('json');
+    const body = isJson && request.postData() ? (JSON.parse(request.postData()!) as Record<string, unknown>) : {};
     const json = (data: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
     const noContent = () => route.fulfill({ status: 204 });
@@ -652,10 +668,35 @@ export class MockApi {
     if (path === '/admin/parades') {
       if (method === 'POST') {
         const id = `p-${this.parades.length + 1}`;
-        this.parades.push({ ...(body as Record<string, unknown>), id });
+        this.parades.push({ ...(body as Record<string, unknown>), id, fixedEntries: [] });
         return json({ id }, 201);
       }
       return json(this.parades);
+    }
+    if ((m = path.match(/^\/admin\/parades\/([^/]+)\/fixed-entries$/)) && method === 'PUT') {
+      const parade = this.parades.find((p) => p.id === m![1])!;
+      parade.fixedEntries = (body as { entries: unknown[] }).entries;
+      this.lineupCalls.push({ path, body });
+      return noContent();
+    }
+    if (path === '/admin/parade/export') {
+      this.lineupCalls.push({ path, body: null });
+      return route.fulfill({
+        status: 200,
+        headers: {
+          'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'content-disposition': "attachment; filename*=UTF-8''Opgaven%20optocht%202027%2029-9-2026.xlsx",
+        },
+        body: 'xlsx',
+      });
+    }
+    if (path === '/admin/parade/start-numbers/import/preview') {
+      this.lineupCalls.push({ path, body: null });
+      return json(this.importPreview);
+    }
+    if (path === '/admin/parade/start-numbers/import') {
+      this.lineupCalls.push({ path, body: null });
+      return json({ changed: this.importPreview.changes.length });
     }
     if ((m = path.match(/^\/admin\/parades\/([^/]+)$/)) && method === 'PUT') {
       const index = this.parades.findIndex((p) => p.id === m![1]);
@@ -825,6 +866,8 @@ export class MockApi {
         defaultSpacingMeters: 5,
         categories: [],
         warnings: [],
+        fixedEntries: ['Geluidswagen', 'Verenigingswagen'],
+        firstStartNumber: 3,
       });
     }
     if (path === '/admin/parade-composition/order' && method === 'PUT') {

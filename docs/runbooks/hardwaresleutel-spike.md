@@ -1,5 +1,7 @@
 # Runbook: spike hardwaresleutel (OQ-68, fase 9c)
 
+> **Afgerond (2026-09-29).** Het spikescherm en het EAS-profiel `spike` zijn verwijderd; de hardwaresleutel zit in Mijn QR. Controleren op een toestel: log in, open Mijn QR en kijk in het portal bij **Toegang → Ledentickets** waar de sleutel staat (`StrongBox`, `TrustedEnvironment`, `SecureEnclave` of `Software`). Onderstaande tekst is de beschrijving van de spike.
+
 De spike toont aan of de app een **niet-exporteerbare ECDSA P-256-sleutel** kan maken in de Secure Enclave (iOS) of StrongBox/TEE (Android), daarmee de QR-payload uit ADR-005 kan ondertekenen, en of .NET die handtekening kan controleren. Resultaten horen in [ADR-005](../adr/ADR-005-qr-ticket-security.md#spike-resultaat-oq-68-fase-9c).
 
 ## Wat er is

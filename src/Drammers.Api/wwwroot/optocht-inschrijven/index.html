@@ -62,6 +62,13 @@
               <label>Kinderen (tot 16 jaar)<input name="childrenCount" type="number" min="0" max="1000" value="0" required inputmode="numeric" /></label>
             </div>
             <p id="categorie-hint" class="muted" hidden></p>
+            <fieldset class="inline">
+              <legend class="sub">Hebben jullie muziek bij je?</legend>
+              <div class="row two">
+                <label class="check"><input type="radio" name="hasMusic" value="true" required /> <span>Ja</span></label>
+                <label class="check"><input type="radio" name="hasMusic" value="false" /> <span>Nee</span></label>
+              </div>
+            </fieldset>
             <label>Geschatte lengte in meters<input name="estimatedLengthMeters" type="number" min="0.1" max="100" step="0.1" required inputmode="decimal" /></label>
             <p class="muted">Inclusief trekkend voertuig en eventuele aanhanger; maximaal 1 decimaal, bijvoorbeeld 12,5.</p>
           </fieldset>

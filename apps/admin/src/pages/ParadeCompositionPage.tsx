@@ -281,6 +281,17 @@ export function ParadeCompositionPage() {
       <div className="columns">
         <section className="card" aria-labelledby="volgorde">
           <h2 id="volgorde">Volgorde ({ordered.length})</h2>
+          {c.fixedEntries.length ? (
+            <ol className="list fixed-entries" aria-label="Vaste plekken vooraan">
+              {c.fixedEntries.map((name, i) => (
+                <li key={name} className="list-row">
+                  <span className="badge">{i + 1}</span>
+                  <p className="grow">{name}</p>
+                  <span className="badge info">Vaste plek</span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
           {ordered.length === 0 ? (
             <p className="muted">Nog geen groepen ingedeeld. Voeg ze toe vanuit Niet ingedeeld.</p>
           ) : null}
@@ -330,7 +341,13 @@ export function ParadeCompositionPage() {
           </ul>
         </section>
       </div>
-      {canAssign ? <GenerateStartNumbers version={version} onApplied={() => void composition.refetch()} /> : null}
+      {canAssign ? (
+        <GenerateStartNumbers
+          version={version}
+          firstStartNumber={c.firstStartNumber}
+          onApplied={() => void composition.refetch()}
+        />
+      ) : null}
     </>
   );
 }
@@ -341,10 +358,19 @@ const modeLabels: Record<StartNumberMode, string> = {
 };
 
 /** "Startnummers genereren uit volgorde": kiezen, voorbeeld bekijken, bevestigen (bij gepubliceerde nummers met HERNUMMER). */
-function GenerateStartNumbers({ version, onApplied }: { version: number; onApplied: () => void }) {
+function GenerateStartNumbers({
+  version,
+  firstStartNumber,
+  onApplied,
+}: {
+  version: number;
+  firstStartNumber: number;
+  onApplied: () => void;
+}) {
   const api = useApi();
   const [mode, setMode] = useState<StartNumberMode>('FillEmpty');
-  const [startAt, setStartAt] = useState('1');
+  // Startnummers vóór de eerste groep zijn van de vaste plekken (fase 12c).
+  const [startAt, setStartAt] = useState(String(firstStartNumber));
   const [preview, setPreview] = useState<StartNumberPreview | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [message, setMessage] = useState<string | null>(null);

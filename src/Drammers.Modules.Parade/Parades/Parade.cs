@@ -58,6 +58,15 @@ public sealed class Parade : IAuditable
 
     public ParadeStatus Status { get; set; }
 
+    /// <summary>
+    /// Vaste plekken vooraan (fase 12c): elk jaar hetzelfde, zoals de geluidswagen, de verenigingswagen en het Convent.
+    /// Ze krijgen startnummer 1, 2, …; de startnummers van de groepen beginnen daarna.
+    /// </summary>
+    public List<ParadeFixedEntry> FixedEntries { get; set; } = [];
+
+    /// <summary>Het eerste startnummer dat een groep kan krijgen.</summary>
+    public int FirstGroupStartNumber => FixedEntries.Count + 1;
+
     /// <summary>Optimistic concurrency voor het samenstellen (fase 12, ADR-012).</summary>
     public int CompositionVersion { get; set; }
 
@@ -81,4 +90,26 @@ public sealed class ParadeNumberSequence
     public Guid ParadeId { get; set; }
 
     public int LastRegistrationNumber { get; set; }
+}
+
+/// <summary>Een vaste plek vooraan in de optocht (startnummer = positie).</summary>
+public sealed class ParadeFixedEntry
+{
+    public const int MaxCount = 10;
+
+    public required string Name { get; set; }
+
+    public int AdultCount { get; set; }
+
+    public int ChildrenCount { get; set; }
+
+    public bool HasMusic { get; set; }
+
+    /// <summary>De standaard vaste plekken van De Vrolijke Drammers.</summary>
+    public static List<ParadeFixedEntry> Defaults() =>
+    [
+        new() { Name = "Geluidswagen", AdultCount = 2, HasMusic = true },
+        new() { Name = "Verenigingswagen \"de Vrolijke Drammers\"", AdultCount = 14, HasMusic = true },
+        new() { Name = "Het Convent van \"de Vrolijke Drammers\"", AdultCount = 8, HasMusic = false },
+    ];
 }

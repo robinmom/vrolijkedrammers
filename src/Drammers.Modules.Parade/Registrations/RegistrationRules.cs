@@ -25,6 +25,7 @@ public static class RegistrationFields
     public const string SubjectDescription = "subjectDescription";
     public const string ChildrenCount = "childrenCount";
     public const string AdultCount = "adultCount";
+    public const string HasMusic = "hasMusic";
     public const string BuildAddress = "buildAddress";
     public const string JuryInspection = "juryInspection";
     public const string EstimatedLength = "estimatedLengthMeters";
@@ -33,7 +34,7 @@ public static class RegistrationFields
 
     public static readonly string[] All =
     [
-        GroupName, ContactName, ContactPhone, ContactEmail, Category, Subject, SubjectDescription, ChildrenCount, AdultCount,
+        GroupName, ContactName, ContactPhone, ContactEmail, Category, Subject, SubjectDescription, ChildrenCount, AdultCount, HasMusic,
         BuildAddress, JuryInspection, EstimatedLength, AdditionalInformation, Documents,
     ];
 
@@ -48,6 +49,7 @@ public static class RegistrationFields
         [SubjectDescription] = "Toelichting onderwerp",
         [ChildrenCount] = "Aantal kinderen",
         [AdultCount] = "Aantal volwassenen",
+        [HasMusic] = "Muziek",
         [BuildAddress] = "Bouwadres",
         [JuryInspection] = "Stalling jury",
         [EstimatedLength] = "Geschatte lengte",
@@ -98,6 +100,11 @@ public static partial class RegistrationRules
         if (r.ChildrenCount < 0 || r.AdultCount < 0)
         {
             Block(RegistrationFields.AdultCount, "Aantallen kunnen niet negatief zijn.");
+        }
+
+        if (forSubmit && r.HasMusic is null)
+        {
+            Block(RegistrationFields.HasMusic, "Geef aan of jullie muziek bij je hebben.");
         }
 
         if (category is null)
@@ -270,7 +277,7 @@ public static class DefaultEditPolicy
 
     private static readonly string Contact = string.Join(',', RegistrationFields.ContactName, RegistrationFields.ContactPhone, RegistrationFields.ContactEmail);
 
-    private static readonly string SubmittedOwner = string.Join(',', Contact, RegistrationFields.ChildrenCount, RegistrationFields.AdultCount,
+    private static readonly string SubmittedOwner = string.Join(',', Contact, RegistrationFields.ChildrenCount, RegistrationFields.AdultCount, RegistrationFields.HasMusic,
         RegistrationFields.AdditionalInformation, RegistrationFields.Documents, RegistrationFields.EstimatedLength);
 
     public static IReadOnlyList<ParadeStatusEditPolicy> Seed

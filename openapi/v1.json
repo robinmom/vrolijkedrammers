@@ -5877,6 +5877,195 @@
         }
       }
     },
+    "/api/v1/admin/parade/export": {
+      "get": {
+        "tags": [
+          "AdminParadeExchange"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/start-numbers/import/preview": {
+      "post": {
+        "tags": [
+          "AdminParadeExchange"
+        ],
+        "summary": "Voorbeeld van een startnummerimport: wijzigingen oud → nieuw en alle fouten; er wordt nog niets opgeslagen.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNumberImportPreview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNumberImportPreview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNumberImportPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parade/start-numbers/import": {
+      "post": {
+        "tags": [
+          "AdminParadeExchange"
+        ],
+        "summary": "Leest de startnummers in (alles of niets); `version` uit het voorbeeld, anders 412.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "$ref": "#/components/schemas/IFormFile"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "version": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNumberImportResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNumberImportResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNumberImportResult"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/parade-registrations": {
       "get": {
         "tags": [
@@ -6605,6 +6794,110 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/parades/{id}/fixed-entries": {
+      "put": {
+        "tags": [
+          "AdminParades"
+        ],
+        "summary": "Vaste plekken vooraan (startnummer 1 … n), bijv. geluidswagen, verenigingswagen en het Convent.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FixedEntriesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FixedEntriesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FixedEntriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "422": {
             "description": "Unprocessable Entity",
@@ -13452,7 +13745,8 @@
           "maxDocumentsPerRegistration",
           "maxDocumentSizeMb",
           "status",
-          "infoText"
+          "infoText",
+          "fixedEntries"
         ],
         "type": "object",
         "properties": {
@@ -13532,6 +13826,12 @@
               "null",
               "string"
             ]
+          },
+          "fixedEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FixedEntryDto"
+            }
           }
         }
       },
@@ -13604,7 +13904,8 @@
           "allowedActions",
           "statusHistory",
           "changes",
-          "documents"
+          "documents",
+          "hasMusic"
         ],
         "type": "object",
         "properties": {
@@ -13753,6 +14054,12 @@
             "items": {
               "$ref": "#/components/schemas/DocumentResponse"
             }
+          },
+          "hasMusic": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -14908,7 +15215,9 @@
           "lengthMeters",
           "defaultSpacingMeters",
           "categories",
-          "warnings"
+          "warnings",
+          "fixedEntries",
+          "firstStartNumber"
         ],
         "type": "object",
         "properties": {
@@ -14951,6 +15260,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "fixedEntries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "firstStartNumber": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -16038,6 +16357,45 @@
           }
         }
       },
+      "FixedEntriesRequest": {
+        "required": [
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FixedEntryDto"
+            }
+          }
+        }
+      },
+      "FixedEntryDto": {
+        "required": [
+          "name",
+          "adultCount",
+          "childrenCount",
+          "hasMusic"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "adultCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "childrenCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasMusic": {
+            "type": "boolean"
+          }
+        }
+      },
       "GenerateStartNumbersRequest": {
         "required": [
           "mode"
@@ -16608,6 +16966,61 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/IFormFile"
+        }
+      },
+      "ImportChange": {
+        "required": [
+          "registrationNumber",
+          "groupName",
+          "oldStartNumber",
+          "newStartNumber",
+          "published"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "oldStartNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "newStartNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "published": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ImportIssue": {
+        "required": [
+          "row",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "row": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       },
       "InboxItem": {
@@ -20164,7 +20577,8 @@
           "canWithdraw",
           "warnings",
           "issues",
-          "reviewReason"
+          "reviewReason",
+          "hasMusic"
         ],
         "type": "object",
         "properties": {
@@ -20310,6 +20724,12 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "hasMusic": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         },
@@ -20914,6 +21334,50 @@
           },
           "published": {
             "type": "boolean"
+          }
+        }
+      },
+      "StartNumberImportPreview": {
+        "required": [
+          "version",
+          "rows",
+          "changes",
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportChange"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportIssue"
+            }
+          }
+        },
+        "description": "Voorbeeld vóór bevestigen: alle wijzigingen en alle fouten (bij één fout wordt niets ingelezen)."
+      },
+      "StartNumberImportResult": {
+        "required": [
+          "changed"
+        ],
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -21533,6 +21997,12 @@
               "null",
               "string"
             ]
+          },
+          "hasMusic": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -21783,6 +22253,9 @@
     },
     {
       "name": "AdminParadeComposition"
+    },
+    {
+      "name": "AdminParadeExchange"
     },
     {
       "name": "AdminParadeRegistrations"

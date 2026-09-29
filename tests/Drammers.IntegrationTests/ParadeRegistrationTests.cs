@@ -81,6 +81,7 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         subjectDescription = (string?)null,
         childrenCount = children,
         adultCount = adults,
+        hasMusic = true,
         buildAddress = new { street = "Dorpsstraat", houseNumber = "1", addition = (string?)null, postalCode = "6999aa", city = "Loil", country = "NL" },
         juryInspectionSameAsBuildAddress = jurySame,
         juryInspectionAddress = jury,

@@ -78,6 +78,9 @@ public sealed class ParadeRegistration : IAuditable
 
     public int AdultCount { get; set; }
 
+    /// <summary>Muziek bij de groep (fase 12c, kolom Muziek in de export); leeg bij inschrijvingen van vóór deze vraag.</summary>
+    public bool? HasMusic { get; set; }
+
     public Address BuildAddress { get; set; } = new();
 
     public bool JuryInspectionSameAsBuildAddress { get; set; } = true;

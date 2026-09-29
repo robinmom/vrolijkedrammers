@@ -167,6 +167,7 @@
       subjectDescription: f.subjectDescription.value || null,
       childrenCount: Number(f.childrenCount.value),
       adultCount: Number(f.adultCount.value),
+      hasMusic: f.hasMusic.value === '' ? null : f.hasMusic.value === 'true',
       buildAddress: address('build'),
       juryInspectionSameAsBuildAddress: f.jurySame.checked,
       juryInspectionAddress: f.jurySame.checked ? null : address('jury'),

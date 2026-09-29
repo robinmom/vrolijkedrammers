@@ -11,6 +11,7 @@ import {
   type ParadeRequest,
 } from '../api/hooks';
 import { Dialog } from '../components/Dialog';
+import { FixedEntriesCard } from '../components/FixedEntriesCard';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import {
@@ -44,7 +45,8 @@ function emptyParade(carnivalYearId: number): ParadeRequest {
   };
 }
 
-const toRequest = (p: AdminParade): ParadeRequest => ({ ...p });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- vaste plekken gaan via een eigen endpoint
+const toRequest = ({ fixedEntries, ...p }: AdminParade): ParadeRequest => ({ ...p });
 
 /**
  * Optocht (fase 11a, <c>parade.config</c>): per carnavalsjaar één optocht met datum, route, inschrijfperiode en
@@ -157,6 +159,7 @@ export function ParadePage() {
           </dl>
         </section>
       ))}
+      {parades.data?.map((p) => <FixedEntriesCard key={`vast-${p.id}`} parade={p} canEdit />)}
       {parades.data?.length === 0 ? <p className="muted">Nog geen optocht ingesteld.</p> : null}
 
       <section className="card" aria-labelledby="categorieen">

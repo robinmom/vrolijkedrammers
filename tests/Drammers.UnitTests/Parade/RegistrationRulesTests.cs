@@ -18,6 +18,7 @@ public class RegistrationRulesTests
         Subject = "Wilde westen",
         ChildrenCount = children,
         AdultCount = adults,
+        HasMusic = true,
         BuildAddress = new Address { Street = "Dorpsstraat", HouseNumber = "1", PostalCode = "6999 AA", City = "Loil" },
         EstimatedLengthMeters = 12.5m,
     };
@@ -98,7 +99,7 @@ public class RegistrationRulesTests
         var empty = new ParadeRegistration();
         Assert.Empty(RegistrationRules.Validate(empty, null, true, forSubmit: false));
         var fields = RegistrationRules.Validate(empty, null, true, forSubmit: true).Select(i => i.Field).ToHashSet();
-        Assert.Superset(new HashSet<string> { "groupName", "contactName", "contactPhone", "contactEmail", "categoryId", "subject", "buildAddress", "estimatedLengthMeters" }, fields);
+        Assert.Superset(new HashSet<string> { "groupName", "contactName", "contactPhone", "contactEmail", "categoryId", "subject", "buildAddress", "estimatedLengthMeters", "hasMusic" }, fields);
     }
 
     [Fact]

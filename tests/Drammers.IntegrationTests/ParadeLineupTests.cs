@@ -21,7 +21,7 @@ public class ParadeLineupTests(SqlServerFixture sql) : IAsyncLifetime
         _api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), await sql.CreateBlobStorageAsync());
         var bestuur = _api.ClientFor((await _api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
         var now = _api.Clock.UtcNow;
-        await JsonAsync(await bestuur.PostAsJsonAsync("/api/v1/admin/parades", new
+        var created = await JsonAsync(await bestuur.PostAsJsonAsync("/api/v1/admin/parades", new
         {
             carnivalYearId = 1,
             name = "Optocht Loil 2027",
@@ -36,6 +36,8 @@ public class ParadeLineupTests(SqlServerFixture sql) : IAsyncLifetime
             maxDocumentSizeMb = 5,
             status = "RegistrationOpen",
         }), HttpStatusCode.Created);
+        // Zonder vaste plekken vooraan (fase 12c; die hebben eigen tests): groepen beginnen bij startnummer 1.
+        await JsonAsync(await bestuur.PutAsJsonAsync($"/api/v1/admin/parades/{created.GetProperty("id").GetGuid()}/fixed-entries", new { entries = Array.Empty<object>() }), HttpStatusCode.NoContent);
         var (_, commissieOid) = await _api.CreateUserAsync("commissie@example.com", DefaultRoles.Lid, DefaultRoles.Optochtcommissie);
         _commissie = _api.ClientFor(commissieOid);
     }
@@ -73,6 +75,7 @@ public class ParadeLineupTests(SqlServerFixture sql) : IAsyncLifetime
             subject = "Wilde westen",
             childrenCount = 0,
             adultCount = adults,
+            hasMusic = true,
             buildAddress = address,
             juryInspectionSameAsBuildAddress = true,
             estimatedLengthMeters = length,

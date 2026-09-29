@@ -35,7 +35,8 @@ public sealed record RegistrationInput(
     bool JuryInspectionSameAsBuildAddress,
     AddressInput? JuryInspectionAddress,
     decimal? EstimatedLengthMeters,
-    string? AdditionalInformation);
+    string? AdditionalInformation,
+    bool? HasMusic = null);
 
 public sealed record UploadedDocument(string FileName, long Length, DocumentType Type, Func<Stream> Open);
 
@@ -622,6 +623,7 @@ public sealed class ParadeRegistrations(
         r.SubjectDescription = Clean(input.SubjectDescription);
         r.ChildrenCount = input.ChildrenCount;
         r.AdultCount = input.AdultCount;
+        r.HasMusic = input.HasMusic;
         Copy(input.BuildAddress, r.BuildAddress);
         r.JuryInspectionSameAsBuildAddress = input.JuryInspectionSameAsBuildAddress;
         Copy(input.JuryInspectionSameAsBuildAddress ? null : input.JuryInspectionAddress, r.JuryInspectionAddress);
@@ -651,6 +653,7 @@ public sealed class ParadeRegistrations(
         SubjectDescription = r.SubjectDescription,
         ChildrenCount = r.ChildrenCount,
         AdultCount = r.AdultCount,
+        HasMusic = r.HasMusic,
         BuildAddress = CloneAddress(r.BuildAddress),
         JuryInspectionSameAsBuildAddress = r.JuryInspectionSameAsBuildAddress,
         JuryInspectionAddress = CloneAddress(r.JuryInspectionAddress),
@@ -682,6 +685,7 @@ public sealed class ParadeRegistrations(
         Check(before.SubjectDescription != after.SubjectDescription, RegistrationFields.SubjectDescription);
         Check(before.ChildrenCount != after.ChildrenCount, RegistrationFields.ChildrenCount);
         Check(before.AdultCount != after.AdultCount, RegistrationFields.AdultCount);
+        Check(before.HasMusic != after.HasMusic, RegistrationFields.HasMusic);
         Check(!SameAddress(before.BuildAddress, after.BuildAddress), RegistrationFields.BuildAddress);
         Check(before.JuryInspectionSameAsBuildAddress != after.JuryInspectionSameAsBuildAddress || !SameAddress(before.JuryInspectionAddress, after.JuryInspectionAddress),
             RegistrationFields.JuryInspection);

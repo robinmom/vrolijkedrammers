@@ -130,6 +130,7 @@ describe('Optocht inschrijven (fase 11)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
     await fireEvent.press(await screen.findByRole('radio', { name: /Loopgroep groot/ }));
     for (let i = 0; i < 12; i++) await fireEvent.press(screen.getByRole('button', { name: 'Volwassenen plus 1' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Nee, zonder muziek' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
     await fireEvent.changeText(await screen.findByLabelText('Onderwerp'), 'Wilde westen');
     await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
@@ -153,6 +154,7 @@ describe('Optocht inschrijven (fase 11)', () => {
         groupName: 'De Gasten',
         categoryId: 3,
         adultCount: 12,
+        hasMusic: false,
         buildAddress: { street: 'Kerkstraat', city: 'Loil' },
       },
     });

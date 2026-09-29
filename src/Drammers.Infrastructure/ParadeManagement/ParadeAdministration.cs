@@ -59,13 +59,53 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
     public async Task<Parade> CreateAsync(ParadeInput input, CancellationToken cancellationToken)
     {
         await ValidateAsync(input, null, cancellationToken);
-        var parade = new Parade { Id = IdGenerator.NewId(), Name = input.Name.Trim() };
+        var parade = new Parade { Id = IdGenerator.NewId(), Name = input.Name.Trim(), FixedEntries = ParadeFixedEntry.Defaults() };
         Apply(parade, input);
         db.Parades.Add(parade);
         db.ParadeNumberSequences.Add(new ParadeNumberSequence { ParadeId = parade.Id, LastRegistrationNumber = 0 });
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade.created", "Parade", parade.Id.ToString(), null, JsonSerializer.Serialize(input, Json)), cancellationToken);
         return parade;
+    }
+
+    /// <summary>
+    /// Vaste plekken vooraan (fase 12c). Die krijgen startnummer 1 … n; een groep die al zo'n nummer heeft, blokkeert
+    /// het uitbreiden (eerst dat nummer wijzigen).
+    /// </summary>
+    public async Task SetFixedEntriesAsync(Guid id, IReadOnlyList<ParadeFixedEntry> entries, CancellationToken cancellationToken)
+    {
+        var parade = await db.Parades.SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Optocht niet gevonden.", DomainErrorKind.NotFound);
+        if (entries.Count > ParadeFixedEntry.MaxCount)
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Hooguit {ParadeFixedEntry.MaxCount} vaste plekken.");
+        }
+
+        var clean = new List<ParadeFixedEntry>();
+        foreach (var e in entries)
+        {
+            var name = e.Name?.Trim();
+            if (string.IsNullOrEmpty(name) || name.Length > 100 || e.AdultCount is < 0 or > 1000 || e.ChildrenCount is < 0 or > 1000)
+            {
+                throw new DomainException(ErrorCodes.Validation, "Elke vaste plek heeft een naam (hooguit 100 tekens) en aantallen van 0 tot en met 1000.");
+            }
+
+            clean.Add(new ParadeFixedEntry { Name = name, AdultCount = e.AdultCount, ChildrenCount = e.ChildrenCount, HasMusic = e.HasMusic });
+        }
+
+        var blocking = await db.ParadeRegistrations.AsNoTracking()
+            .Where(r => r.ParadeId == id && r.StartNumber != null && r.StartNumber <= clean.Count)
+            .OrderBy(r => r.StartNumber).Select(r => new { r.StartNumber, r.GroupName }).ToListAsync(cancellationToken);
+        if (blocking.Count > 0)
+        {
+            throw new DomainException(ErrorCodes.StartNumberTaken,
+                $"Startnummer {string.Join(", ", blocking.Select(b => $"{b.StartNumber} ({b.GroupName})"))} is al aan een groep gegeven. Wijzig dat eerst.",
+                DomainErrorKind.Conflict);
+        }
+
+        parade.FixedEntries = clean;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade.fixed-entries", "Parade", id.ToString(), null, JsonSerializer.Serialize(clean, Json)), cancellationToken);
     }
 
     public async Task UpdateAsync(Guid id, ParadeInput input, CancellationToken cancellationToken)

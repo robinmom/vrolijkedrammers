@@ -162,8 +162,8 @@ public sealed class DoorAccessTests(SqlServerFixture sql) : IAsyncLifetime, IDis
         Assert.Equal(2, blocked.GetProperty("counts").GetProperty("refused").GetInt32());
 
         var events = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/access-scans/events");
-        var eventId = events[0].GetProperty("id").GetGuid();
-        var log = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/access-scans?eventId={eventId}");
+        var key = events.EnumerateArray().Single(e => e.GetProperty("title").GetString() == "Carnavalsavond").GetProperty("key").GetString();
+        var log = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/access-scans?key={key}");
         Assert.Equal(5, log.GetProperty("totalCount").GetInt32());
         Assert.Contains(log.GetProperty("items").EnumerateArray(), r => r.GetProperty("reason").GetString() == "Blocked");
     }
@@ -202,20 +202,92 @@ public sealed class DoorAccessTests(SqlServerFixture sql) : IAsyncLifetime, IDis
     }
 
     [Fact]
-    public async Task Zonder_activiteit_met_toegangscontrole_geen_scannen_en_een_gewoon_lid_mag_niet()
+    public async Task Buiten_carnaval_en_zonder_activiteit_geen_scannen_en_een_gewoon_lid_mag_niet()
     {
         await EventAsync(accessControl: false);
-        var future = await EventAsync();
+        await EventAsync();
         var deur = await DoorAsync("deur@example.com", "installatie-deur-een-0001");
 
+        // Nu (september) is het geen carnaval en loopt er geen activiteit; als eerste volgt de start van carnaval.
         var status = await deur.GetFromJsonAsync<JsonElement>("/api/v1/access/status");
         Assert.Equal(JsonValueKind.Null, status.GetProperty("current").ValueKind);
-        Assert.Equal(future, status.GetProperty("next").GetProperty("id").GetGuid());
+        Assert.Equal("dag-2027-02-06", status.GetProperty("next").GetProperty("key").GetString());
         var closed = await JsonAsync(await deur.PostAsJsonAsync("/api/v1/access/scan", new { code = "X" }), HttpStatusCode.Conflict);
         Assert.Equal("ACCESS_NOT_ACTIVE", closed.GetProperty("code").GetString());
 
         var (_, lidOid) = await MemberAsync("lid@example.com");
         Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(lidOid).PostAsJsonAsync("/api/v1/access/scan", new { code = "X" })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await deur.GetAsync("/api/v1/admin/access-scans/events")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Tijdens_carnaval_zonder_activiteit_scannen_per_carnavalsdag_tot_zes_uur_s_ochtends()
+    {
+        // Maandag 8 februari 2027, 22:00 Loil (21:00 UTC): carnaval, geen activiteit met toegangscontrole.
+        _api.Clock.Advance(new DateTimeOffset(2027, 2, 8, 21, 0, 0, TimeSpan.Zero) - _api.Clock.UtcNow);
+        var (_, code) = await MemberWithQrAsync("carn@example.com");
+        var deur = await DoorAsync("deur@example.com", "installatie-deur-een-0001");
+
+        var status = await deur.GetFromJsonAsync<JsonElement>("/api/v1/access/status");
+        Assert.Equal(("dag-2027-02-08", "Carnaval · maandag 8 februari"),
+            (status.GetProperty("current").GetProperty("key").GetString(), status.GetProperty("current").GetProperty("title").GetString()));
+        Assert.Equal("Admitted", (await ScanAsync(deur, await code())).GetProperty("outcome").GetString());
+
+        // 03:00 's nachts hoort nog bij maandag: al eerder gescand.
+        _api.Clock.Advance(TimeSpan.FromHours(5));
+        Assert.Equal("AdmittedAgain", (await ScanAsync(deur, await code())).GetProperty("outcome").GetString());
+
+        // Dinsdagavond is een nieuwe carnavalsdag: weer "eerste keer".
+        _api.Clock.Advance(TimeSpan.FromHours(17));
+        var tuesday = await ScanAsync(deur, await code());
+        Assert.Equal(("Admitted", "Eerste keer vanavond"), (tuesday.GetProperty("outcome").GetString(), tuesday.GetProperty("message").GetString()));
+
+        var days = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/access-scans/events")).EnumerateArray()
+            .Select(e => (e.GetProperty("key").GetString(), e.GetProperty("counts").GetProperty("scans").GetInt32())).ToList();
+        Assert.Contains(("dag-2027-02-08", 2), days);
+        Assert.Contains(("dag-2027-02-09", 1), days);
+    }
+
+    [Fact]
+    public async Task Buiten_carnaval_bij_een_activiteit_met_toegangscontrole_is_de_QR_geldig_en_kan_er_gescand_worden()
+    {
+        // Pronkzitting op zaterdag 16 januari 2027, 20:00 Loil.
+        var pronkzitting = await WithDbAsync(async db =>
+        {
+            var id = IdGenerator.NewId();
+            db.Events.Add(new Event
+            {
+                Id = id,
+                CarnivalYearId = 1,
+                CategoryId = 1,
+                Title = "Pronkzitting",
+                StartAt = new DateTime(2027, 1, 16, 19, 0, 0, DateTimeKind.Utc),
+                EndAt = new DateTime(2027, 1, 16, 23, 30, 0, DateTimeKind.Utc),
+                Visibility = ContentVisibility.Public,
+                Status = PublicationStatus.Published,
+                AccessControl = true,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+            return id;
+        });
+        var (memberId, oid) = await MemberAsync("pronk@example.com");
+        var phone = await DeviceAsync(oid, "installatie-telefoon-pronk-01");
+        _api.Clock.Advance(new DateTimeOffset(2027, 1, 16, 19, 30, 0, TimeSpan.Zero) - _api.Clock.UtcNow);
+
+        var ticket = await phone.GetFromJsonAsync<JsonElement>("/api/v1/me/ticket");
+        Assert.Equal(("Valid", "Pronkzitting"), (ticket.GetProperty("state").GetString(), ticket.GetProperty("accessTitle").GetString()));
+
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/ticket/bind-device", new { challenge = (string?)null, signature = (string?)null }), HttpStatusCode.NoContent);
+        var code = (await JsonAsync(await phone.GetAsync("/api/v1/me/ticket/code"))).GetProperty("code").GetString()!;
+        var deur = await DoorAsync("deur@example.com", "installatie-deur-een-0001");
+        var scan = await ScanAsync(deur, code);
+        Assert.Equal("Admitted", scan.GetProperty("outcome").GetString());
+        Assert.True(await WithDbAsync(db => db.AccessScans.AnyAsync(s => s.EventId == pronkzitting && s.MemberId == memberId)));
+
+        // Na afloop weer geen QR en geen scannen.
+        _api.Clock.Advance(TimeSpan.FromHours(6));
+        Assert.Equal("NotYetValid", (await phone.GetFromJsonAsync<JsonElement>("/api/v1/me/ticket")).GetProperty("state").GetString());
+        Assert.Equal(HttpStatusCode.Conflict, (await deur.PostAsJsonAsync("/api/v1/access/scan", new { code })).StatusCode);
     }
 }

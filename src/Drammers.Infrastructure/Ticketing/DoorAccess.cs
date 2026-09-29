@@ -1,7 +1,5 @@
 using System.Globalization;
 using Drammers.Infrastructure.Persistence;
-using Drammers.Modules.Content.Events;
-using Drammers.Modules.Content.Shared;
 using Drammers.Modules.Identity.Devices;
 using Drammers.Modules.Membership.Members;
 using Drammers.Modules.Ticketing.Qr;
@@ -12,8 +10,6 @@ using Drammers.SharedKernel.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Infrastructure.Ticketing;
-
-public sealed record AccessEvent(Guid Id, string Title, DateTime StartAt, DateTime? EndAt);
 
 public sealed record AccessCounts(int Inside, int Scans, int Refused);
 
@@ -30,50 +26,37 @@ public sealed record MemberAccess(AccessEvent? Current, bool Inside, DateTime? I
 
 /// <summary>
 /// Toegangscontrole bij de deur (fase 14): QR-codes scannen in de app en leden inchecken in het portal, in één
-/// toegangslog per activiteit met toegangscontrole. Groen bij de eerste keer (of opnieuw op hetzelfde toestel), oranje
+/// toegangslog per toegangsmoment: een activiteit met toegangscontrole, of anders de carnavalsdag
+/// (<see cref="AccessWindows"/>; QR en scannen volgen dezelfde regels). Groen bij de eerste keer (of opnieuw op hetzelfde toestel), oranje
 /// als het lid al via een ander toestel of handmatig binnen is (het deurpersoneel beslist), rood met de reden.
 /// Geen bandjes (OQ-21); wie de rol Deurcontrole heeft mag scannen (OQ-73).
 /// </summary>
-public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation, IClock clock)
+public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation, AccessWindows windows, IClock clock)
 {
-    /// <summary>De scanner staat al zo lang vóór de begintijd open (opstellen, vroege gasten).</summary>
-    public static readonly TimeSpan OpensBefore = TimeSpan.FromHours(2);
-
-    /// <summary>Zonder eindtijd duurt een activiteit voor de toegangscontrole zo lang.</summary>
-    public static readonly TimeSpan DefaultLength = TimeSpan.FromHours(8);
-
     private static readonly TimeZoneInfo Loil = TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam");
 
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
-    private IQueryable<Event> ControlledEvents => db.Events.AsNoTracking().Where(e => e.AccessControl && e.Status != PublicationStatus.Draft);
-
     public async Task<AccessStatus> StatusAsync(CancellationToken cancellationToken)
     {
-        var current = await CurrentEventAsync(cancellationToken);
-        var next = current is null
-            ? await ControlledEvents.Where(e => e.StartAt > Now).OrderBy(e => e.StartAt)
-                .Select(e => new AccessEvent(e.Id, e.Title, e.StartAt, e.EndAt)).FirstOrDefaultAsync(cancellationToken)
-            : null;
-        return new AccessStatus(current, next, current is null ? null : await CountsAsync(current.Id, cancellationToken));
+        var current = await windows.CurrentAsync(cancellationToken);
+        var next = current is null ? await windows.NextAsync(cancellationToken) : null;
+        return new AccessStatus(current, next, current is null ? null : await CountsAsync(current, cancellationToken));
     }
 
-    private async Task<AccessEvent?> CurrentEventAsync(CancellationToken cancellationToken)
-    {
-        var from = Now + OpensBefore;
-        var candidates = await ControlledEvents.Where(e => e.StartAt <= from && e.StartAt >= Now - TimeSpan.FromDays(2))
-            .OrderByDescending(e => e.StartAt).Select(e => new AccessEvent(e.Id, e.Title, e.StartAt, e.EndAt)).ToListAsync(cancellationToken);
-        return candidates.FirstOrDefault(e => Now <= (e.EndAt ?? e.StartAt + DefaultLength));
-    }
+    private async Task<AccessEvent> RequireCurrentAsync(CancellationToken cancellationToken) =>
+        await windows.CurrentAsync(cancellationToken)
+        ?? throw new DomainException(ErrorCodes.AccessNotActive, "Er is nu geen carnaval en geen activiteit met toegangscontrole.", DomainErrorKind.Conflict);
 
-    private async Task<AccessEvent> RequireEventAsync(CancellationToken cancellationToken) =>
-        await CurrentEventAsync(cancellationToken)
-        ?? throw new DomainException(ErrorCodes.AccessNotActive, "Er is op dit moment geen activiteit met toegangscontrole.", DomainErrorKind.Conflict);
+    /// <summary>Scans van één toegangsmoment: een activiteit of een carnavalsdag.</summary>
+    private IQueryable<AccessScan> ScansOf(AccessEvent access) =>
+        access.EventId is { } id
+            ? db.AccessScans.AsNoTracking().Where(s => s.EventId == id)
+            : db.AccessScans.AsNoTracking().Where(s => s.EventId == null && s.CarnivalDay == access.CarnivalDay);
 
-    public async Task<AccessCounts> CountsAsync(Guid eventId, CancellationToken cancellationToken)
+    public async Task<AccessCounts> CountsAsync(AccessEvent access, CancellationToken cancellationToken)
     {
-        var scans = await db.AccessScans.AsNoTracking().Where(s => s.EventId == eventId)
-            .Select(s => new { s.MemberId, s.TicketId, s.Outcome, s.Decision }).ToListAsync(cancellationToken);
+        var scans = await ScansOf(access).Select(s => new { s.MemberId, s.Outcome, s.Decision }).ToListAsync(cancellationToken);
         var inside = scans.Where(s => s.Outcome is AccessOutcome.Admitted or AccessOutcome.AdmittedAgain
                 || (s.Outcome == AccessOutcome.Warning && s.Decision == AccessDecision.Admitted))
             .Select(s => s.MemberId).Distinct().Count();
@@ -81,9 +64,15 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         return new AccessCounts(inside, scans.Count, refused);
     }
 
-    private async Task<AccessScan?> LastAdmissionAsync(Guid eventId, Guid memberId, CancellationToken cancellationToken) =>
-        (await db.AccessScans.AsNoTracking().Where(s => s.EventId == eventId && s.MemberId == memberId)
-            .OrderBy(s => s.ScannedAt).ToListAsync(cancellationToken)).FirstOrDefault(s => s.Admits);
+    private async Task<AccessScan?> LastAdmissionAsync(AccessEvent access, Guid memberId, CancellationToken cancellationToken) =>
+        (await ScansOf(access).Where(s => s.MemberId == memberId).OrderBy(s => s.ScannedAt).ToListAsync(cancellationToken)).FirstOrDefault(s => s.Admits);
+
+    private static AccessScan NewScan(AccessEvent access) => new()
+    {
+        Id = IdGenerator.NewId(),
+        EventId = access.EventId,
+        CarnivalDay = access.EventId is null ? access.CarnivalDay : null,
+    };
 
     private static string Time(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(utc, Loil).ToString("HH:mm", CultureInfo.InvariantCulture);
 
@@ -102,24 +91,20 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
     /// <summary>Scan in de app. <paramref name="details"/> = het deurpersoneel mag zien wie eerder scande (<c>ticket.scan.details</c>).</summary>
     public async Task<AccessResult> ScanAsync(Guid operatorId, string? installationId, string code, bool details, CancellationToken cancellationToken)
     {
-        var accessEvent = await RequireEventAsync(cancellationToken);
+        var accessEvent = await RequireCurrentAsync(cancellationToken);
         var device = string.IsNullOrWhiteSpace(installationId)
             ? null
             : await db.Devices.AsNoTracking().SingleOrDefaultAsync(d => d.UserId == operatorId && d.InstallationId == installationId && d.Status == DeviceStatus.Active, cancellationToken);
         var check = await validation.ValidateAsync(code, cancellationToken);
         var payload = QrPayload.TryDecode(code);
         var ticket = payload is null ? null : await db.Tickets.AsNoTracking().SingleOrDefaultAsync(t => t.PublicRef == payload.Ref, cancellationToken);
-        var scan = new AccessScan
-        {
-            Id = IdGenerator.NewId(),
-            EventId = accessEvent.Id,
-            TicketId = ticket?.Id,
-            MemberId = ticket?.MemberId,
-            Method = AccessMethod.Qr,
-            OperatorUserId = operatorId,
-            OperatorDeviceId = device?.Id,
-            ScannedAt = Now,
-        };
+        var scan = NewScan(accessEvent);
+        scan.TicketId = ticket?.Id;
+        scan.MemberId = ticket?.MemberId;
+        scan.Method = AccessMethod.Qr;
+        scan.OperatorUserId = operatorId;
+        scan.OperatorDeviceId = device?.Id;
+        scan.ScannedAt = Now;
 
         string title, message;
         DateTime? previousAt = null;
@@ -129,7 +114,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         }
         else
         {
-            var previous = await LastAdmissionAsync(accessEvent.Id, ticket!.MemberId, cancellationToken);
+            var previous = await LastAdmissionAsync(accessEvent, ticket!.MemberId, cancellationToken);
             previousAt = previous?.ScannedAt;
             if (previous is null)
             {
@@ -153,7 +138,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         db.AccessScans.Add(scan);
         await db.SaveChangesAsync(cancellationToken);
         return new AccessResult(scan.Id, scan.Outcome, title, message, check.Ticket?.HolderName, previousAt, scan.Outcome == AccessOutcome.Warning,
-            await CountsAsync(accessEvent.Id, cancellationToken));
+            await CountsAsync(accessEvent, cancellationToken));
     }
 
     /// <summary>"Toch toelaten" of "Weigeren" bij oranje; alleen door wie scande en maar één keer.</summary>
@@ -169,22 +154,29 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         scan.Decision = admit ? AccessDecision.Admitted : AccessDecision.Refused;
         scan.DecidedAt = Now;
         await db.SaveChangesAsync(cancellationToken);
-        return await CountsAsync(scan.EventId, cancellationToken);
+        var access = scan.EventId is { } eventId
+            ? AccessWindows.ForEvent(await db.Events.AsNoTracking().SingleAsync(e => e.Id == eventId, cancellationToken))
+            : AccessWindows.ForCarnivalDay(scan.CarnivalDay!.Value);
+        return await CountsAsync(access, cancellationToken);
     }
 
     /// <summary>Toegangskaart bij een lid in het portal: actieve activiteit, al binnen en de toegangshistorie van dit carnavalsjaar.</summary>
     public async Task<MemberAccess> MemberAsync(Guid memberId, CancellationToken cancellationToken)
     {
-        var current = await CurrentEventAsync(cancellationToken);
-        var inside = current is null ? null : await LastAdmissionAsync(current.Id, memberId, cancellationToken);
+        var current = await windows.CurrentAsync(cancellationToken);
+        var inside = current is null ? null : await LastAdmissionAsync(current, memberId, cancellationToken);
         var problem = await TicketProblemAsync(memberId, cancellationToken);
-        var history = await (
+        var rows = await (
             from s in db.AccessScans.AsNoTracking()
             where s.MemberId == memberId
-            join e in db.Events.AsNoTracking() on s.EventId equals e.Id
+            join e in db.Events.AsNoTracking() on s.EventId equals e.Id into es
+            from e in es.DefaultIfEmpty()
             join u in db.Users.AsNoTracking() on s.OperatorUserId equals u.Id
             orderby s.ScannedAt descending
-            select new AccessHistoryItem(s.ScannedAt, s.Method, s.Outcome, s.Decision, e.Title, u.DisplayName)).Take(20).ToListAsync(cancellationToken);
+            select new { s.ScannedAt, s.Method, s.Outcome, s.Decision, EventTitle = e == null ? null : e.Title, s.CarnivalDay, u.DisplayName })
+            .Take(20).ToListAsync(cancellationToken);
+        var history = rows.Select(r => new AccessHistoryItem(r.ScannedAt, r.Method, r.Outcome, r.Decision,
+            r.EventTitle ?? AccessWindows.ForCarnivalDay(r.CarnivalDay!.Value).Title, r.DisplayName)).ToList();
         return new MemberAccess(current, inside is not null, inside?.ScannedAt, problem, history);
     }
 
@@ -209,7 +201,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
     /// </summary>
     public async Task<AccessResult> CheckInAsync(Guid operatorId, Guid memberId, bool force, CancellationToken cancellationToken)
     {
-        var accessEvent = await RequireEventAsync(cancellationToken);
+        var accessEvent = await RequireCurrentAsync(cancellationToken);
         var member = await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => m.FullName).SingleOrDefaultAsync(cancellationToken)
             ?? throw new DomainException(ErrorCodes.NotFound, "Lid niet gevonden.", DomainErrorKind.NotFound);
         var problem = await TicketProblemAsync(memberId, cancellationToken);
@@ -218,29 +210,25 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
             throw new DomainException(ErrorCodes.TicketUnavailable, $"Geen toegang: {problem}", DomainErrorKind.Conflict);
         }
 
-        var previous = await LastAdmissionAsync(accessEvent.Id, memberId, cancellationToken);
+        var previous = await LastAdmissionAsync(accessEvent, memberId, cancellationToken);
         if (previous is not null && !force)
         {
             return new AccessResult(null, AccessOutcome.Warning, "Al binnen", $"{member} is vanavond al binnen sinds {Time(previous.ScannedAt)}.",
-                member, previous.ScannedAt, true, await CountsAsync(accessEvent.Id, cancellationToken));
+                member, previous.ScannedAt, true, await CountsAsync(accessEvent, cancellationToken));
         }
 
         var year = await db.CarnivalYears.AsNoTracking().Where(y => y.Active).Select(y => (int?)y.Id).SingleOrDefaultAsync(cancellationToken);
         var ticketId = year is null ? null : await db.Tickets.Where(t => t.CarnivalYearId == year && t.MemberId == memberId).Select(t => (Guid?)t.Id).SingleOrDefaultAsync(cancellationToken);
-        var scan = new AccessScan
-        {
-            Id = IdGenerator.NewId(),
-            EventId = accessEvent.Id,
-            TicketId = ticketId,
-            MemberId = memberId,
-            Method = AccessMethod.Manual,
-            Outcome = previous is null ? AccessOutcome.Admitted : AccessOutcome.AdmittedAgain,
-            OperatorUserId = operatorId,
-            ScannedAt = Now,
-        };
+        var scan = NewScan(accessEvent);
+        scan.TicketId = ticketId;
+        scan.MemberId = memberId;
+        scan.Method = AccessMethod.Manual;
+        scan.Outcome = previous is null ? AccessOutcome.Admitted : AccessOutcome.AdmittedAgain;
+        scan.OperatorUserId = operatorId;
+        scan.ScannedAt = Now;
         db.AccessScans.Add(scan);
         await db.SaveChangesAsync(cancellationToken);
         return new AccessResult(scan.Id, scan.Outcome, "Ingecheckt", $"{member} is ingecheckt om {Time(scan.ScannedAt)}.", member, previous?.ScannedAt, false,
-            await CountsAsync(accessEvent.Id, cancellationToken));
+            await CountsAsync(accessEvent, cancellationToken));
     }
 }

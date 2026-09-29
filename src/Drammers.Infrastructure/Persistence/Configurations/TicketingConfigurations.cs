@@ -43,12 +43,14 @@ internal sealed class AccessScanConfiguration : IEntityTypeConfiguration<AccessS
 {
     public void Configure(EntityTypeBuilder<AccessScan> builder)
     {
-        builder.ToTable("AccessScan", Schemas.Ticketing);
+        builder.ToTable("AccessScan", Schemas.Ticketing, t =>
+            t.HasCheckConstraint("CK_AccessScan_event_or_day", "([event_id] IS NULL AND [carnival_day] IS NOT NULL) OR ([event_id] IS NOT NULL AND [carnival_day] IS NULL)"));
         builder.Property(a => a.Id).ValueGeneratedNever();
         builder.Property(a => a.Reason).HasMaxLength(40).IsUnicode(false);
         builder.Ignore(a => a.Admits);
         builder.HasIndex(a => new { a.EventId, a.ScannedAt });
         builder.HasIndex(a => new { a.EventId, a.MemberId });
+        builder.HasIndex(a => new { a.CarnivalDay, a.MemberId });
         builder.HasOne<Modules.Content.Events.Event>().WithMany().HasForeignKey(a => a.EventId).OnDelete(DeleteBehavior.Restrict);
         // Geen foreign key naar Ticket: het lid → ticket → scan zou een tweede verwijderpad geven. De scan is een logregel;
         // bij het verwijderen van een lid wordt de koppeling naar het lid leeggemaakt (AVG).

@@ -30,7 +30,11 @@ public sealed class AccessScan
 {
     public Guid Id { get; set; }
 
-    public Guid EventId { get; set; }
+    /// <summary>De activiteit met toegangscontrole; leeg als de scan bij een carnavalsdag hoort.</summary>
+    public Guid? EventId { get; set; }
+
+    /// <summary>De carnavalsdag (tot 06:00 de volgende ochtend) als er geen activiteit met toegangscontrole liep.</summary>
+    public DateOnly? CarnivalDay { get; set; }
 
     public Guid? TicketId { get; set; }
 

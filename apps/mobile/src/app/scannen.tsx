@@ -119,7 +119,7 @@ export default function ScannenScreen() {
         insets={insets.top}
         icon="⏸"
         title="Geen toegangscontrole nu"
-        body={`Er is op dit moment geen activiteit met toegangscontrole.${next ? `\n\nVolgende: ${dayTime.format(new Date(next.startAt))} – ${next.title}` : ''}`}
+        body={`Scannen kan tijdens carnaval en tijdens een activiteit met toegangscontrole.${next ? `\n\nVolgende: ${dayTime.format(new Date(next.startAt))} – ${next.title}` : ''}`}
         action={{ label: 'Terug', onPress: back }}
       />
     );

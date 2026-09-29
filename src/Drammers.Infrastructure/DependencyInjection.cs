@@ -214,6 +214,7 @@ public static class DependencyInjection
         services.AddScoped<ParadeLineup>();
         services.AddScoped<ParadeComposition>();
         services.AddScoped<Ticketing.TicketSigningKeys>();
+        services.AddScoped<Ticketing.AccessWindows>();
         services.AddScoped<Ticketing.MemberTickets>();
         services.AddScoped<Ticketing.TicketValidation>();
         services.AddScoped<Ticketing.TicketAdministration>();

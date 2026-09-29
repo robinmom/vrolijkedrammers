@@ -505,12 +505,12 @@ export function useAccessEvents() {
   return useQuery({ queryKey: ['access-events'], queryFn: async () => required((await api.GET('/api/v1/admin/access-scans/events')).data) });
 }
 
-export function useAccessScans(eventId: string, page: number) {
+export function useAccessScans(key: string, page: number) {
   const api = useApi();
   return useQuery({
-    queryKey: ['access-scans', eventId, page],
-    queryFn: async () => required((await api.GET('/api/v1/admin/access-scans', { params: { query: { eventId, page } } })).data),
-    enabled: Boolean(eventId),
+    queryKey: ['access-scans', key, page],
+    queryFn: async () => required((await api.GET('/api/v1/admin/access-scans', { params: { query: { key, page } } })).data),
+    enabled: Boolean(key),
   });
 }
 export type TicketAction = Schemas['TicketAction'];

@@ -664,7 +664,7 @@ export class MockApi {
     if (path === '/admin/access-scans/events') {
       return json([
         {
-          id: 'ev-1',
+          key: 'ev-1',
           title: 'Carnavalsavond',
           startAt: '2027-02-13T19:00:00Z',
           endAt: '2027-02-14T01:00:00Z',

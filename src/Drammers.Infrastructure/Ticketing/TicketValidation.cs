@@ -11,7 +11,7 @@ namespace Drammers.Infrastructure.Ticketing;
 /// Server-side validatie van een gescande code (fase 13, gebruikt door de scanner in fase 14): de gegevens uit de
 /// database, de regels uit <see cref="TicketQrValidator"/>.
 /// </summary>
-public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys keys, IClock clock)
+public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys keys, AccessWindows windows, IClock clock)
 {
     public async Task<QrValidation> ValidateAsync(string code, CancellationToken cancellationToken)
     {
@@ -30,6 +30,14 @@ public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys key
             if (row is not null)
             {
                 var (from, to) = MemberTickets.Validity(row.y);
+                // Buiten carnaval geldt het ticket tijdens een activiteit met toegangscontrole (QR en scannen gelijk).
+                var now = clock.UtcNow;
+                if ((now < from || now > to) && await windows.CurrentAsync(cancellationToken) is { EventId: not null } access)
+                {
+                    var (start, end) = AccessWindows.Window(access);
+                    (from, to) = (new DateTimeOffset(start, TimeSpan.Zero), new DateTimeOffset(end, TimeSpan.Zero));
+                }
+
                 snapshot = new TicketSnapshot(
                     row.t.PublicRef, row.t.CredentialVersion, row.t.Status, row.MembershipStatus == MembershipStatus.Active, from, to,
                     // Een afgemeld toestel telt niet meer als koppeling (codes daarvan zijn ongeldig).

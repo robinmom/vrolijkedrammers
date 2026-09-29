@@ -736,3 +736,11 @@ test('fase 14: toegangscontrole aanzetten bij een activiteit', async ({ page }) 
   await expect(page.getByText('Event opgeslagen.')).toBeVisible();
   expect((api.events[0] as unknown as { accessControl: boolean }).accessControl).toBe(true);
 });
+
+test('fase 13: vanuit ledentickets naar de pagina van het lid', async ({ page }) => {
+  const api = new MockApi(['ticket.read', 'member.read']);
+  api.tickets[0]!.memberId = 'm-1';
+  await open(page, api, 'tickets');
+  await page.getByRole('link', { name: 'Piet Lid' }).click();
+  await expect(page).toHaveURL(/\/beheer\/leden\/m-1$/);
+});

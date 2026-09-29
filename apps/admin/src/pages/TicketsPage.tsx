@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useMe, useTickets, type TicketAction, type TicketSummary } from '../api/hooks';
@@ -39,6 +40,8 @@ export function TicketsPage() {
   const api = useApi();
   const me = useMe();
   const canManage = (me.data?.permissions ?? []).includes('ticket.manage');
+  // Naar de ledenpagina alleen met het recht om leden te bekijken.
+  const canOpenMember = (me.data?.permissions ?? []).includes('member.read');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -76,7 +79,13 @@ export function TicketsPage() {
       header: 'Lid',
       cell: (info) => (
         <>
-          {info.getValue()}
+          {canOpenMember ? (
+            <Link to="/leden/$id" params={{ id: info.row.original.memberId }}>
+              {info.getValue()}
+            </Link>
+          ) : (
+            info.getValue()
+          )}
           {info.row.original.memberNumber ? (
             <div className="muted small-text">Lidnummer {info.row.original.memberNumber}</div>
           ) : null}

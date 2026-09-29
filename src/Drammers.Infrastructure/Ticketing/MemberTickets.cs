@@ -283,14 +283,17 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
     }
 
     /// <summary>Door de server ondertekende code voor toestellen zonder hardwaresleutel (alleen online, 45 seconden geldig).</summary>
-    public async Task<ServerCode> ServerCodeAsync(Guid userId, string? installationId, CancellationToken cancellationToken, Guid? childMemberId = null)
+    public async Task<ServerCode> ServerCodeAsync(
+        Guid userId, string? installationId, CancellationToken cancellationToken, Guid? childMemberId = null, QrPurpose purpose = QrPurpose.Access)
     {
         var device = await CurrentDeviceAsync(userId, installationId, cancellationToken);
         var ticket = await GetAsync(userId, installationId, cancellationToken, childMemberId);
-        if (ticket.State != TicketState.Valid || !ticket.BoundToThisDevice)
+        // De munten-QR (fase 19b) werkt ook vóór carnaval, bijvoorbeeld op de pronkzitting.
+        var usable = ticket.State == TicketState.Valid || (purpose == QrPurpose.Tokens && ticket.State == TicketState.NotYetValid);
+        if (!usable || !ticket.BoundToThisDevice)
         {
             throw new DomainException(ErrorCodes.TicketUnavailable,
-                ticket.State == TicketState.Valid ? "Je ticket staat op een ander toestel." : ticket.Message, DomainErrorKind.Conflict);
+                usable ? "Je ticket staat op een ander toestel." : ticket.Message, DomainErrorKind.Conflict);
         }
 
         if (ticket.DeviceHasHardwareKey)
@@ -299,7 +302,7 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
         }
 
         var issuedAt = clock.UtcNow.ToUnixTimeSeconds();
-        var unsigned = QrPayload.Unsigned(QrPayload.ServerSigned, Convert.FromBase64String(ticket.PublicRef!), ticket.CredentialVersion,
+        var unsigned = QrPayload.Unsigned(purpose == QrPurpose.Tokens ? QrPayload.ServerSignedTokens : QrPayload.ServerSigned, Convert.FromBase64String(ticket.PublicRef!), ticket.CredentialVersion,
             QrPayload.ShortDeviceId(device.Id), issuedAt, QrPayload.DefaultValidFor);
         using var key = await keys.ActivePrivateKeyAsync(cancellationToken);
         var signature = key.SignData(unsigned, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);

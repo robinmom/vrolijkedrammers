@@ -110,4 +110,25 @@ public sealed class TicketQrValidatorTests : IDisposable
         Assert.NotNull(payload);
         Assert.Equal(5, payload!.Ref[0]);
     }
+
+    [Fact]
+    public void Munten_QR_alleen_bij_de_kassa_en_Mijn_QR_alleen_bij_de_ingang()
+    {
+        var tokens = Code(_device, QrPayload.DeviceSignedTokens);
+        var serverTokens = Code(_server, QrPayload.ServerSignedTokens);
+        Assert.Equal(QrCheck.WrongPurpose, Check(tokens).Result);
+        Assert.Equal(QrCheck.WrongPurpose, Check(serverTokens).Result);
+
+        QrValidation AtKassa(string code, DateTimeOffset at) =>
+            TicketQrValidator.Validate(code, at, _ => Ticket(), [_server.ExportSubjectPublicKeyInfo()], QrPurpose.Tokens);
+        Assert.Equal(QrCheck.Valid, AtKassa(tokens, Now).Result);
+        Assert.Equal(QrCheck.Valid, AtKassa(serverTokens, Now).Result);
+        Assert.Equal(QrCheck.WrongPurpose, AtKassa(Code(_device), Now).Result);
+
+        // Munten afhalen kan ook buiten carnaval (pronkzitting), met een verse code.
+        var early = Now.AddDays(-5);
+        Assert.Equal(QrCheck.Valid, AtKassa(Code(_device, QrPayload.DeviceSignedTokens, issued: early), early).Result);
+        // Een munten-QR ondertekend door de server is niet te maken met de sleutel van het toestel.
+        Assert.Equal(QrCheck.InvalidSignature, AtKassa(Code(_device, QrPayload.ServerSignedTokens), Now).Result);
+    }
 }

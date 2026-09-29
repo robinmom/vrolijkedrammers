@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Authorization;
 using Drammers.Infrastructure.Ticketing;
+using Drammers.Modules.Ticketing.Qr;
 using Drammers.SharedKernel.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -50,11 +51,15 @@ public sealed class MeTicketController(MemberTickets tickets) : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel.</summary>
+    /// <summary>
+    /// Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. Met <c>purpose=Tokens</c> de
+    /// munten-QR voor de kassa (fase 19b).
+    /// </summary>
     [HttpGet("ticket/code")]
     [ProducesResponseType<ServerCode>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public Task<ServerCode> Code(CancellationToken cancellationToken) => tickets.ServerCodeAsync(UserId, InstallationId, cancellationToken);
+    public Task<ServerCode> Code([FromQuery] QrPurpose purpose, CancellationToken cancellationToken) =>
+        tickets.ServerCodeAsync(UserId, InstallationId, cancellationToken, purpose: purpose);
 }
 
 public sealed record DeviceKeyRequest([Required, StringLength(500)] string PublicKey, [Required, StringLength(30)] string SecurityLevel);

@@ -5,6 +5,8 @@
  * | v 1 | ref 16 | cv 2 | did 8 | iat 4 | exp 2 | sig 64 | = 97 bytes
  */
 export const QR_VERSION = 1;
+/** De munten-QR (fase 19b): zelfde opbouw, alleen geldig bij de kassa. */
+export const QR_VERSION_TOKENS = 4;
 export const UNSIGNED_LENGTH = 33;
 export const SIGNATURE_LENGTH = 64;
 
@@ -16,6 +18,8 @@ export interface QrFields {
   issuedAt: number;
   /** Geldigheid in seconden (standaard 45). */
   validFor: number;
+  /** Versie 1 (Mijn QR, standaard) of 4 (munten-QR). */
+  version?: number;
 }
 
 /** De ondertekende velden (alles vóór `sig`). */
@@ -25,7 +29,7 @@ export function unsignedPayload(fields: QrFields): Uint8Array {
   }
   const bytes = new Uint8Array(UNSIGNED_LENGTH);
   const view = new DataView(bytes.buffer);
-  view.setUint8(0, QR_VERSION);
+  view.setUint8(0, fields.version ?? QR_VERSION);
   bytes.set(fields.ref, 1);
   view.setUint16(17, fields.credentialVersion);
   bytes.set(fields.deviceId, 19);

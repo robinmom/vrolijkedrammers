@@ -15,6 +15,16 @@ public enum QrCheck
     WrongDevice,
     InvalidSignature,
     Expired,
+
+    /// <summary>Munten-QR bij de ingang, of Mijn QR bij de kassa.</summary>
+    WrongPurpose,
+}
+
+/// <summary>Waar de code gescand wordt: bij de ingang (Mijn QR) of bij de kassa (munten-QR).</summary>
+public enum QrPurpose
+{
+    Access,
+    Tokens,
 }
 
 /// <summary>Wat de validatie over een ticket moet weten (online uit de database, offline uit de cache van de scanner).</summary>
@@ -37,12 +47,20 @@ public static class TicketQrValidator
     public static readonly TimeSpan ClockSkew = TimeSpan.FromSeconds(90);
 
     public static QrValidation Validate(
-        string text, DateTimeOffset now, Func<byte[], TicketSnapshot?> findTicket, IReadOnlyList<byte[]> serverPublicKeys)
+        string text, DateTimeOffset now, Func<byte[], TicketSnapshot?> findTicket, IReadOnlyList<byte[]> serverPublicKeys,
+        QrPurpose purpose = QrPurpose.Access)
     {
         var payload = QrPayload.TryDecode(text);
-        if (payload is null)
+        if (payload is null || payload.Version == QrPayload.OrderTicket)
         {
             return new(QrCheck.Unreadable, "Geen geldige QR-code van De Vrolijke Drammers.");
+        }
+
+        if (payload.IsTokens != (purpose == QrPurpose.Tokens))
+        {
+            return new(QrCheck.WrongPurpose, purpose == QrPurpose.Access
+                ? "Dit is de munten-QR. Vraag om Mijn QR voor de ingang."
+                : "Dit is Mijn QR. Vraag om de munten-QR (tegel Munten in de app).");
         }
 
         var ticket = findTicket(payload.Ref);
@@ -61,7 +79,8 @@ public static class TicketQrValidator
             return new(QrCheck.MembershipInactive, "Geen actief lidmaatschap.", ticket);
         }
 
-        if (now < ticket.ValidFrom || now > ticket.ValidTo)
+        // Munten afhalen kan ook buiten carnaval (bijvoorbeeld op de pronkzitting).
+        if (purpose == QrPurpose.Access && (now < ticket.ValidFrom || now > ticket.ValidTo))
         {
             return new(QrCheck.OutsideValidity, "Ticket is nu niet geldig (buiten de carnavalsperiode).", ticket);
         }
@@ -77,7 +96,7 @@ public static class TicketQrValidator
         }
 
         var unsigned = payload.UnsignedBytes();
-        var signed = payload.Version == QrPayload.DeviceSigned
+        var signed = payload.IsDeviceSigned
             ? ticket.BoundDevicePublicKey is { } key && Verify(key, unsigned, payload.Signature)
             : serverPublicKeys.Any(k => Verify(k, unsigned, payload.Signature));
         if (!signed)

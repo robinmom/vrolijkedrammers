@@ -14,7 +14,7 @@ namespace Drammers.Infrastructure.Ticketing;
 public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys keys, AccessWindows windows, IClock clock)
 {
     /// <summary>Controleert een code; <paramref name="at"/> is het moment van scannen (standaard nu; offline: het moment op het toestel).</summary>
-    public async Task<QrValidation> ValidateAsync(string code, CancellationToken cancellationToken, DateTimeOffset? at = null)
+    public async Task<QrValidation> ValidateAsync(string code, CancellationToken cancellationToken, DateTimeOffset? at = null, QrPurpose purpose = QrPurpose.Access)
     {
         var moment = at ?? clock.UtcNow;
         var payload = QrPayload.TryDecode(code);
@@ -47,7 +47,7 @@ public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys key
             }
         }
 
-        var serverKeys = payload?.Version == QrPayload.ServerSigned ? await keys.PublicKeysAsync(cancellationToken) : [];
-        return TicketQrValidator.Validate(code, moment, _ => snapshot, serverKeys);
+        var serverKeys = payload is { IsDeviceSigned: false } ? await keys.PublicKeysAsync(cancellationToken) : [];
+        return TicketQrValidator.Validate(code, moment, _ => snapshot, serverKeys, purpose);
     }
 }

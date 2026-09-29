@@ -49,6 +49,7 @@ export default function MeerScreen() {
         {status === 'signedIn' ? (
           <Button label="Mijn kinderen" icon="vereniging" variant="secondary" onPress={() => router.push('/kinderen')} />
         ) : null}
+        <Button label="Kaarten" icon="ticket" variant="secondary" onPress={() => router.push('/kaarten')} />
         {me.data?.permissions.includes('ticket.scan') ? (
           <Button label="Scannen bij de deur" icon="qr" onPress={() => router.push('/scannen')} />
         ) : null}

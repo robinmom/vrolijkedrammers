@@ -1266,7 +1266,7 @@ exports[`snapshot dark 01 Home 1`] = `
               </View>
             </View>
             <View
-              accessibilityLabel="Uitslagen"
+              accessibilityLabel="QR code"
               accessibilityRole="button"
               accessibilityState={
                 {
@@ -1380,12 +1380,15 @@ exports[`snapshot dark 01 Home 1`] = `
                         },
                       ]
                     }
-                    vbHeight={22}
-                    vbWidth={22}
+                    vbHeight={24}
+                    vbWidth={24}
                     width={22}
-                    xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Icon/uitslagen">
-<path id="Vector" d="M5.5 8.25H4.125C3.51721 8.25 2.93432 8.00856 2.50455 7.57879C2.07478 7.14902 1.83333 6.56612 1.83333 5.95833C1.83333 5.35055 2.07478 4.76765 2.50455 4.33788C2.93432 3.90811 3.51721 3.66667 4.125 3.66667H5.5M5.5 8.25V1.83333H16.5V8.25M5.5 8.25C5.5 9.70869 6.07946 11.1076 7.11091 12.1391C8.14236 13.1705 9.54131 13.75 11 13.75C12.4587 13.75 13.8576 13.1705 14.8891 12.1391C15.9205 11.1076 16.5 9.70869 16.5 8.25M16.5 8.25H17.875C18.4828 8.25 19.0657 8.00856 19.4955 7.57879C19.9252 7.14902 20.1667 6.56612 20.1667 5.95833C20.1667 5.35055 19.9252 4.76765 19.4955 4.33788C19.0657 3.90811 18.4828 3.66667 17.875 3.66667H16.5M3.66667 20.1667H18.3333M9.16667 13.4383V15.5833C9.16667 16.0875 8.73583 16.4817 8.2775 16.6925C7.19583 17.1875 6.41667 18.5533 6.41667 20.1667M12.8333 13.4383V15.5833C12.8333 16.0875 13.2642 16.4817 13.7225 16.6925C14.8042 17.1875 15.5833 18.5533 15.5833 20.1667" stroke="#F4B942" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/qr">
+<rect x="3" y="3" width="7" height="7" rx="1" stroke="#F4B942" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="14" y="3" width="7" height="7" rx="1" stroke="#F4B942" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="3" y="14" width="7" height="7" rx="1" stroke="#F4B942" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01" stroke="#F4B942" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>"
                     xmlns="http://www.w3.org/2000/svg"
@@ -1405,17 +1408,106 @@ exports[`snapshot dark 01 Home 1`] = `
                             "type": 0,
                           }
                         }
-                        name="Icon/uitslagen"
+                        name="Icon/qr"
                       >
-                        <RNSVGPath
-                          d="M5.5 8.25H4.125C3.51721 8.25 2.93432 8.00856 2.50455 7.57879C2.07478 7.14902 1.83333 6.56612 1.83333 5.95833C1.83333 5.35055 2.07478 4.76765 2.50455 4.33788C2.93432 3.90811 3.51721 3.66667 4.125 3.66667H5.5M5.5 8.25V1.83333H16.5V8.25M5.5 8.25C5.5 9.70869 6.07946 11.1076 7.11091 12.1391C8.14236 13.1705 9.54131 13.75 11 13.75C12.4587 13.75 13.8576 13.1705 14.8891 12.1391C15.9205 11.1076 16.5 9.70869 16.5 8.25M16.5 8.25H17.875C18.4828 8.25 19.0657 8.00856 19.4955 7.57879C19.9252 7.14902 20.1667 6.56612 20.1667 5.95833C20.1667 5.35055 19.9252 4.76765 19.4955 4.33788C19.0657 3.90811 18.4828 3.66667 17.875 3.66667H16.5M3.66667 20.1667H18.3333M9.16667 13.4383V15.5833C9.16667 16.0875 8.73583 16.4817 8.2775 16.6925C7.19583 17.1875 6.41667 18.5533 6.41667 20.1667M12.8333 13.4383V15.5833C12.8333 16.0875 13.2642 16.4817 13.7225 16.6925C14.8042 17.1875 15.5833 18.5533 15.5833 20.1667"
+                        <RNSVGRect
                           fill={
                             {
                               "payload": 4278190080,
                               "type": 0,
                             }
                           }
-                          name="Vector"
+                          height={7}
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          rx={1}
+                          stroke={
+                            {
+                              "payload": 4294228290,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                          width={7}
+                          x={3}
+                          y={3}
+                        />
+                        <RNSVGRect
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
+                          height={7}
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          rx={1}
+                          stroke={
+                            {
+                              "payload": 4294228290,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                          width={7}
+                          x={14}
+                          y={3}
+                        />
+                        <RNSVGRect
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
+                          height={7}
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          rx={1}
+                          stroke={
+                            {
+                              "payload": 4294228290,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                          width={7}
+                          x={3}
+                          y={14}
+                        />
+                        <RNSVGPath
+                          d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01"
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
                           propList={
                             [
                               "stroke",
@@ -1454,12 +1546,12 @@ exports[`snapshot dark 01 Home 1`] = `
                     ]
                   }
                 >
-                  Uitslagen
+                  QR code
                 </Text>
               </View>
             </View>
             <View
-              accessibilityLabel="Mijn QR"
+              accessibilityLabel="Munten"
               accessibilityRole="button"
               accessibilityState={
                 {
@@ -1546,7 +1638,7 @@ exports[`snapshot dark 01 Home 1`] = `
                   <RNSVGSvgView
                     accessibilityElementsHidden={true}
                     accessible={false}
-                    align="none"
+                    align="xMidYMid"
                     bbHeight={22}
                     bbWidth={22}
                     fill="none"
@@ -1556,15 +1648,11 @@ exports[`snapshot dark 01 Home 1`] = `
                     meetOrSlice={0}
                     minX={0}
                     minY={0}
-                    overflow="visible"
                     style={
                       [
                         {
                           "backgroundColor": "transparent",
                           "borderWidth": 0,
-                        },
-                        {
-                          "display": "block",
                         },
                         {
                           "flex": 0,
@@ -1576,12 +1664,11 @@ exports[`snapshot dark 01 Home 1`] = `
                     vbHeight={24}
                     vbWidth={24}
                     width={22}
-                    xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Icon/qr">
-<rect x="3" y="3" width="7" height="7" rx="1" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="14" y="3" width="7" height="7" rx="1" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="3" y="14" width="7" height="7" rx="1" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    xml="<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/munten">
+<path d="M9 3H15L13.5 6.5H10.5L9 3Z" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.5 6.5C6 9 4 13 4 16C4 19.5 7 21 12 21C17 21 20 19.5 20 16C20 13 18 9 13.5 6.5" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.8 11.2C13.3 10.6 12.7 10.4 12 10.4C10.9 10.4 10.2 11 10.2 11.8C10.2 13.6 13.8 12.8 13.8 14.7C13.8 15.5 13 16.1 12 16.1C11.2 16.1 10.5 15.8 10 15.2M12 9.2V10.4M12 16.1V17.3" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>"
                     xmlns="http://www.w3.org/2000/svg"
@@ -1601,16 +1688,16 @@ exports[`snapshot dark 01 Home 1`] = `
                             "type": 0,
                           }
                         }
-                        name="Icon/qr"
+                        name="Icon/munten"
                       >
-                        <RNSVGRect
+                        <RNSVGPath
+                          d="M9 3H15L13.5 6.5H10.5L9 3Z"
                           fill={
                             {
                               "payload": 4278190080,
                               "type": 0,
                             }
                           }
-                          height={7}
                           propList={
                             [
                               "stroke",
@@ -1619,7 +1706,6 @@ exports[`snapshot dark 01 Home 1`] = `
                               "strokeLinejoin",
                             ]
                           }
-                          rx={1}
                           stroke={
                             {
                               "payload": 4293722130,
@@ -1629,72 +1715,35 @@ exports[`snapshot dark 01 Home 1`] = `
                           strokeLinecap={1}
                           strokeLinejoin={1}
                           strokeWidth={2}
-                          width={7}
-                          x={3}
-                          y={3}
-                        />
-                        <RNSVGRect
-                          fill={
-                            {
-                              "payload": 4278190080,
-                              "type": 0,
-                            }
-                          }
-                          height={7}
-                          propList={
-                            [
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          rx={1}
-                          stroke={
-                            {
-                              "payload": 4293722130,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                          width={7}
-                          x={14}
-                          y={3}
-                        />
-                        <RNSVGRect
-                          fill={
-                            {
-                              "payload": 4278190080,
-                              "type": 0,
-                            }
-                          }
-                          height={7}
-                          propList={
-                            [
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          rx={1}
-                          stroke={
-                            {
-                              "payload": 4293722130,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                          width={7}
-                          x={3}
-                          y={14}
                         />
                         <RNSVGPath
-                          d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01"
+                          d="M10.5 6.5C6 9 4 13 4 16C4 19.5 7 21 12 21C17 21 20 19.5 20 16C20 13 18 9 13.5 6.5"
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4293722130,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        />
+                        <RNSVGPath
+                          d="M13.8 11.2C13.3 10.6 12.7 10.4 12 10.4C10.9 10.4 10.2 11 10.2 11.8C10.2 13.6 13.8 12.8 13.8 14.7C13.8 15.5 13 16.1 12 16.1C11.2 16.1 10.5 15.8 10 15.2M12 9.2V10.4M12 16.1V17.3"
                           fill={
                             {
                               "payload": 4278190080,
@@ -1739,7 +1788,7 @@ exports[`snapshot dark 01 Home 1`] = `
                     ]
                   }
                 >
-                  Mijn QR
+                  Munten
                 </Text>
               </View>
             </View>
@@ -6796,6 +6845,183 @@ exports[`snapshot dark 05 Meer 1`] = `
                 </RNSVGGroup>
               </RNSVGSvgView>
             </View>
+          </View>
+          <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "minHeight": 50,
+                  "paddingHorizontal": 18,
+                },
+                {
+                  "borderColor": "#5AB0E6",
+                  "borderWidth": 1.5,
+                },
+                undefined,
+              ]
+            }
+          >
+            <RNSVGSvgView
+              accessibilityElementsHidden={true}
+              accessible={false}
+              align="xMidYMid"
+              bbHeight={20}
+              bbWidth={20}
+              fill="none"
+              focusable={false}
+              height={20}
+              importantForAccessibility="no-hide-descendants"
+              meetOrSlice={0}
+              minX={0}
+              minY={0}
+              style={
+                [
+                  {
+                    "backgroundColor": "transparent",
+                    "borderWidth": 0,
+                  },
+                  {
+                    "flex": 0,
+                    "height": 20,
+                    "width": 20,
+                  },
+                ]
+              }
+              vbHeight={24}
+              vbWidth={24}
+              width={20}
+              xml="<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/ticket">
+<path d="M3 7C3 5.9 3.9 5 5 5H19C20.1 5 21 5.9 21 7V10C19.9 10 19 10.9 19 12C19 13.1 19.9 14 21 14V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V14C4.1 14 5 13.1 5 12C5 10.9 4.1 10 3 10V7Z" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 5V7M14 11V13M14 17V19" stroke="#5AB0E6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <RNSVGGroup
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+              >
+                <RNSVGGroup
+                  fill={
+                    {
+                      "payload": 4278190080,
+                      "type": 0,
+                    }
+                  }
+                  name="Icon/ticket"
+                >
+                  <RNSVGPath
+                    d="M3 7C3 5.9 3.9 5 5 5H19C20.1 5 21 5.9 21 7V10C19.9 10 19 10.9 19 12C19 13.1 19.9 14 21 14V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V14C4.1 14 5 13.1 5 12C5 10.9 4.1 10 3 10V7Z"
+                    fill={
+                      {
+                        "payload": 4278190080,
+                        "type": 0,
+                      }
+                    }
+                    propList={
+                      [
+                        "stroke",
+                        "strokeWidth",
+                        "strokeLinecap",
+                        "strokeLinejoin",
+                      ]
+                    }
+                    stroke={
+                      {
+                        "payload": 4284133606,
+                        "type": 0,
+                      }
+                    }
+                    strokeLinecap={1}
+                    strokeLinejoin={1}
+                    strokeWidth={2}
+                  />
+                  <RNSVGPath
+                    d="M14 5V7M14 11V13M14 17V19"
+                    fill={
+                      {
+                        "payload": 4278190080,
+                        "type": 0,
+                      }
+                    }
+                    propList={
+                      [
+                        "stroke",
+                        "strokeWidth",
+                        "strokeLinecap",
+                        "strokeLinejoin",
+                      ]
+                    }
+                    stroke={
+                      {
+                        "payload": 4284133606,
+                        "type": 0,
+                      }
+                    }
+                    strokeLinecap={1}
+                    strokeLinejoin={1}
+                    strokeWidth={2}
+                  />
+                </RNSVGGroup>
+              </RNSVGGroup>
+            </RNSVGSvgView>
+            <Text
+              maxFontSizeMultiplier={2}
+              style={
+                [
+                  {
+                    "color": "#5AB0E6",
+                    "fontFamily": "Inter_600SemiBold",
+                    "fontSize": 15,
+                    "lineHeight": undefined,
+                    "textTransform": undefined,
+                  },
+                  undefined,
+                ]
+              }
+            >
+              Kaarten
+            </Text>
           </View>
           <View
             accessibilityLabel="Word ook een Drammer! Lid worden"
@@ -12193,7 +12419,7 @@ exports[`snapshot light 01 Home 1`] = `
               </View>
             </View>
             <View
-              accessibilityLabel="Uitslagen"
+              accessibilityLabel="QR code"
               accessibilityRole="button"
               accessibilityState={
                 {
@@ -12307,12 +12533,15 @@ exports[`snapshot light 01 Home 1`] = `
                         },
                       ]
                     }
-                    vbHeight={22}
-                    vbWidth={22}
+                    vbHeight={24}
+                    vbWidth={24}
                     width={22}
-                    xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Icon/uitslagen">
-<path id="Vector" d="M5.5 8.25H4.125C3.51721 8.25 2.93432 8.00856 2.50455 7.57879C2.07478 7.14902 1.83333 6.56612 1.83333 5.95833C1.83333 5.35055 2.07478 4.76765 2.50455 4.33788C2.93432 3.90811 3.51721 3.66667 4.125 3.66667H5.5M5.5 8.25V1.83333H16.5V8.25M5.5 8.25C5.5 9.70869 6.07946 11.1076 7.11091 12.1391C8.14236 13.1705 9.54131 13.75 11 13.75C12.4587 13.75 13.8576 13.1705 14.8891 12.1391C15.9205 11.1076 16.5 9.70869 16.5 8.25M16.5 8.25H17.875C18.4828 8.25 19.0657 8.00856 19.4955 7.57879C19.9252 7.14902 20.1667 6.56612 20.1667 5.95833C20.1667 5.35055 19.9252 4.76765 19.4955 4.33788C19.0657 3.90811 18.4828 3.66667 17.875 3.66667H16.5M3.66667 20.1667H18.3333M9.16667 13.4383V15.5833C9.16667 16.0875 8.73583 16.4817 8.2775 16.6925C7.19583 17.1875 6.41667 18.5533 6.41667 20.1667M12.8333 13.4383V15.5833C12.8333 16.0875 13.2642 16.4817 13.7225 16.6925C14.8042 17.1875 15.5833 18.5533 15.5833 20.1667" stroke="#123047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/qr">
+<rect x="3" y="3" width="7" height="7" rx="1" stroke="#123047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="14" y="3" width="7" height="7" rx="1" stroke="#123047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="3" y="14" width="7" height="7" rx="1" stroke="#123047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01" stroke="#123047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>"
                     xmlns="http://www.w3.org/2000/svg"
@@ -12332,17 +12561,106 @@ exports[`snapshot light 01 Home 1`] = `
                             "type": 0,
                           }
                         }
-                        name="Icon/uitslagen"
+                        name="Icon/qr"
                       >
-                        <RNSVGPath
-                          d="M5.5 8.25H4.125C3.51721 8.25 2.93432 8.00856 2.50455 7.57879C2.07478 7.14902 1.83333 6.56612 1.83333 5.95833C1.83333 5.35055 2.07478 4.76765 2.50455 4.33788C2.93432 3.90811 3.51721 3.66667 4.125 3.66667H5.5M5.5 8.25V1.83333H16.5V8.25M5.5 8.25C5.5 9.70869 6.07946 11.1076 7.11091 12.1391C8.14236 13.1705 9.54131 13.75 11 13.75C12.4587 13.75 13.8576 13.1705 14.8891 12.1391C15.9205 11.1076 16.5 9.70869 16.5 8.25M16.5 8.25H17.875C18.4828 8.25 19.0657 8.00856 19.4955 7.57879C19.9252 7.14902 20.1667 6.56612 20.1667 5.95833C20.1667 5.35055 19.9252 4.76765 19.4955 4.33788C19.0657 3.90811 18.4828 3.66667 17.875 3.66667H16.5M3.66667 20.1667H18.3333M9.16667 13.4383V15.5833C9.16667 16.0875 8.73583 16.4817 8.2775 16.6925C7.19583 17.1875 6.41667 18.5533 6.41667 20.1667M12.8333 13.4383V15.5833C12.8333 16.0875 13.2642 16.4817 13.7225 16.6925C14.8042 17.1875 15.5833 18.5533 15.5833 20.1667"
+                        <RNSVGRect
                           fill={
                             {
                               "payload": 4278190080,
                               "type": 0,
                             }
                           }
-                          name="Vector"
+                          height={7}
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          rx={1}
+                          stroke={
+                            {
+                              "payload": 4279382087,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                          width={7}
+                          x={3}
+                          y={3}
+                        />
+                        <RNSVGRect
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
+                          height={7}
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          rx={1}
+                          stroke={
+                            {
+                              "payload": 4279382087,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                          width={7}
+                          x={14}
+                          y={3}
+                        />
+                        <RNSVGRect
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
+                          height={7}
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          rx={1}
+                          stroke={
+                            {
+                              "payload": 4279382087,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                          width={7}
+                          x={3}
+                          y={14}
+                        />
+                        <RNSVGPath
+                          d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01"
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
                           propList={
                             [
                               "stroke",
@@ -12381,12 +12699,12 @@ exports[`snapshot light 01 Home 1`] = `
                     ]
                   }
                 >
-                  Uitslagen
+                  QR code
                 </Text>
               </View>
             </View>
             <View
-              accessibilityLabel="Mijn QR"
+              accessibilityLabel="Munten"
               accessibilityRole="button"
               accessibilityState={
                 {
@@ -12473,7 +12791,7 @@ exports[`snapshot light 01 Home 1`] = `
                   <RNSVGSvgView
                     accessibilityElementsHidden={true}
                     accessible={false}
-                    align="none"
+                    align="xMidYMid"
                     bbHeight={22}
                     bbWidth={22}
                     fill="none"
@@ -12483,15 +12801,11 @@ exports[`snapshot light 01 Home 1`] = `
                     meetOrSlice={0}
                     minX={0}
                     minY={0}
-                    overflow="visible"
                     style={
                       [
                         {
                           "backgroundColor": "transparent",
                           "borderWidth": 0,
-                        },
-                        {
-                          "display": "block",
                         },
                         {
                           "flex": 0,
@@ -12503,12 +12817,11 @@ exports[`snapshot light 01 Home 1`] = `
                     vbHeight={24}
                     vbWidth={24}
                     width={22}
-                    xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Icon/qr">
-<rect x="3" y="3" width="7" height="7" rx="1" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="14" y="3" width="7" height="7" rx="1" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="3" y="14" width="7" height="7" rx="1" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    xml="<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/munten">
+<path d="M9 3H15L13.5 6.5H10.5L9 3Z" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.5 6.5C6 9 4 13 4 16C4 19.5 7 21 12 21C17 21 20 19.5 20 16C20 13 18 9 13.5 6.5" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.8 11.2C13.3 10.6 12.7 10.4 12 10.4C10.9 10.4 10.2 11 10.2 11.8C10.2 13.6 13.8 12.8 13.8 14.7C13.8 15.5 13 16.1 12 16.1C11.2 16.1 10.5 15.8 10 15.2M12 9.2V10.4M12 16.1V17.3" stroke="#ED0012" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>"
                     xmlns="http://www.w3.org/2000/svg"
@@ -12528,16 +12841,16 @@ exports[`snapshot light 01 Home 1`] = `
                             "type": 0,
                           }
                         }
-                        name="Icon/qr"
+                        name="Icon/munten"
                       >
-                        <RNSVGRect
+                        <RNSVGPath
+                          d="M9 3H15L13.5 6.5H10.5L9 3Z"
                           fill={
                             {
                               "payload": 4278190080,
                               "type": 0,
                             }
                           }
-                          height={7}
                           propList={
                             [
                               "stroke",
@@ -12546,7 +12859,6 @@ exports[`snapshot light 01 Home 1`] = `
                               "strokeLinejoin",
                             ]
                           }
-                          rx={1}
                           stroke={
                             {
                               "payload": 4293722130,
@@ -12556,72 +12868,35 @@ exports[`snapshot light 01 Home 1`] = `
                           strokeLinecap={1}
                           strokeLinejoin={1}
                           strokeWidth={2}
-                          width={7}
-                          x={3}
-                          y={3}
-                        />
-                        <RNSVGRect
-                          fill={
-                            {
-                              "payload": 4278190080,
-                              "type": 0,
-                            }
-                          }
-                          height={7}
-                          propList={
-                            [
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          rx={1}
-                          stroke={
-                            {
-                              "payload": 4293722130,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                          width={7}
-                          x={14}
-                          y={3}
-                        />
-                        <RNSVGRect
-                          fill={
-                            {
-                              "payload": 4278190080,
-                              "type": 0,
-                            }
-                          }
-                          height={7}
-                          propList={
-                            [
-                              "stroke",
-                              "strokeWidth",
-                              "strokeLinecap",
-                              "strokeLinejoin",
-                            ]
-                          }
-                          rx={1}
-                          stroke={
-                            {
-                              "payload": 4293722130,
-                              "type": 0,
-                            }
-                          }
-                          strokeLinecap={1}
-                          strokeLinejoin={1}
-                          strokeWidth={2}
-                          width={7}
-                          x={3}
-                          y={14}
                         />
                         <RNSVGPath
-                          d="M14 14H17V17M21 14V14.01M14 21H17M21 17V21H20M17 21V21.01"
+                          d="M10.5 6.5C6 9 4 13 4 16C4 19.5 7 21 12 21C17 21 20 19.5 20 16C20 13 18 9 13.5 6.5"
+                          fill={
+                            {
+                              "payload": 4278190080,
+                              "type": 0,
+                            }
+                          }
+                          propList={
+                            [
+                              "stroke",
+                              "strokeWidth",
+                              "strokeLinecap",
+                              "strokeLinejoin",
+                            ]
+                          }
+                          stroke={
+                            {
+                              "payload": 4293722130,
+                              "type": 0,
+                            }
+                          }
+                          strokeLinecap={1}
+                          strokeLinejoin={1}
+                          strokeWidth={2}
+                        />
+                        <RNSVGPath
+                          d="M13.8 11.2C13.3 10.6 12.7 10.4 12 10.4C10.9 10.4 10.2 11 10.2 11.8C10.2 13.6 13.8 12.8 13.8 14.7C13.8 15.5 13 16.1 12 16.1C11.2 16.1 10.5 15.8 10 15.2M12 9.2V10.4M12 16.1V17.3"
                           fill={
                             {
                               "payload": 4278190080,
@@ -12666,7 +12941,7 @@ exports[`snapshot light 01 Home 1`] = `
                     ]
                   }
                 >
-                  Mijn QR
+                  Munten
                 </Text>
               </View>
             </View>
@@ -17723,6 +17998,183 @@ exports[`snapshot light 05 Meer 1`] = `
                 </RNSVGGroup>
               </RNSVGSvgView>
             </View>
+          </View>
+          <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "minHeight": 50,
+                  "paddingHorizontal": 18,
+                },
+                {
+                  "borderColor": "#066AA6",
+                  "borderWidth": 1.5,
+                },
+                undefined,
+              ]
+            }
+          >
+            <RNSVGSvgView
+              accessibilityElementsHidden={true}
+              accessible={false}
+              align="xMidYMid"
+              bbHeight={20}
+              bbWidth={20}
+              fill="none"
+              focusable={false}
+              height={20}
+              importantForAccessibility="no-hide-descendants"
+              meetOrSlice={0}
+              minX={0}
+              minY={0}
+              style={
+                [
+                  {
+                    "backgroundColor": "transparent",
+                    "borderWidth": 0,
+                  },
+                  {
+                    "flex": 0,
+                    "height": 20,
+                    "width": 20,
+                  },
+                ]
+              }
+              vbHeight={24}
+              vbWidth={24}
+              width={20}
+              xml="<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon/ticket">
+<path d="M3 7C3 5.9 3.9 5 5 5H19C20.1 5 21 5.9 21 7V10C19.9 10 19 10.9 19 12C19 13.1 19.9 14 21 14V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V14C4.1 14 5 13.1 5 12C5 10.9 4.1 10 3 10V7Z" stroke="#066AA6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 5V7M14 11V13M14 17V19" stroke="#066AA6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <RNSVGGroup
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+              >
+                <RNSVGGroup
+                  fill={
+                    {
+                      "payload": 4278190080,
+                      "type": 0,
+                    }
+                  }
+                  name="Icon/ticket"
+                >
+                  <RNSVGPath
+                    d="M3 7C3 5.9 3.9 5 5 5H19C20.1 5 21 5.9 21 7V10C19.9 10 19 10.9 19 12C19 13.1 19.9 14 21 14V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V14C4.1 14 5 13.1 5 12C5 10.9 4.1 10 3 10V7Z"
+                    fill={
+                      {
+                        "payload": 4278190080,
+                        "type": 0,
+                      }
+                    }
+                    propList={
+                      [
+                        "stroke",
+                        "strokeWidth",
+                        "strokeLinecap",
+                        "strokeLinejoin",
+                      ]
+                    }
+                    stroke={
+                      {
+                        "payload": 4278610598,
+                        "type": 0,
+                      }
+                    }
+                    strokeLinecap={1}
+                    strokeLinejoin={1}
+                    strokeWidth={2}
+                  />
+                  <RNSVGPath
+                    d="M14 5V7M14 11V13M14 17V19"
+                    fill={
+                      {
+                        "payload": 4278190080,
+                        "type": 0,
+                      }
+                    }
+                    propList={
+                      [
+                        "stroke",
+                        "strokeWidth",
+                        "strokeLinecap",
+                        "strokeLinejoin",
+                      ]
+                    }
+                    stroke={
+                      {
+                        "payload": 4278610598,
+                        "type": 0,
+                      }
+                    }
+                    strokeLinecap={1}
+                    strokeLinejoin={1}
+                    strokeWidth={2}
+                  />
+                </RNSVGGroup>
+              </RNSVGGroup>
+            </RNSVGSvgView>
+            <Text
+              maxFontSizeMultiplier={2}
+              style={
+                [
+                  {
+                    "color": "#066AA6",
+                    "fontFamily": "Inter_600SemiBold",
+                    "fontSize": 15,
+                    "lineHeight": undefined,
+                    "textTransform": undefined,
+                  },
+                  undefined,
+                ]
+              }
+            >
+              Kaarten
+            </Text>
           </View>
           <View
             accessibilityLabel="Word ook een Drammer! Lid worden"

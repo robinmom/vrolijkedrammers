@@ -26,6 +26,12 @@ De webhook bevat alleen het betalings-id. De status wordt altijd bij Mollie opge
 3. De bestelling staat in het portal op **Betaald** en de koper krijgt een e-mail met de link naar de QR.
 4. Test ook "Failed" en "Canceled". De plaatsen komen dan direct weer vrij.
 
+## Webpagina voor de website
+
+- De openbare kaartverkoop staat op `https://<api-host>/kaarten/`. Link ernaar vanaf vrolijkedrammers.nl.
+- Gasten kopen daar kaarten (geen munten) en betalen met iDEAL.
+- Na het betalen komen ze op `/kaarten/bestelling/`, met de QR. Dezelfde link staat in de e-mail.
+
 ## Reconciliatie met de penningmeester
 
 - **Portal:** Kaartverkoop toont de omzet en per bestelling de betaalwijze (iDEAL, contant, gratis).

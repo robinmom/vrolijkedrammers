@@ -41,6 +41,24 @@ public class PortalHostingTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Kaarten_pagina_en_bestelpagina_met_dezelfde_CSP_als_lid_worden()
+    {
+        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/kaarten")).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/kaarten/bestelling")).StatusCode);
+
+        foreach (var path in new[] { "/kaarten/", "/kaarten/bestelling/?id=abc&t=def" })
+        {
+            var response = await _client.GetAsync(path);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+            Assert.Contains("frame-ancestors 'none'", csp, StringComparison.Ordinal);
+            Assert.DoesNotContain("unsafe-inline", csp, StringComparison.Ordinal);
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/kaarten/bestelling/app.js")).StatusCode);
+    }
+
+    [Fact]
     public async Task Optocht_inschrijven_pagina_met_dezelfde_CSP_als_lid_worden()
     {
         Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/optocht-inschrijven")).StatusCode);

@@ -19,6 +19,11 @@ public static class PortalHosting
     /// </summary>
     public const string ArrivalsPath = "/aanrijtijden";
 
+    /// <summary>Openbare kaartverkoop (fase 19b): bestellen, betalen via Mollie en de bestelling met de QR.</summary>
+    public const string TicketsPath = "/kaarten";
+
+    private const string TicketsOrderPath = "/kaarten/bestelling";
+
     private const string ArrivalsContentSecurityPolicy =
         "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors https://vrolijkedrammers.nl https://www.vrolijkedrammers.nl; " +
         "base-uri 'self'; form-action 'none'; object-src 'none'";
@@ -48,7 +53,8 @@ public static class PortalHosting
             {
                 headers.ContentSecurityPolicy = ArrivalsContentSecurityPolicy;
             }
-            else if (context.Request.Path.StartsWithSegments(JoinPath) || context.Request.Path.StartsWithSegments(ParadePath))
+            else if (context.Request.Path.StartsWithSegments(JoinPath) || context.Request.Path.StartsWithSegments(ParadePath)
+                || context.Request.Path.StartsWithSegments(TicketsPath))
             {
                 headers.ContentSecurityPolicy = JoinContentSecurityPolicy;
                 headers.XFrameOptions = "DENY";
@@ -67,7 +73,7 @@ public static class PortalHosting
         // /beheer → /beheer/ (Vite gebruikt paden onder de base). Geen route: routing negeert de trailing slash.
         app.Use((context, next) =>
         {
-            if (context.Request.Path.Value is BasePath or JoinPath or ParadePath or ArrivalsPath)
+            if (context.Request.Path.Value is BasePath or JoinPath or ParadePath or ArrivalsPath or TicketsPath or TicketsOrderPath)
             {
                 context.Response.Redirect($"{context.Request.Path.Value}/{context.Request.QueryString}");
                 return Task.CompletedTask;

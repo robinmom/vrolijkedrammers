@@ -91,8 +91,9 @@ export default function HomeScreen() {
 
         <View style={styles.shortcuts}>
           <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
-          <ShortcutTile icon="uitslagen" label="Uitslagen" tint="yellow" onPress={() => router.push('/uitslagen')} />
-          <ShortcutTile icon="qr" label="Mijn QR" tint="red" onPress={() => router.push('/mijn-qr')} />
+          {/* Fase 19b: QR code op de plek van Uitslagen (die staat onder Meer), Munten op de oude plek van de QR. */}
+          <ShortcutTile icon="qr" label="QR code" tint="yellow" onPress={() => router.push('/mijn-qr')} />
+          <ShortcutTile icon="munten" label="Munten" tint="red" onPress={() => router.push('/munten')} />
           <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
         </View>
 

@@ -191,6 +191,7 @@ export class MockApi {
   urgent = true;
   // Fase 11: optocht.
   parades: Record<string, unknown>[] = [];
+  compositionWarnings: string[] = [];
   // Fase 16: aanrijtijden.
   arrivals = {
     location: 'Rotonde Holthuizen' as string | null,
@@ -921,7 +922,7 @@ export class MockApi {
         lengthMeters: ordered.length * 15,
         defaultSpacingMeters: 5,
         categories: [],
-        warnings: [],
+        warnings: this.compositionWarnings,
         fixedEntries: ['Geluidswagen', 'Verenigingswagen'],
         firstStartNumber: 3,
       });

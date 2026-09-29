@@ -21,6 +21,9 @@ export function Layout() {
   const me = useMe();
   const [menuOpen, setMenuOpen] = useState(false);
   const sections = navSections(me.data?.permissions ?? []);
+  // Een menu-item met onderliggende menu-items (bijv. /optocht en /optocht/samenstellen) is alleen actief op zijn eigen pad.
+  const allPaths = sections.flatMap((s) => s.items.map((i) => i.to));
+  const exact = (to: string) => to === '/' || allPaths.some((p) => p !== to && p.startsWith(`${to}/`));
   const name = me.data?.displayName ?? auth.user?.name;
   const role = me.data?.roles[0]?.name;
 
@@ -58,7 +61,7 @@ export function Layout() {
                     <li key={item.to}>
                       <Link
                         to={item.to}
-                        activeOptions={{ exact: item.to === '/' }}
+                        activeOptions={{ exact: exact(item.to) }}
                         activeProps={{ 'aria-current': 'page', className: 'active' }}
                         onClick={() => setMenuOpen(false)}
                       >

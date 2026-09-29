@@ -1452,3 +1452,20 @@ ul.alert {
   border-bottom-color: var(--dvd-link-text);
   font-weight: 600;
 }
+
+/* Signalen bij de volgorde (samenstellen): inklapbaar. */
+.warnings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.warnings-panel.collapsed {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.warnings-panel ul {
+  margin: 8px 0 0;
+}

@@ -37,14 +37,6 @@ export default function MeerScreen() {
       onPress: () => router.push('/componenten'),
     });
   }
-  if (__DEV__ || process.env.EXPO_PUBLIC_DEVICE_KEY_SPIKE === '1') {
-    settings.push({
-      type: 'link',
-      key: 'sleutel',
-      label: 'Hardwaresleutel (spike)',
-      onPress: () => router.push('/meer/sleutel-test'),
-    });
-  }
 
   return (
     <Screen>

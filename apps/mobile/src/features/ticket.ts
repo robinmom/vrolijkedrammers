@@ -15,6 +15,11 @@ const VALID_FOR = 45;
 const STORE: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY };
 const TICKET_CACHE = 'dvd.ticket.v1';
 const KEY_STATE = 'dvd.ticketkey.v1';
+/** Kinderen waarvan dit toestel een ticket bewaart (fase 17), zodat uitloggen ook die gegevens wist. */
+const CHILD_CACHES = 'dvd.ticket.children.v1';
+
+/** Eigen ticket, of dat van een kind waarvan de gebruiker ouder/verzorger is (fase 17). */
+const cacheKey = (childId?: string) => (childId ? `${TICKET_CACHE}.${childId}` : TICKET_CACHE);
 
 /** Wat de app nodig heeft om zonder internet een code te maken (geen persoonsgegevens behalve de naam op het scherm). */
 export interface CachedTicket {
@@ -29,7 +34,7 @@ export interface CachedTicket {
 
 export const hasHardwareKey = () => DeviceKey !== null;
 
-export async function saveTicket(ticket: MyTicket): Promise<void> {
+export async function saveTicket(ticket: MyTicket, childId?: string): Promise<void> {
   if (ticket.publicRef && ticket.deviceShortId && ticket.boundToThisDevice && ticket.deviceHasHardwareKey) {
     const cached: CachedTicket = {
       publicRef: ticket.publicRef,
@@ -40,22 +45,36 @@ export async function saveTicket(ticket: MyTicket): Promise<void> {
       validFrom: ticket.validFrom,
       validTo: ticket.validTo,
     };
-    await SecureStore.setItemAsync(TICKET_CACHE, JSON.stringify(cached), STORE);
+    await SecureStore.setItemAsync(cacheKey(childId), JSON.stringify(cached), STORE);
+    if (childId) {
+      const known = await childCaches();
+      if (!known.includes(childId)) {
+        await SecureStore.setItemAsync(CHILD_CACHES, JSON.stringify([...known, childId]), STORE);
+      }
+    }
   } else {
-    await SecureStore.deleteItemAsync(TICKET_CACHE, STORE);
+    await SecureStore.deleteItemAsync(cacheKey(childId), STORE);
   }
 }
 
-export async function loadTicket(): Promise<CachedTicket | null> {
-  const raw = await SecureStore.getItemAsync(TICKET_CACHE, STORE).catch(() => null);
+async function childCaches(): Promise<string[]> {
+  const raw = await SecureStore.getItemAsync(CHILD_CACHES, STORE).catch(() => null);
+  return raw ? (JSON.parse(raw) as string[]) : [];
+}
+
+export async function loadTicket(childId?: string): Promise<CachedTicket | null> {
+  const raw = await SecureStore.getItemAsync(cacheKey(childId), STORE).catch(() => null);
   return raw ? (JSON.parse(raw) as CachedTicket) : null;
 }
 
 /** Bij uitloggen: ticketgegevens en sleutelstatus van dit toestel vergeten. */
 export async function forgetTicket(): Promise<void> {
+  const children = await childCaches();
   await Promise.all([
     SecureStore.deleteItemAsync(TICKET_CACHE, STORE),
     SecureStore.deleteItemAsync(KEY_STATE, STORE),
+    SecureStore.deleteItemAsync(CHILD_CACHES, STORE),
+    ...children.map((id) => SecureStore.deleteItemAsync(cacheKey(id), STORE)),
   ]).catch(() => undefined);
 }
 
@@ -104,16 +123,21 @@ export async function syncDeviceKey(serverKnowsKey: boolean): Promise<boolean> {
 
 async function bindOnce(
   force: boolean,
+  childId?: string,
 ): Promise<{ ok: true } | { ok: false; status: number; code?: string; message?: string }> {
   const withKey = await ensureDeviceKey(force).catch(() => false);
   let body: { challenge: string | null; signature: string | null } = { challenge: null, signature: null };
   if (withKey && DeviceKey) {
-    const { data } = await api.POST('/api/v1/me/ticket/challenge');
+    const { data } = childId
+      ? await api.POST('/api/v1/me/children/{memberId}/ticket/challenge', { params: { path: { memberId: childId } } })
+      : await api.POST('/api/v1/me/ticket/challenge');
     if (data) {
       body = { challenge: data.challenge, signature: await DeviceKey.signAsync(TICKET_KEY_ALIAS, data.challenge) };
     }
   }
-  const { error, response } = await api.POST('/api/v1/me/ticket/bind-device', { body });
+  const { error, response } = childId
+    ? await api.POST('/api/v1/me/children/{memberId}/ticket/bind-device', { params: { path: { memberId: childId } }, body })
+    : await api.POST('/api/v1/me/ticket/bind-device', { body });
   if (response.ok) {
     return { ok: true };
   }
@@ -123,12 +147,13 @@ async function bindOnce(
 
 /**
  * Koppelt het ticket aan dit toestel, met proof-of-possession als er een hardwaresleutel is. Kent de API de sleutel
- * niet (meer), bijvoorbeeld na opnieuw inloggen, dan eenmalig een nieuwe sleutel maken en opnieuw proberen.
+ * niet (meer), bijvoorbeeld na opnieuw inloggen, dan eenmalig een nieuwe sleutel maken en opnieuw proberen. Met
+ * `childId` het ticket van een kind op de telefoon van de ouder (fase 17).
  */
-export async function bindThisDevice(): Promise<{ ok: true } | { ok: false; message: string }> {
-  let result = await bindOnce(false);
+export async function bindThisDevice(childId?: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  let result = await bindOnce(false, childId);
   if (!result.ok && result.code === 'DEVICE_KEY_INVALID') {
-    result = await bindOnce(true);
+    result = await bindOnce(true, childId);
   }
   return result.ok
     ? result
@@ -150,8 +175,10 @@ export async function deviceCode(ticket: CachedTicket, now: Date): Promise<{ cod
 }
 
 /** Door de server ondertekende code voor toestellen zonder hardwaresleutel (alleen met internet). */
-export async function serverCode(): Promise<{ code: string; issuedAt: number } | null> {
-  const { data } = await api.GET('/api/v1/me/ticket/code');
+export async function serverCode(childId?: string): Promise<{ code: string; issuedAt: number } | null> {
+  const { data } = childId
+    ? await api.GET('/api/v1/me/children/{memberId}/ticket/code', { params: { path: { memberId: childId } } })
+    : await api.GET('/api/v1/me/ticket/code');
   return data ? { code: data.code, issuedAt: data.issuedAt } : null;
 }
 

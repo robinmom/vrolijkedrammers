@@ -9,7 +9,7 @@ import { useSessionStatus } from '../../auth/useSession';
 import { groupFunctionLabels, signOut, statusLabels } from '../../features/account';
 import { formatDateOnly } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, BackLink, Badge, Card, LargeTitleHeader, QueryState, Screen, SettingsList } from '../../ui';
+import { AppText, BackLink, Badge, Button, Card, LargeTitleHeader, QueryState, Screen, SettingsList } from '../../ui';
 
 /**
  * Mijn gegevens (fase 9): de gegevens uit de ledenadministratie (alleen lezen), groepen en rollen, met de acties
@@ -102,6 +102,7 @@ export default function MijnGegevensScreen() {
                 </AppText>
               </View>
             ))}
+            <Button label="Naar Mijn kinderen" variant="secondary" onPress={() => router.push('/kinderen')} />
           </Card>
         ) : null}
 

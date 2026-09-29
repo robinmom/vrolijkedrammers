@@ -74,6 +74,7 @@ describe('Lid worden', () => {
       photoConsent: false,
       guardianName: null,
       source: 'App',
+      membershipType: 'Individual',
     });
 
     await fireEvent.changeText(screen.getByLabelText('Code'), '123456');
@@ -81,11 +82,12 @@ describe('Lid worden', () => {
     expect(await screen.findByText('Bedankt voor je aanmelding!')).toBeTruthy();
   });
 
-  it('onder de 16: sectie ouder/verzorger is verplicht en het e-mailadres is dat van de ouder', async () => {
+  it('onder de 15: sectie ouder/verzorger is verplicht en het e-mailadres is dat van de ouder; Dansgarde als soort lidmaatschap', async () => {
     mockApi({ ...api, '/api/v1/membership-applications': { status: 201, body: { id: 'a-2' } } });
     const tenYearsAgo = new Date();
     tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
     await renderApp(routes, '/meer/aanmelden');
+    await fireEvent.press(await screen.findByRole('radio', { name: /^Dansgarde\./ }));
     await fillAdult(`01-01-${tenYearsAgo.getFullYear()}`);
 
     expect(await screen.findByText('Ouder of verzorger')).toBeTruthy();
@@ -98,7 +100,20 @@ describe('Lid worden', () => {
 
     expect(await screen.findByText('Bevestig je e-mailadres')).toBeTruthy();
     const post = requests().find((r) => r.url.endsWith('/api/v1/membership-applications'))!;
-    expect(await post.clone().json()).toMatchObject({ guardianName: 'Anja Berg', guardianPhone: '0612345678' });
+    expect(await post.clone().json()).toMatchObject({
+      guardianName: 'Anja Berg',
+      guardianPhone: '0612345678',
+      membershipType: 'Dansgarde',
+    });
+  });
+
+  it('vanaf 15: een eigen aanmelding zonder ouder', async () => {
+    mockApi(api);
+    const sixteen = new Date();
+    sixteen.setFullYear(sixteen.getFullYear() - 16);
+    await renderApp(routes, '/meer/aanmelden');
+    await fillAdult(`01-01-${sixteen.getFullYear()}`);
+    expect(screen.queryByText('Ouder of verzorger')).toBeNull();
   });
 
   it('toont de uitleg van de API bij een fout (bijv. ongeldig IBAN)', async () => {

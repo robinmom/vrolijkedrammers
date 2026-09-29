@@ -125,6 +125,26 @@ public sealed class MyNotifications(DrammersDbContext db, PushTokenProtector tok
         return new InboxPage(items, unread, rows.Count > PageSize);
     }
 
+    /// <summary>De laatste meldingen die deze ouder namens een kind kreeg (fase 17, kind-detail in de app).</summary>
+    public async Task<IReadOnlyList<InboxItem>> ForChildAsync(Guid userId, Guid childMemberId, int take, CancellationToken cancellationToken)
+    {
+        var rows = await Inbox(userId).Where(r => r.OnBehalfOfMemberId == childMemberId)
+            .Join(db.Notifications, r => r.NotificationId, n => n.Id, (r, n) => new
+            {
+                n.Id,
+                n.Title,
+                n.Body,
+                n.Category,
+                n.DeepLink,
+                SentAt = n.SentAt ?? n.ScheduledAt ?? n.CreatedAt,
+                r.ReadAt,
+            })
+            .OrderByDescending(x => x.SentAt).ThenByDescending(x => x.Id)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+        return [.. rows.Select(x => new InboxItem(x.Id, x.Title, x.Body, x.Category, x.DeepLink, x.SentAt, x.ReadAt))];
+    }
+
     public async Task MarkReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken)
     {
         var updated = await db.NotificationRecipients

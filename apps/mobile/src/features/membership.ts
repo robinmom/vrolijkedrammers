@@ -11,7 +11,10 @@ export function parseDutchDate(value: string): string | null {
   return valid ? `${y}-${m!.padStart(2, '0')}-${d!.padStart(2, '0')}` : null;
 }
 
-/** Leeftijd in hele jaren op een datum (voor de ouder-sectie onder de 16). */
+/** Vanaf deze leeftijd een eigen aanmelding en account; jonger via de ouder/verzorger (OQ-15, fase 17). */
+export const OWN_ACCOUNT_AGE = 15;
+
+/** Leeftijd in hele jaren op een datum (voor de ouder-sectie onder de 15). */
 export function ageOn(isoDate: string, today: Date): number {
   const [y, m, d] = isoDate.split('-').map(Number) as [number, number, number];
   const age = today.getFullYear() - y;

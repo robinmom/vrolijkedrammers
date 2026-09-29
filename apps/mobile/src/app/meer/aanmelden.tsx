@@ -1,8 +1,9 @@
+import { brand } from '@drammers/design-tokens';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
 import { fotoTekst, mandaatTekst, privacyTekst } from '../../content/static';
-import { ageOn, parseDutchDate } from '../../features/membership';
+import { ageOn, OWN_ACCOUNT_AGE, parseDutchDate } from '../../features/membership';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, CheckboxRow, LargeTitleHeader, Screen, TextField } from '../../ui';
 
@@ -26,6 +27,7 @@ interface FormState {
   mandateConsent: boolean;
   privacyConsent: boolean;
   photoConsent: boolean;
+  membershipType: 'Individual' | 'Dansgarde';
 }
 
 const EMPTY: FormState = {
@@ -46,6 +48,7 @@ const EMPTY: FormState = {
   mandateConsent: false,
   privacyConsent: false,
   photoConsent: false,
+  membershipType: 'Individual',
 };
 
 /** Foutmelding uit ProblemDetails (de API legt uit wat er mis is), anders een algemene tekst. */
@@ -61,7 +64,8 @@ function problemText(status: number, error: unknown): string {
 
 /**
  * Lid worden (fase 9b, ADR-014): formulier → code per e-mail → ingediend. Het bestuur beoordeelt elke aanmelding;
- * onder de 16 vult de ouder/verzorger het formulier in en krijgt die het account.
+ * onder de 15 vult de ouder/verzorger het formulier in en krijgt die het account. Fase 17: soort lidmaatschap
+ * (1 persoon of Dansgarde).
  */
 export default function AanmeldenScreen() {
   const { colors } = useTheme();
@@ -77,7 +81,7 @@ export default function AanmeldenScreen() {
       setForm((current) => ({ ...current, [key]: value }));
 
   const birthDate = parseDutchDate(form.birthDate);
-  const minor = birthDate !== null && ageOn(birthDate, new Date()) < 16;
+  const minor = birthDate !== null && ageOn(birthDate, new Date()) < OWN_ACCOUNT_AGE;
   const complete =
     Boolean(
       form.firstName.trim() &&
@@ -119,6 +123,7 @@ export default function AanmeldenScreen() {
           privacyConsent: form.privacyConsent,
           photoConsent: form.photoConsent,
           source: 'App',
+          membershipType: form.membershipType,
         },
       });
       if (data) {
@@ -211,6 +216,49 @@ export default function AanmeldenScreen() {
           <>
             <Card style={styles.card}>
               <AppText variant="sectionHeader" accessibilityRole="header">
+                Soort lidmaatschap
+              </AppText>
+              <View accessibilityRole="radiogroup" accessibilityLabel="Soort lidmaatschap" style={styles.types}>
+                {(
+                  [
+                    ['Individual', 'Lidmaatschap 1 persoon', 'Lid van de vereniging: activiteiten, optocht en carnaval.'],
+                    [
+                      'Dansgarde',
+                      'Dansgarde',
+                      'Dansen bij de dansgarde (vanaf 5 jaar). Het bestuur deelt het nieuwe lid daarna in bij een dansgroep, zoals de Mini Drammers of de Drammerinekes.',
+                    ],
+                  ] as const
+                ).map(([value, label, description]) => {
+                  const selected = form.membershipType === value;
+                  return (
+                    <Pressable
+                      key={value}
+                      onPress={() => set('membershipType')(value)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selected }}
+                      accessibilityLabel={`${label}. ${description}`}
+                      style={[
+                        styles.type,
+                        { borderColor: selected ? brand.red : colors.border, borderWidth: selected ? 2 : 1 },
+                      ]}
+                    >
+                      <View
+                        style={[styles.radio, { borderColor: selected ? brand.red : colors.border, borderWidth: selected ? 6 : 1.5 }]}
+                      />
+                      <View style={styles.typeText}>
+                        <AppText variant="bodyStrong">{label}</AppText>
+                        <AppText variant="caption" color={colors.textSecondary}>
+                          {description}
+                        </AppText>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Card>
+
+            <Card style={styles.card}>
+              <AppText variant="sectionHeader" accessibilityRole="header">
                 Het nieuwe lid
               </AppText>
               <TextField
@@ -286,7 +334,7 @@ export default function AanmeldenScreen() {
                   Ouder of verzorger
                 </AppText>
                 <AppText variant="caption" color={colors.textSecondary}>
-                  Het nieuwe lid is jonger dan 16. De ouder of verzorger krijgt het account voor de app en ontvangt de
+                  Het nieuwe lid is jonger dan 15. De ouder of verzorger krijgt het account voor de app en ontvangt de
                   e-mails.
                 </AppText>
                 <TextField
@@ -378,4 +426,8 @@ const styles = StyleSheet.create({
   card: { padding: 16, gap: 14 },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choice: { borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  types: { gap: 10 },
+  type: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderRadius: 16, padding: 14 },
+  radio: { width: 22, height: 22, borderRadius: 11, marginTop: 2 },
+  typeText: { flex: 1, gap: 4 },
 });

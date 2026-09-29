@@ -1,8 +1,11 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { p256 } from '@noble/curves/nist.js';
 import * as Haptics from 'expo-haptics';
 import MeerScreen from '../app/(tabs)/meer';
 import ScannenScreen from '../app/scannen';
 import { setSessionForTest } from '../auth/session';
+import { base45, signedPayload, toBase64, unsignedPayload } from '../features/deviceQr';
 import { api } from '../test/api-fixture';
 import { mockApi, renderApp } from '../test/render';
 
@@ -110,5 +113,62 @@ describe('Scannen bij de deur (fase 14b)', () => {
     expect(await screen.findByText('Geen toegang')).toBeTruthy();
     expect(screen.getByText('Ticket geblokkeerd.')).toBeTruthy();
     expect(Haptics.notificationAsync).toHaveBeenLastCalledWith('error');
+  });
+
+  it('offline: geen antwoord van de server → gecontroleerd met de controlelijst en in de wachtrij', async () => {
+    await AsyncStorage.clear();
+    const key = p256.keygen();
+    const header = '3059301306072a8648ce3d020106082a8648ce3d030107034200'.match(/../g)!.map((h) => parseInt(h, 16));
+    const ref = Uint8Array.from({ length: 16 }, (_, i) => i);
+    const deviceId = Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    const unsigned = unsignedPayload({
+      ref,
+      credentialVersion: 1,
+      deviceId,
+      issuedAt: Math.floor(Date.now() / 1000),
+      validFor: 45,
+    });
+    (globalThis as { __qr?: string }).__qr = base45(signedPayload(unsigned, p256.sign(unsigned, key.secretKey)));
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['ticket.scan']),
+      '/api/v1/access/status': { current, next: null, counts },
+      '/api/v1/access/offline-pack': {
+        generatedAt: new Date().toISOString(),
+        current,
+        validFrom: new Date(Date.now() - 3_600_000).toISOString(),
+        validTo: new Date(Date.now() + 3_600_000).toISOString(),
+        serverKeys: [],
+        tickets: [
+          {
+            ref: toBase64(ref),
+            credentialVersion: 1,
+            blocked: false,
+            membershipActive: true,
+            deviceShortId: toBase64(deviceId),
+            devicePublicKey: toBase64(Uint8Array.from([...header, ...p256.getPublicKey(key.secretKey, false)])),
+            holderName: 'Piet van der Lid',
+          },
+        ],
+      },
+      '/api/v1/access/scan': () => {
+        throw new TypeError('Network request failed');
+      },
+    });
+    await renderApp(routes, '/scannen');
+    await waitFor(() =>
+      expect(
+        (globalThis.fetch as jest.Mock).mock.calls.some(([r]) =>
+          String((r as Request).url ?? r).includes('offline-pack'),
+        ),
+      ).toBe(true),
+    );
+    await fireEvent.press(await screen.findByTestId('camera'));
+    expect(await screen.findByText('Offline gecontroleerd')).toBeTruthy();
+    expect(screen.getByText('Piet van der Lid')).toBeTruthy();
+    expect(JSON.parse((await AsyncStorage.getItem('dvd.offline-scans.v1'))!)).toHaveLength(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Volgende scannen' }));
+    expect(await screen.findByText('1 offline scan wacht op verzending')).toBeTruthy();
+    delete (globalThis as { __qr?: string }).__qr;
   });
 });

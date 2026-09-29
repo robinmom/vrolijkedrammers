@@ -35,6 +35,17 @@ public sealed class AccessController(DoorAccess access) : ControllerBase
     public Task<AccessResult> Scan(ScanRequest request, CancellationToken cancellationToken) =>
         access.ScanAsync(UserId, Request.Headers[DeviceCheck.HeaderName].ToString(), request.Code, Details, cancellationToken);
 
+    /// <summary>Controlelijst voor offline scannen (fase 15, lichte variant); de app houdt die alleen in het geheugen.</summary>
+    [HttpGet("api/v1/access/offline-pack")]
+    [ProducesResponseType<OfflinePack>(StatusCodes.Status200OK)]
+    public Task<OfflinePack> OfflinePack(CancellationToken cancellationToken) => access.OfflinePackAsync(cancellationToken);
+
+    /// <summary>Offline scans uit de wachtrij (idempotent op <c>clientScanId</c>).</summary>
+    [HttpPost("api/v1/access/offline-scans")]
+    [ProducesResponseType<OfflineSyncResult>(StatusCodes.Status200OK)]
+    public Task<OfflineSyncResult> SyncOffline(OfflineScansRequest request, CancellationToken cancellationToken) =>
+        access.SyncOfflineAsync(UserId, Request.Headers[DeviceCheck.HeaderName].ToString(), request.Scans, cancellationToken);
+
     /// <summary>"Toch toelaten" of "Weigeren" bij oranje.</summary>
     [HttpPost("api/v1/access/scans/{id:guid}/decision")]
     [ProducesResponseType<AccessCounts>(StatusCodes.Status200OK)]
@@ -103,12 +114,15 @@ public sealed class AdminAccessScansController(DrammersDbContext db, DoorAccess 
             join d in db.Devices.AsNoTracking() on s.OperatorDeviceId equals d.Id into ds
             from d in ds.DefaultIfEmpty()
             orderby s.ScannedAt descending
-            select new AccessScanRow(s.Id, s.ScannedAt, m == null ? null : m.FullName, s.Method, s.Outcome, s.Reason, s.Decision, u.DisplayName, d == null ? null : d.Name);
+            select new AccessScanRow(s.Id, s.ScannedAt, m == null ? null : m.FullName, s.Method, s.Outcome, s.Reason, s.Decision, u.DisplayName, d == null ? null : d.Name,
+                s.Offline, s.OfflineOutcome);
         return new PagedResult<AccessScanRow>(await query.Skip((p - 1) * size).Take(size).ToListAsync(cancellationToken), p, size, await query.CountAsync(cancellationToken));
     }
 }
 
 public sealed record ScanRequest([Required, StringLength(300)] string Code);
+
+public sealed record OfflineScansRequest([Required, MaxLength(500)] IReadOnlyList<OfflineScan> Scans);
 
 public sealed record DecisionRequest(bool Admit);
 
@@ -118,4 +132,4 @@ public sealed record AccessEventSummary(string Key, string Title, DateTime Start
 
 public sealed record AccessScanRow(
     Guid Id, DateTime ScannedAt, string? MemberName, AccessMethod Method, AccessOutcome Outcome, string? Reason, AccessDecision? Decision,
-    string OperatorName, string? DeviceName);
+    string OperatorName, string? DeviceName, bool Offline, AccessOutcome? OfflineOutcome);

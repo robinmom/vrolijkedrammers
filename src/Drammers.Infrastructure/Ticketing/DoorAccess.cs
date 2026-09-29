@@ -22,6 +22,19 @@ public sealed record AccessResult(
 
 public sealed record AccessHistoryItem(DateTime At, AccessMethod Method, AccessOutcome Outcome, AccessDecision? Decision, string EventTitle, string? Operator);
 
+/// <summary>Controlelijst voor offline scannen (fase 15, lichte variant): alleen in het geheugen van de scanner.</summary>
+public sealed record OfflineTicket(
+    string Ref, int CredentialVersion, bool Blocked, bool MembershipActive, string? DeviceShortId, string? DevicePublicKey, string HolderName);
+
+public sealed record OfflinePack(
+    DateTime GeneratedAt, AccessEvent? Current, DateTime? ValidFrom, DateTime? ValidTo, IReadOnlyList<string> ServerKeys,
+    IReadOnlyList<OfflineTicket> Tickets);
+
+/// <summary>Een offline scan uit de wachtrij van de scanner; <see cref="ScannedAt"/> is de tijd op het toestel.</summary>
+public sealed record OfflineScan(Guid ClientScanId, string Code, DateTime ScannedAt, AccessOutcome LocalOutcome);
+
+public sealed record OfflineSyncResult(int Accepted, int Duplicates, int Skipped, int Conflicts);
+
 public sealed record MemberAccess(AccessEvent? Current, bool Inside, DateTime? InsideSince, string? TicketProblem, IReadOnlyList<AccessHistoryItem> History);
 
 /// <summary>
@@ -31,7 +44,7 @@ public sealed record MemberAccess(AccessEvent? Current, bool Inside, DateTime? I
 /// als het lid al via een ander toestel of handmatig binnen is (het deurpersoneel beslist), rood met de reden.
 /// Geen bandjes (OQ-21); wie de rol Deurcontrole heeft mag scannen (OQ-73).
 /// </summary>
-public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation, AccessWindows windows, IClock clock)
+public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation, AccessWindows windows, TicketSigningKeys keys, IClock clock)
 {
     private static readonly TimeZoneInfo Loil = TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam");
 
@@ -64,8 +77,10 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         return new AccessCounts(inside, scans.Count, refused);
     }
 
-    private async Task<AccessScan?> LastAdmissionAsync(AccessEvent access, Guid memberId, CancellationToken cancellationToken) =>
-        (await ScansOf(access).Where(s => s.MemberId == memberId).OrderBy(s => s.ScannedAt).ToListAsync(cancellationToken)).FirstOrDefault(s => s.Admits);
+    /// <summary>De eerste toelating van dit lid bij dit toegangsmoment (vóór <paramref name="before"/>, voor offline scans).</summary>
+    private async Task<AccessScan?> LastAdmissionAsync(AccessEvent access, Guid memberId, CancellationToken cancellationToken, DateTime? before = null) =>
+        (await ScansOf(access).Where(s => s.MemberId == memberId && (before == null || s.ScannedAt <= before))
+            .OrderBy(s => s.ScannedAt).ToListAsync(cancellationToken)).FirstOrDefault(s => s.Admits);
 
     private static AccessScan NewScan(AccessEvent access) => new()
     {
@@ -92,10 +107,24 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
     public async Task<AccessResult> ScanAsync(Guid operatorId, string? installationId, string code, bool details, CancellationToken cancellationToken)
     {
         var accessEvent = await RequireCurrentAsync(cancellationToken);
-        var device = string.IsNullOrWhiteSpace(installationId)
+        var device = await OperatorDeviceAsync(operatorId, installationId, cancellationToken);
+        var (scan, title, message, holder, previousAt) = await EvaluateAsync(operatorId, device, code, accessEvent, Now, details, cancellationToken);
+        db.AccessScans.Add(scan);
+        await db.SaveChangesAsync(cancellationToken);
+        return new AccessResult(scan.Id, scan.Outcome, title, message, holder, previousAt, scan.Outcome == AccessOutcome.Warning,
+            await CountsAsync(accessEvent, cancellationToken));
+    }
+
+    private async Task<Device?> OperatorDeviceAsync(Guid operatorId, string? installationId, CancellationToken cancellationToken) =>
+        string.IsNullOrWhiteSpace(installationId)
             ? null
             : await db.Devices.AsNoTracking().SingleOrDefaultAsync(d => d.UserId == operatorId && d.InstallationId == installationId && d.Status == DeviceStatus.Active, cancellationToken);
-        var check = await validation.ValidateAsync(code, cancellationToken);
+
+    /// <summary>Beoordeelt een QR-scan op moment <paramref name="at"/> (online nu, offline de tijd op het toestel).</summary>
+    private async Task<(AccessScan Scan, string Title, string Message, string? Holder, DateTime? PreviousAt)> EvaluateAsync(
+        Guid operatorId, Device? device, string code, AccessEvent accessEvent, DateTime at, bool details, CancellationToken cancellationToken)
+    {
+        var check = await validation.ValidateAsync(code, cancellationToken, new DateTimeOffset(at, TimeSpan.Zero));
         var payload = QrPayload.TryDecode(code);
         var ticket = payload is null ? null : await db.Tickets.AsNoTracking().SingleOrDefaultAsync(t => t.PublicRef == payload.Ref, cancellationToken);
         var scan = NewScan(accessEvent);
@@ -104,7 +133,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         scan.Method = AccessMethod.Qr;
         scan.OperatorUserId = operatorId;
         scan.OperatorDeviceId = device?.Id;
-        scan.ScannedAt = Now;
+        scan.ScannedAt = at;
 
         string title, message;
         DateTime? previousAt = null;
@@ -114,15 +143,16 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         }
         else
         {
-            var previous = await LastAdmissionAsync(accessEvent, ticket!.MemberId, cancellationToken);
+            var previous = await LastAdmissionAsync(accessEvent, ticket!.MemberId, cancellationToken, before: at);
             previousAt = previous?.ScannedAt;
+            var offline = previous?.Offline == true ? " (offline)" : "";
             if (previous is null)
             {
                 (scan.Outcome, title, message) = (AccessOutcome.Admitted, "Toegang geldig", "Eerste keer vanavond");
             }
             else if (previous.Method == AccessMethod.Qr && device is not null && previous.OperatorDeviceId == device.Id)
             {
-                (scan.Outcome, title, message) = (AccessOutcome.AdmittedAgain, "Toegang geldig", $"Al eerder gescand op dit toestel om {Time(previous.ScannedAt)}");
+                (scan.Outcome, title, message) = (AccessOutcome.AdmittedAgain, "Toegang geldig", $"Al eerder{offline} gescand op dit toestel om {Time(previous.ScannedAt)}");
             }
             else
             {
@@ -131,14 +161,138 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
                 title = "Let op";
                 message = previous.Method == AccessMethod.Manual
                     ? $"Vanavond al ingecheckt om {Time(previous.ScannedAt)}{await WhoAsync(previous, details, cancellationToken)}. Controleer of dit dezelfde persoon is."
-                    : $"Vanavond al gescand op een ander toestel om {Time(previous.ScannedAt)}{await WhoAsync(previous, details, cancellationToken)}. Controleer of dit dezelfde persoon is.";
+                    : $"Vanavond al{offline} gescand op een ander toestel om {Time(previous.ScannedAt)}{await WhoAsync(previous, details, cancellationToken)}. Controleer of dit dezelfde persoon is.";
             }
         }
 
-        db.AccessScans.Add(scan);
-        await db.SaveChangesAsync(cancellationToken);
-        return new AccessResult(scan.Id, scan.Outcome, title, message, check.Ticket?.HolderName, previousAt, scan.Outcome == AccessOutcome.Warning,
-            await CountsAsync(accessEvent, cancellationToken));
+        return (scan, title, message, check.Ticket?.HolderName, previousAt);
+    }
+
+    /// <summary>
+    /// Controlelijst voor offline scannen (lichte variant): per ticket van het actieve carnavalsjaar de referentie,
+    /// versie, blokkade, lidmaatschap, de sleutel van het gekoppelde toestel en de naam, plus de publieke sleutel van de
+    /// server. De scanner houdt die alleen in het geheugen zolang het scanscherm open is (geen ledengegevens op schijf).
+    /// </summary>
+    public async Task<OfflinePack> OfflinePackAsync(CancellationToken cancellationToken)
+    {
+        var current = await windows.CurrentAsync(cancellationToken);
+        var year = await windows.ActiveYearAsync(cancellationToken);
+        var tickets = year is null
+            ? []
+            : await (
+                from t in db.Tickets.AsNoTracking()
+                where t.CarnivalYearId == year.Id
+                join m in db.Members.AsNoTracking() on t.MemberId equals m.Id
+                join d in db.Devices.AsNoTracking() on t.BoundDeviceId equals d.Id into ds
+                from d in ds.DefaultIfEmpty()
+                select new { t.PublicRef, t.CredentialVersion, t.Status, m.MembershipStatus, t.BoundDeviceId, DeviceActive = d != null && d.Status == DeviceStatus.Active, DeviceKey = d == null ? null : d.PublicKey, m.FullName })
+                .ToListAsync(cancellationToken);
+        var window = current is null ? ((DateTime From, DateTime To)?)null : AccessWindows.Window(current);
+        // De serversleutel bestaat pas na de eerste servercode; voor offline controle moet hij er altijd zijn.
+        (await keys.ActivePrivateKeyAsync(cancellationToken)).Dispose();
+
+        return new OfflinePack(
+            Now, current, window?.From, window?.To,
+            [.. (await keys.PublicKeysAsync(cancellationToken)).Select(Convert.ToBase64String)],
+            [.. tickets.Select(t => new OfflineTicket(
+                Convert.ToBase64String(t.PublicRef), t.CredentialVersion, t.Status == TicketStatus.Blocked, t.MembershipStatus == MembershipStatus.Active,
+                t.BoundDeviceId is { } id && t.DeviceActive ? Convert.ToBase64String(QrPayload.ShortDeviceId(id)) : null,
+                t.DeviceActive ? t.DeviceKey : null, t.FullName))]);
+    }
+
+    /// <summary>
+    /// Offline scans uit de wachtrij verwerken (idempotent op <see cref="OfflineScan.ClientScanId"/>): de server controleert
+    /// opnieuw op het moment van scannen en legt het vast als offline. Toonde de scanner groen of oranje, maar is de scan
+    /// volgens de server ongeldig, dan is dat een offline-conflict (zichtbaar in de toegangslog). Scans ouder dan 24 uur of
+    /// buiten een toegangsmoment worden overgeslagen.
+    /// </summary>
+    public async Task<OfflineSyncResult> SyncOfflineAsync(Guid operatorId, string? installationId, IReadOnlyList<OfflineScan> scans, CancellationToken cancellationToken)
+    {
+        var device = await OperatorDeviceAsync(operatorId, installationId, cancellationToken);
+        int accepted = 0, duplicates = 0, skipped = 0, conflicts = 0;
+        foreach (var item in scans.OrderBy(s => s.ScannedAt))
+        {
+            if (await db.AccessScans.AnyAsync(s => s.ClientScanId == item.ClientScanId, cancellationToken))
+            {
+                duplicates++;
+                continue;
+            }
+
+            // Klok van het toestel: niet in de toekomst en niet ouder dan een dag.
+            var at = DateTime.SpecifyKind(item.ScannedAt, DateTimeKind.Utc) > Now ? Now : DateTime.SpecifyKind(item.ScannedAt, DateTimeKind.Utc);
+            var access = at < Now.AddHours(-24) ? null : await windows.CurrentAsync(cancellationToken, new DateTimeOffset(at, TimeSpan.Zero));
+            if (access is null)
+            {
+                skipped++;
+                continue;
+            }
+
+            var (scan, _, _, _, _) = await EvaluateAsync(operatorId, device, item.Code, access, at, details: false, cancellationToken);
+            scan.Offline = true;
+            scan.ClientScanId = item.ClientScanId;
+            scan.OfflineOutcome = item.LocalOutcome;
+            scan.SyncedAt = Now;
+            var admittedLocally = item.LocalOutcome is AccessOutcome.Admitted or AccessOutcome.AdmittedAgain or AccessOutcome.Warning;
+            if (scan.Outcome == AccessOutcome.Warning && admittedLocally)
+            {
+                // Offline al binnengelaten: dat is de beslissing.
+                scan.Decision = AccessDecision.Admitted;
+                scan.DecidedAt = at;
+            }
+
+            if (admittedLocally && scan.Outcome == AccessOutcome.Refused)
+            {
+                conflicts++;
+            }
+
+            db.AccessScans.Add(scan);
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken);
+                accepted++;
+                await ReconcileLaterAsync(scan, access, cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // Tegelijk door een tweede verzending opgeslagen (unieke client-id).
+                db.ChangeTracker.Clear();
+                duplicates++;
+            }
+        }
+
+        return new OfflineSyncResult(accepted, duplicates, skipped, conflicts);
+    }
+
+    /// <summary>
+    /// Een offline scan kan later binnenkomen dan een scan die erna gedaan werd (omgekeerde syncvolgorde). Was die latere
+    /// scan "eerste keer" op een ander toestel, dan wordt hij "al eerder binnen via een ander toestel" (toegelaten), zodat
+    /// het resultaat niet van de volgorde van synchroniseren afhangt.
+    /// </summary>
+    private async Task ReconcileLaterAsync(AccessScan earlier, AccessEvent access, CancellationToken cancellationToken)
+    {
+        if (!earlier.Admits || earlier.MemberId is null)
+        {
+            return;
+        }
+
+        var later = await (access.EventId is { } id
+                ? db.AccessScans.Where(s => s.EventId == id)
+                : db.AccessScans.Where(s => s.EventId == null && s.CarnivalDay == access.CarnivalDay))
+            .Where(s => s.MemberId == earlier.MemberId && s.ScannedAt > earlier.ScannedAt && s.Outcome == AccessOutcome.Admitted
+                && (s.Method == AccessMethod.Manual || s.OperatorDeviceId != earlier.OperatorDeviceId))
+            .ToListAsync(cancellationToken);
+        foreach (var scan in later)
+        {
+            scan.Outcome = AccessOutcome.Warning;
+            scan.Reason = "OtherDevice";
+            scan.Decision = AccessDecision.Admitted;
+            scan.DecidedAt ??= scan.ScannedAt;
+        }
+
+        if (later.Count > 0)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     /// <summary>"Toch toelaten" of "Weigeren" bij oranje; alleen door wie scande en maar één keer.</summary>

@@ -33,7 +33,10 @@ const helper = columnHelper<Row>();
 const columns = [
   helper.accessor('scannedAt', { header: 'Tijd', cell: (info) => formatDateTime(info.getValue()) }),
   helper.accessor('memberName', { header: 'Lid', cell: (info) => info.getValue() ?? '–' }),
-  helper.accessor('method', { header: 'Hoe', cell: (info) => (info.getValue() === 'Manual' ? 'Ingecheckt' : 'QR') }),
+  helper.accessor('method', {
+    header: 'Hoe',
+    cell: (info) => (info.getValue() === 'Manual' ? 'Ingecheckt' : info.row.original.offline ? 'QR (offline)' : 'QR'),
+  }),
   helper.accessor('outcome', {
     header: 'Uitkomst',
     cell: (info) => {
@@ -43,6 +46,16 @@ const columns = [
         <>
           <span className={`badge ${o?.tone ?? ''}`}>{o?.label ?? info.getValue()}</span>
           {decision ? <span className="badge">{decision === 'Admitted' ? 'Toch toegelaten' : 'Geweigerd'}</span> : null}
+          {info.row.original.offline &&
+          info.getValue() === 'Refused' &&
+          info.row.original.offlineOutcome !== 'Refused' ? (
+            <span
+              className="badge error"
+              title="De scanner liet dit lid offline binnen; volgens de server was de code ongeldig."
+            >
+              Offline toegelaten
+            </span>
+          ) : null}
         </>
       );
     },

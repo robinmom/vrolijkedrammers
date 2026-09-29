@@ -96,6 +96,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/access/offline-pack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Controlelijst voor offline scannen (fase 15, lichte variant); de app houdt die alleen in het geheugen. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OfflinePack"];
+                        "application/json": components["schemas"]["OfflinePack"];
+                        "text/json": components["schemas"]["OfflinePack"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/offline-scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Offline scans uit de wachtrij (idempotent op `clientScanId`). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OfflineScansRequest"];
+                    "text/json": components["schemas"]["OfflineScansRequest"];
+                    "application/*+json": components["schemas"]["OfflineScansRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OfflineSyncResult"];
+                        "application/json": components["schemas"]["OfflineSyncResult"];
+                        "text/json": components["schemas"]["OfflineSyncResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/access/scans/{id}/decision": {
         parameters: {
             query?: never;
@@ -8962,6 +9044,8 @@ export interface components {
             decision: null | components["schemas"]["AccessDecision"];
             operatorName: string;
             deviceName: null | string;
+            offline: boolean;
+            offlineOutcome: null | components["schemas"]["AccessOutcome"];
         };
         AccessStatus: {
             current: null | components["schemas"]["AccessEvent"];
@@ -10188,6 +10272,50 @@ export interface components {
             failedCount: number;
             /** Format: int32 */
             readCount: number;
+        };
+        OfflinePack: {
+            /** Format: date-time */
+            generatedAt: string;
+            current: null | components["schemas"]["AccessEvent"];
+            /** Format: date-time */
+            validFrom: null | string;
+            /** Format: date-time */
+            validTo: null | string;
+            serverKeys: string[];
+            tickets: components["schemas"]["OfflineTicket"][];
+        };
+        /** @description Een offline scan uit de wachtrij van de scanner; DateTime OfflineScan.ScannedAt is de tijd op het toestel. */
+        OfflineScan: {
+            /** Format: uuid */
+            clientScanId: string;
+            code: string;
+            /** Format: date-time */
+            scannedAt: string;
+            localOutcome: components["schemas"]["AccessOutcome"];
+        };
+        OfflineScansRequest: {
+            scans: components["schemas"]["OfflineScan"][];
+        };
+        OfflineSyncResult: {
+            /** Format: int32 */
+            accepted: number;
+            /** Format: int32 */
+            duplicates: number;
+            /** Format: int32 */
+            skipped: number;
+            /** Format: int32 */
+            conflicts: number;
+        };
+        /** @description Controlelijst voor offline scannen (fase 15, lichte variant): alleen in het geheugen van de scanner. */
+        OfflineTicket: {
+            ref: string;
+            /** Format: int32 */
+            credentialVersion: number;
+            blocked: boolean;
+            membershipActive: boolean;
+            deviceShortId: null | string;
+            devicePublicKey: null | string;
+            holderName: string;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfAccessScanRow: {

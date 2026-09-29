@@ -290,4 +290,82 @@ public sealed class DoorAccessTests(SqlServerFixture sql) : IAsyncLifetime, IDis
         Assert.Equal("NotYetValid", (await phone.GetFromJsonAsync<JsonElement>("/api/v1/me/ticket")).GetProperty("state").GetString());
         Assert.Equal(HttpStatusCode.Conflict, (await deur.PostAsJsonAsync("/api/v1/access/scan", new { code })).StatusCode);
     }
+
+    // ----- Fase 15: offline scannen (lichte variant) --------------------------------------------------------------
+
+    private static async Task<JsonElement> SyncAsync(HttpClient door, params object[] scans) =>
+        await JsonAsync(await door.PostAsJsonAsync("/api/v1/access/offline-scans", new { scans }));
+
+    private static object Offline(Guid id, string code, DateTimeOffset at, string local = "Admitted") =>
+        new { clientScanId = id, code, scannedAt = at.UtcDateTime, localOutcome = local };
+
+    [Fact]
+    public async Task Controlelijst_bevat_tickets_met_sleutel_en_blokkade_maar_geen_contactgegevens()
+    {
+        await EventAsync();
+        ToEvening();
+        await MemberWithQrAsync("piet@example.com");
+        var deur = await DoorAsync("deur@example.com", "installatie-deur-een-0001");
+
+        var pack = await deur.GetFromJsonAsync<JsonElement>("/api/v1/access/offline-pack");
+        Assert.Equal("Carnavalsavond", pack.GetProperty("current").GetProperty("title").GetString());
+        var ticket = Assert.Single(pack.GetProperty("tickets").EnumerateArray());
+        Assert.Equal(("Lid piet", false, true), (ticket.GetProperty("holderName").GetString(), ticket.GetProperty("blocked").GetBoolean(), ticket.GetProperty("membershipActive").GetBoolean()));
+        Assert.NotNull(ticket.GetProperty("devicePublicKey").GetString());
+        Assert.Single(pack.GetProperty("serverKeys").EnumerateArray());
+        Assert.DoesNotContain("example.com", pack.GetRawText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Twee_offline_scanners_omgekeerde_syncvolgorde_geeft_hetzelfde_resultaat_en_dubbel_versturen_is_idempotent()
+    {
+        await EventAsync();
+        ToEvening();
+        var (memberId, code) = await MemberWithQrAsync("piet@example.com");
+        var a = await DoorAsync("a@example.com", "installatie-scanner-a-0001");
+        var b = await DoorAsync("b@example.com", "installatie-scanner-b-0001");
+        var codeA = await code();
+        var atA = _api.Clock.UtcNow;
+        _api.Clock.Advance(TimeSpan.FromMinutes(5));
+        var codeB = await code();
+        var atB = _api.Clock.UtcNow;
+        _api.Clock.Advance(TimeSpan.FromMinutes(20));
+
+        // Eerst de latere scan van B, daarna de eerdere van A.
+        var idB = Guid.NewGuid();
+        Assert.Equal(1, (await SyncAsync(b, Offline(idB, codeB, atB))).GetProperty("accepted").GetInt32());
+        Assert.Equal(1, (await SyncAsync(a, Offline(Guid.NewGuid(), codeA, atA))).GetProperty("accepted").GetInt32());
+        Assert.Equal(1, (await SyncAsync(b, Offline(idB, codeB, atB))).GetProperty("duplicates").GetInt32());
+
+        var scans = await WithDbAsync(db => db.AccessScans.Where(s => s.MemberId == memberId).OrderBy(s => s.ScannedAt).ToListAsync());
+        Assert.Equal(2, scans.Count);
+        Assert.Equal((Modules.Ticketing.Tickets.AccessOutcome.Admitted, Modules.Ticketing.Tickets.AccessOutcome.Warning), (scans[0].Outcome, scans[1].Outcome));
+        Assert.Equal(Modules.Ticketing.Tickets.AccessDecision.Admitted, scans[1].Decision);
+        Assert.All(scans, s => Assert.True(s.Offline));
+        var status = await a.GetFromJsonAsync<JsonElement>("/api/v1/access/status");
+        Assert.Equal((1, 2), (status.GetProperty("counts").GetProperty("inside").GetInt32(), status.GetProperty("counts").GetProperty("scans").GetInt32()));
+
+        // Een volgende (online) scan op een derde toestel: oranje, eerder offline gescand.
+        var c = await DoorAsync("c@example.com", "installatie-scanner-c-0001");
+        var next = await ScanAsync(c, await code());
+        Assert.StartsWith("Vanavond al (offline) gescand op een ander toestel", next.GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Offline_toegelaten_maar_intussen_geblokkeerd_is_een_conflict_en_te_oude_scans_worden_overgeslagen()
+    {
+        await EventAsync();
+        ToEvening();
+        var (memberId, code) = await MemberWithQrAsync("piet@example.com");
+        var deur = await DoorAsync("deur@example.com", "installatie-deur-een-0001");
+        var scanned = await code();
+        var at = _api.Clock.UtcNow;
+        var ticketId = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/tickets")).GetProperty("items")[0].GetProperty("id").GetGuid();
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/tickets/{ticketId}/action", new { action = "Block", reason = "Gestolen" }), HttpStatusCode.NoContent);
+
+        var result = await SyncAsync(deur, Offline(Guid.NewGuid(), scanned, at), Offline(Guid.NewGuid(), scanned, at.AddDays(-3)));
+        Assert.Equal((1, 1, 1), (result.GetProperty("accepted").GetInt32(), result.GetProperty("conflicts").GetInt32(), result.GetProperty("skipped").GetInt32()));
+        var row = await WithDbAsync(db => db.AccessScans.SingleAsync(s => s.MemberId == memberId));
+        Assert.Equal((Modules.Ticketing.Tickets.AccessOutcome.Refused, Modules.Ticketing.Tickets.AccessOutcome.Admitted, "Blocked"), (row.Outcome, row.OfflineOutcome!.Value, row.Reason));
+    }
 }

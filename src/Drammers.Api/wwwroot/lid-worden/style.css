@@ -38,6 +38,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 @media (min-width: 600px) { .row.two { grid-template-columns: 1fr 1fr; } .row.three { grid-template-columns: 2fr 1fr 2fr; } }
 .check { flex-direction: row; align-items: flex-start; font-weight: 400; gap: 10px; }
 .check input { width: 22px; min-height: 22px; margin-top: 2px; flex: none; }
+.choice { border: 1px solid var(--rand); border-radius: 12px; padding: 12px; }
+.choice:has(input:checked) { border: 2px solid var(--rood); padding: 11px; }
 button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 12px 20px; min-height: 48px; background: var(--rood); color: #fff; cursor: pointer; }
 button.secondary { background: transparent; color: var(--blauw); border: 1.5px solid var(--blauw); }
 button:disabled { opacity: 0.6; cursor: default; }

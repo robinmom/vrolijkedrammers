@@ -100,7 +100,14 @@ export function NotificationsPage() {
 
 type AudienceMode = 'everyone' | 'members' | 'selection';
 
-const emptyAudience: NotificationAudience = { everyone: false, members: false, roles: [], groups: [], memberIds: [] };
+const emptyAudience: NotificationAudience = { everyone: false, members: false, dansgarde: false, roles: [], groups: [], memberIds: [] };
+
+/** Vooraf ingevulde doelgroep vanuit een link, bijv. "Melding aan dansgarde" (?doelgroep=dansgarde) of een dansgroep (?groep=id). */
+function initialSelection(): NotificationAudience {
+  const params = new URLSearchParams(window.location.search);
+  const group = params.get('groep');
+  return { ...emptyAudience, dansgarde: params.get('doelgroep') === 'dansgarde', groups: group ? [group] : [] };
+}
 
 /**
  * Melding opstellen (docs/02 §5.3): tekst, categorie, doelgroep met het aantal ontvangers vooraf, direct of gepland.
@@ -117,14 +124,15 @@ export function NotificationComposerPage() {
   const [category, setCategory] = useState<NotificationCategory>('Program');
   const [deepLink, setDeepLink] = useState('');
   const [mode, setMode] = useState<AudienceMode>('selection');
-  const [selection, setSelection] = useState<NotificationAudience>(emptyAudience);
+  const [selection, setSelection] = useState<NotificationAudience>(initialSelection);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [preview, setPreview] = useState<AudiencePreview | null>(null);
   const [confirm, setConfirm] = useState(false);
 
   const audience: NotificationAudience =
     mode === 'everyone' ? { ...emptyAudience, everyone: true } : mode === 'members' ? { ...emptyAudience, members: true } : selection;
-  const empty = mode === 'selection' && !selection.roles?.length && !selection.groups?.length && !selection.memberIds?.length;
+  const empty =
+    mode === 'selection' && !selection.dansgarde && !selection.roles?.length && !selection.groups?.length && !selection.memberIds?.length;
   const audienceKey = JSON.stringify(audience);
 
   useEffect(() => {
@@ -270,6 +278,13 @@ export function NotificationComposerPage() {
                   ))}
                 </fieldset>
               ) : null}
+              {options.data?.anyAudience ? (
+                <Checkbox
+                  label="Dansgarde (iedereen met groep Dansgarde in e-Boekhouden)"
+                  checked={Boolean(selection.dansgarde)}
+                  onChange={(e) => setSelection({ ...selection, dansgarde: e.target.checked })}
+                />
+              ) : null}
               <fieldset>
                 <legend>Groepen</legend>
                 {(options.data?.groups ?? []).length === 0 ? <p className="muted">Geen groepen.</p> : null}
@@ -285,7 +300,10 @@ export function NotificationComposerPage() {
               {canPickMembers ? (
                 <MemberPicker selected={selection.memberIds ?? []} onChange={(memberIds) => setSelection({ ...selection, memberIds })} />
               ) : null}
-              <p className="muted">Bij groepen en leden ontvangen ook de ouders/verzorgers, met "Namens [naam]" voor de titel.</p>
+              <p className="muted">
+                Bij de dansgarde, groepen en leden ontvangen ook de ouders/verzorgers (tot het kind 18 is), met "Namens [naam]" voor
+                de titel.
+              </p>
             </>
           ) : null}
           <p role="status" className="kpi-hint">

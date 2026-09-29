@@ -42,7 +42,8 @@ public sealed record ApplicationInput(
     bool MandateConsent,
     bool PrivacyConsent,
     bool PhotoConsent,
-    ApplicationSource Source);
+    ApplicationSource Source,
+    MembershipType MembershipType = MembershipType.Individual);
 
 /// <summary>
 /// Lid worden (fase 9b, ADR-014 §1): formulier → e-mailcode (= indienen) → beoordeling door het bestuur → na goedkeuring
@@ -346,6 +347,11 @@ public sealed class MembershipApplications(
             freeTexts[joinField] = clock.UtcNow.Year.ToString(CultureInfo.InvariantCulture);
         }
 
+        if (application.MembershipType == MembershipType.Dansgarde && mapping.ParadeGroupName is { } groupField)
+        {
+            freeTexts[groupField] = Dansgarde.GroupValue;
+        }
+
         var note = new StringBuilder($"Aangemeld via {SourceLabel(application.Source)} op {application.SubmittedAt:dd-MM-yyyy}.");
         note.Append(CultureInfo.InvariantCulture, $" Rekeninghouder: {application.AccountHolder}.");
         if (application.GuardianName is not null)
@@ -389,6 +395,7 @@ public sealed class MembershipApplications(
             MobilePhone = application.GuardianPhone ?? application.Phone,
             BirthDate = application.BirthDate,
             JoinYear = (short)today.Year,
+            ParadeGroupName = application.MembershipType == MembershipType.Dansgarde ? Dansgarde.GroupValue : null,
             MembershipStatus = MembershipStatus.Active,
             SyncState = MemberSyncState.InSync,
             EbLastSeenAt = clock.UtcNow.UtcDateTime,
@@ -444,6 +451,7 @@ public sealed class MembershipApplications(
             AccountHolder = Required(input.AccountHolder, "de naam van de rekeninghouder", 100),
             ConsentPhoto = input.PhotoConsent,
             Source = input.Source,
+            MembershipType = input.MembershipType,
             Status = ApplicationStatus.Draft,
             MandateReference = string.Empty,
         };

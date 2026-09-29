@@ -85,7 +85,8 @@ public sealed class Notification
 /// <summary>
 /// Doelgroep (docs/02 §5.3). <see cref="Everyone"/> = alle accounts plus gasten met push-toestemming;
 /// <see cref="Members"/> = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en
-/// leden ontvangen ook de ouders/verzorgers ("Namens …").
+/// leden ontvangen ook de ouders/verzorgers ("Namens …"). <see cref="Dansgarde"/> = alle leden met groep "Dansgarde" in
+/// e-Boekhouden (fase 17), ook met hun ouders.
 /// </summary>
 public sealed record NotificationAudience(
     bool Everyone = false,
@@ -93,11 +94,13 @@ public sealed record NotificationAudience(
     IReadOnlyList<string>? Roles = null,
     IReadOnlyList<Guid>? Groups = null,
     IReadOnlyList<Guid>? MemberIds = null,
-    IReadOnlyList<Guid>? UserIds = null)
+    IReadOnlyList<Guid>? UserIds = null,
+    bool Dansgarde = false)
 {
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty =>
-        !Everyone && !Members && (Roles?.Count ?? 0) == 0 && (Groups?.Count ?? 0) == 0 && (MemberIds?.Count ?? 0) == 0 && (UserIds?.Count ?? 0) == 0;
+        !Everyone && !Members && !Dansgarde && (Roles?.Count ?? 0) == 0 && (Groups?.Count ?? 0) == 0 && (MemberIds?.Count ?? 0) == 0
+        && (UserIds?.Count ?? 0) == 0;
 }
 
 public enum DeliveryStatus

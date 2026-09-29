@@ -68,11 +68,13 @@ public sealed record ApplicationRequest(
     bool MandateConsent,
     bool PrivacyConsent,
     bool PhotoConsent,
-    ApplicationSource Source)
+    ApplicationSource Source,
+    MembershipType MembershipType = MembershipType.Individual)
 {
     public ApplicationInput ToInput() => new(
         FirstName, NamePrefix, LastName, Gender, BirthDate, AddressLine, PostalCode, City, Email, Phone, GuardianName, GuardianPhone,
-        Iban, AccountHolder, MandateConsent, PrivacyConsent, PhotoConsent, Source == ApplicationSource.Portal ? ApplicationSource.App : Source);
+        Iban, AccountHolder, MandateConsent, PrivacyConsent, PhotoConsent, Source == ApplicationSource.Portal ? ApplicationSource.App : Source,
+        MembershipType);
 }
 
 public sealed record ApplicationStartedResponse(Guid Id);

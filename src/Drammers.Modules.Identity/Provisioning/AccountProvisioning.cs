@@ -49,6 +49,9 @@ public sealed class AccountProvisioning
 
     public Guid? MemberId { get; set; }
 
+    /// <summary>Inlogadres als dat niet het adres uit e-Boekhouden is ("Eigen account geven", fase 17).</summary>
+    public string? LoginEmail { get; set; }
+
     public string? EntraObjectId { get; set; }
 
     public Guid? UserId { get; set; }

@@ -1494,6 +1494,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/dansgarde": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DansgardeOverview"];
+                        "application/json": components["schemas"]["DansgardeOverview"];
+                        "text/json": components["schemas"]["DansgardeOverview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dansgarde/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DanceGroups"];
+                        "application/json": components["schemas"]["DanceGroups"];
+                        "text/json": components["schemas"]["DanceGroups"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dansgarde/{memberId}/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Deelt een dansgarde-lid in bij één dansgroep; `groupId` leeg = uit de dansgroep halen. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssignDanceGroupRequest"];
+                    "text/json": components["schemas"]["AssignDanceGroupRequest"];
+                    "application/*+json": components["schemas"]["AssignDanceGroupRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/dashboard": {
         parameters: {
             query?: never;
@@ -2123,6 +2261,633 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/guardians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberGuardians"];
+                        "application/json": components["schemas"]["MemberGuardians"];
+                        "text/json": components["schemas"]["MemberGuardians"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Koppelt een bestaand app-account als ouder/verzorger (hooguit 2 per kind, alleen onder 18). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkGuardianRequest"];
+                    "text/json": components["schemas"]["LinkGuardianRequest"];
+                    "application/*+json": components["schemas"]["LinkGuardianRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/guardians/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nodigt een ouder uit per e-mail: een nieuw account met alleen de rol Ouder/verzorger, of het bestaande account. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["InviteGuardianRequest"];
+                    "text/json": components["schemas"]["InviteGuardianRequest"];
+                    "application/*+json": components["schemas"]["InviteGuardianRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/guardians/{relationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    relationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/own-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eigen account op het eigen e-mailadres (vanaf 15); de ouders blijven tot 18 gekoppeld voor meldingen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OwnAccountRequest"];
+                    "text/json": components["schemas"]["OwnAccountRequest"];
+                    "application/*+json": components["schemas"]["OwnAccountRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accounts om als ouder te koppelen (zoeken op naam of e-mail). */
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuardianCandidateResponse"][];
+                        "application/json": components["schemas"]["GuardianCandidateResponse"][];
+                        "text/json": components["schemas"]["GuardianCandidateResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["GuardianLinkRequestStatus"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuardianRequestView"][];
+                        "application/json": components["schemas"]["GuardianRequestView"][];
+                        "text/json": components["schemas"]["GuardianRequestView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApproveGuardianRequest"];
+                    "text/json": components["schemas"]["ApproveGuardianRequest"];
+                    "application/*+json": components["schemas"]["ApproveGuardianRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RejectGuardianRequest"];
+                    "text/json": components["schemas"]["RejectGuardianRequest"];
+                    "application/*+json": components["schemas"]["RejectGuardianRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voorstellen: een lid jonger dan 15 en een ander lid met hetzelfde e-mailadres. Er wordt niets vanzelf gekoppeld. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuardianSuggestion"][];
+                        "application/json": components["schemas"]["GuardianSuggestion"][];
+                        "text/json": components["schemas"]["GuardianSuggestion"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-suggestions/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GuardianSuggestionRequest"];
+                    "text/json": components["schemas"]["GuardianSuggestionRequest"];
+                    "application/*+json": components["schemas"]["GuardianSuggestionRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guardian-suggestions/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GuardianSuggestionRequest"];
+                    "text/json": components["schemas"]["GuardianSuggestionRequest"];
+                    "application/*+json": components["schemas"]["GuardianSuggestionRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -6712,7 +7477,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Kinderen waarvan de gebruiker ouder/verzorger is (fase 9b; beheer en meldingen volgen in fase 17). */
+        /** Kinderen waarvan de gebruiker ouder/verzorger is (fase 17): tot 18 jaar; de QR alleen zonder eigen account. */
         get: {
             parameters: {
                 query?: never;
@@ -6728,15 +7493,103 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["MyChildResponse"][];
-                        "application/json": components["schemas"]["MyChildResponse"][];
-                        "text/json": components["schemas"]["MyChildResponse"][];
+                        "text/plain": components["schemas"]["MyChild"][];
+                        "application/json": components["schemas"]["MyChild"][];
+                        "text/json": components["schemas"]["MyChild"][];
                     };
                 };
             };
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/guardian-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Koppelverzoeken van deze ouder (fase 17). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyGuardianRequest"][];
+                        "application/json": components["schemas"]["MyGuardianRequest"][];
+                        "text/json": components["schemas"]["MyGuardianRequest"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Koppeling met een kind aanvragen op voor- en achternaam; het bestuur beoordeelt het verzoek in het portal. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["GuardianLinkRequestInput"];
+                    "text/json": components["schemas"]["GuardianLinkRequestInput"];
+                    "application/*+json": components["schemas"]["GuardianLinkRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuardianRequestCreatedResponse"];
+                        "application/json": components["schemas"]["GuardianRequestCreatedResponse"];
+                        "text/json": components["schemas"]["GuardianRequestCreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -9521,6 +10374,7 @@ export interface components {
             resultingMemberId: null | string;
             provisioning: null | components["schemas"]["ApplicationProvisioningResponse"];
             emailInUseBy: null | string;
+            membershipType: components["schemas"]["MembershipType"];
         };
         ApplicationNotesRequest: {
             notes: null | string;
@@ -9554,6 +10408,7 @@ export interface components {
             privacyConsent: boolean;
             photoConsent: boolean;
             source: components["schemas"]["ApplicationSource"];
+            membershipType?: components["schemas"]["MembershipType"];
         };
         /** @enum {unknown} */
         ApplicationSource: "App" | "Website" | "Portal";
@@ -9578,6 +10433,7 @@ export interface components {
             source: components["schemas"]["ApplicationSource"];
             /** Format: date-time */
             submittedAt: null | string;
+            membershipType: components["schemas"]["MembershipType"];
         };
         ApplyStartNumbersRequest: {
             /** Format: int32 */
@@ -9593,6 +10449,14 @@ export interface components {
         ApproveAccountRequestRequest: {
             /** Format: uuid */
             memberId: string;
+        };
+        ApproveGuardianRequest: {
+            /** Format: uuid */
+            memberId: string;
+        };
+        AssignDanceGroupRequest: {
+            /** Format: uuid */
+            groupId: null | string;
         };
         AttachmentResponse: {
             /** Format: uuid */
@@ -9780,6 +10644,59 @@ export interface components {
             name: string;
             description: null | string;
             permissions: string[];
+        };
+        DanceGroup: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            active: boolean;
+            leaders: string[];
+            members: components["schemas"]["DanceGroupMember"][];
+        };
+        DanceGroupMember: {
+            /** Format: uuid */
+            memberId: string;
+            fullName: string;
+            /** Format: int32 */
+            age: null | number;
+        };
+        DanceGroupRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        DanceGroups: {
+            groups: components["schemas"]["DanceGroup"][];
+            unassigned: components["schemas"]["DanceGroupMember"][];
+        };
+        DansgardeMember: {
+            /** Format: uuid */
+            memberId: string;
+            fullName: string;
+            memberNumber: string;
+            /** Format: date */
+            birthDate: null | string;
+            /** Format: int32 */
+            age: null | number;
+            danceGroup: null | components["schemas"]["DanceGroupRef"];
+            guardians: string[];
+            hasSuggestion: boolean;
+            ownAccount: boolean;
+            /** Format: date */
+            turnsFifteenOn: null | string;
+        };
+        DansgardeOverview: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            withoutGroup: number;
+            /** Format: int32 */
+            withoutGuardian: number;
+            /** Format: int32 */
+            turningFifteenSoon: number;
+            members: components["schemas"]["DansgardeMember"][];
+            groups: components["schemas"]["DanceGroupRef"][];
         };
         DashboardResponse: {
             /** Format: int32 */
@@ -10029,6 +10946,85 @@ export interface components {
         };
         /** @enum {unknown} */
         GroupType: "DanceGuard" | "Committee" | "ParadeGroup" | "Other";
+        GuardianCandidateResponse: {
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            email: string;
+            isMember: boolean;
+        };
+        GuardianLinkRequestInput: {
+            childFirstName: string;
+            childLastName: string;
+            relationship: components["schemas"]["GuardianRelationship"];
+            phone: null | string;
+        };
+        /** @enum {unknown} */
+        GuardianLinkRequestStatus: "Pending" | "Approved" | "Rejected";
+        /** @enum {unknown} */
+        GuardianRelationship: "Parent" | "Caregiver";
+        GuardianRequestCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        GuardianRequestView: {
+            /** Format: uuid */
+            id: string;
+            requestedByName: string;
+            requestedByEmail: string;
+            childFirstName: string;
+            childLastName: string;
+            relationship: components["schemas"]["GuardianRelationship"];
+            phone: null | string;
+            status: components["schemas"]["GuardianLinkRequestStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: null | string;
+            rejectionReason: null | string;
+            /** Format: uuid */
+            memberId: null | string;
+            memberName: null | string;
+            candidates: components["schemas"]["MemberCandidate"][];
+        };
+        /** @description Voorstel: een lid jonger dan 15 en een ander lid met hetzelfde e-mailadres (fase 17). Alleen een voorstel. */
+        GuardianSuggestion: {
+            /** Format: uuid */
+            childMemberId: string;
+            childName: string;
+            childNumber: string;
+            /** Format: int32 */
+            childAge: null | number;
+            childDansgarde: boolean;
+            /** Format: uuid */
+            parentMemberId: string;
+            parentName: string;
+            parentNumber: string;
+            /** Format: int32 */
+            parentAge: null | number;
+            email: string;
+            /** Format: uuid */
+            parentUserId: null | string;
+        };
+        GuardianSuggestionRequest: {
+            /** Format: uuid */
+            childMemberId: string;
+            /** Format: uuid */
+            parentMemberId: string;
+        };
+        GuardianView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            email: null | string;
+            relationship: components["schemas"]["GuardianRelationship"];
+            isMember: boolean;
+            phone: null | string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         HealthEntry: {
             name: string;
             status: string;
@@ -10063,6 +11059,11 @@ export interface components {
             unreadCount: number;
             hasMore: boolean;
         };
+        InviteGuardianRequest: {
+            email: string;
+            name: string;
+            relationship: components["schemas"]["GuardianRelationship"];
+        };
         IssueTicketsResponse: {
             /** Format: int32 */
             issued: number;
@@ -10085,6 +11086,11 @@ export interface components {
                 [key: string]: number;
             };
             categories: components["schemas"]["CategoryTotals"][];
+        };
+        LinkGuardianRequest: {
+            /** Format: uuid */
+            userId: string;
+            relationship: components["schemas"]["GuardianRelationship"];
         };
         Maintenance: {
             enabled: boolean;
@@ -10119,6 +11125,16 @@ export interface components {
             /** Format: date-time */
             lastLoginAt: null | string;
             awaitingFirstSignIn: boolean;
+        };
+        MemberCandidate: {
+            /** Format: uuid */
+            memberId: string;
+            name: string;
+            memberNumber: string;
+            /** Format: int32 */
+            age: null | number;
+            /** Format: int32 */
+            guardians: number;
         };
         MemberDetailResponse: {
             /** Format: uuid */
@@ -10189,6 +11205,15 @@ export interface components {
             /** Format: date */
             validTo: null | string;
         };
+        MemberGuardians: {
+            applies: boolean;
+            /** Format: int32 */
+            max: number;
+            guardians: components["schemas"]["GuardianView"][];
+            suggestions: components["schemas"]["GuardianSuggestion"][];
+            requests: components["schemas"]["GuardianRequestView"][];
+            ownAccount: components["schemas"]["OwnAccountInfo"];
+        };
         MemberLocalUpdateRequest: {
             localStatusOverride: null | components["schemas"]["MembershipStatus"];
             /** Format: date */
@@ -10249,6 +11274,13 @@ export interface components {
         };
         /** @enum {unknown} */
         MembershipStatus: "Active" | "Inactive" | "Suspended" | "Deceased";
+        /**
+         * @description Aanmelding als nieuw lid (fase 9b, REQ-APP-01..05). Leeft in een tijdelijke wachtrij tot het bestuur beslist. De
+         *     bankgegevens staan hier alleen tot ze naar e-Boekhouden zijn doorgegeven of de aanvraag is afgewezen, en worden dan
+         *     gewist (dataminimalisatie).
+         * @enum {unknown}
+         */
+        MembershipType: "Individual" | "Dansgarde";
         MemberSummaryCountsResponse: {
             /** Format: int32 */
             active: number;
@@ -10301,16 +11333,35 @@ export interface components {
             ios: string;
             android: string;
         };
-        MyChildResponse: {
+        MyChild: {
+            /** Format: uuid */
+            memberId: string;
             fullName: string;
+            firstName: null | string;
             memberNumber: string;
             /** Format: date */
             birthDate: null | string;
+            /** Format: int32 */
+            age: null | number;
             status: components["schemas"]["MembershipStatus"];
+            ownAccount: boolean;
+            canShowQr: boolean;
+            groups: string[];
         };
         MyGroupResponse: {
             name: string;
             function: components["schemas"]["GroupFunction"];
+        };
+        MyGuardianRequest: {
+            /** Format: uuid */
+            id: string;
+            childFirstName: string;
+            childLastName: string;
+            status: components["schemas"]["GuardianLinkRequestStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            decidedAt: null | string;
         };
         MyMemberResponse: {
             memberNumber: string;
@@ -10386,7 +11437,8 @@ export interface components {
         /**
          * @description Doelgroep (docs/02 §5.3). bool NotificationAudience.Everyone = alle accounts plus gasten met push-toestemming;
          *     bool NotificationAudience.Members = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en
-         *     leden ontvangen ook de ouders/verzorgers ("Namens …").
+         *     leden ontvangen ook de ouders/verzorgers ("Namens …"). bool NotificationAudience.Dansgarde = alle leden met groep "Dansgarde" in
+         *     e-Boekhouden (fase 17), ook met hun ouders.
          */
         NotificationAudience: {
             /** @default false */
@@ -10397,6 +11449,8 @@ export interface components {
             groups?: null | string[];
             memberIds?: null | string[];
             userIds?: null | string[];
+            /** @default false */
+            dansgarde: boolean;
         };
         NotificationAudienceOptionsResponse: {
             /** @description Mag naar elke doelgroep (`notification.send`); anders alleen de eigen groepen. */
@@ -10497,6 +11551,25 @@ export interface components {
             deviceShortId: null | string;
             devicePublicKey: null | string;
             holderName: string;
+        };
+        /**
+         * @description Eigen account van een lid: vanaf 15 kan het bestuur een eigen account geven (DateOnly? OwnAccountInfo.AvailableFrom); tot 18 blijven
+         *     de ouders gekoppeld (DateOnly? OwnAccountInfo.GuardiansUntil).
+         */
+        OwnAccountInfo: {
+            hasAccount: boolean;
+            email: null | string;
+            /** Format: int32 */
+            age: null | number;
+            canGetOwnAccount: boolean;
+            /** Format: date */
+            availableFrom: null | string;
+            /** Format: date */
+            guardiansUntil: null | string;
+            pending: boolean;
+        };
+        OwnAccountRequest: {
+            email: string;
         };
         /** @description Pagineringsconventie van de API (docs/05 §1): `?page=1&amp;pageSize=25`, maximaal 100. */
         PagedResultOfAccessScanRow: {
@@ -10969,6 +12042,9 @@ export interface components {
         };
         RejectApplicationRequest: {
             reason: string;
+        };
+        RejectGuardianRequest: {
+            reason: null | string;
         };
         RenameDeviceRequest: {
             name: string;

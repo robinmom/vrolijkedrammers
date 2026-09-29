@@ -55,7 +55,7 @@
 | OQ-12 | Grens 10 bij loopgroepen | IMPORTANT | 11 | 🟢 10 = groot, klein = 3-9 (2026-09-28) |
 | OQ-13 | Onderwerp verplicht | IMPORTANT | 11 | 🟢 ja, per optocht uit te zetten (2026-09-28) |
 | OQ-14 | Verplichte documenten per categorie | IMPORTANT | 11 | 🟢 niet verplicht in 2027 (2026-09-28) |
-| OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟢 besloten 2026-09-27: lid vanaf 5 jaar (dansgarde); eigen account vanaf 16, jonger via de ouder/verzorger (rol Ouder) |
+| OQ-15 | Minimumleeftijd eigen account | IMPORTANT | 9 | 🟢 besloten 2026-09-27, bijgesteld 2026-09-29 (fase 17): lid vanaf 5 jaar (dansgarde); eigen account vanaf **15**, jonger via de ouder/verzorger (rol Ouder); ouders blijven gekoppeld tot 18 |
 | OQ-20 | Definitie carnavalstoegang (AccessWindows, gasten) | IMPORTANT | 13 | 🟢 besloten 2026-09-28: één ledenticket per actief lid per carnavalsjaar, geldig de hele carnavalsperiode (geen vensters per dag); gasten niet in de app. Aanvulling 2026-09-29: QR en scannen volgen dezelfde regels — geldig tijdens de carnavalsperiode én tijdens elke activiteit met toegangscontrole (ook buiten carnaval); scans horen bij de activiteit of anders bij de carnavalsdag (tot 06:00) |
 | OQ-21 | Bandjesbeleid | IMPORTANT | 14 | 🟢 besloten 2026-09-28: geen bandjes; alleen scannen of inchecken, herhaalde toegang is zichtbaar als "al eerder gescand" |
 | OQ-22 | Pasfoto in scanner | LATER | — | 🟡 |
@@ -274,7 +274,7 @@ Dit bepaalt het `User`-model, de standaardrollen en het activatieproces (fase 3)
 | OQ-12 | Grens 10 | **Besloten 2026-09-28:** 10 is groot; klein = 3-9 | 11 |
 | OQ-13 | Onderwerp verplicht | **Besloten 2026-09-28:** ja, per optocht uit te zetten | 11 |
 | OQ-14 | Verplichte documenten | **Besloten 2026-09-28:** geen verplichting in 2027; later per categorie | 11 |
-| OQ-15 | Minimumleeftijd account | 16 jaar; jonger via het account van de ouder/verzorger (rol Ouder, ADR-014) | 9 |
+| OQ-15 | Minimumleeftijd account | 15 jaar (bijgesteld in fase 17; was 16); jonger via het account van de ouder/verzorger (rol Ouder, ADR-014) | 9 |
 | OQ-20 | Carnavalstoegang | AccessWindow per carnavalsdag; één ledenticket per lid per jaar; gasten via dagkaart (na MVP) of papieren toegang | 13 |
 | OQ-21 | Bandjes | Kleur per dag; geen herscan bij geldig bandje; configureerbaar | 14 |
 | OQ-23 | Zonder smartphone | Printkaart + naamcontrole + bandje | 13 |

@@ -81,6 +81,11 @@ public sealed class NotificationAudienceResolver(DrammersDbContext db, IClock cl
             memberIds.UnionWith(inGroups);
         }
 
+        if (audience.Dansgarde)
+        {
+            memberIds.UnionWith(await Members.Dansgarde.Members(db).AsNoTracking().Select(m => m.Id).ToListAsync(cancellationToken));
+        }
+
         if (memberIds.Count > 0)
         {
             var activeMembers = (await db.Members.AsNoTracking()
@@ -94,10 +99,12 @@ public sealed class NotificationAudienceResolver(DrammersDbContext db, IClock cl
                 Add(row.Id, null);
             }
 
+            // Ouders ontvangen namens hun kind tot het 18 is (fase 17), ook als het kind vanaf 15 een eigen account heeft.
             var guardians = await db.GuardianRelations.AsNoTracking()
                 .Join(active, g => g.GuardianUserId, u => u.Id, (g, _) => new { g.GuardianUserId, g.MemberId })
+                .Join(db.Members, g => g.MemberId, m => m.Id, (g, m) => new { g.GuardianUserId, g.MemberId, m.BirthDate })
                 .ToListAsync(cancellationToken);
-            foreach (var guardian in guardians.Where(g => activeMembers.Contains(g.MemberId)).OrderBy(g => g.MemberId))
+            foreach (var guardian in guardians.Where(g => activeMembers.Contains(g.MemberId) && Members.Guardians.IsMinor(g.BirthDate, today)).OrderBy(g => g.MemberId))
             {
                 Add(guardian.GuardianUserId, guardian.MemberId);
             }

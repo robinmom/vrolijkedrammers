@@ -188,6 +188,8 @@ public static class DependencyInjection
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();
         services.AddScoped<GroupAdministration>();
+        services.AddScoped<Guardians>();
+        services.AddScoped<Dansgarde>();
         services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
         services.AddScoped<MemberAccounts>();
         services.AddScoped<IOutboxMessageHandler, MemberAccountProvisioningHandler>();

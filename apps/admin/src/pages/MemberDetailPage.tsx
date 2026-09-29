@@ -1,8 +1,17 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation, useMe, useMember, useMemberHistory, type MemberDetail, type MembershipStatus } from '../api/hooks';
+import {
+  useApiMutation,
+  useMe,
+  useMember,
+  useMemberGuardians,
+  useMemberHistory,
+  type MemberDetail,
+  type MembershipStatus,
+} from '../api/hooks';
 import { AccessCard } from '../components/AccessCard';
+import { GuardiansCard } from '../components/GuardiansCard';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
@@ -49,6 +58,7 @@ export function MemberDetailPage() {
   const api = useApi();
   const me = useMe();
   const member = useMember(id);
+  const guardians = useMemberGuardians(id);
   const [form, setForm] = useState<LocalForm | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmInactive, setConfirmInactive] = useState(false);
@@ -278,68 +288,72 @@ export function MemberDetailPage() {
 
         <div>
           {canCheckIn ? <AccessCard memberId={id} /> : null}
-          <section className="card" aria-labelledby="account">
-            <h2 id="account">App-account</h2>
-            {m.account ? (
-              <>
-                <dl className="details compact-details">
-                  <dt>E-mailadres</dt>
-                  <dd>{m.account.email}</dd>
-                  <dt>Status</dt>
-                  <dd>
-                    <span className={`badge ${m.account.accountStatus === 'Active' ? 'ok' : 'warn'}`}>
-                      {accountStatusLabels[m.account.accountStatus] ?? m.account.accountStatus}
-                    </span>
-                  </dd>
-                  <dt>Laatste login</dt>
-                  <dd>
-                    {m.account.awaitingFirstSignIn ? (
-                      <span className="badge info">Wacht op eerste aanmelding</span>
-                    ) : (
-                      formatDateTime(m.account.lastLoginAt)
-                    )}
-                  </dd>
-                </dl>
-                <Link to="/gebruikers/$id" params={{ id: m.account.userId }} className="button ghost">
-                  Naar gebruiker en rollen →
-                </Link>
-                <ProblemAlert error={removeAccount.error} />
-                {canApprove ? (
-                  <button type="button" className="button danger small" onClick={() => setConfirmRemoveAccount(true)}>
-                    App-account verwijderen
-                  </button>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <p className="muted">Dit lid heeft (nog) geen app-account.</p>
-                {m.provisioning ? (
-                  <p>
-                    <span className={`badge ${m.provisioning.lastError ? 'error' : 'info'}`}>
-                      {m.provisioning.lastError ? 'Aanmaken mislukt' : (provisioningStepLabels[m.provisioning.step] ?? m.provisioning.step)}
-                    </span>{' '}
-                    {m.provisioning.lastError ? (
-                      <Link to="/accountverzoeken">Bekijk en probeer opnieuw</Link>
-                    ) : null}
-                  </p>
-                ) : null}
-                <ProblemAlert error={provision.error} />
-                {canApprove ? (
-                  <button
-                    type="button"
-                    className="button"
-                    disabled={!m.email || m.effectiveStatus !== 'Active' || provision.isPending || Boolean(m.provisioning && !m.provisioning.lastError)}
-                    title={m.email ? undefined : 'Vul eerst een e-mailadres in e-Boekhouden in'}
-                    onClick={() =>
-                      provision.mutate(undefined, { onSuccess: () => setMessage(`Het account wordt aangemaakt; ${m.fullName} krijgt een welkomstmail op ${m.email}.`) })
-                    }
-                  >
-                    App-account aanmaken
-                  </button>
-                ) : null}
-              </>
-            )}
-          </section>
+          <GuardiansCard memberId={id} memberName={m.fullName} canEdit={canEdit} />
+          {/* Een kind zonder eigen account staat onder zijn ouders; de kaart "Eigen account" hierboven vervangt dan deze kaart. */}
+          {guardians.data?.applies && !m.account ? null : (
+            <section className="card" aria-labelledby="account">
+              <h2 id="account">App-account</h2>
+              {m.account ? (
+                <>
+                  <dl className="details compact-details">
+                    <dt>E-mailadres</dt>
+                    <dd>{m.account.email}</dd>
+                    <dt>Status</dt>
+                    <dd>
+                      <span className={`badge ${m.account.accountStatus === 'Active' ? 'ok' : 'warn'}`}>
+                        {accountStatusLabels[m.account.accountStatus] ?? m.account.accountStatus}
+                      </span>
+                    </dd>
+                    <dt>Laatste login</dt>
+                    <dd>
+                      {m.account.awaitingFirstSignIn ? (
+                        <span className="badge info">Wacht op eerste aanmelding</span>
+                      ) : (
+                        formatDateTime(m.account.lastLoginAt)
+                      )}
+                    </dd>
+                  </dl>
+                  <Link to="/gebruikers/$id" params={{ id: m.account.userId }} className="button ghost">
+                    Naar gebruiker en rollen →
+                  </Link>
+                  <ProblemAlert error={removeAccount.error} />
+                  {canApprove ? (
+                    <button type="button" className="button danger small" onClick={() => setConfirmRemoveAccount(true)}>
+                      App-account verwijderen
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <p className="muted">Dit lid heeft (nog) geen app-account.</p>
+                  {m.provisioning ? (
+                    <p>
+                      <span className={`badge ${m.provisioning.lastError ? 'error' : 'info'}`}>
+                        {m.provisioning.lastError ? 'Aanmaken mislukt' : (provisioningStepLabels[m.provisioning.step] ?? m.provisioning.step)}
+                      </span>{' '}
+                      {m.provisioning.lastError ? (
+                        <Link to="/accountverzoeken">Bekijk en probeer opnieuw</Link>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  <ProblemAlert error={provision.error} />
+                  {canApprove ? (
+                    <button
+                      type="button"
+                      className="button"
+                      disabled={!m.email || m.effectiveStatus !== 'Active' || provision.isPending || Boolean(m.provisioning && !m.provisioning.lastError)}
+                      title={m.email ? undefined : 'Vul eerst een e-mailadres in e-Boekhouden in'}
+                      onClick={() =>
+                        provision.mutate(undefined, { onSuccess: () => setMessage(`Het account wordt aangemaakt; ${m.fullName} krijgt een welkomstmail op ${m.email}.`) })
+                      }
+                    >
+                      App-account aanmaken
+                    </button>
+                  ) : null}
+                </>
+              )}
+            </section>
+          )}
 
           <section className="card" aria-labelledby="groepen">
             <div className="card-header">

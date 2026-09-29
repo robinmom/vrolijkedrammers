@@ -195,6 +195,7 @@ internal sealed class AccountProvisioningConfiguration : IEntityTypeConfiguratio
         builder.ToTable("AccountProvisioning", Schemas.Identity);
         builder.Property(p => p.Id).ValueGeneratedNever();
         builder.Property(p => p.SourceId).HasMaxLength(254);
+        builder.Property(p => p.LoginEmail).HasMaxLength(254);
         builder.HasIndex(p => new { p.SourceType, p.SourceId }).IsUnique();
         builder.Property(p => p.EbMemberId).HasMaxLength(50).IsUnicode(false);
         builder.Property(p => p.MemberNumber).HasMaxLength(20).IsUnicode(false);

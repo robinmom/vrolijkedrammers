@@ -40,7 +40,8 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
 
     private DateOnly Today => DateOnly.FromDateTime(_api.Clock.UtcNow.UtcDateTime);
 
-    private object Form(string email, int age, string firstName = "Piet", string? guardian = null, string iban = ValidIban, bool mandate = true) => new
+    private object Form(
+        string email, int age, string firstName = "Piet", string? guardian = null, string iban = ValidIban, bool mandate = true, string membershipType = "Individual") => new
     {
         firstName,
         namePrefix = "van der",
@@ -60,6 +61,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         privacyConsent = true,
         photoConsent = false,
         source = "App",
+        membershipType,
     };
 
     [GeneratedRegex(@"\b\d{6}\b")]
@@ -154,6 +156,21 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         var children = (await parent.GetFromJsonAsync<JsonElement>("/api/v1/me/children")).EnumerateArray().Select(c => c.GetProperty("fullName").GetString()).ToList();
         Assert.Equal(["Sanne van der Berg", "Tim van der Berg"], children);
         Assert.Equal(HttpStatusCode.Forbidden, (await parent.GetAsync("/api/v1/me/member")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Dansgarde_aanmelding_zet_groep_Dansgarde_bij_het_nieuwe_lid()
+    {
+        var id = await SubmitAsync(Form("ouder@example.com", 8, "Lot", guardian: "Robin Mom", membershipType: "Dansgarde"), "ouder@example.com");
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
+        Assert.Equal("Dansgarde", detail.GetProperty("membershipType").GetString());
+
+        await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/approve", null);
+        await RunProvisioningAsync();
+
+        var application = await WithDbAsync(db => db.MembershipApplications.AsNoTracking().SingleAsync(a => a.Id == id));
+        var member = await WithDbAsync(db => db.Members.AsNoTracking().SingleAsync(m => m.Id == application.ResultingMemberId));
+        Assert.Equal("Dansgarde", member.ParadeGroupName);
     }
 
     [Fact]

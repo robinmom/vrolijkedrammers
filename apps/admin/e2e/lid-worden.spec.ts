@@ -41,6 +41,7 @@ test('lid worden via de webpagina: kind onder de 16 met ouder, code, klaar', asy
   await serve(page, api);
   await page.goto('/lid-worden/');
 
+  await page.getByRole('radio', { name: /Dansgarde/ }).check();
   await page.getByLabel('Voornaam').fill('Sanne');
   await page.getByLabel('Achternaam').fill('Jansen');
   await page.getByLabel('Geboortedatum').fill(`${new Date().getFullYear() - 8}-03-12`);
@@ -68,6 +69,7 @@ test('lid worden via de webpagina: kind onder de 16 met ouder, code, klaar', asy
     email: 'ouder@example.com',
     source: 'Website',
     mandateConsent: true,
+    membershipType: 'Dansgarde',
   });
 
   await page.getByLabel('Code', { exact: true }).fill('123456');
@@ -91,5 +93,8 @@ test('volwassene ziet geen ouder-sectie; een verkeerde code geeft een melding', 
   await serve(page, api);
   await page.goto('/lid-worden/');
   await page.getByLabel('Geboortedatum').fill('1990-03-12');
+  await expect(page.getByRole('group', { name: 'Ouder of verzorger' })).toBeHidden();
+  // Vanaf 15 een eigen aanmelding (fase 17).
+  await page.getByLabel('Geboortedatum').fill(`${new Date().getFullYear() - 16}-01-01`);
   await expect(page.getByRole('group', { name: 'Ouder of verzorger' })).toBeHidden();
 });

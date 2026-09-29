@@ -5,6 +5,8 @@ import {
   useAdminNews,
   useCurrentCarnivalYear,
   useDashboard,
+  useGuardianRequests,
+  useGuardianSuggestions,
   useMe,
   useMemberSummary,
   useSyncConflicts,
@@ -51,7 +53,7 @@ interface Attention {
   tone: string;
   badge: string;
   text: string;
-  link?: 'ledensync' | 'leden' | 'nieuws';
+  link?: 'ledensync' | 'leden' | 'nieuws' | 'koppelverzoeken';
   action?: string;
 }
 
@@ -67,6 +69,8 @@ export function DashboardPage() {
   const conflicts = useSyncConflicts(can('import.run'));
   const events = useAdminEvents(false, can('event.manage'));
   const news = useAdminNews(can('news.manage'));
+  const guardianRequests = useGuardianRequests('Pending', can('member.update'));
+  const guardianSuggestions = useGuardianSuggestions(can('member.update'));
   const d = dashboard.data;
 
   const firstName = (me.data?.displayName ?? '').split(' ')[0];
@@ -91,6 +95,21 @@ export function DashboardPage() {
   if (summary.data?.missingInEBoekhouden) {
     const n = summary.data.missingInEBoekhouden;
     attention.push({ key: 'ontbrekend', tone: 'warn', badge: `${n} ${n === 1 ? 'lid' : 'leden'}`, text: 'Staan niet meer in e-Boekhouden en worden bij de volgende sync inactief.', link: 'leden', action: 'Bekijken' });
+  }
+  const linkCount = (guardianRequests.data?.length ?? 0) + (guardianSuggestions.data?.length ?? 0);
+  if (linkCount) {
+    const r = guardianRequests.data?.length ?? 0;
+    const v = guardianSuggestions.data?.length ?? 0;
+    attention.push({
+      key: 'koppelverzoeken',
+      tone: 'info',
+      badge: `${linkCount} ouder-kind`,
+      text: [r ? `${r} koppelverzoek${r === 1 ? '' : 'en'} uit de app` : null, v ? `${v} voorstel${v === 1 ? '' : 'len'} (zelfde e-mail)` : null]
+        .filter(Boolean)
+        .join(' en ') + ' wachten op beoordeling.',
+      link: 'koppelverzoeken',
+      action: 'Bekijken',
+    });
   }
   for (const item of scheduledNews.slice(0, 2)) {
     attention.push({ key: item.id, tone: 'info', badge: 'Gepland', text: `Nieuwsbericht "${item.title}" verschijnt op ${formatDateTime(item.publishAt)}.`, link: 'nieuws', action: 'Openen' });
@@ -182,6 +201,10 @@ export function DashboardPage() {
                       </Link>
                     ) : a.link === 'leden' ? (
                       <Link to="/leden" className="button ghost small">
+                        {a.action}
+                      </Link>
+                    ) : a.link === 'koppelverzoeken' ? (
+                      <Link to="/koppelverzoeken" className="button ghost small">
                         {a.action}
                       </Link>
                     ) : a.link === 'nieuws' ? (

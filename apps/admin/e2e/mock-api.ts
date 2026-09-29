@@ -193,6 +193,59 @@ export class MockApi {
   parades: Record<string, unknown>[] = [];
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];
+  // Fase 17: ouders/verzorgers en dansgarde.
+  guardianCalls: { method: string; path: string; body: unknown }[] = [];
+  memberGuardians: Record<string, Record<string, unknown>> = {};
+  guardianSuggestions: Record<string, unknown>[] = [];
+  guardianRequests: Record<string, unknown>[] = [];
+  dansgarde = {
+    total: 3,
+    withoutGroup: 1,
+    withoutGuardian: 1,
+    turningFifteenSoon: 1,
+    groups: [
+      { id: 'dg-1', name: 'Mini Drammers' },
+      { id: 'dg-2', name: 'Drammerinekes' },
+    ],
+    members: [
+      {
+        memberId: 'm-1',
+        fullName: 'Lot Mom',
+        memberNumber: '1042',
+        birthDate: '2012-03-10',
+        age: 14,
+        danceGroup: { id: 'dg-2', name: 'Drammerinekes' } as { id: string; name: string } | null,
+        guardians: ['Robin Mom'],
+        hasSuggestion: false,
+        ownAccount: false,
+        turnsFifteenOn: '2026-11-10',
+      },
+      {
+        memberId: 'm-2',
+        fullName: 'Fenna Mom',
+        memberNumber: '1088',
+        birthDate: '2017-05-01',
+        age: 9,
+        danceGroup: { id: 'dg-1', name: 'Mini Drammers' } as { id: string; name: string } | null,
+        guardians: [] as string[],
+        hasSuggestion: true,
+        ownAccount: false,
+        turnsFifteenOn: null,
+      },
+      {
+        memberId: 'm-3',
+        fullName: 'Noor Smit',
+        memberNumber: '1101',
+        birthDate: '2019-01-01',
+        age: 7,
+        danceGroup: null as { id: string; name: string } | null,
+        guardians: ['Joep Smit'],
+        hasSuggestion: false,
+        ownAccount: false,
+        turnsFifteenOn: null,
+      },
+    ],
+  };
   // Fase 14: toegangscontrole.
   accessInside: string | null = null;
   checkIns: { memberId: string; force: boolean }[] = [];
@@ -1391,6 +1444,84 @@ export class MockApi {
             : null;
         })(),
       });
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/(guardians|own-account)(\/.*)?$/))) {
+      if (method !== 'GET') {
+        this.guardianCalls.push({ method, path, body });
+        return method === 'POST' && m[2] === 'own-account' ? json(null, 202) : noContent();
+      }
+      return json(
+        this.memberGuardians[m[1]!] ?? {
+          applies: false,
+          max: 2,
+          guardians: [],
+          suggestions: [],
+          requests: [],
+          ownAccount: {
+            hasAccount: true,
+            email: null,
+            age: 40,
+            canGetOwnAccount: false,
+            availableFrom: null,
+            guardiansUntil: null,
+            pending: false,
+          },
+        },
+      );
+    }
+    if (path === '/admin/guardian-candidates') {
+      return json([{ userId: 'u-sanne', name: 'Sanne Mom', email: 'sanne@example.com', isMember: false }]);
+    }
+    if (path === '/admin/guardian-requests') {
+      const status = url.searchParams.get('status');
+      return json(this.guardianRequests.filter((r) => !status || r.status === status));
+    }
+    if ((m = path.match(/^\/admin\/guardian-requests\/([^/]+)\/(approve|reject)$/))) {
+      this.guardianCalls.push({ method, path, body });
+      const request = this.guardianRequests.find((r) => r.id === m![1]);
+      if (request) {
+        request.status = m[2] === 'approve' ? 'Approved' : 'Rejected';
+        request.decidedAt = '2026-09-29T12:00:00Z';
+      }
+      return noContent();
+    }
+    if (path === '/admin/guardian-suggestions') {
+      return json(this.guardianSuggestions);
+    }
+    if (path === '/admin/guardian-suggestions/link' || path === '/admin/guardian-suggestions/dismiss') {
+      this.guardianCalls.push({ method, path, body });
+      const b = body as { childMemberId: string; parentMemberId: string };
+      this.guardianSuggestions = this.guardianSuggestions.filter(
+        (x) => !(x.childMemberId === b.childMemberId && x.parentMemberId === b.parentMemberId),
+      );
+      return noContent();
+    }
+    if (path === '/admin/dansgarde') {
+      return json(this.dansgarde);
+    }
+    if (path === '/admin/dansgarde/groups') {
+      return json({
+        groups: this.dansgarde.groups.map((g) => ({
+          id: g.id,
+          name: g.name,
+          description: g.id === 'dg-1' ? '5 – 9 jaar' : '10 – 14 jaar',
+          active: true,
+          leaders: g.id === 'dg-1' ? ['Anja Smit'] : [],
+          members: this.dansgarde.members
+            .filter((x) => x.danceGroup?.id === g.id)
+            .map((x) => ({ memberId: x.memberId, fullName: x.fullName, age: x.age })),
+        })),
+        unassigned: this.dansgarde.members
+          .filter((x) => !x.danceGroup)
+          .map((x) => ({ memberId: x.memberId, fullName: x.fullName, age: x.age })),
+      });
+    }
+    if ((m = path.match(/^\/admin\/dansgarde\/([^/]+)\/group$/)) && method === 'PUT') {
+      this.guardianCalls.push({ method, path, body });
+      const member = this.dansgarde.members.find((x) => x.memberId === m![1])!;
+      const groupId = (body as { groupId: string | null }).groupId;
+      member.danceGroup = this.dansgarde.groups.find((g) => g.id === groupId) ?? null;
+      return noContent();
     }
     if (path === '/admin/sync-jobs') {
       return json({ items: this.syncJobs, page: 1, pageSize: 20, totalCount: this.syncJobs.length });

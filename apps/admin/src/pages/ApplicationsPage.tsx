@@ -32,7 +32,8 @@ const columns = [
     header: 'Leeftijd',
     cell: (info) => (
       <>
-        {info.getValue()} jaar {info.row.original.minor ? <span className="badge info">via ouder</span> : null}
+        {info.getValue()} jaar {info.row.original.minor ? <span className="badge info">via ouder</span> : null}{' '}
+        {info.row.original.membershipType === 'Dansgarde' ? <span className="badge">Dansgarde</span> : null}
       </>
     ),
   }),
@@ -139,6 +140,7 @@ export function ApplicationDetailPage() {
   const a = application.data;
   const open = a.status === 'Submitted' || a.status === 'InReview';
   const rows: [string, string | null | undefined][] = [
+    ['Soort lidmaatschap', a.membershipType === 'Dansgarde' ? 'Dansgarde (groep "Dansgarde" in e-Boekhouden)' : 'Lidmaatschap 1 persoon'],
     ['Geboortedatum', `${formatDate(a.birthDate)} (${a.age} jaar)`],
     ['Geslacht', a.gender === 'm' ? 'Man' : a.gender === 'v' ? 'Vrouw' : '—'],
     ['Adres', `${a.addressLine}, ${a.postalCode} ${a.city}`],

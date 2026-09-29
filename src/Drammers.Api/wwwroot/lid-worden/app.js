@@ -22,7 +22,7 @@
 
   const isMinor = () => {
     const value = form.elements.birthDate.value;
-    return value ? ageOn(new Date(value + 'T12:00:00'), new Date()) < 16 : false;
+    return value ? ageOn(new Date(value + 'T12:00:00'), new Date()) < 15 : false;
   };
 
   form.elements.birthDate.addEventListener('change', () => {
@@ -66,6 +66,7 @@
       guardianName: isMinor() ? f.guardianName.value : null, guardianPhone: isMinor() ? f.guardianPhone.value : null,
       iban: f.iban.value, accountHolder: f.accountHolder.value, mandateConsent: f.mandateConsent.checked,
       privacyConsent: f.privacyConsent.checked, photoConsent: f.photoConsent.checked, source: 'Website',
+      membershipType: f.membershipType.value,
     };
     const button = form.querySelector('button[type=submit]');
     button.disabled = true;

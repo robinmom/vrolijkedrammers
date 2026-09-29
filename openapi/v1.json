@@ -1773,6 +1773,148 @@
         }
       }
     },
+    "/api/v1/admin/dansgarde": {
+      "get": {
+        "tags": [
+          "AdminDansgarde"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DansgardeOverview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DansgardeOverview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DansgardeOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dansgarde/groups": {
+      "get": {
+        "tags": [
+          "AdminDansgarde"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceGroups"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceGroups"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceGroups"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dansgarde/{memberId}/group": {
+      "put": {
+        "tags": [
+          "AdminDansgarde"
+        ],
+        "summary": "Deelt een dansgarde-lid in bij één dansgroep; `groupId` leeg = uit de dansgroep halen.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignDanceGroupRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignDanceGroupRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignDanceGroupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/dashboard": {
       "get": {
         "tags": [
@@ -2564,6 +2706,794 @@
                   "items": {
                     "$ref": "#/components/schemas/AudienceOptionResponse"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/guardians": {
+      "get": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberGuardians"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberGuardians"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberGuardians"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "summary": "Koppelt een bestaand app-account als ouder/verzorger (hooguit 2 per kind, alleen onder 18).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGuardianRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGuardianRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGuardianRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/guardians/invite": {
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "summary": "Nodigt een ouder uit per e-mail: een nieuw account met alleen de rol Ouder/verzorger, of het bestaande account.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteGuardianRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteGuardianRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteGuardianRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/guardians/{relationId}": {
+      "delete": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "relationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/own-account": {
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "summary": "Eigen account op het eigen e-mailadres (vanaf 15); de ouders blijven tot 18 gekoppeld voor meldingen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAccountRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAccountRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-candidates": {
+      "get": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "summary": "Accounts om als ouder te koppelen (zoeken op naam of e-mail).",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianCandidateResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianCandidateResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianCandidateResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-requests": {
+      "get": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/GuardianLinkRequestStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianRequestView"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianRequestView"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianRequestView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-requests/{id}/approve": {
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveGuardianRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveGuardianRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveGuardianRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-requests/{id}/reject": {
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectGuardianRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectGuardianRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectGuardianRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-suggestions": {
+      "get": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "summary": "Voorstellen: een lid jonger dan 15 en een ander lid met hetzelfde e-mailadres. Er wordt niets vanzelf gekoppeld.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianSuggestion"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianSuggestion"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuardianSuggestion"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-suggestions/link": {
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianSuggestionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianSuggestionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianSuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/guardian-suggestions/dismiss": {
+      "post": {
+        "tags": [
+          "AdminGuardians"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianSuggestionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianSuggestionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianSuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8129,7 +9059,7 @@
         "tags": [
           "Me"
         ],
-        "summary": "Kinderen waarvan de gebruiker ouder/verzorger is (fase 9b; beheer en meldingen volgen in fase 17).",
+        "summary": "Kinderen waarvan de gebruiker ouder/verzorger is (fase 17): tot 18 jaar; de QR alleen zonder eigen account.",
         "responses": {
           "200": {
             "description": "OK",
@@ -8138,7 +9068,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/MyChildResponse"
+                    "$ref": "#/components/schemas/MyChild"
                   }
                 }
               },
@@ -8146,7 +9076,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/MyChildResponse"
+                    "$ref": "#/components/schemas/MyChild"
                   }
                 }
               },
@@ -8154,8 +9084,135 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/MyChildResponse"
+                    "$ref": "#/components/schemas/MyChild"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/guardian-requests": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Koppelverzoeken van deze ouder (fase 17).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyGuardianRequest"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyGuardianRequest"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyGuardianRequest"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Koppeling met een kind aanvragen op voor- en achternaam; het bestuur beoordeelt het verzoek in het portal.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianLinkRequestInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianLinkRequestInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardianLinkRequestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardianRequestCreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardianRequestCreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardianRequestCreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -12588,7 +13645,8 @@
           "internalNotes",
           "resultingMemberId",
           "provisioning",
-          "emailInUseBy"
+          "emailInUseBy",
+          "membershipType"
         ],
         "type": "object",
         "properties": {
@@ -12754,6 +13812,9 @@
               "null",
               "string"
             ]
+          },
+          "membershipType": {
+            "$ref": "#/components/schemas/MembershipType"
           }
         }
       },
@@ -12898,6 +13959,9 @@
           },
           "source": {
             "$ref": "#/components/schemas/ApplicationSource"
+          },
+          "membershipType": {
+            "$ref": "#/components/schemas/MembershipType"
           }
         }
       },
@@ -12943,7 +14007,8 @@
           "minor",
           "status",
           "source",
-          "submittedAt"
+          "submittedAt",
+          "membershipType"
         ],
         "type": "object",
         "properties": {
@@ -12976,6 +14041,9 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "membershipType": {
+            "$ref": "#/components/schemas/MembershipType"
           }
         }
       },
@@ -13014,6 +14082,33 @@
         "properties": {
           "memberId": {
             "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ApproveGuardianRequest": {
+        "required": [
+          "memberId"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AssignDanceGroupRequest": {
+        "required": [
+          "groupId"
+        ],
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           }
         }
@@ -13668,6 +14763,219 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "DanceGroup": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "active",
+          "leaders",
+          "members"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "leaders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DanceGroupMember"
+            }
+          }
+        }
+      },
+      "DanceGroupMember": {
+        "required": [
+          "memberId",
+          "fullName",
+          "age"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "age": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DanceGroupRef": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "DanceGroups": {
+        "required": [
+          "groups",
+          "unassigned"
+        ],
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DanceGroup"
+            }
+          },
+          "unassigned": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DanceGroupMember"
+            }
+          }
+        }
+      },
+      "DansgardeMember": {
+        "required": [
+          "memberId",
+          "fullName",
+          "memberNumber",
+          "birthDate",
+          "age",
+          "danceGroup",
+          "guardians",
+          "hasSuggestion",
+          "ownAccount",
+          "turnsFifteenOn"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "age": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "danceGroup": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DanceGroupRef"
+              }
+            ]
+          },
+          "guardians": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hasSuggestion": {
+            "type": "boolean"
+          },
+          "ownAccount": {
+            "type": "boolean"
+          },
+          "turnsFifteenOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "DansgardeOverview": {
+        "required": [
+          "total",
+          "withoutGroup",
+          "withoutGuardian",
+          "turningFifteenSoon",
+          "members",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutGroup": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutGuardian": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "turningFifteenSoon": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DansgardeMember"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DanceGroupRef"
             }
           }
         }
@@ -14586,6 +15894,297 @@
           "Other"
         ]
       },
+      "GuardianCandidateResponse": {
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "isMember"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "isMember": {
+            "type": "boolean"
+          }
+        }
+      },
+      "GuardianLinkRequestInput": {
+        "required": [
+          "childFirstName",
+          "childLastName",
+          "relationship",
+          "phone"
+        ],
+        "type": "object",
+        "properties": {
+          "childFirstName": {
+            "type": "string"
+          },
+          "childLastName": {
+            "type": "string"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/GuardianRelationship"
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "GuardianLinkRequestStatus": {
+        "enum": [
+          "Pending",
+          "Approved",
+          "Rejected"
+        ]
+      },
+      "GuardianRelationship": {
+        "enum": [
+          "Parent",
+          "Caregiver"
+        ]
+      },
+      "GuardianRequestCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "GuardianRequestView": {
+        "required": [
+          "id",
+          "requestedByName",
+          "requestedByEmail",
+          "childFirstName",
+          "childLastName",
+          "relationship",
+          "phone",
+          "status",
+          "createdAt",
+          "decidedAt",
+          "rejectionReason",
+          "memberId",
+          "memberName",
+          "candidates"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestedByName": {
+            "type": "string"
+          },
+          "requestedByEmail": {
+            "type": "string"
+          },
+          "childFirstName": {
+            "type": "string"
+          },
+          "childLastName": {
+            "type": "string"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/GuardianRelationship"
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/GuardianLinkRequestStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "rejectionReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "memberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "memberName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberCandidate"
+            }
+          }
+        }
+      },
+      "GuardianSuggestion": {
+        "required": [
+          "childMemberId",
+          "childName",
+          "childNumber",
+          "childAge",
+          "childDansgarde",
+          "parentMemberId",
+          "parentName",
+          "parentNumber",
+          "parentAge",
+          "email",
+          "parentUserId"
+        ],
+        "type": "object",
+        "properties": {
+          "childMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "childName": {
+            "type": "string"
+          },
+          "childNumber": {
+            "type": "string"
+          },
+          "childAge": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "childDansgarde": {
+            "type": "boolean"
+          },
+          "parentMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parentName": {
+            "type": "string"
+          },
+          "parentNumber": {
+            "type": "string"
+          },
+          "parentAge": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "email": {
+            "type": "string"
+          },
+          "parentUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "Voorstel: een lid jonger dan 15 en een ander lid met hetzelfde e-mailadres (fase 17). Alleen een voorstel."
+      },
+      "GuardianSuggestionRequest": {
+        "required": [
+          "childMemberId",
+          "parentMemberId"
+        ],
+        "type": "object",
+        "properties": {
+          "childMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parentMemberId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "GuardianView": {
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "email",
+          "relationship",
+          "isMember",
+          "phone",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/GuardianRelationship"
+          },
+          "isMember": {
+            "type": "boolean"
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "HealthEntry": {
         "required": [
           "name",
@@ -14701,6 +16300,25 @@
           }
         }
       },
+      "InviteGuardianRequest": {
+        "required": [
+          "email",
+          "name",
+          "relationship"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/GuardianRelationship"
+          }
+        }
+      },
       "IssueTicketsResponse": {
         "required": [
           "issued"
@@ -14765,6 +16383,22 @@
           }
         },
         "description": "Totalen voor het overzicht: aantallen per status en per categorie, deelnemers en lengte van de optocht."
+      },
+      "LinkGuardianRequest": {
+        "required": [
+          "userId",
+          "relationship"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/GuardianRelationship"
+          }
+        }
       },
       "Maintenance": {
         "required": [
@@ -14901,6 +16535,39 @@
           }
         },
         "description": "App-account van een lid; `AwaitingFirstSignIn`: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27)."
+      },
+      "MemberCandidate": {
+        "required": [
+          "memberId",
+          "name",
+          "memberNumber",
+          "age",
+          "guardians"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "age": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "guardians": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "MemberDetailResponse": {
         "required": [
@@ -15236,6 +16903,47 @@
           }
         }
       },
+      "MemberGuardians": {
+        "required": [
+          "applies",
+          "max",
+          "guardians",
+          "suggestions",
+          "requests",
+          "ownAccount"
+        ],
+        "type": "object",
+        "properties": {
+          "applies": {
+            "type": "boolean"
+          },
+          "max": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "guardians": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GuardianView"
+            }
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GuardianSuggestion"
+            }
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GuardianRequestView"
+            }
+          },
+          "ownAccount": {
+            "$ref": "#/components/schemas/OwnAccountInfo"
+          }
+        }
+      },
       "MemberLocalUpdateRequest": {
         "required": [
           "localStatusOverride",
@@ -15467,6 +17175,13 @@
           "Deceased"
         ]
       },
+      "MembershipType": {
+        "enum": [
+          "Individual",
+          "Dansgarde"
+        ],
+        "description": "Aanmelding als nieuw lid (fase 9b, REQ-APP-01..05). Leeft in een tijdelijke wachtrij tot het bestuur beslist. De\nbankgegevens staan hier alleen tot ze naar e-Boekhouden zijn doorgegeven of de aanvraag is afgewezen, en worden dan\ngewist (dataminimalisatie)."
+      },
       "MemberSummaryCountsResponse": {
         "required": [
           "active",
@@ -15652,17 +17367,33 @@
           }
         }
       },
-      "MyChildResponse": {
+      "MyChild": {
         "required": [
+          "memberId",
           "fullName",
+          "firstName",
           "memberNumber",
           "birthDate",
-          "status"
+          "age",
+          "status",
+          "ownAccount",
+          "canShowQr",
+          "groups"
         ],
         "type": "object",
         "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "fullName": {
             "type": "string"
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "memberNumber": {
             "type": "string"
@@ -15674,8 +17405,27 @@
             ],
             "format": "date"
           },
+          "age": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
           "status": {
             "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "ownAccount": {
+            "type": "boolean"
+          },
+          "canShowQr": {
+            "type": "boolean"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -15691,6 +17441,43 @@
           },
           "function": {
             "$ref": "#/components/schemas/GroupFunction"
+          }
+        }
+      },
+      "MyGuardianRequest": {
+        "required": [
+          "id",
+          "childFirstName",
+          "childLastName",
+          "status",
+          "createdAt",
+          "decidedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "childFirstName": {
+            "type": "string"
+          },
+          "childLastName": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GuardianLinkRequestStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -16059,9 +17846,13 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "dansgarde": {
+            "type": "boolean",
+            "default": false
           }
         },
-        "description": "Doelgroep (docs/02 §5.3). bool NotificationAudience.Everyone = alle accounts plus gasten met push-toestemming;\nbool NotificationAudience.Members = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en\nleden ontvangen ook de ouders/verzorgers (\"Namens …\")."
+        "description": "Doelgroep (docs/02 §5.3). bool NotificationAudience.Everyone = alle accounts plus gasten met push-toestemming;\nbool NotificationAudience.Members = iedereen met de rol Lid; anders de vereniging van rollen, groepen en leden. Bij groepen en\nleden ontvangen ook de ouders/verzorgers (\"Namens …\"). bool NotificationAudience.Dansgarde = alle leden met groep \"Dansgarde\" in\ne-Boekhouden (fase 17), ook met hun ouders."
       },
       "NotificationAudienceOptionsResponse": {
         "required": [
@@ -16425,6 +18216,68 @@
           }
         },
         "description": "Controlelijst voor offline scannen (fase 15, lichte variant): alleen in het geheugen van de scanner."
+      },
+      "OwnAccountInfo": {
+        "required": [
+          "hasAccount",
+          "email",
+          "age",
+          "canGetOwnAccount",
+          "availableFrom",
+          "guardiansUntil",
+          "pending"
+        ],
+        "type": "object",
+        "properties": {
+          "hasAccount": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "age": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "canGetOwnAccount": {
+            "type": "boolean"
+          },
+          "availableFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "guardiansUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "pending": {
+            "type": "boolean"
+          }
+        },
+        "description": "Eigen account van een lid: vanaf 15 kan het bestuur een eigen account geven (DateOnly? OwnAccountInfo.AvailableFrom); tot 18 blijven\nde ouders gekoppeld (DateOnly? OwnAccountInfo.GuardiansUntil)."
+      },
+      "OwnAccountRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
       },
       "PagedResultOfAccessScanRow": {
         "required": [
@@ -18143,6 +19996,20 @@
           }
         }
       },
+      "RejectGuardianRequest": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RenameDeviceRequest": {
         "required": [
           "name"
@@ -19469,6 +21336,9 @@
       "name": "AdminConfig"
     },
     {
+      "name": "AdminDansgarde"
+    },
+    {
       "name": "AdminDashboard"
     },
     {
@@ -19476,6 +21346,9 @@
     },
     {
       "name": "AdminGroups"
+    },
+    {
+      "name": "AdminGuardians"
     },
     {
       "name": "AdminMembers"

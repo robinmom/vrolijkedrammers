@@ -50,6 +50,12 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<Drammers.Modules.Membership.Guardians.GuardianRelation> GuardianRelations =>
         Set<Drammers.Modules.Membership.Guardians.GuardianRelation>();
 
+    public DbSet<Drammers.Modules.Membership.Guardians.GuardianLinkRequest> GuardianLinkRequests =>
+        Set<Drammers.Modules.Membership.Guardians.GuardianLinkRequest>();
+
+    public DbSet<Drammers.Modules.Membership.Guardians.GuardianSuggestionDismissal> GuardianSuggestionDismissals =>
+        Set<Drammers.Modules.Membership.Guardians.GuardianSuggestionDismissal>();
+
     public DbSet<Member> Members => Set<Member>();
 
     public DbSet<ExcludedMember> ExcludedMembers => Set<ExcludedMember>();

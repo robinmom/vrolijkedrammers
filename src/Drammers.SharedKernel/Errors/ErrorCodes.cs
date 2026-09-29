@@ -65,4 +65,13 @@ public static class ErrorCodes
     public const string InvalidStatusTransition = "INVALID_STATUS_TRANSITION";
     public const string TooManyDocuments = "TOO_MANY_DOCUMENTS";
     public const string CategoryCodeTaken = "CATEGORY_CODE_TAKEN";
+    public const string GuardianLimit = "GUARDIAN_LIMIT";
+    public const string GuardianExists = "GUARDIAN_EXISTS";
+    public const string GuardianNotFound = "GUARDIAN_NOT_FOUND";
+    public const string GuardianNotAllowed = "GUARDIAN_NOT_ALLOWED";
+    public const string GuardianRequestNotFound = "GUARDIAN_REQUEST_NOT_FOUND";
+    public const string GuardianRequestDecided = "GUARDIAN_REQUEST_DECIDED";
+    public const string OwnAccountNotAllowed = "OWN_ACCOUNT_NOT_ALLOWED";
+    public const string EmailInUse = "EMAIL_IN_USE";
+    public const string NotDansgarde = "NOT_DANSGARDE";
 }

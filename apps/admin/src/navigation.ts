@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Leden' | 'Optocht' | 'Toegang' | 'Beheer';
+  section?: 'Content' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -26,9 +26,12 @@ export const navItems: readonly NavItem[] = [
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   { label: 'Accountverzoeken', to: '/accountverzoeken', permission: 'member.approve', icon: 'gebruiker', section: 'Leden' },
+  { label: 'Koppelverzoeken', to: '/koppelverzoeken', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden' },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
+  { label: 'Overzicht', to: '/dansgarde', permission: 'member.read', icon: 'leden', section: 'Dansgarde' },
+  { label: 'Dansgroepen', to: '/dansgarde/groepen', permission: 'member.read', icon: 'groepen', section: 'Dansgarde' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },
   { label: 'Samenstellen', to: '/optocht/samenstellen', permission: 'parade.read', icon: 'audit', section: 'Optocht' },
   { label: 'Optocht en categorieën', to: '/optocht', permission: 'parade.config', icon: 'instellingen', section: 'Optocht' },

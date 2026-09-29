@@ -144,6 +144,11 @@ public sealed class AdminNotificationsController(
             labels.Add("Alle leden");
         }
 
+        if (audience.Dansgarde)
+        {
+            labels.Add("Dansgarde (met ouders)");
+        }
+
         var roles = audience.Roles ?? [];
         labels.AddRange(await db.Roles.AsNoTracking().Where(r => roles.Contains(r.Code)).OrderBy(r => r.SortOrder).Select(r => "Rol: " + r.Name).ToListAsync(cancellationToken));
         var groups = audience.Groups ?? [];

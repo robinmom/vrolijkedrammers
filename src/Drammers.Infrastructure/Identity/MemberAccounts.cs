@@ -87,6 +87,7 @@ public sealed class MemberAccounts(
             null => (AccountRequestStatus.Pending, "unknown-member-number"),
             _ when !string.Equals(member.Email?.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase) => (AccountRequestStatus.Pending, "email-mismatch"),
             _ when member.EffectiveStatus != MembershipStatus.Active => (AccountRequestStatus.Pending, "member-not-active"),
+            _ when IsYoungerThanOwnAccountAge(member.BirthDate) => (AccountRequestStatus.Pending, "minor"),
             _ when await HasAccountAsync(member.Id, cancellationToken) => (AccountRequestStatus.Duplicate, "has-account"),
             _ => (AccountRequestStatus.Approved, (string?)null),
         };
@@ -180,6 +181,43 @@ public sealed class MemberAccounts(
     }
 
     /// <summary>
+    /// "Eigen account geven" (fase 17): een lid vanaf 15 dat onder zijn ouders stond, krijgt een account op het eigen
+    /// e-mailadres (niet het adres uit e-Boekhouden, dat vaak van een ouder is). Idempotent per lid; een eerdere, nog niet
+    /// voltooide poging krijgt het nieuwe adres.
+    /// </summary>
+    public async Task<Guid> ProvisionOwnAccountAsync(Guid memberId, string loginEmail, CancellationToken cancellationToken)
+    {
+        var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == memberId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.MemberNotFound, "Lid niet gevonden.", DomainErrorKind.NotFound);
+        if (member.EffectiveStatus != MembershipStatus.Active)
+        {
+            throw new DomainException(ErrorCodes.MemberNotEligible, "Alleen een actief lid kan een account krijgen.", DomainErrorKind.Conflict);
+        }
+
+        if (await HasAccountAsync(memberId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.MemberHasAccount, "Dit lid heeft al een app-account.", DomainErrorKind.Conflict);
+        }
+
+        var sourceId = Members.Guardians.OwnAccountSource(memberId);
+        var saga = await GetOrCreateSagaAsync(ProvisioningSourceType.Manual, sourceId, memberId, cancellationToken);
+        if (saga.UserId is null)
+        {
+            saga.LoginEmail = loginEmail;
+            saga.EntraObjectId = null;
+            saga.Step = ProvisioningStep.Pending;
+            saga.CompletedAt = null;
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(ProvisioningSourceType.Manual, sourceId));
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("member.own-account-requested", "Member", memberId.ToString(), null, null), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return saga.Id;
+    }
+
+    /// <summary>
     /// Het bestuur zet het app-account van een lid terug naar "geen account": inlog, rollen en apparaten vervallen; het
     /// lid in e-Boekhouden blijft. Later kan opnieuw een account worden aangemaakt.
     /// </summary>
@@ -247,7 +285,7 @@ public sealed class MemberAccounts(
         {
             var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == memberId, cancellationToken)
                 ?? throw new DomainException(ErrorCodes.MemberNotFound, "Lid niet gevonden.", DomainErrorKind.NotFound);
-            var loginEmail = member.Email?.Trim().ToLowerInvariant()
+            var loginEmail = saga.LoginEmail ?? member.Email?.Trim().ToLowerInvariant()
                 ?? throw new DomainException(ErrorCodes.MemberNotEligible, "Het lid heeft geen e-mailadres in e-Boekhouden.", DomainErrorKind.Conflict);
 
             if (saga.EntraObjectId is null)
@@ -371,6 +409,8 @@ public sealed class MemberAccounts(
                     ?? throw new DomainException(ErrorCodes.AccountRequestNotFound, "Goedgekeurd verzoek niet gevonden.", DomainErrorKind.NotFound);
             case ProvisioningSourceType.Manual when message.SourceId.StartsWith("member:", StringComparison.Ordinal):
                 return Guid.Parse(message.SourceId["member:".Length..]);
+            case ProvisioningSourceType.Manual when message.SourceId.StartsWith("own:", StringComparison.Ordinal):
+                return Guid.Parse(message.SourceId["own:".Length..]);
             default:
                 throw new InvalidOperationException($"Onbekende provisioningbron {message.SourceType}/{message.SourceId}");
         }
@@ -420,7 +460,18 @@ public sealed class MemberAccounts(
         {
             throw new DomainException(ErrorCodes.MemberHasAccount, "Dit lid heeft al een app-account.", DomainErrorKind.Conflict);
         }
+
+        if (IsYoungerThanOwnAccountAge(member.BirthDate))
+        {
+            throw new DomainException(ErrorCodes.MemberNotEligible,
+                $"Leden jonger dan {Modules.Membership.Applications.MembershipApplication.MinimumAgeOwnAccount} krijgen geen eigen account: koppel een ouder of verzorger.",
+                DomainErrorKind.Conflict);
+        }
     }
+
+    private bool IsYoungerThanOwnAccountAge(DateOnly? birthDate) =>
+        Members.Guardians.AgeOn(birthDate, DateOnly.FromDateTime(clock.UtcNow.UtcDateTime)) is { } age
+        && age < Modules.Membership.Applications.MembershipApplication.MinimumAgeOwnAccount;
 
     private Task<bool> HasAccountAsync(Guid memberId, CancellationToken cancellationToken) =>
         db.Users.AnyAsync(u => u.MemberId == memberId && u.AccountStatus != AccountStatus.Deleted, cancellationToken);

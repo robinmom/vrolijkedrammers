@@ -32,6 +32,13 @@ public enum ApplicationSource
 /// bankgegevens staan hier alleen tot ze naar e-Boekhouden zijn doorgegeven of de aanvraag is afgewezen, en worden dan
 /// gewist (dataminimalisatie).
 /// </summary>
+/// <summary>Soort lidmaatschap bij Lid worden (fase 17): gewoon lid of dansgarde (vrij veld "groep" in e-Boekhouden).</summary>
+public enum MembershipType
+{
+    Individual,
+    Dansgarde,
+}
+
 public sealed class MembershipApplication
 {
     public Guid Id { get; set; }
@@ -39,6 +46,8 @@ public sealed class MembershipApplication
     public ApplicationStatus Status { get; set; }
 
     public ApplicationSource Source { get; set; }
+
+    public MembershipType MembershipType { get; set; }
 
     // --- Aanvrager (het nieuwe lid) ---
     public required string FirstName { get; set; }
@@ -123,8 +132,8 @@ public sealed class MembershipApplication
         return BirthDate > date.AddYears(-age) ? age - 1 : age;
     }
 
-    /// <summary>OQ-15 (besluit 2026-09-27): vanaf 16 een eigen account; jonger via de ouder/verzorger.</summary>
-    public const int MinimumAgeOwnAccount = 16;
+    /// <summary>OQ-15 (besluit 2026-09-29, fase 17): vanaf 15 een eigen account; jonger via de ouder/verzorger.</summary>
+    public const int MinimumAgeOwnAccount = 15;
 
     /// <summary>Lid worden kan vanaf 5 jaar (dansgarde).</summary>
     public const int MinimumAgeMembership = 5;

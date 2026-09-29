@@ -32,7 +32,7 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
         var rows = await query.OrderByDescending(a => a.SubmittedAt).Skip((p - 1) * size).Take(size).ToListAsync(cancellationToken);
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
         return new PagedResult<ApplicationSummaryResponse>(
-            [.. rows.Select(a => new ApplicationSummaryResponse(a.Id, a.FullName, a.City, a.AgeOn(today), a.IsMinorOn(today), a.Status, a.Source, a.SubmittedAt))],
+            [.. rows.Select(a => new ApplicationSummaryResponse(a.Id, a.FullName, a.City, a.AgeOn(today), a.IsMinorOn(today), a.Status, a.Source, a.SubmittedAt, a.MembershipType))],
             p, size, total);
     }
 
@@ -58,7 +58,8 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
             a.Id, a.Status, a.Source, a.FirstName, a.NamePrefix, a.LastName, a.FullName, a.Gender, a.BirthDate, a.AgeOn(today), a.IsMinorOn(today),
             a.AddressLine, a.PostalCode, a.City, a.Email, a.Phone, a.GuardianName, a.GuardianPhone,
             MembershipApplications.MaskIban(a.Iban), a.AccountHolder, a.MandateReference, a.MandateConsentAt, a.ConsentPrivacyAt, a.ConsentPhoto,
-            a.SubmittedAt, handler, a.HandledAt, a.DecisionAt, a.RejectionReason, a.InternalNotes, a.ResultingMemberId, provisioning, emailInUseBy);
+            a.SubmittedAt, handler, a.HandledAt, a.DecisionAt, a.RejectionReason, a.InternalNotes, a.ResultingMemberId, provisioning, emailInUseBy,
+            a.MembershipType);
     }
 
     [HttpPost("{id:guid}/start-review")]
@@ -108,7 +109,8 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
 }
 
 public sealed record ApplicationSummaryResponse(
-    Guid Id, string FullName, string City, int Age, bool Minor, ApplicationStatus Status, ApplicationSource Source, DateTime? SubmittedAt);
+    Guid Id, string FullName, string City, int Age, bool Minor, ApplicationStatus Status, ApplicationSource Source, DateTime? SubmittedAt,
+    MembershipType MembershipType);
 
 public sealed record ApplicationProvisioningResponse(Guid Id, ProvisioningStep Step, string? MemberNumber, int Attempts, string? LastError);
 
@@ -118,7 +120,7 @@ public sealed record ApplicationDetailResponse(
     string? GuardianName, string? GuardianPhone, string? IbanMasked, string? AccountHolder, string MandateReference, DateTime? MandateConsentAt,
     DateTime ConsentPrivacyAt, bool ConsentPhoto, DateTime? SubmittedAt, string? HandledBy, DateTime? HandledAt, DateTime? DecisionAt,
     string? RejectionReason, string? InternalNotes, Guid? ResultingMemberId, ApplicationProvisioningResponse? Provisioning,
-    string? EmailInUseBy);
+    string? EmailInUseBy, MembershipType MembershipType);
 
 public sealed record RejectApplicationRequest([param: Required, StringLength(500, MinimumLength = 3)] string Reason);
 

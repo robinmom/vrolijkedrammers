@@ -616,14 +616,30 @@ legend {
   color: var(--dvd-accent-text);
 }
 
+/* Donkere tekst: groen op de groene tint haalt net geen 4,5:1 (WCAG AA). */
 .alert-success {
   background: var(--dvd-tint-green);
-  color: var(--dvd-success-text);
+  color: var(--dvd-text-primary);
+  border-left: 4px solid var(--dvd-success-text);
 }
 
 .alert-warning {
   background: var(--dvd-tint-yellow);
   color: var(--dvd-text-primary);
+}
+
+.alert-info {
+  background: var(--dvd-tint-blue);
+  color: var(--dvd-text-primary);
+}
+
+ul.alert {
+  padding-left: 32px;
+}
+
+.alert .toolbar {
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 .banner {
@@ -1366,4 +1382,71 @@ legend {
 .subheading {
   font-size: 15px;
   margin: 16px 0 4px;
+}
+
+/* Filterchips (fase 17: dansgroepen). */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--dvd-border);
+  background: transparent;
+  color: var(--dvd-text-primary);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip.active {
+  background: var(--dvd-tint-blue);
+  border-color: transparent;
+  color: var(--dvd-link-text);
+  font-weight: 600;
+}
+
+.toolbar > .grow {
+  flex: 1;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.card-grid > .card {
+  margin-bottom: 0;
+}
+
+/* Tabs (fase 17: koppelverzoeken). */
+.tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--dvd-border);
+  margin-bottom: 20px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 8px;
+  font: inherit;
+  font-weight: 500;
+  color: var(--dvd-text-secondary);
+  cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--dvd-link-text);
+  border-bottom-color: var(--dvd-link-text);
+  font-weight: 600;
 }

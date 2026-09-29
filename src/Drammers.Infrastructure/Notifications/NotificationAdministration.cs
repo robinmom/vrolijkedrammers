@@ -158,7 +158,7 @@ public sealed class NotificationAdministration(DrammersDbContext db, IOutbox out
 
         // Alleen notification.send.group: uitsluitend groepen waar de afzender zelf (als actief lid) in zit.
         var audience = draft.Audience;
-        if (audience.Everyone || audience.Members || (audience.Roles?.Count ?? 0) > 0 || (audience.MemberIds?.Count ?? 0) > 0
+        if (audience.Everyone || audience.Members || audience.Dansgarde || (audience.Roles?.Count ?? 0) > 0 || (audience.MemberIds?.Count ?? 0) > 0
             || (audience.Groups?.Count ?? 0) == 0 || sender.MemberId is not { } memberId)
         {
             throw new DomainException(ErrorCodes.Forbidden, "Je mag alleen meldingen versturen aan je eigen groep(en).", DomainErrorKind.Forbidden);

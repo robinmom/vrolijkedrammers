@@ -663,3 +663,58 @@ export function usePrivacyRequests(page: number) {
     queryFn: async () => required((await api.GET('/api/v1/admin/privacy-requests', { params: { query: { page, pageSize: 25 } } })).data),
   });
 }
+
+// ----- Fase 17: ouders/verzorgers en dansgarde -----
+
+export type MemberGuardians = Schemas['MemberGuardians'];
+export type GuardianSuggestion = Schemas['GuardianSuggestion'];
+export type GuardianRequestView = Schemas['GuardianRequestView'];
+export type DansgardeOverview = Schemas['DansgardeOverview'];
+export type DanceGroups = Schemas['DanceGroups'];
+
+export function useMemberGuardians(memberId: string, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['member-guardians', memberId],
+    enabled,
+    queryFn: async () => required((await api.GET('/api/v1/admin/members/{id}/guardians', { params: { path: { id: memberId } } })).data),
+  });
+}
+
+export function useGuardianCandidates(search: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['guardian-candidates', search],
+    enabled: search.trim().length >= 2,
+    queryFn: async () => required((await api.GET('/api/v1/admin/guardian-candidates', { params: { query: { search } } })).data),
+  });
+}
+
+export function useGuardianRequests(status: 'Pending' | 'Approved' | 'Rejected' | null, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['guardian-requests', status],
+    enabled,
+    queryFn: async () =>
+      required((await api.GET('/api/v1/admin/guardian-requests', { params: { query: status ? { status } : {} } })).data),
+  });
+}
+
+export function useGuardianSuggestions(enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['guardian-suggestions'],
+    enabled,
+    queryFn: async () => required((await api.GET('/api/v1/admin/guardian-suggestions')).data),
+  });
+}
+
+export function useDansgarde() {
+  const api = useApi();
+  return useQuery({ queryKey: ['dansgarde'], queryFn: async () => required((await api.GET('/api/v1/admin/dansgarde')).data) });
+}
+
+export function useDanceGroups() {
+  const api = useApi();
+  return useQuery({ queryKey: ['dance-groups'], queryFn: async () => required((await api.GET('/api/v1/admin/dansgarde/groups')).data) });
+}

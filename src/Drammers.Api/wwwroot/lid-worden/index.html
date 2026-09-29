@@ -20,9 +20,15 @@
     <main>
       <section id="formulier" class="card" aria-labelledby="titel-formulier">
         <h2 id="titel-formulier">Aanmelden als lid</h2>
-        <p class="muted">Lid worden kan vanaf 5 jaar. Ben je jonger dan 16, dan vult je ouder of verzorger het formulier mee in. Het bestuur beoordeelt elke aanmelding; daarna hoor je van ons.</p>
+        <p class="muted">Lid worden kan vanaf 5 jaar. Ben je jonger dan 15, dan vult je ouder of verzorger het formulier mee in. Het bestuur beoordeelt elke aanmelding; daarna hoor je van ons.</p>
 
         <form id="aanmelden" novalidate>
+          <fieldset>
+            <legend>Soort lidmaatschap</legend>
+            <label class="check choice"><input type="radio" name="membershipType" value="Individual" checked /> <span><strong>Lidmaatschap 1 persoon</strong><br /><span class="muted">Lid van de vereniging: activiteiten, optocht en carnaval.</span></span></label>
+            <label class="check choice"><input type="radio" name="membershipType" value="Dansgarde" /> <span><strong>Dansgarde</strong><br /><span class="muted">Dansen bij de dansgarde (vanaf 5 jaar). Het bestuur deelt het nieuwe lid daarna in bij een dansgroep.</span></span></label>
+          </fieldset>
+
           <fieldset>
             <legend>Gegevens van het nieuwe lid</legend>
             <div class="row three">
@@ -49,7 +55,7 @@
 
           <fieldset id="ouder" hidden>
             <legend>Ouder of verzorger</legend>
-            <p class="muted">Het nieuwe lid is jonger dan 16. De ouder of verzorger krijgt het account voor de app en ontvangt de e-mails.</p>
+            <p class="muted">Het nieuwe lid is jonger dan 15. De ouder of verzorger krijgt het account voor de app en ontvangt de e-mails.</p>
             <div class="row two">
               <label>Naam ouder/verzorger<input name="guardianName" maxlength="100" autocomplete="name" /></label>
               <label>Telefoon ouder/verzorger<input name="guardianPhone" type="tel" maxlength="30" autocomplete="tel" /></label>

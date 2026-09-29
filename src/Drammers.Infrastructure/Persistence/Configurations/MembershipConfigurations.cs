@@ -162,6 +162,34 @@ internal sealed class GuardianRelationConfiguration : IEntityTypeConfiguration<D
     }
 }
 
+internal sealed class GuardianLinkRequestConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Guardians.GuardianLinkRequest>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Guardians.GuardianLinkRequest> builder)
+    {
+        builder.ToTable("GuardianLinkRequest", Schemas.Membership);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.Property(r => r.ChildFirstName).HasMaxLength(50);
+        builder.Property(r => r.ChildLastName).HasMaxLength(80);
+        builder.Property(r => r.Phone).HasMaxLength(30);
+        builder.Property(r => r.RejectionReason).HasMaxLength(500);
+        builder.HasIndex(r => new { r.Status, r.CreatedAt });
+        builder.HasIndex(r => r.RequestedByUserId);
+        builder.HasOne<Drammers.Modules.Identity.Users.User>().WithMany().HasForeignKey(r => r.RequestedByUserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Member>().WithMany().HasForeignKey(r => r.MemberId).OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
+internal sealed class GuardianSuggestionDismissalConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Guardians.GuardianSuggestionDismissal>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Guardians.GuardianSuggestionDismissal> builder)
+    {
+        builder.ToTable("GuardianSuggestionDismissal", Schemas.Membership);
+        builder.HasKey(d => new { d.ChildMemberId, d.ParentMemberId });
+        builder.HasOne<Member>().WithMany().HasForeignKey(d => d.ChildMemberId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Member>().WithMany().HasForeignKey(d => d.ParentMemberId).OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
 internal sealed class ExcludedMemberConfiguration : IEntityTypeConfiguration<ExcludedMember>
 {
     public void Configure(EntityTypeBuilder<ExcludedMember> builder)

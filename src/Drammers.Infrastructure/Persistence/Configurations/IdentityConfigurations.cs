@@ -29,6 +29,7 @@ public static class DefaultRoles
     public const string Redactie = "redactie";
     public const string Bestuur = "bestuur";
     public const string BeheerderIt = "beheerder-it";
+    public const string Kassa = "kassa";
 
     private static readonly string[] MemberBasics =
         [P.MemberReadOwn, P.EventRead, P.NewsRead, P.PhotoRead, P.NotificationReadOwn, P.TicketReadOwn];
@@ -58,10 +59,13 @@ public static class DefaultRoles
              P.EventManage, P.NewsManage, P.PhotoManage, P.NotificationSend, P.NotificationSendUrgent, P.ParadeRegister,
              P.ParadeRead, P.ParadeManage, P.ParadeManageFinal, P.ParadeAssignStartNumber, P.ParadeImportArrivalTimes,
              P.ParadeExport, P.ParadeConfig, P.TicketScan, P.TicketScanDetails, P.TicketRead, P.TicketManage,
-             P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),
+             P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge, P.SaleManage]),
         new(12, BeheerderIt, "Beheerder (IT)", "Technisch beheer, zonder inhoudelijke rechten op betalingen en goedkeuringen (systeemrol)",
             IsSystem: true, IsAssignableBySync: false,
             [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),
+        // Kassa (fase 19): munten-QR's scannen met de scanner in de app en de bestelling uitgeven; alles komt in de Kassalog.
+        new(13, Kassa, "Kassa", "Mag bij de kassa munten-QR's scannen en bestellingen uitgeven", false, false,
+            [.. MemberBasics, P.SaleCollect]),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

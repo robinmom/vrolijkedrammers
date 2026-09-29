@@ -5,12 +5,15 @@ namespace Drammers.Modules.Ticketing.Qr;
 /// <summary>
 /// QR-payload (ADR-005): vaste binaire layout van 97 bytes, base45-gecodeerd (RFC 9285).
 /// <c>| v 1 | ref 16 | cv 2 | did 8 | iat 4 | exp 2 | sig 64 |</c>. Versie 1 is ondertekend met de hardwaresleutel van
-/// het toestel, versie 2 door de server (fallback). De handtekening is ECDSA P-256/SHA-256 als r‖s over de eerste 33 bytes.
+/// het toestel, versie 2 door de server (fallback). Versie 3 is een gekochte kaart (fase 19): door de server ondertekend,
+/// zonder toestel en zonder verlooptijd (<c>did</c> en <c>exp</c> zijn 0); de QR vervalt na één keer scannen.
+/// De handtekening is ECDSA P-256/SHA-256 als r‖s over de eerste 33 bytes.
 /// </summary>
 public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, byte[] DeviceId, long IssuedAt, int ValidFor, byte[] Signature)
 {
     public const byte DeviceSigned = 1;
     public const byte ServerSigned = 2;
+    public const byte OrderTicket = 3;
     public const int UnsignedLength = 33;
     public const int SignatureLength = 64;
     public const int Length = UnsignedLength + SignatureLength;
@@ -44,7 +47,7 @@ public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, 
     {
         // Geen Trim(): de spatie is een geldig base45-teken en kan aan het begin of eind van een code staan.
         var bytes = Base45.TryDecode(text.Trim('\r', '\n', '\t'));
-        if (bytes is not { Length: Length } || bytes[0] is not (DeviceSigned or ServerSigned))
+        if (bytes is not { Length: Length } || bytes[0] is not (DeviceSigned or ServerSigned or OrderTicket))
         {
             return null;
         }

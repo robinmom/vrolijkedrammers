@@ -137,6 +137,8 @@ module api 'modules/appservice.bicep' = {
       Push__Provider: pushProvider == 'Expo' ? 'Expo' : 'Simulated'
       Email__Endpoint: email.outputs.endpoint
       Email__SenderDomain: email.outputs.senderDomain
+      // Kaartverkoop (fase 19): links in e-mails van de nachtelijke job; de Mollie-sleutel staat in Key Vault (mollie-api-key).
+      Sales__PublicBaseUrl: 'https://app-dvd-api-${environmentName}.azurewebsites.net'
       Auth__Authority: externalIdAuthority
       Auth__Audience: apiClientId
       Auth__EnvironmentAccessClaim: environmentAccessClaim

@@ -73,6 +73,7 @@ public static class DependencyInjection
                 services.AddScheduledJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Schedule, TimeSpan.FromHours(20));
                 services.AddScheduledJob<DataRetentionJob>(DataRetentionJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 30), TimeSpan.FromHours(20));
                 services.AddScheduledJob<ParadeDeadlineReminderJob>(ParadeDeadlineReminderJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 18, 0), TimeSpan.FromHours(20));
+                services.AddScheduledJob<Sales.SaleExpiryJob>(Sales.SaleExpiryJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 45), TimeSpan.FromHours(20));
             }
         }
 
@@ -119,6 +120,12 @@ public static class DependencyInjection
         {
             services.AddSingleton<IEmailSender, AcsEmailSender>();
         }
+
+        // Mollie (fase 19): API-sleutel uit Key Vault (secret mollie-api-key), test-sleutel buiten productie.
+        services.Configure<Payments.MollieOptions>(configuration.GetSection(Payments.MollieOptions.SectionName));
+        services.Configure<Sales.SalesOptions>(configuration.GetSection(Sales.SalesOptions.SectionName));
+        services.AddMemoryCache();
+        services.AddHttpClient<Payments.IMollieClient, Payments.MollieClient>(http => http.Timeout = TimeSpan.FromSeconds(30));
 
         // e-Boekhouden (ADR-010): token uit Key Vault; leegmaken van leden alleen in Dev en Acc.
         services.Configure<EBoekhoudenOptions>(configuration.GetSection(EBoekhoudenOptions.SectionName));
@@ -224,6 +231,9 @@ public static class DependencyInjection
         services.AddScoped<Ticketing.TicketAdministration>();
         services.AddScoped<Ticketing.DoorAccess>();
         services.AddScoped<Ticketing.AccessStatistics>();
+        services.AddScoped<Sales.TicketSales>();
+        services.AddScoped<Sales.SaleAdministration>();
+        services.TryAddScoped<Sales.SaleExpiryJob>();
         services.AddScoped<ParadePublicRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeStatusMailHandler>();
         services.TryAddScoped<ParadeDeadlineReminderJob>();

@@ -46,6 +46,13 @@ public class AuthorizationConventionTests
         $"{nameof(ParadeController)}.{nameof(ParadeController.VerifyPublic)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.ResendPublic)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.PublicStatus)}",
+        // Fase 19: kaartverkoop zonder account en de webhook van Mollie (status altijd bij Mollie opgehaald).
+        $"{nameof(SalesController)}.{nameof(SalesController.Products)}",
+        $"{nameof(SalesController)}.{nameof(SalesController.Order)}",
+        $"{nameof(SalesController)}.{nameof(SalesController.Get)}",
+        $"{nameof(SalesController)}.{nameof(SalesController.Pay)}",
+        $"{nameof(SalesController)}.{nameof(SalesController.Waitlist)}",
+        $"{nameof(MollieWebhookController)}.{nameof(MollieWebhookController.Webhook)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

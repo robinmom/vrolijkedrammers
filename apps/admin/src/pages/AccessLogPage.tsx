@@ -15,7 +15,7 @@ const outcomeLabels: Record<string, { label: string; tone: string }> = {
   Refused: { label: 'Geweigerd', tone: 'error' },
 };
 
-const reasonLabels: Record<string, string> = {
+export const reasonLabels: Record<string, string> = {
   Unreadable: 'Onleesbare code',
   UnknownTicket: 'Onbekend ticket',
   Blocked: 'Ticket geblokkeerd',

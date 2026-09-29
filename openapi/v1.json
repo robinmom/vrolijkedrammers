@@ -571,6 +571,137 @@
         }
       }
     },
+    "/api/v1/admin/access-stats": {
+      "get": {
+        "tags": [
+          "AdminAccessStats"
+        ],
+        "summary": "Statistieken van één carnavalsdag (`dag-2027-02-13`) of activiteit (event-id).",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 40,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessStats"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessStats"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessStats"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/access-stats/overview": {
+      "get": {
+        "tags": [
+          "AdminAccessStats"
+        ],
+        "summary": "Alle carnavalsdagen en activiteiten met toegangscontrole naast elkaar.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessStats"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessStats"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/access-stats/dashboard": {
+      "get": {
+        "tags": [
+          "AdminAccessStats"
+        ],
+        "summary": "Blok op het dashboard: lopende (of laatste) dag/activiteit en \"klaar voor de deur\".",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessDashboard"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessDashboard"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/account-requests": {
       "get": {
         "tags": [
@@ -10902,6 +11033,32 @@
           }
         }
       },
+      "AccessDashboard": {
+        "required": [
+          "live",
+          "stats",
+          "readiness"
+        ],
+        "type": "object",
+        "properties": {
+          "live": {
+            "type": "boolean"
+          },
+          "stats": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessStats"
+              }
+            ]
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/DoorReadiness"
+          }
+        }
+      },
       "AccessDecision": {
         "enum": [
           "Admitted",
@@ -11169,6 +11326,82 @@
             ]
           }
         }
+      },
+      "AccessStats": {
+        "required": [
+          "moment",
+          "activeMembers",
+          "inside",
+          "scans",
+          "repeatsSameDevice",
+          "repeatsOtherDevice",
+          "refused",
+          "viaQr",
+          "viaCheckIn",
+          "offlineScans",
+          "offlineConflicts",
+          "perHour",
+          "refusalReasons"
+        ],
+        "type": "object",
+        "properties": {
+          "moment": {
+            "$ref": "#/components/schemas/AccessEvent"
+          },
+          "activeMembers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inside": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scans": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "repeatsSameDevice": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "repeatsOtherDevice": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refused": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "viaQr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "viaCheckIn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "offlineScans": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "offlineConflicts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "perHour": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HourBucket"
+            }
+          },
+          "refusalReasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReasonCount"
+            }
+          }
+        },
+        "description": "Statistieken van één toegangsmoment (carnavalsdag of activiteit met toegangscontrole)."
       },
       "AccessStatus": {
         "required": [
@@ -13650,6 +13883,34 @@
           "Other"
         ]
       },
+      "DoorReadiness": {
+        "required": [
+          "activeMembers",
+          "bound",
+          "boundWithHardwareKey",
+          "notBound"
+        ],
+        "type": "object",
+        "properties": {
+          "activeMembers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bound": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "boundWithHardwareKey": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notBound": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "\"Klaar voor de deur\": hoeveel actieve leden hun ledenticket aan een telefoon hebben gekoppeld (Mijn QR) en hoeveel\nniet — die laatsten moeten bij de deur via de ledenlijst worden ingecheckt."
+      },
       "EraseRequest": {
         "required": [
           "confirmation"
@@ -14339,6 +14600,29 @@
             "type": "string"
           }
         }
+      },
+      "HourBucket": {
+        "required": [
+          "hourStart",
+          "arrivals",
+          "scans"
+        ],
+        "type": "object",
+        "properties": {
+          "hourStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "arrivals": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scans": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Aankomsten en scans in één uur (begin van het uur in UTC; het portal toont Loil-tijd)."
       },
       "IFormFile": {
         "type": "string",
@@ -17538,6 +17822,22 @@
           }
         }
       },
+      "ReasonCount": {
+        "required": [
+          "reason",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "RegisterDeviceRequest": {
         "required": [
           "installationId",
@@ -19152,6 +19452,9 @@
     },
     {
       "name": "AccountRequests"
+    },
+    {
+      "name": "AdminAccessStats"
     },
     {
       "name": "AdminAccounts"

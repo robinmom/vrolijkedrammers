@@ -12027,10 +12027,18 @@ export interface components {
             newStartNumber: null | number;
             published: boolean;
         };
+        /**
+         * @description Een fout in een importbestand: string ImportIssue.Message = wat er mis is en waarom, string? ImportIssue.Advice = wat je eraan
+         *     doet; met de gegevens uit het bestand (opgave, startnummer, naam) zodat de regel terug te vinden is.
+         */
         ImportIssue: {
             /** Format: int32 */
             row: number;
             message: string;
+            advice?: null | string;
+            registrationNumber?: null | string;
+            startNumber?: null | string;
+            groupName?: null | string;
         };
         InboxItem: {
             /** Format: uuid */

@@ -227,20 +227,28 @@ public class ParadeExchangeTests(SqlServerFixture sql) : IAsyncLifetime
         sheet.Cell(7, 2).Value = 2;          // vaste plek
         sheet.Cell(8, 2).Value = "tien";     // geen nummer
         sheet.Cell(9, 2).Value = 9;          // niet goedgekeurd
-        sheet.Cell(10, 1).Value = 42;        // onbekende opgave
+        sheet.Cell(10, 1).Value = 42;        // onbekende opgave, zonder naam (zoals regels in het bronbestand)
+        sheet.Cell(10, 2).Value = 20;
+        sheet.Cell(11, 1).Value = 99;        // vaste plek mét opgavenummer, zoals in het bronbestand: wordt overgeslagen
+        sheet.Cell(11, 2).Value = 1;
+        sheet.Cell(11, 3).Value = "Geluidswagen";
         var preview = await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade/start-numbers/import/preview", File(workbook)));
         var errors = preview.GetProperty("errors").EnumerateArray().Select(e => e.GetProperty("message").GetString()!).ToList();
         Assert.Equal(4, errors.Count);
         Assert.Contains(errors, e => e.Contains("vaste plek", StringComparison.Ordinal));
         Assert.Contains(errors, e => e.Contains("\"tien\"", StringComparison.Ordinal));
-        Assert.Contains(errors, e => e.Contains("niet goedgekeurd", StringComparison.Ordinal));
-        Assert.Contains(errors, e => e.Contains("Opgave 42 bestaat niet", StringComparison.Ordinal));
+        Assert.Contains(errors, e => e.Contains("status \"ingediend\"; alleen goedgekeurde", StringComparison.Ordinal));
+        Assert.Contains(errors, e => e.Contains("geen inschrijving met opgavenummer 42 (en de regel heeft geen groepsnaam)", StringComparison.Ordinal));
+        var unknown = preview.GetProperty("errors").EnumerateArray().Single(e => e.GetProperty("registrationNumber").GetString() == "42");
+        Assert.Equal(("20", 10), (unknown.GetProperty("startNumber").GetString(), unknown.GetProperty("row").GetInt32()));
+        Assert.Contains("Haal het startnummer", unknown.GetProperty("advice").GetString(), StringComparison.Ordinal);
         var version = preview.GetProperty("version").GetInt32();
         await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade/start-numbers/import", File(workbook, version: version)), HttpStatusCode.UnprocessableEntity);
         Assert.False(await WithDbAsync(db => db.ParadeRegistrations.AnyAsync(r => r.StartNumber != null)));
 
         // Dubbel startnummer wordt ook gevonden.
         sheet.Cell(10, 1).Clear();
+        sheet.Cell(10, 2).Clear();
         sheet.Cell(9, 2).Clear();
         sheet.Cell(7, 2).Value = 7;
         sheet.Cell(8, 2).Value = 7;

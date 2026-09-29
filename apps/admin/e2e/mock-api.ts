@@ -229,7 +229,14 @@ export class MockApi {
       newStartNumber: number | null;
       published: boolean;
     }[];
-    errors: { row: number; message: string }[];
+    errors: {
+      row: number;
+      message: string;
+      advice?: string | null;
+      registrationNumber?: string | null;
+      startNumber?: string | null;
+      groupName?: string | null;
+    }[];
   } = { version: 4, rows: 2, changes: [], errors: [] };
   reviews: { action: string; reason: string | null }[] = [];
   lineupCalls: { path: string; body: unknown }[] = [];

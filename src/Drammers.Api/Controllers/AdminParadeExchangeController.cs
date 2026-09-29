@@ -159,6 +159,7 @@ public sealed class AdminParadeExchangeController(ParadeExchange exchange, IAudi
                     var cells = sheet.Row(headerRow).CellsUsed().ToList();
                     var opgave = cells.FirstOrDefault(c => Header(c) == "opgave");
                     var start = cells.FirstOrDefault(c => Header(c) == "startnummer");
+                    var name = cells.FirstOrDefault(c => Header(c) is "naam groep" or "naam");
                     if (opgave is null || start is null)
                     {
                         continue;
@@ -170,9 +171,10 @@ public sealed class AdminParadeExchangeController(ParadeExchange exchange, IAudi
                     {
                         var number = Text(sheet.Cell(r, opgave.Address.ColumnNumber));
                         var startNumber = Text(sheet.Cell(r, start.Address.ColumnNumber));
+                        var groupName = name is null ? null : Text(sheet.Cell(r, name.Address.ColumnNumber));
                         if (number is not null || startNumber is not null)
                         {
-                            rows.Add(new StartNumberImportRow(r, number, startNumber));
+                            rows.Add(new StartNumberImportRow(r, number, startNumber, groupName));
                         }
                     }
 

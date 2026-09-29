@@ -7,6 +7,7 @@ import { uploadJson } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
+import { ImportErrors } from '../components/ImportErrors';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { formatDate, formatDateTime } from '../format';
 
@@ -328,20 +329,7 @@ function ImportArrivals({ onDone }: { onDone: (message: string) => void }) {
         {preview ? (
           <>
             {preview.location ? <p>Meldplek: {preview.location}</p> : null}
-            {preview.errors.length ? (
-              <div className="alert alert-error" role="alert">
-                <strong>
-                  {preview.errors.length} fout{preview.errors.length === 1 ? '' : 'en'}: er wordt niets ingelezen.
-                </strong>
-                <ul>
-                  {preview.errors.map((e, i) => (
-                    <li key={i}>
-                      Regel {e.row}: {e.message}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            <ImportErrors errors={preview.errors} withRegistrationNumber={false} />
             {preview.changes.length ? (
               <div className="table-scroll" tabIndex={0} role="region" aria-label="Wijzigingen">
                 <table className="table compact">

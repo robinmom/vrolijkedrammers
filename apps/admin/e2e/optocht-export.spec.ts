@@ -75,8 +75,22 @@ test('fase 12c: exporteren en startnummers importeren met voorbeeld', async ({ p
     rows: 3,
     changes: [],
     errors: [
-      { row: 5, message: 'Startnummer 2 bij opgave 1 is van de vaste plek "Verenigingswagen".' },
-      { row: 8, message: 'Opgave 42 bestaat niet in deze optocht.' },
+      {
+        row: 5,
+        message: 'Startnummer 2 is gereserveerd voor de vaste plek "Verenigingswagen"; groepen beginnen bij 4.',
+        advice: 'Kies voor De Knotwilgen een startnummer vanaf 4.',
+        registrationNumber: '1',
+        startNumber: '2',
+        groupName: 'De Knotwilgen',
+      },
+      {
+        row: 68,
+        message: 'Er is in deze optocht geen inschrijving met opgavenummer 65 (en de regel heeft geen groepsnaam).',
+        advice: 'Haal het startnummer bij deze regel weg of verwijder de regel.',
+        registrationNumber: '65',
+        startNumber: '20',
+        groupName: null,
+      },
     ],
   };
   // De export staat op Samenstellen (niet meer op Inschrijvingen).
@@ -96,7 +110,9 @@ test('fase 12c: exporteren en startnummers importeren met voorbeeld', async ({ p
     buffer: Buffer.from('xlsx'),
   });
   await expect(dialog.getByText('2 fouten: er wordt niets ingelezen.')).toBeVisible();
-  await expect(dialog.getByText('Regel 8: Opgave 42 bestaat niet in deze optocht.')).toBeVisible();
+  const fout = dialog.getByRole('row', { name: /^68 65 20 geen/ });
+  await expect(fout.getByRole('cell', { name: /geen inschrijving met opgavenummer 65/ })).toBeVisible();
+  await expect(fout.getByRole('cell', { name: /Haal het startnummer/ })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Inlezen' })).toBeDisabled();
   await expectNoSeriousA11yIssues(page);
 

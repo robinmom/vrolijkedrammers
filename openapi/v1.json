@@ -17634,8 +17634,33 @@
           },
           "message": {
             "type": "string"
+          },
+          "advice": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "registrationNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
-        }
+        },
+        "description": "Een fout in een importbestand: string ImportIssue.Message = wat er mis is en waarom, string? ImportIssue.Advice = wat je eraan\ndoet; met de gegevens uit het bestand (opgave, startnummer, naam) zodat de regel terug te vinden is."
       },
       "InboxItem": {
         "required": [

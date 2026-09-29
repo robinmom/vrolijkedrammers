@@ -119,6 +119,7 @@ public sealed class AdminParadeArrivalsController(ParadeArrivals arrivals) : Con
                         throw new DomainException(ErrorCodes.Validation, "Geen tijdkolom gevonden naast \"Stnr.\".");
                     }
 
+                    var name = cells.FirstOrDefault(c => Header(c) is "naam" or "naam groep");
                     var location = Header(time).StartsWith("aanrijtijd", StringComparison.Ordinal) ? null : time.GetFormattedString().Trim();
                     var rows = new List<ArrivalImportRow>();
                     var last = sheet.LastRowUsed()?.RowNumber() ?? headerRow;
@@ -128,7 +129,7 @@ public sealed class AdminParadeArrivalsController(ParadeArrivals arrivals) : Con
                         var value = TimeText(sheet.Cell(r, time.Address.ColumnNumber));
                         if (number is not null || value is not null)
                         {
-                            rows.Add(new ArrivalImportRow(r, number, value));
+                            rows.Add(new ArrivalImportRow(r, number, value, name is null ? null : Text(sheet.Cell(r, name.Address.ColumnNumber))));
                         }
                     }
 

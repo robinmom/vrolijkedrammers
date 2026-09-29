@@ -22,7 +22,7 @@ public sealed record PublicArrivalRow(int? StartNumber, string? Category, string
 public sealed record PublicArrivals(bool Published, string? ParadeName, DateOnly? ParadeDate, string? Location, IReadOnlyList<PublicArrivalRow> Rows);
 
 /// <summary>Een regel uit een geüpload bestand: Stnr. en de tijd (ruwe celwaarden).</summary>
-public sealed record ArrivalImportRow(int Row, string? StartNumber, string? Time);
+public sealed record ArrivalImportRow(int Row, string? StartNumber, string? Time, string? GroupName = null);
 
 public sealed record ArrivalChange(Guid Id, int StartNumber, string? GroupName, TimeOnly? OldTime, TimeOnly? NewTime);
 
@@ -197,8 +197,16 @@ public sealed class ParadeArrivals(
         var errors = new List<ImportIssue>();
         var changes = new List<(ParadeRegistration, TimeOnly?)>();
         var seen = new HashSet<int>();
+        var byNumber = (await db.ParadeRegistrations.AsNoTracking()
+                .Where(r => r.ParadeId == parade.Id && r.StartNumber != null && r.Status != RegistrationStatus.Draft)
+                .GroupJoin(db.ParadeCategories, r => r.CategoryId, c => (int?)c.Id, (r, cs) => new { r, cs })
+                .SelectMany(x => x.cs.DefaultIfEmpty(), (x, c) => new { x.r.StartNumber, x.r.GroupName, x.r.Status, HasVehicle = c != null && c.HasVehicle })
+                .ToListAsync(cancellationToken))
+            .GroupBy(x => x.StartNumber!.Value).ToDictionary(g => g.Key, g => g.First());
         foreach (var row in rows)
         {
+            ImportIssue Issue(string message, string advice) => new(row.Row, message, advice, null, row.StartNumber, row.GroupName);
+
             if (string.IsNullOrWhiteSpace(row.StartNumber))
             {
                 continue;
@@ -206,19 +214,33 @@ public sealed class ParadeArrivals(
 
             if (WholeNumber(row.StartNumber) is not { } number)
             {
-                errors.Add(new ImportIssue(row.Row, $"Stnr. \"{row.StartNumber}\" is geen nummer."));
+                errors.Add(Issue($"In de kolom Stnr. staat \"{row.StartNumber}\"; dat is geen startnummer.", "Zet in Stnr. alleen het startnummer, of maak de cel leeg."));
+                continue;
+            }
+
+            if (number < parade.FirstGroupStartNumber)
+            {
+                // Vaste plekken vooraan (geluidswagen e.d.) krijgen geen aanrijtijd via de groepen.
                 continue;
             }
 
             if (!seen.Add(number))
             {
-                errors.Add(new ImportIssue(row.Row, $"Startnummer {number} staat dubbel in het bestand."));
+                errors.Add(Issue($"Startnummer {number} staat twee keer in het bestand.", "Laat elk startnummer maar één keer voorkomen."));
                 continue;
             }
 
             if (!vehicles.TryGetValue(number, out var registration))
             {
-                errors.Add(new ImportIssue(row.Row, $"Startnummer {number} is geen goedgekeurde wagen in deze optocht."));
+                var found = byNumber.GetValueOrDefault(number);
+                errors.Add(found is null
+                    ? Issue($"Geen groep in de optocht heeft startnummer {number}" + (string.IsNullOrWhiteSpace(row.GroupName) ? "." : $" (in het bestand: {row.GroupName})."),
+                        "Ken eerst startnummers toe (Samenstellen of de startnummerimport), of haal deze regel weg.")
+                    : !found.HasVehicle
+                        ? Issue($"Startnummer {number} is {found.GroupName}; dat is geen wagen (alleen wagens krijgen een aanrijtijd).",
+                            "Haal de tijd bij deze regel weg, of kies bij de inschrijving een categorie met een voertuig.")
+                        : Issue($"Startnummer {number} is {found.GroupName}, maar die inschrijving is (nog) niet goedgekeurd.",
+                            "Keur de inschrijving eerst goed en importeer daarna opnieuw, of haal deze regel weg."));
                 continue;
             }
 
@@ -227,7 +249,7 @@ public sealed class ParadeArrivals(
             {
                 if (ParseTime(row.Time) is not { } parsed)
                 {
-                    errors.Add(new ImportIssue(row.Row, $"Tijd \"{row.Time}\" bij startnummer {number} is geen geldige tijd (bijv. 10:30)."));
+                    errors.Add(Issue($"\"{row.Time}\" is geen tijd.", "Schrijf de tijd als 10:30 of 10:30 uur."));
                     continue;
                 }
 

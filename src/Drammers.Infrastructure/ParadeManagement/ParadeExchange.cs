@@ -22,10 +22,15 @@ public sealed record ParadeExportRow(
 
 public sealed record ParadeExport(string ParadeName, int Year, IReadOnlyList<ParadeExportRow> Rows);
 
-/// <summary>Een regel uit een geüpload bestand: de ruwe celwaarden van Opgave en Startnummer.</summary>
-public sealed record StartNumberImportRow(int Row, string? RegistrationNumber, string? StartNumber);
+/// <summary>Een regel uit een geüpload bestand: de ruwe celwaarden van Opgave, Startnummer en (ter controle) Naam groep.</summary>
+public sealed record StartNumberImportRow(int Row, string? RegistrationNumber, string? StartNumber, string? GroupName = null);
 
-public sealed record ImportIssue(int Row, string Message);
+/// <summary>
+/// Een fout in een importbestand: <see cref="Message"/> = wat er mis is en waarom, <see cref="Advice"/> = wat je eraan
+/// doet; met de gegevens uit het bestand (opgave, startnummer, naam) zodat de regel terug te vinden is.
+/// </summary>
+public sealed record ImportIssue(
+    int Row, string Message, string? Advice = null, string? RegistrationNumber = null, string? StartNumber = null, string? GroupName = null);
 
 public sealed record ImportChange(int RegistrationNumber, string? GroupName, int? OldStartNumber, int? NewStartNumber, bool Published);
 
@@ -144,6 +149,9 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
 
         foreach (var row in rows)
         {
+            ImportIssue Issue(string message, string advice) =>
+                new(row.Row, message, advice, row.RegistrationNumber, row.StartNumber, row.GroupName);
+
             if (string.IsNullOrWhiteSpace(row.RegistrationNumber))
             {
                 // Vaste plekken en lege regels hebben geen opgavenummer.
@@ -152,20 +160,32 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
 
             if (!TryNumber(row.RegistrationNumber, out var number))
             {
-                errors.Add(new ImportIssue(row.Row, $"Opgave \"{row.RegistrationNumber}\" is geen nummer."));
+                errors.Add(Issue($"In de kolom Opgave staat \"{row.RegistrationNumber}\"; dat is geen opgavenummer.",
+                    "Zet in de kolom Opgave alleen het opgavenummer uit de app, of maak de cel leeg."));
+                continue;
+            }
+
+            // Een vaste plek vooraan (bijv. de geluidswagen) staat in het bronbestand soms mét een opgavenummer: die regel
+            // hoort niet bij een inschrijving en wordt overgeslagen.
+            if (TryNumber(row.StartNumber ?? string.Empty, out var fixedNumber) && fixedNumber >= 1 && fixedNumber < parade.FirstGroupStartNumber
+                && SameName(row.GroupName, parade.FixedEntries[fixedNumber - 1].Name))
+            {
                 continue;
             }
 
             if (seen.TryGetValue(number, out var earlier))
             {
-                errors.Add(new ImportIssue(row.Row, $"Opgave {number} staat dubbel in het bestand (ook op regel {earlier})."));
+                errors.Add(Issue($"Opgave {number} staat twee keer in het bestand (ook op regel {earlier}).", "Laat elke opgave maar één keer voorkomen."));
                 continue;
             }
 
             seen[number] = row.Row;
             if (!byNumber.TryGetValue(number, out var registration))
             {
-                errors.Add(new ImportIssue(row.Row, $"Opgave {number} bestaat niet in deze optocht."));
+                errors.Add(Issue(
+                    $"Er is in deze optocht geen inschrijving met opgavenummer {number}"
+                    + (string.IsNullOrWhiteSpace(row.GroupName) ? " (en de regel heeft geen groepsnaam)." : $" (in het bestand: {row.GroupName})."),
+                    "Het opgavenummer komt uit een ander bestand of een ander jaar, of de groep heeft (nog) niet ingeschreven in de app. Haal het startnummer bij deze regel weg of verwijder de regel; gebruik bij voorkeur de export als basis."));
                 continue;
             }
 
@@ -174,13 +194,16 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
             {
                 if (!TryNumber(row.StartNumber, out var n) || n is < 1 or > 9999)
                 {
-                    errors.Add(new ImportIssue(row.Row, $"Startnummer \"{row.StartNumber}\" bij opgave {number} is geen geldig nummer (1 tot en met 9999)."));
+                    errors.Add(Issue($"\"{row.StartNumber}\" is geen geldig startnummer: alleen hele getallen van 1 tot en met 9999.",
+                        "Vul een heel getal in, of maak de cel leeg."));
                     continue;
                 }
 
                 if (n < parade.FirstGroupStartNumber)
                 {
-                    errors.Add(new ImportIssue(row.Row, $"Startnummer {n} bij opgave {number} is van de vaste plek \"{parade.FixedEntries[n - 1].Name}\"."));
+                    errors.Add(Issue(
+                        $"Startnummer {n} is gereserveerd voor de vaste plek \"{parade.FixedEntries[n - 1].Name}\"; groepen beginnen bij {parade.FirstGroupStartNumber}.",
+                        $"Kies voor {registration.GroupName ?? $"opgave {number}"} een startnummer vanaf {parade.FirstGroupStartNumber}, of pas de vaste plekken aan onder Optocht."));
                     continue;
                 }
 
@@ -194,13 +217,19 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
 
             if (startNumber is not null && !ParadeLineup.InLineup.Contains(registration.Status))
             {
-                errors.Add(new ImportIssue(row.Row, $"Opgave {number} ({registration.GroupName}) is nog niet goedgekeurd en kan geen startnummer krijgen."));
+                errors.Add(Issue(
+                    $"Opgave {number} ({registration.GroupName ?? "zonder naam"}) heeft de status \"{StatusLabel(registration.Status)}\"; alleen goedgekeurde inschrijvingen krijgen een startnummer.",
+                    registration.Status is RegistrationStatus.Rejected or RegistrationStatus.Withdrawn
+                        ? "Deze groep doet niet mee: haal het startnummer bij deze regel weg."
+                        : "Keur de inschrijving eerst goed (Optocht → Inschrijvingen) en importeer daarna opnieuw, of haal het startnummer weg."));
                 continue;
             }
 
             if (registration.Status == RegistrationStatus.Final)
             {
-                errors.Add(new ImportIssue(row.Row, $"Opgave {number} ({registration.GroupName}) is definitief; het startnummer wijzigt niet via een import."));
+                errors.Add(Issue(
+                    $"Opgave {number} ({registration.GroupName}) is definitief vastgesteld; het startnummer ({registration.StartNumber}) wijzigt niet via een import.",
+                    "Wijzig dit startnummer bij de inschrijving zelf (met het recht voor de definitieve optocht), of zet het oude nummer terug in het bestand."));
                 continue;
             }
 
@@ -212,7 +241,9 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
         foreach (var duplicate in final.Where(f => f.Value != null).GroupBy(f => f.Value!.Value).Where(g => g.Count() > 1))
         {
             var names = duplicate.Select(d => registrations.First(r => r.Id == d.Key)).Select(r => $"opgave {r.RegistrationNumber} ({r.GroupName})");
-            errors.Add(new ImportIssue(0, $"Startnummer {duplicate.Key} komt meer dan eens voor: {string.Join(", ", names)}."));
+            errors.Add(new ImportIssue(0, $"Startnummer {duplicate.Key} komt meer dan eens voor: {string.Join(", ", names)}.",
+                "Geef elke groep een eigen startnummer. Een groep die niet in het bestand staat, houdt haar huidige nummer.",
+                StartNumber: duplicate.Key.ToString(CultureInfo.InvariantCulture)));
         }
 
         var changes = target
@@ -222,6 +253,26 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
             .ToList();
         return (changes, errors, rows.Count);
     }
+
+    private static bool SameName(string? a, string? b) =>
+        !string.IsNullOrWhiteSpace(a) && !string.IsNullOrWhiteSpace(b)
+        && string.Equals(Normalize(a), Normalize(b), StringComparison.OrdinalIgnoreCase);
+
+    private static string Normalize(string value) => string.Join(' ', value.Replace('"', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+    private static string StatusLabel(RegistrationStatus status) => status switch
+    {
+        RegistrationStatus.Draft => "concept",
+        RegistrationStatus.Submitted => "ingediend",
+        RegistrationStatus.UnderReview => "in behandeling",
+        RegistrationStatus.AdditionalInformationRequired => "aanvulling gevraagd",
+        RegistrationStatus.Approved => "goedgekeurd",
+        RegistrationStatus.Rejected => "afgewezen",
+        RegistrationStatus.Withdrawn => "ingetrokken",
+        RegistrationStatus.StartNumberAssigned => "startnummer bekend",
+        RegistrationStatus.Final => "definitief",
+        _ => status.ToString(),
+    };
 
     /// <summary>Hele getallen, ook zoals Excel ze als tekst of als "12.0" kan opslaan.</summary>
     private static bool TryNumber(string value, out int number)

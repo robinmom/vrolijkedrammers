@@ -222,8 +222,8 @@ public class ParadeArrivalsTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("Parkeerplaats De Muggenhof", preview.GetProperty("location").GetString());
         var errors = preview.GetProperty("errors").EnumerateArray().Select(e => e.GetProperty("message").GetString()!).ToList();
         Assert.Equal(2, errors.Count);
-        Assert.Contains(errors, e => e.Contains("Startnummer 6 is geen goedgekeurde wagen", StringComparison.Ordinal));
-        Assert.Contains(errors, e => e.Contains("Startnummer 7", StringComparison.Ordinal));
+        Assert.Contains(errors, e => e.Contains("Startnummer 6 is De Lopers; dat is geen wagen", StringComparison.Ordinal));
+        Assert.Contains(errors, e => e.Contains("Geen groep in de optocht heeft startnummer 7", StringComparison.Ordinal));
         await JsonAsync(await _commissie.PostAsync("/api/v1/admin/parade/arrival-times/import", File(workbook, "aanrijtijden.xlsx")), HttpStatusCode.UnprocessableEntity);
 
         sheet.Row(5).Delete();

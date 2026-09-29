@@ -5,6 +5,7 @@ import { useApi } from '../api/ApiContext';
 import { uploadJson } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
 import { Dialog } from './Dialog';
+import { ImportErrors } from './ImportErrors';
 import { ProblemAlert } from './ProblemAlert';
 
 type Preview = components['schemas']['StartNumberImportPreview'];
@@ -145,21 +146,7 @@ export function ImportStartNumbers({ onDone }: { onDone: (message: string) => vo
         {busy && !preview ? <p className="muted">Bestand lezen…</p> : null}
         {preview ? (
           <>
-            {preview.errors.length ? (
-              <div className="alert alert-error" role="alert">
-                <strong>
-                  {preview.errors.length} fout{preview.errors.length === 1 ? '' : 'en'}: er wordt niets ingelezen.
-                </strong>
-                <ul>
-                  {preview.errors.map((e, i) => (
-                    <li key={i}>
-                      {e.row ? `Regel ${e.row}: ` : ''}
-                      {e.message}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            <ImportErrors errors={preview.errors} />
             {preview.changes.length === 0 && preview.errors.length === 0 ? (
               <p role="status">Geen wijzigingen: alle startnummers in het bestand zijn al zo.</p>
             ) : null}

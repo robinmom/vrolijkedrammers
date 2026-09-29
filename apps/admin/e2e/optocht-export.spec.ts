@@ -79,11 +79,14 @@ test('fase 12c: exporteren en startnummers importeren met voorbeeld', async ({ p
       { row: 8, message: 'Opgave 42 bestaat niet in deze optocht.' },
     ],
   };
-  await open(page, api, 'optocht/inschrijvingen');
-
+  // De export staat op Samenstellen (niet meer op Inschrijvingen).
+  await open(page, api, 'optocht/samenstellen');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exporteren (Excel)' }).click();
   expect((await download).suggestedFilename()).toBe('Opgaven optocht 2027 29-9-2026.xlsx');
+
+  await page.goto('/beheer/optocht/inschrijvingen');
+  await expect(page.getByRole('button', { name: 'Exporteren (Excel)' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Startnummers importeren' }).click();
   const dialog = page.getByRole('dialog', { name: 'Startnummers importeren' });
@@ -141,4 +144,30 @@ test('fase 12c: samenstellen toont de vaste plekken en begint bij het eerste vri
   await expect(fixed.getByText('Geluidswagen')).toBeVisible();
   await expect(fixed.getByText('Vaste plek')).toHaveCount(2);
   await expect(page.getByLabel(/Eerste startnummer/)).toHaveValue('3');
+});
+
+test('samenstellen: signalen zijn in te klappen en het menu markeert alleen de pagina waar je bent', async ({
+  page,
+}) => {
+  const api = new MockApi(['parade.read', 'parade.manage', 'parade.config']);
+  api.compositionWarnings = ['4 groepen met een voertuig achter elkaar (positie 1–4).'];
+  await open(page, api, 'optocht/samenstellen');
+  const nav = page.getByRole('navigation');
+  const toggle = page.getByRole('button', { name: 'Menu' });
+  if (await toggle.isVisible()) await toggle.click();
+  await expect(nav.getByRole('link', { name: 'Samenstellen' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.getByRole('link', { name: 'Optocht en categorieën' })).not.toHaveAttribute('aria-current', 'page');
+  if (await toggle.isVisible()) await toggle.click();
+
+  const panel = page.getByRole('status').filter({ hasText: 'Let op: 1 signaal bij de volgorde' });
+  await expect(panel.getByText('4 groepen met een voertuig achter elkaar (positie 1–4).')).toBeVisible();
+  await panel.getByRole('button', { name: 'Minimaliseren' }).click();
+  await expect(panel.getByText('4 groepen met een voertuig achter elkaar')).toHaveCount(0);
+  await expect(panel.getByRole('button', { name: 'Tonen' })).toHaveAttribute('aria-expanded', 'false');
+
+  // De keuze blijft bewaard.
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Tonen' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tonen' }).click();
+  await expect(page.getByText('4 groepen met een voertuig achter elkaar (positie 1–4).')).toBeVisible();
 });

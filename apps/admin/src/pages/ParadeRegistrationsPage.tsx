@@ -18,7 +18,7 @@ import {
 import { DataTable, columnHelper } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
 import { Icon } from '../components/Icon';
-import { ExportButton, ImportStartNumbers } from '../components/ParadeExchange';
+import { ImportStartNumbers } from '../components/ParadeExchange';
 import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { ApiError, describeProblem } from '../api/errors';
@@ -171,7 +171,6 @@ export function ParadeRegistrationsPage() {
   const api = useApi();
   const me = useMe();
   const canAssign = (me.data?.permissions ?? []).includes('parade.assign-start-number');
-  const canExport = (me.data?.permissions ?? []).includes('parade.export');
   const [filter, setFilter] = useState<RegistrationFilter>({});
   const [page, setPage] = useState(1);
   const [publishing, setPublishing] = useState(false);
@@ -199,15 +198,12 @@ export function ParadeRegistrationsPage() {
             definitief. Ken daarna startnummers toe en publiceer ze: elke groep krijgt dan een melding en een e-mail.
           </p>
         </div>
-        {canAssign || canExport ? (
+        {canAssign ? (
           <div className="actions">
-            {canExport ? <ExportButton /> : null}
-            {canAssign ? <ImportStartNumbers onDone={setMessage} /> : null}
-            {canAssign ? (
-              <button type="button" className="button" disabled={toPublish <= 0} onClick={() => setPublishing(true)}>
-                Startnummers publiceren{toPublish > 0 ? ` (${toPublish})` : ''}
-              </button>
-            ) : null}
+            <ImportStartNumbers onDone={setMessage} />
+            <button type="button" className="button" disabled={toPublish <= 0} onClick={() => setPublishing(true)}>
+              Startnummers publiceren{toPublish > 0 ? ` (${toPublish})` : ''}
+            </button>
           </div>
         ) : null}
       </div>

@@ -28,6 +28,7 @@ import {
   type StartNumberPreview,
 } from '../api/hooks';
 import { Icon } from '../components/Icon';
+import { ExportButton } from '../components/ParadeExchange';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { registrationStatusLabels } from '../format';
 
@@ -144,6 +145,7 @@ export function ParadeCompositionPage() {
   const permissions = me.data?.permissions ?? [];
   const canEdit = permissions.includes('parade.manage');
   const canAssign = permissions.includes('parade.assign-start-number');
+  const canExport = permissions.includes('parade.export');
   const composition = useParadeComposition();
   const [order, setOrder] = useState<string[]>([]);
   const [version, setVersion] = useState(0);
@@ -224,6 +226,11 @@ export function ParadeCompositionPage() {
             bewaard. Slepen verandert geen startnummers; gebruik daarvoor Startnummers genereren.
           </p>
         </div>
+        {canExport ? (
+          <div className="actions">
+            <ExportButton />
+          </div>
+        ) : null}
       </div>
       <section className="kpis" aria-label="Totalen van de volgorde">
         <div className="kpi">
@@ -268,16 +275,7 @@ export function ParadeCompositionPage() {
       ) : (
         <ProblemAlert error={save.error} />
       )}
-      {c.warnings.length ? (
-        <div className="alert alert-warning" role="status">
-          <strong>Let op:</strong>
-          <ul>
-            {c.warnings.map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {c.warnings.length ? <WarningsPanel warnings={c.warnings} /> : null}
       <div className="columns">
         <section className="card" aria-labelledby="volgorde">
           <h2 id="volgorde">Volgorde ({ordered.length})</h2>
@@ -507,3 +505,47 @@ function GenerateStartNumbers({
     </section>
   );
 }
+
+const WARNINGS_OPEN = 'dvd.samenstellen.signalen-open';
+
+/**
+ * Signalen bij de volgorde (bijv. vier wagens achter elkaar), inklapbaar zodat ze de pagina niet domineren. Ingeklapt
+ * blijft het aantal zichtbaar; de keuze wordt in deze browser onthouden.
+ */
+function WarningsPanel({ warnings }: { warnings: readonly string[] }) {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(WARNINGS_OPEN) !== '0';
+    } catch {
+      return true;
+    }
+  });
+  const toggle = () => {
+    setOpen(!open);
+    try {
+      localStorage.setItem(WARNINGS_OPEN, open ? '0' : '1');
+    } catch {
+      // Geen opslag beschikbaar: alleen voor deze pagina.
+    }
+  };
+  return (
+    <div className={`alert alert-warning warnings-panel${open ? '' : ' collapsed'}`} role="status">
+      <div className="warnings-head">
+        <strong>
+          Let op: {warnings.length} signa{warnings.length === 1 ? 'al' : 'len'} bij de volgorde
+        </strong>
+        <button type="button" className="button ghost small" aria-expanded={open} onClick={toggle}>
+          {open ? 'Minimaliseren' : 'Tonen'}
+        </button>
+      </div>
+      {open ? (
+        <ul>
+          {warnings.map((w) => (
+            <li key={w}>{w}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+

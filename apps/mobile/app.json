@@ -51,6 +51,14 @@
           "color": "#ED0012",
           "defaultChannel": "program"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "De Vrolijke Drammers gebruikt de camera om QR-codes van leden te scannen bij de ingang.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "scheme": "drammers",

@@ -6,7 +6,7 @@ import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
 import { themeLabels } from '../../theme/labels';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, Card, Icon, LargeTitleHeader, Screen, SettingsList, ShortcutTile, type SettingsItem } from '../../ui';
+import { AppText, Button, Card, Icon, LargeTitleHeader, Screen, SettingsList, ShortcutTile, type SettingsItem } from '../../ui';
 
 const logo = require('../../../assets/images/logo.png');
 const mascotte = require('../../../assets/images/mascotte.png');
@@ -54,6 +54,9 @@ export default function MeerScreen() {
       />
       <View style={styles.content}>
         <AccountCard signedIn={status === 'signedIn'} name={me.data?.displayName} />
+        {me.data?.permissions.includes('ticket.scan') ? (
+          <Button label="Scannen bij de deur" icon="qr" onPress={() => router.push('/scannen')} />
+        ) : null}
         {status === 'signedIn' ? null : (
           <Pressable
             onPress={() => router.push('/meer/lid-worden')}

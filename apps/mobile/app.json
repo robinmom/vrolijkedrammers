@@ -8,7 +8,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "nl.vrolijkedrammers.app"
+      "bundleIdentifier": "nl.vrolijkedrammers.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -55,7 +58,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "De Vrolijke Drammers gebruikt de camera om QR-codes van leden te scannen bij de ingang.",
+          "cameraPermission": "De Vrolijke Drammers gebruikt de camera om QR-codes te scannen bij de ingang en de kassa.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

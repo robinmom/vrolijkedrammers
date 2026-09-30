@@ -959,7 +959,25 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Bulkacties: `POST /admin/photo-albums/{id}/photos/bulk` met `Hide`, `Show`, `Move` (naar een andere galerij), `SetPhotographer` en `Delete`; één auditregel (`photo.bulk-…`) per actie; een omslagfoto die verdwijnt, wordt leeggemaakt.
 - Tests: integratie (`PhotoGalleryTests`), portal-e2e met axe (`fotos.spec.ts`).
 
-**21c — de website.** Server-side gerenderde pagina's in dezelfde App Service (snel en vindbaar, weinig JavaScript), met een cachebaar media-adres voor afbeeldingen (de SAS-links van 15 minuten passen niet in een gecachte pagina). Pagina's: home, agenda, nieuws, vereniging (kader, prinsengalerie, jeugdprinsen, onderscheidingen, vaste pagina's), optocht, foto's, contact en "Doe mee". Facebook-feed via de Graph API.
+**21c — de website (gebouwd).**
+- Nieuw project `Drammers.Website` (Razor-klassebibliotheek), gehost in dezelfde App Service als de API, op de hoofdmap. Server-side gerenderd: snel, vindbaar en bruikbaar zonder JavaScript; `site.js` (klein) verbetert alleen de uitklapmenu's, het prinsvenster en de lightbox.
+- Pagina's:
+  - `/` (hero uit het portal, de eerstvolgende activiteiten, het laatste nieuws, "Doe mee" en de Facebook-feed);
+  - `/agenda` (per maand, filter op soort, "In mijn agenda" via iCal);
+  - `/nieuws` en `/nieuws/{webadres}`;
+  - `/kader`, `/prinsengalerie` en `/jeugdprinsen` (alleen als het bestuur hem aanzet); klik op een prins opent het venster (`?prins=`, werkt zonder JavaScript);
+  - `/onderscheidingen` (per jaar, "Kijk verder") en `/onderscheidingen/{webadres}`;
+  - `/fotos` (filter op soort) en `/fotos/{id}` (drie kolommen op de telefoon, lightbox met vegen);
+  - `/optocht` (inschrijfperiode, status, aanrijtijden, de informatietekst van de optocht), `/contact`, `/doe-mee`;
+  - vaste pagina's uit het portal op hun eigen webadres (`/over-ons`, `/loillands`, `/privacy` …);
+  - `/sitemap.xml`, `/robots.txt` en een 404-pagina in de huisstijl (`noindex`).
+- Alleen openbare inhoud: dezelfde filters als de API voor gasten (`ContentViewer.Guest`), nieuws alleen met "Ook tonen op de website".
+- Afbeeldingen via `/media/{soort}/{id}?v=…` in plaats van SAS-links: het endpoint controleert per aanvraag of het item openbaar is (een verborgen foto of een ledenalbum geeft 404) en levert met `ETag` en `Cache-Control` (foto's 1 uur, overige afbeeldingen 1 dag).
+- Pagina's worden 60 seconden gecachet (output cache); een geslaagde wijziging via `/api/v1/admin/…` maakt de cache meteen leeg.
+- Facebook: `FacebookFeed` haalt de laatste 3 berichten op via de Graph API met het paginatoken uit Key Vault (secret `facebook-page-token`), een half uur in het geheugen. Zonder token toont de site alleen de link naar de pagina.
+- Beveiliging: CSP voor de website (alles van de eigen origin, afbeeldingen ook van `*.fbcdn.net`), `X-Frame-Options: DENY`. Lettertypen zelf gehost (Poppins en Inter, OFL), geen Google Fonts en geen cookies.
+- Toegankelijkheid: axe (WCAG 2.1 AA) zonder ernstige fouten op desktop en mobiel; de paginakop in het donkerdere Loils blauw (#066AA6) voor voldoende contrast.
+- Tests: integratie (`WebsitePagesTests`).
 
 **21d — inloggen op de website** voor de optocht (MSAL, zelfde Entra External ID als de app) en "Mijn inschrijving"; een inschrijving zonder account wordt gekoppeld zodra iemand met hetzelfde e-mailadres inlogt.
 

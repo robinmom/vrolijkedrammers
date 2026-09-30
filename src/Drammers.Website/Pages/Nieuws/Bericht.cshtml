@@ -1,0 +1,63 @@
+@page "/nieuws/{slug}"
+@model Drammers.Website.Pages.Nieuws.BerichtModel
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var a = Model.Article;
+    var url = $"{Request.Scheme}://{Request.Host}/nieuws/{a.Card.Slug}";
+}
+<partial name="_PageBand" model='new PageBand(a.Card.Title, null, ("/nieuws", "Nieuws"), (null, Nl.Date(a.Card.PublishedAt)))' />
+<div class="wrap content">
+    <div class="article-layout">
+        <article class="article">
+            @if (a.Card.ImageUrl is not null)
+            {
+                <img class="article-image" src="@a.Card.ImageUrl" alt="" width="1600" height="900">
+            }
+            <p class="article-meta">Gepubliceerd op @Nl.Date(a.Card.PublishedAt)@(a.Card.Category is null ? "" : $" · {a.Card.Category}")</p>
+            @if (a.Card.Summary is not null)
+            {
+                <p class="intro">@a.Card.Summary</p>
+            }
+            <div class="prose">
+                @Html.Raw(a.BodyHtml)
+                @Html.Raw(a.WebsiteBodyHtml)
+            </div>
+            <div class="share">
+                <strong>Delen:</strong>
+                <a class="button outline" href="https://wa.me/?text=@Uri.EscapeDataString($"{a.Card.Title} {url}")" rel="noopener">WhatsApp</a>
+                <a class="button outline" href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(url)" rel="noopener">Facebook</a>
+            </div>
+        </article>
+        <aside class="aside" aria-label="Meer">
+            <div class="app-promo">
+                <h2>Nieuws direct op je telefoon?</h2>
+                <p>Met de app krijg je een melding bij belangrijk nieuws.</p>
+                <a class="button" href="/doe-mee#app">Download de app</a>
+            </div>
+            @if (Model.More.Count > 0)
+            {
+                <h2>Meer nieuws</h2>
+                @foreach (var n in Model.More)
+                {
+                    <a class="card news-item" href="/nieuws/@n.Slug">
+                        @if (n.ImageUrl is not null)
+                        {
+                            <img src="@n.ImageUrl" alt="" loading="lazy" width="96" height="80">
+                        }
+                        else
+                        {
+                            <span class="img-empty"></span>
+                        }
+                        <div>
+                            <span class="news-date">@Nl.Date(n.PublishedAt)</span>
+                            <h3>@n.Title</h3>
+                        </div>
+                    </a>
+                }
+            }
+        </aside>
+    </div>
+</div>

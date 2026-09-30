@@ -1,0 +1,22 @@
+@page "/{slug:regex(^[a-z0-9]+(-[a-z0-9]+)*$)}"
+@model PaginaModel
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var c = Model.Text;
+    var band = new PageBand(c.Title, c.Intro, (null, c.Title));
+}
+<partial name="_PageBand" model="band" />
+<div class="wrap content">
+    <article class="article-layout">
+        <div class="article">
+            @if (c.ImageUrl is not null)
+            {
+                <img class="article-image" src="@c.ImageUrl" alt="" width="1600" height="900">
+            }
+            <div class="prose">@Html.Raw(c.BodyHtml)</div>
+        </div>
+    </article>
+</div>

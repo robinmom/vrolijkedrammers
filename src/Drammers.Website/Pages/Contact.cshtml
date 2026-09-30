@@ -1,0 +1,40 @@
+@page "/contact"
+@model ContactModel
+<partial name="_PageBand" model='new PageBand("Contact", "Een vraag over het lidmaatschap, de optocht of een betaling? Mail direct naar de juiste persoon.", (null, "Contact"))' />
+<div class="wrap content">
+    <div class="grid-3">
+        <section class="card contact-card">
+            <h2>Ledenadministratie</h2>
+            <p>Lid worden, adreswijziging, opzeggen en vragen over de app.</p>
+            <a href="mailto:secretaris@vrolijkedrammers.nl">secretaris@vrolijkedrammers.nl</a>
+        </section>
+        <section class="card contact-card">
+            <h2>Optocht</h2>
+            <p>Inschrijving, startnummers, aanrijtijden en het juryreglement.</p>
+            <a href="mailto:optocht@vrolijkedrammers.nl">optocht@vrolijkedrammers.nl</a>
+        </section>
+        <section class="card contact-card">
+            <h2>Kaarten en betalingen</h2>
+            <p>Kaarten, munten en de contributie.</p>
+            <a href="mailto:penningmeester@vrolijkedrammers.nl">penningmeester@vrolijkedrammers.nl</a>
+        </section>
+    </div>
+    @if (Model.Extra is not null)
+    {
+        <div class="prose">@Html.Raw(Model.Extra.BodyHtml)</div>
+    }
+    <section class="card cta-card" aria-labelledby="social-kop">
+        <h2 id="social-kop" class="h3">Liever via social media?</h2>
+        <p>Stuur ons een bericht via Facebook of Instagram.</p>
+        <p class="button-row">
+            @if (Model.Settings.FacebookPageUrl is not null)
+            {
+                <a class="button outline" href="@Model.Settings.FacebookPageUrl" rel="noopener">Facebook</a>
+            }
+            @if (Model.Settings.InstagramUrl is not null)
+            {
+                <a class="button outline" href="@Model.Settings.InstagramUrl" rel="noopener">Instagram</a>
+            }
+        </p>
+    </section>
+</div>

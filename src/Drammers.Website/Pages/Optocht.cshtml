@@ -1,0 +1,84 @@
+@page "/optocht"
+@model OptochtModel
+@{
+    var p = Model.Parade;
+    var title = p?.Name ?? "Optocht";
+    var lead = p is null
+        ? "De kleurrijke stoet met praalwagens, loopgroepen en muziek door Loil."
+        : $"{p.Date.ToString("dddd d MMMM yyyy", Nl.Culture)} trekt de kleurrijke stoet met praalwagens, loopgroepen en muziek door Loil.";
+    lead = char.ToUpper(lead[0], Nl.Culture) + lead[1..];
+    var band = new PageBand(title, lead, (null, "Optocht"));
+}
+<partial name="_PageBand" model="band" />
+<div class="wrap content">
+    <div class="grid-3">
+        <div class="card cta-card">
+            @if (p?.RegistrationOpen == true)
+            {
+                <span><span class="badge green">Open</span></span>
+            }
+            else if (p is not null && p.RegistrationOpensAt > DateTime.UtcNow)
+            {
+                <span><span class="badge">Vanaf @Nl.Date(p.RegistrationOpensAt)</span></span>
+            }
+            else
+            {
+                <span><span class="badge">Gesloten</span></span>
+            }
+            <h2 class="h3">Inschrijven</h2>
+            <p>
+                @if (p is not null)
+                {
+                    @:Inschrijven kan van @Nl.Date(p.RegistrationOpensAt) tot en met @Nl.Date(p.RegistrationClosesAt). Je krijgt direct een opgavenummer.
+                }
+                else
+                {
+                    @:De inschrijving voor de volgende optocht is nog niet geopend.
+                }
+            </p>
+            @if (p?.RegistrationOpen == true)
+            {
+                <p><a class="button" href="/optocht-inschrijven/">Schrijf je in</a></p>
+            }
+        </div>
+        <div class="card cta-card">
+            <h2 class="h3">Mijn inschrijving</h2>
+            <p>Bekijk hoe het met jullie inschrijving staat via de link in je bevestigingsmail, of in de app onder Optocht.</p>
+        </div>
+        <div class="card cta-card">
+            @if (p?.ArrivalTimesPublished != true)
+            {
+                <span><span class="badge">Nog niet bekend</span></span>
+            }
+            <h2 class="h3">Aanrijtijden</h2>
+            <p>Hier staan de aanrijtijden en opstelplaatsen per startnummer zodra de optocht is ingedeeld.</p>
+            @if (p?.ArrivalTimesPublished == true)
+            {
+                <p><a class="button outline" href="/aanrijtijden/">Aanrijtijden</a></p>
+            }
+        </div>
+    </div>
+    <div class="two-col">
+        <section class="prose" aria-labelledby="info-kop">
+            <h2 id="info-kop">Praktische informatie</h2>
+            @if (p is not null)
+            {
+                <p><strong>Start:</strong> @p.StartTime.ToString("HH:mm", Nl.Culture) uur@(p.StartLocation is null ? "" : $", {p.StartLocation}")</p>
+                @if (p.RouteDescription is not null)
+                {
+                    <p><strong>Route:</strong> @p.RouteDescription</p>
+                }
+                @Html.Raw(p.InfoHtml)
+            }
+            @if (Model.Extra is not null)
+            {
+                @Html.Raw(Model.Extra.BodyHtml)
+            }
+        </section>
+        <aside class="card downloads" aria-labelledby="vragen-kop">
+            <h2 id="vragen-kop" class="h3">Vragen over de optocht?</h2>
+            <p class="muted">Mail de optochtcommissie:</p>
+            <p><a href="mailto:optocht@vrolijkedrammers.nl">optocht@vrolijkedrammers.nl</a></p>
+        </aside>
+    </div>
+</div>

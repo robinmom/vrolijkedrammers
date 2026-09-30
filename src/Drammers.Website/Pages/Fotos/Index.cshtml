@@ -1,0 +1,42 @@
+@page "/fotos"
+@model Drammers.Website.Pages.Fotos.IndexModel
+@using Drammers.Website.Pages.Fotos
+@{
+    var band = new PageBand("Foto's", "De mooiste momenten van de pronkzitting, de optocht, carnaval en meer.", (null, "Foto's"));
+}
+<partial name="_PageBand" model="band" />
+<div class="wrap content">
+    <nav class="chips" aria-label="Filter op soort">
+        <a class="chip" href="/fotos" aria-current="@(Model.Filter is null ? "true" : "false")">Alles</a>
+        @foreach (var c in IndexModel.Categories)
+        {
+            <a class="chip" href="/fotos?soort=@c.Slug" aria-current="@(Model.Filter == c.Slug ? "true" : "false")">@c.Name</a>
+        }
+    </nav>
+    @if (Model.Albums.Count == 0)
+    {
+        <p class="muted">Nog geen foto's@(Model.Filter is null ? "" : " van deze soort").</p>
+    }
+    <ul class="grid-3" role="list">
+        @foreach (var a in Model.Albums)
+        {
+            <li>
+                <a class="card album-card" href="/fotos/@a.Id.ToString("N")">
+                    @if (a.CoverUrl is not null)
+                    {
+                        <img src="@a.CoverUrl" alt="" loading="lazy" width="400" height="267">
+                    }
+                    else
+                    {
+                        <span class="img-empty"></span>
+                    }
+                    <span class="album-text">
+                        <h2 class="h3">@a.Title</h2>
+                        <span class="muted">@(a.Date is { } d ? Nl.Date(d) + " · " : "")@a.PhotoCount foto's</span>
+                        <span><span class="badge blue">@IndexModel.Name(a.Category)</span></span>
+                    </span>
+                </a>
+            </li>
+        }
+    </ul>
+</div>

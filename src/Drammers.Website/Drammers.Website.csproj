@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- De openbare website vrolijkedrammers.nl (fase 21c): server-side gerenderde Razor Pages in dezelfde App Service als de API. -->
+  <PropertyGroup>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Drammers.Infrastructure\Drammers.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

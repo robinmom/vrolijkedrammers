@@ -1,0 +1,134 @@
+@page
+@model IndexModel
+<section class="hero">
+    <img class="hero-image" src="@Model.Hero.ImageUrl" alt="" fetchpriority="high">
+    <div class="wrap">
+        <div class="hero-inner">
+            @if (Model.Hero.Eyebrow is not null)
+            {
+                <p class="eyebrow">@Model.Hero.Eyebrow</p>
+            }
+            <h1>@Model.Hero.Title</h1>
+            @if (Model.Hero.Subtitle is not null)
+            {
+                <p>@Model.Hero.Subtitle</p>
+            }
+            <div class="button-row">
+                @if (Model.Hero.Primary is { } primary)
+                {
+                    <a class="button white" href="@primary.Href">@primary.Label</a>
+                }
+                @if (Model.Hero.Secondary is { } secondary)
+                {
+                    <a class="button" href="@secondary.Href">@secondary.Label</a>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="wrap home-content">
+    <section aria-labelledby="agenda-kop">
+        <div class="section-head">
+            <h2 id="agenda-kop">Eerstvolgende activiteiten</h2>
+            <a class="link-arrow" href="/agenda">Hele agenda →</a>
+        </div>
+        @if (Model.Events.Count == 0)
+        {
+            <p class="muted">Er staan nog geen activiteiten in de agenda.</p>
+        }
+        else
+        {
+            <div class="grid-3">
+                @foreach (var e in Model.Events)
+                {
+                    <a class="card event-card" href="/agenda#activiteit-@e.Id.ToString("N")">
+                        <partial name="_EventCard" model="e" />
+                    </a>
+                }
+            </div>
+        }
+    </section>
+
+    @if (Model.News.Count > 0)
+    {
+        var first = Model.News[0];
+        <section aria-labelledby="nieuws-kop">
+            <div class="section-head">
+                <h2 id="nieuws-kop">Laatste nieuws</h2>
+                <a class="link-arrow" href="/nieuws">Al het nieuws →</a>
+            </div>
+            <div class="news-grid">
+                <a class="card news-feature" href="/nieuws/@first.Slug">
+                    @if (first.ImageUrl is not null)
+                    {
+                        <img src="@first.ImageUrl" alt="" loading="lazy" width="1600" height="900">
+                    }
+                    <div class="news-text">
+                        <span class="news-date">@Nl.Date(first.PublishedAt)</span>
+                        <h3>@first.Title</h3>
+                        @if (first.Summary is not null)
+                        {
+                            <p class="muted">@first.Summary</p>
+                        }
+                    </div>
+                </a>
+                <div class="news-list">
+                    @foreach (var n in Model.News.Skip(1))
+                    {
+                        <a class="card news-item" href="/nieuws/@n.Slug">
+                            @if (n.ImageUrl is not null)
+                            {
+                                <img src="@n.ImageUrl" alt="" loading="lazy" width="170" height="124">
+                            }
+                            else
+                            {
+                                <span class="img-empty"></span>
+                            }
+                            <div>
+                                <span class="news-date">@Nl.Date(n.PublishedAt)</span>
+                                <h3>@n.Title</h3>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="join-band" aria-labelledby="doemee-kop">
+        <h2 id="doemee-kop">Doe mee met De Vrolijke Drammers</h2>
+        <p>Alles regel je hier direct online: je hoort meteen of het gelukt is.</p>
+        <partial name="_JoinTiles" />
+    </section>
+
+    <section class="card facebook" aria-labelledby="facebook-kop">
+        <div class="section-head">
+            <h2 id="facebook-kop">Volg ons op Facebook</h2>
+            @if (Model.FacebookPageUrl is not null)
+            {
+                <a class="link-arrow" href="@Model.FacebookPageUrl" rel="noopener">Naar onze pagina ↗</a>
+            }
+        </div>
+        @if (Model.Facebook.Count > 0)
+        {
+            <div class="fb-posts">
+                @foreach (var p in Model.Facebook)
+                {
+                    <a class="fb-post" href="@p.Link" rel="noopener">
+                        @if (p.ImageUrl is not null)
+                        {
+                            <img src="@p.ImageUrl" alt="" loading="lazy" referrerpolicy="no-referrer">
+                        }
+                        <p>@(p.Message ?? "Bekijk dit bericht op Facebook")</p>
+                        <small>@Nl.Date(p.CreatedAt)</small>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="muted">Het laatste nieuws, foto's en filmpjes delen we ook op Facebook.</p>
+        }
+    </section>
+</div>

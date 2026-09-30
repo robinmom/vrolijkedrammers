@@ -1,0 +1,52 @@
+@page "/onderscheidingen"
+@model Drammers.Website.Pages.Onderscheidingen.IndexModel
+@using Drammers.Website.Pages.Onderscheidingen
+<partial name="_PageBand" model='new PageBand("Onderscheidingen", "Elk jaar eert De Vrolijke Drammers mensen die veel voor de vereniging en voor Loil hebben betekend.", (null, "Vereniging"), (null, "Onderscheidingen"))' />
+<div class="wrap content">
+    <div class="grid-3 award-types">
+        @foreach (var t in IndexModel.Types)
+        {
+            <div class="card">
+                <h2 class="h3">@t.Name</h2>
+                <p>@t.Text</p>
+                <a class="link-arrow" href="/onderscheidingen?soort=@t.Slug">Kijk verder →</a>
+            </div>
+        }
+    </div>
+    @if (Model.Filter is not null)
+    {
+        <p><a class="chip" href="/onderscheidingen">← Alle onderscheidingen</a></p>
+    }
+    @if (Model.Awards.Count == 0)
+    {
+        <p class="muted">Nog geen onderscheidingen op deze pagina.</p>
+    }
+    @foreach (var year in Model.Awards.GroupBy(a => a.Year))
+    {
+        <section class="year-group" aria-labelledby="jaar-@year.Key">
+            <h2 id="jaar-@year.Key">@year.Key</h2>
+            @foreach (var a in year)
+            {
+                <a class="card award-row" href="/onderscheidingen/@a.Slug">
+                    @if (a.PhotoUrl is not null)
+                    {
+                        <img src="@a.PhotoUrl" alt="" loading="lazy" width="240" height="170">
+                    }
+                    else
+                    {
+                        <span class="img-empty"></span>
+                    }
+                    <span class="award-text">
+                        <span><span class="badge">@IndexModel.Name(a.Type)</span></span>
+                        <h3>@a.Recipient</h3>
+                        @if (a.Excerpt is not null)
+                        {
+                            <p>@a.Excerpt</p>
+                        }
+                        <span class="link-arrow">Kijk verder →</span>
+                    </span>
+                </a>
+            }
+        </section>
+    }
+</div>

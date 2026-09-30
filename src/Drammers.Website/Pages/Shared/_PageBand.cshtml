@@ -1,0 +1,27 @@
+@model PageBand
+<section class="page-band">
+    <div class="wrap">
+        <nav aria-label="Kruimelpad">
+            <p class="crumbs">
+                <a href="/">Home</a>
+                @foreach (var (href, label) in Model.Crumbs)
+                {
+                    <span aria-hidden="true"> › </span>
+                    @if (href is null)
+                    {
+                        <span aria-current="page">@label</span>
+                    }
+                    else
+                    {
+                        <a href="@href">@label</a>
+                    }
+                }
+            </p>
+        </nav>
+        <h1>@Model.Title</h1>
+        @if (Model.Lead is not null)
+        {
+            <p class="lead">@Model.Lead</p>
+        }
+    </div>
+</section>

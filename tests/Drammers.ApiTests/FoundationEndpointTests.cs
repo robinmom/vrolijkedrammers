@@ -49,7 +49,8 @@ public class FoundationEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
     [Fact]
     public async Task Onbekende_route_geeft_ProblemDetails_met_code_en_traceId()
     {
-        var response = await _client.GetAsync("/bestaat-niet");
+        // Onder de hoofdmap staat sinds fase 21c de website (met een 404-pagina in HTML); de API blijft ProblemDetails geven.
+        var response = await _client.GetAsync("/api/v1/bestaat-niet");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);

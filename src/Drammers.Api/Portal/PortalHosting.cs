@@ -36,6 +36,10 @@ public static class PortalHosting
         "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.ciamlogin.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
+    // De website (fase 21c): alles van de eigen origin; afbeeldingen ook van het Facebook-CDN (feed op de homepage).
+    private const string WebsiteContentSecurityPolicy =
+        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
     /// <summary>Headers voor alle responses; de portal-CSP alleen onder <see cref="BasePath"/>.</summary>
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app) =>
         app.Use((context, next) =>
@@ -57,6 +61,12 @@ public static class PortalHosting
                 || context.Request.Path.StartsWithSegments(TicketsPath))
             {
                 headers.ContentSecurityPolicy = JoinContentSecurityPolicy;
+                headers.XFrameOptions = "DENY";
+            }
+            else if (Website.WebsiteSetup.IsWebsitePath(context.Request.Path))
+            {
+                headers.ContentSecurityPolicy = WebsiteContentSecurityPolicy;
+                headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
                 headers.XFrameOptions = "DENY";
             }
             else

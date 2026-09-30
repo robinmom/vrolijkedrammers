@@ -1,7 +1,8 @@
 # Runbook: kaartverkoop en Mollie (fase 19)
 
-> **Status:** de Mollie-sleutel is nog niet gezet. Dit is geparkeerd tot het bestuur de sleutel aanlevert.
-> Tot die tijd werken gratis groepskaarten en contante bestellingen in het portal wel; betalen met iDEAL niet.
+> **Status:**
+> - Dev: de test-sleutel staat sinds 30-09-2026 in `kv-dvd-dev`.
+> - Acc en productie: nog niet gezet. Productie krijgt de live-sleutel.
 
 ## Mollie-sleutel in Key Vault
 
@@ -11,7 +12,15 @@ De API leest de sleutel uit Key Vault. Hij staat niet in de repository, niet in 
 2. Kies de sleutel:
    - Dev en Acc: de **test**-sleutel (`test_…`);
    - productie: alleen de **live**-sleutel (`live_…`).
-3. Zet de sleutel als secret **`mollie-api-key`** in de Key Vault van de omgeving: Azure Portal → Key Vault `kv-dvd-<omgeving>` → Secrets → Generate/Import.
+3. Zet de sleutel als secret **`mollie-api-key`** in de Key Vault van de omgeving, in een eigen terminal. Je hebt de rol *Key Vault Administrator* of *Key Vault Secrets Officer* op de vault nodig:
+
+   ```bash
+   read -rs MOLLIE_KEY   # plakken en Enter; niets zichtbaar, niet in de shellhistorie
+   az keyvault secret set --vault-name kv-dvd-<omgeving> --name mollie-api-key --value "$MOLLIE_KEY" --output none
+   unset MOLLIE_KEY
+   ```
+
+   Controleren zonder de waarde te tonen: `az keyvault secret list --vault-name kv-dvd-<omgeving> --query "[?name=='mollie-api-key'].attributes.enabled"`.
 4. Klaar. Binnen tien minuten gebruikt de API de nieuwe sleutel (hij bewaart de sleutel kort in het geheugen). Opnieuw starten is niet nodig.
 
 Zonder sleutel geeft bestellen met betalen de melding "Online betalen is nog niet ingesteld". Gratis groepskaarten en contante bestellingen in het portal werken dan wel.

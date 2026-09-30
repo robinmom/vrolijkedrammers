@@ -973,6 +973,44 @@ export class MockApi {
           body: 'xlsx',
         });
       }
+      if (path === '/admin/sales/kassalog') {
+        return json({
+          day: url.searchParams.get('day') ?? '2027-02-13',
+          issued: 86,
+          tokensIssued: 1240,
+          refused: 1,
+          rows: [
+            {
+              id: 'k-1',
+              scannedAt: '2027-02-13T20:14:00Z',
+              issuedAt: '2027-02-13T20:14:30Z',
+              outcome: 'Issued',
+              reason: null,
+              memberName: 'Mendy Mom',
+              memberGroup: 'Kruumels',
+              quantity: 20,
+              orderNumber: '2027-0311',
+              paidWith: 'iDEAL',
+              operatorName: 'Kees',
+              deviceName: 'Kassa 1',
+            },
+            {
+              id: 'k-2',
+              scannedAt: '2027-02-13T19:57:00Z',
+              issuedAt: null,
+              outcome: 'Refused',
+              reason: 'WrongDevice',
+              memberName: 'Ruby Mom',
+              memberGroup: 'Kruumels',
+              quantity: 10,
+              orderNumber: '2027-0305',
+              paidWith: 'iDEAL',
+              operatorName: 'Anja',
+              deviceName: 'Kassa 2',
+            },
+          ],
+        });
+      }
       if (path === '/admin/sales/tokens') return json(this.saleOrders.filter((o) => o.productId === 'sp-mu'));
     }
     if (path === '/admin/parades') {

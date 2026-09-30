@@ -38,6 +38,12 @@ public sealed class AccessScan
 
     public Guid? TicketId { get; set; }
 
+    /// <summary>Gekochte kaart (fase 19c): de QR van de bestelling; dan is <see cref="MemberId"/> leeg.</summary>
+    public Guid? OrderTicketId { get; set; }
+
+    /// <summary>Hoeveel personen met deze scan naar binnen gingen (gekochte kaart: alle kaarten op de QR tegelijk).</summary>
+    public int? Persons { get; set; }
+
     public Guid? MemberId { get; set; }
 
     public AccessMethod Method { get; set; }

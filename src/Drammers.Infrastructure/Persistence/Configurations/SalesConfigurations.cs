@@ -116,3 +116,17 @@ internal sealed class WaitlistEntryConfiguration : IEntityTypeConfiguration<Wait
         builder.HasOne<Member>().WithMany().HasForeignKey(w => w.BuyerMemberId).OnDelete(DeleteBehavior.SetNull);
     }
 }
+
+internal sealed class TokenScanConfiguration : IEntityTypeConfiguration<TokenScan>
+{
+    public void Configure(EntityTypeBuilder<TokenScan> builder)
+    {
+        builder.ToTable("TokenScan", Schemas.Ticketing, t => t.HasCheckConstraint("CK_TokenScan_quantity", "[quantity] IS NULL OR [quantity] > 0"));
+        builder.Property(s => s.Id).ValueGeneratedNever();
+        builder.Property(s => s.Reason).HasMaxLength(40).IsUnicode(false);
+        builder.HasIndex(s => s.ScannedAt);
+        builder.HasIndex(s => s.OrderTicketId);
+        // Logregel: geen foreign key naar de bestelling; het lid wordt bij verwijderen (AVG) leeggemaakt.
+        builder.HasOne<Member>().WithMany().HasForeignKey(s => s.MemberId).OnDelete(DeleteBehavior.SetNull);
+    }
+}

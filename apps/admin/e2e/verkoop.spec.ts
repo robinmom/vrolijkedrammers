@@ -26,7 +26,7 @@ test('fase 19: menukop Verkoop met een pagina per product', async ({ page }) => 
   const nav = page.getByRole('navigation');
   await expect(nav.getByText('Verkoop', { exact: true })).toBeVisible();
   await expect(nav.getByText('Kaartverkoop')).toHaveCount(0);
-  for (const name of ['Pronkzitting', 'Dagkaarten', 'Activiteiten', 'Munten']) {
+  for (const name of ['Pronkzitting', 'Dagkaarten', 'Activiteiten', 'Munten', 'Kassalog']) {
     await expect(nav.getByRole('link', { name })).toBeVisible();
   }
   await expect(nav.getByRole('link', { name: 'Pronkzitting' })).toHaveAttribute('aria-current', 'page');
@@ -136,4 +136,19 @@ test('leden: bij een lid staat de groep uit e-Boekhouden', async ({ page }) => {
   await open(page, api, 'leden/m-1');
   const groep = page.locator('dt', { hasText: /^Groep$/ });
   await expect(groep.locator('xpath=following-sibling::dd[1]')).toHaveText('De Kruumels');
+});
+
+test('fase 19c: kassalog met uitgiftes en geweigerde scans', async ({ page }) => {
+  const api = new MockApi(['sale.manage']);
+  await open(page, api, 'verkoop/kassalog');
+  await expect(page.getByRole('heading', { name: 'Kassalog', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('row', { name: /Mendy Mom Kruumels 20 2027-0311 .* Uitgegeven Kassa 1 · Kees/ }),
+  ).toBeVisible();
+  await expect(page.getByText('Geweigerd: ander toestel')).toBeVisible();
+  await expect(page.getByText('1.240')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Kerncijfers kassa' }).getByText('1240')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await page.getByLabel('Dag').fill('2027-02-12');
+  await expect(page.getByRole('heading', { name: 'Scans op 12 feb 2027' })).toBeVisible();
 });

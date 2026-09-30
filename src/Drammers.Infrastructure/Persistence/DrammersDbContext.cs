@@ -88,6 +88,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Ticketing.Sales.WaitlistEntry> WaitlistEntries => Set<Modules.Ticketing.Sales.WaitlistEntry>();
 
+    public DbSet<Modules.Ticketing.Sales.TokenScan> TokenScans => Set<Modules.Ticketing.Sales.TokenScan>();
+
     public DbSet<EventCategory> EventCategories => Set<EventCategory>();
 
     public DbSet<Event> Events => Set<Event>();

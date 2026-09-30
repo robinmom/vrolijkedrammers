@@ -142,3 +142,16 @@ export const kindPages: Record<SaleProductKind, { title: string; path: string; s
     unit: 'munten',
   },
 };
+
+export type KassaDay = Schemas['KassaDay'];
+export type KassaLogRow = Schemas['KassaLogRow'];
+
+export function useKassaLog(day: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['sales', 'kassalog', day],
+    queryFn: async () =>
+      required((await api.GET('/api/v1/admin/sales/kassalog', { params: { query: { day: day || undefined } } })).data),
+    refetchInterval: 30_000,
+  });
+}

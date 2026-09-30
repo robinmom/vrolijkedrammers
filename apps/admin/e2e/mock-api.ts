@@ -110,6 +110,7 @@ export class MockApi {
       description: null as string | null,
       eventId: null,
       coverPhotoId: null,
+      category: 'Parade',
       publication: {
         visibility: 'Public',
         audienceRoles: [] as string[],
@@ -1819,6 +1820,17 @@ export class MockApi {
         })),
       );
     }
+    if (path === '/admin/photo-albums' && method === 'POST') {
+      const id = `a-${this.albums.length + 1}`;
+      this.albums.push({
+        ...(body as unknown as (typeof this.albums)[number]),
+        id,
+        coverPhotoId: null,
+        eventId: null,
+        photos: [],
+      });
+      return json({ id }, 201);
+    }
     if (path === '/admin/photo-albums') {
       return json(
         this.albums.map((a) => ({
@@ -1828,10 +1840,56 @@ export class MockApi {
           visibility: a.publication.visibility,
           status: a.publication.status,
           photoCount: a.photos.length,
+          category: a.category,
+          coverUrl: a.photos[0]?.thumbnailUrl ?? null,
         })),
       );
     }
+    if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)\/photos$/)) && method === 'POST') {
+      // Bulk-upload in het portal: één foto per verzoek.
+      const album = this.albums.find((a) => a.id === m![1])!;
+      const id = `p-${Math.random().toString(36).slice(2, 8)}`;
+      album.photos.push({
+        id,
+        processingStatus: 'Ready',
+        hidden: false,
+        caption: null,
+        photographer: null,
+        thumbnailUrl: PIXEL,
+      });
+      return json([{ id }], 201);
+    }
+    if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)\/photos\/bulk$/))) {
+      const album = this.albums.find((a) => a.id === m![1])!;
+      const ids = body.photoIds as string[];
+      const chosen = album.photos.filter((p) => ids.includes(p.id));
+      switch (body.action) {
+        case 'Hide':
+        case 'Show':
+          chosen.forEach((p) => (p.hidden = body.action === 'Hide'));
+          break;
+        case 'SetPhotographer':
+          chosen.forEach((p) => (p.photographer = body.photographer as never));
+          break;
+        case 'Move':
+          this.albums.find((a) => a.id === body.targetAlbumId)!.photos.push(...chosen);
+          album.photos = album.photos.filter((p) => !ids.includes(p.id));
+          break;
+        case 'Delete':
+          album.photos = album.photos.filter((p) => !ids.includes(p.id));
+          break;
+      }
+      this.record(`photo.bulk-${String(body.action).toLowerCase()}`, 'PhotoAlbum', album.id, { count: chosen.length });
+      return json({ count: chosen.length });
+    }
     if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)$/))) {
+      if (method === 'PUT') {
+        Object.assign(
+          this.albums.find((a) => a.id === m![1])!,
+          body,
+        );
+        return noContent();
+      }
       return json(this.albums.find((a) => a.id === m![1]));
     }
     if (path === '/admin/members/summary') {

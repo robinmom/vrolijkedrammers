@@ -6384,6 +6384,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/photo-albums/{id}/photos/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulkactie op meerdere foto's tegelijk (fase 21b): verbergen, tonen, verplaatsen, fotograaf instellen of verwijderen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PhotoBulkRequest"];
+                    "text/json": components["schemas"]["PhotoBulkRequest"];
+                    "application/*+json": components["schemas"]["PhotoBulkRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PhotoBulkResponse"];
+                        "application/json": components["schemas"]["PhotoBulkResponse"];
+                        "text/json": components["schemas"]["PhotoBulkResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/photo-albums/{id}/photos": {
         parameters: {
             query?: never;
@@ -6393,7 +6450,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Foto's uploaden (maximaal 20 per keer); ze verschijnen zodra de verwerking klaar is. */
+        /**
+         * Foto's uploaden (maximaal 20 per verzoek; het portal stuurt ze één voor één met voortgang en opnieuw proberen);
+         *     ze verschijnen zodra de verwerking klaar is.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -12498,6 +12558,7 @@ export interface paths {
                 query?: {
                     page?: number;
                     pageSize?: number;
+                    category?: components["schemas"]["PhotoCategory"];
                 };
                 header?: never;
                 path?: never;
@@ -13555,6 +13616,7 @@ export interface components {
             coverPhotoId: null | string;
             publication: components["schemas"]["PublicationResponse"];
             photos: components["schemas"]["AdminPhotoResponse"][];
+            category?: components["schemas"]["PhotoCategory"];
         };
         AdminAlbumSummaryResponse: {
             /** Format: uuid */
@@ -13566,6 +13628,8 @@ export interface components {
             status: components["schemas"]["PublicationStatus"];
             /** Format: int32 */
             photoCount: number;
+            category?: components["schemas"]["PhotoCategory"];
+            coverUrl?: null | string;
         };
         AdminCarnivalYearResponse: {
             /** Format: int32 */
@@ -13773,6 +13837,7 @@ export interface components {
             /** Format: uuid */
             eventId: null | string;
             publication: components["schemas"]["PublicationRequest"];
+            category?: components["schemas"]["PhotoCategory"];
         };
         AnonymousPushRequest: {
             installId: string;
@@ -15665,7 +15730,30 @@ export interface components {
             /** Format: int32 */
             photoCount: number;
             coverUrl: null | string;
+            category?: components["schemas"]["PhotoCategory"];
         };
+        /**
+         * @description Wat een bulkactie met de gekozen foto's doet (fase 21b).
+         * @enum {unknown}
+         */
+        PhotoBulkAction: "Hide" | "Show" | "Delete" | "Move" | "SetPhotographer";
+        PhotoBulkRequest: {
+            photoIds: string[];
+            action: components["schemas"]["PhotoBulkAction"];
+            /** Format: uuid */
+            targetAlbumId: null | string;
+            photographer: null | string;
+        };
+        PhotoBulkResponse: {
+            /** Format: int32 */
+            count: number;
+        };
+        /**
+         * @description Soort fotogalerij (fase 21b).
+         * @default Other
+         * @enum {unknown}
+         */
+        PhotoCategory: "Pronkzitting" | "Carnival" | "Parade" | "Dansgarde" | "Youth" | "Events" | "Other";
         PhotoOrderRequest: {
             photoIds: string[];
         };

@@ -33,7 +33,8 @@ public sealed record NewsInput(
     string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false,
     bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null, string? Image = null);
 
-public sealed record AlbumInput(string Title, DateOnly? AlbumDate, string? Description, Guid? EventId, PublicationInput Publication);
+public sealed record AlbumInput(
+    string Title, DateOnly? AlbumDate, string? Description, Guid? EventId, PublicationInput Publication, PhotoCategory Category = PhotoCategory.Other);
 
 public sealed record UploadedFile(string FileName, long Length, Func<Stream> Open);
 
@@ -303,6 +304,66 @@ public sealed class ContentAdministration(
         }
     }
 
+    /// <summary>
+    /// Bulkactie op foto's van één album (fase 21b): verbergen, tonen, verplaatsen naar een ander album, fotograaf
+    /// instellen of verwijderen. Eén auditregel voor de hele actie.
+    /// </summary>
+    public async Task<int> BulkPhotosAsync(
+        Guid albumId, IReadOnlyCollection<Guid> photoIds, PhotoBulkAction action, Guid? targetAlbumId, string? photographer,
+        CancellationToken cancellationToken)
+    {
+        var photos = await db.Photos.Where(p => p.AlbumId == albumId && photoIds.Contains(p.Id)).ToListAsync(cancellationToken);
+        if (photos.Count != photoIds.Distinct().Count())
+        {
+            throw new DomainException(ErrorCodes.Validation, "Niet alle gekozen foto's horen bij dit album.");
+        }
+
+        switch (action)
+        {
+            case PhotoBulkAction.Hide or PhotoBulkAction.Show:
+                photos.ForEach(p => p.Hidden = action == PhotoBulkAction.Hide);
+                break;
+            case PhotoBulkAction.SetPhotographer:
+                photos.ForEach(p => p.Photographer = string.IsNullOrWhiteSpace(photographer) ? null : photographer.Trim());
+                break;
+            case PhotoBulkAction.Move:
+                if (targetAlbumId is not { } target || target == albumId || !await db.PhotoAlbums.AnyAsync(a => a.Id == target, cancellationToken))
+                {
+                    throw new DomainException(ErrorCodes.Validation, "Kies een ander bestaand album om de foto's naartoe te verplaatsen.");
+                }
+
+                var last = await db.Photos.Where(p => p.AlbumId == target).MaxAsync(p => (int?)p.SortOrder, cancellationToken) ?? 0;
+                foreach (var p in photos.OrderBy(p => p.SortOrder))
+                {
+                    (p.AlbumId, p.SortOrder) = (target, ++last);
+                }
+
+                break;
+            case PhotoBulkAction.Delete:
+                db.Photos.RemoveRange(photos);
+                break;
+        }
+
+        if (action is PhotoBulkAction.Move or PhotoBulkAction.Delete)
+        {
+            var ids = photos.Select(p => p.Id).ToList();
+            await db.PhotoAlbums.Where(a => a.Id == albumId && a.CoverPhotoId != null && ids.Contains(a.CoverPhotoId.Value))
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.CoverPhotoId, (Guid?)null), cancellationToken);
+        }
+
+        await SaveWithAuditAsync($"photo.bulk-{action.ToString().ToLowerInvariant()}", "PhotoAlbum", albumId,
+            new { count = photos.Count, targetAlbumId }, cancellationToken);
+        if (action == PhotoBulkAction.Delete)
+        {
+            foreach (var photo in photos)
+            {
+                await DeletePhotoBlobsAsync(photo, cancellationToken);
+            }
+        }
+
+        return photos.Count;
+    }
+
     public async Task DeletePhotoAsync(Guid photoId, CancellationToken cancellationToken)
     {
         var photo = await db.Photos.SingleOrDefaultAsync(p => p.Id == photoId, cancellationToken) ?? throw NotFound();
@@ -358,7 +419,7 @@ public sealed class ContentAdministration(
 
     private void Apply(PhotoAlbum a, AlbumInput input)
     {
-        (a.Title, a.AlbumDate, a.Description, a.EventId) = (input.Title, input.AlbumDate, input.Description, input.EventId);
+        (a.Title, a.AlbumDate, a.Description, a.EventId, a.Category) = (input.Title, input.AlbumDate, input.Description, input.EventId, input.Category);
         (a.Visibility, a.Status, a.PublishAt) = Publication(input.Publication);
         a.Audiences.Clear();
         a.Audiences.AddRange(Audiences(input.Publication).Select(r => new PhotoAlbumAudience { AlbumId = a.Id, AudienceType = r.Type, AudienceRef = r.Ref }));

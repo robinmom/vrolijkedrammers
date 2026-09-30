@@ -21,10 +21,16 @@ public sealed class PhotoAlbumsController(DrammersDbContext db, ContentViewerRes
     [HttpGet]
     [PublicCache]
     [ProducesResponseType<PagedResult<PhotoAlbumResponse>>(StatusCodes.Status200OK)]
-    public async Task<PagedResult<PhotoAlbumResponse>> Search([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+    public async Task<PagedResult<PhotoAlbumResponse>> Search(
+        [FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] PhotoCategory? category, CancellationToken cancellationToken)
     {
         var (p, size) = PagedResult<PhotoAlbumResponse>.Normalize(page, pageSize);
         var query = db.PhotoAlbums.AsNoTracking().VisibleTo(await viewers.ResolveAsync(), clock.UtcNow.UtcDateTime);
+        if (category is { } c)
+        {
+            query = query.Where(a => a.Category == c);
+        }
+
         var total = await query.CountAsync(cancellationToken);
         var albums = await query.OrderByDescending(a => a.AlbumDate).ThenByDescending(a => a.CreatedAt).Skip((p - 1) * size).Take(size).ToListAsync(cancellationToken);
         var items = new List<PhotoAlbumResponse>();
@@ -77,10 +83,11 @@ public sealed class PhotoAlbumsController(DrammersDbContext db, ContentViewerRes
         var cover = await visible.Where(p => album.CoverPhotoId == null || p.Id == album.CoverPhotoId)
             .OrderBy(p => p.SortOrder).Select(p => p.ThumbnailBlobPath).FirstOrDefaultAsync(cancellationToken);
         return new PhotoAlbumResponse(album.Id, album.Title, album.AlbumDate, album.Description, count,
-            await urls.ForAsync(FileContainers.PhotosDerived, cover, cancellationToken));
+            await urls.ForAsync(FileContainers.PhotosDerived, cover, cancellationToken), album.Category);
     }
 }
 
-public sealed record PhotoAlbumResponse(Guid Id, string Title, DateOnly? AlbumDate, string? Description, int PhotoCount, string? CoverUrl);
+public sealed record PhotoAlbumResponse(
+    Guid Id, string Title, DateOnly? AlbumDate, string? Description, int PhotoCount, string? CoverUrl, PhotoCategory Category = PhotoCategory.Other);
 
 public sealed record PhotoResponse(Guid Id, string ThumbnailUrl, string DisplayUrl, int? Width, int? Height, string? Caption, string? Photographer, DateTime? TakenAt);

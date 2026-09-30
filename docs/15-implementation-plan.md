@@ -830,7 +830,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - Via `POST /me/orders/tickets/{id}/share` gaan kaarten naar een lid van dezelfde groep (vrij veld 3).
   - Het lid krijgt een eigen QR en een melding; de kaarten verdwijnen uit de QR van de besteller.
   - De besteller houdt minstens één kaart. Een gedeelde kaart kan niet verder gedeeld worden.
-- **Munten-QR:** payloadversie 4 (met de sleutel van het toestel) of 5 (door de server ondertekend, `GET /me/ticket/code?purpose=Tokens`).
+- **Munten-QR:** payloadversie 4 (met de sleutel van het toestel) of 5 (door de server ondertekend, `GET /me/ticket/code?purpose=Tokens&orderTicketId=…`). **Eén QR per muntenbestelling** (30-09-2026): de referentie is die van de bestelling, toestel en sleutel die van het ledenticket. In de app swipe je van rechts naar links naar de volgende bestelling. Een uitgegeven bestelling is bij de kassa geblokkeerd.
   - Gekoppeld aan het toestel en elke 30 seconden nieuw, net als Mijn QR.
   - Ook te gebruiken vóór carnaval, bijvoorbeeld op de pronkzitting.
   - De validatie weigert de munten-QR bij de ingang en Mijn QR bij de kassa (`WrongPurpose`).

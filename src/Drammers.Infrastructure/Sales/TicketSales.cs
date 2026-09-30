@@ -50,9 +50,10 @@ public sealed record OrderView(
 
 /// <summary>
 /// Een QR bij de bestelling; <see cref="Code"/> alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
-/// <see cref="CanShare"/>: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b).
+/// <see cref="CanShare"/>: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b). <see cref="Ref"/>
+/// (base64) alleen bij munten van het lid zelf: daarmee maakt het toestel de munten-QR van deze bestelling.
 /// </summary>
-public sealed record OrderTicketView(Guid Id, int Quantity, OrderTicketStatus Status, string? Code, bool CanShare);
+public sealed record OrderTicketView(Guid Id, int Quantity, OrderTicketStatus Status, string? Code, bool CanShare, string? Ref = null);
 
 /// <summary>Kaarten die de besteller met een groepslid heeft gedeeld; die hebben een eigen QR bij de ontvanger.</summary>
 public sealed record SharedTicket(string Name, int Quantity);
@@ -598,7 +599,10 @@ public sealed partial class TicketSales(
         foreach (var t in tickets)
         {
             var code = t.Status == OrderTicketStatus.Active && product.Kind != SaleProductKind.Tokens ? await CodeAsync(t, cancellationToken) : null;
-            views.Add(new OrderTicketView(t.Id, t.Quantity, t.Status, code, canShareOrder && t.Status == OrderTicketStatus.Active && t.Quantity > 1));
+            var tokensRef = product.Kind == SaleProductKind.Tokens && t.Status == OrderTicketStatus.Active && viewer is not null && t.HolderMemberId == viewer
+                ? Convert.ToBase64String(t.PublicRef)
+                : null;
+            views.Add(new OrderTicketView(t.Id, t.Quantity, t.Status, code, canShareOrder && t.Status == OrderTicketStatus.Active && t.Quantity > 1, tokensRef));
         }
 
         var shared = new List<SharedTicket>();

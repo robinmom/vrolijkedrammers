@@ -12212,13 +12212,21 @@
         "tags": [
           "MeTicket"
         ],
-        "summary": "Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. Met `purpose=Tokens` de\nmunten-QR voor de kassa (fase 19b).",
+        "summary": "Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. Met `purpose=Tokens` de\nmunten-QR voor de kassa (fase 19b), per muntenbestelling (`orderTicketId`).",
         "parameters": [
           {
             "name": "purpose",
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/QrPurpose"
+            }
+          },
+          {
+            "name": "orderTicketId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -21782,9 +21790,15 @@
           },
           "canShare": {
             "type": "boolean"
+          },
+          "ref": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).\nbool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b)."
+        "description": "Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).\nbool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b). string? OrderTicketView.Ref\n(base64) alleen bij munten van het lid zelf: daarmee maakt het toestel de munten-QR van deze bestelling."
       },
       "OrderView": {
         "required": [

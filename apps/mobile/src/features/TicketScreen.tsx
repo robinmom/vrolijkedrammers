@@ -5,7 +5,7 @@ import { createEventInCalendarAsync } from 'expo-calendar/legacy';
 import { router, useFocusEffect } from 'expo-router';
 import { usePreventScreenCapture, useScreenshotListener } from 'expo-screen-capture';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { queryKeys, useChildTicket, useMyTicket } from '../api/queries';
 import { useSessionStatus } from '../auth/useSession';
@@ -40,14 +40,14 @@ export function TicketScreen({
   childId,
   childName,
   purpose = 'Access',
-  tokens,
+  tokenTickets,
   before,
 }: {
   childId?: string;
   childName?: string;
-  /** 'Tokens': de munten-QR voor de kassa (fase 19b), met de nog af te halen munten. */
+  /** 'Tokens': de munten-QR voor de kassa (fase 19b), één per muntenbestelling (swipen). */
   purpose?: QrPurpose;
-  tokens?: number;
+  tokenTickets?: TokenTicket[];
   /** Extra inhoud boven het ticket (munten kopen). */
   before?: React.ReactNode;
 }) {
@@ -161,7 +161,11 @@ export function TicketScreen({
       <Screen>
         {header}
         <View style={styles.content}>
-          <LiveTicket holder={cached} source="device" cached={cached} childId={childId} purpose={purpose} tokens={tokens} />
+          {forTokens ? (
+            <TokensCarousel holder={cached} source="device" cached={cached} tickets={tokenTickets ?? []} />
+          ) : (
+            <LiveTicket holder={cached} source="device" cached={cached} childId={childId} purpose={purpose} />
+          )}
         </View>
       </Screen>
     );
@@ -237,14 +241,21 @@ export function TicketScreen({
             </AppText>
           </>
         ) : data.boundToThisDevice ? (
-          <LiveTicket
-            holder={data}
-            source={data.deviceHasHardwareKey ? 'device' : 'server'}
-            cached={cached}
-            childId={childId}
-            purpose={purpose}
-            tokens={tokens}
-          />
+          forTokens ? (
+            <TokensCarousel
+              holder={data}
+              source={data.deviceHasHardwareKey ? 'device' : 'server'}
+              cached={cached}
+              tickets={tokenTickets ?? []}
+            />
+          ) : (
+            <LiveTicket
+              holder={data}
+              source={data.deviceHasHardwareKey ? 'device' : 'server'}
+              cached={cached}
+              childId={childId}
+            />
+          )
         ) : data.boundDeviceName ? (
           <>
             <TicketCard ticket={data}>
@@ -314,20 +325,20 @@ interface Holder {
 function TicketCard({
   ticket,
   muted,
-  tokens,
+  tokensLabel,
   children,
 }: {
   ticket: Holder;
   muted?: boolean;
-  /** De munten-QR: het aantal munten dat nog af te halen is. */
-  tokens?: number;
+  /** De munten-QR: welke bestelling (bijv. "20 munten · bestelling 2027-0101"). */
+  tokensLabel?: string;
   children: React.ReactNode;
 }) {
   return (
     <Card style={styles.ticket}>
       <View style={[styles.head, { backgroundColor: muted ? '#5B6C7B' : brand.navy }]}>
         <AppText variant="label" color={brand.yellow}>
-          {tokens !== undefined
+          {tokensLabel !== undefined
             ? 'MUNTEN · PERSOONSGEBONDEN'
             : `LEDENTICKET · CARNAVAL ${ticket.carnivalYearName?.split('/').pop() ?? ''}`}
         </AppText>
@@ -337,10 +348,8 @@ function TicketCard({
         <AppText variant="caption" color="rgba(255,255,255,0.85)">
           {muted
             ? 'Niet geldig'
-            : tokens !== undefined
-              ? tokens > 0
-                ? `${tokens} munten betaald · nog af te halen`
-                : 'Geen munten af te halen'
+            : tokensLabel !== undefined
+              ? tokensLabel
               : ticket.accessTitle
                 ? `Geldig bij ${ticket.accessTitle}`
                 : `Geldig van ${validityText(ticket.validFrom, ticket.validTo)}`}
@@ -417,14 +426,21 @@ function LiveTicket({
   cached,
   childId,
   purpose = 'Access',
-  tokens,
+  tokenTicket,
+  active = true,
+  cardOnly = false,
 }: {
   holder: Holder | MyTicket;
   source: 'device' | 'server';
   cached: CachedTicket | null;
   childId?: string;
   purpose?: QrPurpose;
-  tokens?: number;
+  /** De muntenbestelling waarvoor deze QR is (munten-QR). */
+  tokenTicket?: TokenTicket;
+  /** Alleen de zichtbare kaart in de carrousel maakt codes. */
+  active?: boolean;
+  /** Alleen de kaart, zonder uitleg eronder (carrousel). */
+  cardOnly?: boolean;
 }) {
   const forTokens = purpose === 'Tokens';
   const { colors } = useTheme();
@@ -442,9 +458,12 @@ function LiveTicket({
   const age = code ? now / 1000 - code.issuedAt : Number.POSITIVE_INFINITY;
   const due = age >= REFRESH_SECONDS;
   useEffect(() => {
-    if (!due || busy.current) return;
+    if (!due || busy.current || !active) return;
     busy.current = true;
-    const next = source === 'device' && cached ? deviceCode(cached, new Date(), purpose) : serverCode(childId, purpose);
+    const next =
+      source === 'device' && cached
+        ? deviceCode(cached, new Date(), purpose, tokenTicket?.ref)
+        : serverCode(childId, purpose, tokenTicket?.id);
     next
       .then((result) => {
         setFailed(!result);
@@ -454,7 +473,7 @@ function LiveTicket({
       .finally(() => {
         busy.current = false;
       });
-  }, [due, source, cached, childId, purpose]);
+  }, [due, source, cached, childId, purpose, tokenTicket, active]);
 
   const remaining = code ? Math.max(0, Math.ceil(REFRESH_SECONDS - age)) : 0;
   const offline = !online;
@@ -466,9 +485,11 @@ function LiveTicket({
         : `Live · ververst over ${remaining} s`;
   const statusColor = failed && source === 'server' ? brand.red : offline ? brand.yellow : brand.green;
 
-  return (
-    <>
-      <TicketCard ticket={holder} tokens={forTokens ? (tokens ?? 0) : undefined}>
+  const card = (
+      <TicketCard
+        ticket={holder}
+        tokensLabel={tokenTicket ? `${tokenTicket.quantity} munten · bestelling ${tokenTicket.number}` : undefined}
+      >
         <View
           style={styles.qr}
           accessible
@@ -478,7 +499,7 @@ function LiveTicket({
               : 'QR-code van je ledenticket. Laat deze scannen bij de ingang.'
           }
         >
-          {code && !(failed && source === 'server') ? (
+          {active && code && !(failed && source === 'server') ? (
             <QRCode value={code.code} size={240} ecl="M" color={brand.navy} backgroundColor="#FFFFFF" quietZone={0} />
           ) : (
             <ActivityIndicator accessibilityLabel="Code maken" />
@@ -494,6 +515,12 @@ function LiveTicket({
           />
         </View>
       </TicketCard>
+  );
+  if (cardOnly) return card;
+
+  return (
+    <>
+      {card}
       <InfoRows
         rows={
           forTokens
@@ -514,7 +541,89 @@ function LiveTicket({
   );
 }
 
+export interface TokenTicket {
+  /** Id van de QR bij de muntenbestelling (voor de servercode). */
+  id: string;
+  /** Referentie (base64) waarmee het toestel de code maakt. */
+  ref: string;
+  quantity: number;
+  number: string;
+}
+
+/**
+ * Munten-QR's (fase 19b): één per muntenbestelling. Van rechts naar links swipen toont de volgende bestelling; de stipjes
+ * eronder springen ook naar een bestelling (toegankelijk). Alleen de zichtbare kaart maakt codes.
+ */
+function TokensCarousel({
+  holder,
+  source,
+  cached,
+  tickets,
+}: {
+  holder: Holder | MyTicket;
+  source: 'device' | 'server';
+  cached: CachedTicket | null;
+  tickets: TokenTicket[];
+}) {
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const pageWidth = width - 40;
+  const [index, setIndex] = useState(0);
+  const scroller = useRef<ScrollView>(null);
+  const go = (i: number) => {
+    setIndex(i);
+    scroller.current?.scrollTo({ x: i * pageWidth, animated: true });
+  };
+
+  return (
+    <>
+      <ScrollView
+        ref={scroller}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / pageWidth))}
+        testID="munten-carrousel"
+      >
+        {tickets.map((t, i) => (
+          <View key={t.id} style={{ width: pageWidth }}>
+            <LiveTicket holder={holder} source={source} cached={cached} purpose="Tokens" tokenTicket={t} active={i === index} cardOnly />
+          </View>
+        ))}
+      </ScrollView>
+      {tickets.length > 1 ? (
+        <View style={styles.dots}>
+          {tickets.map((t, i) => (
+            <Pressable
+              key={t.id}
+              onPress={() => go(i)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityState={{ selected: i === index }}
+              accessibilityLabel={`Bestelling ${i + 1} van ${tickets.length}: ${t.quantity} munten`}
+            >
+              <View style={[styles.pageDot, { backgroundColor: i === index ? brand.red : colors.border }]} />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {tickets.length > 1 ? (
+        <AppText variant="caption" color={colors.textSecondary} style={styles.centerText}>
+          Bestelling {index + 1} van {tickets.length} · swipe voor de volgende
+        </AppText>
+      ) : null}
+      <InfoRows rows={['Gekoppeld aan dit toestel', 'Niet te delen: alleen jij kunt afhalen', 'Scherm staat op maximale helderheid']} />
+      <AppText variant="caption" color={colors.textSecondary}>
+        Laat de code scannen bij de kassa: elke bestelling heeft een eigen QR. Je krijgt de munten zodra de kassa de bestelling
+        uitgeeft. Een screenshot werkt niet.
+      </AppText>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
+  pageDot: { width: 8, height: 8, borderRadius: 4 },
   content: { paddingHorizontal: 20, gap: 16, paddingBottom: 24 },
   loading: { marginTop: 48 },
   center: { alignItems: 'center', gap: 12, paddingVertical: 32 },

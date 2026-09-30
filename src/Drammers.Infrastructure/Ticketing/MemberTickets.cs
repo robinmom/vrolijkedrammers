@@ -283,8 +283,13 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
     }
 
     /// <summary>Door de server ondertekende code voor toestellen zonder hardwaresleutel (alleen online, 45 seconden geldig).</summary>
+    /// <summary>
+    /// Door de server ondertekende code. Voor de munten-QR (fase 19b) met <paramref name="orderTicketId"/>: de referentie
+    /// is die van de muntenbestelling van het lid, zodat de kassa weet welke bestelling wordt uitgegeven.
+    /// </summary>
     public async Task<ServerCode> ServerCodeAsync(
-        Guid userId, string? installationId, CancellationToken cancellationToken, Guid? childMemberId = null, QrPurpose purpose = QrPurpose.Access)
+        Guid userId, string? installationId, CancellationToken cancellationToken, Guid? childMemberId = null, QrPurpose purpose = QrPurpose.Access,
+        Guid? orderTicketId = null)
     {
         var device = await CurrentDeviceAsync(userId, installationId, cancellationToken);
         var ticket = await GetAsync(userId, installationId, cancellationToken, childMemberId);
@@ -301,8 +306,22 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
             throw new DomainException(ErrorCodes.TicketUnavailable, "Dit toestel maakt de code zelf met zijn hardwaresleutel.", DomainErrorKind.Conflict);
         }
 
+        var reference = Convert.FromBase64String(ticket.PublicRef!);
+        if (purpose == QrPurpose.Tokens)
+        {
+            var memberId = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.MemberId).SingleOrDefaultAsync(cancellationToken);
+            reference = await (
+                from ot in db.OrderTickets.AsNoTracking()
+                where ot.Id == orderTicketId && ot.HolderMemberId == memberId && ot.Status == Modules.Ticketing.Sales.OrderTicketStatus.Active
+                join o in db.SaleOrders.AsNoTracking() on ot.OrderId equals o.Id
+                join p in db.SaleProducts.AsNoTracking() on o.ProductId equals p.Id
+                where p.Kind == Modules.Ticketing.Sales.SaleProductKind.Tokens && o.Status == Modules.Ticketing.Sales.SaleOrderStatus.Confirmed
+                select ot.PublicRef).SingleOrDefaultAsync(cancellationToken)
+                ?? throw new DomainException(ErrorCodes.TicketUnavailable, "Deze munten zijn niet (meer) af te halen.", DomainErrorKind.Conflict);
+        }
+
         var issuedAt = clock.UtcNow.ToUnixTimeSeconds();
-        var unsigned = QrPayload.Unsigned(purpose == QrPurpose.Tokens ? QrPayload.ServerSignedTokens : QrPayload.ServerSigned, Convert.FromBase64String(ticket.PublicRef!), ticket.CredentialVersion,
+        var unsigned = QrPayload.Unsigned(purpose == QrPurpose.Tokens ? QrPayload.ServerSignedTokens : QrPayload.ServerSigned, reference, ticket.CredentialVersion,
             QrPayload.ShortDeviceId(device.Id), issuedAt, QrPayload.DefaultValidFor);
         using var key = await keys.ActivePrivateKeyAsync(cancellationToken);
         var signature = key.SignData(unsigned, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);

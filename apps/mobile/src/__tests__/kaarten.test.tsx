@@ -194,12 +194,13 @@ describe('Kaarten (fase 19b)', () => {
 
   it('munten: met betaalde munten de munten-QR, ook vóór carnaval', async () => {
     setSessionForTest('signedIn');
-    const tokens = order({ id: 't-1', kind: 'Tokens', productName: 'Consumptiemunten', groupName: null, paidQuantity: 20, memberQuantity: 0, sharedWith: [], tickets: [{ id: 't', quantity: 20, status: 'Active', code: null, canShare: false }] });
-    expect(tokensToCollect([tokens as never])).toBe(20);
+    const tokens = order({ id: 't-1', number: '2027-0101', kind: 'Tokens', productName: 'Consumptiemunten', groupName: null, paidQuantity: 20, memberQuantity: 0, sharedWith: [], createdAt: '2026-10-10T18:00:00Z', tickets: [{ id: 'ot-1', quantity: 20, status: 'Active', code: null, canShare: false, ref: 'AAECAwQFBgcICQoLDA0ODw==' }] });
+    const more = order({ id: 't-2', number: '2027-0188', kind: 'Tokens', productName: 'Consumptiemunten', groupName: null, paidQuantity: 10, memberQuantity: 0, sharedWith: [], createdAt: '2026-10-12T18:00:00Z', tickets: [{ id: 'ot-2', quantity: 10, status: 'Active', code: null, canShare: false, ref: 'EBESExQVFhcYGRobHB0eHw==' }] });
+    expect(tokensToCollect([tokens as never, more as never])).toBe(30);
     mockApi({
       ...api,
       '/api/v1/me': me,
-      '/api/v1/me/orders': [tokens],
+      '/api/v1/me/orders': [more, tokens],
       '/api/v1/me/ticket': {
         state: 'NotYetValid',
         message: '',
@@ -219,11 +220,19 @@ describe('Kaarten (fase 19b)', () => {
     });
     await renderApp(routes, '/munten');
     // Ook vóór carnaval (bijvoorbeeld op de pronkzitting) staat de munten-QR klaar.
-    expect(await screen.findByText('MUNTEN · PERSOONSGEBONDEN')).toBeTruthy();
-    expect(screen.getByText('20 munten betaald · nog af te halen')).toBeTruthy();
+    expect(await screen.findAllByText('MUNTEN · PERSOONSGEBONDEN')).toHaveLength(2);
+    // Eén QR per bestelling, oudste eerst; alleen de zichtbare kaart haalt een code op.
+    expect(screen.getByText('20 munten · bestelling 2027-0101')).toBeTruthy();
+    expect(screen.getByText('10 munten · bestelling 2027-0188')).toBeTruthy();
     expect((await screen.findByTestId('qr-code')).props.children).toBe('DVD-MUNTEN');
     expect(screen.getByText('Niet te delen: alleen jij kunt afhalen')).toBeTruthy();
-    expect(requests().find((r) => r.url.includes('/api/v1/me/ticket/code'))!.url).toContain('purpose=Tokens');
+    expect(screen.getByText('Bestelling 1 van 2 · swipe voor de volgende')).toBeTruthy();
+    const codeCalls = () => requests().filter((r) => r.url.includes('/api/v1/me/ticket/code')).map((r) => r.url);
+    expect(codeCalls().every((u) => u.includes('purpose=Tokens') && u.includes('orderTicketId=ot-1'))).toBe(true);
+    // Naar de volgende bestelling (zoals swipen): die maakt dan zijn eigen code.
+    await fireEvent.press(screen.getByRole('button', { name: 'Bestelling 2 van 2: 10 munten' }));
+    expect(await screen.findByText('Bestelling 2 van 2 · swipe voor de volgende')).toBeTruthy();
+    await waitFor(() => expect(codeCalls().some((u) => u.includes('orderTicketId=ot-2'))).toBe(true));
   });
 
   it('munten-QR op het toestel is versie 4; meldingen openen Mijn kaarten en Munten', () => {

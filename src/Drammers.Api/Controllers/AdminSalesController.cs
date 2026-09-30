@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Drammers.Api.Controllers;
 
 /// <summary>
-/// Kaartverkoop in het portal (fase 19, Figma 🎫 Kaartverkoop): producten, bestellingen (contant of met een betaallink),
+/// Verkoop in het portal (fase 19, Figma 🎫 Kaartverkoop; één pagina per soort product): producten, bestellingen (contant of met een betaallink),
 /// de pronkzitting per avond met de export voor de tafelindeling, de wachtlijst en de munten. Alles met <c>sale.manage</c>.
 /// </summary>
 [ApiController]
@@ -28,7 +28,8 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
 
     [HttpGet("summary")]
     [ProducesResponseType<SalesSummary>(StatusCodes.Status200OK)]
-    public Task<SalesSummary> Summary(CancellationToken cancellationToken) => administration.SummaryAsync(cancellationToken);
+    public Task<SalesSummary> Summary([FromQuery] SaleProductKind? kind, CancellationToken cancellationToken) =>
+        administration.SummaryAsync(cancellationToken, kind);
 
     [HttpGet("products")]
     [ProducesResponseType<IReadOnlyList<AdminSaleProductResponse>>(StatusCodes.Status200OK)]
@@ -55,11 +56,11 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
     [HttpGet("orders")]
     [ProducesResponseType<PagedResult<SaleOrderRow>>(StatusCodes.Status200OK)]
     public async Task<PagedResult<SaleOrderRow>> Orders(
-        [FromQuery] Guid? productId, [FromQuery] SaleOrderStatus? status, [FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize,
-        CancellationToken cancellationToken)
+        [FromQuery] Guid? productId, [FromQuery] SaleProductKind? kind, [FromQuery] SaleOrderStatus? status, [FromQuery] string? search,
+        [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
         var (p, size) = PagedResult<SaleOrderRow>.Normalize(page, pageSize);
-        var (items, total) = await administration.OrdersAsync(productId, status, search, p, size, cancellationToken);
+        var (items, total) = await administration.OrdersAsync(productId, status, search, p, size, cancellationToken, kind);
         return new PagedResult<SaleOrderRow>(items, p, size, total);
     }
 

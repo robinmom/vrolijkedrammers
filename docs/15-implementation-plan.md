@@ -787,7 +787,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Nooit terugbetalen. Het bestuur kan annuleren: de QR vervalt en de plaatsen komen vrij.
 - Pronkzitting voor groepen:
   - Elk lid van een groep (e-Boekhouden vrij veld 3) mag voor de groep bestellen.
-  - Het maximum is het aantal actieve leden van de groep, beide avonden samen.
+  - Het maximum is het aantal **personen** van de actieve leden van de groep, beide avonden samen. Het soort lid komt uit het e-Boekhouden-veld dat als categorie is gemapt: "Tweepersoonslid DVD" telt 2; "Eénpersoonslid DVD", "Lidmaatschap dansgarde DVD" en alle andere waarden tellen 1.
   - Dat maximum is **geen reservering**. Wat de groep nog niet besteld heeft, blijft vrij voor anderen.
   - Is de avond vol, dan komt een latere bestelling op de wachtlijst.
 - Leden bestellen groepskaarten gratis (in de contributie). Niet-leden betalen altijd met iDEAL. Alleen het portal kan contant boeken of een betaallink per e-mail sturen, ook los voor de vrije verkoop.
@@ -810,10 +810,11 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - De koper opent de bestelling met een geheim token. Dat staat versleuteld (Data Protection) in de database, zodat latere e-mails dezelfde link sturen.
 - E-mails: bevestiging, betaallink, wachtlijst en "er is plek". Een pushmelding voor ingelogde kopers.
 - Nachtelijke job `sale-expiry`: zet verlopen bestellingen op Verlopen, kijkt eerst bij Mollie en markeert verlopen uitnodigingen. De serverless database kan de rest van de tijd pauzeren; de capaciteit hangt niet van de job af.
-- Portal: eigen menukop Kaartverkoop met de pagina's Kaartverkoop, Pronkzitting en Munten.
-  - Kaartverkoop: kerncijfers, producten instellen, bestellingen met contant ontvangen, link opnieuw en annuleren, een nieuwe bestelling en een betaallink maken.
+- Portal: eigen menukop **Verkoop** met een pagina per soort product: Pronkzitting, Dagkaarten, Activiteiten en Munten (30-09-2026). Elke pagina heeft kerncijfers, de producten (instellen, wachtlijst), de bestellingen, "+ Bestelling" en (behalve Munten) "Betaallink maken". Bij een lid toont het portal de groep (vrij veld 3).
+  - Bestellingen: contant ontvangen, link opnieuw en annuleren.
   - Pronkzitting: per avond de groepen en losse kaarten op naam, de wachtlijst met toekennen, en de Excel-export voor de tafelindeling.
   - Munten: wie heeft gekocht, betaald en afgehaald.
+  - Dagkaarten en Activiteiten: producten, wachtlijst per product en bestellingen.
 - Rechten: `sale.manage` (bestuur) en `sale.collect` (nieuwe rol Kassa, 19c).
 
 **19b — app en webpagina (gebouwd).**

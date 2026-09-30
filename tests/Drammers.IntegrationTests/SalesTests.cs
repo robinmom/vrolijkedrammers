@@ -324,4 +324,24 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Contains("<svg", await svg.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.NotFound, (await _guest.GetAsync($"/api/v1/sales/orders/{created.GetProperty("orderId").GetGuid()}/tickets/{ticketId}/qr.svg?t=fout")).StatusCode);
     }
+
+    [Fact]
+    public async Task Groepsmaximum_telt_personen_tweepersoonslid_telt_twee()
+    {
+        await ProductAsync("Pronkzitting", "Pronkzitting vrijdag", 1250, capacity: 300, date: "2027-02-05");
+        var mendy = await MemberAsync("mendy@example.com", "Kruumels");
+        await WithDbAsync(async db =>
+        {
+            db.Members.AddRange(
+                new Member { Id = IdGenerator.NewId(), MemberNumber = "K1", FullName = "Duo", ParadeGroupName = "Kruumels", MemberCategory = "Tweepersoonslid DVD", MembershipStatus = MembershipStatus.Active },
+                new Member { Id = IdGenerator.NewId(), MemberNumber = "K2", FullName = "Danseres", ParadeGroupName = "Kruumels", MemberCategory = "Lidmaatschap dansgarde DVD", MembershipStatus = MembershipStatus.Active },
+                new Member { Id = IdGenerator.NewId(), MemberNumber = "K3", FullName = "Oud-lid", ParadeGroupName = "Kruumels", MemberCategory = "Tweepersoonslid DVD", MembershipStatus = MembershipStatus.Inactive });
+            return await db.SaveChangesAsync();
+        });
+        var group = (await JsonAsync(await mendy.GetAsync("/api/v1/sales/products"))).GetProperty("group");
+        // Mendy (zonder soort: 1) + tweepersoonslid (2) + dansgarde (1); het inactieve lid telt niet.
+        Assert.Equal(3, group.GetProperty("activeMembers").GetInt32());
+        Assert.Equal(4, group.GetProperty("persons").GetInt32());
+        Assert.Equal(4, group.GetProperty("remaining").GetInt32());
+    }
 }

@@ -1,5 +1,8 @@
 # Runbook: kaartverkoop en Mollie (fase 19)
 
+> **Status:** de Mollie-sleutel is nog niet gezet. Dit is geparkeerd tot het bestuur de sleutel aanlevert.
+> Tot die tijd werken gratis groepskaarten en contante bestellingen in het portal wel; betalen met iDEAL niet.
+
 ## Mollie-sleutel in Key Vault
 
 De API leest de sleutel uit Key Vault. Hij staat niet in de repository, niet in app-settings en komt niet via Claude.
@@ -21,7 +24,7 @@ De webhook bevat alleen het betalings-id. De status wordt altijd bij Mollie opge
 
 ## Testen in de testmodus
 
-1. Zet in het portal onder **Kaartverkoop → + Product** een product op "Te koop".
+1. Zet in het portal onder **Verkoop** (Pronkzitting, Dagkaarten, Activiteiten of Munten) een product op "Te koop".
 2. Bestel in de app of op de webpagina. Kies op de testpagina van Mollie de status "Paid".
 3. De bestelling staat in het portal op **Betaald** en de koper krijgt een e-mail met de link naar de QR.
 4. Test ook "Failed" en "Canceled". De plaatsen komen dan direct weer vrij.
@@ -34,6 +37,6 @@ De webhook bevat alleen het betalings-id. De status wordt altijd bij Mollie opge
 
 ## Reconciliatie met de penningmeester
 
-- **Portal:** Kaartverkoop toont de omzet en per bestelling de betaalwijze (iDEAL, contant, gratis).
+- **Portal:** elke pagina onder Verkoop toont de omzet en per bestelling de betaalwijze (iDEAL, contant, gratis).
 - **Mollie:** het dashboard toont de betalingen met de omschrijving `<product> · bestelling <nummer>`.
 - Nooit terugbetalen. Een geannuleerde bestelling blijft in Mollie als betaald staan en staat in het portal als Geannuleerd.

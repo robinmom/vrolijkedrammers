@@ -7059,7 +7059,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    kind?: components["schemas"]["SaleProductKind"];
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -7247,6 +7249,7 @@ export interface paths {
             parameters: {
                 query?: {
                     productId?: string;
+                    kind?: components["schemas"]["SaleProductKind"];
                     status?: components["schemas"]["SaleOrderStatus"];
                     search?: string;
                     page?: number;
@@ -13286,11 +13289,16 @@ export interface components {
         GrantWaitlistRequest: {
             payment: components["schemas"]["PortalPayment"];
         };
-        /** @description Kaarten die een groep (vrij veld 3) nog gratis kan bestellen: actieve leden min wat al besteld is (beide avonden). */
+        /**
+         * @description Kaarten die een groep (vrij veld 3) nog gratis kan bestellen: het aantal personen van de actieve leden (een
+         *     tweepersoonslid telt 2, zie MembershipWeights) min wat al besteld is (beide avonden).
+         */
         GroupAllowance: {
             groupName: string;
             /** Format: int32 */
             activeMembers: number;
+            /** Format: int32 */
+            persons: number;
             /** Format: int32 */
             ordered: number;
             /** Format: int32 */
@@ -13589,6 +13597,9 @@ export interface components {
             joinYear: null | number;
             ebStatusRaw: null | string;
             memberCategory: null | string;
+            paradeGroupName: null | string;
+            /** Format: int32 */
+            persons: number;
             syncedStatus: components["schemas"]["MembershipStatus"];
             localStatusOverride: null | components["schemas"]["MembershipStatus"];
             effectiveStatus: components["schemas"]["MembershipStatus"];
@@ -14720,11 +14731,8 @@ export interface components {
         SaleOrderStatus: "AwaitingPayment" | "Confirmed" | "Cancelled" | "Expired";
         /** @enum {unknown} */
         SalePaymentMethod: "Free" | "Mollie" | "Cash";
-        /**
-         * @description Wat er te koop is (fase 19).
-         * @enum {unknown}
-         */
-        SaleProductKind: "Pronkzitting" | "DayTicket" | "EventTicket" | "Tokens";
+        /** @enum {unknown} */
+        SaleProductKind: "Pronkzitting" | "DayTicket" | "EventTicket" | "Tokens" | null;
         SaleProductRequest: {
             kind: components["schemas"]["SaleProductKind"];
             name: string;
@@ -14774,6 +14782,8 @@ export interface components {
         SalesSummary: {
             /** Format: int32 */
             revenueCents: number;
+            /** Format: int32 */
+            sold: number;
             /** Format: int32 */
             openPaymentLinks: number;
             /** Format: int32 */

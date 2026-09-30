@@ -59,7 +59,7 @@ const munten = product('11111111-0000-0000-0000-000000000004', 'Tokens', 'Consum
 const catalog = (isMember: boolean) => ({
   products: [vrijdag, zaterdag, dagkaart, munten],
   isMember,
-  group: isMember ? { groupName: 'Kruumels', activeMembers: 13, ordered: 8, remaining: 5 } : null,
+  group: isMember ? { groupName: 'Kruumels', activeMembers: 11, persons: 13, ordered: 8, remaining: 5 } : null,
 });
 
 const order = (extra: Record<string, unknown> = {}) => ({
@@ -120,7 +120,7 @@ describe('Kaarten (fase 19b)', () => {
     mockApi({ ...api, '/api/v1/me': me, '/api/v1/sales/products': catalog(true) });
     await renderApp(routes, '/kaarten/pronkzitting');
     expect(await screen.findByText('Voor de Kruumels')).toBeTruthy();
-    expect(screen.getByText(/13 leden · 8 al besteld door de groep/)).toBeTruthy();
+    expect(screen.getByText(/13 personen \(11 leden\) · 8 al besteld door de groep/)).toBeTruthy();
     // Standaard de avond met plaats (zaterdag); kies vrijdag (vol).
     await fireEvent.press(screen.getByRole('radio', { name: /vrijdag 5 februari, vol/ }));
     await fireEvent.press(screen.getByTestId('Kaarten groep-plus'));

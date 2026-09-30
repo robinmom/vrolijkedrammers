@@ -284,6 +284,26 @@ export class MockApi {
       waiting: 0,
     },
     {
+      id: 'sp-dag',
+      kind: 'DayTicket',
+      name: 'Dagkaart zaterdag',
+      description: null,
+      eventId: null,
+      date: '2027-02-13',
+      priceCents: 750,
+      capacity: 500,
+      maxPerOrder: 10,
+      saleOpensAt: null,
+      saleClosesAt: null,
+      onSale: true,
+      sortOrder: 2,
+      sold: 96,
+      held: 0,
+      remaining: 404,
+      revenueCents: 72000,
+      waiting: 0,
+    },
+    {
       id: 'sp-mu',
       kind: 'Tokens',
       name: 'Consumptiemunten',
@@ -813,6 +833,7 @@ export class MockApi {
       if (method !== 'GET') this.salesCalls.push({ method, path, body });
       if (path === '/admin/sales/summary') {
         return json({
+          sold: url.searchParams.get('kind') === 'Tokens' ? 1120 : 558,
           revenueCents: 348250,
           openPaymentLinks: 4,
           openAmountCents: 8750,
@@ -866,7 +887,11 @@ export class MockApi {
         );
       }
       if (path === '/admin/sales/orders' && method === 'GET') {
-        return json({ items: this.saleOrders, page: 1, pageSize: 25, totalCount: this.saleOrders.length });
+        const kind = url.searchParams.get('kind');
+        const items = this.saleOrders.filter(
+          (o) => !kind || this.saleProducts.find((p) => p.id === o.productId)?.kind === kind,
+        );
+        return json({ items, page: 1, pageSize: 25, totalCount: items.length });
       }
       if (path === '/admin/sales/orders' && method === 'POST') {
         return json(
@@ -877,8 +902,8 @@ export class MockApi {
       if (path.match(/^\/admin\/sales\/orders\/[^/]+\/(paid-cash|cancel|resend-link)$/)) return noContent();
       if (path === '/admin/sales/groups') {
         return json([
-          { groupName: 'De Kruumels', activeMembers: 13, ordered: 8, remaining: 5 },
-          { groupName: 'De Snotapen', activeMembers: 12, ordered: 0, remaining: 12 },
+          { groupName: 'De Kruumels', activeMembers: 11, persons: 13, ordered: 8, remaining: 5 },
+          { groupName: 'De Snotapen', activeMembers: 12, persons: 12, ordered: 0, remaining: 12 },
         ]);
       }
       if ((m = path.match(/^\/admin\/sales\/waitlist\/([^/]+)\/grant$/))) {
@@ -1771,6 +1796,8 @@ export class MockApi {
         joinYear: member.joinYear,
         ebStatusRaw: null,
         memberCategory: null,
+        paradeGroupName: 'De Kruumels',
+        persons: 1,
         syncedStatus: member.status,
         localStatusOverride: member.localStatusOverride,
         effectiveStatus: member.localStatusOverride ?? member.status,

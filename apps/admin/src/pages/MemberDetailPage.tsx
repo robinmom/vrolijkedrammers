@@ -206,9 +206,14 @@ export function MemberDetailPage() {
               {sources.categoryFromEBoekhouden ? (
                 <>
                   <dt>Categorie</dt>
-                  <dd>{m.memberCategory ?? '—'}</dd>
+                  <dd>
+                    {m.memberCategory ?? '—'}
+                    {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}
+                  </dd>
                 </>
               ) : null}
+              <dt>Groep</dt>
+              <dd>{m.paradeGroupName ?? '—'}</dd>
             </dl>
           </section>
 

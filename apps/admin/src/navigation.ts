@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Kaartverkoop' | 'Beheer';
+  section?: 'Content' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -39,9 +39,11 @@ export const navItems: readonly NavItem[] = [
   { label: 'Ledentickets', to: '/tickets', permission: 'ticket.read', icon: 'rollen', section: 'Toegang' },
   { label: 'Toegangslog', to: '/toegangslog', permission: 'ticket.read', icon: 'audit', section: 'Toegang' },
   { label: 'Statistieken', to: '/toegang/statistieken', permission: 'ticket.read', icon: 'rapport', section: 'Toegang' },
-  { label: 'Kaartverkoop', to: '/kaartverkoop', permission: 'sale.manage', icon: 'ticket', section: 'Kaartverkoop' },
-  { label: 'Pronkzitting', to: '/kaartverkoop/pronkzitting', permission: 'sale.manage', icon: 'agenda', section: 'Kaartverkoop' },
-  { label: 'Munten', to: '/kaartverkoop/munten', permission: 'sale.manage', icon: 'munten', section: 'Kaartverkoop' },
+  // Fase 19: één pagina per soort product.
+  { label: 'Pronkzitting', to: '/verkoop/pronkzitting', permission: 'sale.manage', icon: 'agenda', section: 'Verkoop' },
+  { label: 'Dagkaarten', to: '/verkoop/dagkaarten', permission: 'sale.manage', icon: 'ticket', section: 'Verkoop' },
+  { label: 'Activiteiten', to: '/verkoop/activiteiten', permission: 'sale.manage', icon: 'jaar', section: 'Verkoop' },
+  { label: 'Munten', to: '/verkoop/munten', permission: 'sale.manage', icon: 'munten', section: 'Verkoop' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage', icon: 'gebruiker', section: 'Beheer' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage', icon: 'rollen', section: 'Beheer' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage', icon: 'jaar', section: 'Beheer' },

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import { api, unwrap } from '../api/client';
 import { useSessionStatus } from '../auth/useSession';
+import type { TokenTicket } from './TicketScreen';
 
 /** Kaartverkoop in de app (fase 19b): catalogus, bestellingen van gasten op dit toestel en Mijn kaarten. */
 export type SaleCatalog = components['schemas']['SaleCatalogResponse'];
@@ -113,6 +114,19 @@ export const useShareCandidates = (ticketId: string | null) =>
     queryFn: () =>
       unwrap(api.GET('/api/v1/me/orders/tickets/{ticketId}/share-candidates', { params: { path: { ticketId: ticketId! } } })),
   });
+
+/** Betaalde muntenbestellingen die nog opgehaald moeten worden: één munten-QR per bestelling, oudste eerst. */
+export function tokenTickets(orders: OrderView[] | undefined): TokenTicket[] {
+  return (orders ?? [])
+    .filter((o) => o.kind === 'Tokens' && o.status === 'Confirmed')
+    .slice()
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .flatMap((o) =>
+      o.tickets
+        .filter((t) => t.status === 'Active' && t.ref)
+        .map((t) => ({ id: t.id, ref: t.ref!, quantity: t.quantity, number: o.number })),
+    );
+}
 
 /** Munten die betaald zijn en nog opgehaald moeten worden. */
 export function tokensToCollect(orders: OrderView[] | undefined): number {

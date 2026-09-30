@@ -10113,12 +10113,13 @@ export interface paths {
         };
         /**
          * Door de server ondertekende code (45 s) voor toestellen zonder hardwaresleutel. Met `purpose=Tokens` de
-         *     munten-QR voor de kassa (fase 19b).
+         *     munten-QR voor de kassa (fase 19b), per muntenbestelling (`orderTicketId`).
          */
         get: {
             parameters: {
                 query?: {
                     purpose?: components["schemas"]["QrPurpose"];
+                    orderTicketId?: string;
                 };
                 header?: never;
                 path?: never;
@@ -14022,7 +14023,8 @@ export interface components {
         OrderTicketStatus: "Active" | "Used" | "Cancelled";
         /**
          * @description Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
-         *     bool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b).
+         *     bool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b). string? OrderTicketView.Ref
+         *     (base64) alleen bij munten van het lid zelf: daarmee maakt het toestel de munten-QR van deze bestelling.
          */
         OrderTicketView: {
             /** Format: uuid */
@@ -14032,6 +14034,7 @@ export interface components {
             status: components["schemas"]["OrderTicketStatus"];
             code: null | string;
             canShare: boolean;
+            ref?: null | string;
         };
         /** @description De bestelling zoals de koper hem ziet (na betalen of via de link in de e-mail). */
         OrderView: {

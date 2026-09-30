@@ -168,10 +168,12 @@ export async function deviceCode(
   ticket: CachedTicket,
   now: Date,
   purpose: QrPurpose = 'Access',
+  /** Munten-QR: de referentie van de muntenbestelling in plaats van die van het ledenticket. */
+  reference?: string,
 ): Promise<{ code: string; issuedAt: number }> {
   const issuedAt = Math.floor(now.getTime() / 1000);
   const unsigned = unsignedPayload({
-    ref: fromBase64(ticket.publicRef),
+    ref: fromBase64(reference ?? ticket.publicRef),
     credentialVersion: ticket.credentialVersion,
     deviceId: fromBase64(ticket.deviceShortId),
     issuedAt,
@@ -186,10 +188,11 @@ export async function deviceCode(
 export async function serverCode(
   childId?: string,
   purpose: QrPurpose = 'Access',
+  orderTicketId?: string,
 ): Promise<{ code: string; issuedAt: number } | null> {
   const { data } = childId
     ? await api.GET('/api/v1/me/children/{memberId}/ticket/code', { params: { path: { memberId: childId } } })
-    : await api.GET('/api/v1/me/ticket/code', { params: { query: { purpose } } });
+    : await api.GET('/api/v1/me/ticket/code', { params: { query: { purpose, orderTicketId } } });
   return data ? { code: data.code, issuedAt: data.issuedAt } : null;
 }
 

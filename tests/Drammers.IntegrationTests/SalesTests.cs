@@ -344,4 +344,62 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(4, group.GetProperty("persons").GetInt32());
         Assert.Equal(4, group.GetProperty("remaining").GetInt32());
     }
+
+    [Fact]
+    public async Task Munten_QR_per_bestelling_alleen_bij_de_kassa()
+    {
+        var munten = await ProductAsync("Tokens", "Consumptiemunten", 250, capacity: null, maxPerOrder: 100);
+        var (userId, oid) = await _api.CreateUserAsync("mendy@example.com", DefaultRoles.Lid);
+        await WithDbAsync(async db =>
+        {
+            var memberId = IdGenerator.NewId();
+            db.Members.Add(new Member { Id = memberId, MemberNumber = "M1", FullName = "Mendy Mom", Email = "mendy@example.com", MembershipStatus = MembershipStatus.Active });
+            await db.SaveChangesAsync();
+            return await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(x => x.SetProperty(u => u.MemberId, memberId));
+        });
+        var phone = _api.ClientFor(oid);
+        phone.DefaultRequestHeaders.Add("X-Device-Id", "installatie-munten-0001");
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/devices", new { installationId = "installatie-munten-0001", platform = "Ios", model = "iPhone 15", appVersion = "1.0.0" }));
+        await JsonAsync(await phone.GetAsync("/api/v1/me/ticket"));
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/ticket/bind-device", new { challenge = (string?)null, signature = (string?)null }), HttpStatusCode.NoContent);
+
+        foreach (var quantity in new[] { 20, 10 })
+        {
+            await JsonAsync(await phone.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: quantity, name: null, email: null)), HttpStatusCode.Created);
+        }
+
+        foreach (var paymentId in _mollie.Payments.Keys)
+        {
+            _mollie.SetStatus(paymentId, "paid");
+            await WebhookAsync(paymentId);
+        }
+
+        var tickets = (await JsonAsync(await phone.GetAsync("/api/v1/me/orders"))).EnumerateArray()
+            .Select(o => o.GetProperty("tickets")[0]).ToList();
+        Assert.Equal(2, tickets.Count);
+        Assert.All(tickets, t => Assert.NotNull(t.GetProperty("ref").GetString()));
+        var first = tickets[0];
+
+        // Vóór carnaval, zonder hardwaresleutel: een munten-QR van de server voor precies deze bestelling.
+        var code = (await JsonAsync(await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={first.GetProperty("id").GetGuid()}")))
+            .GetProperty("code").GetString()!;
+        Assert.Equal(QrPayload.ServerSignedTokens, QrPayload.TryDecode(code)!.Version);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var validation = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Ticketing.TicketValidation>();
+            var atKassa = await validation.ValidateAsync(code, default, purpose: QrPurpose.Tokens);
+            Assert.Equal(QrCheck.Valid, atKassa.Result);
+            Assert.Equal(first.GetProperty("ref").GetString(), Convert.ToBase64String(atKassa.Ticket!.PublicRef));
+            Assert.Equal("Mendy Mom", atKassa.Ticket.HolderName);
+            Assert.Equal(QrCheck.WrongPurpose, (await validation.ValidateAsync(code, default)).Result);
+
+            // Uitgegeven: dezelfde QR werkt niet nog een keer.
+            await WithDbAsync(db => db.OrderTickets.Where(t => t.Id == first.GetProperty("id").GetGuid())
+                .ExecuteUpdateAsync(x => x.SetProperty(t => t.Status, OrderTicketStatus.Used)));
+            Assert.Equal(QrCheck.Blocked, (await validation.ValidateAsync(code, default, purpose: QrPurpose.Tokens)).Result);
+        }
+
+        // Geen code voor munten van een ander of een onbekende bestelling.
+        Assert.Equal(HttpStatusCode.Conflict, (await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={Guid.NewGuid()}")).StatusCode);
+    }
 }

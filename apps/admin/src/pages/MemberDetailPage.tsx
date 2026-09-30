@@ -200,16 +200,16 @@ export function MemberDetailPage() {
               {sources.statusFromEBoekhouden ? (
                 <>
                   <dt>Status in e-Boekhouden</dt>
-                  <dd>{m.ebStatusRaw ?? '—'}</dd>
+                  <dd>
+                    {m.ebStatusRaw ?? '—'}
+                    {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}
+                  </dd>
                 </>
               ) : null}
               {sources.categoryFromEBoekhouden ? (
                 <>
-                  <dt>Soort lid</dt>
-                  <dd>
-                    {m.memberCategory ?? '—'}
-                    {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}
-                  </dd>
+                  <dt>Categorie</dt>
+                  <dd>{m.memberCategory ?? '—'}</dd>
                 </>
               ) : null}
               <dt>Groep</dt>

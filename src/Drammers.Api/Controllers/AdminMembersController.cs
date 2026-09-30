@@ -88,7 +88,7 @@ public sealed class AdminMembersController(
         return new MemberDetailResponse(
             m.Id, m.MemberNumber, m.EbMemberId, m.FullName, m.FirstName, m.NamePrefix, m.LastName, m.NameCorrectedManually,
             m.Salutation, m.Gender, m.AddressLine, m.PostalCode, m.City, m.Country, m.Email, m.Phone, m.MobilePhone,
-            m.BirthDate, m.JoinYear, m.EbStatusRaw, m.MemberCategory, m.ParadeGroupName, MembershipWeights.Persons(m.MemberCategory),
+            m.BirthDate, m.JoinYear, m.EbStatusRaw, m.MemberCategory, m.ParadeGroupName, MembershipWeights.Persons(m.EbStatusRaw),
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),

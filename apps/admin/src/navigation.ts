@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
+  section?: 'Content' | 'Website' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -23,6 +23,13 @@ export const navItems: readonly NavItem[] = [
     icon: 'meldingen',
     section: 'Content',
   },
+  // Fase 21a: beheer van de website.
+  { label: 'Homepage', to: '/website/homepage', permission: 'website.manage', icon: 'home', section: 'Website' },
+  { label: "Pagina's", to: '/website/paginas', permission: 'website.manage', icon: 'rapport', section: 'Website' },
+  { label: 'Kader', to: '/website/kader', permission: 'website.manage', icon: 'groepen', section: 'Website' },
+  { label: 'Prinsen', to: '/website/prinsen', permission: 'website.manage', icon: 'gebruiker', section: 'Website' },
+  { label: 'Onderscheidingen', to: '/website/onderscheidingen', permission: 'website.manage', icon: 'jaar', section: 'Website' },
+  { label: 'Instellingen website', to: '/website/instellingen', permission: 'website.manage', icon: 'instellingen', section: 'Website' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   { label: 'Accountverzoeken', to: '/accountverzoeken', permission: 'member.approve', icon: 'gebruiker', section: 'Leden' },

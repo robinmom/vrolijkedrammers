@@ -66,6 +66,7 @@ export function MemberDetailPage() {
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
   const canApprove = (me.data?.permissions ?? []).includes('member.approve');
   const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  const canWebsite = (me.data?.permissions ?? []).includes('website.manage');
   const canCheckIn = (me.data?.permissions ?? []).includes('ticket.scan');
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
@@ -382,6 +383,31 @@ export function MemberDetailPage() {
               </ul>
             )}
           </section>
+
+          {canWebsite || (m.kader?.length ?? 0) > 0 ? (
+            <section className="card" aria-labelledby="kader">
+              <div className="card-header">
+                <h2 id="kader">Kader (website)</h2>
+                {canWebsite ? (
+                  <Link to="/website/kader" className="button ghost small">
+                    Kader beheren
+                  </Link>
+                ) : null}
+              </div>
+              {(m.kader?.length ?? 0) === 0 ? (
+                <p className="muted">Geen functie in het kader.</p>
+              ) : (
+                <ul className="list">
+                  {m.kader!.map((k) => (
+                    <li key={k.id} className="list-row">
+                      <span className="grow">{k.committee}</span>
+                      {k.function ? <span className="badge">{k.function}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
 
           <MemberHistory memberId={id} />
 

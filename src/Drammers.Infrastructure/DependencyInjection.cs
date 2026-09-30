@@ -186,6 +186,7 @@ public static class DependencyInjection
         services.AddScoped<TestAccessAdministration>();
         services.AddScoped<ConfigurationAdministration>();
         services.AddScoped<ContentAdministration>();
+        services.AddScoped<WebsiteAdministration>();
         services.AddScoped<ContentFiles>();
         services.AddScoped<IOutboxMessageHandler, PhotoProcessingHandler>();
         services.TryAddScoped<ContentPublisherJob>();

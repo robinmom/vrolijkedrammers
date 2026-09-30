@@ -28,7 +28,10 @@ public sealed record EventInput(
     string? LocationName, string? LocationAddress, decimal? Latitude, decimal? Longitude, bool IsHighlight, string? BadgeText,
     PublicationInput Publication, bool AccessControl = false);
 
-public sealed record NewsInput(string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false);
+/// <summary>Nieuws; <c>Image</c> is het pad van een vooraf geüploade afbeelding (<see cref="UploadedImages"/>): <c>null</c> = ongewijzigd, leeg = weghalen.</summary>
+public sealed record NewsInput(
+    string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false,
+    bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null, string? Image = null);
 
 public sealed record AlbumInput(string Title, DateOnly? AlbumDate, string? Description, Guid? EventId, PublicationInput Publication);
 
@@ -122,8 +125,9 @@ public sealed class ContentAdministration(
     {
         var n = new NewsItem { Id = IdGenerator.NewId(), Title = input.Title, Body = input.Body, AuthorUserId = actor.UserId };
         Apply(n, input);
+        await ApplyWebsiteAsync(n, input, cancellationToken);
         db.News.Add(n);
-        await SaveWithAuditAsync("news.created", "News", n.Id, input, cancellationToken);
+        await SaveWithAuditAsync("news.created", "News", n.Id, AuditValues(input), cancellationToken);
         return n.Id;
     }
 
@@ -132,9 +136,41 @@ public sealed class ContentAdministration(
         var n = await db.News.Include(x => x.Audiences).SingleOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw NotFound();
         var wasPublished = n.Status == PublicationStatus.Published;
         Apply(n, input);
+        var obsoleteImage = await ApplyWebsiteAsync(n, input, cancellationToken);
         var action = !wasPublished && n.Status == PublicationStatus.Published ? "news.published" : "news.updated";
-        await SaveWithAuditAsync(action, "News", n.Id, input, cancellationToken);
+        await SaveWithAuditAsync(action, "News", n.Id, AuditValues(input), cancellationToken);
+        await DeleteBlobsAsync(FileContainers.Content, [obsoleteImage], cancellationToken);
     }
+
+    /// <summary>
+    /// Website (fase 21a): alleen openbaar nieuws mag op de website. Het webadres wordt uit de titel gemaakt als het leeg
+    /// is en blijft daarna staan (links blijven werken); een vooraf geüploade afbeelding wordt gekoppeld.
+    /// </summary>
+    private async Task<string?> ApplyWebsiteAsync(NewsItem n, NewsInput input, CancellationToken cancellationToken)
+    {
+        if (input.ShowOnWebsite && n.Visibility != ContentVisibility.Public)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Alleen openbaar nieuws kan ook op de website. Zet de zichtbaarheid op Openbaar.");
+        }
+
+        (n.ShowOnWebsite, n.WebsiteBody) = (input.ShowOnWebsite, string.IsNullOrWhiteSpace(input.WebsiteBody) ? null : input.WebsiteBody);
+        var slug = !string.IsNullOrWhiteSpace(input.Slug) ? Slugs.Validate(input.Slug.Trim())
+            : n.Slug ?? (input.ShowOnWebsite ? Slugs.From(input.Title) : null);
+        if (slug is not null && slug != n.Slug)
+        {
+            n.Slug = string.IsNullOrWhiteSpace(input.Slug)
+                ? await Slugs.UniqueAsync(slug, s => db.News.AnyAsync(x => x.Slug == s && x.Id != n.Id, cancellationToken))
+                : await db.News.AnyAsync(x => x.Slug == slug && x.Id != n.Id, cancellationToken)
+                    ? throw new DomainException(ErrorCodes.Validation, $"Het webadres '{slug}' is al in gebruik.")
+                    : slug;
+        }
+
+        var (image, obsolete) = UploadedImages.Resolve(n.ImageBlobPath, input.Image);
+        n.ImageBlobPath = image;
+        return obsolete;
+    }
+
+    private static NewsInput AuditValues(NewsInput input) => input with { WebsiteBody = input.WebsiteBody is null ? null : "…" };
 
     public async Task SetNewsStatusAsync(Guid id, PublicationStatus status, DateTime? publishAt, CancellationToken cancellationToken)
     {

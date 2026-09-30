@@ -102,6 +102,18 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Photo> Photos => Set<Photo>();
 
+    public DbSet<Modules.Content.Website.WebsiteSettings> WebsiteSettings => Set<Modules.Content.Website.WebsiteSettings>();
+
+    public DbSet<Modules.Content.Website.WebsitePage> WebsitePages => Set<Modules.Content.Website.WebsitePage>();
+
+    public DbSet<Modules.Content.Website.Committee> Committees => Set<Modules.Content.Website.Committee>();
+
+    public DbSet<Modules.Content.Website.CommitteeMember> CommitteeMembers => Set<Modules.Content.Website.CommitteeMember>();
+
+    public DbSet<Modules.Content.Website.Prince> Princes => Set<Modules.Content.Website.Prince>();
+
+    public DbSet<Modules.Content.Website.Award> Awards => Set<Modules.Content.Website.Award>();
+
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();

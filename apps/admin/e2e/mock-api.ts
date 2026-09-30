@@ -1,5 +1,9 @@
 import type { Page, Route } from '@playwright/test';
 
+/** 1×1 PNG als voorbeeldafbeelding. */
+const PIXEL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
 /** In-memory API voor de end-to-endtests; vorm gelijk aan het OpenAPI-contract. */
 export class MockApi {
   permissions: string[];
@@ -698,6 +702,118 @@ export class MockApi {
     inactiveStatusValues: ['opgezegd'],
   };
 
+  // Fase 21a: websitebeheer.
+  websiteSettings = {
+    heroEyebrow: 'CARNAVAL · LOIL' as string | null,
+    heroTitle: 'Alaaf! Het feest komt eraan.',
+    heroSubtitle: 'Pronkzitting, optocht en vier dagen feest.' as string | null,
+    heroPrimaryLabel: 'Bekijk de agenda' as string | null,
+    heroPrimaryLink: 'Agenda' as string | null,
+    heroSecondaryLabel: 'Word lid' as string | null,
+    heroSecondaryLink: 'Membership' as string | null,
+    heroImageUrl: null as string | null,
+    facebookPageUrl: 'https://www.facebook.com/vrolijkedrammers' as string | null,
+    instagramUrl: null as string | null,
+    showYouthPrinces: false,
+  };
+  websitePages: {
+    id: string;
+    slug: string;
+    title: string;
+    intro: string | null;
+    body: string;
+    imageUrl: string | null;
+    isPublished: boolean;
+    sortOrder: number;
+  }[] = [
+    {
+      id: 'pg-1',
+      slug: 'over-ons',
+      title: 'Over ons',
+      intro: null,
+      body: '# Over ons',
+      imageUrl: null,
+      isPublished: true,
+      sortOrder: 10,
+    },
+  ];
+  committees = [
+    { id: 1, name: 'Bestuur', slug: 'bestuur', sortOrder: 10 },
+    { id: 2, name: 'Raad van Elf', slug: 'raad-van-elf', sortOrder: 20 },
+  ];
+  kader: {
+    id: string;
+    committeeId: number;
+    memberId: string | null;
+    memberNumber: string | null;
+    name: string;
+    function: string | null;
+    photoUrl: string | null;
+    sortOrder: number;
+  }[] = [
+    {
+      id: 'k-1',
+      committeeId: 1,
+      memberId: 'm-1',
+      memberNumber: '0031',
+      name: 'Marcel Wiendels',
+      function: 'Voorzitter',
+      photoUrl: null,
+      sortOrder: 10,
+    },
+    {
+      id: 'k-2',
+      committeeId: 1,
+      memberId: null,
+      memberNumber: null,
+      name: 'Anouk Berendsen',
+      function: 'President',
+      photoUrl: null,
+      sortOrder: 20,
+    },
+  ];
+  princes: {
+    id: string;
+    kind: string;
+    year: number;
+    princeName: string;
+    name: string | null;
+    motto: string | null;
+    photoUrl: string | null;
+  }[] = [
+    {
+      id: 'p-1',
+      kind: 'Prince',
+      year: 2025,
+      princeName: 'Prins Ronnie I',
+      name: 'Ronnie Loeters',
+      motto: 'Mee lache!',
+      photoUrl: null,
+    },
+  ];
+  awards: {
+    id: string;
+    type: string;
+    year: number;
+    recipient: string;
+    body: string | null;
+    photoUrl: string | null;
+    slug: string;
+    isPublished: boolean;
+  }[] = [
+    {
+      id: 'a-1',
+      type: 'Drammertje',
+      year: 2025,
+      recipient: 'Harrie Sloot',
+      body: 'Chauffeur.',
+      photoUrl: null,
+      slug: 'harrie-sloot-2025',
+      isPublished: true,
+    },
+  ];
+  news: Record<string, unknown>[] = [];
+
   constructor(
     permissions: string[] = [
       'report.view',
@@ -737,6 +853,151 @@ export class MockApi {
 
   async install(page: Page) {
     await page.route('**/api/v1/**', (route) => this.handle(route));
+  }
+
+  private handleWebsite(
+    path: string,
+    method: string,
+    body: Record<string, unknown>,
+    url: URL,
+    json: (data: unknown, status?: number) => Promise<void>,
+    noContent: () => Promise<void>,
+  ) {
+    let m: RegExpMatchArray | null;
+    const photo = (value: unknown, current: string | null) => (value === '' ? null : value ? PIXEL : current);
+    if (path === '/admin/website/settings') {
+      if (method === 'PUT') {
+        const { heroImage, ...rest } = body as Record<string, never>;
+        Object.assign(this.websiteSettings, rest, {
+          heroImageUrl: photo(heroImage, this.websiteSettings.heroImageUrl),
+        });
+        this.record('website.settings-updated', 'WebsiteSettings', '1', rest);
+        return noContent();
+      }
+      return json({
+        ...this.websiteSettings,
+        youthPrinceCount: this.princes.filter((p) => p.kind === 'YouthPrince').length,
+      });
+    }
+    if (path === '/admin/website/pages') {
+      if (method === 'POST') {
+        const id = `pg-${this.websitePages.length + 1}`;
+        this.websitePages.push({
+          ...(body as never),
+          id,
+          slug: (body.slug as string) ?? 'nieuwe-pagina',
+          imageUrl: photo(body.image, null),
+        });
+        return json({ id }, 201);
+      }
+      return json(
+        this.websitePages.map((p) => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          isPublished: p.isPublished,
+          sortOrder: p.sortOrder,
+          updatedAt: '2026-09-30T20:00:00Z',
+        })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/website\/pages\/([^/]+)$/))) {
+      const page = this.websitePages.find((p) => p.id === m![1])!;
+      if (method === 'PUT') {
+        Object.assign(page, body, { imageUrl: photo(body.image, page.imageUrl) });
+        return noContent();
+      }
+      if (method === 'DELETE') {
+        this.websitePages = this.websitePages.filter((p) => p !== page);
+        return noContent();
+      }
+      return json(page);
+    }
+    if (path === '/admin/website/committees') {
+      if (method === 'POST') {
+        const id = this.committees.length + 1;
+        this.committees.push({ id, name: body.name as string, slug: `c-${id}`, sortOrder: body.sortOrder as number });
+        return json({ id }, 201);
+      }
+      return json(
+        this.committees.map((c) => ({
+          ...c,
+          members: this.kader.filter((k) => k.committeeId === c.id).sort((a, b) => a.sortOrder - b.sortOrder),
+        })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/website\/committees\/(\d+)\/order$/))) {
+      (body.ids as string[]).forEach((id, i) => (this.kader.find((k) => k.id === id)!.sortOrder = (i + 1) * 10));
+      this.record('website.kader-reordered', 'Committee', m[1]!, body.ids);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/website\/committees\/(\d+)$/))) {
+      const c = this.committees.find((x) => x.id === Number(m![1]))!;
+      if (method === 'DELETE') this.committees = this.committees.filter((x) => x !== c);
+      else Object.assign(c, body);
+      return noContent();
+    }
+    if (path === '/admin/website/member-search') {
+      const q = (url.searchParams.get('q') ?? '').toLowerCase();
+      return json(
+        this.members
+          .filter((x) => x.fullName.toLowerCase().includes(q))
+          .map((x) => ({ id: x.id, memberNumber: x.memberNumber, fullName: x.fullName, city: x.city })),
+      );
+    }
+    if (path === '/admin/website/kader' && method === 'POST') {
+      const id = `k-${this.kader.length + 1}`;
+      const member = this.members.find((x) => x.id === body.memberId);
+      this.kader.push({
+        id,
+        committeeId: body.committeeId as number,
+        memberId: (body.memberId as string) ?? null,
+        memberNumber: member?.memberNumber ?? null,
+        name: body.name as string,
+        function: (body.function as string) ?? null,
+        photoUrl: photo(body.photo, null),
+        sortOrder: 1000,
+      });
+      this.record('website.kader-added', 'CommitteeMember', id, body);
+      return json({ id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/website\/kader\/([^/]+)$/))) {
+      const k = this.kader.find((x) => x.id === m![1])!;
+      if (method === 'DELETE') this.kader = this.kader.filter((x) => x !== k);
+      else Object.assign(k, body, { photoUrl: photo(body.photo, k.photoUrl) });
+      return noContent();
+    }
+    if (path === '/admin/website/princes') {
+      if (method === 'POST') {
+        const id = `p-${this.princes.length + 1}`;
+        this.princes.push({ ...(body as never), id, photoUrl: photo(body.photo, null) });
+        return json({ id }, 201);
+      }
+      const kind = url.searchParams.get('kind');
+      return json(this.princes.filter((p) => !kind || p.kind === kind).sort((a, b) => b.year - a.year));
+    }
+    if ((m = path.match(/^\/admin\/website\/princes\/([^/]+)$/))) {
+      const p = this.princes.find((x) => x.id === m![1])!;
+      if (method === 'DELETE') this.princes = this.princes.filter((x) => x !== p);
+      else Object.assign(p, body, { photoUrl: photo(body.photo, p.photoUrl) });
+      return noContent();
+    }
+    if (path === '/admin/website/awards') {
+      if (method === 'POST') {
+        const id = `a-${this.awards.length + 1}`;
+        this.awards.push({ ...(body as never), id, slug: id, photoUrl: photo(body.photo, null) });
+        return json({ id }, 201);
+      }
+      const type = url.searchParams.get('type');
+      return json(this.awards.filter((a) => !type || a.type === type).sort((a, b) => b.year - a.year));
+    }
+    if ((m = path.match(/^\/admin\/website\/awards\/([^/]+)$/))) {
+      const a = this.awards.find((x) => x.id === m![1])!;
+      if (method === 'DELETE') this.awards = this.awards.filter((x) => x !== a);
+      else Object.assign(a, body, { photoUrl: photo(body.photo, a.photoUrl) });
+      return noContent();
+    }
+    return json({ title: 'Niet gevonden (mock)' }, 404);
   }
 
   private async handle(route: Route) {
@@ -1515,8 +1776,39 @@ export class MockApi {
         noDevice: 17,
       });
     }
+    if (path === '/admin/news/images' || path === '/admin/website/images') {
+      return json({ path: 'uploads/0123456789abcdef0123456789abcdef.jpg', url: PIXEL });
+    }
+    if (path === '/admin/news' && method === 'POST') {
+      const id = `n-${this.news.length + 1}`;
+      this.news.push({
+        ...body,
+        id,
+        imageUrl: body.image ? PIXEL : null,
+        slug: body.showOnWebsite ? 'drammertje-2026' : null,
+        pushStatus: null,
+      });
+      this.record('news.created', 'News', id, body);
+      return json({ id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/news\/([^/]+)$/)) && method === 'GET') {
+      return json(this.news.find((n) => n.id === m![1]));
+    }
+    if (path.startsWith('/admin/website/')) {
+      return this.handleWebsite(path, method, body, url, json, noContent);
+    }
     if (path === '/admin/news') {
-      return json([]);
+      return json(
+        this.news.map((n) => ({
+          id: n.id,
+          title: n.title,
+          visibility: 'Public',
+          status: 'Published',
+          publishAt: null,
+          expireAt: null,
+          showOnWebsite: n.showOnWebsite ?? false,
+        })),
+      );
     }
     if (path === '/admin/photo-albums') {
       return json(

@@ -333,9 +333,9 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         await WithDbAsync(async db =>
         {
             db.Members.AddRange(
-                new Member { Id = IdGenerator.NewId(), MemberNumber = "K1", FullName = "Duo", ParadeGroupName = "Kruumels", MemberCategory = "Tweepersoonslid DVD", MembershipStatus = MembershipStatus.Active },
-                new Member { Id = IdGenerator.NewId(), MemberNumber = "K2", FullName = "Danseres", ParadeGroupName = "Kruumels", MemberCategory = "Lidmaatschap dansgarde DVD", MembershipStatus = MembershipStatus.Active },
-                new Member { Id = IdGenerator.NewId(), MemberNumber = "K3", FullName = "Oud-lid", ParadeGroupName = "Kruumels", MemberCategory = "Tweepersoonslid DVD", MembershipStatus = MembershipStatus.Inactive });
+                new Member { Id = IdGenerator.NewId(), MemberNumber = "K1", FullName = "Duo", ParadeGroupName = "Kruumels", EbStatusRaw = "Tweepersoonslid DVD", MembershipStatus = MembershipStatus.Active },
+                new Member { Id = IdGenerator.NewId(), MemberNumber = "K2", FullName = "Danseres", ParadeGroupName = "Kruumels", EbStatusRaw = "Lidmaatschap dansgarde DVD", MembershipStatus = MembershipStatus.Active },
+                new Member { Id = IdGenerator.NewId(), MemberNumber = "K3", FullName = "Oud-lid", ParadeGroupName = "Kruumels", EbStatusRaw = "Tweepersoonslid DVD", MembershipStatus = MembershipStatus.Inactive });
             return await db.SaveChangesAsync();
         });
         var group = (await JsonAsync(await mendy.GetAsync("/api/v1/sales/products"))).GetProperty("group");
@@ -401,5 +401,34 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
 
         // Geen code voor munten van een ander of een onbekende bestelling.
         Assert.Equal(HttpStatusCode.Conflict, (await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={Guid.NewGuid()}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Kruumels_negen_regels_zijn_veertien_personen()
+    {
+        // Zoals in e-Boekhouden: 9 leden, waarvan 5 tweepersoonsleden (status in vrij veld 1) → 14 personen.
+        string[] statuses =
+        [
+            "Tweepersoonslid DVD", "Tweepersoonslid DVD", "Tweepersoonslid DVD", "Tweepersoonslid DVD", "tweepersoonslid dvd ",
+            "Eénpersoonslid DVD", "Eénpersoonslid DVD", "Lidmaatschap dansgarde DVD",
+        ];
+        var mendy = await MemberAsync("mendy@example.com", "Kruumels");
+        await WithDbAsync(async db =>
+        {
+            await db.Members.Where(m => m.Email == "mendy@example.com").ExecuteUpdateAsync(x => x.SetProperty(m => m.EbStatusRaw, "Eénpersoonslid DVD"));
+            db.Members.AddRange(statuses.Select((status, i) => new Member
+            {
+                Id = IdGenerator.NewId(),
+                MemberNumber = $"KR{i}",
+                FullName = $"Kruumel {i}",
+                ParadeGroupName = "Kruumels",
+                EbStatusRaw = status,
+                MembershipStatus = MembershipStatus.Active,
+            }));
+            return await db.SaveChangesAsync();
+        });
+        var group = (await JsonAsync(await mendy.GetAsync("/api/v1/sales/products"))).GetProperty("group");
+        Assert.Equal(9, group.GetProperty("activeMembers").GetInt32());
+        Assert.Equal(14, group.GetProperty("persons").GetInt32());
     }
 }

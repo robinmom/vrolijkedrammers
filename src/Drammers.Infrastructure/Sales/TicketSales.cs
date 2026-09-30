@@ -161,7 +161,7 @@ public sealed partial class TicketSales(
         var members = await db.Members.AsNoTracking()
             .Where(m => m.ParadeGroupName == name && (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active)
             .GroupBy(_ => 1)
-            .Select(g => new { Count = g.Count(), Persons = g.Sum(m => m.MemberCategory == Members.MembershipWeights.TwoPersons ? 2 : 1) })
+            .Select(g => new { Count = g.Count(), Persons = g.Sum(m => m.EbStatusRaw == Members.MembershipWeights.TwoPersons ? 2 : 1) })
             .SingleOrDefaultAsync(cancellationToken);
         var active = members?.Count ?? 0;
         var persons = members?.Persons ?? 0;

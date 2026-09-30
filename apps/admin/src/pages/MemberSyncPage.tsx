@@ -393,12 +393,12 @@ const FREE_TEXT = Array.from({ length: 10 }, (_, i) => `freeText${i + 1}`);
 const mappingFields: { key: 'birthDate' | 'joinYear' | 'status' | 'category' | 'paradeGroupName'; label: string; hint: string }[] = [
   { key: 'birthDate', label: 'Geboortedatum', hint: 'Formaat JJJJ-MM-DD (DD-MM-JJJJ wordt ook herkend)' },
   { key: 'joinYear', label: 'Inschrijfjaar', hint: 'Jaartal, bijv. 1995' },
-  { key: 'status', label: 'Lidmaatschapsstatus', hint: 'Bijv. actief of opgezegd' },
   {
-    key: 'category',
-    label: 'Soort lid',
-    hint: 'Bijv. Eénpersoonslid DVD of Tweepersoonslid DVD (telt 2 personen bij de pronkzitting); bij De Vrolijke Drammers vrij veld 1',
+    key: 'status',
+    label: 'Lidmaatschapsstatus (soort lid)',
+    hint: 'Bij De Vrolijke Drammers vrij veld 1, bijv. Eénpersoonslid DVD of Tweepersoonslid DVD (telt 2 personen bij de pronkzitting). Opgezegd of inactief = niet actief',
   },
+  { key: 'category', label: 'Categorie', hint: 'Bijv. jeugdlid of gezinslid' },
   { key: 'paradeGroupName', label: 'Groepsnaam optocht', hint: 'Vult de inschrijving voor de optocht vooraf in (bijv. vrij veld 3)' },
 ];
 

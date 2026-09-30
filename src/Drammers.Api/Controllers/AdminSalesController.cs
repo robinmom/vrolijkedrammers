@@ -223,6 +223,12 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
         return candidate;
     }
 
+    /// <summary>Kassalog van één dag (standaard vandaag): elke scan van een munten-QR en elke uitgifte.</summary>
+    [HttpGet("kassalog")]
+    [ProducesResponseType<KassaDay>(StatusCodes.Status200OK)]
+    public Task<KassaDay> KassaLog([FromServices] TokenCollection kassa, [FromQuery] DateOnly? day, CancellationToken cancellationToken) =>
+        kassa.LogAsync(day, cancellationToken);
+
     [HttpGet("tokens")]
     [ProducesResponseType<IReadOnlyList<SaleOrderRow>>(StatusCodes.Status200OK)]
     public Task<IReadOnlyList<SaleOrderRow>> Tokens(CancellationToken cancellationToken) => administration.TokensAsync(cancellationToken);

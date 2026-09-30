@@ -7776,6 +7776,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/sales/kassalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kassalog van één dag (standaard vandaag): elke scan van een munten-QR en elke uitgifte. */
+        get: {
+            parameters: {
+                query?: {
+                    day?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KassaDay"];
+                        "application/json": components["schemas"]["KassaDay"];
+                        "text/json": components["schemas"]["KassaDay"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sales/tokens": {
         parameters: {
             query?: never;
@@ -8686,6 +8726,110 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kassa/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ScanRequest"];
+                    "text/json": components["schemas"]["ScanRequest"];
+                    "application/*+json": components["schemas"]["ScanRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KassaResult"];
+                        "application/json": components["schemas"]["KassaResult"];
+                        "text/json": components["schemas"]["KassaResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kassa/scans/{id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KassaResult"];
+                        "application/json": components["schemas"]["KassaResult"];
+                        "text/json": components["schemas"]["KassaResult"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -12262,6 +12406,8 @@ export interface components {
             previousAt: null | string;
             needsDecision: boolean;
             counts: components["schemas"]["AccessCounts"];
+            /** Format: int32 */
+            persons?: null | number;
         };
         AccessScanRow: {
             /** Format: uuid */
@@ -13503,6 +13649,49 @@ export interface components {
         IssueTicketsResponse: {
             /** Format: int32 */
             issued: number;
+        };
+        KassaDay: {
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            issued: number;
+            /** Format: int32 */
+            tokensIssued: number;
+            /** Format: int32 */
+            refused: number;
+            rows: components["schemas"]["KassaLogRow"][];
+        };
+        /** @description Eén regel in de Kassalog van het portal. */
+        KassaLogRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            scannedAt: string;
+            /** Format: date-time */
+            issuedAt: null | string;
+            outcome: components["schemas"]["TokenScanOutcome"];
+            reason: null | string;
+            memberName: null | string;
+            memberGroup: null | string;
+            /** Format: int32 */
+            quantity: null | number;
+            orderNumber: null | string;
+            paidWith: null | string;
+            operatorName: string;
+            deviceName: null | string;
+        };
+        /** @description Wat de kassa na een scan ziet (Figma "iOS / 9 Kassa – munten uitgeven"). */
+        KassaResult: {
+            /** Format: uuid */
+            scanId: null | string;
+            outcome: components["schemas"]["TokenScanOutcome"];
+            title: string;
+            message: string;
+            holderName: null | string;
+            /** Format: int32 */
+            quantity: null | number;
+            orderNumber: null | string;
+            paidWith: null | string;
         };
         /** @description Totalen voor het overzicht: aantallen per status en per categorie, deelnemers en lengte van de optocht. */
         LineupSummary: {
@@ -15009,6 +15198,8 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /** @enum {unknown} */
+        TokenScanOutcome: "Ready" | "Issued" | "Refused";
         UpdateRegistrationRequest: {
             version: null | string;
             groupName: null | string;

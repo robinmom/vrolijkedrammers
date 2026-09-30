@@ -9439,6 +9439,46 @@
         }
       }
     },
+    "/api/v1/admin/sales/kassalog": {
+      "get": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Kassalog van één dag (standaard vandaag): elke scan van een munten-QR en elke uitgifte.",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaDay"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaDay"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaDay"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/sales/tokens": {
       "get": {
         "tags": [
@@ -10523,6 +10563,135 @@
             "description": "Not Found",
             "content": {
               "text/calendar": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kassa/scan": {
+      "post": {
+        "tags": [
+          "Kassa"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kassa/scans/{id}/issue": {
+      "post": {
+        "tags": [
+          "Kassa"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KassaResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -15028,6 +15197,13 @@
           },
           "counts": {
             "$ref": "#/components/schemas/AccessCounts"
+          },
+          "persons": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         },
         "description": "Wat het deurpersoneel na een scan of inchecken ziet (fase 14, Figma 📷 Toegangscontrole)."
@@ -19732,6 +19908,181 @@
             "format": "int32"
           }
         }
+      },
+      "KassaDay": {
+        "required": [
+          "day",
+          "issued",
+          "tokensIssued",
+          "refused",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "issued": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tokensIssued": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refused": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KassaLogRow"
+            }
+          }
+        }
+      },
+      "KassaLogRow": {
+        "required": [
+          "id",
+          "scannedAt",
+          "issuedAt",
+          "outcome",
+          "reason",
+          "memberName",
+          "memberGroup",
+          "quantity",
+          "orderNumber",
+          "paidWith",
+          "operatorName",
+          "deviceName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scannedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/TokenScanOutcome"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "memberName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "memberGroup": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "quantity": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "orderNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidWith": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "operatorName": {
+            "type": "string"
+          },
+          "deviceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Eén regel in de Kassalog van het portal."
+      },
+      "KassaResult": {
+        "required": [
+          "scanId",
+          "outcome",
+          "title",
+          "message",
+          "holderName",
+          "quantity",
+          "orderNumber",
+          "paidWith"
+        ],
+        "type": "object",
+        "properties": {
+          "scanId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/TokenScanOutcome"
+          },
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "holderName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "quantity": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "orderNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidWith": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Wat de kassa na een scan ziet (Figma \"iOS / 9 Kassa – munten uitgeven\")."
       },
       "LineupSummary": {
         "required": [
@@ -25396,6 +25747,13 @@
           }
         }
       },
+      "TokenScanOutcome": {
+        "enum": [
+          "Ready",
+          "Issued",
+          "Refused"
+        ]
+      },
       "UpdateRegistrationRequest": {
         "required": [
           "version",
@@ -25918,6 +26276,9 @@
     },
     {
       "name": "Events"
+    },
+    {
+      "name": "Kassa"
     },
     {
       "name": "MeChildren"

@@ -3,6 +3,7 @@ using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Identity.Devices;
 using Drammers.Modules.Membership.Members;
 using Drammers.Modules.Ticketing.Qr;
+using Drammers.Modules.Ticketing.Sales;
 using Drammers.Modules.Ticketing.Tickets;
 using Drammers.SharedKernel.Errors;
 using Drammers.SharedKernel.Identifiers;
@@ -16,9 +17,10 @@ public sealed record AccessCounts(int Inside, int Scans, int Refused);
 public sealed record AccessStatus(AccessEvent? Current, AccessEvent? Next, AccessCounts? Counts);
 
 /// <summary>Wat het deurpersoneel na een scan of inchecken ziet (fase 14, Figma 📷 Toegangscontrole).</summary>
+/// <remarks><see cref="Persons"/>: bij een gekochte kaart hoeveel personen tegelijk naar binnen gaan (fase 19c).</remarks>
 public sealed record AccessResult(
     Guid? ScanId, AccessOutcome Outcome, string Title, string Message, string? HolderName, DateTime? PreviousAt, bool NeedsDecision,
-    AccessCounts Counts);
+    AccessCounts Counts, int? Persons = null);
 
 public sealed record AccessHistoryItem(DateTime At, AccessMethod Method, AccessOutcome Outcome, AccessDecision? Decision, string EventTitle, string? Operator);
 
@@ -69,10 +71,12 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
 
     public async Task<AccessCounts> CountsAsync(AccessEvent access, CancellationToken cancellationToken)
     {
-        var scans = await ScansOf(access).Select(s => new { s.MemberId, s.Outcome, s.Decision }).ToListAsync(cancellationToken);
-        var inside = scans.Where(s => s.Outcome is AccessOutcome.Admitted or AccessOutcome.AdmittedAgain
-                || (s.Outcome == AccessOutcome.Warning && s.Decision == AccessDecision.Admitted))
-            .Select(s => s.MemberId).Distinct().Count();
+        var scans = await ScansOf(access).Select(s => new { s.MemberId, s.Outcome, s.Decision, s.Persons }).ToListAsync(cancellationToken);
+        var admitted = scans.Where(s => s.Outcome is AccessOutcome.Admitted or AccessOutcome.AdmittedAgain
+            || (s.Outcome == AccessOutcome.Warning && s.Decision == AccessDecision.Admitted)).ToList();
+        // Leden één keer; gekochte kaarten (zonder lid) met het aantal personen op de QR.
+        var inside = admitted.Where(s => s.MemberId is not null).Select(s => s.MemberId).Distinct().Count()
+            + admitted.Where(s => s.MemberId is null).Sum(s => s.Persons ?? 0);
         var refused = scans.Count(s => s.Outcome == AccessOutcome.Refused || s.Decision == AccessDecision.Refused);
         return new AccessCounts(inside, scans.Count, refused);
     }
@@ -112,7 +116,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         db.AccessScans.Add(scan);
         await db.SaveChangesAsync(cancellationToken);
         return new AccessResult(scan.Id, scan.Outcome, title, message, holder, previousAt, scan.Outcome == AccessOutcome.Warning,
-            await CountsAsync(accessEvent, cancellationToken));
+            await CountsAsync(accessEvent, cancellationToken), scan.OrderTicketId is null ? null : scan.Persons);
     }
 
     private async Task<Device?> OperatorDeviceAsync(Guid operatorId, string? installationId, CancellationToken cancellationToken) =>
@@ -122,8 +126,14 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
 
     /// <summary>Beoordeelt een QR-scan op moment <paramref name="at"/> (online nu, offline de tijd op het toestel).</summary>
     private async Task<(AccessScan Scan, string Title, string Message, string? Holder, DateTime? PreviousAt)> EvaluateAsync(
-        Guid operatorId, Device? device, string code, AccessEvent accessEvent, DateTime at, bool details, CancellationToken cancellationToken)
+        Guid operatorId, Device? device, string code, AccessEvent accessEvent, DateTime at, bool details, CancellationToken cancellationToken,
+        bool fromQueue = false)
     {
+        if (QrPayload.TryDecode(code) is { Version: QrPayload.OrderTicket } purchased)
+        {
+            return await EvaluatePurchasedAsync(operatorId, device, purchased, accessEvent, at, fromQueue, cancellationToken);
+        }
+
         var check = await validation.ValidateAsync(code, cancellationToken, new DateTimeOffset(at, TimeSpan.Zero));
         var payload = QrPayload.TryDecode(code);
         var ticket = payload is null ? null : await db.Tickets.AsNoTracking().SingleOrDefaultAsync(t => t.PublicRef == payload.Ref, cancellationToken);
@@ -166,6 +176,82 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
         }
 
         return (scan, title, message, check.Ticket?.HolderName, previousAt);
+    }
+
+    /// <summary>
+    /// Gekochte kaart (fase 19c): één QR voor alle kaarten van de bestelling. Alleen online (besluit 30-09-2026): de server
+    /// zet de QR in één keer op gebruikt, zodat hij niet op twee toestellen tegelijk werkt. Alle personen gaan tegelijk naar
+    /// binnen. De kaart moet bij dit toegangsmoment horen: dezelfde activiteit, of anders dezelfde dag.
+    /// </summary>
+    private async Task<(AccessScan Scan, string Title, string Message, string? Holder, DateTime? PreviousAt)> EvaluatePurchasedAsync(
+        Guid operatorId, Device? device, QrPayload payload, AccessEvent accessEvent, DateTime at, bool offline, CancellationToken cancellationToken)
+    {
+        var scan = NewScan(accessEvent);
+        scan.Method = AccessMethod.Qr;
+        scan.OperatorUserId = operatorId;
+        scan.OperatorDeviceId = device?.Id;
+        scan.ScannedAt = at;
+        (AccessScan, string, string, string?, DateTime?) Refuse(string reason, string message, string? holder = null, DateTime? previous = null)
+        {
+            scan.Outcome = AccessOutcome.Refused;
+            scan.Reason = reason;
+            return (scan, "Geen toegang", message, holder, previous);
+        }
+
+        var serverKeys = await keys.PublicKeysAsync(cancellationToken);
+        if (!serverKeys.Any(k => TicketQrValidator.Verify(k, payload.UnsignedBytes(), payload.Signature)))
+        {
+            return Refuse(nameof(QrCheck.InvalidSignature), "Ongeldige handtekening: de code is nagemaakt of gewijzigd.");
+        }
+
+        var row = await (
+            from t in db.OrderTickets.AsNoTracking()
+            where t.PublicRef == payload.Ref
+            join o in db.SaleOrders.AsNoTracking() on t.OrderId equals o.Id
+            join p in db.SaleProducts.AsNoTracking() on o.ProductId equals p.Id
+            select new { t, o.Status, o.GroupName, o.BuyerName, o.Number, p.Kind, p.Name, p.Date, p.EventId }).SingleOrDefaultAsync(cancellationToken);
+        if (row is null || row.Kind == SaleProductKind.Tokens)
+        {
+            return Refuse(nameof(QrCheck.UnknownTicket), "Onbekende kaart.");
+        }
+
+        scan.OrderTicketId = row.t.Id;
+        scan.Persons = row.t.Quantity;
+        var holder = row.GroupName ?? row.BuyerName;
+        if (offline)
+        {
+            return Refuse("OnlineOnly", "Gekochte kaarten kunnen alleen online gescand worden.", holder);
+        }
+
+        if (row.Status != SaleOrderStatus.Confirmed || row.t.Status == OrderTicketStatus.Cancelled)
+        {
+            return Refuse(nameof(QrCheck.Blocked), $"Bestelling {row.Number} is geannuleerd of niet betaald.", holder);
+        }
+
+        var accessDay = accessEvent.CarnivalDay ?? DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(accessEvent.StartAt, Loil));
+        var fits = row.EventId is { } eventId ? accessEvent.EventId == eventId : row.Date is not { } date || date == accessDay;
+        if (!fits)
+        {
+            var when = row.Date is { } d ? d.ToString("dddd d MMMM", CultureInfo.GetCultureInfo("nl-NL")) : row.Name;
+            return Refuse(nameof(QrCheck.OutsideValidity), $"Deze kaart is voor {row.Name} ({when}), niet voor {accessEvent.Title}.", holder);
+        }
+
+        if (row.t.Status == OrderTicketStatus.Used)
+        {
+            return Refuse("AlreadyUsed", $"Al gescand om {Time(row.t.UsedAt ?? at)}: alle {row.t.Quantity} personen zijn toen naar binnen gegaan.", holder, row.t.UsedAt);
+        }
+
+        // In één keer op gebruikt; wie tegelijk op een ander toestel scant, krijgt rood.
+        var claimed = await db.OrderTickets.Where(t => t.Id == row.t.Id && t.Status == OrderTicketStatus.Active)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.Status, OrderTicketStatus.Used).SetProperty(t => t.UsedAt, at), cancellationToken);
+        if (claimed == 0)
+        {
+            return Refuse("AlreadyUsed", "Deze QR is net op een ander toestel gescand.", holder);
+        }
+
+        scan.Outcome = AccessOutcome.Admitted;
+        var persons = row.t.Quantity == 1 ? "1 persoon" : $"{row.t.Quantity} personen";
+        return (scan, "Toegang geldig", $"{persons} tegelijk naar binnen · {row.Name}", holder, null);
     }
 
     /// <summary>
@@ -227,7 +313,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
                 continue;
             }
 
-            var (scan, _, _, _, _) = await EvaluateAsync(operatorId, device, item.Code, access, at, details: false, cancellationToken);
+            var (scan, _, _, _, _) = await EvaluateAsync(operatorId, device, item.Code, access, at, details: false, cancellationToken, fromQueue: true);
             scan.Offline = true;
             scan.ClientScanId = item.ClientScanId;
             scan.OfflineOutcome = item.LocalOutcome;

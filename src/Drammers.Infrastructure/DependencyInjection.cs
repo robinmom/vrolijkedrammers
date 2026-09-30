@@ -233,6 +233,7 @@ public static class DependencyInjection
         services.AddScoped<Ticketing.AccessStatistics>();
         services.AddScoped<Sales.TicketSales>();
         services.AddScoped<Sales.SaleAdministration>();
+        services.AddScoped<Sales.TokenCollection>();
         services.TryAddScoped<Sales.SaleExpiryJob>();
         services.AddScoped<ParadePublicRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeStatusMailHandler>();

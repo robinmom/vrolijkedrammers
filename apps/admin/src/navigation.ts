@@ -44,6 +44,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Dagkaarten', to: '/verkoop/dagkaarten', permission: 'sale.manage', icon: 'ticket', section: 'Verkoop' },
   { label: 'Activiteiten', to: '/verkoop/activiteiten', permission: 'sale.manage', icon: 'jaar', section: 'Verkoop' },
   { label: 'Munten', to: '/verkoop/munten', permission: 'sale.manage', icon: 'munten', section: 'Verkoop' },
+  { label: 'Kassalog', to: '/verkoop/kassalog', permission: 'sale.manage', icon: 'audit', section: 'Verkoop' },
   { label: 'Gebruikers', to: '/gebruikers', permission: 'role.manage', icon: 'gebruiker', section: 'Beheer' },
   { label: 'Rollen en rechten', to: '/rollen', permission: 'role.manage', icon: 'rollen', section: 'Beheer' },
   { label: 'Carnavalsjaren', to: '/carnavalsjaren', permission: 'config.manage', icon: 'jaar', section: 'Beheer' },

@@ -18,6 +18,7 @@ import { ParadeCompositionPage } from './pages/ParadeCompositionPage';
 import { ParadePage } from './pages/ParadePage';
 import { TicketsPage } from './pages/TicketsPage';
 import { PronkzittingPage } from './pages/PronkzittingPage';
+import { KassaLogPage } from './pages/KassaLogPage';
 import { DayTicketsPage, EventTicketsPage, TokensPage } from './pages/SalesKindPage';
 import { AccessLogPage } from './pages/AccessLogPage';
 import { ArrivalTimesPage } from './pages/ArrivalTimesPage';
@@ -67,6 +68,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/dagkaarten', component: guarded('sale.manage', DayTicketsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/activiteiten', component: guarded('sale.manage', EventTicketsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/munten', component: guarded('sale.manage', TokensPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/kassalog', component: guarded('sale.manage', KassaLogPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/aanrijtijden', component: guarded('parade.import-arrival-times', ArrivalTimesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/samenstellen', component: guarded('parade.read', ParadeCompositionPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/inschrijvingen/$id', component: guarded('parade.read', ParadeRegistrationDetailPage) }),

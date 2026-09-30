@@ -77,6 +77,11 @@ export function checkOffline(pack: OfflinePack, code: string, now: Date, seenHer
     holderName,
   });
   const bytes = base45Decode(code);
+  // Gekochte kaarten (versie 3) alleen online: de server zet de QR in één keer op gebruikt (fase 19c).
+  if (bytes?.length === 97 && bytes[0] === 3)
+    return refuse('Gekochte kaart: alleen online te scannen. Probeer het opnieuw zodra er internet is.');
+  if (bytes?.length === 97 && (bytes[0] === 4 || bytes[0] === 5))
+    return refuse('Dit is de munten-QR. Vraag om Mijn QR voor de ingang.');
   if (!bytes || bytes.length !== 97 || (bytes[0] !== 1 && bytes[0] !== 2))
     return refuse('Geen geldige QR-code van De Vrolijke Drammers.');
   const ref = bytes.slice(1, 17);

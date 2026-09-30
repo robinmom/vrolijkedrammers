@@ -16,6 +16,8 @@ type AccessResult = components['schemas']['AccessResult'];
 
 /** Resultaat op het scherm: online van de server, of offline gecontroleerd met de controlelijst. */
 type ShownResult = Pick<AccessResult, 'outcome' | 'title' | 'message' | 'holderName' | 'needsDecision'> & {
+  /** Gekochte kaart (fase 19c): zoveel personen gaan tegelijk naar binnen. */
+  persons?: number | null;
   scanId: string | null;
   offline: boolean;
 };
@@ -187,7 +189,7 @@ export default function ScannenScreen() {
           style={styles.resultBody}
           accessible
           accessibilityLiveRegion="assertive"
-          accessibilityLabel={`${result.title}. ${result.holderName ?? ''}. ${result.message}`}
+          accessibilityLabel={`${result.title}. ${result.holderName ?? ''}. ${result.persons ? `${result.persons} personen. ` : ''}${result.message}`}
         >
           <View style={[styles.circle, { backgroundColor: `${look.foreground}2E` }]}>
             <AppText variant="largeTitle" color={look.foreground} style={styles.icon}>
@@ -208,6 +210,13 @@ export default function ScannenScreen() {
             <AppText variant="sectionHeader" color={look.foreground} style={styles.centerText}>
               {result.holderName}
             </AppText>
+          ) : null}
+          {result.persons && result.outcome === 'Admitted' ? (
+            <View style={[styles.persons, { backgroundColor: `${look.foreground}2E` }]}>
+              <AppText variant="largeTitle" color={look.foreground} style={styles.centerText}>
+                {result.persons} {result.persons === 1 ? 'persoon' : 'personen'}
+              </AppText>
+            </View>
           ) : null}
           <AppText variant="body" color={look.foreground} style={styles.centerText}>
             {result.message}
@@ -288,7 +297,7 @@ export default function ScannenScreen() {
           <View style={styles.finder} />
           {permission.granted ? (
             <AppText variant="body" color="rgba(255,255,255,0.85)" style={styles.centerText}>
-              Richt de camera op de QR-code in Mijn QR
+              Richt de camera op Mijn QR of de QR van een gekochte kaart
             </AppText>
           ) : (
             <View style={styles.permission}>
@@ -410,6 +419,7 @@ function Message({
 }
 
 const styles = StyleSheet.create({
+  persons: { borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, alignSelf: 'stretch' },
   fill: { flex: 1 },
   center: { alignItems: 'center', justifyContent: 'center' },
   overlay: { flex: 1, paddingHorizontal: 24, gap: 12 },

@@ -839,10 +839,21 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - `/kaarten/bestelling/?id&t` toont de status en de QR als SVG van de server (`qr.svg`, QRCoder). Er is geen scriptbibliotheek in de browser nodig.
   - Dezelfde CSP als Lid worden.
 
-**19c — scanner en Kassa.**
-- Gekochte kaarten scannen: alle overgebleven personen gaan tegelijk naar binnen, daarna is de QR geblokkeerd.
-- De rol Kassa scant de munten-QR, ziet de bestelling en drukt op "Bestelling uitgegeven".
-- Kassalog in het portal.
+**19c — scanner en Kassa (gebouwd).** Besluiten van 30-09-2026: gekochte kaarten en munten **alleen online**; bij de deur het bestaande groene scherm met het aantal personen.
+- **Deur:**
+  - De bestaande scanner herkent de QR van een gekochte kaart (versie 3). Alle personen op de QR gaan tegelijk naar binnen en de QR gaat in één keer op gebruikt (`ExecuteUpdate`, dus niet op twee toestellen tegelijk).
+  - De kaart moet bij het toegangsmoment horen: dezelfde activiteit, of anders dezelfde dag.
+  - Nog een keer scannen geeft rood ("Al gescand om …"). Een offline scan telt niet (`OnlineOnly`) en de QR blijft geldig.
+  - De teller "binnen" telt de personen mee. In de toegangslog staan `order_ticket_id` en `persons`.
+- **Kassa (rol Kassa, `sale.collect`):**
+  - `POST /kassa/scan` controleert de munten-QR (per bestelling, gekoppeld aan het toestel) en toont naam, aantal munten, betaalwijze en bestelnummer.
+  - `POST /kassa/scans/{id}/issue` ("Bestelling uitgegeven") zet de bestelling in één keer op uitgegeven. Dat kan binnen 10 minuten na de scan.
+  - Al uitgegeven, geannuleerd, een ander toestel of een verlopen code geeft rood, met de reden.
+  - In de app: Meer → "Kassa: munten uitgeven".
+- **Kassalog:**
+  - Tabel `ticketing.TokenScan` met elke kassascan en elke uitgifte.
+  - Portal: Verkoop → Kassalog, per dag (tot 06:00): kerncijfers en per regel tijd, lid, groep, munten, bestelling, resultaat en kassa of medewerker.
+  - `GET /admin/sales/kassalog?day=`.
 
 **API-endpoints (19a).**
 - Openbaar:

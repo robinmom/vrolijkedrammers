@@ -883,7 +883,7 @@ export class MockApi {
       if (method === 'POST') {
         const id = `pg-${this.websitePages.length + 1}`;
         this.websitePages.push({
-          ...(body as never),
+          ...(body as unknown as (typeof this.websitePages)[number]),
           id,
           slug: (body.slug as string) ?? 'nieuwe-pagina',
           imageUrl: photo(body.image, null),
@@ -970,7 +970,7 @@ export class MockApi {
     if (path === '/admin/website/princes') {
       if (method === 'POST') {
         const id = `p-${this.princes.length + 1}`;
-        this.princes.push({ ...(body as never), id, photoUrl: photo(body.photo, null) });
+        this.princes.push({ ...(body as unknown as (typeof this.princes)[number]), id, photoUrl: photo(body.photo, null) });
         return json({ id }, 201);
       }
       const kind = url.searchParams.get('kind');
@@ -985,7 +985,7 @@ export class MockApi {
     if (path === '/admin/website/awards') {
       if (method === 'POST') {
         const id = `a-${this.awards.length + 1}`;
-        this.awards.push({ ...(body as never), id, slug: id, photoUrl: photo(body.photo, null) });
+        this.awards.push({ ...(body as unknown as (typeof this.awards)[number]), id, slug: id, photoUrl: photo(body.photo, null) });
         return json({ id }, 201);
       }
       const type = url.searchParams.get('type');

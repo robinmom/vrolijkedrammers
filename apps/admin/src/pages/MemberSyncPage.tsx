@@ -394,7 +394,11 @@ const mappingFields: { key: 'birthDate' | 'joinYear' | 'status' | 'category' | '
   { key: 'birthDate', label: 'Geboortedatum', hint: 'Formaat JJJJ-MM-DD (DD-MM-JJJJ wordt ook herkend)' },
   { key: 'joinYear', label: 'Inschrijfjaar', hint: 'Jaartal, bijv. 1995' },
   { key: 'status', label: 'Lidmaatschapsstatus', hint: 'Bijv. actief of opgezegd' },
-  { key: 'category', label: 'Categorie', hint: 'Bijv. jeugdlid of gezinslid' },
+  {
+    key: 'category',
+    label: 'Soort lid',
+    hint: 'Bijv. Eénpersoonslid DVD of Tweepersoonslid DVD (telt 2 personen bij de pronkzitting); bij De Vrolijke Drammers vrij veld 1',
+  },
   { key: 'paradeGroupName', label: 'Groepsnaam optocht', hint: 'Vult de inschrijving voor de optocht vooraf in (bijv. vrij veld 3)' },
 ];
 

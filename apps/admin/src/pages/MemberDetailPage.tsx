@@ -205,7 +205,7 @@ export function MemberDetailPage() {
               ) : null}
               {sources.categoryFromEBoekhouden ? (
                 <>
-                  <dt>Categorie</dt>
+                  <dt>Soort lid</dt>
                   <dd>
                     {m.memberCategory ?? '—'}
                     {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}

@@ -787,7 +787,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Nooit terugbetalen. Het bestuur kan annuleren: de QR vervalt en de plaatsen komen vrij.
 - Pronkzitting voor groepen:
   - Elk lid van een groep (e-Boekhouden vrij veld 3) mag voor de groep bestellen.
-  - Het maximum is het aantal **personen** van de actieve leden van de groep, beide avonden samen. Het soort lid komt uit het e-Boekhouden-veld dat als categorie is gemapt: "Tweepersoonslid DVD" telt 2; "Eénpersoonslid DVD", "Lidmaatschap dansgarde DVD" en alle andere waarden tellen 1.
+  - Het maximum is het aantal **personen** van de actieve leden van de groep, beide avonden samen. Het soort lid staat in e-Boekhouden in **vrij veld 1**; map dat in het portal onder Leden → Synchronisatie als "Soort lid": "Tweepersoonslid DVD" telt 2; "Eénpersoonslid DVD", "Lidmaatschap dansgarde DVD" en alle andere waarden tellen 1.
   - Dat maximum is **geen reservering**. Wat de groep nog niet besteld heeft, blijft vrij voor anderen.
   - Is de avond vol, dan komt een latere bestelling op de wachtlijst.
 - Leden bestellen groepskaarten gratis (in de contributie). Niet-leden betalen altijd met iDEAL. Alleen het portal kan contant boeken of een betaallink per e-mail sturen, ook los voor de vrije verkoop.

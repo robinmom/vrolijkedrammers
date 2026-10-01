@@ -62,6 +62,8 @@ const signedInApi = {
       startNumber: null,
       submittedAt: '2026-12-02T10:00:00Z',
       createdAt: '2026-12-01T10:00:00Z',
+      paradeId: 'p-1',
+      paradeName: 'Optocht Loil 2027',
     },
   ],
 };

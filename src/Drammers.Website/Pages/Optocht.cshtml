@@ -19,8 +19,9 @@
             <p><a class="button" href="/optocht/uitslag">Naar de uitslag</a></p>
         </div>
     }
-    <div class="grid-3">
+    <div class="grid-3 optocht-cards">
         <div class="card cta-card">
+            <h2 class="h3">Inschrijven</h2>
             @if (p?.RegistrationOpen == true)
             {
                 <span><span class="badge green">Open</span></span>
@@ -33,7 +34,6 @@
             {
                 <span><span class="badge">Gesloten</span></span>
             }
-            <h2 class="h3">Inschrijven</h2>
             <p>
                 @if (p is not null)
                 {
@@ -46,24 +46,24 @@
             </p>
             @if (p?.RegistrationOpen == true)
             {
-                <p><a class="button" href="/optocht-inschrijven/">Schrijf je in</a></p>
+                <p class="card-actions"><a class="button" href="/optocht-inschrijven/">Schrijf je in</a></p>
             }
         </div>
         <div class="card cta-card">
             <h2 class="h3">Mijn inschrijving</h2>
             <p>Log in om te zien hoe het met jullie inschrijving staat, of gebruik de link in je bevestigingsmail. In de app staat hij onder Optocht.</p>
-            <p><a class="button outline" href="/optocht-inschrijven/">Mijn inschrijving</a></p>
+            <p class="card-actions"><a class="button outline" href="/optocht-inschrijven/">Mijn inschrijving</a></p>
         </div>
         <div class="card cta-card">
+            <h2 class="h3">Aanrijtijden</h2>
             @if (p?.ArrivalTimesPublished != true)
             {
                 <span><span class="badge">Nog niet bekend</span></span>
             }
-            <h2 class="h3">Aanrijtijden</h2>
             <p>Hier staan de aanrijtijden en opstelplaatsen per startnummer zodra de optocht is ingedeeld.</p>
             @if (p?.ArrivalTimesPublished == true)
             {
-                <p><a class="button outline" href="/aanrijtijden/">Aanrijtijden</a></p>
+                <p class="card-actions"><a class="button outline" href="/aanrijtijden/">Aanrijtijden</a></p>
             }
         </div>
     </div>

@@ -146,6 +146,68 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Nieuwe_optocht_vult_groep_contact_categorie_en_bouwlocatie_van_vorig_jaar_in_maar_niet_wat_per_jaar_verschilt()
+    {
+        // Vorig jaar ingediend in de eerste optocht.
+        var (_, lid) = await LidAsync("piet@example.com");
+        var draft = await DraftAsync(lid);
+        await SaveAsync(lid, draft, Complete(draft.GetProperty("version").GetString()!));
+        var old = await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{draft.GetProperty("id").GetGuid()}/submit", null));
+        await WithDbAsync(db => db.Parades.Where(p => p.Id == _paradeId).ExecuteUpdateAsync(u => u.SetProperty(p => p.Status, Modules.Parade.Parades.ParadeStatus.Completed)));
+
+        var now = _api.Clock.UtcNow;
+        var created = await _bestuur.PostAsJsonAsync("/api/v1/admin/parades", new
+        {
+            carnivalYearId = 1,
+            name = "Optocht Loil 2027 (nieuw)",
+            paradeDate = "2027-02-14",
+            startTime = "13:30:00",
+            startLocation = (string?)null,
+            routeDescription = (string?)null,
+            routeLengthKm = (decimal?)null,
+            registrationOpensAt = now.AddDays(-1),
+            registrationClosesAt = now.AddDays(20),
+            editDeadlineAt = (DateTimeOffset?)null,
+            subjectRequired = true,
+            defaultSpacingMeters = 5m,
+            maxDocumentsPerRegistration = 2,
+            maxDocumentSizeMb = 5,
+            status = "RegistrationOpen",
+        });
+        var newParade = (await JsonAsync(created, HttpStatusCode.Created)).GetProperty("id").GetGuid();
+
+        // Mijn inschrijvingen: met de optocht erbij, zodat de app de oude niet als "Mijn inschrijving" toont.
+        var mine = await lid.GetFromJsonAsync<List<JsonElement>>("/api/v1/parade/registrations");
+        Assert.Equal((_paradeId, "Optocht Loil 2027"), (mine![0].GetProperty("paradeId").GetGuid(), mine[0].GetProperty("paradeName").GetString()));
+
+        var fresh = await DraftAsync(lid);
+        Assert.Equal(JsonValueKind.Null, fresh.GetProperty("registrationNumber").ValueKind);
+        Assert.Equal(JsonValueKind.Null, fresh.GetProperty("startNumber").ValueKind);
+        Assert.Equal(("De Knotwilgen", 3, "piet@example.com", "6999 AA"), (fresh.GetProperty("groupName").GetString(), fresh.GetProperty("categoryId").GetInt32(),
+            fresh.GetProperty("contactEmail").GetString(), fresh.GetProperty("buildAddress").GetProperty("postalCode").GetString()));
+        Assert.Equal((JsonValueKind.Null, 0, 0, JsonValueKind.Null, JsonValueKind.Null), (fresh.GetProperty("subject").ValueKind, fresh.GetProperty("adultCount").GetInt32(),
+            fresh.GetProperty("childrenCount").GetInt32(), fresh.GetProperty("estimatedLengthMeters").ValueKind, fresh.GetProperty("hasMusic").ValueKind));
+        Assert.NotEqual(old.GetProperty("id").GetGuid(), fresh.GetProperty("id").GetGuid());
+        Assert.Equal(newParade, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == fresh.GetProperty("id").GetGuid()).Select(r => r.ParadeId).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Optocht_verwijderen_met_de_naam_ter_bevestiging_verwijdert_alles()
+    {
+        var (_, lid) = await LidAsync("piet@example.com");
+        var draft = await DraftAsync(lid);
+        await SaveAsync(lid, draft, Complete(draft.GetProperty("version").GetString()!));
+        await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{draft.GetProperty("id").GetGuid()}/submit", null));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.DeleteAsync($"/api/v1/admin/parades/{_paradeId}?confirmName=Verkeerde%20naam")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/parades/{_paradeId}?confirmName={Uri.EscapeDataString("optocht loil 2027")}")).StatusCode);
+        Assert.False(await WithDbAsync(db => db.Parades.AnyAsync(p => p.Id == _paradeId)));
+        Assert.False(await WithDbAsync(db => db.ParadeRegistrations.AnyAsync(r => r.ParadeId == _paradeId)));
+        Assert.Equal(HttpStatusCode.NotFound, (await _api.CreateClient().GetAsync("/api/v1/parade/current")).StatusCode);
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "parade.deleted")));
+    }
+
+    [Fact]
     public async Task Vijftig_gelijktijdige_inzendingen_krijgen_1_tot_50_zonder_gaten()
     {
         var clients = new List<(HttpClient Client, Guid Id)>();

@@ -197,6 +197,15 @@ public sealed class ParadeRegistrations(
 
         var location = await db.ParadeBuildLocations.AsNoTracking().Where(l => l.UserId == user.UserId)
             .OrderByDescending(l => l.LastUsedAt).FirstOrDefaultAsync(cancellationToken);
+        // Vooraf invullen vanuit de inschrijving van vorig jaar (besluit product owner 2026-10-01): groepsnaam en categorie
+        // (te wijzigen); niet wat per jaar verschilt, zoals onderwerp, deelnemers, muziek en lengte.
+        var previous = await db.ParadeRegistrations.AsNoTracking()
+            .Where(r => r.OwnerUserId == user.UserId && r.ParadeId != parade.Id && r.Status != RegistrationStatus.Draft)
+            .OrderByDescending(r => r.CreatedAt).Select(r => new { r.GroupName, r.CategoryId }).FirstOrDefaultAsync(cancellationToken);
+        var previousCategory = previous?.CategoryId is { } categoryId
+            && await db.ParadeCategories.AnyAsync(c => c.Id == categoryId && c.Active && (c.ParadeId == null || c.ParadeId == parade.Id), cancellationToken)
+            ? previous.CategoryId
+            : null;
         var registration = new ParadeRegistration
         {
             Id = IdGenerator.NewId(),
@@ -208,7 +217,8 @@ public sealed class ParadeRegistrations(
             ContactName = member?.FullName ?? user.DisplayName,
             ContactPhone = PhoneNormalizer.Normalize(member?.MobilePhone ?? member?.Phone),
             ContactEmail = member?.Email ?? user.Email,
-            GroupName = member?.ParadeGroupName,
+            GroupName = member?.ParadeGroupName ?? previous?.GroupName,
+            CategoryId = previousCategory,
             BuildAddress = location is null ? new Address() : CloneAddress(location.Address),
         };
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);

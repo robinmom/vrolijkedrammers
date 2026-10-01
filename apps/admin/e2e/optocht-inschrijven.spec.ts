@@ -81,7 +81,7 @@ async function fillForm(page: Page) {
   await page.getByLabel('Kinderen (tot 16 jaar)').fill('2');
   await page.getByRole('group', { name: 'Hebben jullie muziek bij je?' }).getByLabel('Ja').check();
   const build = page.getByRole('group', { name: 'Bouwlocatie' });
-  await build.getByLabel('Straat').fill('Dorpsstraat');
+  await build.getByLabel('Straat', { exact: true }).fill('Dorpsstraat');
   await build.getByLabel('Huisnummer').fill('1');
   await build.getByLabel('Postcode').fill('6999 AA');
   await build.getByLabel('Plaats').fill('Loil');
@@ -200,9 +200,9 @@ const draft = {
   },
 };
 
-async function serveSignedIn(page: Page, permissions: string[]) {
+async function serveSignedIn(page: Page, permissions: string[], earlier: unknown[] = []) {
   const calls: { method: string; path: string; body: unknown; auth: string | undefined }[] = [];
-  let mine: unknown[] = [];
+  let mine: unknown[] = earlier;
   await serve(page, { bodies: [] }, fakeLogin({ name: 'Piet Test', username: 'piet@example.com' }));
   await page.route('**/api/v1/me', (route) =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify({ displayName: 'Piet Test', permissions }) }),
@@ -219,7 +219,17 @@ async function serveSignedIn(page: Page, permissions: string[]) {
     const json = (data: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
     if (path.endsWith('/submit')) {
-      mine = [{ id: 'd-1', groupName: 'De Bouwers', status: 'Submitted', registrationNumber: 12, startNumber: null }];
+      mine = [
+        {
+          id: 'd-1',
+          groupName: 'De Bouwers',
+          status: 'Submitted',
+          registrationNumber: 12,
+          startNumber: null,
+          paradeId: 'p-1',
+          paradeName: 'Optocht Loil 2027',
+        },
+      ];
       return json({ ...draft, status: 'Submitted', registrationNumber: 12 });
     }
     if (request.method() === 'PUT') return json({ ...draft, ...(request.postDataJSON() as object), version: 'v2' });
@@ -256,7 +266,9 @@ test('fase 21d: ingelogd inschrijven zonder e-mailcode en daarna Mijn inschrijvi
   await expect(page.getByRole('heading', { name: 'Inschrijfformulier' })).toBeVisible();
   // Vooraf ingevuld uit het concept (gegevens van het lid en de vorige bouwlocatie).
   await expect(page.getByLabel('Naam van de groep')).toHaveValue('De Bouwers');
-  await expect(page.getByRole('group', { name: 'Bouwlocatie' }).getByLabel('Straat')).toHaveValue('Dorpsstraat');
+  await expect(page.getByRole('group', { name: 'Bouwlocatie' }).getByLabel('Straat', { exact: true })).toHaveValue(
+    'Dorpsstraat',
+  );
   await expect(page.getByText(/je inschrijving direct ingediend/)).toBeVisible();
   await fillForm(page);
   await page.getByRole('button', { name: 'Inschrijving versturen' }).click();
@@ -287,4 +299,37 @@ test('fase 21d: ingelogd zonder rechten als groepsverantwoordelijke', async ({ p
   await expect(page.getByText(/groepsverantwoordelijke/)).toBeVisible();
   await page.getByRole('button', { name: 'Zonder account inschrijven' }).click();
   await expect(page.getByRole('heading', { name: 'Inschrijfformulier' })).toBeVisible();
+});
+
+test('nieuwe optocht: eerdere inschrijving staat apart, opnieuw inschrijven met dezelfde of een andere bouwlocatie', async ({
+  page,
+}) => {
+  await serveSignedIn(
+    page,
+    ['parade.register'],
+    [
+      {
+        id: 'r-old',
+        groupName: 'De Bouwers',
+        status: 'StartNumberAssigned',
+        registrationNumber: 12,
+        startNumber: 31,
+        paradeId: 'p-0',
+        paradeName: 'Optocht Loil 2026',
+      },
+    ],
+  );
+  await page.goto('/optocht-inschrijven/');
+  await expect(page.getByText('Je hebt nog geen inschrijving voor de optocht.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Eerdere optochten' })).toBeVisible();
+  await expect(page.getByText('Optocht Loil 2026: De Bouwers')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Nieuwe inschrijving' }).click();
+  const build = page.getByRole('group', { name: 'Bouwlocatie' });
+  await expect(build.getByText('Dorpsstraat 1, Loil')).toBeVisible();
+  await expect(build.getByLabel('Straat', { exact: true })).toHaveValue('Dorpsstraat');
+  await build.getByLabel(/Andere locatie/).check();
+  await expect(build.getByLabel('Straat', { exact: true })).toHaveValue('');
+  await build.getByLabel(/Zelfde locatie/).check();
+  await expect(build.getByLabel('Straat', { exact: true })).toHaveValue('Dorpsstraat');
 });

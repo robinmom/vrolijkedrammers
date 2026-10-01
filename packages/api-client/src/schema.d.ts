@@ -6445,7 +6445,51 @@ export interface paths {
             };
         };
         post?: never;
-        delete?: never;
+        /** Optocht definitief verwijderen, met alles erbij; ter bevestiging de naam van de optocht meesturen. */
+        delete: {
+            parameters: {
+                query: {
+                    confirmName: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -17345,6 +17389,9 @@ export interface components {
             submittedAt: null | string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: uuid */
+            paradeId: string;
+            paradeName: string;
         };
         RejectAccountRequestRequest: {
             reason: null | string;

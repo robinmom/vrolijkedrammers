@@ -1592,6 +1592,19 @@ export class MockApi {
       this.lineupCalls.push({ path, body: null });
       return json({ changed: this.importPreview.changes.length });
     }
+    if ((m = path.match(/^\/admin\/parades\/([^/]+)$/)) && method === 'DELETE') {
+      const parade = this.parades.find((p) => p.id === m![1]);
+      if (!parade) return json({ title: 'Niet gevonden' }, 404);
+      if (String(url.searchParams.get('confirmName') ?? '').toLowerCase() !== String(parade.name).toLowerCase()) {
+        return json(
+          { title: 'Bevestiging', detail: `Typ ter bevestiging de naam van de optocht: ${String(parade.name)}.` },
+          422,
+        );
+      }
+      this.parades = this.parades.filter((p) => p !== parade);
+      this.record('parade.deleted', 'Parade', String(parade.id), {});
+      return noContent();
+    }
     if ((m = path.match(/^\/admin\/parades\/([^/]+)$/)) && method === 'PUT') {
       const index = this.parades.findIndex((p) => p.id === m![1]);
       this.parades[index] = { ...(body as Record<string, unknown>), id: m[1] };

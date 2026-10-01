@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Authorization;
 using Drammers.Api.Content;
 using Drammers.Infrastructure.Content;
+using Drammers.Infrastructure.Content.Import;
 using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Content.Website;
@@ -287,6 +288,50 @@ public sealed class AdminWebsiteController(DrammersDbContext db, WebsiteAdminist
     {
         await website.DeleteAwardAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    // ----- Overzetten van de oude website (fase 21e) ----------------------------------------------------------------
+
+    [HttpGet("import")]
+    [ProducesResponseType<WebsiteImportSummary>(StatusCodes.Status200OK)]
+    public async Task<WebsiteImportSummary> GetImport(CancellationToken cancellationToken)
+    {
+        var counts = await db.WebsiteImportItems.AsNoTracking().GroupBy(i => new { i.Kind, i.Status })
+            .Select(g => new { g.Key.Kind, g.Key.Status, Count = g.Count() }).ToListAsync(cancellationToken);
+        var failures = await db.WebsiteImportItems.AsNoTracking().Where(i => i.Status == WebsiteImportStatus.Failed).OrderBy(i => i.Id).Take(100)
+            .Select(i => new WebsiteImportFailure(i.Id, i.Kind, i.Title, i.SourceUrl, i.Error)).ToListAsync(cancellationToken);
+        var last = await db.WebsiteImportItems.MaxAsync(i => (DateTime?)(i.ProcessedAt ?? i.CreatedAt), cancellationToken);
+        var running = await db.Outbox.AnyAsync(o => o.Type == WebsiteImporter.MessageType && o.ProcessedAt == null && o.Attempts < Drammers.Worker.Outbox.OutboxProcessor.MaxAttempts, cancellationToken);
+        int Count(WebsiteImportKind kind, WebsiteImportStatus status) => counts.Where(c => c.Kind == kind && c.Status == status).Sum(c => c.Count);
+        return new WebsiteImportSummary(
+            [.. Enum.GetValues<WebsiteImportKind>().Select(k => new WebsiteImportCount(k, Count(k, WebsiteImportStatus.Pending), Count(k, WebsiteImportStatus.Done),
+                Count(k, WebsiteImportStatus.Skipped), Count(k, WebsiteImportStatus.Failed)))],
+            failures, running, last);
+    }
+
+    /// <summary>Start (of hervat) het overzetten van de oude WordPress-site; het werk gebeurt op de achtergrond.</summary>
+    [HttpPost("import")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> StartImport([FromServices] Drammers.SharedKernel.Messaging.IOutbox outbox, CancellationToken cancellationToken)
+    {
+        if (!await db.Outbox.AnyAsync(o => o.Type == WebsiteImporter.MessageType && o.ProcessedAt == null && o.Attempts < Drammers.Worker.Outbox.OutboxProcessor.MaxAttempts, cancellationToken))
+        {
+            // Plannen is veilig om te herhalen: alleen nieuwe items van de oude site komen erbij.
+            outbox.Enqueue(WebsiteImporter.MessageType, new WebsiteImporter.ImportMessage("plan"));
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return Accepted();
+    }
+
+    /// <summary>Mislukte items opnieuw proberen.</summary>
+    [HttpPost("import/retry")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> RetryImport([FromServices] Drammers.SharedKernel.Messaging.IOutbox outbox, CancellationToken cancellationToken)
+    {
+        await db.WebsiteImportItems.Where(i => i.Status == WebsiteImportStatus.Failed)
+            .ExecuteUpdateAsync(u => u.SetProperty(i => i.Status, WebsiteImportStatus.Pending), cancellationToken);
+        return await StartImport(outbox, cancellationToken);
     }
 
     private Task<string?> ImageUrl(string? path, CancellationToken cancellationToken) => urls.ForAsync(FileContainers.Content, path, cancellationToken);

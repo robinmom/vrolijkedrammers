@@ -15,7 +15,7 @@ public sealed class BerichtModel(WebsiteReader reader) : SitePage
         var article = await reader.NewsArticleAsync(slug, cancellationToken);
         if (article is null)
         {
-            return NotFoundPage();
+            return await NotFoundOrRedirectAsync();
         }
 
         Article = article;

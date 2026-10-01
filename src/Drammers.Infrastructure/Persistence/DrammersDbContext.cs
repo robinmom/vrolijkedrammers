@@ -114,6 +114,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Content.Website.Award> Awards => Set<Modules.Content.Website.Award>();
 
+    public DbSet<Modules.Content.Website.WebsiteImportItem> WebsiteImportItems => Set<Modules.Content.Website.WebsiteImportItem>();
+
+    public DbSet<Modules.Content.Website.WebsiteRedirect> WebsiteRedirects => Set<Modules.Content.Website.WebsiteRedirect>();
+
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();

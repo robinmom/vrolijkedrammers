@@ -12,6 +12,7 @@ import {
 import { Checkbox, Field } from '../components/Field';
 import { ImagePicker } from '../components/ImagePicker';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
+import { WebsiteImportCard } from '../components/WebsiteImportCard';
 
 const links = Object.keys(linkLabels) as WebsiteLink[];
 
@@ -144,6 +145,7 @@ export function WebsiteSettingsPage() {
           </div>
         </form>
       ) : null}
+      <WebsiteImportCard />
     </>
   );
 }

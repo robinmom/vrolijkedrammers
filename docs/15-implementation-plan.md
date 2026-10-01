@@ -981,7 +981,30 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **21d — inloggen op de website** voor de optocht (MSAL, zelfde Entra External ID als de app) en "Mijn inschrijving"; een inschrijving zonder account wordt gekoppeld zodra iemand met hetzelfde e-mailadres inlogt.
 
-**21e — overzetten** van de WordPress-inhoud via de openbare WordPress-API (berichten, prinsen, onderscheidingen, kader, vaste pagina's en foto's) en doorverwijzingen van de oude adressen.
+**21e — overzetten van de oude WordPress-site (gebouwd).**
+- Starten vanuit de portal: Website → Instellingen website → "Oude website overzetten" (recht `website.manage`). Het werk loopt op de achtergrond via de outbox (`website.import`). Elke run duurt maximaal 3 minuten; zolang er werk is, zet de run zichzelf weer in de wachtrij.
+- Bron: de openbare REST-API (`/wp-json/wp/v2/posts`, `pages`, `award`). Wat daar niet in staat (prinsen, jeugdprinsen, kader en de tekst van een onderscheiding), wordt uit de openbare HTML gelezen. Afbeeldingen worden alleen van de eigen host gedownload, in het originele formaat (zonder `-WxH`) en maximaal 25 MB.
+- Werklijst `website_import_items` (uniek op soort + bron). Daardoor kun je de import hervatten en wordt niets dubbel aangemaakt. "Opnieuw controleren" plant opnieuw en pakt alleen nieuwe items op. Mislukte items komen met de fout in de portal en kun je opnieuw proberen.
+- Wat er van elk onderdeel wordt:
+
+  | Oude site | Nieuwe site |
+  |---|---|
+  | Bericht | Nieuws (`ShowOnWebsite`, originele datum, uitgelichte afbeelding, categorie). Een bericht met foto's krijgt een album met een link. |
+  | Pagina met ≥4 foto's | Fotoalbum (categorie uit de titel). Bij een tekst van ≥300 tekens komt er ook een nieuwsbericht. |
+  | Overige pagina | Websitepagina |
+  | Prins / jeugdprins | Prinsengalerie |
+  | Onderscheiding | Onderscheiding (soort, jaar, foto, tekst) |
+  | Kader per commissie | Kader. Een kaderlid wordt aan een lid gekoppeld als er precies één lid met dezelfde naam is. |
+
+  Vervangen pagina's (home, agenda, contact, lid worden, optochtformulier, test- en dubbele pagina's) worden overgeslagen.
+- HTML gaat naar Markdown (koppen, vet/cursief, links, lijsten en tabellen). Logo's en scripts gaan weg. De Markdown-renderer kan nu tabellen tonen.
+- Doorverwijzingen (301):
+  - van elk overgezet adres naar het nieuwe adres (tabel `website_redirects`);
+  - vaste regels voor `/prins/`, `/jeugdprins/`, `/commissies/{slug}`, `/commissielid/`, `/category/`, `/tag/`, `/evenementen/`, `/sponsoren/` en `/historie/`;
+  - vaste adressen zoals `/aanmelden-lid/` naar `/lid-worden/`.
+- Nog open:
+  - pdf's (Drammerskrant) op de oude uploads-map worden niet overgezet en werken niet meer na de domeinwissel;
+  - oude berichten staan ook in het nieuwsoverzicht van de app.
 
 **21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 

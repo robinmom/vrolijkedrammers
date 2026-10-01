@@ -11618,6 +11618,59 @@
         }
       }
     },
+    "/api/v1/admin/website/import": {
+      "get": {
+        "tags": [
+          "AdminWebsite"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteImportSummary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteImportSummary"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteImportSummary"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminWebsite"
+        ],
+        "summary": "Start (of hervat) het overzetten van de oude WordPress-site; het werk gebeurt op de achtergrond.",
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/website/import/retry": {
+      "post": {
+        "tags": [
+          "AdminWebsite"
+        ],
+        "summary": "Mislukte items opnieuw proberen.",
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
     "/api/v1/app-auth-config": {
       "get": {
         "tags": [
@@ -28188,6 +28241,120 @@
                 "$ref": "#/components/schemas/WebsiteHeroButton"
               }
             ]
+          }
+        }
+      },
+      "WebsiteImportCount": {
+        "required": [
+          "kind",
+          "pending",
+          "done",
+          "skipped",
+          "failed"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/WebsiteImportKind"
+          },
+          "pending": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "done": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WebsiteImportFailure": {
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "sourceUrl",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/WebsiteImportKind"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sourceUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "WebsiteImportKind": {
+        "enum": [
+          "Post",
+          "Page",
+          "Gallery",
+          "GalleryPhoto",
+          "Prince",
+          "YouthPrince",
+          "Award",
+          "Kader"
+        ],
+        "description": "Soort bron-item bij het overzetten van de oude WordPress-site (fase 21e)."
+      },
+      "WebsiteImportSummary": {
+        "required": [
+          "counts",
+          "failures",
+          "running",
+          "lastActivity"
+        ],
+        "type": "object",
+        "properties": {
+          "counts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteImportCount"
+            }
+          },
+          "failures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebsiteImportFailure"
+            }
+          },
+          "running": {
+            "type": "boolean"
+          },
+          "lastActivity": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },

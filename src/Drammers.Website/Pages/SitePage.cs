@@ -22,6 +22,12 @@ public abstract class SitePage : PageModel
 
     public bool IsNotFound { get; private set; }
 
+    /// <summary>Extra scripts voor deze pagina (fase 21d, bijvoorbeeld een formulier), na <c>site.js</c> en met <c>defer</c>.</summary>
+    public IReadOnlyList<string> Scripts { get; protected set; } = [];
+
+    /// <summary>Niet opnemen in zoekmachines (bijvoorbeeld een bestelling met een persoonlijke link).</summary>
+    public bool NoIndex { get; protected set; }
+
     /// <summary>
     /// Een oud adres van de WordPress-site stuurt permanent door naar de nieuwe pagina; anders de 404 in de huisstijl.
     /// </summary>

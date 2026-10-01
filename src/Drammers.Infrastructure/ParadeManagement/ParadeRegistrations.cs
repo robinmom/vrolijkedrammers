@@ -72,6 +72,45 @@ public sealed class ParadeRegistrations(
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// Fase 21d: inschrijvingen via het webformulier (zonder account) met hetzelfde, bevestigde e-mailadres als het account
+    /// worden aan dat account gekoppeld; daarna staan ze onder Mijn inschrijving in de app en op de website.
+    /// </summary>
+    public async Task<int> ClaimByEmailAsync(Guid userId, string email, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return 0;
+        }
+
+        var normalized = email.Trim().ToLowerInvariant();
+        var claimable = await db.ParadeRegistrations
+            .Where(r => r.Source == RegistrationSource.WebForm && r.OwnerUserId == null && r.ContactEmailVerifiedAt != null
+                && r.ContactEmail != null && r.ContactEmail.ToLower() == normalized)
+            .ToListAsync(cancellationToken);
+        if (claimable.Count == 0)
+        {
+            return 0;
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        foreach (var registration in claimable)
+        {
+            registration.OwnerUserId = userId;
+            db.ParadeRegistrationManagers.Add(new ParadeRegistrationManager { RegistrationId = registration.Id, UserId = userId, Role = ManagerRole.Owner, AddedAt = Now });
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        foreach (var registration in claimable)
+        {
+            await audit.WriteAsync(new AuditEntry("parade-registration.claimed", "ParadeRegistration", registration.Id.ToString(), null,
+                JsonSerializer.Serialize(new { userId }, Json)), cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return claimable.Count;
+    }
+
     public async Task<ParadeRegistration> GetAsync(Guid userId, Guid id, CancellationToken cancellationToken) =>
         await db.ParadeRegistrations.AsNoTracking()
             .SingleOrDefaultAsync(r => r.Id == id && db.ParadeRegistrationManagers.Any(m => m.RegistrationId == r.Id && m.UserId == userId), cancellationToken)

@@ -1,0 +1,6 @@
+@page "/aanrijtijden"
+@model AanrijtijdenModel
+<partial name="_PageBand" model='new PageBand("Aanrijtijden optocht", "Per startnummer de tijd waarop de wagen bij de meldplek moet zijn.", ("/optocht", "Optocht"), (null, "Aanrijtijden"))' />
+<div class="wrap content form-page">
+    <partial name="Forms/_Aanrijtijden" />
+</div>

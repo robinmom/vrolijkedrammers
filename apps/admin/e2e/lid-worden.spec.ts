@@ -1,29 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { forms, serveWebsitePages } from './website-page';
 
-/**
- * De openbare webpagina /lid-worden (fase 9b): echte bestanden uit src/Drammers.Api/wwwroot, met dezelfde CSP als de
- * API; alleen de API-aanroepen zijn nagebootst.
- */
-const root = join(dirname(fileURLToPath(import.meta.url)), '../../../src/Drammers.Api/wwwroot/lid-worden');
-const csp =
-  "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
-const types: Record<string, string> = { html: 'text/html', css: 'text/css', js: 'text/javascript', png: 'image/png' };
+/** Lid worden (fase 9b, sinds 21d een pagina van de website): de echte formulier-HTML en het script; de API is nagebootst. */
 
 async function serve(page: Page, api: { bodies: unknown[]; verifyStatus?: number }) {
-  await page.route('**/lid-worden/**', (route) => {
-    const file = new URL(route.request().url()).pathname.replace('/lid-worden/', '') || 'index.html';
-    const ext = file.split('.').pop()!;
-    return route.fulfill({
-      status: 200,
-      contentType: types[ext],
-      headers: { 'content-security-policy': csp },
-      body: readFileSync(join(root, file)),
-    });
-  });
+  await serveWebsitePages(page, forms.lidWorden);
   await page.route('**/api/v1/membership-applications**', (route) => {
     const url = route.request().url();
     if (url.endsWith('/verify-email')) {

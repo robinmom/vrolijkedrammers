@@ -1,0 +1,6 @@
+@page "/kaarten/bestelling"
+@model KaartenBestellingModel
+<partial name="_PageBand" model='new PageBand("Je bestelling", null, ("/kaarten", "Kaarten"), (null, "Bestelling"))' />
+<div class="wrap content form-page">
+    <partial name="Forms/_KaartenBestelling" />
+</div>

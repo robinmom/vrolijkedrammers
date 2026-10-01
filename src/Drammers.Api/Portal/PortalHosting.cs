@@ -8,37 +8,17 @@ public static class PortalHosting
 {
     public const string BasePath = "/beheer";
 
-    /// <summary>Openbare webpagina "Lid worden" (fase 9b); statisch, praat met dezelfde API.</summary>
-    public const string JoinPath = "/lid-worden";
-
-    /// <summary>Openbare webpagina "Inschrijven optocht" (fase 11c) voor iedereen zonder account; zelfde CSP als lid worden.</summary>
-    public const string ParadePath = "/optocht-inschrijven";
-
-    /// <summary>
-    /// Openbare aanrijtijdenlijst (fase 16). Mag worden ingesloten op de website van de vereniging (iframe), verder niet.
-    /// </summary>
-    public const string ArrivalsPath = "/aanrijtijden";
-
-    /// <summary>Openbare kaartverkoop (fase 19b): bestellen, betalen via Mollie en de bestelling met de QR.</summary>
-    public const string TicketsPath = "/kaarten";
-
-    private const string TicketsOrderPath = "/kaarten/bestelling";
-
-    private const string ArrivalsContentSecurityPolicy =
-        "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors https://vrolijkedrammers.nl https://www.vrolijkedrammers.nl; " +
-        "base-uri 'self'; form-action 'none'; object-src 'none'";
-
-    private const string JoinContentSecurityPolicy =
-        "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
-
     // connect-src: de API (zelfde origin) en de inlogpagina van Entra External ID.
     private const string ContentSecurityPolicy =
         "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.ciamlogin.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
     // De website (fase 21c): alles van de eigen origin; afbeeldingen ook van het Facebook-CDN (feed op de homepage).
+    // Sinds 21d horen lid worden, optocht inschrijven, aanrijtijden en kaarten bij de website; connect-src ook naar de
+    // inlogpagina van Entra External ID (tokens ophalen bij het inloggen voor de optocht).
     private const string WebsiteContentSecurityPolicy =
-        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; connect-src 'self' https://*.ciamlogin.com; " +
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
     /// <summary>Headers voor alle responses; de portal-CSP alleen onder <see cref="BasePath"/>.</summary>
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app) =>
@@ -51,16 +31,6 @@ public static class PortalHosting
             {
                 headers.ContentSecurityPolicy = ContentSecurityPolicy;
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
-                headers.XFrameOptions = "DENY";
-            }
-            else if (context.Request.Path.StartsWithSegments(ArrivalsPath))
-            {
-                headers.ContentSecurityPolicy = ArrivalsContentSecurityPolicy;
-            }
-            else if (context.Request.Path.StartsWithSegments(JoinPath) || context.Request.Path.StartsWithSegments(ParadePath)
-                || context.Request.Path.StartsWithSegments(TicketsPath))
-            {
-                headers.ContentSecurityPolicy = JoinContentSecurityPolicy;
                 headers.XFrameOptions = "DENY";
             }
             else if (Website.WebsiteSetup.IsWebsitePath(context.Request.Path))
@@ -83,7 +53,7 @@ public static class PortalHosting
         // /beheer → /beheer/ (Vite gebruikt paden onder de base). Geen route: routing negeert de trailing slash.
         app.Use((context, next) =>
         {
-            if (context.Request.Path.Value is BasePath or JoinPath or ParadePath or ArrivalsPath or TicketsPath or TicketsOrderPath)
+            if (context.Request.Path.Value is BasePath)
             {
                 context.Response.Redirect($"{context.Request.Path.Value}/{context.Request.QueryString}");
                 return Task.CompletedTask;

@@ -168,8 +168,10 @@ GRAPH_SP_ID="$(graph --method get --url "$GRAPH/servicePrincipals(appId='$GRAPH_
 
 echo "==> Beheerportal ($ENV)"
 PORTAL_NAME="DVD Beheerportal ($ENV)"
+# Ook de website (fase 21d): inloggen bij optocht inschrijven, op dezelfde host als het portal.
 PORTAL_REDIRECTS="$(jq -cn --arg url "$PORTAL_URL" --arg env "$ENV" \
-  '[($url | select(length > 0)), (if $env == "dev" then "http://localhost:5173", "http://localhost:5173/beheer/" else empty end)]')"
+  '[($url | select(length > 0)), ($url | select(length > 0) | sub("/beheer/?$"; "") + "/optocht-inschrijven/"),
+    (if $env == "dev" then "http://localhost:5173", "http://localhost:5173/beheer/", "http://localhost:5162/optocht-inschrijven/" else empty end)]')"
 PORTAL_APP_ID="$(ensure_app "$PORTAL_NAME" "{
   \"displayName\": \"$PORTAL_NAME\", \"signInAudience\": \"AzureADMyOrg\",
   \"spa\": {\"redirectUris\": $PORTAL_REDIRECTS},

@@ -21,7 +21,7 @@ public static class WebsiteSetup
     public const string CachePolicy = "website";
 
     /// <summary>Paden die niet bij de website horen (API, portal en de losse webpagina's).</summary>
-    public static readonly string[] OtherPaths = ["/api", "/health", "/beheer", "/lid-worden", "/optocht-inschrijven", "/aanrijtijden", "/kaarten", "/openapi"];
+    public static readonly string[] OtherPaths = ["/api", "/health", "/beheer", "/openapi"];
 
     public static IServiceCollection AddWebsite(this IServiceCollection services, IConfiguration configuration)
     {

@@ -14519,6 +14519,7 @@
         "tags": [
           "ParadeRegistrations"
         ],
+        "summary": "Mijn inschrijvingen; eerst worden inschrijvingen zonder account met hetzelfde e-mailadres gekoppeld (fase 21d).",
         "responses": {
           "200": {
             "description": "OK",

@@ -1,0 +1,172 @@
+<div id="account" class="account-bar" hidden>
+  <p>Ingelogd als <strong id="account-naam"></strong></p>
+  <button type="button" id="uitloggen" class="secondary">Uitloggen</button>
+</div>
+
+<section id="laden" class="form-card"><p>Laden…</p></section>
+
+<div id="keuze" class="login-choice" hidden>
+  <section class="form-card" aria-labelledby="titel-inloggen">
+    <h2 id="titel-inloggen" tabindex="-1">Inloggen en inschrijven</h2>
+    <p class="muted">Met het account van de app. Je inschrijving staat daarna ook in de app en hier onder Mijn inschrijving, en je hoeft geen code over te typen.</p>
+    <div class="actions"><button type="button" id="inloggen">Inloggen</button></div>
+  </section>
+  <section class="form-card" aria-labelledby="titel-gast">
+    <h2 id="titel-gast">Zonder account inschrijven</h2>
+    <p class="muted">Je bevestigt je e-mailadres met een code. De status bekijk je via de link in de bevestigingsmail.</p>
+    <div class="actions"><button type="button" id="als-gast" class="secondary">Zonder account verder</button></div>
+  </section>
+</div>
+
+<section id="mijn" class="form-card" aria-labelledby="titel-mijn" hidden>
+  <h2 id="titel-mijn" tabindex="-1">Mijn inschrijving</h2>
+  <p id="mijn-leeg" class="muted" hidden>Je hebt nog geen inschrijving voor de optocht.</p>
+  <ul id="mijn-lijst" class="registration-list"></ul>
+  <div id="mijn-fout" class="error" role="alert" hidden></div>
+  <div class="actions">
+    <button type="button" id="nieuw" hidden>Nieuwe inschrijving</button>
+    <button type="button" id="verder" hidden>Verder invullen</button>
+  </div>
+  <p class="muted">Wil je iets wijzigen? Dat kan in de app onder Optocht, of neem contact op met de optochtcommissie.</p>
+</section>
+
+<section id="geen-rechten" class="form-card" aria-labelledby="titel-geen-rechten" hidden>
+  <h2 id="titel-geen-rechten" tabindex="-1">Een groep inschrijven</h2>
+  <p id="geen-rechten-tekst">Groepen worden met een account ingeschreven door een groepsverantwoordelijke. Ben jij dat? Vraag het bestuur of de optochtcommissie om je account als groepsverantwoordelijke aan te zetten.</p>
+  <p>Je kunt je groep ook zonder account inschrijven.</p>
+  <div class="actions"><button type="button" id="als-gast-2" class="secondary">Zonder account inschrijven</button></div>
+</section>
+
+<section id="gesloten" class="form-card" aria-labelledby="titel-gesloten" hidden>
+  <h2 id="titel-gesloten" tabindex="-1">Inschrijven nog niet mogelijk</h2>
+  <p id="gesloten-tekst"></p>
+  <p id="gesloten-inloggen" hidden>Al ingeschreven? <button type="button" id="inloggen-2" class="secondary">Inloggen</button> om je inschrijving te bekijken.</p>
+</section>
+
+<section id="formulier" class="form-card" aria-labelledby="titel-formulier" hidden>
+  <h2 id="titel-formulier" tabindex="-1">Inschrijfformulier</h2>
+  <div id="info" class="info muted"></div>
+  <p id="formulier-uitleg" class="muted">
+    Na het versturen krijg je een code per e-mail. Pas na die code is je inschrijving ingediend en krijg je een opgavenummer. De
+    optochtcommissie beoordeelt elke inschrijving; pas na goedkeuring is hij definitief.
+  </p>
+
+  <form id="inschrijven" novalidate>
+    <fieldset>
+      <legend>Groep</legend>
+      <label>Naam van de groep<input name="groupName" required maxlength="100" /></label>
+      <label>Categorie<select name="categoryId" required><option value="">Kies een categorie</option></select></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Contactpersoon</legend>
+      <label>Naam<input name="contactName" required maxlength="100" autocomplete="name" /></label>
+      <div class="row two">
+        <label>Telefoon<input name="contactPhone" type="tel" required maxlength="30" autocomplete="tel" /></label>
+        <label>E-mailadres<input name="contactEmail" type="email" required maxlength="254" autocomplete="email" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Onderwerp</legend>
+      <label><span id="label-onderwerp">Onderwerp</span><input name="subject" maxlength="150" /></label>
+      <label>Toelichting (optioneel)<textarea name="subjectDescription" maxlength="2000"></textarea></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Deelnemers</legend>
+      <div class="row two">
+        <label>Volwassenen<input name="adultCount" type="number" min="0" max="1000" value="0" required inputmode="numeric" /></label>
+        <label>Kinderen (tot 16 jaar)<input name="childrenCount" type="number" min="0" max="1000" value="0" required inputmode="numeric" /></label>
+      </div>
+      <p id="categorie-hint" class="muted" hidden></p>
+      <fieldset class="inline">
+        <legend class="sub">Hebben jullie muziek bij je?</legend>
+        <div class="row two">
+          <label class="check"><input type="radio" name="hasMusic" value="true" required /> <span>Ja</span></label>
+          <label class="check"><input type="radio" name="hasMusic" value="false" /> <span>Nee</span></label>
+        </div>
+      </fieldset>
+      <label>Geschatte lengte in meters<input name="estimatedLengthMeters" type="number" min="0.1" max="100" step="0.1" required inputmode="decimal" /></label>
+      <p class="muted">Inclusief trekkend voertuig en eventuele aanhanger; maximaal 1 decimaal, bijvoorbeeld 12,5.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Bouwlocatie</legend>
+      <div class="row four">
+        <label>Straat<input name="buildStreet" required maxlength="100" autocomplete="address-line1" /></label>
+        <label>Huisnummer<input name="buildHouseNumber" required maxlength="10" /></label>
+        <label>Toevoeging<input name="buildAddition" maxlength="10" /></label>
+      </div>
+      <div class="row two">
+        <label>Postcode<input name="buildPostalCode" required maxlength="10" autocomplete="postal-code" /></label>
+        <label>Plaats<input name="buildCity" required maxlength="60" autocomplete="address-level2" /></label>
+      </div>
+      <label class="check"><input name="jurySame" type="checkbox" checked />
+        <span>De jury kan de wagen of groep op deze locatie bekijken</span></label>
+    </fieldset>
+
+    <fieldset id="jury" hidden>
+      <legend>Locatie voor de jury</legend>
+      <div class="row four">
+        <label>Straat<input name="juryStreet" maxlength="100" /></label>
+        <label>Huisnummer<input name="juryHouseNumber" maxlength="10" /></label>
+        <label>Toevoeging<input name="juryAddition" maxlength="10" /></label>
+      </div>
+      <div class="row two">
+        <label>Postcode<input name="juryPostalCode" maxlength="10" /></label>
+        <label>Plaats<input name="juryCity" maxlength="60" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Overig</legend>
+      <label>Extra informatie voor de commissie (optioneel)<textarea name="additionalInformation" maxlength="4000"></textarea></label>
+      <label class="check"><input name="rulesAccepted" type="checkbox" required />
+        <span>Ik verklaar dat de gegevens juist zijn en ga akkoord met het optochtreglement van CV De Vrolijke Drammers.</span></label>
+    </fieldset>
+
+    <div id="fout" class="error" role="alert" hidden></div>
+    <button type="submit">Inschrijving versturen</button>
+  </form>
+</section>
+
+<section id="code" class="form-card" aria-labelledby="titel-code" hidden>
+  <h2 id="titel-code" tabindex="-1">Bevestig je e-mailadres</h2>
+  <p>We hebben een code van 6 cijfers gestuurd naar <strong id="code-email"></strong>. Vul die hieronder in. Kijk ook in je map met ongewenste e-mail.</p>
+  <form id="bevestigen" novalidate>
+    <label>Code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required /></label>
+    <p id="code-fout" class="error" role="alert" hidden></p>
+    <div class="actions">
+      <button type="submit">Bevestigen</button>
+      <button type="button" id="opnieuw" class="secondary">Nieuwe code sturen</button>
+    </div>
+  </form>
+</section>
+
+<section id="klaar" class="form-card" aria-labelledby="titel-klaar" hidden>
+  <h2 id="titel-klaar" tabindex="-1">Je inschrijving is ingediend</h2>
+  <p>Je opgavenummer is <strong id="opgavenummer"></strong>.</p>
+  <p>
+    De optochtcommissie beoordeelt je inschrijving; pas na goedkeuring is hij definitief. Je krijgt bij elke stap een e-mail. In de
+    bevestigingsmail staat een link waarmee je de status altijd kunt bekijken.
+  </p>
+  <p id="klaar-status"><a id="status-link" href="#">Status van je inschrijving bekijken</a></p>
+  <div class="actions"><button type="button" id="naar-mijn" class="secondary" hidden>Naar Mijn inschrijving</button></div>
+</section>
+
+<section id="status" class="form-card" aria-labelledby="titel-status" hidden>
+  <h2 id="titel-status" tabindex="-1">Status van je inschrijving</h2>
+  <p><span id="status-tekst" class="status"></span></p>
+  <p id="status-uitleg"></p>
+  <dl class="gegevens">
+    <dt>Optocht</dt><dd id="status-optocht"></dd>
+    <dt>Groep</dt><dd id="status-groep"></dd>
+    <dt>Categorie</dt><dd id="status-categorie"></dd>
+    <dt>Opgavenummer</dt><dd id="status-nummer"></dd>
+    <dt>Startnummer</dt><dd id="status-start"></dd>
+  </dl>
+  <p id="status-reden" hidden></p>
+  <p class="muted">Wil je iets wijzigen? Neem contact op met de optochtcommissie via de e-mail die je hebt ontvangen.</p>
+</section>
+

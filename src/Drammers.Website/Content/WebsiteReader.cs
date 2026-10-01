@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Drammers.Infrastructure.Content;
+using Drammers.Infrastructure.ParadeManagement;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Content.Events;
 using Drammers.Modules.Content.Photos;
@@ -210,8 +211,7 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
 
     public async Task<ParadeView?> ParadeAsync(CancellationToken cancellationToken)
     {
-        var p = await db.Parades.AsNoTracking().Join(db.CarnivalYears.Where(y => y.Active), p => p.CarnivalYearId, y => y.Id, (p, y) => p)
-            .OrderByDescending(p => p.ParadeDate).FirstOrDefaultAsync(cancellationToken);
+        var p = await db.CurrentParades().AsNoTracking().FirstOrDefaultAsync(cancellationToken);
         return p is null ? null : new ParadeView(p.Name, p.ParadeDate, p.StartTime, p.StartLocation, p.RouteDescription, p.RegistrationOpensAt,
             p.RegistrationClosesAt, p.IsRegistrationOpen(Now), p.ArrivalTimesPublishedAt is not null, MarkdownRenderer.ToSafeHtml(p.InfoText));
     }

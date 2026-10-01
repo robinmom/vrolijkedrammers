@@ -42,7 +42,7 @@ public sealed class ParadeComposition(DrammersDbContext db, ParadeLineup lineup,
     public const string RenumberConfirmation = "HERNUMMER";
 
     private async Task<Parade> CurrentParadeAsync(CancellationToken cancellationToken) =>
-        await db.Parades.AsNoTracking().Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active)).SingleOrDefaultAsync(cancellationToken)
+        await db.CurrentParades().AsNoTracking().FirstOrDefaultAsync(cancellationToken)
         ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Er is nog geen optocht voor het actieve carnavalsjaar.", DomainErrorKind.NotFound);
 
     private async Task<List<(ParadeRegistration Registration, ParadeCategory? Category)>> LineupAsync(Guid paradeId, CancellationToken cancellationToken)

@@ -87,7 +87,7 @@ public sealed class ParadeReview(
     public async Task<(IReadOnlyList<ReviewSummary> Items, int Total)> SearchAsync(
         RegistrationFilter filter, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var parade = await db.Parades.AsNoTracking().Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active)).Select(p => (Guid?)p.Id).SingleOrDefaultAsync(cancellationToken);
+        var parade = await db.CurrentParades().Select(p => (Guid?)p.Id).FirstOrDefaultAsync(cancellationToken);
         var query =
             from r in db.ParadeRegistrations.AsNoTracking()
             where r.ParadeId == parade && r.Status != RegistrationStatus.Draft

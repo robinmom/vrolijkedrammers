@@ -26,7 +26,8 @@ internal sealed class ParadeConfiguration : IEntityTypeConfiguration<Parade>
             e.Property(x => x.Name).HasMaxLength(100);
         });
         builder.HasOne<Modules.Content.CarnivalYears.CarnivalYear>().WithMany().HasForeignKey(p => p.CarnivalYearId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(p => p.CarnivalYearId).IsUnique();
+        // Meerdere optochten per carnavalsjaar mogelijk (fase 22a); formeel is er één per jaar.
+        builder.HasIndex(p => p.CarnivalYearId);
         builder.ToTable(t => t.HasCheckConstraint("CK_Parade_registration_period", "[registration_closes_at] > [registration_opens_at]"));
     }
 }
@@ -196,5 +197,30 @@ internal sealed class ParadeStatusEditPolicyConfiguration : IEntityTypeConfigura
         builder.HasOne<Parade>().WithMany().HasForeignKey(p => p.ParadeId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(p => new { p.ParadeId, p.Status, p.ActorScope }).IsUnique();
         builder.HasData(DefaultEditPolicy.Seed);
+    }
+}
+
+internal sealed class ParadeJudgingCategoryConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.ParadeJudgingCategory>
+{
+    public void Configure(EntityTypeBuilder<Modules.Parade.Judging.ParadeJudgingCategory> builder)
+    {
+        builder.ToTable("ParadeJudgingCategory", Schemas.Parade, t => t.HasCheckConstraint("CK_ParadeJudgingCategory_weights",
+            "[weight_originality] BETWEEN 0 AND 5 AND [weight_carnivalesque] BETWEEN 0 AND 5 AND [weight_quality] BETWEEN 0 AND 5 AND [weight_overall] BETWEEN 0 AND 5"));
+        builder.HasKey(c => new { c.ParadeId, c.CategoryId });
+        builder.HasOne<Parade>().WithMany().HasForeignKey(c => c.ParadeId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<ParadeCategory>().WithMany().HasForeignKey(c => c.CategoryId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ParadeJurorAssignmentConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.ParadeJurorAssignment>
+{
+    public void Configure(EntityTypeBuilder<Modules.Parade.Judging.ParadeJurorAssignment> builder)
+    {
+        builder.ToTable("ParadeJurorAssignment", Schemas.Parade);
+        builder.HasKey(a => new { a.ParadeId, a.UserId, a.CategoryId });
+        builder.HasOne<Parade>().WithMany().HasForeignKey(a => a.ParadeId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Modules.Identity.Users.User>().WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<ParadeCategory>().WithMany().HasForeignKey(a => a.CategoryId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(a => new { a.ParadeId, a.CategoryId });
     }
 }

@@ -15,7 +15,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/admin")]
 [RequirePermission(Permissions.ParadeConfig)]
-public sealed class AdminParadesController(DrammersDbContext db, ParadeAdministration parades) : ControllerBase
+public sealed class AdminParadesController(DrammersDbContext db, ParadeAdministration parades, ParadeJury jury) : ControllerBase
 {
     [HttpGet("parades")]
     [ProducesResponseType<IReadOnlyList<AdminParadeResponse>>(StatusCodes.Status200OK)]
@@ -36,6 +36,8 @@ public sealed class AdminParadesController(DrammersDbContext db, ParadeAdministr
     public async Task<ActionResult<CreatedResponse>> Create(ParadeRequest request, CancellationToken cancellationToken)
     {
         var parade = await parades.CreateAsync(request.ToInput(), cancellationToken);
+        // Fase 22a: weging en jury-indeling overnemen van de vorige optocht.
+        await jury.EnsureCategoriesAsync(parade.Id, cancellationToken);
         return Created($"/api/v1/admin/parades/{parade.Id}", new CreatedResponse(parade.Id));
     }
 

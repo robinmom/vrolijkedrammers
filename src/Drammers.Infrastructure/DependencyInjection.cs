@@ -231,6 +231,7 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, NotificationReceiptsHandler>();
         services.TryAddScoped<IPushSender, SimulatedPushSender>();
         services.AddScoped<ParadeAdministration>();
+        services.AddScoped<ParadeJury>();
         services.AddScoped<ParadeRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeSubmittedMailHandler>();
         services.AddScoped<ParadeReview>();

@@ -38,7 +38,7 @@ public sealed class ParadeArrivals(
     DrammersDbContext db, INotificationService notifications, IAuditLogger audit, ParadeChangeContext changeContext, IClock clock)
 {
     private async Task<Parade> CurrentParadeAsync(CancellationToken cancellationToken) =>
-        await db.Parades.Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active)).SingleOrDefaultAsync(cancellationToken)
+        await db.CurrentParades().FirstOrDefaultAsync(cancellationToken)
         ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Er is nog geen optocht voor het actieve carnavalsjaar.", DomainErrorKind.NotFound);
 
     /// <summary>Goedgekeurde wagens in de optocht, op startnummer (zonder nummer achteraan).</summary>
@@ -300,7 +300,7 @@ public sealed class ParadeArrivals(
 
     public async Task<PublicArrivals> PublicAsync(CancellationToken cancellationToken)
     {
-        var parade = await db.Parades.AsNoTracking().Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active)).SingleOrDefaultAsync(cancellationToken);
+        var parade = await db.CurrentParades().AsNoTracking().FirstOrDefaultAsync(cancellationToken);
         if (parade?.ArrivalTimesPublishedAt is null)
         {
             return new PublicArrivals(false, parade?.Name, parade?.ParadeDate, parade?.ArrivalLocation, []);

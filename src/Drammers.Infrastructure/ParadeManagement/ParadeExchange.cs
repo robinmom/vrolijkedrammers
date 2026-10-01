@@ -52,7 +52,7 @@ public sealed class ParadeExchange(DrammersDbContext db, ParadeLineup lineup, IA
     ];
 
     private async Task<Parade> CurrentParadeAsync(CancellationToken cancellationToken) =>
-        await db.Parades.AsNoTracking().Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active)).SingleOrDefaultAsync(cancellationToken)
+        await db.CurrentParades().AsNoTracking().FirstOrDefaultAsync(cancellationToken)
         ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Er is nog geen optocht voor het actieve carnavalsjaar.", DomainErrorKind.NotFound);
 
     public async Task<ParadeExport> ExportAsync(CancellationToken cancellationToken)

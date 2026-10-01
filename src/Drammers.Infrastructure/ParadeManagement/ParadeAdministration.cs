@@ -42,7 +42,8 @@ public sealed record CategoryInput(
     int SortOrder);
 
 /// <summary>
-/// Optocht en categorieën configureren (fase 11, <c>parade.config</c>). Eén optocht per carnavalsjaar; bij het aanmaken
+/// Optocht en categorieën configureren (fase 11, <c>parade.config</c>). Formeel één optocht per carnavalsjaar, maar er
+/// kunnen er meer zijn (fase 22a); bij het aanmaken
 /// ontstaat de teller voor opgavenummers (ADR-011). Categorieën worden niet verwijderd maar gedeactiveerd, zodat
 /// inschrijvingen hun categorie houden.
 /// </summary>
@@ -50,11 +51,9 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    /// <summary>De optocht van het actieve carnavalsjaar, of <c>null</c>.</summary>
+    /// <summary>De huidige optocht (zie <see cref="CurrentParade"/>), of <c>null</c>.</summary>
     public async Task<Parade?> CurrentAsync(CancellationToken cancellationToken) =>
-        await db.Parades.AsNoTracking()
-            .Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active))
-            .SingleOrDefaultAsync(cancellationToken);
+        await db.CurrentParades().AsNoTracking().FirstOrDefaultAsync(cancellationToken);
 
     public async Task<Parade> CreateAsync(ParadeInput input, CancellationToken cancellationToken)
     {
@@ -145,10 +144,6 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
             throw new DomainException(ErrorCodes.CarnivalYearNotFound, "Carnavalsjaar niet gevonden.");
         }
 
-        if (await db.Parades.AnyAsync(p => p.CarnivalYearId == input.CarnivalYearId && p.Id != id, cancellationToken))
-        {
-            throw new DomainException(ErrorCodes.Validation, "Er is al een optocht voor dit carnavalsjaar.", DomainErrorKind.Conflict);
-        }
     }
 
     private static void Apply(Parade parade, ParadeInput input)
@@ -236,4 +231,19 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
     public DateTime Now => clock.UtcNow.UtcDateTime;
 
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}
+
+/// <summary>
+/// De huidige optocht (fase 22a): van het actieve carnavalsjaar de eerste die nog niet is afgerond, op datum; zijn ze
+/// allemaal afgerond, dan de laatste. Zo wordt een nieuwe optocht in hetzelfde jaar de huidige zodra de vorige klaar is.
+/// </summary>
+public static class CurrentParade
+{
+    public static IQueryable<Parade> CurrentParades(this DrammersDbContext db) =>
+        db.Parades
+            .Where(p => db.CarnivalYears.Any(y => y.Id == p.CarnivalYearId && y.Active))
+            .OrderBy(p => p.Status == ParadeStatus.Completed ? 1 : 0)
+            .ThenBy(p => p.Status == ParadeStatus.Completed ? (DateOnly?)null : p.ParadeDate)
+            .ThenByDescending(p => p.ParadeDate)
+            .ThenBy(p => p.CreatedAt);
 }

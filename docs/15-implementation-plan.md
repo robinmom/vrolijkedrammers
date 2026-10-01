@@ -1042,6 +1042,48 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 ---
 
+### Fase 22 — Jury en uitslag van de optocht
+
+Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalschermen Jury, Uitnodigen, Aanpassen, Buiten categorie, Uitslag en Publiceren. Afspraken met de product owner (1 oktober 2026):
+- Een optocht hoort bij een carnavalsjaar; er kunnen meerdere optochten per jaar zijn.
+- Juryleden zijn accounts zonder ledenbestand en loggen in met e-mail en code. Per optocht worden ze in categorieën ingedeeld.
+- De hoofdjury (portal, alleen Jury) en het bestuur delen in en keuren beoordelingen buiten categorie goed, zonder de scores te zien.
+- Er wordt 3x beoordeeld op 4 criteria van 0 tot 100. Per jurylid telt het gemiddelde van de ingevulde passages; per criterium de som over de juryleden maal de weging.
+- Alleen de uitslagcommissie ziet de uitslag. Publiceren gebeurt pas na de prijsuitreiking, met een mail naar de secretaris en de voorzitter.
+
+**22a — optocht en jury in het portal (gebouwd).**
+- Meerdere optochten per carnavalsjaar. De unieke index op `carnival_year_id` is weg en de portal kiest het carnavalsjaar bij een nieuwe optocht.
+  - "De huidige optocht" (`CurrentParades()`): van het actieve jaar de eerste die nog niet is afgerond (op datum); zijn ze allemaal afgerond, de laatste.
+  - App, website, inschrijven, samenstellen en aanrijtijden gebruiken die ene definitie.
+- Nieuwe rollen en rechten:
+
+  | Rol | Recht | Wat het mag |
+  |---|---|---|
+  | Jury | `parade.judge` | jureren in de app |
+  | Hoofdjury | `jury.assign` | juryleden indelen |
+  | Uitslagcommissie | `parade.result` | de uitslag zien |
+  | Bestuur | `jury.manage` + `jury.assign` | alles rond de jury |
+
+- Juryleden uitnodigen met alleen naam en e-mail: een account met de rol Jury zonder lid, en een mail met uitleg. Bij de eerste aanmelding met dat adres wordt het account gekoppeld (ADR-014).
+- Per optocht en categorie (`ParadeJudgingCategory`):
+  - wel of niet beoordelen;
+  - weging 0–5 per criterium (standaard: wagens kwaliteit 2x, loopgroepen algemene indruk 2x);
+  - de indeling van juryleden (`ParadeJurorAssignment`).
+- Een nieuwe optocht neemt weging en indeling over van de vorige.
+- Portal: pagina Optocht → Jury met:
+  - juryleden, met uitnodigen, aanpassen (categorieën, hoofdjury), uitnodiging opnieuw sturen en uit de jury halen;
+  - categorieën met weging.
+  - De hoofdjury ziet alleen deze pagina, zonder uitnodigen en zonder weging.
+
+**22b — jureren in de app (gepland).** Het jureerscherm: startnummer, groep en motto, 3 passages × 4 sliders, en swipen door de toegewezen categorieën.
+- De knop "Hele optocht" met melding. Beoordelingen buiten categorie wachten op akkoord van het bestuur of de hoofdjury (per wagen of groep, zonder scores).
+- Scores worden offline bewaard en gesynchroniseerd. Het jurylid dient in met bevestiging en kan daarna niets meer wijzigen.
+
+**22c — uitslag (gepland).** De uitslag per categorie voor de uitslagcommissie, zodra alle juryleden van die categorie hebben ingediend.
+- Excel-export: uitslag per categorie en zaallijst.
+- "Nu publiceren": met de vraag of de prijsuitreiking is geweest en een mail naar secretaris@ en voorzitter@. Daarna is de optocht afgerond.
+- Daarna de uitslag op de website en in de app, en achteraf foto's bij de inzendingen.
+
 ## 5. Buiten het plan (LATER)
 
 Nieuwsbrief (in-app + e-mail, OQ-43), pasfoto in de scanner (OQ-22), VNet/private endpoints/Front Door (OQ-72), migratie naar Notification Hubs, Mollie next-gen webhooks (OQ-24), uitslagenmodule (OQ-40), 

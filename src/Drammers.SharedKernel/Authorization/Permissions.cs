@@ -49,6 +49,10 @@ public static class Permissions
     public const string SaleManage = "sale.manage";
     public const string SaleCollect = "sale.collect";
     public const string WebsiteManage = "website.manage";
+    public const string ParadeJudge = "parade.judge";
+    public const string JuryAssign = "jury.assign";
+    public const string JuryManage = "jury.manage";
+    public const string ParadeResult = "parade.result";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -97,6 +101,11 @@ public static class Permissions
         new(SaleManage, "Kaartverkoop beheren: producten, bestellingen, contant, betaallinks en wachtlijst", "Financieel"),
         new(SaleCollect, "Kassa: munten-QR scannen en bestellingen uitgeven", "Financieel"),
         new(WebsiteManage, "Website beheren: homepage, pagina's, kader, prinsen en onderscheidingen", "Content"),
+        // Fase 22: jury en uitslag van de optocht.
+        new(ParadeJudge, "Jureren in de app (eigen categorieën)", "Optocht"),
+        new(JuryAssign, "Juryleden aan categorieën toewijzen en beoordelingen buiten categorie goedkeuren", "Optocht"),
+        new(JuryManage, "Juryleden uitnodigen, hoofdjury aanwijzen en de weging instellen", "Optocht"),
+        new(ParadeResult, "Uitslag van de optocht inzien, exporteren en publiceren", "Optocht"),
     ];
 }
 

@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useSessionStatus } from '../auth/useSession';
-import { api, unwrap } from './client';
+import { ApiError, api, unwrap } from './client';
 
 /**
  * Querysleutels op één plek, zodat de persistente cache (offline) en pull-to-refresh dezelfde data raken.
@@ -35,6 +35,7 @@ export const queryKeys = {
   parade: ['parade'] as const,
   /** Jureren (fase 22b): bewaard in de cache, zodat het jurylid ook zonder netwerk de optocht ziet. */
   jury: ['jury', 'current'] as const,
+  paradeResults: ['parade', 'results'] as const,
   paradeCategories: ['parade', 'categories'] as const,
   arrivalTimes: ['parade', 'arrival-times'] as const,
   myRegistrations: ['me', 'parade-registrations'] as const,
@@ -291,3 +292,17 @@ export const useOfflinePack = (enabled: boolean) => {
 /** De optocht om te jureren met de eigen scores (alleen met <c>parade.judge</c>). */
 export const useJurySession = (enabled: boolean) =>
   useQuery({ queryKey: queryKeys.jury, queryFn: () => unwrap(api.GET('/api/v1/jury/current')), enabled });
+
+/** De gepubliceerde uitslag van de optocht (fase 22c), of <c>null</c> zolang er nog niets is gepubliceerd. */
+export const useParadeResults = () =>
+  useQuery({
+    queryKey: queryKeys.paradeResults,
+    queryFn: async () => {
+      try {
+        return await unwrap(api.GET('/api/v1/parade/results'));
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+      }
+    },
+  });

@@ -129,6 +129,7 @@ public static class DependencyInjection
 
         // e-Boekhouden (ADR-010): token uit Key Vault; leegmaken van leden alleen in Dev en Acc.
         services.Configure<EBoekhoudenOptions>(configuration.GetSection(EBoekhoudenOptions.SectionName));
+        services.Configure<ParadeManagement.ResultsOptions>(configuration.GetSection(ParadeManagement.ResultsOptions.SectionName));
         services.Configure<Content.Import.WordPressImportOptions>(configuration.GetSection(Content.Import.WordPressImportOptions.SectionName));
         services.AddHttpClient<IEBoekhoudenClient, EBoekhoudenClient>(http => http.Timeout = TimeSpan.FromSeconds(60));
         services.Configure<MemberDataOptions>(o => o.AllowPurge = configuration["Auth:RequiredEnvironmentAccess"] is "dev" or "acc");
@@ -233,6 +234,7 @@ public static class DependencyInjection
         services.AddScoped<ParadeAdministration>();
         services.AddScoped<ParadeJury>();
         services.AddScoped<ParadeJudging>();
+        services.AddScoped<ParadeResults>();
         services.AddScoped<ParadeRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeSubmittedMailHandler>();
         services.AddScoped<ParadeReview>();

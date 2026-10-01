@@ -16,6 +16,7 @@ import { MemberSyncPage, SyncJobPage } from './pages/MemberSyncPage';
 import { NewsEditorPage, NewsPage } from './pages/NewsPage';
 import { ParadeCompositionPage } from './pages/ParadeCompositionPage';
 import { JuryPage } from './pages/JuryPage';
+import { ResultsPage } from './pages/ResultsPage';
 import { ParadePage } from './pages/ParadePage';
 import { TicketsPage } from './pages/TicketsPage';
 import { PronkzittingPage } from './pages/PronkzittingPage';
@@ -85,6 +86,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/aanrijtijden', component: guarded('parade.import-arrival-times', ArrivalTimesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/samenstellen', component: guarded('parade.read', ParadeCompositionPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/jury', component: guarded('jury.assign', JuryPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/optocht/uitslag', component: guarded('parade.result', ResultsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/optocht/inschrijvingen/$id', component: guarded('parade.read', ParadeRegistrationDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/meldingen', component: guarded(NOTIFY, NotificationsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/meldingen/nieuw', component: guarded(NOTIFY, NotificationComposerPage) }),

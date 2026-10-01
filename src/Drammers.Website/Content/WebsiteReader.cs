@@ -209,6 +209,11 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
 
     // ----- Optocht -------------------------------------------------------------------------------------------------
 
+    /// <summary>De naam van de laatste optocht met een gepubliceerde uitslag (fase 22c), of <c>null</c>.</summary>
+    public async Task<string?> PublishedResultsAsync(CancellationToken cancellationToken) =>
+        await db.Parades.AsNoTracking().Where(p => p.ResultsPublishedAt != null).OrderByDescending(p => p.ParadeDate)
+            .Select(p => p.Name).FirstOrDefaultAsync(cancellationToken);
+
     public async Task<ParadeView?> ParadeAsync(CancellationToken cancellationToken)
     {
         var p = await db.CurrentParades().AsNoTracking().FirstOrDefaultAsync(cancellationToken);

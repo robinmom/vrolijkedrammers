@@ -224,3 +224,43 @@ internal sealed class ParadeJurorAssignmentConfiguration : IEntityTypeConfigurat
         builder.HasIndex(a => new { a.ParadeId, a.CategoryId });
     }
 }
+
+internal sealed class JudgingScoreConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.JudgingScore>
+{
+    public void Configure(EntityTypeBuilder<Modules.Parade.Judging.JudgingScore> builder)
+    {
+        builder.ToTable("JudgingScore", Schemas.Parade, t =>
+        {
+            t.HasCheckConstraint("CK_JudgingScore_value", "[value] BETWEEN 0 AND 100");
+            t.HasCheckConstraint("CK_JudgingScore_pass", "[pass] BETWEEN 1 AND 3");
+        });
+        builder.HasKey(s => new { s.RegistrationId, s.UserId, s.Pass, s.Criterion });
+        builder.Property(s => s.Criterion).HasConversion<string>().HasMaxLength(20);
+        builder.HasOne<ParadeRegistration>().WithMany().HasForeignKey(s => s.RegistrationId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Modules.Identity.Users.User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(s => new { s.ParadeId, s.UserId });
+    }
+}
+
+internal sealed class JudgingSubmissionConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.JudgingSubmission>
+{
+    public void Configure(EntityTypeBuilder<Modules.Parade.Judging.JudgingSubmission> builder)
+    {
+        builder.ToTable("JudgingSubmission", Schemas.Parade);
+        builder.HasKey(s => new { s.ParadeId, s.UserId });
+        builder.HasOne<Parade>().WithMany().HasForeignKey(s => s.ParadeId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Modules.Identity.Users.User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class JudgingOutsideReviewConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.JudgingOutsideReview>
+{
+    public void Configure(EntityTypeBuilder<Modules.Parade.Judging.JudgingOutsideReview> builder)
+    {
+        builder.ToTable("JudgingOutsideReview", Schemas.Parade);
+        builder.HasKey(r => new { r.ParadeId, r.UserId, r.RegistrationId });
+        builder.Property(r => r.Decision).HasConversion<string>().HasMaxLength(20);
+        builder.HasOne<Parade>().WithMany().HasForeignKey(r => r.ParadeId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<ParadeRegistration>().WithMany().HasForeignKey(r => r.RegistrationId).OnDelete(DeleteBehavior.NoAction);
+    }
+}

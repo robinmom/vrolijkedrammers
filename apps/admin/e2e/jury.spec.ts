@@ -79,3 +79,40 @@ test('fase 22a: bestuur haalt een jurylid uit de jury', async ({ page }) => {
   await expect(page.getByText('Bert de Vries is uit de jury gehaald.')).toBeVisible();
   await expect(page.getByRole('row', { name: /Bert de Vries/ })).toHaveCount(0);
 });
+
+test('fase 22b: voortgang per jurylid en beoordelingen buiten categorie per inzending goedkeuren, zonder scores', async ({
+  page,
+}) => {
+  const api = new MockApi(['jury.assign']);
+  await open(page, api, 'optocht/jury');
+  await expect(page.getByRole('row', { name: /Anke Jansen .*Ingediend/ })).toBeVisible();
+  await expect(page.getByRole('row', { name: /Bert de Vries .*Bezig 9\/19/ })).toBeVisible();
+  await expect(
+    page.getByText(
+      /Bert de Vries heeft 2 inzendingen gejureerd buiten de eigen categorieën \(Loopgroepen groot jeugd\)/,
+    ),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Aanpassen beoordelingen buiten categorie van Bert de Vries' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(
+    dialog.getByRole('row', { name: /6 De jeugdige Sökkels Loopgroepen groot jeugd 3 passages/ }),
+  ).toBeVisible();
+  await expect(dialog.getByText(/scores zijn alleen voor het jurylid zelf/)).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await dialog.getByRole('button', { name: 'Akkoord De jeugdige Sökkels' }).click();
+  await expect(dialog.getByRole('row', { name: /De jeugdige Sökkels/ })).toContainText('Akkoord');
+  await dialog.getByRole('button', { name: 'Afwijzen DwarZ' }).click();
+  await expect(dialog.getByRole('row', { name: /DwarZ/ })).toContainText('Afgewezen');
+  await dialog.getByRole('button', { name: 'Klaar' }).click();
+  await expect(page.getByText(/gejureerd buiten de eigen categorieën/)).toHaveCount(0);
+  expect(api.jury.outside.map((o) => o.decision)).toEqual(['Approved', 'Rejected']);
+});
+
+test('fase 22b: alles van een jurylid in één keer goedkeuren', async ({ page }) => {
+  const api = new MockApi(['jury.manage', 'jury.assign']);
+  await open(page, api, 'optocht/jury');
+  await page.getByRole('button', { name: 'Akkoord alles van Bert de Vries' }).click();
+  await expect(page.getByText(/gejureerd buiten de eigen categorieën/)).toHaveCount(0);
+  expect(api.jury.outside.every((o) => o.decision === 'Approved')).toBe(true);
+});

@@ -35,6 +35,8 @@ export default function OptochtScreen() {
   const parade = useParade();
   const arrivals = useArrivalTimes();
   const canRegister = (me.data?.permissions ?? []).includes('parade.register');
+  // Fase 22b: juryleden jureren vanuit de optocht.
+  const canJudge = (me.data?.permissions ?? []).includes('parade.judge');
   const registrations = useMyRegistrations(canRegister);
   const guest = session === 'signedOut';
   const open = parade.data?.registrationOpen ?? false;
@@ -111,6 +113,7 @@ export default function OptochtScreen() {
           <Stat value={routeLength ?? '–'} label="Route" accessibilityLabel={routeLength ? `Route: ${routeLength}` : 'Route: nog niet bekend'} />
         </Card>
 
+        {canJudge ? <Button label="Jureren" icon="uitslagen" onPress={() => router.push('/jureren')} /> : null}
         <View style={styles.buttons}>
           {action ? (
             <View style={styles.flex}>

@@ -42,7 +42,7 @@ public sealed class MeController(AppConfigReader appConfig, DrammersDbContext db
     [RequirePermission(Permissions.MemberReadOwn)]
     [ProducesResponseType<MyMemberResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<MyMemberResponse> GetMember(CancellationToken cancellationToken)
+    public async Task<MyMemberResponse> GetMember([FromServices] Jubilees jubilees, CancellationToken cancellationToken)
     {
         var memberId = CurrentUser.Get(HttpContext)!.MemberId
             ?? throw new DomainException(ErrorCodes.MemberNotFound, "Je account is niet aan een lid gekoppeld.", DomainErrorKind.NotFound);
@@ -54,9 +54,11 @@ public sealed class MeController(AppConfigReader appConfig, DrammersDbContext db
             .OrderBy(g => g.Name)
             .Select(g => new MyGroupResponse(g.Name, g.Function))
             .ToListAsync(cancellationToken);
+        var jubilee = await jubilees.ForMemberAsync(m, cancellationToken);
         return new MyMemberResponse(
             m.MemberNumber, m.FullName, m.FirstName, m.AddressLine, m.PostalCode, m.City, m.Email, m.Phone ?? m.MobilePhone,
-            m.BirthDate, m.JoinYear, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidTo, groups);
+            m.BirthDate, m.JoinYear, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidTo, groups,
+            jubilee?.YearsMember, jubilee?.IsJubilee ?? false);
     }
 
     /// <summary>Kinderen waarvan de gebruiker ouder/verzorger is (fase 17): tot 18 jaar; de QR alleen zonder eigen account.</summary>
@@ -167,7 +169,7 @@ public sealed record MeRole(string Code, string Name);
 public sealed record MyMemberResponse(
     string MemberNumber, string FullName, string? FirstName, string? AddressLine, string? PostalCode, string? City, string? Email,
     string? Phone, DateOnly? BirthDate, short? JoinYear, MembershipStatus Status, DateOnly? MembershipValidTo,
-    IReadOnlyList<MyGroupResponse> Groups);
+    IReadOnlyList<MyGroupResponse> Groups, int? YearsMember = null, bool IsJubilee = false);
 
 public sealed record GuardianLinkRequestInput(
     [param: Required, StringLength(50)] string ChildFirstName,

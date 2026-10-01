@@ -63,7 +63,7 @@
 | OQ-24 | Mollie next-gen webhooks met signatures | LATER | 19 | 🟡 |
 | OQ-25 | Certificate pinning scanner | IMPORTANT | 14 | 🟢 voorstel: nee |
 | OQ-26 | MFA voor gewone leden | IMPORTANT | 3 | 🟢 voorstel: nee |
-| OQ-30 | Jubileumregels | LATER | 20 | 🟡 |
+| OQ-30 | Jubileumregels | LATER | 20 | 🟢 besloten (2026-10-02): jaar waarin carnaval valt − inschrijfjaar; jubilea 11…77 instelbaar; correctie per lid |
 | OQ-40 | "Uitslagen"-tegel | IMPORTANT | 6 | 🟢 besloten: nieuwscategorie "Uitslagen" (2026-09-25) |
 | OQ-41 | Route/kaart optocht | IMPORTANT | 11 | 🟢 voorstel |
 | OQ-42 | Ontbrekende Figma-schermen | IMPORTANT | 6/9/11/13/14 | 🟡 |

@@ -49,6 +49,8 @@ export default function MijnGegevensScreen() {
         ['Telefoon', m.phone],
         ['Geboortedatum', m.birthDate ? formatDateOnly(m.birthDate) : null],
         ['Lid sinds', m.joinYear ? String(m.joinYear) : null],
+        // Fase 20: aantal jaren lid in het jaar waarin carnaval van het actieve carnavalsjaar valt.
+        ['Jaren lid', m.yearsMember != null ? `${m.yearsMember} jaar` : null],
       ]
     : [];
 
@@ -70,6 +72,18 @@ export default function MijnGegevensScreen() {
                 size="regular"
               />
             </View>
+            {m.isJubilee && m.yearsMember != null ? (
+              <View
+                style={styles.jubilee}
+                accessible
+                accessibilityLabel={`Jubilaris: dit carnavalsjaar ${m.yearsMember} jaar lid`}
+              >
+                <Badge label="Jubilaris" variant="highlight" size="regular" />
+                <AppText variant="body" style={styles.flex}>
+                  Dit carnavalsjaar ben je {m.yearsMember} jaar lid. Proficiat!
+                </AppText>
+              </View>
+            ) : null}
             {rows.map(([label, value]) => (
               <View key={label} style={[styles.row, { borderTopColor: colors.border }]}>
                 <AppText variant="caption" color={colors.textSecondary} style={styles.label}>
@@ -165,6 +179,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, gap: 16 },
   card: { padding: 16, gap: 10 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  jubilee: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   row: { flexDirection: 'row', gap: 12, borderTopWidth: StyleSheet.hairlineWidth * 2, paddingTop: 10 },
   label: { width: 110 },
   flex: { flex: 1 },

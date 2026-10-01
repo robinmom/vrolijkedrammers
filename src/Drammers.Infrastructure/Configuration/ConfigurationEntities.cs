@@ -89,4 +89,5 @@ public static class AppConfigurationKeys
     public const string MaintenanceMode = "maintenance_mode";
     public const string MaintenanceMessage = "maintenance_message";
     public const string SupportEmail = "support_email";
+    public const string JubileeMilestones = "jubilee_milestones";
 }

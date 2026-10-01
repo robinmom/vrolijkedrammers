@@ -12,6 +12,7 @@ import {
 } from '../api/hooks';
 import { AccessCard } from '../components/AccessCard';
 import { GuardiansCard } from '../components/GuardiansCard';
+import { JubileeCard } from '../components/JubileeCard';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
@@ -408,6 +409,8 @@ export function MemberDetailPage() {
               )}
             </section>
           ) : null}
+
+          <JubileeCard member={m} canEdit={canEdit} />
 
           <MemberHistory memberId={id} />
 

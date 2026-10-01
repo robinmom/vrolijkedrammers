@@ -84,6 +84,14 @@ public sealed class Member : IAuditable
 
     public DateOnly? MembershipValidTo { get; set; }
 
+    /// <summary>
+    /// Jubileum telt vanaf dit jaar in plaats van het inschrijfjaar (fase 20), bijvoorbeeld als iemand een tijd geen lid was.
+    /// </summary>
+    public short? JubileeJoinYearOverride { get; set; }
+
+    /// <summary>Waarom het jubileumjaar is aangepast.</summary>
+    public string? JubileeNote { get; set; }
+
     // --- Sync ---
     public byte[] EbHash { get; set; } = [];
 
@@ -103,4 +111,7 @@ public sealed class Member : IAuditable
 
     /// <summary>De status die telt: een lokale override wint altijd van de afleiding uit de sync (ADR-010).</summary>
     public MembershipStatus EffectiveStatus => LocalStatusOverride ?? MembershipStatus;
+
+    /// <summary>Het jaar waarvanaf het jubileum telt: de correctie wint van het inschrijfjaar.</summary>
+    public short? JubileeBaseYear => JubileeJoinYearOverride ?? JoinYear;
 }

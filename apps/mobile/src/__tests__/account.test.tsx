@@ -71,6 +71,8 @@ const member = {
   phone: null,
   birthDate: '1980-03-12',
   joinYear: 1995,
+  yearsMember: 33,
+  isJubilee: true,
   status: 'Active',
   membershipValidTo: null,
   groups: [{ name: 'Jeugdcommissie', function: 'Lead' }],
@@ -206,6 +208,9 @@ describe('Mijn gegevens', () => {
     expect(screen.getByText('12 maart 1980')).toBeTruthy();
     expect(screen.getByText('Jeugdcommissie · Leiding')).toBeTruthy();
     expect(screen.getByText(/secretariaat/)).toBeTruthy();
+    // Fase 20: jaren lid en jubileum.
+    expect(screen.getByText('33 jaar')).toBeTruthy();
+    expect(screen.getByLabelText('Jubilaris: dit carnavalsjaar 33 jaar lid')).toBeTruthy();
 
     const call = requests().find((r) => r.url.endsWith('/api/v1/me/member'))!;
     expect(call.headers.get('authorization')).toBe('Bearer test-token');

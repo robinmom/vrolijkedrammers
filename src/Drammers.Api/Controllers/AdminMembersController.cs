@@ -95,7 +95,7 @@ public sealed class AdminMembersController(
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),
-            account, groups, provisioning, kader);
+            account, groups, provisioning, kader, m.JubileeJoinYearOverride, m.JubileeNote);
     }
 
     [HttpPatch("{id:guid}")]
@@ -269,7 +269,8 @@ public sealed record MemberDetailResponse(
     string? MemberCategory, string? ParadeGroupName, int Persons, MembershipStatus SyncedStatus, MembershipStatus? LocalStatusOverride, MembershipStatus EffectiveStatus,
     DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, MemberSyncState SyncState, DateTime? EbLastSeenAt,
     DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups,
-    MemberProvisioningResponse? Provisioning, IReadOnlyList<MemberKaderResponse>? Kader = null);
+    MemberProvisioningResponse? Provisioning, IReadOnlyList<MemberKaderResponse>? Kader = null, short? JubileeJoinYearOverride = null,
+    string? JubileeNote = null);
 
 /// <summary>Functie in het kader op de website (fase 21a); beheer onder Website → Kader.</summary>
 public sealed record MemberKaderResponse(Guid Id, int CommitteeId, string Committee, string? Function);

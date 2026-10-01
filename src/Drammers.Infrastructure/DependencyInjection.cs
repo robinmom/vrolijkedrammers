@@ -207,6 +207,7 @@ public static class DependencyInjection
         services.AddScoped<MemberSync>();
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();
+        services.AddScoped<Jubilees>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();
         services.AddScoped<ParadeManagement.ParadeExchange>();

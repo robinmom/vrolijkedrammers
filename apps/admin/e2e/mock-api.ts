@@ -856,6 +856,13 @@ export class MockApi {
     await page.route('**/api/v1/**', (route) => this.handle(route));
   }
 
+  websiteImport: {
+    counts: { kind: string; pending: number; done: number; skipped: number; failed: number }[];
+    failures: { id: number; kind: string; sourceUrl: string; title: string | null; error: string | null }[];
+    running: boolean;
+    lastActivity: string | null;
+  } = { counts: [], failures: [], running: false, lastActivity: null };
+
   private handleWebsite(
     path: string,
     method: string,
@@ -866,6 +873,35 @@ export class MockApi {
   ) {
     let m: RegExpMatchArray | null;
     const photo = (value: unknown, current: string | null) => (value === '' ? null : value ? PIXEL : current);
+    if (path === '/admin/website/import' || path === '/admin/website/import/retry') {
+      if (method === 'POST') {
+        // Nep-import: na starten staat alles meteen klaar, met één mislukte pagina; opnieuw proberen lost die op.
+        const retry = path.endsWith('/retry');
+        this.websiteImport = {
+          counts: [
+            { kind: 'Post', pending: 0, done: 120, skipped: 0, failed: 0 },
+            { kind: 'Page', pending: 0, done: 14, skipped: 9, failed: retry ? 0 : 1 },
+            { kind: 'Prince', pending: 0, done: 60, skipped: 0, failed: 0 },
+          ],
+          failures: retry
+            ? []
+            : [
+                {
+                  id: 7,
+                  kind: 'Page',
+                  sourceUrl: 'https://vrolijkedrammers.nl/oud/',
+                  title: 'Oude pagina',
+                  error: 'Niet gevonden',
+                },
+              ],
+          running: false,
+          lastActivity: '2026-10-01T10:00:00Z',
+        };
+        this.record('website.import-started', 'WebsiteImport', '1', {});
+        return json(null, 202);
+      }
+      return json(this.websiteImport);
+    }
     if (path === '/admin/website/settings') {
       if (method === 'PUT') {
         const { heroImage, ...rest } = body as Record<string, never>;

@@ -13,7 +13,7 @@ public sealed class PaginaModel(WebsiteReader reader) : SitePage
         var page = await reader.PageAsync(slug, cancellationToken);
         if (page is null)
         {
-            return NotFoundPage();
+            return await NotFoundOrRedirectAsync();
         }
 
         Text = page;

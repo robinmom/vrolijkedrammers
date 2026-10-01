@@ -162,3 +162,19 @@ test('fase 21a: nieuws met afbeelding vóór het opslaan en ook op de website', 
     websiteBody: 'Het hele verhaal.',
   });
 });
+
+test('fase 21e: oude website overzetten met voortgang en mislukte onderdelen opnieuw proberen', async ({ page }) => {
+  const api = new MockApi(['website.manage']);
+  await open(page, api, 'website/instellingen');
+  const card = page.getByRole('region', { name: 'Oude website overzetten' });
+  await card.getByRole('button', { name: 'Start overzetten' }).click();
+  await expect(card.getByRole('row', { name: /Nieuwsberichten 120/ })).toBeVisible();
+  await expect(card.getByText('Klaar')).toBeVisible();
+  await card.getByText('Wat is er mislukt? (1)').click();
+  await expect(card.getByText('Oude pagina: Niet gevonden')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await card.getByRole('button', { name: 'Mislukte opnieuw proberen' }).click();
+  await expect(card.getByText(/Wat is er mislukt/)).toBeHidden();
+  await expect(card.getByRole('button', { name: 'Opnieuw controleren' })).toBeVisible();
+  expect(api.audit.map((a) => a.action)).toContain('website.import-started');
+});

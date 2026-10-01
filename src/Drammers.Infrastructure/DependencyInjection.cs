@@ -129,6 +129,7 @@ public static class DependencyInjection
 
         // e-Boekhouden (ADR-010): token uit Key Vault; leegmaken van leden alleen in Dev en Acc.
         services.Configure<EBoekhoudenOptions>(configuration.GetSection(EBoekhoudenOptions.SectionName));
+        services.Configure<Content.Import.WordPressImportOptions>(configuration.GetSection(Content.Import.WordPressImportOptions.SectionName));
         services.AddHttpClient<IEBoekhoudenClient, EBoekhoudenClient>(http => http.Timeout = TimeSpan.FromSeconds(60));
         services.Configure<MemberDataOptions>(o => o.AllowPurge = configuration["Auth:RequiredEnvironmentAccess"] is "dev" or "acc");
 
@@ -187,6 +188,15 @@ public static class DependencyInjection
         services.AddScoped<ConfigurationAdministration>();
         services.AddScoped<ContentAdministration>();
         services.AddScoped<WebsiteAdministration>();
+        // Overzetten van de oude WordPress-site (fase 21e): in porties via de outbox.
+        services.AddOptions<Content.Import.WordPressImportOptions>();
+        services.AddHttpClient<Content.Import.WordPressSource>(http =>
+        {
+            http.Timeout = TimeSpan.FromSeconds(60);
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("DeVrolijkeDrammers-Import/1.0");
+        });
+        services.AddScoped<Content.Import.WebsiteImporter>();
+        services.AddScoped<IOutboxMessageHandler, Content.Import.WebsiteImportHandler>();
         services.AddScoped<ContentFiles>();
         services.AddScoped<IOutboxMessageHandler, PhotoProcessingHandler>();
         services.TryAddScoped<ContentPublisherJob>();

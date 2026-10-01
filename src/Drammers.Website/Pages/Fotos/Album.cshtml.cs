@@ -15,7 +15,7 @@ public sealed class AlbumModel(WebsiteReader reader) : SitePage
         var result = await reader.AlbumAsync(id, cancellationToken);
         if (result is not { } found)
         {
-            return NotFoundPage();
+            return await NotFoundOrRedirectAsync();
         }
 
         (Album, Photos) = (found.Album, found.Photos);

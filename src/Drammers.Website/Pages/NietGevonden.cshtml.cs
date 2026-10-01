@@ -18,6 +18,8 @@ public sealed class NietGevondenModel(IProblemDetailsService problems) : SitePag
             return new EmptyResult();
         }
 
-        return NotFoundPage();
+        // Oud adres dat helemaal niet bestaat (bijvoorbeeld /prins/naam): doorverwijzen als dat kan.
+        var original = HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodeReExecuteFeature>()?.OriginalPath;
+        return await NotFoundOrRedirectAsync(original);
     }
 }

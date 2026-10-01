@@ -9501,6 +9501,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/website/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsiteImportSummary"];
+                        "application/json": components["schemas"]["WebsiteImportSummary"];
+                        "text/json": components["schemas"]["WebsiteImportSummary"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Start (of hervat) het overzetten van de oude WordPress-site; het werk gebeurt op de achtergrond. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/import/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mislukte items opnieuw proberen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app-auth-config": {
         parameters: {
             query?: never;
@@ -16565,6 +16654,37 @@ export interface components {
             imageUrl: null | string;
             primary: null | components["schemas"]["WebsiteHeroButton"];
             secondary: null | components["schemas"]["WebsiteHeroButton"];
+        };
+        WebsiteImportCount: {
+            kind: components["schemas"]["WebsiteImportKind"];
+            /** Format: int32 */
+            pending: number;
+            /** Format: int32 */
+            done: number;
+            /** Format: int32 */
+            skipped: number;
+            /** Format: int32 */
+            failed: number;
+        };
+        WebsiteImportFailure: {
+            /** Format: int64 */
+            id: number;
+            kind: components["schemas"]["WebsiteImportKind"];
+            title: null | string;
+            sourceUrl: null | string;
+            error: null | string;
+        };
+        /**
+         * @description Soort bron-item bij het overzetten van de oude WordPress-site (fase 21e).
+         * @enum {unknown}
+         */
+        WebsiteImportKind: "Post" | "Page" | "Gallery" | "GalleryPhoto" | "Prince" | "YouthPrince" | "Award" | "Kader";
+        WebsiteImportSummary: {
+            counts: components["schemas"]["WebsiteImportCount"][];
+            failures: components["schemas"]["WebsiteImportFailure"][];
+            running: boolean;
+            /** Format: date-time */
+            lastActivity: null | string;
         };
         /** @enum {unknown} */
         WebsiteLink: "Agenda" | "News" | "Photos" | "Parade" | "ParadeRegistration" | "Membership" | "Tickets" | "App" | "Contact" | null;

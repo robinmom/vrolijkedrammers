@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Drammers.Website.Pages;
 
@@ -20,6 +21,16 @@ public abstract class SitePage : PageModel
     public string? ShareImage { get; protected set; }
 
     public bool IsNotFound { get; private set; }
+
+    /// <summary>
+    /// Een oud adres van de WordPress-site stuurt permanent door naar de nieuwe pagina; anders de 404 in de huisstijl.
+    /// </summary>
+    protected async Task<IActionResult> NotFoundOrRedirectAsync(string? path = null)
+    {
+        var redirects = HttpContext.RequestServices.GetRequiredService<Content.Redirects>();
+        var target = await redirects.FindAsync(path ?? Request.Path.Value ?? "/", HttpContext.RequestAborted);
+        return target is not null && target != Request.Path.Value ? RedirectPermanent(target) : NotFoundPage();
+    }
 
     /// <summary>Toont de 404-pagina in de huisstijl (met status 404, zodat zoekmachines hem niet opnemen).</summary>
     protected IActionResult NotFoundPage()

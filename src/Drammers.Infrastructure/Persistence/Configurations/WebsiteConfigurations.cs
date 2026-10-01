@@ -110,3 +110,30 @@ internal sealed class AwardConfiguration : IEntityTypeConfiguration<Award>
         builder.HasIndex(a => new { a.Year, a.Type });
     }
 }
+
+internal sealed class WebsiteImportItemConfiguration : IEntityTypeConfiguration<WebsiteImportItem>
+{
+    public void Configure(EntityTypeBuilder<WebsiteImportItem> builder)
+    {
+        builder.ToTable("WebsiteImportItem", Schemas.Content);
+        builder.Property(i => i.Id).ValueGeneratedOnAdd();
+        builder.Property(i => i.SourceKey).HasMaxLength(300);
+        builder.Property(i => i.SourceUrl).HasMaxLength(500);
+        builder.Property(i => i.Title).HasMaxLength(300);
+        builder.Property(i => i.TargetId).HasMaxLength(100);
+        builder.Property(i => i.Error).HasMaxLength(2000);
+        builder.HasIndex(i => new { i.Kind, i.SourceKey }).IsUnique();
+        builder.HasIndex(i => new { i.Status, i.Id });
+    }
+}
+
+internal sealed class WebsiteRedirectConfiguration : IEntityTypeConfiguration<WebsiteRedirect>
+{
+    public void Configure(EntityTypeBuilder<WebsiteRedirect> builder)
+    {
+        builder.ToTable("WebsiteRedirect", Schemas.Content);
+        builder.HasKey(r => r.FromPath);
+        builder.Property(r => r.FromPath).HasMaxLength(300).IsUnicode(false);
+        builder.Property(r => r.ToPath).HasMaxLength(300).IsUnicode(false);
+    }
+}

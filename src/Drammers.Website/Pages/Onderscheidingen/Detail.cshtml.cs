@@ -13,7 +13,7 @@ public sealed class DetailModel(WebsiteReader reader) : SitePage
         var award = await reader.AwardAsync(slug, cancellationToken);
         if (award is null)
         {
-            return NotFoundPage();
+            return await NotFoundOrRedirectAsync();
         }
 
         Award = award;

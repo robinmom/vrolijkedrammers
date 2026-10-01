@@ -1,0 +1,6 @@
+@page "/optocht-inschrijven"
+@model OptochtInschrijvenModel
+<partial name="_PageBand" model='new PageBand("Optocht inschrijven", "Schrijf je groep, loopgroep of praalwagen in voor de optocht.", ("/optocht", "Optocht"), (null, "Inschrijven"))' />
+<div class="wrap content form-page">
+    <partial name="Forms/_OptochtInschrijven" />
+</div>

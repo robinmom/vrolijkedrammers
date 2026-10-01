@@ -33,7 +33,7 @@
           : 'Laat de QR scannen bij de ingang. Eén QR geldt voor alle kaarten: bij het scannen gaan alle personen tegelijk naar binnen.');
       for (const ticket of order.tickets.filter((x) => x.status === 'Active' && order.kind !== 'Tokens')) {
         const card = document.createElement('article');
-        card.className = 'card ticket';
+        card.className = 'form-card ticket';
         const img = document.createElement('img');
         img.src = `/api/v1/sales/orders/${encodeURIComponent(id)}/tickets/${encodeURIComponent(ticket.id)}/qr.svg?t=${encodeURIComponent(token)}`;
         img.alt = `QR-code voor ${ticket.quantity} ${ticket.quantity === 1 ? 'persoon' : 'personen'}`;

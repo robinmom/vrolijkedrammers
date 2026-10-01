@@ -514,6 +514,42 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Inschrijving_zonder_account_komt_bij_het_account_met_hetzelfde_e_mailadres()
+    {
+        // Fase 21d: eerst als gast (bevestigd met de e-mailcode), later ingelogd op de website of in de app.
+        var guest = _api.CreateClient();
+        async Task<Guid> GuestAsync(string email, string group, bool verify)
+        {
+            var body = JsonSerializer.SerializeToNode(Complete("", group: group))!;
+            body["contactEmail"] = email;
+            var id = (await JsonAsync(await guest.PostAsJsonAsync("/api/v1/parade/public-registrations", new { registration = body, rulesAccepted = true }), HttpStatusCode.Created))
+                .GetProperty("id").GetGuid();
+            if (verify)
+            {
+                var code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => string.Equals(m.To, email, StringComparison.OrdinalIgnoreCase)).PlainText, @"\b\d{6}\b").Value;
+                await JsonAsync(await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code }));
+            }
+
+            return id;
+        }
+
+        var mine = await GuestAsync("Groep@Example.com", "De Gasten", verify: true);
+        await GuestAsync("groep@example.com", "Niet bevestigd", verify: false);
+        await GuestAsync("ander@example.com", "Iemand anders", verify: true);
+
+        var (userId, client) = await LidAsync("groep@example.com");
+        var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/v1/parade/registrations");
+        var only = Assert.Single(list!);
+        Assert.Equal(("De Gasten", "Submitted"), (only.GetProperty("groupName").GetString(), only.GetProperty("status").GetString()));
+        Assert.Equal(userId, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == mine).Select(r => r.OwnerUserId).SingleAsync()));
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/v1/parade/registrations/{mine}")).StatusCode);
+
+        // Nog een keer ophalen koppelt niets dubbel.
+        Assert.Single((await client.GetFromJsonAsync<List<JsonElement>>("/api/v1/parade/registrations"))!);
+        Assert.Equal(1, await WithDbAsync(db => db.ParadeRegistrationManagers.CountAsync(m => m.RegistrationId == mine)));
+    }
+
+    [Fact]
     public async Task Mede_beheerder_moet_zelf_groepsverantwoordelijke_zijn()
     {
         var (_, eigenaar) = await LidAsync("piet@example.com");

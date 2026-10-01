@@ -1,15 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { forms, serveWebsitePages } from './website-page';
 
-/** Fase 19b: openbare webpagina /kaarten — bestellen, vol → wachtlijst, en de bestelling met de QR. */
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '../../../src/Drammers.Api/wwwroot/kaarten');
-const types: Record<string, string> = { html: 'text/html', css: 'text/css', js: 'text/javascript', png: 'image/png' };
-const csp =
-  "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+/** Fase 19b: /kaarten (sinds 21d een pagina van de website) — bestellen, vol → wachtlijst, en de bestelling met de QR. */
 
 const products = {
   isMember: false,
@@ -68,16 +61,7 @@ const products = {
 
 async function serve(page: Page) {
   const posts: { path: string; body: unknown }[] = [];
-  await page.route('**/kaarten/**', (route) => {
-    const path = new URL(route.request().url()).pathname.replace('/kaarten/', '');
-    const file = path === '' ? 'index.html' : path.endsWith('/') ? `${path}index.html` : path;
-    return route.fulfill({
-      status: 200,
-      contentType: types[file.split('.').pop()!],
-      headers: { 'content-security-policy': csp },
-      body: readFileSync(join(root, file)),
-    });
-  });
+  await serveWebsitePages(page, forms.kaarten);
   await page.route('**/api/v1/sales/**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace('/api/v1/sales', '');

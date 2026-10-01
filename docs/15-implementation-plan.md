@@ -979,7 +979,19 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Toegankelijkheid: axe (WCAG 2.1 AA) zonder ernstige fouten op desktop en mobiel; de paginakop in het donkerdere Loils blauw (#066AA6) voor voldoende contrast.
 - Tests: integratie (`WebsitePagesTests`).
 
-**21d — inloggen op de website** voor de optocht (MSAL, zelfde Entra External ID als de app) en "Mijn inschrijving"; een inschrijving zonder account wordt gekoppeld zodra iemand met hetzelfde e-mailadres inlogt.
+**21d — losse pagina's in de website en inloggen voor de optocht (gebouwd).**
+- Lid worden, optocht inschrijven, aanrijtijden en kaarten (met de bestelpagina) zijn gewone pagina's van de website, met kop, menu, voet en de huisstijl. Ze staan op dezelfde adressen (`/lid-worden/`, `/optocht-inschrijven/`, `/aanrijtijden/`, `/kaarten/`, `/kaarten/bestelling/`). De losse mappen in `Drammers.Api/wwwroot` en hun eigen CSP zijn weg.
+- Het formulier per pagina staat als pure HTML in `Drammers.Website/Pages/Shared/Forms` en het script in `wwwroot/js/forms`. Zo testen de e2e-tests van de portal precies dezelfde HTML (`apps/admin/e2e/website-page.ts`). Kop en voet test de integratietest.
+- "Lidmaatschap 1 persoon" heet nu "Lid".
+- Inloggen op `/optocht-inschrijven/` gebeurt met MSAL (redirect + PKCE, tokens in sessionStorage), met dezelfde Entra External ID en dezelfde SPA-registratie als het portal.
+  - De redirect-URI `<host>/optocht-inschrijven/` moet bij die registratie staan (`infra/entra/register-apps.sh`, akkoord nodig).
+  - De website-CSP staat `connect-src https://*.ciamlogin.com` toe.
+- Zonder account en zonder inlog kies je eerst: "Inloggen en inschrijven" of "Zonder account inschrijven" (het bestaande formulier met e-mailcode).
+- Ingelogd als groepsverantwoordelijke zie je Mijn inschrijving met status, opgave- en startnummer.
+  - Een nieuwe inschrijving maakt een concept via de API van de app (vooringevuld met de gegevens van het lid en de vorige bouwlocatie), slaat op en dient in, zonder e-mailcode.
+  - Een concept vul je verder in met "Verder invullen".
+- Ingelogd zonder die rol krijg je dezelfde uitleg als in de app, met de mogelijkheid om zonder account in te schrijven.
+- Een inschrijving zonder account wordt gekoppeld aan het account met hetzelfde, bevestigde e-mailadres bij het ophalen van Mijn inschrijvingen, in de app en op de website (audit `parade-registration.claimed`).
 
 **21e — overzetten van de oude WordPress-site (gebouwd).**
 - Starten vanuit de portal: Website → Instellingen website → "Oude website overzetten" (recht `website.manage`). Het werk loopt op de achtergrond via de outbox (`website.import`). Elke run duurt maximaal 3 minuten; zolang er werk is, zet de run zichzelf weer in de wachtrij.

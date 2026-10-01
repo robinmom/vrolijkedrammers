@@ -19,11 +19,16 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
 {
     private Guid UserId => CurrentUser.Get(HttpContext)!.UserId;
 
+    /// <summary>Mijn inschrijvingen; eerst worden inschrijvingen zonder account met hetzelfde e-mailadres gekoppeld (fase 21d).</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<RegistrationSummaryResponse>>(StatusCodes.Status200OK)]
-    public async Task<IReadOnlyList<RegistrationSummaryResponse>> Mine(CancellationToken cancellationToken) =>
-        [.. (await registrations.MineAsync(UserId, cancellationToken)).Select(r => new RegistrationSummaryResponse(
+    public async Task<IReadOnlyList<RegistrationSummaryResponse>> Mine(CancellationToken cancellationToken)
+    {
+        var user = CurrentUser.Get(HttpContext)!;
+        await registrations.ClaimByEmailAsync(user.UserId, user.Email, cancellationToken);
+        return [.. (await registrations.MineAsync(user.UserId, cancellationToken)).Select(r => new RegistrationSummaryResponse(
             r.Id, r.GroupName, r.Status, r.RegistrationNumber, r.StartNumber, r.SubmittedAt, r.CreatedAt))];
+    }
 
     [HttpPost]
     [ProducesResponseType<RegistrationResponse>(StatusCodes.Status201Created)]

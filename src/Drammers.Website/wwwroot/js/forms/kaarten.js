@@ -49,7 +49,7 @@
         const button = el('button', { type: 'button', class: p.soldOut ? 'secondary' : '' }, p.soldOut ? 'Wachtlijst' : 'Bestellen');
         button.addEventListener('click', () => choose(p));
         list.append(
-          el('article', { class: 'card product' },
+          el('article', { class: 'form-card product' },
             el('div', {},
               el('h3', {}, p.name),
               el('p', { class: 'muted' }, [when(p), p.description].filter(Boolean).join(' · ')),
@@ -114,7 +114,7 @@
         return fail(p.message);
       }
       const created = await response.json();
-      window.location.assign(created.checkoutUrl ?? `bestelling/?id=${created.orderId}&t=${encodeURIComponent(created.token)}`);
+      window.location.assign(created.checkoutUrl ?? `/kaarten/bestelling/?id=${created.orderId}&t=${encodeURIComponent(created.token)}`);
     } catch {
       fail('Geen verbinding. Probeer het opnieuw.');
     } finally {

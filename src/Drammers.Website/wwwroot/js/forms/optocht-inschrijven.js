@@ -1,19 +1,30 @@
-// Inschrijven optocht zonder account (fase 11c): formulier → e-mailcode → opgavenummer. Met ?status=<token> alleen de status.
+// Inschrijven optocht (fase 11c, sinds 21d op de website): eerst kiezen tussen inloggen en zonder account.
+// - Zonder account: formulier → e-mailcode → opgavenummer. Met ?status=<token> alleen de status.
+// - Ingelogd (groepsverantwoordelijke): Mijn inschrijving, en een nieuwe inschrijving via dezelfde API als de app
+//   (concept → opslaan → indienen), zonder e-mailcode. Inschrijvingen zonder account met hetzelfde e-mailadres koppelt de
+//   API aan het account.
 (() => {
   'use strict';
   const api = '/api/v1/parade';
   const form = document.getElementById('inschrijven');
-  const sections = ['laden', 'gesloten', 'formulier', 'code', 'klaar', 'status'];
+  const sections = ['laden', 'gesloten', 'keuze', 'mijn', 'geen-rechten', 'formulier', 'code', 'klaar', 'status'];
+  const login = window.DrammersLogin;
   let registrationId = null;
   let categories = [];
+  let parade = null;
+  // Ingelogd invullen: het concept uit de API (met versie voor het opslaan).
+  let draft = null;
+  let mine = [];
 
   const show = (id) => {
     for (const section of sections) document.getElementById(section).hidden = section !== id;
     document.getElementById(id).querySelector('h2')?.focus();
   };
+  const signedIn = () => Boolean(login?.state.account);
   const text = (id, value) => (document.getElementById(id).textContent = value ?? '–');
 
   const statusTexts = {
+    Draft: ['Concept', 'Nog niet ingediend: vul hem verder in en dien hem in.'],
     Submitted: ['Ingediend', 'De optochtcommissie gaat je inschrijving beoordelen.'],
     UnderReview: ['In behandeling', 'De optochtcommissie beoordeelt je inschrijving.'],
     AdditionalInformationRequired: ['Aanvulling gevraagd', 'De optochtcommissie heeft meer informatie nodig. Je hebt hierover een e-mail gekregen.'],
@@ -104,27 +115,122 @@
     show('status');
   }
 
+  function showClosed() {
+    if (parade.registrationOpen) return false;
+    const opens = new Date(parade.registrationOpensAt);
+    if (opens > new Date()) {
+      text('gesloten-tekst', `De inschrijving voor de ${parade.name} opent op ${opens.toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })}.`);
+    } else {
+      text('titel-gesloten', 'Inschrijven is gesloten');
+      text('gesloten-tekst', `De inschrijving voor de ${parade.name} is gesloten.`);
+    }
+    document.getElementById('gesloten-inloggen').hidden = !login?.state.available || signedIn();
+    show('gesloten');
+    return true;
+  }
+
+  // Formulier voor gasten (met e-mailcode) of ingelogd (concept van de API, zonder code).
+  function showForm(asGuest) {
+    document.getElementById('formulier-uitleg').textContent = asGuest
+      ? 'Na het versturen krijg je een code per e-mail. Pas na die code is je inschrijving ingediend en krijg je een opgavenummer. De optochtcommissie beoordeelt elke inschrijving; pas na goedkeuring is hij definitief.'
+      : 'Je bent ingelogd: na het versturen is je inschrijving direct ingediend en krijg je een opgavenummer. De optochtcommissie beoordeelt elke inschrijving; pas na goedkeuring is hij definitief.';
+    show('formulier');
+  }
+
+  function fillForm(r) {
+    const f = form.elements;
+    const set = (name, value) => (f[name].value = value ?? '');
+    set('groupName', r.groupName);
+    set('contactName', r.contactName);
+    set('contactPhone', r.contactPhoneDisplay ?? r.contactPhone);
+    set('contactEmail', r.contactEmail);
+    set('categoryId', r.categoryId == null ? '' : String(r.categoryId));
+    set('subject', r.subject);
+    set('subjectDescription', r.subjectDescription);
+    set('adultCount', String(r.adultCount ?? 0));
+    set('childrenCount', String(r.childrenCount ?? 0));
+    if (r.hasMusic != null) f.hasMusic.value = String(r.hasMusic);
+    set('estimatedLengthMeters', r.estimatedLengthMeters == null ? '' : String(r.estimatedLengthMeters));
+    for (const [prefix, a] of [['build', r.buildAddress], ['jury', r.juryInspectionAddress]]) {
+      set(`${prefix}Street`, a?.street);
+      set(`${prefix}HouseNumber`, a?.houseNumber);
+      set(`${prefix}Addition`, a?.addition);
+      set(`${prefix}PostalCode`, a?.postalCode);
+      set(`${prefix}City`, a?.city);
+    }
+    f.jurySame.checked = r.juryInspectionSameAsBuildAddress !== false;
+    f.jurySame.dispatchEvent(new Event('change'));
+    set('additionalInformation', r.additionalInformation);
+    categoryHint();
+  }
+
+  function renderMine() {
+    const list = document.getElementById('mijn-lijst');
+    list.replaceChildren();
+    for (const r of mine) {
+      const [label, explanation] = statusTexts[r.status] ?? [r.status, ''];
+      const li = document.createElement('li');
+      const head = document.createElement('p');
+      const name = document.createElement('strong');
+      name.textContent = r.groupName || 'Inschrijving zonder naam';
+      const badge = document.createElement('span');
+      badge.className = 'status';
+      badge.textContent = label;
+      head.append(name, ' ', badge);
+      const numbers = document.createElement('p');
+      numbers.className = 'muted';
+      numbers.textContent = [
+        r.registrationNumber ? `Opgavenummer ${r.registrationNumber}` : null,
+        r.startNumber ? `startnummer ${r.startNumber}` : null,
+        explanation,
+      ].filter(Boolean).join(' · ');
+      li.append(head, numbers);
+      list.append(li);
+    }
+    const active = mine.filter((r) => r.status !== 'Withdrawn');
+    document.getElementById('mijn-leeg').hidden = mine.length > 0;
+    const open = Boolean(parade?.registrationOpen);
+    document.getElementById('nieuw').hidden = !open || active.length > 0;
+    document.getElementById('verder').hidden = !open || !active.some((r) => r.status === 'Draft');
+    show('mijn');
+  }
+
+  async function startSignedIn() {
+    const account = document.getElementById('account');
+    text('account-naam', login.state.account.name || login.state.account.username);
+    account.hidden = false;
+    let me = null;
+    try {
+      const response = await login.fetch('/api/v1/me');
+      me = response.ok ? await response.json() : null;
+    } catch {
+      me = null;
+    }
+    if (!me || !me.permissions.includes('parade.register')) {
+      if (!me) {
+        text('geen-rechten-tekst', 'Je inlog is nog niet gekoppeld aan een account van De Vrolijke Drammers. Maak je account in de app af, of vraag het bestuur om hulp.');
+      }
+      document.getElementById('als-gast-2').hidden = !parade?.registrationOpen;
+      return show('geen-rechten');
+    }
+    const response = await login.fetch(`${api}/registrations`).catch(() => null);
+    mine = response?.ok ? await response.json() : [];
+    renderMine();
+  }
+
   async function start() {
     const token = new URLSearchParams(location.search).get('status');
     if (token) return showStatus(token);
+    if (login) await login.init('/optocht-inschrijven/');
     const [paradeResponse, categoryResponse] = await Promise.all([fetch(`${api}/current`).catch(() => null), fetch(`${api}/categories`).catch(() => null)]);
     if (!paradeResponse?.ok) {
       text('gesloten-tekst', paradeResponse?.status === 404 ? 'Er is nog geen optocht bekend. Kijk later nog eens.' : 'De gegevens ophalen lukt nu niet. Probeer het later opnieuw.');
       if (paradeResponse?.status !== 404) text('titel-gesloten', 'Inschrijven lukt nu niet');
       return show('gesloten');
     }
-    const parade = await paradeResponse.json();
-    text('optocht-naam', `Inschrijven: ${parade.name}`);
-    if (!parade.registrationOpen) {
-      const opens = new Date(parade.registrationOpensAt);
-      if (opens > new Date()) {
-        text('gesloten-tekst', `De inschrijving voor de ${parade.name} opent op ${opens.toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })}.`);
-      } else {
-        text('titel-gesloten', 'Inschrijven is gesloten');
-        text('gesloten-tekst', `De inschrijving voor de ${parade.name} is gesloten.`);
-      }
-      return show('gesloten');
-    }
+    parade = await paradeResponse.json();
+    const title = document.querySelector('.page-band h1');
+    if (title) title.textContent = `Inschrijven: ${parade.name}`;
     // De API zet de Markdown om naar veilige HTML (alleen opmaak, links en lijsten).
     if (parade.infoHtml) document.getElementById('info').innerHTML = parade.infoHtml;
     form.elements.subject.required = parade.subjectRequired;
@@ -136,8 +242,62 @@
       option.textContent = category.name;
       form.elements.categoryId.append(option);
     }
-    show('formulier');
+    if (signedIn()) return startSignedIn();
+    if (showClosed()) return;
+    // Altijd eerst de keuze om in te loggen; zonder werkende login direct het formulier.
+    if (login?.state.available) return show('keuze');
+    showForm(true);
   }
+
+  async function openDraft(create) {
+    const error = document.getElementById('mijn-fout');
+    error.hidden = true;
+    try {
+      const existing = mine.find((r) => r.status === 'Draft');
+      const response = create
+        ? await login.fetch(`${api}/registrations`, { method: 'POST' })
+        : await login.fetch(`${api}/registrations/${existing.id}`);
+      if (!response.ok) {
+        const p = await problem(response);
+        const list = await login.fetch(`${api}/registrations`).catch(() => null);
+        mine = list?.ok ? await list.json() : mine;
+        renderMine();
+        return fail(error, p);
+      }
+      draft = await response.json();
+      fillForm(draft);
+      showForm(false);
+    } catch {
+      fail(error, { message: 'Geen verbinding. Probeer het opnieuw.' });
+    }
+  }
+
+  async function submitSignedIn(registration, error) {
+    let response = await login.fetch(`${api}/registrations/${draft.id}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...registration, version: draft.version }),
+    });
+    if (!response.ok) return fail(error, await problem(response));
+    draft = await response.json();
+    response = await login.fetch(`${api}/registrations/${draft.id}/submit`, { method: 'POST' });
+    if (!response.ok) return fail(error, await problem(response));
+    const submitted = await response.json();
+    text('opgavenummer', String(submitted.registrationNumber));
+    document.getElementById('klaar-status').hidden = true;
+    document.getElementById('naar-mijn').hidden = false;
+    draft = null;
+    show('klaar');
+  }
+
+  document.getElementById('inloggen').addEventListener('click', () => login.signIn());
+  document.getElementById('inloggen-2').addEventListener('click', () => login.signIn());
+  document.getElementById('uitloggen').addEventListener('click', () => login.signOut());
+  document.getElementById('als-gast').addEventListener('click', () => showForm(true));
+  document.getElementById('als-gast-2').addEventListener('click', () => showForm(true));
+  document.getElementById('nieuw').addEventListener('click', () => openDraft(true));
+  document.getElementById('verder').addEventListener('click', () => openDraft(false));
+  document.getElementById('naar-mijn').addEventListener('click', () => startSignedIn());
 
   form.elements.categoryId.addEventListener('change', categoryHint);
   form.elements.jurySame.addEventListener('change', () => {
@@ -176,6 +336,16 @@
     };
     const button = form.querySelector('button[type=submit]');
     button.disabled = true;
+    if (draft && signedIn()) {
+      try {
+        await submitSignedIn(registration, error);
+      } catch {
+        fail(error, { message: 'Geen verbinding. Probeer het opnieuw.' });
+      } finally {
+        button.disabled = false;
+      }
+      return;
+    }
     try {
       const response = await fetch(`${api}/public-registrations`, {
         method: 'POST',

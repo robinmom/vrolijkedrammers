@@ -1,8 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { forms, serveWebsitePages } from './website-page';
 import { MockApi } from './mock-api';
 
 /** Fase 16: aanrijtijden in het portal en de openbare webpagina /aanrijtijden. */
@@ -47,21 +45,9 @@ test('fase 16: aanrijtijden genereren, aanpassen, meldplek en publiceren', async
   await expect(page.getByRole('link', { name: 'openbare pagina' })).toHaveAttribute('href', '/aanrijtijden/');
 });
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '../../../src/Drammers.Api/wwwroot/aanrijtijden');
-const types: Record<string, string> = { html: 'text/html', css: 'text/css', js: 'text/javascript', png: 'image/png' };
-const csp =
-  "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors https://vrolijkedrammers.nl https://www.vrolijkedrammers.nl; base-uri 'self'; form-action 'none'; object-src 'none'";
-
+// Fase 21d: de openbare lijst is een pagina van de website (echte formulier-HTML en script, API nagebootst).
 async function serve(page: Page, published: boolean) {
-  await page.route('**/aanrijtijden/**', (route) => {
-    const file = new URL(route.request().url()).pathname.replace('/aanrijtijden/', '') || 'index.html';
-    return route.fulfill({
-      status: 200,
-      contentType: types[file.split('.').pop()!],
-      headers: { 'content-security-policy': csp },
-      body: readFileSync(join(root, file)),
-    });
-  });
+  await serveWebsitePages(page, forms.aanrijtijden);
   await page.route('**/api/v1/parade/arrival-times', (route) =>
     route.fulfill({
       status: 200,

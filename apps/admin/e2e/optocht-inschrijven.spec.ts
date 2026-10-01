@@ -1,18 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { forms, serveWebsitePages } from './website-page';
 
 /**
- * De openbare webpagina /optocht-inschrijven (fase 11c): echte bestanden uit src/Drammers.Api/wwwroot, met dezelfde CSP
- * als de API; alleen de API-aanroepen zijn nagebootst.
+ * Optocht inschrijven (fase 11c, sinds 21d een pagina van de website met inloggen): de echte formulier-HTML en scripts;
+ * de API is nagebootst. Zonder login-configuratie gaat de pagina direct naar het formulier voor gasten.
  */
-const root = join(dirname(fileURLToPath(import.meta.url)), '../../../src/Drammers.Api/wwwroot/optocht-inschrijven');
-const csp =
-  "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
-const types: Record<string, string> = { html: 'text/html', css: 'text/css', js: 'text/javascript', png: 'image/png' };
-
 const parade = {
   id: 'p-1',
   name: 'Optocht Loil 2027',
@@ -26,17 +19,20 @@ const categories = [
   { id: 4, name: 'Praalwagens', minimumParticipants: null, maximumParticipants: null },
 ];
 
-async function serve(page: Page, api: { bodies: unknown[]; open?: boolean; startStatus?: number }) {
-  await page.route('**/optocht-inschrijven/**', (route) => {
-    const file = new URL(route.request().url()).pathname.replace('/optocht-inschrijven/', '') || 'index.html';
-    const ext = file.split('.').pop()!;
-    return route.fulfill({
+async function serve(
+  page: Page,
+  api: { bodies: unknown[]; open?: boolean; startStatus?: number },
+  overrides: Record<string, string> = {},
+) {
+  await serveWebsitePages(page, forms.optocht, overrides);
+  // Zonder login-configuratie (zoals lokaal): geen inlogkeuze, direct het formulier.
+  await page.route('**/api/v1/portal-config', (route) =>
+    route.fulfill({
       status: 200,
-      contentType: types[ext],
-      headers: { 'content-security-policy': csp },
-      body: readFileSync(join(root, file)),
-    });
-  });
+      contentType: 'application/json',
+      body: JSON.stringify({ clientId: '', authority: '', apiScope: '' }),
+    }),
+  );
   await page.route('**/api/v1/parade/**', (route) => {
     const url = new URL(route.request().url());
     const json = (data: unknown, status = 200) =>
@@ -153,4 +149,142 @@ test('optocht inschrijven: blokkerende meldingen van de API en een gesloten insc
 
   await page.goto('/optocht-inschrijven/?status=fout');
   await expect(page.getByText('Deze statuslink is niet (meer) geldig.')).toBeVisible();
+});
+
+// ----- Fase 21d: inloggen op de website -------------------------------------------------------------------------------
+
+/** Nagebootste login (de echte MSAL-redirect naar Entra kan hier niet): wel of niet ingelogd. */
+function fakeLogin(account: { name: string; username: string } | null) {
+  return {
+    'js/login.js': `window.DrammersLogin = (() => {
+      const state = { available: true, account: ${JSON.stringify(account)} };
+      return {
+        state,
+        async init() { return state; },
+        signIn() { window.__signIn = true; },
+        signOut() { window.__signOut = true; },
+        fetch: (url, o = {}) => fetch(url, { ...o, headers: { ...(o.headers ?? {}), authorization: 'Bearer test' } }),
+      };
+    })();`,
+  };
+}
+
+const draft = {
+  id: 'd-1',
+  version: 'v1',
+  status: 'Draft',
+  groupName: 'De Bouwers',
+  contactName: 'Piet Test',
+  contactPhone: '+31612345678',
+  contactPhoneDisplay: '06 12345678',
+  contactEmail: 'piet@example.com',
+  categoryId: null,
+  adultCount: 0,
+  childrenCount: 0,
+  buildAddress: {
+    street: 'Dorpsstraat',
+    houseNumber: '1',
+    addition: null,
+    postalCode: '6999 AA',
+    city: 'Loil',
+    country: 'NL',
+  },
+  juryInspectionSameAsBuildAddress: true,
+  juryInspectionAddress: {
+    street: null,
+    houseNumber: null,
+    addition: null,
+    postalCode: null,
+    city: null,
+    country: null,
+  },
+};
+
+async function serveSignedIn(page: Page, permissions: string[]) {
+  const calls: { method: string; path: string; body: unknown; auth: string | undefined }[] = [];
+  let mine: unknown[] = [];
+  await serve(page, { bodies: [] }, fakeLogin({ name: 'Piet Test', username: 'piet@example.com' }));
+  await page.route('**/api/v1/me', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ displayName: 'Piet Test', permissions }) }),
+  );
+  await page.route('**/api/v1/parade/registrations**', (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    calls.push({
+      method: request.method(),
+      path,
+      body: request.postDataJSON(),
+      auth: request.headers()['authorization'],
+    });
+    const json = (data: unknown, status = 200) =>
+      route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
+    if (path.endsWith('/submit')) {
+      mine = [{ id: 'd-1', groupName: 'De Bouwers', status: 'Submitted', registrationNumber: 12, startNumber: null }];
+      return json({ ...draft, status: 'Submitted', registrationNumber: 12 });
+    }
+    if (request.method() === 'PUT') return json({ ...draft, ...(request.postDataJSON() as object), version: 'v2' });
+    if (request.method() === 'POST') return json(draft, 201);
+    return json(mine);
+  });
+  return calls;
+}
+
+test('fase 21d: niet ingelogd eerst de keuze tussen inloggen en zonder account', async ({ page }) => {
+  await serve(page, { bodies: [] }, fakeLogin(null));
+  await page.goto('/optocht-inschrijven/');
+  await expect(page.getByRole('heading', { name: 'Inloggen en inschrijven' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Zonder account inschrijven' })).toBeVisible();
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual(
+    [],
+  );
+  await page.getByRole('button', { name: 'Inloggen' }).click();
+  expect(await page.evaluate(() => (window as unknown as { __signIn?: boolean }).__signIn)).toBe(true);
+  await page.getByRole('button', { name: 'Zonder account verder' }).click();
+  await expect(page.getByRole('heading', { name: 'Inschrijfformulier' })).toBeVisible();
+  await expect(page.getByText(/krijg je een code per e-mail/)).toBeVisible();
+});
+
+test('fase 21d: ingelogd inschrijven zonder e-mailcode en daarna Mijn inschrijving', async ({ page }) => {
+  const calls = await serveSignedIn(page, ['parade.register']);
+  await page.goto('/optocht-inschrijven/');
+  await expect(page.getByText('Ingelogd als Piet Test')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mijn inschrijving' })).toBeVisible();
+  await expect(page.getByText('Je hebt nog geen inschrijving voor de optocht.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Nieuwe inschrijving' }).click();
+  await expect(page.getByRole('heading', { name: 'Inschrijfformulier' })).toBeVisible();
+  // Vooraf ingevuld uit het concept (gegevens van het lid en de vorige bouwlocatie).
+  await expect(page.getByLabel('Naam van de groep')).toHaveValue('De Bouwers');
+  await expect(page.getByRole('group', { name: 'Bouwlocatie' }).getByLabel('Straat')).toHaveValue('Dorpsstraat');
+  await expect(page.getByText(/je inschrijving direct ingediend/)).toBeVisible();
+  await fillForm(page);
+  await page.getByRole('button', { name: 'Inschrijving versturen' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Je inschrijving is ingediend' })).toBeVisible();
+  await expect(page.getByText('12', { exact: true })).toBeVisible();
+  expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+    'GET /api/v1/parade/registrations',
+    'POST /api/v1/parade/registrations',
+    'PUT /api/v1/parade/registrations/d-1',
+    'POST /api/v1/parade/registrations/d-1/submit',
+  ]);
+  expect(calls.every((c) => c.auth === 'Bearer test')).toBe(true);
+  expect(calls[2]!.body).toMatchObject({ version: 'v1', groupName: 'De Bouwers', categoryId: 3, adultCount: 12 });
+
+  await page.getByRole('button', { name: 'Naar Mijn inschrijving' }).click();
+  await expect(page.getByRole('listitem').filter({ hasText: 'De Bouwers' })).toContainText('Ingediend');
+  await expect(page.getByRole('listitem').filter({ hasText: 'De Bouwers' })).toContainText('Opgavenummer 12');
+  await expect(page.getByRole('button', { name: 'Nieuwe inschrijving' })).toBeHidden();
+  await page.getByRole('button', { name: 'Uitloggen' }).click();
+  expect(await page.evaluate(() => (window as unknown as { __signOut?: boolean }).__signOut)).toBe(true);
+});
+
+test('fase 21d: ingelogd zonder rechten als groepsverantwoordelijke', async ({ page }) => {
+  await serveSignedIn(page, []);
+  await page.goto('/optocht-inschrijven/');
+  await expect(page.getByRole('heading', { name: 'Een groep inschrijven' })).toBeVisible();
+  await expect(page.getByText(/groepsverantwoordelijke/)).toBeVisible();
+  await page.getByRole('button', { name: 'Zonder account inschrijven' }).click();
+  await expect(page.getByRole('heading', { name: 'Inschrijfformulier' })).toBeVisible();
 });

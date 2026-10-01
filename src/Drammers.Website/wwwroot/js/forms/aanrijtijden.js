@@ -1,4 +1,4 @@
-// Openbare aanrijtijden (fase 16): de lijst zoals op de website, rechtstreeks uit de app van de vereniging.
+// Openbare aanrijtijden (fase 16, sinds 21d een pagina van de website): per startnummer de tijd bij de meldplek.
 (() => {
   'use strict';
   const status = document.getElementById('status');
@@ -13,8 +13,11 @@
   fetch('/api/v1/parade/arrival-times')
     .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
     .then((data) => {
-      if (data.paradeName) document.getElementById('titel').textContent = `Aanrijtijden ${data.paradeName}`;
-      if (data.paradeDate) document.getElementById('datum').textContent = date.format(new Date(`${data.paradeDate}T12:00:00Z`));
+      // Titel en datum in de paginakop van de website.
+      const title = document.querySelector('.page-band h1');
+      const lead = document.querySelector('.page-band .lead');
+      if (data.paradeName && title) title.textContent = `Aanrijtijden ${data.paradeName}`;
+      if (data.paradeDate && lead) lead.textContent = `Optocht op ${date.format(new Date(`${data.paradeDate}T12:00:00Z`))}.`;
       if (!data.published || data.rows.length === 0) {
         status.textContent = 'De aanrijtijden zijn nog niet bekend. Kijk later nog eens.';
         return;

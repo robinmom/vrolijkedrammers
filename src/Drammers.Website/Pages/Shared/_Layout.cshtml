@@ -43,7 +43,7 @@
     <meta property="og:site_name" content="De Vrolijke Drammers">
     <meta property="og:title" content="@(string.IsNullOrEmpty(page.PageTitle) ? "De Vrolijke Drammers" : page.PageTitle)">
     <meta property="og:image" content="@(page.ShareImage ?? "/_content/Drammers.Website/img/hero-optocht.jpg")">
-    @if (page.IsNotFound)
+    @if (page.IsNotFound || page.NoIndex)
     {
         <meta name="robots" content="noindex">
     }
@@ -52,6 +52,10 @@
     <link rel="preload" href="/_content/Drammers.Website/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/_content/Drammers.Website/css/site.css" asp-append-version="true">
     <script src="/_content/Drammers.Website/js/site.js" defer></script>
+    @foreach (var script in page.Scripts)
+    {
+        <script src="@script" defer asp-append-version="true"></script>
+    }
 </head>
 <body>
     <a class="skip-link" href="#inhoud">Naar de inhoud</a>

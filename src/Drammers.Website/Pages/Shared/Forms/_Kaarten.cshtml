@@ -1,0 +1,37 @@
+<section id="producten" aria-labelledby="titel-producten">
+  <h2 id="titel-producten" tabindex="-1">Te koop</h2>
+  <p id="laden" class="muted">Laden…</p>
+  <div id="lijst" class="product-list"></div>
+  <p class="muted">Ben je lid? Groepskaarten voor de pronkzitting en munten bestel je in de app van De Vrolijke Drammers. Kaarten worden niet terugbetaald.</p>
+</section>
+
+<section id="bestellen" class="form-card" aria-labelledby="titel-bestellen" hidden>
+  <h2 id="titel-bestellen" tabindex="-1">Bestellen</h2>
+  <p id="product-info" class="muted"></p>
+  <form id="formulier" novalidate>
+    <label>Aantal kaarten<input name="quantity" type="number" min="1" max="10" value="1" required /></label>
+    <div class="row two">
+      <label>Naam<input name="buyerName" required maxlength="200" autocomplete="name" /></label>
+      <label>E-mailadres<input name="buyerEmail" type="email" required maxlength="254" autocomplete="email" /></label>
+    </div>
+    <label>Telefoon (optioneel)<input name="buyerPhone" type="tel" maxlength="40" autocomplete="tel" /></label>
+    <label id="opmerking">Opmerking of wensen (optioneel)<textarea name="remark" rows="2" maxlength="500"></textarea></label>
+    <p class="total"><span>Te betalen</span><span id="totaal"></span></p>
+    <p id="fout" class="error" role="alert" hidden></p>
+    <div id="wachtlijst" hidden>
+      <p>Wil je op de wachtlijst? Komt er plek, dan krijg je een e-mail met een betaallink die 48 uur geldig is.</p>
+    </div>
+    <div class="actions">
+      <button type="submit" id="betalen">Betalen met iDEAL</button>
+      <button type="button" id="naar-wachtlijst" class="secondary" hidden>Op de wachtlijst</button>
+      <button type="button" id="terug" class="secondary">Terug</button>
+    </div>
+    <p class="muted">Je betaalt veilig via Mollie. Je kaarten krijg je per e-mail. Kaarten worden niet terugbetaald.</p>
+  </form>
+</section>
+
+<section id="wachtlijst-klaar" class="form-card" aria-labelledby="titel-wachtlijst" hidden>
+  <h2 id="titel-wachtlijst" tabindex="-1">Je staat op de wachtlijst</h2>
+  <p>Komt er plek, dan krijg je een e-mail met een betaallink die 48 uur geldig is.</p>
+</section>
+

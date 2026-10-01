@@ -25,55 +25,6 @@ public class PortalHostingTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Lid_worden_pagina_met_eigen_CSP_en_zonder_inlogdomein()
-    {
-        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/lid-worden")).StatusCode);
-
-        var response = await _client.GetAsync("/lid-worden/");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Word ook een Drammer!", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
-        Assert.Contains("connect-src 'self';", csp, StringComparison.Ordinal);
-        Assert.DoesNotContain("ciamlogin", csp, StringComparison.Ordinal);
-        Assert.DoesNotContain("unsafe-inline", csp, StringComparison.Ordinal);
-        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/lid-worden/app.js")).StatusCode);
-    }
-
-    [Fact]
-    public async Task Kaarten_pagina_en_bestelpagina_met_dezelfde_CSP_als_lid_worden()
-    {
-        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/kaarten")).StatusCode);
-        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/kaarten/bestelling")).StatusCode);
-
-        foreach (var path in new[] { "/kaarten/", "/kaarten/bestelling/?id=abc&t=def" })
-        {
-            var response = await _client.GetAsync(path);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
-            Assert.Contains("frame-ancestors 'none'", csp, StringComparison.Ordinal);
-            Assert.DoesNotContain("unsafe-inline", csp, StringComparison.Ordinal);
-        }
-
-        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/kaarten/bestelling/app.js")).StatusCode);
-    }
-
-    [Fact]
-    public async Task Optocht_inschrijven_pagina_met_dezelfde_CSP_als_lid_worden()
-    {
-        Assert.Equal(HttpStatusCode.Redirect, (await _client.GetAsync("/optocht-inschrijven")).StatusCode);
-
-        var response = await _client.GetAsync("/optocht-inschrijven/?status=abc");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("Inschrijven voor de optocht", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
-        Assert.Contains("connect-src 'self';", csp, StringComparison.Ordinal);
-        Assert.DoesNotContain("unsafe-inline", csp, StringComparison.Ordinal);
-        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync("/optocht-inschrijven/app.js")).StatusCode);
-    }
-
-    [Fact]
     public async Task Beheer_zonder_slash_wordt_doorgestuurd()
     {
         var response = await _client.GetAsync("/beheer");

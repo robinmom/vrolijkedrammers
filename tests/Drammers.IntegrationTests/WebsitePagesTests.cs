@@ -143,6 +143,30 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(["Pronkzitting 2024"], older.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
     }
 
+    [Theory]
+    [InlineData("/lid-worden/", "Word ook een Drammer!", "js/forms/lid-worden.js")]
+    [InlineData("/lid-worden", "Aanmelden als lid", "js/forms/lid-worden.js")]
+    [InlineData("/optocht-inschrijven/?status=abc", "Inloggen en inschrijven", "js/login.js")]
+    [InlineData("/aanrijtijden/", "Aanrijtijden optocht", "js/forms/aanrijtijden.js")]
+    [InlineData("/kaarten/", "Te koop", "js/forms/kaarten.js")]
+    [InlineData("/kaarten/bestelling/?id=abc&t=def", "Je bestelling", "js/forms/kaarten-bestelling.js")]
+    public async Task Losse_onderdelen_zijn_pagina_s_van_de_website(string path, string text, string script)
+    {
+        // Fase 21d: lid worden, optocht, aanrijtijden en kaarten met kop, menu en voet van de website, op hetzelfde adres.
+        var response = await _guest.GetAsync(path);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(text, html);
+        Assert.Contains($"/_content/Drammers.Website/{script}", html);
+        Assert.Contains("class=\"site-header\"", html);
+        Assert.Contains("powered by", html);
+        var csp = response.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("connect-src 'self' https://*.ciamlogin.com", csp);
+        Assert.Contains("frame-ancestors 'none'", csp);
+        Assert.DoesNotContain("unsafe-inline", csp);
+        Assert.Equal(path.StartsWith("/kaarten/bestelling", StringComparison.Ordinal), html.Contains("noindex", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task Jeugdprinsen_pas_zichtbaar_als_het_bestuur_de_pagina_aanzet()
     {

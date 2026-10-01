@@ -7,6 +7,7 @@ using Drammers.Api.ErrorHandling;
 using Drammers.Api.Portal;
 using Drammers.Infrastructure;
 using Drammers.SharedKernel.Time;
+using Drammers.Website;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 
@@ -45,6 +46,7 @@ try
     builder.Services.AddScoped<Drammers.Api.Content.ContentViewerResolver>();
     builder.Services.AddScoped<Drammers.Api.Content.ContentUrls>();
     builder.Services.AddSingleton<IClock, SystemClock>();
+    builder.Services.AddWebsite(builder.Configuration);
 
     // Traces, metrics en logs naar Application Insights; de connection string zet Bicep (niet geheim).
     if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
@@ -57,7 +59,7 @@ try
     app.UseForwardedHeaders();
     app.UseSecurityHeaders();
     app.UseExceptionHandler();
-    app.UseStatusCodePages();
+    app.UseStatusCodePagesWithWebsite();
     app.UseSerilogRequestLogging();
 
     if (app.Environment.IsDevelopment())
@@ -71,10 +73,14 @@ try
 
     // Het portal (statische bestanden) vóór de authenticatie: het is publiek en logt zelf in via MSAL.
     app.UsePortalStaticFiles();
+    // Routing expliciet ná de statuspagina's: een 404 op de website wordt dan opnieuw gerouteerd naar de 404-pagina.
+    app.UseRouting();
     app.UseAuthentication();
     app.UseDeviceCheck();
     app.UseRateLimiter();
     app.UseAuthorization();
+    app.UseOutputCache();
+    app.UseWebsiteCacheInvalidation();
 
     // live: het proces draait (App Service health check). ready: SQL, Key Vault en Blob zijn bereikbaar.
     app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false, ResponseWriter = AppVersion.WriteLiveResponseAsync })
@@ -82,6 +88,7 @@ try
     app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyTag) })
         .AllowAnonymous();
     app.MapControllers();
+    app.MapWebsite();
     app.MapPortalFallback();
 
     await app.RunAsync();

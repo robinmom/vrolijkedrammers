@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Drammers.Modules.Parade\Drammers.Modules.Parade.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Payments\Drammers.Modules.Payments.csproj" />
     <ProjectReference Include="..\Drammers.Modules.Ticketing\Drammers.Modules.Ticketing.csproj" />
+    <ProjectReference Include="..\Drammers.Website\Drammers.Website.csproj" />
   </ItemGroup>
 
 </Project>

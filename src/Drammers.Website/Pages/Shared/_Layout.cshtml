@@ -1,0 +1,210 @@
+@inject SiteShell Shell
+@{
+    var page = (SitePage)ViewContext.ViewData.Model!;
+    var settings = await Shell.SettingsAsync();
+    var menuPages = (await Shell.MenuPagesAsync()).ToDictionary(p => p.Slug, p => p.Title);
+    var title = string.IsNullOrEmpty(page.PageTitle) ? "De Vrolijke Drammers · Carnavalsvereniging Loil" : $"{page.PageTitle} · De Vrolijke Drammers";
+    var association = new List<(string Href, string Label)>();
+    if (menuPages.TryGetValue("over-ons", out var overOns)) association.Add(("/over-ons", overOns));
+    association.Add(("/kader", "Kader"));
+    association.Add(("/prinsengalerie", "Prinsengalerie"));
+    if (settings.ShowYouthPrinces) association.Add(("/jeugdprinsen", "Jeugdprinsen"));
+    association.Add(("/onderscheidingen", "Onderscheidingen"));
+    foreach (var slug in new[] { "dansgarde", "historie", "loillands" })
+    {
+        if (menuPages.TryGetValue(slug, out var label)) association.Add(($"/{slug}", label));
+    }
+    var joinIn = new (string Href, string Label, string Hint)[]
+    {
+        ("/lid-worden/", "Lid worden", "Aanmelden als lid van de vereniging"),
+        ("/optocht-inschrijven/", "Optocht inschrijven", "Groep, wagen of loopgroep aanmelden"),
+        ("/aanrijtijden/", "Aanrijtijden optocht", "Wanneer en waar opstellen"),
+        ("/kaarten/", "Kaarten en munten", "Pronkzitting, dagkaarten en munten"),
+        ("/doe-mee#app", "Download de app", "iPhone en Android"),
+    };
+    var main = new (string Key, string Href, string Label)[]
+    {
+        ("home", "/", "Home"), ("agenda", "/agenda", "Agenda"), ("nieuws", "/nieuws", "Nieuws"),
+    };
+    var after = new (string Key, string Href, string Label)[]
+    {
+        ("optocht", "/optocht", "Optocht"), ("fotos", "/fotos", "Foto's"), ("contact", "/contact", "Contact"),
+    };
+    string Current(string key) => page.ActiveMenu == key ? "page" : "false";
+}
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@title</title>
+    <meta name="description" content="@(page.MetaDescription ?? "Carnavalsvereniging De Vrolijke Drammers uit Loil, sinds 1958: agenda, nieuws, optocht, foto's en lid worden.")">
+    <meta name="theme-color" content="#087BC1">
+    <meta property="og:site_name" content="De Vrolijke Drammers">
+    <meta property="og:title" content="@(string.IsNullOrEmpty(page.PageTitle) ? "De Vrolijke Drammers" : page.PageTitle)">
+    <meta property="og:image" content="@(page.ShareImage ?? "/_content/Drammers.Website/img/hero-optocht.jpg")">
+    @if (page.IsNotFound)
+    {
+        <meta name="robots" content="noindex">
+    }
+    <link rel="icon" type="image/png" href="/_content/Drammers.Website/img/logo.png">
+    <link rel="preload" href="/_content/Drammers.Website/fonts/poppins-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/_content/Drammers.Website/fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/_content/Drammers.Website/css/site.css" asp-append-version="true">
+    <script src="/_content/Drammers.Website/js/site.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#inhoud">Naar de inhoud</a>
+    <header class="site-header">
+        <div class="wrap header-inner">
+            <a class="brand" href="/" aria-label="De Vrolijke Drammers, naar de homepage">
+                <img src="/_content/Drammers.Website/img/logo.png" alt="" width="56" height="56">
+                <span class="brand-text">
+                    <strong>De Vrolijke Drammers</strong>
+                    <small>Carnavalsvereniging Loil · sinds 1958</small>
+                </span>
+            </a>
+            <details class="menu-toggle">
+                <summary aria-label="Menu openen of sluiten"><span class="menu-icon" aria-hidden="true"></span>Menu</summary>
+                <nav class="mobile-nav" aria-label="Hoofdmenu (mobiel)">
+                    <ul>
+                        @foreach (var item in main)
+                        {
+                            <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>
+                        }
+                        <li>
+                            <span class="mobile-group">Vereniging</span>
+                            <ul class="mobile-sub">
+                                @foreach (var a in association)
+                                {
+                                    <li><a href="@a.Href">@a.Label</a></li>
+                                }
+                            </ul>
+                        </li>
+                        @foreach (var item in after)
+                        {
+                            <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>
+                        }
+                    </ul>
+                    <div class="mobile-join">
+                        <strong>Doe mee</strong>
+                        <ul>
+                            @foreach (var j in joinIn)
+                            {
+                                <li><a href="@j.Href">@j.Label</a></li>
+                            }
+                        </ul>
+                    </div>
+                </nav>
+            </details>
+            <nav class="main-nav" aria-label="Hoofdmenu">
+                <ul>
+                    @foreach (var item in main)
+                    {
+                        <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>
+                    }
+                    <li>
+                        <details class="dropdown">
+                            <summary aria-current="@Current("vereniging")">Vereniging</summary>
+                            <ul class="dropdown-menu">
+                                @foreach (var a in association)
+                                {
+                                    <li><a href="@a.Href">@a.Label</a></li>
+                                }
+                            </ul>
+                        </details>
+                    </li>
+                    @foreach (var item in after)
+                    {
+                        <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>
+                    }
+                    <li>
+                        <details class="dropdown join">
+                            <summary>Doe mee</summary>
+                            <ul class="dropdown-menu dropdown-right">
+                                @foreach (var j in joinIn)
+                                {
+                                    <li><a href="@j.Href"><strong>@j.Label</strong><small>@j.Hint</small></a></li>
+                                }
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="inhoud" tabindex="-1">
+        @if (page.IsNotFound)
+        {
+            IgnoreBody();
+            <section class="page-band">
+                <div class="wrap">
+                    <h1>Pagina niet gevonden</h1>
+                    <p class="lead">Deze pagina bestaat niet (meer). Misschien is hij verhuisd.</p>
+                </div>
+            </section>
+            <div class="wrap content">
+                <p><a class="button" href="/">Naar de homepage</a> <a class="button outline" href="/agenda">Bekijk de agenda</a></p>
+            </div>
+        }
+        else
+        {
+            @RenderBody()
+        }
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap footer-columns">
+            <div class="footer-brand">
+                <span class="footer-logo"><img src="/_content/Drammers.Website/img/logo.png" alt="" width="56" height="56"></span>
+                <p class="footer-name">Carnavalsvereniging<br>De Vrolijke Drammers Loil</p>
+                <p class="footer-muted">Al sinds 1958 het feest van Loil.</p>
+            </div>
+            <div>
+                <h2>Contact</h2>
+                <dl class="footer-contact">
+                    <dt>Ledenadministratie</dt>
+                    <dd><a href="mailto:secretaris@vrolijkedrammers.nl">secretaris@vrolijkedrammers.nl</a></dd>
+                    <dt>Optocht</dt>
+                    <dd><a href="mailto:optocht@vrolijkedrammers.nl">optocht@vrolijkedrammers.nl</a></dd>
+                    <dt>Kaarten en betalingen</dt>
+                    <dd><a href="mailto:penningmeester@vrolijkedrammers.nl">penningmeester@vrolijkedrammers.nl</a></dd>
+                </dl>
+            </div>
+            <div>
+                <h2>Doe mee</h2>
+                <ul>
+                    @foreach (var j in joinIn)
+                    {
+                        <li><a href="@j.Href">@j.Label</a></li>
+                    }
+                </ul>
+            </div>
+            <div>
+                <h2>Vereniging</h2>
+                <ul>
+                    @foreach (var a in association)
+                    {
+                        <li><a href="@a.Href">@a.Label</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="wrap footer-bottom">
+            <p>© @DateTime.UtcNow.Year Carnavalsvereniging De Vrolijke Drammers · <a href="/privacy">Privacyverklaring</a></p>
+            <p class="footer-right">
+                @if (settings.FacebookPageUrl is not null)
+                {
+                    <a href="@settings.FacebookPageUrl" rel="noopener">Facebook</a>
+                }
+                @if (settings.InstagramUrl is not null)
+                {
+                    <a href="@settings.InstagramUrl" rel="noopener">Instagram</a>
+                }
+                <a class="powered" href="https://movement-it.nl" rel="noopener"><span>powered by</span><img src="/_content/Drammers.Website/img/movement-it.png" alt="Movement-IT" width="96" height="24"></a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

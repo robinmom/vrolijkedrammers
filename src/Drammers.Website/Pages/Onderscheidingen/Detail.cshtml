@@ -1,0 +1,23 @@
+@page "/onderscheidingen/{slug}"
+@model Drammers.Website.Pages.Onderscheidingen.DetailModel
+@using Drammers.Website.Pages.Onderscheidingen
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var a = Model.Award;
+}
+<partial name="_PageBand" model='new PageBand(a.Recipient, $"{IndexModel.Name(a.Type)} {a.Year}", ("/onderscheidingen", "Onderscheidingen"), (null, a.Recipient))' />
+<div class="wrap content">
+    <article class="article-layout">
+        <div class="article">
+            @if (a.PhotoUrl is not null)
+            {
+                <img class="article-image" src="@a.PhotoUrl" alt="@a.Recipient" width="1600" height="1000">
+            }
+            <div class="prose">@Html.Raw(a.BodyHtml)</div>
+            <p><a class="button outline" href="/onderscheidingen">← Alle onderscheidingen</a></p>
+        </div>
+    </article>
+</div>

@@ -1,0 +1,41 @@
+@page "/kader"
+@model KaderModel
+<partial name="_PageBand" model='new PageBand("Het kader", "Bestuur, Raad van Elf, convent en de leiding van de dansgarde: samen met de leden de drijvende kracht achter de vereniging.", (null, "Vereniging"), (null, "Kader"))' />
+<div class="wrap content">
+    @if (Model.Active is null)
+    {
+        <p class="muted">Het kader staat binnenkort op deze pagina.</p>
+    }
+    else
+    {
+        <nav class="tabs" aria-label="Commissies">
+            @foreach (var c in Model.Committees)
+            {
+                <a href="/kader?commissie=@c.Slug" aria-current="@(c == Model.Active ? "true" : "false")">@c.Name</a>
+            }
+        </nav>
+        <section aria-label="@Model.Active.Name">
+            <h2 class="visually-hidden">@Model.Active.Name</h2>
+            <ul class="grid-4 people" role="list">
+                @foreach (var p in Model.Active.Members)
+                {
+                    <li class="card person">
+                        @if (p.PhotoUrl is not null)
+                        {
+                            <img src="@p.PhotoUrl" alt="" loading="lazy" width="132" height="132">
+                        }
+                        else
+                        {
+                            <span class="img-empty"></span>
+                        }
+                        <h3>@p.Name</h3>
+                        @if (p.Function is not null)
+                        {
+                            <span class="badge blue">@p.Function</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>

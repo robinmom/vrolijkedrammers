@@ -1,0 +1,23 @@
+@model EventCard
+@{
+    var local = Nl.Local(Model.StartAt);
+    var meta = Model.AllDay ? "Hele dag" : $"{Nl.Time(Model.StartAt)} uur";
+    if (Model.Location is not null) meta += $" · {Model.Location}";
+}
+<div class="date-block" aria-hidden="true">
+    <span>@Nl.Weekday(Model.StartAt)</span>
+    <strong>@local.Day</strong>
+    <span>@Nl.Month(Model.StartAt)</span>
+</div>
+<div class="event-text">
+    @if (Model.Badge is not null)
+    {
+        <span class="badge @(Model.IsHighlight ? "gold" : "red")">@Model.Badge</span>
+    }
+    else if (Model.IsHighlight)
+    {
+        <span class="badge gold">Hoogtepunt</span>
+    }
+    <h3>@Model.Title</h3>
+    <p class="event-meta"><span class="visually-hidden">@Nl.Date(Model.StartAt), </span>@meta</p>
+</div>

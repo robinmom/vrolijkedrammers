@@ -1,0 +1,91 @@
+@page "/prinsengalerie"
+@model PrinsenModel
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var title = Model.Youth ? "Jeugdprinsen" : "Prinsengalerie";
+    var lead = Model.Youth
+        ? "De jeugdprinsen en -prinsessen van De Vrolijke Drammers. Klik op een foto voor meer informatie."
+        : "Sinds 1958 heeft Loil elk jaar een prins. Klik op een prins voor meer informatie.";
+}
+<partial name="_PageBand" model='new PageBand(title, lead, (null, "Vereniging"), (null, title))' />
+<div class="wrap content">
+    @if (Model.Princes.Count == 0)
+    {
+        <p class="muted">De galerij wordt binnenkort gevuld.</p>
+    }
+    @foreach (var decade in Model.Princes.GroupBy(p => p.Year / 10 * 10))
+    {
+        <section class="year-group" aria-labelledby="decennium-@decade.Key">
+            <h2 id="decennium-@decade.Key">@decade.Key – @(decade.Key + 9)</h2>
+            <ul class="grid-5 princes" role="list">
+                @foreach (var p in decade)
+                {
+                    <li>
+                        <a class="card prince-card" href="@Model.BasePath?prins=@p.Id.ToString("N")#prins" data-modal-link>
+                            @if (p.PhotoUrl is not null)
+                            {
+                                <img src="@p.PhotoUrl" alt="" loading="lazy" width="220" height="220">
+                            }
+                            else
+                            {
+                                <span class="img-empty"></span>
+                            }
+                            <span class="prince-text">
+                                <span class="year">@p.Year</span>
+                                <h3>@p.PrinceName</h3>
+                                @if (p.Name is not null)
+                                {
+                                    <span class="muted">@p.Name</span>
+                                }
+                            </span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
+@if (Model.Selected is { } s)
+{
+    <div class="modal-backdrop" id="prins">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="prins-naam">
+            @if (s.PhotoUrl is not null)
+            {
+                <img src="@s.PhotoUrl" alt="Foto van @s.PrinceName" width="420" height="520">
+            }
+            <div class="modal-body">
+                <div class="modal-top">
+                    <span class="badge red">Carnaval @s.Year</span>
+                    <a class="modal-close" href="@Model.BasePath" aria-label="Sluiten" data-modal-close>✕</a>
+                </div>
+                <h2 id="prins-naam">@s.PrinceName</h2>
+                @if (s.Name is not null)
+                {
+                    <p class="lead muted">@s.Name</p>
+                }
+                @if (s.Motto is not null)
+                {
+                    <p class="muted"><strong>Motto</strong></p>
+                    <p class="motto">“@s.Motto”</p>
+                }
+                <nav class="modal-nav" aria-label="Andere prinsen">
+                    @if (Model.Previous is { } prev)
+                    {
+                        <a href="@Model.BasePath?prins=@prev.Id.ToString("N")#prins">‹ @prev.PrinceName (@prev.Year)</a>
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
+                    @if (Model.Next is { } next)
+                    {
+                        <a href="@Model.BasePath?prins=@next.Id.ToString("N")#prins">@next.PrinceName (@next.Year) ›</a>
+                    }
+                </nav>
+            </div>
+        </div>
+    </div>
+}

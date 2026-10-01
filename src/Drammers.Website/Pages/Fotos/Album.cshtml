@@ -1,0 +1,38 @@
+@page "/fotos/{id:guid}"
+@model Drammers.Website.Pages.Fotos.AlbumModel
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var a = Model.Album;
+    var band = new PageBand(a.Title, a.Description ?? (a.Date is { } d ? Nl.Date(d) : null), ("/fotos", "Foto's"), (null, a.Title));
+}
+<partial name="_PageBand" model="band" />
+<div class="wrap content">
+    <p class="muted">@a.PhotoCount foto's. Tik op een foto om hem groot te bekijken en veeg naar de volgende.</p>
+    <ul class="photo-grid" role="list" data-gallery>
+        @for (var i = 0; i < Model.Photos.Count; i++)
+        {
+            var p = Model.Photos[i];
+            <li>
+                <a href="@p.DisplayUrl" data-index="@i" data-caption="@(p.Caption ?? "")@(p.Photographer is null ? "" : $" · Foto: {p.Photographer}")">
+                    <img src="@p.ThumbnailUrl" alt="@(p.Caption ?? $"Foto {i + 1} van {a.Title}")" loading="lazy" width="400" height="300">
+                </a>
+            </li>
+        }
+    </ul>
+    <p><a class="button outline" href="/fotos">← Alle foto's</a></p>
+</div>
+<div class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto bekijken" data-lightbox>
+    <div class="lightbox-top">
+        <span data-counter></span>
+        <button type="button" data-close aria-label="Sluiten">✕</button>
+    </div>
+    <div class="lightbox-stage">
+        <button type="button" class="prev" data-prev aria-label="Vorige foto">‹</button>
+        <img alt="" data-image>
+        <button type="button" class="next" data-next aria-label="Volgende foto">›</button>
+    </div>
+    <p class="lightbox-caption" data-caption></p>
+</div>

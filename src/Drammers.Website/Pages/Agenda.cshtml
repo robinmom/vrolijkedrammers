@@ -1,0 +1,37 @@
+@page "/agenda"
+@model AgendaModel
+<partial name="_PageBand" model='new PageBand("Agenda", "Alle openbare activiteiten van De Vrolijke Drammers. Zet ze met één klik in je eigen agenda.", (null, "Agenda"))' />
+<div class="wrap content">
+    <nav class="chips" aria-label="Filter op soort activiteit">
+        <a class="chip" href="/agenda" aria-current="@(Model.Category is null ? "true" : "false")">Alles</a>
+        @foreach (var c in Model.Categories)
+        {
+            <a class="chip" href="/agenda?categorie=@c.Code" aria-current="@(Model.Category == c.Code ? "true" : "false")">@c.Name</a>
+        }
+    </nav>
+    @if (Model.Events.Count == 0)
+    {
+        <p class="muted">Er staan geen activiteiten in de agenda@(Model.Category is null ? "" : " van deze soort").</p>
+    }
+    @foreach (var month in Model.Events.GroupBy(e => Nl.MonthYear(e.StartAt)))
+    {
+        <section class="month" aria-label="@month.Key">
+            <h2>@month.Key</h2>
+            <div class="agenda-list">
+                @foreach (var e in month)
+                {
+                    <article class="card event-card" id="activiteit-@e.Id.ToString("N")">
+                        <partial name="_EventCard" model="e" />
+                        @if (e.Summary is not null)
+                        {
+                            <p class="event-text muted">@e.Summary</p>
+                        }
+                        <div class="event-actions">
+                            <a class="link-arrow" href="/api/v1/events/@e.Id/ical" download>+ In mijn agenda<span class="visually-hidden"> (@e.Title)</span></a>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+</div>

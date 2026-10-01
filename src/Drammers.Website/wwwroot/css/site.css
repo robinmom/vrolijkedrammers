@@ -475,3 +475,7 @@ ul.grid-3, ul.grid-4, ul.grid-5 { list-style: none; padding: 0; margin: 0; }
 .data-table tr.podium-1 td:first-child { color: var(--rood-tekst); }
 .result-photo { width: 88px; }
 .result-photo img { width: 72px; height: 54px; object-fit: cover; border-radius: 8px; }
+
+/* Optocht: knoppen onderaan de kaarten, op gelijke hoogte (2026-10-01). */
+.optocht-cards .cta-card { display: flex; flex-direction: column; }
+.optocht-cards .card-actions { margin-top: auto; padding-top: 4px; }

@@ -47,7 +47,7 @@ public sealed record CategoryInput(
 /// ontstaat de teller voor opgavenummers (ADR-011). Categorieën worden niet verwijderd maar gedeactiveerd, zodat
 /// inschrijvingen hun categorie houden.
 /// </summary>
-public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audit, IClock clock)
+public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audit, IClock clock, Files.IFileStore files)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -105,6 +105,44 @@ public sealed class ParadeAdministration(DrammersDbContext db, IAuditLogger audi
         parade.FixedEntries = clean;
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade.fixed-entries", "Parade", id.ToString(), null, JsonSerializer.Serialize(clean, Json)), cancellationToken);
+    }
+
+    /// <summary>
+    /// Een optocht definitief verwijderen (besluit product owner 2026-10-01: altijd, met bevestiging door de naam in te
+    /// typen), met alle inschrijvingen, documenten, jury-indeling, scores en uitslag. Het fotoalbum van de uitslag blijft
+    /// staan (dat beheer je bij Foto's).
+    /// </summary>
+    public async Task DeleteAsync(Guid id, string confirmName, CancellationToken cancellationToken)
+    {
+        var parade = await db.Parades.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Optocht niet gevonden.", DomainErrorKind.NotFound);
+        if (!string.Equals(confirmName?.Trim(), parade.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Typ ter bevestiging de naam van de optocht: {parade.Name}.");
+        }
+
+        var registrationIds = db.ParadeRegistrations.Where(r => r.ParadeId == id).Select(r => r.Id);
+        var documents = await db.ParadeDocuments.AsNoTracking().Where(d => registrationIds.Contains(d.RegistrationId)).Select(d => d.BlobPath).ToListAsync(cancellationToken);
+        var counts = new { registrations = await registrationIds.CountAsync(cancellationToken), documents = documents.Count };
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await db.JudgingOutsideReviews.Where(r => r.ParadeId == id).ExecuteDeleteAsync(cancellationToken);
+        await db.ParadeRegistrations.Where(r => r.ParadeId == id).ExecuteDeleteAsync(cancellationToken);
+        await db.Parades.Where(p => p.Id == id).ExecuteDeleteAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade.deleted", "Parade", id.ToString(), JsonSerializer.Serialize(new { parade.Name, parade.ParadeDate, counts }, Json), null), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        foreach (var path in documents)
+        {
+            try
+            {
+                await files.DeleteAsync(Files.FileContainers.ParadeDocuments, path, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Een achtergebleven document zonder inschrijving is niet bereikbaar; de bewaartermijn ruimt het later op.
+            }
+        }
     }
 
     public async Task UpdateAsync(Guid id, ParadeInput input, CancellationToken cancellationToken)

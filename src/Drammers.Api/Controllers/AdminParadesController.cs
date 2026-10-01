@@ -50,6 +50,17 @@ public sealed class AdminParadesController(DrammersDbContext db, ParadeAdministr
         return NoContent();
     }
 
+    /// <summary>Optocht definitief verwijderen, met alles erbij; ter bevestiging de naam van de optocht meesturen.</summary>
+    [HttpDelete("parades/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Delete(Guid id, [FromQuery, Required] string confirmName, CancellationToken cancellationToken)
+    {
+        await parades.DeleteAsync(id, confirmName, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>Vaste plekken vooraan (startnummer 1 … n), bijv. geluidswagen, verenigingswagen en het Convent.</summary>
     [HttpPut("parades/{id:guid}/fixed-entries")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

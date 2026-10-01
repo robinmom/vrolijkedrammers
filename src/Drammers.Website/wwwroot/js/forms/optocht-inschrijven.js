@@ -15,6 +15,7 @@
   // Ingelogd invullen: het concept uit de API (met versie voor het opslaan).
   let draft = null;
   let mine = [];
+  let previousBuild = null;
 
   const show = (id) => {
     for (const section of sections) document.getElementById(section).hidden = section !== id;
@@ -158,16 +159,29 @@
       set(`${prefix}PostalCode`, a?.postalCode);
       set(`${prefix}City`, a?.city);
     }
+    // Bouwlocatie van vorig jaar: kiezen tussen dezelfde of een andere locatie (dan leeg invullen).
+    previousBuild = r.buildAddress?.street ? r.buildAddress : null;
+    document.getElementById('bouw-keuze').hidden = !previousBuild;
+    if (previousBuild) {
+      text('bouw-vorig', [`${previousBuild.street} ${previousBuild.houseNumber ?? ''}${previousBuild.addition ?? ''}`.trim(), previousBuild.city].filter(Boolean).join(', '));
+      f.bouwKeuze.value = 'zelfde';
+    }
     f.jurySame.checked = r.juryInspectionSameAsBuildAddress !== false;
     f.jurySame.dispatchEvent(new Event('change'));
     set('additionalInformation', r.additionalInformation);
     categoryHint();
   }
 
+  // Alleen de inschrijving van de huidige optocht is "Mijn inschrijving"; die van eerdere optochten staan eronder.
+  const currentMine = () => mine.filter((r) => r.paradeId === parade?.id);
+
   function renderMine() {
     const list = document.getElementById('mijn-lijst');
     list.replaceChildren();
+    const earlier = document.getElementById('eerder-lijst');
+    earlier.replaceChildren();
     for (const r of mine) {
+      const target = r.paradeId === parade?.id ? list : earlier;
       const [label, explanation] = statusTexts[r.status] ?? [r.status, ''];
       const li = document.createElement('li');
       const head = document.createElement('p');
@@ -184,11 +198,13 @@
         r.startNumber ? `startnummer ${r.startNumber}` : null,
         explanation,
       ].filter(Boolean).join(' · ');
+      if (target === earlier && r.paradeName) head.prepend(`${r.paradeName}: `);
       li.append(head, numbers);
-      list.append(li);
+      target.append(li);
     }
-    const active = mine.filter((r) => r.status !== 'Withdrawn');
-    document.getElementById('mijn-leeg').hidden = mine.length > 0;
+    const active = currentMine().filter((r) => r.status !== 'Withdrawn');
+    document.getElementById('mijn-leeg').hidden = currentMine().length > 0;
+    document.getElementById('eerder').hidden = earlier.childElementCount === 0;
     const open = Boolean(parade?.registrationOpen);
     document.getElementById('nieuw').hidden = !open || active.length > 0;
     document.getElementById('verder').hidden = !open || !active.some((r) => r.status === 'Draft');
@@ -253,7 +269,7 @@
     const error = document.getElementById('mijn-fout');
     error.hidden = true;
     try {
-      const existing = mine.find((r) => r.status === 'Draft');
+      const existing = currentMine().find((r) => r.status === 'Draft');
       const response = create
         ? await login.fetch(`${api}/registrations`, { method: 'POST' })
         : await login.fetch(`${api}/registrations/${existing.id}`);
@@ -300,6 +316,16 @@
   document.getElementById('naar-mijn').addEventListener('click', () => startSignedIn());
 
   form.elements.categoryId.addEventListener('change', categoryHint);
+  for (const radio of form.querySelectorAll('input[name=bouwKeuze]')) {
+    radio.addEventListener('change', () => {
+      const same = form.elements.bouwKeuze.value === 'zelfde';
+      for (const field of ['Street', 'HouseNumber', 'Addition', 'PostalCode', 'City']) {
+        const key = field.charAt(0).toLowerCase() + field.slice(1);
+        form.elements[`build${field}`].value = same && previousBuild ? (previousBuild[key] ?? '') : '';
+      }
+      if (!same) form.elements.buildStreet.focus();
+    });
+  }
   form.elements.jurySame.addEventListener('change', () => {
     const separate = !form.elements.jurySame.checked;
     document.getElementById('jury').hidden = !separate;

@@ -22,6 +22,10 @@
   <h2 id="titel-mijn" tabindex="-1">Mijn inschrijving</h2>
   <p id="mijn-leeg" class="muted" hidden>Je hebt nog geen inschrijving voor de optocht.</p>
   <ul id="mijn-lijst" class="registration-list"></ul>
+  <div id="eerder" hidden>
+    <h3 class="h3">Eerdere optochten</h3>
+    <ul id="eerder-lijst" class="registration-list"></ul>
+  </div>
   <div id="mijn-fout" class="error" role="alert" hidden></div>
   <div class="actions">
     <button type="button" id="nieuw" hidden>Nieuwe inschrijving</button>
@@ -93,6 +97,10 @@
 
     <fieldset>
       <legend>Bouwlocatie</legend>
+      <div id="bouw-keuze" class="row two" hidden>
+        <label class="check choice"><input type="radio" name="bouwKeuze" value="zelfde" checked /> <span><strong>Zelfde locatie</strong><br /><span id="bouw-vorig" class="muted"></span></span></label>
+        <label class="check choice"><input type="radio" name="bouwKeuze" value="andere" /> <span><strong>Andere locatie</strong><br /><span class="muted">Vul hieronder het adres in.</span></span></label>
+      </div>
       <div class="row four">
         <label>Straat<input name="buildStreet" required maxlength="100" autocomplete="address-line1" /></label>
         <label>Huisnummer<input name="buildHouseNumber" required maxlength="10" /></label>

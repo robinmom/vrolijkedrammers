@@ -835,7 +835,7 @@ function LocationStep({
               { borderColor: adding ? colors.linkText : colors.border, backgroundColor: colors.surface },
             ]}
           >
-            <AppText variant="bodyStrong">+ Nieuwe locatie toevoegen</AppText>
+            <AppText variant="bodyStrong">+ Andere locatie</AppText>
           </Pressable>
         </View>
       ) : null}

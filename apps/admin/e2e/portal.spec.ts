@@ -500,6 +500,16 @@ test('fase 11a: optocht instellen en een categorie aanpassen', async ({ page }) 
     carnivalYearId: 1,
   });
 
+  // Verwijderen (2026-10-01): alleen na het intypen van de naam.
+  await page.getByRole('button', { name: 'Verwijderen Optocht Loil 2027' }).click();
+  const confirm = page.getByRole('dialog');
+  await expect(confirm.getByRole('button', { name: 'Definitief verwijderen' })).toBeDisabled();
+  await confirm.getByLabel(/Typ ter bevestiging de naam/).fill('optocht loil 2027');
+  await expectNoSeriousA11yIssues(page);
+  await confirm.getByRole('button', { name: 'Definitief verwijderen' }).click();
+  await expect(page.getByText('Optocht Loil 2027 is verwijderd.')).toBeVisible();
+  expect(api.parades).toEqual([]);
+
   await page.getByRole('button', { name: 'Wijzigen Volwassenen Loopgroepen klein (3-9)' }).click();
   await page.getByRole('dialog').getByLabel('Actief (kiesbaar)').uncheck();
   await page.getByRole('dialog').getByRole('button', { name: 'Opslaan' }).click();

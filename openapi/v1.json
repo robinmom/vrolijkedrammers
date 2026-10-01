@@ -7778,6 +7778,76 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "AdminParades"
+        ],
+        "summary": "Optocht definitief verwijderen, met alles erbij; ter bevestiging de naam van de optocht meesturen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "confirmName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/parades/{id}/fixed-entries": {
@@ -28084,7 +28154,9 @@
           "registrationNumber",
           "startNumber",
           "submittedAt",
-          "createdAt"
+          "createdAt",
+          "paradeId",
+          "paradeName"
         ],
         "type": "object",
         "properties": {
@@ -28125,6 +28197,13 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "paradeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paradeName": {
+            "type": "string"
           }
         }
       },

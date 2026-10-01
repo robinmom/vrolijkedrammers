@@ -60,6 +60,13 @@ export function ParadePage() {
   const [editing, setEditing] = useState<{ id: string | null; form: ParadeRequest } | null>(null);
   const [category, setCategory] = useState<{ id: number | null; form: CategoryRequest } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // Optocht verwijderen (besluit 2026-10-01): altijd mogelijk, na het intypen van de naam.
+  const [deleting, setDeleting] = useState<{ parade: AdminParade; confirm: string } | null>(null);
+  const remove = useApiMutation(
+    (v: { id: string; confirmName: string }) =>
+      api.DELETE('/api/v1/admin/parades/{id}', { params: { path: { id: v.id }, query: { confirmName: v.confirmName } } }),
+    [['admin-parades'], ['jury'], ['results']],
+  );
   const activeYear = years.data?.find((y) => y.active);
 
   const save = useApiMutation(
@@ -132,9 +139,14 @@ export function ParadePage() {
             <h2 id={`optocht-${p.id}`}>
               {p.name} <span className="badge">{paradeStatusLabels[p.status] ?? p.status}</span>
             </h2>
-            <button type="button" className="button secondary small" onClick={() => setEditing({ id: p.id, form: toRequest(p) })}>
-              Wijzigen
-            </button>
+            <span className="actions">
+              <button type="button" className="button secondary small" onClick={() => setEditing({ id: p.id, form: toRequest(p) })}>
+                Wijzigen <span className="visually-hidden">{p.name}</span>
+              </button>
+              <button type="button" className="button ghost danger small" onClick={() => setDeleting({ parade: p, confirm: '' })}>
+                Verwijderen <span className="visually-hidden">{p.name}</span>
+              </button>
+            </span>
           </div>
           <dl className="stats">
             <div>
@@ -447,6 +459,49 @@ export function ParadePage() {
               </button>
               <button type="submit" className="button" disabled={saveCategory.isPending}>
                 Opslaan
+              </button>
+            </div>
+          </form>
+        ) : null}
+      </Dialog>
+      <Dialog open={deleting !== null} title={`${deleting?.parade.name ?? ''} verwijderen?`} onClose={() => setDeleting(null)}>
+        {deleting ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              remove.mutate(
+                { id: deleting.parade.id, confirmName: deleting.confirm },
+                {
+                  onSuccess: () => {
+                    setMessage(`${deleting.parade.name} is verwijderd.`);
+                    setDeleting(null);
+                  },
+                },
+              );
+            }}
+          >
+            <p>
+              Dit verwijdert de optocht definitief, met alle inschrijvingen, documenten, de jury-indeling, de scores en de uitslag.
+              Dit kan niet ongedaan worden gemaakt.
+            </p>
+            <Field
+              label={`Typ ter bevestiging de naam: ${deleting.parade.name}`}
+              required
+              autoComplete="off"
+              value={deleting.confirm}
+              onChange={(e) => setDeleting({ ...deleting, confirm: e.target.value })}
+            />
+            <ProblemAlert error={remove.error} />
+            <div className="actions">
+              <button type="button" className="button secondary" onClick={() => setDeleting(null)}>
+                Annuleren
+              </button>
+              <button
+                type="submit"
+                className="button danger"
+                disabled={remove.isPending || deleting.confirm.trim().toLowerCase() !== deleting.parade.name.toLowerCase()}
+              >
+                Definitief verwijderen
               </button>
             </div>
           </form>

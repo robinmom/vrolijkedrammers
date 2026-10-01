@@ -41,8 +41,9 @@ export default function OptochtScreen() {
   const guest = session === 'signedOut';
   const open = parade.data?.registrationOpen ?? false;
 
-  const mine = canRegister ? registrations.data?.find((r) => r.status !== 'Withdrawn') : undefined;
   const p = parade.data;
+  // Alleen de inschrijving voor de huidige optocht; die van vorige optochten horen hier niet (ook al hebben ze een startnummer).
+  const mine = canRegister ? registrations.data?.find((r) => r.paradeId === p?.id && r.status !== 'Withdrawn') : undefined;
 
   // Eén knop, afhankelijk van de situatie; buiten de inschrijfperiode geen aanmeldknop.
   const action = mine

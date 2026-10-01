@@ -2,9 +2,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Drammers.Api.Authorization;
 using Drammers.Infrastructure.ParadeManagement;
+using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Parade.Registrations;
 using Drammers.SharedKernel.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Api.Controllers;
 
@@ -15,7 +17,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/parade/registrations")]
 [RequirePermission(Permissions.ParadeRegister)]
-public sealed class ParadeRegistrationsController(ParadeRegistrations registrations) : ControllerBase
+public sealed class ParadeRegistrationsController(ParadeRegistrations registrations, DrammersDbContext db) : ControllerBase
 {
     private Guid UserId => CurrentUser.Get(HttpContext)!.UserId;
 
@@ -26,8 +28,12 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
     {
         var user = CurrentUser.Get(HttpContext)!;
         await registrations.ClaimByEmailAsync(user.UserId, user.Email, cancellationToken);
-        return [.. (await registrations.MineAsync(user.UserId, cancellationToken)).Select(r => new RegistrationSummaryResponse(
-            r.Id, r.GroupName, r.Status, r.RegistrationNumber, r.StartNumber, r.SubmittedAt, r.CreatedAt))];
+        var mine = await registrations.MineAsync(user.UserId, cancellationToken);
+        // Met de optocht erbij: de app en de website tonen alleen de inschrijving van de huidige optocht als "Mijn inschrijving".
+        var paradeIds = mine.Select(r => r.ParadeId).Distinct().ToList();
+        var parades = await db.Parades.AsNoTracking().Where(p => paradeIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
+        return [.. mine.Select(r => new RegistrationSummaryResponse(
+            r.Id, r.GroupName, r.Status, r.RegistrationNumber, r.StartNumber, r.SubmittedAt, r.CreatedAt, r.ParadeId, parades.GetValueOrDefault(r.ParadeId, "")))];
     }
 
     [HttpPost]
@@ -215,7 +221,8 @@ public sealed record RegistrationResponse(
     string? ReviewReason, bool? HasMusic, string? ArrivalTime, string? ArrivalLocation);
 
 public sealed record RegistrationSummaryResponse(
-    Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt);
+    Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt,
+    Guid ParadeId, string ParadeName);
 
 public sealed record BuildLocationResponse(Guid Id, AddressDto Address, DateTime LastUsedAt);
 

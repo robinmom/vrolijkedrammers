@@ -208,7 +208,7 @@ describe('Optocht inschrijven (fase 11)', () => {
     const same = await screen.findByRole('radio', { name: 'Zelfde locatie: Dorpsstraat 12, 6999 AA Loil' });
     expect(same.props.accessibilityState.checked).toBe(true);
     expect(screen.getByRole('button', { name: 'Verwijder Dorpsstraat 12, 6999 AA Loil' })).toBeTruthy();
-    await fireEvent.press(screen.getByRole('radio', { name: '+ Nieuwe locatie toevoegen' }));
+    await fireEvent.press(screen.getByRole('radio', { name: '+ Andere locatie' }));
     expect((await screen.findByLabelText('Straat')).props.value).toBe('');
   });
 
@@ -288,6 +288,8 @@ describe('Optocht inschrijven (fase 11)', () => {
           startNumber: null,
           submittedAt: null,
           createdAt: '2026-12-01T10:00:00Z',
+          paradeId: 'p-1',
+          paradeName: 'Optocht Loil 2027',
         },
       ],
       '/api/v1/parade/registrations/r-1': (method: string) => (method === 'DELETE' ? { status: 204 } : draft),
@@ -367,5 +369,31 @@ describe('Optocht inschrijven (fase 11)', () => {
     expect(screen.queryByRole('button', { name: 'Aanrijtijden wagens' })).toBeNull();
     await renderApp(routes, '/optocht/aanrijtijden');
     expect(await screen.findByText('Nog niet bekend')).toBeTruthy();
+  });
+});
+
+describe('Nieuwe optocht (2026-10-01)', () => {
+  it('een inschrijving van een vorige optocht is niet "Mijn inschrijving": je kunt je opnieuw aanmelden', async () => {
+    setSessionForTest('signedIn');
+    mockApi({
+      ...paradeApi,
+      '/api/v1/me': me(['parade.register']),
+      '/api/v1/parade/registrations': [
+        {
+          id: 'r-old',
+          groupName: 'De Knotwilgen',
+          status: 'StartNumberAssigned',
+          registrationNumber: 12,
+          startNumber: 31,
+          submittedAt: '2026-01-10T10:00:00Z',
+          createdAt: '2026-01-09T10:00:00Z',
+          paradeId: 'p-0',
+          paradeName: 'Optocht Loil 2026',
+        },
+      ],
+    });
+    await renderApp(routes, '/optocht');
+    expect(await screen.findByRole('button', { name: 'Aanmelden optocht' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Mijn inschrijving' })).toBeNull();
   });
 });

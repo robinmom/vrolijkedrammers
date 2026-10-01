@@ -2894,6 +2894,384 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    paradeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["JuryOverviewResponse"];
+                        "application/json": components["schemas"]["JuryOverviewResponse"];
+                        "text/json": components["schemas"]["JuryOverviewResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jury/jurors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["InviteJurorRequest"];
+                    "text/json": components["schemas"]["InviteJurorRequest"];
+                    "application/*+json": components["schemas"]["InviteJurorRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jury/parades/{paradeId}/jurors/{userId}/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** De categorieën van een jurylid in deze optocht. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JurorCategoriesRequest"];
+                    "text/json": components["schemas"]["JurorCategoriesRequest"];
+                    "application/*+json": components["schemas"]["JurorCategoriesRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jury/jurors/{userId}/head-jury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["HeadJuryRequest"];
+                    "text/json": components["schemas"]["HeadJuryRequest"];
+                    "application/*+json": components["schemas"]["HeadJuryRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jury/jurors/{userId}/resend-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jury/jurors/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Uit de jury halen (rollen Jury en Hoofdjury eraf, geen categorieën meer). */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jury/parades/{paradeId}/categories/{categoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                    categoryId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JudgingWeightsRequest"];
+                    "text/json": components["schemas"]["JudgingWeightsRequest"];
+                    "application/*+json": components["schemas"]["JudgingWeightsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members": {
         parameters: {
             query?: never;
@@ -12020,6 +12398,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Mijn inschrijvingen; eerst worden inschrijvingen zonder account met hetzelfde e-mailadres gekoppeld (fase 21d). */
         get: {
             parameters: {
                 query?: never;
@@ -14996,6 +15375,9 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        HeadJuryRequest: {
+            headJury: boolean;
+        };
         HealthEntry: {
             name: string;
             status: string;
@@ -15058,9 +15440,63 @@ export interface components {
             name: string;
             relationship: components["schemas"]["GuardianRelationship"];
         };
+        InviteJurorRequest: {
+            name: string;
+            email: string;
+        };
         IssueTicketsResponse: {
             /** Format: int32 */
             issued: number;
+        };
+        JudgingCategoryResponse: {
+            /** Format: int32 */
+            categoryId: number;
+            name: string;
+            judged: boolean;
+            /** Format: int32 */
+            originality: number;
+            /** Format: int32 */
+            carnivalesque: number;
+            /** Format: int32 */
+            quality: number;
+            /** Format: int32 */
+            overall: number;
+            /** Format: int32 */
+            jurorCount: number;
+            /** Format: int32 */
+            entryCount: number;
+        };
+        JudgingWeightsRequest: {
+            judged: boolean;
+            /** Format: int32 */
+            originality: number;
+            /** Format: int32 */
+            carnivalesque: number;
+            /** Format: int32 */
+            quality: number;
+            /** Format: int32 */
+            overall: number;
+        };
+        JurorCategoriesRequest: {
+            categoryIds: number[];
+        };
+        JurorResponse: {
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            email: string;
+            invited: boolean;
+            headJury: boolean;
+            categoryIds: number[];
+        };
+        JuryOverviewResponse: {
+            /** Format: uuid */
+            paradeId: string;
+            paradeName: string;
+            /** Format: date */
+            paradeDate: string;
+            jurors: components["schemas"]["JurorResponse"][];
+            categories: components["schemas"]["JudgingCategoryResponse"][];
         };
         KaderCandidateResponse: {
             /** Format: uuid */

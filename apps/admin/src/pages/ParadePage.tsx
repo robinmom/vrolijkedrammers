@@ -49,7 +49,7 @@ function emptyParade(carnivalYearId: number): ParadeRequest {
 const toRequest = ({ fixedEntries, ...p }: AdminParade): ParadeRequest => ({ ...p });
 
 /**
- * Optocht (fase 11a, <c>parade.config</c>): per carnavalsjaar één optocht met datum, route, inschrijfperiode en
+ * Optocht (fase 11a, <c>parade.config</c>): optochten per carnavalsjaar (fase 22a: meer dan één mogelijk) met datum, route, inschrijfperiode en
  * uploadlimieten, plus de categorieën met hun deelnemersgrenzen (OQ-10: alleen de doelgroep telt; OQ-12: 10 = groot).
  */
 export function ParadePage() {
@@ -112,13 +112,14 @@ export function ParadePage() {
         <div className="page-title">
           <h1>Optocht</h1>
           <p className="page-subtitle">
-            Eén optocht per carnavalsjaar. Leden schrijven hun groep in via de app zolang de inschrijving open is; het opgavenummer
-            volgt de volgorde van binnenkomst.
+            Een optocht hoort bij een carnavalsjaar; meestal één per jaar. Leden schrijven hun groep in via de app zolang de
+            inschrijving open is; het opgavenummer volgt de volgorde van binnenkomst. Een nieuwe optocht neemt de jury-indeling
+            en weging over van de vorige.
           </p>
         </div>
-        {activeYear && !parades.data?.some((p) => p.carnivalYearId === activeYear.id) ? (
+        {activeYear ? (
           <button type="button" className="button" onClick={() => setEditing({ id: null, form: emptyParade(activeYear.id) })}>
-            Optocht {activeYear.name} toevoegen
+            Optocht toevoegen
           </button>
         ) : null}
       </div>
@@ -235,6 +236,17 @@ export function ParadePage() {
         {editing ? (
           <form onSubmit={submit}>
             <Field label="Naam" required maxLength={100} value={editing.form.name} onChange={(e) => set({ name: e.target.value })} />
+            <div className="field">
+              <label htmlFor="optocht-jaar">Carnavalsjaar</label>
+              <select id="optocht-jaar" value={editing.form.carnivalYearId} onChange={(e) => set({ carnivalYearId: Number(e.target.value) })}>
+                {(years.data ?? []).map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.name}
+                    {y.active ? ' (actief)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="form-grid">
               <Field label="Datum" type="date" required value={editing.form.paradeDate} onChange={(e) => set({ paradeDate: e.target.value })} />
               <Field

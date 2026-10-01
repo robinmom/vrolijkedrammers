@@ -297,7 +297,7 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Beheer_categorieen_en_maar_een_optocht_per_carnavalsjaar()
+    public async Task Beheer_categorieen_en_een_tweede_optocht_in_hetzelfde_carnavalsjaar()
     {
         var categories = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-categories");
         var small = categories.EnumerateArray().Single(c => c.GetProperty("code").GetString() == "ADULT_WALK_S");
@@ -339,7 +339,9 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
             maxDocumentSizeMb = 10,
             status = "Planned",
         });
-        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        // Fase 22a: meerdere optochten per carnavalsjaar; de eerste die nog niet is afgerond blijft de huidige.
+        Assert.Equal(HttpStatusCode.Created, duplicate.StatusCode);
+        Assert.Equal("Optocht Loil 2027", (await _api.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/parade/current")).GetProperty("name").GetString());
 
         var (_, lid) = await LidAsync("piet@example.com");
         Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/parades")).StatusCode);

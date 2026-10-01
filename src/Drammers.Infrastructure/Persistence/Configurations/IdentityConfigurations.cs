@@ -30,6 +30,9 @@ public static class DefaultRoles
     public const string Bestuur = "bestuur";
     public const string BeheerderIt = "beheerder-it";
     public const string Kassa = "kassa";
+    public const string Jury = "jury";
+    public const string Hoofdjury = "hoofdjury";
+    public const string Uitslagcommissie = "uitslagcommissie";
 
     private static readonly string[] MemberBasics =
         [P.MemberReadOwn, P.EventRead, P.NewsRead, P.PhotoRead, P.NotificationReadOwn, P.TicketReadOwn];
@@ -60,13 +63,21 @@ public static class DefaultRoles
              P.ParadeRead, P.ParadeManage, P.ParadeManageFinal, P.ParadeAssignStartNumber, P.ParadeImportArrivalTimes,
              P.ParadeExport, P.ParadeConfig, P.TicketScan, P.TicketScanDetails, P.TicketRead, P.TicketManage,
              P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge, P.SaleManage,
-             P.WebsiteManage]),
+             P.WebsiteManage, P.JuryManage, P.JuryAssign]),
         new(12, BeheerderIt, "Beheerder (IT)", "Technisch beheer, zonder inhoudelijke rechten op betalingen en goedkeuringen (systeemrol)",
             IsSystem: true, IsAssignableBySync: false,
             [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),
         // Kassa (fase 19): munten-QR's scannen met de scanner in de app en de bestelling uitgeven; alles komt in de Kassalog.
         new(13, Kassa, "Kassa", "Mag bij de kassa munten-QR's scannen en bestellingen uitgeven", false, false,
             [.. MemberBasics, P.SaleCollect]),
+        // Fase 22: juryleden zijn geen leden (eigen account, uitgenodigd door het bestuur); de hoofdjury jureert ook zelf
+        // (rol Jury erbij) en wijst juryleden aan categorieën toe. Alleen de uitslagcommissie ziet de uitslag.
+        new(14, Jury, "Jury", "Jurylid van de optocht: beoordeelt in de app de toegewezen categorieën", false, false,
+            [P.ParadeJudge]),
+        new(15, Hoofdjury, "Hoofdjury", "Wijst juryleden aan categorieën toe en keurt beoordelingen buiten categorie goed (beheerportal)", false, false,
+            [P.JuryAssign]),
+        new(16, Uitslagcommissie, "Uitslagcommissie", "Ziet, exporteert en publiceert de uitslag van de optocht", false, false,
+            [P.ParadeResult]),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

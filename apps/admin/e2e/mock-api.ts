@@ -856,6 +856,106 @@ export class MockApi {
     await page.route('**/api/v1/**', (route) => this.handle(route));
   }
 
+  // Fase 22a: jury van de huidige optocht.
+  jury = {
+    paradeId: 'p-1',
+    paradeName: 'Optocht Loil 2027',
+    paradeDate: '2027-02-07',
+    jurors: [
+      {
+        userId: 'j-1',
+        name: 'Anke Jansen',
+        email: 'anke@example.com',
+        invited: false,
+        headJury: true,
+        categoryIds: [1],
+      },
+      {
+        userId: 'j-2',
+        name: 'Bert de Vries',
+        email: 'bert@example.com',
+        invited: false,
+        headJury: false,
+        categoryIds: [1, 3],
+      },
+    ],
+    categories: [
+      {
+        categoryId: 1,
+        name: 'Getrokken wagens volwassenen',
+        judged: true,
+        originality: 1,
+        carnivalesque: 1,
+        quality: 2,
+        overall: 1,
+        jurorCount: 2,
+        entryCount: 13,
+      },
+      {
+        categoryId: 3,
+        name: 'Loopgroepen groot volwassenen',
+        judged: true,
+        originality: 1,
+        carnivalesque: 1,
+        quality: 1,
+        overall: 2,
+        jurorCount: 1,
+        entryCount: 6,
+      },
+    ],
+  };
+
+  private handleJury(
+    path: string,
+    method: string,
+    body: Record<string, unknown>,
+    json: (data: unknown, status?: number) => Promise<void>,
+    noContent: () => Promise<void>,
+  ) {
+    let m: RegExpMatchArray | null;
+    const recount = () =>
+      this.jury.categories.forEach(
+        (c) => (c.jurorCount = this.jury.jurors.filter((j) => j.categoryIds.includes(c.categoryId)).length),
+      );
+    if (path === '/admin/jury' && method === 'GET') return json(this.jury);
+    if (path === '/admin/jury/jurors' && method === 'POST') {
+      const juror = {
+        userId: `j-${this.jury.jurors.length + 1}`,
+        name: String(body.name),
+        email: String(body.email),
+        invited: true,
+        headJury: false,
+        categoryIds: [] as number[],
+      };
+      this.jury.jurors.push(juror);
+      this.record('jury.invited', 'User', juror.userId, body);
+      return json({ id: juror.userId }, 201);
+    }
+    if ((m = path.match(/^\/admin\/jury\/parades\/[^/]+\/jurors\/([^/]+)\/categories$/))) {
+      this.jury.jurors.find((j) => j.userId === m![1])!.categoryIds = body.categoryIds as number[];
+      recount();
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/jury\/jurors\/([^/]+)\/head-jury$/))) {
+      this.jury.jurors.find((j) => j.userId === m![1])!.headJury = Boolean(body.headJury);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/jury\/jurors\/([^/]+)\/resend-invite$/))) return noContent();
+    if ((m = path.match(/^\/admin\/jury\/jurors\/([^/]+)$/)) && method === 'DELETE') {
+      this.jury.jurors = this.jury.jurors.filter((j) => j.userId !== m![1]);
+      recount();
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/jury\/parades\/[^/]+\/categories\/(\d+)$/))) {
+      Object.assign(
+        this.jury.categories.find((c) => c.categoryId === Number(m![1]))!,
+        body,
+      );
+      return noContent();
+    }
+    return json({ title: 'Niet gevonden' }, 404);
+  }
+
   websiteImport: {
     counts: { kind: string; pending: number; done: number; skipped: number; failed: number }[];
     failures: { id: number; kind: string; sourceUrl: string; title: string | null; error: string | null }[];
@@ -1839,6 +1939,9 @@ export class MockApi {
     }
     if ((m = path.match(/^\/admin\/news\/([^/]+)$/)) && method === 'GET') {
       return json(this.news.find((n) => n.id === m![1]));
+    }
+    if (path.startsWith('/admin/jury')) {
+      return this.handleJury(path, method, body, json, noContent);
     }
     if (path.startsWith('/admin/website/')) {
       return this.handleWebsite(path, method, body, url, json, noContent);

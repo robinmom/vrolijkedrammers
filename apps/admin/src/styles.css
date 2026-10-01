@@ -1774,3 +1774,24 @@ fieldset {
     grid-row: 2;
   }
 }
+
+/* Fase 22a: jury */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.table th.num,
+.table td.num {
+  text-align: right;
+}
+
+.actions.spread {
+  justify-content: space-between;
+}
+
+.button.ghost.danger {
+  background: transparent;
+  color: var(--dvd-action-danger);
+}

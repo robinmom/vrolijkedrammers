@@ -485,7 +485,7 @@ test('fase 11a: optocht instellen en een categorie aanpassen', async ({ page }) 
   await open(page, api, 'optocht');
   await expect(page.getByRole('heading', { name: 'Categorieën' })).toBeVisible();
   await expectNoSeriousA11yIssues(page);
-  await page.getByRole('button', { name: /Optocht .* toevoegen/ }).click();
+  await page.getByRole('button', { name: 'Optocht toevoegen' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Naam').fill('Optocht Loil 2027');
   await dialog.getByLabel('Datum').fill('2027-02-07');

@@ -128,6 +128,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Parade.Categories.ParadeCategory> ParadeCategories => Set<Modules.Parade.Categories.ParadeCategory>();
 
+    public DbSet<Modules.Parade.Judging.ParadeJudgingCategory> ParadeJudgingCategories => Set<Modules.Parade.Judging.ParadeJudgingCategory>();
+
+    public DbSet<Modules.Parade.Judging.ParadeJurorAssignment> ParadeJurorAssignments => Set<Modules.Parade.Judging.ParadeJurorAssignment>();
+
     public DbSet<Modules.Parade.Registrations.ParadeRegistration> ParadeRegistrations => Set<Modules.Parade.Registrations.ParadeRegistration>();
 
     public DbSet<Modules.Parade.Registrations.ParadeRegistrationManager> ParadeRegistrationManagers => Set<Modules.Parade.Registrations.ParadeRegistrationManager>();

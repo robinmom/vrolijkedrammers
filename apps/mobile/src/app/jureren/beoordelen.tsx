@@ -31,6 +31,8 @@ export default function BeoordelenScreen() {
   const [pass, setPass] = useState(Number(params.passage) || 1);
   const [chosen, setChosen] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Tijdens het slepen van een slider niet naar de volgende wagen swipen.
+  const [sliding, setSliding] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const list = useRef<FlatList<Page>>(null);
   const s = session.data;
@@ -163,6 +165,7 @@ export default function BeoordelenScreen() {
         data={pages}
         horizontal
         pagingEnabled
+        scrollEnabled={!sliding}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(p) => (p.kind === 'entry' ? p.entry.registrationId : 'einde')}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
@@ -237,6 +240,8 @@ export default function BeoordelenScreen() {
                     label={c.label}
                     value={valueOf(judging.scores, item.entry.registrationId, pass, c.key)}
                     onChange={(v) => judging.setScore(item.entry.registrationId, pass, c.key, v)}
+                    onSlidingStart={() => setSliding(true)}
+                    onSlidingEnd={() => setSliding(false)}
                   />
                 ))}
               </Card>

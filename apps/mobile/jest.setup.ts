@@ -3,6 +3,14 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 jest.mock('@react-native-community/netinfo', () => require('@react-native-community/netinfo/jest/netinfo-mock.js'));
+// Native slider (jureren): in tests een gewone View; de toegankelijke bediening zit in ScoreSlider zelf.
+jest.mock('@react-native-community/slider', () => {
+  const { View } = require('react-native');
+  function NativeSlider(props: Record<string, unknown>) {
+    return require('react').createElement(View, { testID: 'native-slider', ...props });
+  }
+  return { __esModule: true, default: NativeSlider };
+});
 jest.mock('expo-calendar/legacy', () => ({ createEventInCalendarAsync: jest.fn(async () => ({ action: 'saved' })) }));
 
 // De API-client leest `fetch` bij het aanmaken; tests geven per geval antwoorden via `mockApi` (src/test/render.tsx).

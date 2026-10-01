@@ -1079,7 +1079,8 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
 - App: Optocht → **Jureren** (alleen met `parade.judge`).
   - J1: de optocht, jouw categorieën en de voortgang per voorbijtrekken, met "Verder jureren (nr. X)".
   - J2–J7: van links naar rechts swipen door de inzendingen in startvolgorde. Per inzending: startnummer, groep, categorie en motto; per voorbijtrekken (tabbladen 1, 2, 3) 4 sliders van 0 tot 100, met een samenvatting van de vorige passage.
-  - De slider is eigen code met PanResponder: geen nieuwe native module, dus geen nieuwe app-build nodig. Met VoiceOver/TalkBack verander je hem met vegen, 5 per keer.
+  - De slider is de native slider van iOS en Android (`@react-native-community/slider`, vanaf 2026-10-02, op verzoek: de eigen PanResponder-slider botste met het swipen). Tijdens het slepen staat het swipen naar de volgende wagen uit. Met VoiceOver/TalkBack verander je hem met vegen, 5 per keer.
+  - Dit is een native module, dus een nieuwe app-build is nodig. De app heeft geen OTA-updates (`expo-updates` is niet ingericht), dus elke app-wijziging komt via een nieuwe build.
 - **Hele optocht:** pas na bevestiging. Inzendingen buiten de eigen categorieën staan gemarkeerd met "telt pas mee na goedkeuring".
 - **Offline:** scores staan direct op de telefoon (AsyncStorage) en worden na 1,5 s in porties verstuurd, of zodra er weer verbinding is.
   - Server en telefoon: per score wint de nieuwste invulling (tijd op het toestel, hooguit 5 minuten in de toekomst).

@@ -393,3 +393,6 @@ ul.grid-3, ul.grid-4, ul.grid-5 { list-style: none; padding: 0; margin: 0; }
   .feature-image { min-height: 0; aspect-ratio: 16 / 9; }
   .hero-inner { padding: 28px 0 26px; }
 }
+/* Doe mee: de knop "Start" in alle tegels op dezelfde hoogte (onderaan). */
+.join-tile { display: flex; flex-direction: column; }
+.join-tile .link-arrow { margin-top: auto; padding-top: 8px; }

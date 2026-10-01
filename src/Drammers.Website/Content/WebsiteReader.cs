@@ -46,7 +46,7 @@ public sealed record MenuPage(string Slug, string Title);
 /// Leest de openbare inhoud voor de website (fase 21c): alleen wat voor een gast zichtbaar is (openbaar, gepubliceerd,
 /// niet verlopen). Afbeeldingen gaan via het eigen media-adres (<see cref="MediaUrls"/>), niet via SAS-links.
 /// </summary>
-public sealed class WebsiteReader(DrammersDbContext db, IClock clock)
+public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSeasons seasons)
 {
     /// <summary>Vaste pagina's die in het menu Vereniging staan (als ze online zijn), in deze volgorde.</summary>
     public static readonly string[] AssociationPages = ["over-ons", "dansgarde", "historie", "loillands"];
@@ -98,13 +98,22 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock)
     private IQueryable<Modules.Content.News.NewsItem> WebsiteNews() =>
         db.News.AsNoTracking().VisibleTo(ContentViewer.Guest, Now).Where(n => n.ShowOnWebsite && n.Slug != null);
 
-    public async Task<(IReadOnlyList<NewsCard> Items, int Total)> NewsAsync(int page, int pageSize, CancellationToken cancellationToken)
+    /// <summary>De carnavalsjaren voor het archief (fase 21g).</summary>
+    public Task<SeasonCalendar> SeasonsAsync(CancellationToken cancellationToken) => seasons.LoadAsync(cancellationToken);
+
+    /// <summary>Nieuws van één seizoen (het actieve jaar of een jaar uit het archief), nieuwste eerst.</summary>
+    public async Task<(IReadOnlyList<NewsCard> Items, int Total)> NewsAsync(CarnivalSeason season, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var query = WebsiteNews();
+        var query = WebsiteNews().InSeason(season);
         var total = await query.CountAsync(cancellationToken);
         var rows = await query.OrderByDescending(n => n.PublishAt ?? n.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         return ([.. rows.Select(ToCard)], total);
     }
+
+    /// <summary>De oudere jaren waarin websitenieuws staat, nieuwste eerst.</summary>
+    public async Task<IReadOnlyList<CarnivalSeason>> NewsArchiveAsync(SeasonCalendar calendar, CancellationToken cancellationToken) =>
+        calendar.Archive(await WebsiteNews().Where(n => (n.PublishAt ?? n.CreatedAt) < calendar.Current.StartUtc)
+            .Select(n => n.PublishAt ?? n.CreatedAt).ToListAsync(cancellationToken));
 
     public async Task<NewsArticle?> NewsArticleAsync(string slug, CancellationToken cancellationToken)
     {
@@ -152,10 +161,19 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock)
 
     private IQueryable<Photo> VisiblePhotos() => db.Photos.AsNoTracking().Where(p => p.ProcessingStatus == PhotoProcessingStatus.Ready && !p.Hidden);
 
-    public async Task<IReadOnlyList<AlbumCard>> AlbumsAsync(PhotoCategory? category, CancellationToken cancellationToken)
+    private IQueryable<PhotoAlbum> WebsiteAlbums(PhotoCategory? category) =>
+        db.PhotoAlbums.AsNoTracking().VisibleTo(ContentViewer.Guest, Now).Where(a => category == null || a.Category == category);
+
+    /// <summary>De oudere jaren waarin albums met foto's staan, nieuwste eerst.</summary>
+    public async Task<IReadOnlyList<CarnivalSeason>> AlbumArchiveAsync(SeasonCalendar calendar, PhotoCategory? category, CancellationToken cancellationToken) =>
+        calendar.Archive((await WebsiteAlbums(category).Where(a => VisiblePhotos().Any(p => p.AlbumId == a.Id))
+                .Select(a => new { a.AlbumDate, Moment = a.PublishAt ?? a.CreatedAt }).ToListAsync(cancellationToken))
+            .Select(a => SeasonFilters.AlbumMoment(a.AlbumDate, a.Moment)));
+
+    /// <summary>Albums van één seizoen, nieuwste eerst.</summary>
+    public async Task<IReadOnlyList<AlbumCard>> AlbumsAsync(PhotoCategory? category, CarnivalSeason season, CancellationToken cancellationToken)
     {
-        var albums = await db.PhotoAlbums.AsNoTracking().VisibleTo(ContentViewer.Guest, Now)
-            .Where(a => category == null || a.Category == category)
+        var albums = await WebsiteAlbums(category).InSeason(season)
             .OrderByDescending(a => a.AlbumDate).ThenByDescending(a => a.CreatedAt)
             .Select(a => new
             {

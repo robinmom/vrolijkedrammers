@@ -187,6 +187,7 @@ public static class DependencyInjection
         services.AddScoped<TestAccessAdministration>();
         services.AddScoped<ConfigurationAdministration>();
         services.AddScoped<ContentAdministration>();
+        services.AddScoped<CarnivalSeasons>();
         services.AddScoped<WebsiteAdministration>();
         // Overzetten van de oude WordPress-site (fase 21e): in porties via de outbox.
         services.AddOptions<Content.Import.WordPressImportOptions>();

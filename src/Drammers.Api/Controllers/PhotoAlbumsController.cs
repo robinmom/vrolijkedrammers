@@ -16,16 +16,18 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/photo-albums")]
-public sealed class PhotoAlbumsController(DrammersDbContext db, ContentViewerResolver viewers, ContentUrls urls, IClock clock) : ControllerBase
+public sealed class PhotoAlbumsController(DrammersDbContext db, ContentViewerResolver viewers, ContentUrls urls, IClock clock, CarnivalSeasons seasons) : ControllerBase
 {
     [HttpGet]
     [PublicCache]
     [ProducesResponseType<PagedResult<PhotoAlbumResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<PagedResult<PhotoAlbumResponse>> Search(
-        [FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] PhotoCategory? category, CancellationToken cancellationToken)
+        [FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] PhotoCategory? category, [FromQuery] string? season, CancellationToken cancellationToken)
     {
         var (p, size) = PagedResult<PhotoAlbumResponse>.Normalize(page, pageSize);
-        var query = db.PhotoAlbums.AsNoTracking().VisibleTo(await viewers.ResolveAsync(), clock.UtcNow.UtcDateTime);
+        var shown = await SeasonEndpoints.ResolveAsync(seasons, season, cancellationToken);
+        var query = db.PhotoAlbums.AsNoTracking().VisibleTo(await viewers.ResolveAsync(), clock.UtcNow.UtcDateTime).InSeason(shown);
         if (category is { } c)
         {
             query = query.Where(a => a.Category == c);
@@ -40,6 +42,19 @@ public sealed class PhotoAlbumsController(DrammersDbContext db, ContentViewerRes
         }
 
         return new PagedResult<PhotoAlbumResponse>(items, p, size, total);
+    }
+
+    /// <summary>De oudere carnavalsjaren met albums, nieuwste eerst (fase 21g); zonder <c>season</c> toont de lijst het actieve jaar.</summary>
+    [HttpGet("seasons")]
+    [PublicCache]
+    [ProducesResponseType<SeasonsResponse>(StatusCodes.Status200OK)]
+    public async Task<SeasonsResponse> Seasons([FromQuery] PhotoCategory? category, CancellationToken cancellationToken)
+    {
+        var calendar = await seasons.LoadAsync(cancellationToken);
+        var albums = await db.PhotoAlbums.AsNoTracking().VisibleTo(await viewers.ResolveAsync(), clock.UtcNow.UtcDateTime)
+            .Where(a => category == null || a.Category == category)
+            .Select(a => new { a.AlbumDate, Moment = a.PublishAt ?? a.CreatedAt }).ToListAsync(cancellationToken);
+        return SeasonEndpoints.ToResponse(calendar, calendar.Archive(albums.Select(a => SeasonFilters.AlbumMoment(a.AlbumDate, a.Moment))));
     }
 
     [HttpGet("{id:guid}")]

@@ -1,13 +1,17 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { queryKeys, useNews } from '../../api/queries';
+import { StyleSheet, View } from 'react-native';
+import { queryKeys, useNews, useNewsSeasons } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { NewsFeed } from '../../features/NewsFeed';
-import { EmptyState, LargeTitleHeader, QueryState, Screen, SearchField } from '../../ui';
+import { SeasonArchive } from '../../features/SeasonArchive';
+import { EmptyState, LargeTitleHeader, QueryState, Screen, SearchField, SectionHeader } from '../../ui';
 
-/** 03 Nieuws (Figma 4:474). */
+/** 03 Nieuws (Figma 4:474): het actieve carnavalsjaar; oudere jaren via de knoppen eronder (fase 21g). */
 export default function NieuwsScreen() {
-  const news = useNews();
+  const [season, setSeason] = useState<string | null>(null);
+  const news = useNews(season);
+  const seasons = useNewsSeasons();
   const refresh = useRefresh([queryKeys.news]);
   const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState('');
@@ -31,13 +35,26 @@ export default function NieuwsScreen() {
         ]}
       />
       {searching ? <SearchField value={search} onChangeText={setSearch} placeholder="Zoek in het nieuws" /> : null}
+      {season ? (
+        <View style={styles.padded}>
+          <SectionHeader title={`Nieuws ${season}`} />
+        </View>
+      ) : null}
       {!news.data ? (
         <QueryState query={news} />
       ) : items.length === 0 ? (
-        <EmptyState icon="nieuws" title={news.data.length === 0 ? 'Nog geen nieuws' : 'Geen berichten gevonden'} />
+        <EmptyState
+          icon="nieuws"
+          title={news.data.length > 0 ? 'Geen berichten gevonden' : season ? 'Geen nieuws in dit jaar' : 'Nog geen nieuws dit carnavalsjaar'}
+        />
       ) : (
         <NewsFeed items={items} />
       )}
+      <SeasonArchive seasons={seasons.data} selected={season} onChange={setSeason} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  padded: { paddingHorizontal: 20, paddingBottom: 8 },
+});

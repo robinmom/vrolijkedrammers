@@ -67,8 +67,9 @@ test('carnavalsjaar toevoegen en activeren; precies één actief', async ({ page
   await open(page, api, 'carnavalsjaren');
   await page.getByRole('button', { name: 'Carnavalsjaar toevoegen' }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Naam').fill('2027/2028');
-  await dialog.getByLabel('Seizoen vanaf').fill('2027-11-11');
+  // Fase 21g: het nieuwe jaar sluit aan op het vorige (dat eindigt op 10-02-2027).
+  await expect(dialog.getByLabel('Naam')).toHaveValue('2027/2028');
+  await expect(dialog.getByLabel('Seizoen vanaf')).toHaveValue('2027-02-11');
   await dialog.getByLabel('Seizoen tot').fill('2028-03-01');
   await dialog.getByLabel('Carnaval vanaf').fill('2028-02-26');
   await dialog.getByLabel('Carnaval tot').fill('2028-02-29');
@@ -775,4 +776,17 @@ test('fase 13: vanuit ledentickets naar de pagina van het lid', async ({ page })
   await open(page, api, 'tickets');
   await page.getByRole('link', { name: 'Piet Lid' }).click();
   await expect(page).toHaveURL(/\/beheer\/leden\/m-1$/);
+});
+
+test('fase 21g: melding als nieuws gepland wordt na het laatste carnavalsjaar', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'nieuws/nieuw');
+  await page.getByLabel('Status').selectOption('Scheduled');
+  await page.getByLabel('Publiceren op').fill('2027-01-20T10:00');
+  await expect(page.getByText(/nog geen carnavalsjaar/)).toBeHidden();
+  await page.getByLabel('Publiceren op').fill('2027-06-01T10:00');
+  await expect(
+    page.getByRole('status').filter({ hasText: /Er is nog geen carnavalsjaar voor 1 jun.* 2027/ }),
+  ).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
 });

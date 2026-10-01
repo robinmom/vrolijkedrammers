@@ -11729,6 +11729,45 @@
         }
       }
     },
+    "/api/v1/carnival-years": {
+      "get": {
+        "tags": [
+          "CarnivalYears"
+        ],
+        "summary": "Alle carnavalsjaren, oudste eerst; o.a. voor de melding in de portal als iets ná het laatste jaar gepland wordt.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarnivalYearResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarnivalYearResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarnivalYearResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/carnival-years/current": {
       "get": {
         "tags": [
@@ -13882,6 +13921,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13901,6 +13947,56 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfNewsSummaryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/news/seasons": {
+      "get": {
+        "tags": [
+          "News"
+        ],
+        "summary": "De oudere carnavalsjaren met nieuws, nieuwste eerst (fase 21g); zonder `season` toont de lijst het actieve jaar.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
                 }
               }
             }
@@ -15381,6 +15477,13 @@
             "schema": {
               "$ref": "#/components/schemas/PhotoCategory"
             }
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -15400,6 +15503,65 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPhotoAlbumResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/photo-albums/seasons": {
+      "get": {
+        "tags": [
+          "PhotoAlbums"
+        ],
+        "summary": "De oudere carnavalsjaren met albums, nieuwste eerst (fase 21g); zonder `season` toont de lijst het actieve jaar.",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PhotoCategory"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
                 }
               }
             }
@@ -27004,6 +27166,50 @@
             "format": "date-time"
           }
         }
+      },
+      "SeasonResponse": {
+        "required": [
+          "slug",
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "Een carnavalsjaar in het archief, bijvoorbeeld `2025-2026` (fase 21g)."
+      },
+      "SeasonsResponse": {
+        "required": [
+          "current",
+          "archive"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "$ref": "#/components/schemas/SeasonResponse"
+          },
+          "archive": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeasonResponse"
+            }
+          }
+        },
+        "description": "Het actieve carnavalsjaar en de oudere jaren met inhoud (nieuwste eerst)."
       },
       "ServerCode": {
         "required": [

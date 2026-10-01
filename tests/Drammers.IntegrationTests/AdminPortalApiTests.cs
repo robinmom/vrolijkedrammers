@@ -32,7 +32,7 @@ public class AdminPortalApiTests(SqlServerFixture sql) : IAsyncLifetime
         var created = await _bestuur.PostAsJsonAsync("/api/v1/admin/carnival-years", new
         {
             name = "2027/2028",
-            startDate = "2027-11-11",
+            startDate = "2027-02-11",
             endDate = "2028-03-01",
             carnivalStartDate = "2028-02-26",
             carnivalEndDate = "2028-02-29",
@@ -47,6 +47,61 @@ public class AdminPortalApiTests(SqlServerFixture sql) : IAsyncLifetime
         var years = await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/carnival-years");
         Assert.Single(years!, y => y.GetProperty("active").GetBoolean());
         Assert.Equal("2027/2028", (await _api.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/carnival-years/current")).GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task Carnavalsjaren_sluiten_altijd_op_elkaar_aan()
+    {
+        // Seed: 2026/2027 loopt t/m 10-02-2027. Een gat of overlap wordt geweigerd.
+        foreach (var start in new[] { "2027-11-11", "2027-02-01" })
+        {
+            var refused = await _bestuur.PostAsJsonAsync("/api/v1/admin/carnival-years", new
+            {
+                name = "2027/2028",
+                startDate = start,
+                endDate = "2028-03-01",
+                carnivalStartDate = "2028-02-26",
+                carnivalEndDate = "2028-02-29",
+            });
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+            Assert.Contains("11 februari 2027", await refused.Content.ReadAsStringAsync());
+        }
+
+        var earlier = await _bestuur.PostAsJsonAsync("/api/v1/admin/carnival-years", new
+        {
+            name = "2025/2026",
+            startDate = "2025-03-06",
+            endDate = "2026-11-10",
+            carnivalStartDate = "2026-02-14",
+            carnivalEndDate = "2026-02-17",
+        });
+        Assert.Equal(HttpStatusCode.Created, earlier.StatusCode);
+
+        // Het einde van 2025/2026 vervroegen: 2026/2027 begint dan automatisch een dag later.
+        var id = (await earlier.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync($"/api/v1/admin/carnival-years/{id}", new
+        {
+            name = "2025/2026",
+            startDate = "2025-03-06",
+            endDate = "2026-02-18",
+            carnivalStartDate = "2026-02-14",
+            carnivalEndDate = "2026-02-17",
+        })).StatusCode);
+        var years = await _api.CreateClient().GetFromJsonAsync<List<JsonElement>>("/api/v1/carnival-years");
+        Assert.Equal(
+            [("2025/2026", "2025-03-06", "2026-02-18"), ("2026/2027", "2026-02-19", "2027-02-10")],
+            years!.Select(y => (y.GetProperty("name").GetString(), y.GetProperty("startDate").GetString(), y.GetProperty("endDate").GetString())));
+
+        // Zo ver vervroegen dat de carnavalsdagen van het vorige jaar erbuiten vallen, kan niet.
+        var tooEarly = await _bestuur.PutAsJsonAsync("/api/v1/admin/carnival-years/1", new
+        {
+            name = "2026/2027",
+            startDate = "2026-02-01",
+            endDate = "2027-02-10",
+            carnivalStartDate = "2027-02-06",
+            carnivalEndDate = "2027-02-09",
+        });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, tooEarly.StatusCode);
     }
 
     [Fact]

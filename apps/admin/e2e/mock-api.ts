@@ -1940,6 +1940,10 @@ export class MockApi {
         lastSyncAt: '2026-09-26T01:00:00Z',
       });
     }
+    if (path === '/carnival-years') {
+      // De publieke lijst heeft geen actief-vlag; die extra eigenschap negeert de portal.
+      return json([...this.years].sort((a, b) => a.startDate.localeCompare(b.startDate)));
+    }
     if (path === '/carnival-years/current') {
       return json({
         id: 1,

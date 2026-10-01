@@ -1,0 +1,17 @@
+@model SeasonNav
+@if (Model.Archive.Count > 0 || Model.IsArchive)
+{
+    <nav class="season-nav" aria-labelledby="seizoenen-titel">
+        <h2 id="seizoenen-titel" class="h3">@(Model.IsArchive ? "Andere jaren" : "Eerdere jaren")</h2>
+        <ul class="chips" role="list">
+            @if (Model.IsArchive)
+            {
+                <li><a class="chip" href="@Model.Href(Model.Current)">Actueel (@Model.Current.Slug)</a></li>
+            }
+            @foreach (var season in Model.Archive)
+            {
+                <li><a class="chip" href="@Model.Href(season)" aria-current="@(season.Slug == Model.Shown.Slug ? "page" : "false")">@season.Slug</a></li>
+            }
+        </ul>
+    </nav>
+}

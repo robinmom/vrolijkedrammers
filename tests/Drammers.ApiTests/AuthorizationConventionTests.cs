@@ -17,6 +17,7 @@ public class AuthorizationConventionTests
     [
         $"{nameof(AppConfigController)}.{nameof(AppConfigController.Get)}",
         $"{nameof(CarnivalYearsController)}.{nameof(CarnivalYearsController.GetCurrent)}",
+        $"{nameof(CarnivalYearsController)}.{nameof(CarnivalYearsController.List)}",
         $"{nameof(PortalConfigController)}.{nameof(PortalConfigController.Get)}",
         $"{nameof(EventsController)}.{nameof(EventsController.GetCategories)}",
         $"{nameof(EventsController)}.{nameof(EventsController.Search)}",
@@ -24,9 +25,11 @@ public class AuthorizationConventionTests
         $"{nameof(EventsController)}.{nameof(EventsController.Ical)}",
         $"{nameof(NewsController)}.{nameof(NewsController.Search)}",
         $"{nameof(NewsController)}.{nameof(NewsController.Get)}",
+        $"{nameof(NewsController)}.{nameof(NewsController.Seasons)}",
         $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Search)}",
         $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Get)}",
         $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Photos)}",
+        $"{nameof(PhotoAlbumsController)}.{nameof(PhotoAlbumsController.Seasons)}",
         // Fase 9: accountverzoek (generiek antwoord, rate limit) en aanmeldinstellingen van de app (geen geheimen).
         $"{nameof(AccountRequestsController)}.{nameof(AccountRequestsController.Submit)}",
         $"{nameof(AppAuthController)}.{nameof(AppAuthController.GetConfig)}",

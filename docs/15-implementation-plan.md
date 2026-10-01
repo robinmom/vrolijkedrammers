@@ -1006,6 +1006,21 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - pdf's (Drammerskrant) op de oude uploads-map worden niet overgezet en werken niet meer na de domeinwissel;
   - oude berichten staan ook in het nieuwsoverzicht van de app.
 
+**21g — nieuws en foto's per carnavalsjaar (gebouwd).**
+- Carnavalsjaren sluiten altijd op elkaar aan:
+  - een nieuw jaar begint de dag na het nieuwste jaar; de portal vult de naam en de begindatum al in;
+  - wijzig je het einde van een jaar, dan schuift het begin van het volgende jaar mee (en andersom), met audit;
+  - een gat of overlap geeft een melding (`CARNIVAL_YEAR_NOT_CONTIGUOUS`);
+  - de migratie `CarnivalYearsContiguous` laat bestaande jaren aansluiten.
+- Website en app tonen nieuws en foto's van het actieve carnavalsjaar. Oudere jaren staan onder knoppen met het jaartal (`2025-2026`):
+  - website: `/nieuws?seizoen=2025-2026`, `/fotos?seizoen=…`;
+  - API: `GET /news?season=…` en `/photo-albums?season=…`, met de jaren via `/news/seasons` en `/photo-albums/seasons`.
+- Een bericht hoort bij het jaar waarin zijn publicatiedatum valt; een album bij zijn albumdatum.
+  - Datums van vóór het oudste jaar in de backend (overgezette berichten) krijgen een afgeleid jaar: van de dag na Aswoensdag tot en met de volgende Aswoensdag.
+  - Wat ná het actieve jaar valt, blijft bij het actieve jaar tot het volgende jaar is aangemaakt en actief gezet.
+  - De portal geeft dan een melding bij het plannen van nieuws of een album.
+- De agenda loopt gewoon door en heeft geen archief.
+
 **21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 
 ---

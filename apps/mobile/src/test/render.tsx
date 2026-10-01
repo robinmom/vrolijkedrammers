@@ -13,11 +13,14 @@ type Body = unknown | { status: number; body?: unknown } | ((method: string) => 
 export function mockApi(routes: Record<string, Body>): string[] {
   const calls: string[] = [];
   (globalThis.fetch as jest.Mock).mockImplementation(async (input: Request | string, init?: RequestInit) => {
-    const path = new URL(typeof input === 'string' ? input : input.url).pathname;
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    const path = url.pathname;
     calls.push(path);
     const method = typeof input === 'string' ? (init?.method ?? 'GET') : input.method;
+    // Een pad mét querystring gaat voor (bijv. nieuws van een ouder carnavalsjaar), anders het pad zelf.
+    const key = url.search && routes[path + url.search] !== undefined ? path + url.search : path;
     // Een functie kiest het antwoord per HTTP-methode (bijv. GET-lijst en POST-nieuw op hetzelfde pad).
-    const route = typeof routes[path] === 'function' ? (routes[path] as (method: string) => unknown)(method) : routes[path];
+    const route = typeof routes[key] === 'function' ? (routes[key] as (method: string) => unknown)(method) : routes[key];
     const { status, body } =
       route && typeof route === 'object' && typeof (route as { status?: unknown }).status === 'number' ? (route as { status: number; body?: unknown }) : { status: route === undefined ? 404 : 200, body: route };
     return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });

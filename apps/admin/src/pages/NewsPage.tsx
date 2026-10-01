@@ -141,7 +141,7 @@ export function NewsEditorPage() {
           <Field label="Categorie" value={form.category ?? ''} onChange={(e) => set({ category: e.target.value || null })} />
           <Field label="Zichtbaar tot" type="datetime-local" value={toLocalInput(form.expireAt)} onChange={(e) => set({ expireAt: fromLocalInput(e.target.value) })} />
         </div>
-        <PublicationFields value={form.publication} onChange={(publication) => set({ publication })} />
+        <PublicationFields value={form.publication} onChange={(publication) => set({ publication })} seasonWarning />
         <fieldset>
           <legend>Afbeelding</legend>
           <ImagePicker

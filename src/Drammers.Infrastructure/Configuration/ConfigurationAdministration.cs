@@ -100,6 +100,7 @@ public sealed class ConfigurationAdministration(DrammersDbContext db, IAuditLogg
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await EnsureConnectsAsync(input, cancellationToken);
         var year = new CarnivalYear
         {
             Name = input.Name,
@@ -126,11 +127,18 @@ public sealed class ConfigurationAdministration(DrammersDbContext db, IAuditLogg
             throw new DomainException(ErrorCodes.CarnivalYearNameTaken, $"Carnavalsjaar '{input.Name}' bestaat al.", DomainErrorKind.Conflict);
         }
 
-        var before = JsonSerializer.Serialize(new CarnivalYearInput(year.Name, year.StartDate, year.EndDate, year.CarnivalStartDate, year.CarnivalEndDate), Json);
+        var before = JsonSerializer.Serialize(InputOf(year), Json);
         (year.Name, year.StartDate, year.EndDate, year.CarnivalStartDate, year.CarnivalEndDate) =
             (input.Name, input.StartDate, input.EndDate, input.CarnivalStartDate, input.CarnivalEndDate);
+        var moved = await MoveNeighboursAsync(year, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("carnival-year.updated", "CarnivalYear", id.ToString(), before, JsonSerializer.Serialize(input, Json)), cancellationToken);
+        foreach (var (neighbour, neighbourBefore) in moved)
+        {
+            await audit.WriteAsync(new AuditEntry("carnival-year.updated", "CarnivalYear", neighbour.Id.ToString(), neighbourBefore,
+                JsonSerializer.Serialize(InputOf(neighbour), Json)), cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -147,6 +155,71 @@ public sealed class ConfigurationAdministration(DrammersDbContext db, IAuditLogg
             JsonSerializer.Serialize(new { previouslyActive = previous }, Json), null), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
+
+    private static CarnivalYearInput InputOf(CarnivalYear y) => new(y.Name, y.StartDate, y.EndDate, y.CarnivalStartDate, y.CarnivalEndDate);
+
+    /// <summary>
+    /// Carnavalsjaren sluiten altijd op elkaar aan (fase 21g): een nieuw jaar begint de dag na het nieuwste jaar (of eindigt
+    /// de dag vóór het oudste). Zo valt elk bericht en elke foto in precies één jaar.
+    /// </summary>
+    private async Task EnsureConnectsAsync(CarnivalYearInput input, CancellationToken cancellationToken)
+    {
+        var years = await db.CarnivalYears.AsNoTracking().OrderBy(y => y.StartDate).Select(y => new { y.Name, y.StartDate, y.EndDate }).ToListAsync(cancellationToken);
+        if (years.Count == 0)
+        {
+            return;
+        }
+
+        var (oldest, newest) = (years[0], years[^1]);
+        if (input.StartDate > newest.EndDate && input.StartDate != newest.EndDate.AddDays(1))
+        {
+            throw NotContiguous($"Het nieuwe jaar moet aansluiten op {newest.Name}: laat het seizoen beginnen op {Nl(newest.EndDate.AddDays(1))}.");
+        }
+
+        if (input.EndDate < oldest.StartDate && input.EndDate != oldest.StartDate.AddDays(-1))
+        {
+            throw NotContiguous($"Het jaar moet aansluiten op {oldest.Name}: laat het seizoen eindigen op {Nl(oldest.StartDate.AddDays(-1))}.");
+        }
+
+        if (input.StartDate <= newest.EndDate && input.EndDate >= oldest.StartDate)
+        {
+            throw NotContiguous($"Dit seizoen overlapt met een bestaand carnavalsjaar. Een nieuw jaar begint op {Nl(newest.EndDate.AddDays(1))}.");
+        }
+    }
+
+    /// <summary>Schuift het vorige en volgende jaar mee, zodat de jaren na een wijziging nog steeds aansluiten.</summary>
+    private async Task<List<(CarnivalYear Year, string Before)>> MoveNeighboursAsync(CarnivalYear year, CancellationToken cancellationToken)
+    {
+        var others = await db.CarnivalYears.Where(y => y.Id != year.Id).OrderBy(y => y.StartDate).ToListAsync(cancellationToken);
+        var previous = others.LastOrDefault(y => y.StartDate < year.StartDate);
+        var next = others.FirstOrDefault(y => y.StartDate > year.StartDate);
+        var moved = new List<(CarnivalYear, string)>();
+        if (previous is not null && previous.EndDate != year.StartDate.AddDays(-1))
+        {
+            moved.Add((previous, JsonSerializer.Serialize(InputOf(previous), Json)));
+            previous.EndDate = year.StartDate.AddDays(-1);
+            if (previous.EndDate <= previous.StartDate || previous.CarnivalEndDate > previous.EndDate)
+            {
+                throw NotContiguous($"Dan klopt {previous.Name} niet meer: dat jaar zou op {Nl(previous.EndDate)} eindigen, vóór de carnavalsdagen of het begin.");
+            }
+        }
+
+        if (next is not null && next.StartDate != year.EndDate.AddDays(1))
+        {
+            moved.Add((next, JsonSerializer.Serialize(InputOf(next), Json)));
+            next.StartDate = year.EndDate.AddDays(1);
+            if (next.StartDate >= next.EndDate || next.CarnivalStartDate < next.StartDate)
+            {
+                throw NotContiguous($"Dan klopt {next.Name} niet meer: dat jaar zou op {Nl(next.StartDate)} beginnen, ná de carnavalsdagen of het einde.");
+            }
+        }
+
+        return moved;
+    }
+
+    private static DomainException NotContiguous(string message) => new(ErrorCodes.CarnivalYearNotContiguous, message);
+
+    private static string Nl(DateOnly date) => date.ToString("d MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("nl-NL"));
 
     private async Task<CarnivalYear> FindYearAsync(int id, CancellationToken cancellationToken) =>
         await db.CarnivalYears.SingleOrDefaultAsync(y => y.Id == id, cancellationToken)

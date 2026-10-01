@@ -60,10 +60,12 @@
             </div>
             <div class="news-grid">
                 <a class="card news-feature" href="/nieuws/@first.Slug">
-                    @if (first.ImageUrl is not null)
-                    {
-                        <img src="@first.ImageUrl" alt="" loading="lazy" width="1600" height="900">
-                    }
+                    <span class="feature-image">
+                        @if (first.ImageUrl is not null)
+                        {
+                            <img src="@first.ImageUrl" alt="" loading="lazy" width="1600" height="900">
+                        }
+                    </span>
                     <div class="news-text">
                         <span class="news-date">@Nl.Date(first.PublishedAt)</span>
                         <h3>@first.Title</h3>

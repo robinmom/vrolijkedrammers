@@ -362,3 +362,34 @@ ul.grid-3, ul.grid-4, ul.grid-5 { list-style: none; padding: 0; margin: 0; }
 .page-band { background: var(--blauw-tekst); }
 .page-band .lead, .crumbs, .crumbs a { color: #fff; }
 .crumbs a { text-decoration: underline; text-decoration-color: rgba(255, 255, 255, 0.5); }
+
+/* Feedback 01-10-2026: minder blauw (lagere hero en paginakop), nieuwskolommen even hoog. */
+.hero-inner { padding: 64px 0 76px; max-width: 640px; }
+.hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.2rem); margin-bottom: 14px; }
+.hero p { margin-bottom: 22px; font-size: 1.1rem; }
+.page-band { padding: 26px 0 30px; border-radius: 0 0 32px 32px; }
+.page-band h1 { font-size: clamp(1.8rem, 3.6vw, 2.4rem); }
+.page-band .lead { margin-top: 6px; font-size: 1.05rem; }
+.crumbs { margin-bottom: 6px; }
+.news-grid { align-items: stretch; }
+.news-feature { grid-template-rows: minmax(220px, 1fr) auto; }
+.news-feature img { height: 100%; aspect-ratio: auto; }
+.news-index .news-feature { grid-template-rows: auto 1fr; }
+.news-index .news-feature img { aspect-ratio: 16 / 9; height: auto; }
+.news-list { gap: 16px; }
+.news-item img, .news-item .img-empty { height: 104px; }
+@media (max-width: 760px) {
+  .hero-inner { padding: 32px 0 30px; }
+  .page-band { padding: 18px 0 22px; border-radius: 0 0 22px 22px; }
+  .news-feature { grid-template-rows: auto auto; }
+  .news-feature img { aspect-ratio: 16 / 9; height: auto; }
+  .news-item img, .news-item .img-empty { height: 84px; }
+}
+/* Grote nieuwsfoto vult de ruimte; de rechterkolom (4 berichten) bepaalt de hoogte. */
+.feature-image { position: relative; display: block; min-height: 200px; background: var(--grijs); }
+.feature-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-inner { padding: 48px 0 56px; }
+@media (max-width: 760px) {
+  .feature-image { min-height: 0; aspect-ratio: 16 / 9; }
+  .hero-inner { padding: 28px 0 26px; }
+}

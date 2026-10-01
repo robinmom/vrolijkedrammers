@@ -20,7 +20,7 @@ public sealed class IndexModel(WebsiteReader reader, FacebookFeed facebook, Site
         Hero = await reader.HeroAsync(cancellationToken);
         ShareImage = Hero.ImageUrl;
         Events = await reader.EventsAsync(3, null, cancellationToken);
-        News = (await reader.NewsAsync(1, 4, cancellationToken)).Items;
+        News = (await reader.NewsAsync(1, 5, cancellationToken)).Items;
         Facebook = await facebook.LatestAsync(cancellationToken);
         FacebookPageUrl = (await shell.SettingsAsync()).FacebookPageUrl;
     }

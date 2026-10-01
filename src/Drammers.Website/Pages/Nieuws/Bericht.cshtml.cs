@@ -20,7 +20,7 @@ public sealed class BerichtModel(WebsiteReader reader) : SitePage
 
         Article = article;
         (PageTitle, MetaDescription, ShareImage) = (article.Card.Title, article.Card.Summary, article.Card.ImageUrl);
-        More = [.. (await reader.NewsAsync(1, 4, cancellationToken)).Items.Where(n => n.Slug != slug).Take(3)];
+        More = [.. (await reader.NewsAsync((await reader.SeasonsAsync(cancellationToken)).Current, 1, 4, cancellationToken)).Items.Where(n => n.Slug != slug).Take(3)];
         return Page();
     }
 }

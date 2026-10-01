@@ -9,7 +9,25 @@ import { formatDate } from '../format';
 type YearForm = Omit<CarnivalYear, 'id' | 'active'>;
 const emptyYear: YearForm = { name: '', startDate: '', endDate: '', carnivalStartDate: '', carnivalEndDate: '' };
 
-/** Carnavalsjaren; activeren maakt de andere jaren inactief (altijd precies één actief). */
+/** yyyy-mm-dd plus een aantal dagen. */
+function addDays(date: string, days: number) {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Een nieuw jaar sluit aan op het nieuwste jaar: het begint de dag erna (fase 21g). */
+function nextYear(years: CarnivalYear[]): YearForm {
+  const newest = [...years].sort((a, b) => b.startDate.localeCompare(a.startDate))[0];
+  if (!newest) return emptyYear;
+  const [first, second] = newest.name.split('/').map(Number);
+  return { ...emptyYear, name: first && second ? `${first + 1}/${second + 1}` : '', startDate: addDays(newest.endDate, 1) };
+}
+
+/**
+ * Carnavalsjaren; activeren maakt de andere jaren inactief (altijd precies één actief). De jaren sluiten op elkaar aan:
+ * wijzig je het einde van een jaar, dan schuift het begin van het volgende jaar mee.
+ */
 export function CarnivalYearsPage() {
   const api = useApi();
   const years = useCarnivalYears();
@@ -45,10 +63,14 @@ export function CarnivalYearsPage() {
     <>
       <div className="page-header">
         <h1>Carnavalsjaren</h1>
-        <button type="button" className="button" onClick={() => setEditing({ id: null, form: emptyYear })}>
+        <button type="button" className="button" onClick={() => setEditing({ id: null, form: nextYear(years.data ?? []) })}>
           Carnavalsjaar toevoegen
         </button>
       </div>
+      <p className="muted">
+        De jaren sluiten op elkaar aan: een nieuw jaar begint de dag na het vorige. Nieuws en foto's van het actieve jaar staan
+        vooraan op de website en in de app; oudere jaren staan onder een knop met het jaartal.
+      </p>
       <SuccessMessage message={message} />
       <ProblemAlert error={years.error ?? activate.error} />
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Carnavalsjaren">
@@ -96,8 +118,13 @@ export function CarnivalYearsPage() {
           <form onSubmit={submit}>
             <Field label="Naam" hint="bijv. 2027/2028" pattern="^\d{4}/\d{4}$" required value={editing.form.name} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, name: e.target.value } })} />
             <div className="form-grid">
-              <Field label="Seizoen vanaf" type="date" required value={editing.form.startDate} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, startDate: e.target.value } })} />
-              <Field label="Seizoen tot" type="date" required value={editing.form.endDate} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, endDate: e.target.value } })} />
+              <Field
+                label="Seizoen vanaf"
+                type="date"
+                required
+                hint={editing.id === null && (years.data ?? []).length > 0 ? 'De dag na het einde van het vorige jaar.' : 'Het vorige jaar eindigt de dag ervoor.'}
+                value={editing.form.startDate} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, startDate: e.target.value } })} />
+              <Field label="Seizoen tot" type="date" required hint="Bijvoorbeeld Aswoensdag. Het volgende jaar begint de dag erna." value={editing.form.endDate} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, endDate: e.target.value } })} />
               <Field label="Carnaval vanaf" type="date" required value={editing.form.carnivalStartDate} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, carnivalStartDate: e.target.value } })} />
               <Field label="Carnaval tot" type="date" required value={editing.form.carnivalEndDate} onChange={(e) => setEditing({ ...editing, form: { ...editing.form, carnivalEndDate: e.target.value } })} />
             </div>

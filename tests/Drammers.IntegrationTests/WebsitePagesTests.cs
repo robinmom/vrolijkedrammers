@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Worker.Outbox;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -79,6 +81,66 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
         var article = await HtmlAsync("/nieuws/carnaval-komt-eraan");
         Assert.Contains("<strong>hele</strong>", article);
         await HtmlAsync("/nieuws/alleen-in-de-app", HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Nieuws_van_het_actieve_carnavalsjaar_en_oudere_jaren_onder_een_knop()
+    {
+        await NewsAsync("Nieuw seizoen");
+        var old = await NewsAsync("Optocht van vorig jaar");
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await db.News.Where(n => n.Id == old).ExecuteUpdateAsync(u => u.SetProperty(n => n.PublishAt, new DateTime(2025, 12, 1, 10, 0, 0, DateTimeKind.Utc)));
+        }
+
+        // Actief jaar 2026/2027 (seed); december 2025 hoort bij 2025-2026.
+        var current = await HtmlAsync("/nieuws");
+        Assert.Contains("Nieuw seizoen", current);
+        Assert.DoesNotContain("Optocht van vorig jaar", current);
+        Assert.Contains("href=\"/nieuws?seizoen=2025-2026\"", current);
+        Assert.DoesNotContain("Optocht van vorig jaar", await HtmlAsync("/"));
+
+        var archive = await HtmlAsync("/nieuws?seizoen=2025-2026");
+        Assert.Contains("Optocht van vorig jaar", archive);
+        Assert.DoesNotContain("Nieuw seizoen", archive);
+        Assert.Contains("Actueel (2026-2027)", archive);
+        await HtmlAsync("/nieuws?seizoen=2025-2027", HttpStatusCode.NotFound);
+
+        // De app: zelfde verdeling via de API.
+        var news = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/news");
+        Assert.Equal(["Nieuw seizoen"], news.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
+        var seasons = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/news/seasons");
+        Assert.Equal("2026-2027", seasons.GetProperty("current").GetProperty("slug").GetString());
+        Assert.Equal(["2025-2026"], seasons.GetProperty("archive").EnumerateArray().Select(i => i.GetProperty("slug").GetString()));
+        var older = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/news?season=2025-2026");
+        Assert.Equal(["Optocht van vorig jaar"], older.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
+        Assert.Equal(HttpStatusCode.NotFound, (await _guest.GetAsync("/api/v1/news?season=onzin")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Fotoalbums_per_carnavalsjaar()
+    {
+        var album = await AlbumAsync("Pronkzitting 2027", "Public");
+        await UploadPhotoAsync(album);
+        var old = await AlbumAsync("Pronkzitting 2024", "Public");
+        await UploadPhotoAsync(old);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await db.PhotoAlbums.Where(a => a.Id == old).ExecuteUpdateAsync(u => u.SetProperty(a => a.AlbumDate, new DateOnly(2024, 1, 20)));
+        }
+
+        var current = await HtmlAsync("/fotos?soort=pronkzitting");
+        Assert.Contains("Pronkzitting 2027", current);
+        Assert.DoesNotContain("Pronkzitting 2024", current);
+        Assert.Contains("href=\"/fotos?soort=pronkzitting&amp;seizoen=2023-2024\"", current);
+        Assert.Contains("Pronkzitting 2024", await HtmlAsync("/fotos?seizoen=2023-2024"));
+
+        var seasons = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/photo-albums/seasons");
+        Assert.Equal(["2023-2024"], seasons.GetProperty("archive").EnumerateArray().Select(i => i.GetProperty("slug").GetString()));
+        var older = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/photo-albums?season=2023-2024");
+        Assert.Equal(["Pronkzitting 2024"], older.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
     }
 
     [Fact]

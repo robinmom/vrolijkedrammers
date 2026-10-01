@@ -13,8 +13,13 @@ export const queryKeys = {
   events: ['events'] as const,
   event: (id: string) => ['events', id] as const,
   news: ['news'] as const,
+  /** Nieuws van een ouder carnavalsjaar (fase 21g); zonder jaar het actieve jaar. */
+  newsOfSeason: (season: string) => ['news', 'season', season] as const,
+  newsSeasons: ['news', 'seasons'] as const,
   newsItem: (id: string) => ['news', id] as const,
   albums: ['photo-albums'] as const,
+  albumsOfSeason: (season: string) => ['photo-albums', 'season', season] as const,
+  albumSeasons: ['photo-albums', 'seasons'] as const,
   album: (id: string) => ['photo-albums', id] as const,
   photos: (albumId: string) => ['photo-albums', albumId, 'photos'] as const,
   /** Persoonlijke gegevens: nooit in de persistente cache (zie QueryProvider). */
@@ -64,12 +69,17 @@ export const useEvent = (id: string) =>
     queryFn: () => unwrap(api.GET('/api/v1/events/{id}', { params: { path: { id } } })),
   });
 
-/** Nieuws, nieuwste eerst. */
-export const useNews = () =>
+/** Nieuws van het actieve carnavalsjaar, of van een ouder jaar (bijvoorbeeld "2025-2026"); nieuwste eerst. */
+export const useNews = (season?: string | null) =>
   useQuery({
-    queryKey: queryKeys.news,
-    queryFn: async () => (await unwrap(api.GET('/api/v1/news', { params: { query: PAGE } }))).items,
+    queryKey: season ? queryKeys.newsOfSeason(season) : queryKeys.news,
+    queryFn: async () =>
+      (await unwrap(api.GET('/api/v1/news', { params: { query: { ...PAGE, season: season ?? undefined } } }))).items,
   });
+
+/** Het actieve carnavalsjaar en de oudere jaren met nieuws (voor de knoppen onder het nieuws). */
+export const useNewsSeasons = () =>
+  useQuery({ queryKey: queryKeys.newsSeasons, queryFn: () => unwrap(api.GET('/api/v1/news/seasons')) });
 
 export const useNewsItem = (id: string) =>
   useQuery({
@@ -77,11 +87,16 @@ export const useNewsItem = (id: string) =>
     queryFn: () => unwrap(api.GET('/api/v1/news/{id}', { params: { path: { id } } })),
   });
 
-export const usePhotoAlbums = () =>
+/** Albums van het actieve carnavalsjaar, of van een ouder jaar. */
+export const usePhotoAlbums = (season?: string | null) =>
   useQuery({
-    queryKey: queryKeys.albums,
-    queryFn: async () => (await unwrap(api.GET('/api/v1/photo-albums', { params: { query: PAGE } }))).items,
+    queryKey: season ? queryKeys.albumsOfSeason(season) : queryKeys.albums,
+    queryFn: async () =>
+      (await unwrap(api.GET('/api/v1/photo-albums', { params: { query: { ...PAGE, season: season ?? undefined } } }))).items,
   });
+
+export const useAlbumSeasons = () =>
+  useQuery({ queryKey: queryKeys.albumSeasons, queryFn: () => unwrap(api.GET('/api/v1/photo-albums/seasons')) });
 
 export const usePhotoAlbum = (id: string | undefined) =>
   useQuery({

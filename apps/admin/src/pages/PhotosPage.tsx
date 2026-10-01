@@ -10,6 +10,7 @@ import { ConfirmDialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { PublicationFields, defaultPublication } from '../components/PublicationFields';
+import { SeasonWarning } from '../components/SeasonWarning';
 import { formatDate, statusLabels, visibilityLabels } from '../format';
 
 type PhotoCategory = NonNullable<Schemas['PhotoCategory']>;
@@ -281,7 +282,8 @@ export function AlbumEditorPage() {
         </div>
       </div>
       <Field label="Omschrijving" value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value || null })} />
-      <PublicationFields value={form.publication} onChange={(publication) => setForm({ ...form, publication })} />
+      <SeasonWarning date={form.albumDate} />
+      <PublicationFields value={form.publication} onChange={(publication) => setForm({ ...form, publication })} seasonWarning={!form.albumDate} />
       <p className="muted">Openbare galerijen staan ook op de website.</p>
       <ProblemAlert error={save.error ?? remove.error} />
       <div className="actions">

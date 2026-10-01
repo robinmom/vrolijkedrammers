@@ -142,6 +142,28 @@ describe('03 Nieuws', () => {
     expect(await screen.findByText('optocht')).toBeTruthy();
   });
 
+  it('fase 21g: alleen het actieve carnavalsjaar; oudere jaren onder een knop met het jaartal', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/news/seasons': {
+        current: { slug: '2026-2027', start: '2026-02-19', end: null },
+        archive: [{ slug: '2025-2026', start: '2025-03-06', end: '2026-02-18' }],
+      },
+      '/api/v1/news?page=1&pageSize=100&season=2025-2026': paged([{ ...data.news[0]!, id: 'oud-1', title: 'Uitslag optocht 2026' }]),
+    });
+    await renderApp(routes, '/nieuws');
+    expect(await screen.findByText('De optocht-inschrijving is geopend!')).toBeTruthy();
+    expect(screen.getByText('Eerdere jaren')).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: '2025-2026' }));
+    expect(await screen.findByText('Uitslag optocht 2026')).toBeTruthy();
+    expect(screen.getByText('Nieuws 2025-2026')).toBeTruthy();
+    expect(screen.queryByText('De optocht-inschrijving is geopend!')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Actueel (2026-2027)' }));
+    expect(await screen.findByText('De optocht-inschrijving is geopend!')).toBeTruthy();
+  });
+
   it('nieuw gepubliceerd nieuws verschijnt bij terugkeren naar de tab (zonder pull-to-refresh)', async () => {
     mockApi(api);
     await renderApp(routes, '/nieuws');

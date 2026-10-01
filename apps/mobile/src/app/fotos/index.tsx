@@ -1,16 +1,23 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { queryKeys, useAlbumPhotos, usePhotoAlbums } from '../../api/queries';
+import { useState } from 'react';
+import { queryKeys, useAlbumPhotos, useAlbumSeasons, usePhotoAlbums } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { SeasonArchive } from '../../features/SeasonArchive';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AlbumCard, AppText, BackLink, EmptyState, LargeTitleHeader, PhotoGrid, QueryState, Screen, SectionHeader } from '../../ui';
 
 const RECENT = 15;
 
-/** 07 Foto's (Figma 8:428): albumcarrousel en de nieuwste foto's van het laatste album. */
+/**
+ * 07 Foto's (Figma 8:428): albumcarrousel en de nieuwste foto's van het laatste album, van het actieve carnavalsjaar;
+ * oudere jaren via de knoppen eronder (fase 21g).
+ */
 export default function FotosScreen() {
   const { colors } = useTheme();
-  const albums = usePhotoAlbums();
+  const [season, setSeason] = useState<string | null>(null);
+  const albums = usePhotoAlbums(season);
+  const seasons = useAlbumSeasons();
   const latest = albums.data?.[0];
   const photos = useAlbumPhotos(latest?.id);
   const refresh = useRefresh([queryKeys.albums, ...(latest ? [queryKeys.photos(latest.id)] : [])]);
@@ -24,11 +31,15 @@ export default function FotosScreen() {
       {!albums.data ? (
         <QueryState query={albums} />
       ) : albums.data.length === 0 ? (
-        <EmptyState icon="fotos" title="Nog geen foto's" message="Na de eerste activiteit verschijnen hier de albums." />
+        <EmptyState
+          icon="fotos"
+          title={season ? "Geen foto's in dit jaar" : "Nog geen foto's dit carnavalsjaar"}
+          message={season ? undefined : 'Na de eerste activiteit verschijnen hier de albums.'}
+        />
       ) : (
         <View style={styles.content}>
           <View style={styles.padded}>
-            <SectionHeader title="Albums" />
+            <SectionHeader title={season ? `Albums ${season}` : 'Albums'} />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
             {albums.data.map((album) => (
@@ -59,6 +70,7 @@ export default function FotosScreen() {
           ) : null}
         </View>
       )}
+      <SeasonArchive seasons={seasons.data} selected={season} onChange={setSeason} />
     </Screen>
   );
 }

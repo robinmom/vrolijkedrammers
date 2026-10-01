@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAudienceGroups, useMe, useMember, useMembers, useRoles, type Schemas } from '../api/hooks';
 import { fromLocalInput, statusLabels, toLocalInput, visibilityLabels } from '../format';
 import { Checkbox, Field } from './Field';
+import { SeasonWarning } from './SeasonWarning';
 
 export type Publication = Schemas['PublicationRequest'];
 
@@ -18,7 +19,16 @@ export const defaultPublication: Publication = {
  * Zichtbaarheid (Iedereen/Leden/Beperkt) en publicatie (status en moment); gedeeld door agenda, nieuws en foto's.
  * Bij "Beperkt" kies je rollen, groepen en (met toegang tot ledengegevens) individuele leden.
  */
-export function PublicationFields({ value, onChange }: { value: Publication; onChange: (value: Publication) => void }) {
+export function PublicationFields({
+  value,
+  onChange,
+  seasonWarning = false,
+}: {
+  value: Publication;
+  onChange: (value: Publication) => void;
+  /** Melding als het publicatiemoment ná het laatste carnavalsjaar valt (nieuws en foto's, fase 21g). */
+  seasonWarning?: boolean;
+}) {
   const roles = useRoles();
   const groups = useAudienceGroups();
   const me = useMe();
@@ -108,6 +118,7 @@ export function PublicationFields({ value, onChange }: { value: Publication; onC
           />
         ) : null}
       </div>
+      {seasonWarning && value.status === 'Scheduled' ? <SeasonWarning date={value.publishAt} /> : null}
     </>
   );
 }

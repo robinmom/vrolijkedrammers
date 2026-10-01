@@ -9664,6 +9664,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carnival-years": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alle carnavalsjaren, oudste eerst; o.a. voor de melding in de portal als iets ná het laatste jaar gepland wordt. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CarnivalYearResponse"][];
+                        "application/json": components["schemas"]["CarnivalYearResponse"][];
+                        "text/json": components["schemas"]["CarnivalYearResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carnival-years/current": {
         parameters: {
             query?: never;
@@ -11472,6 +11510,7 @@ export interface paths {
                 query?: {
                     page?: number;
                     pageSize?: number;
+                    season?: string;
                 };
                 header?: never;
                 path?: never;
@@ -11488,6 +11527,55 @@ export interface paths {
                         "text/plain": components["schemas"]["PagedResultOfNewsSummaryResponse"];
                         "application/json": components["schemas"]["PagedResultOfNewsSummaryResponse"];
                         "text/json": components["schemas"]["PagedResultOfNewsSummaryResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/news/seasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De oudere carnavalsjaren met nieuws, nieuwste eerst (fase 21g); zonder `season` toont de lijst het actieve jaar. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SeasonsResponse"];
+                        "application/json": components["schemas"]["SeasonsResponse"];
+                        "text/json": components["schemas"]["SeasonsResponse"];
                     };
                 };
             };
@@ -12648,6 +12736,7 @@ export interface paths {
                     page?: number;
                     pageSize?: number;
                     category?: components["schemas"]["PhotoCategory"];
+                    season?: string;
                 };
                 header?: never;
                 path?: never;
@@ -12664,6 +12753,57 @@ export interface paths {
                         "text/plain": components["schemas"]["PagedResultOfPhotoAlbumResponse"];
                         "application/json": components["schemas"]["PagedResultOfPhotoAlbumResponse"];
                         "text/json": components["schemas"]["PagedResultOfPhotoAlbumResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/photo-albums/seasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De oudere carnavalsjaren met albums, nieuwste eerst (fase 21g); zonder `season` toont de lijst het actieve jaar. */
+        get: {
+            parameters: {
+                query?: {
+                    category?: components["schemas"]["PhotoCategory"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SeasonsResponse"];
+                        "application/json": components["schemas"]["SeasonsResponse"];
+                        "text/json": components["schemas"]["SeasonsResponse"];
                     };
                 };
             };
@@ -16338,6 +16478,19 @@ export interface components {
         ScheduleRequest: {
             /** Format: date-time */
             publishAt: string;
+        };
+        /** @description Een carnavalsjaar in het archief, bijvoorbeeld `2025-2026` (fase 21g). */
+        SeasonResponse: {
+            slug: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: null | string;
+        };
+        /** @description Het actieve carnavalsjaar en de oudere jaren met inhoud (nieuwste eerst). */
+        SeasonsResponse: {
+            current: components["schemas"]["SeasonResponse"];
+            archive: components["schemas"]["SeasonResponse"][];
         };
         ServerCode: {
             code: string;

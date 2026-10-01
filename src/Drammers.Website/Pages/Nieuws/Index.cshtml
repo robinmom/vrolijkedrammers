@@ -1,10 +1,19 @@
 @page "/nieuws"
 @model Drammers.Website.Pages.Nieuws.IndexModel
-<partial name="_PageBand" model='new PageBand("Nieuws", "Het laatste nieuws van De Vrolijke Drammers.", (null, "Nieuws"))' />
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var band = Model.Seasons.IsArchive
+        ? new PageBand(Model.PageTitle, $"Het nieuws van carnavalsjaar {Model.Seasons.Shown.Slug}.", ("/nieuws", "Nieuws"), (null, Model.Seasons.Shown.Slug))
+        : new PageBand("Nieuws", "Het laatste nieuws van De Vrolijke Drammers.", (null, "Nieuws"));
+}
+<partial name="_PageBand" model="band" />
 <div class="wrap content">
     @if (Model.Items.Count == 0)
     {
-        <p class="muted">Nog geen nieuws.</p>
+        <p class="muted">@(Model.Seasons.IsArchive ? "Geen nieuws in dit jaar." : "Nog geen nieuws dit carnavalsjaar.")</p>
     }
     <div class="news-index">
         @foreach (var n in Model.Items)
@@ -30,12 +39,13 @@
         <nav class="pager" aria-label="Pagina's">
             @if (Model.Current > 1)
             {
-                <a class="button outline" href="/nieuws?pagina=@(Model.Current - 1)">← Nieuwer</a>
+                <a class="button outline" href="@Model.PageHref(Model.Current - 1)">← Nieuwer</a>
             }
             @if (Model.Current < Model.Pages)
             {
-                <a class="button outline" href="/nieuws?pagina=@(Model.Current + 1)">Ouder →</a>
+                <a class="button outline" href="@Model.PageHref(Model.Current + 1)">Ouder →</a>
             }
         </nav>
     }
+    <partial name="_SeasonNav" model="Model.Seasons" />
 </div>

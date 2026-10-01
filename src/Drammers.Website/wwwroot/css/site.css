@@ -181,8 +181,11 @@ a.card:hover h3 { color: var(--rood-tekst); }
 
 /* Tabs en filters */
 .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+ul.chips { list-style: none; margin: 0; padding: 0; }
+.season-nav { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--rand); }
+.season-nav h2 { margin: 0 0 12px; }
 .chip { padding: 9px 18px; border-radius: 999px; background: #fff; border: 1px solid var(--rand); color: var(--navy); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-.chip[aria-current="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.chip[aria-current="true"], .chip[aria-current="page"] { background: var(--navy); color: #fff; border-color: var(--navy); }
 .tabs { display: inline-flex; flex-wrap: wrap; gap: 8px; padding: 6px; background: #fff; border: 1px solid var(--rand); border-radius: 999px; }
 .tabs a { padding: 10px 20px; border-radius: 999px; color: var(--navy); font-weight: 600; text-decoration: none; }
 .tabs a[aria-current="true"] { background: var(--navy); color: #fff; }

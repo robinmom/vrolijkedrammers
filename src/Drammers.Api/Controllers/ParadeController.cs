@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Drammers.Api.Content;
 using Drammers.Infrastructure.Content;
 using Drammers.Infrastructure.ParadeManagement;
 using Drammers.Modules.Parade.Categories;
@@ -16,7 +17,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/parade")]
-public sealed class ParadeController(ParadeAdministration parades, ParadePublicRegistrations publicRegistrations, ParadeResults results) : ControllerBase
+public sealed class ParadeController(ParadeAdministration parades, ParadePublicRegistrations publicRegistrations, ParadeResults results, ContentUrls urls) : ControllerBase
 {
     [HttpGet("current")]
     [ProducesResponseType<ParadeInfoResponse>(StatusCodes.Status200OK)]
@@ -46,11 +47,26 @@ public sealed class ParadeController(ParadeAdministration parades, ParadePublicR
     public async Task<ActionResult<PublicResultsResponse>> Results(CancellationToken cancellationToken)
     {
         var o = await results.PublishedAsync(cancellationToken);
-        return o is null
-            ? Problem(statusCode: StatusCodes.Status404NotFound, detail: "Er is nog geen uitslag gepubliceerd.")
-            : new PublicResultsResponse(o.ParadeName, o.ParadeDate, o.PublishedAt!.Value,
-                [.. o.Categories.Select(c => new PublicCategoryResultResponse(c.Name, c.MaxPoints,
-                    [.. c.Rows.Select(r => new PublicResultRowResponse(r.Place, r.StartNumber, r.GroupName, r.Motto, r.Total))]))]);
+        if (o is null)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, detail: "Er is nog geen uitslag gepubliceerd.");
+        }
+
+        var categories = new List<PublicCategoryResultResponse>();
+        foreach (var c in o.Categories)
+        {
+            var rows = new List<PublicResultRowResponse>();
+            foreach (var r in c.Rows)
+            {
+                // Fase 22d: de eerste foto van de inzending (korte SAS-link, zoals de andere foto's in de app).
+                rows.Add(new PublicResultRowResponse(r.Place, r.StartNumber, r.GroupName, r.Motto, r.Total,
+                    await urls.ForAsync(Infrastructure.Files.FileContainers.PhotosDerived, r.Photo?.ThumbnailBlobPath, cancellationToken)));
+            }
+
+            categories.Add(new PublicCategoryResultResponse(c.Name, c.MaxPoints, rows));
+        }
+
+        return new PublicResultsResponse(o.ParadeName, o.ParadeDate, o.PublishedAt!.Value, o.AlbumId, categories);
     }
 
     [HttpGet("categories")]
@@ -126,8 +142,8 @@ public sealed record ParadeCategoryResponse(
         c.Id, c.Code, c.Name, c.AgeGroup, c.Type, c.MinimumParticipants, c.MaximumParticipants, c.ParticipantCountBasis, c.ValidationMode, c.HasVehicle, c.Active, c.SortOrder);
 }
 
-public sealed record PublicResultsResponse(string ParadeName, DateOnly ParadeDate, DateTime PublishedAt, IReadOnlyList<PublicCategoryResultResponse> Categories);
+public sealed record PublicResultsResponse(string ParadeName, DateOnly ParadeDate, DateTime PublishedAt, Guid? AlbumId, IReadOnlyList<PublicCategoryResultResponse> Categories);
 
 public sealed record PublicCategoryResultResponse(string Name, int MaxPoints, IReadOnlyList<PublicResultRowResponse> Rows);
 
-public sealed record PublicResultRowResponse(int Place, int? StartNumber, string GroupName, string? Motto, decimal Total);
+public sealed record PublicResultRowResponse(int Place, int? StartNumber, string GroupName, string? Motto, decimal Total, string? PhotoUrl);

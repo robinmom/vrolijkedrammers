@@ -1,7 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useApi } from '../api/ApiContext';
+import { describeProblem } from '../api/errors';
 import { useApiMutation, type Schemas } from '../api/hooks';
+import { uploadWithProgress } from '../api/upload';
+import { useAuth } from '../auth/AuthContext';
 import { Dialog } from '../components/Dialog';
 import { Checkbox } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
@@ -28,6 +31,29 @@ export function ResultsPage() {
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState<string | null>(null);
   const data = results.data;
+  const auth = useAuth();
+  const client = useQueryClient();
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  // Fase 22d: foto's bij een inzending, ook achteraf; één voor één, net als bij Foto's.
+  async function addPhotos(registrationId: string, groupName: string, files: File[]) {
+    if (files.length === 0) return;
+    setError(null);
+    setUploading(registrationId);
+    try {
+      for (const file of files) {
+        const form = new FormData();
+        form.append('files', file);
+        await uploadWithProgress(auth, `/api/v1/admin/results/entries/${registrationId}/photos`, form, () => undefined);
+      }
+      setMessage(`${files.length === 1 ? '1 foto' : `${files.length} foto's`} toegevoegd bij ${groupName}.`);
+      await client.invalidateQueries({ queryKey: ['results'] });
+    } catch (e) {
+      setError(new Error(describeProblem(e)));
+    } finally {
+      setUploading(null);
+    }
+  }
   const publish = useApiMutation(
     () => api.POST('/api/v1/admin/results/publish', { body: { paradeId: data!.paradeId, prizeCeremonyHeld: true } }),
     [['results']],
@@ -173,6 +199,7 @@ export function ResultsPage() {
                     <th scope="col" className="num">
                       Totaal
                     </th>
+                    <th scope="col">Foto&apos;s</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +217,28 @@ export function ResultsPage() {
                       <td className="num">{points(r.overall)}</td>
                       <td className="num">
                         <strong>{points(r.total)}</strong>
+                      </td>
+                      <td>
+                        <label className="button secondary small file-button">
+                          {uploading === r.registrationId
+                            ? 'Uploaden…'
+                            : r.photoCount > 0
+                              ? `${r.photoCount} · toevoegen`
+                              : 'Toevoegen'}
+                          <span className="visually-hidden"> foto&apos;s bij {r.groupName}</span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/heic,image/webp"
+                            multiple
+                            className="visually-hidden"
+                            disabled={uploading !== null}
+                            onChange={(e) => {
+                              // Eerst kopiëren: na het leegmaken van de invoer is de FileList ook leeg.
+                              void addPhotos(r.registrationId, r.groupName, Array.from(e.target.files ?? []));
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
                       </td>
                     </tr>
                   ))}

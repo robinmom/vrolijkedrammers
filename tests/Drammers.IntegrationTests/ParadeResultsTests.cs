@@ -8,8 +8,10 @@ using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Parade.Parades;
 using Drammers.Modules.Parade.Registrations;
 using Drammers.SharedKernel.Identifiers;
+using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Drammers.IntegrationTests;
 
@@ -192,5 +194,59 @@ public class ParadeResultsTests(SqlServerFixture sql) : IAsyncLifetime
         var refused = await _uitslag.PostAsJsonAsync("/api/v1/admin/results/publish", new { paradeId = _paradeId, prizeCeremonyHeld = true });
         Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
         Assert.Contains("Nog niet alle juryleden", await refused.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Fotos_bij_een_inzending_zijn_pas_zichtbaar_met_de_uitslag()
+    {
+        Guid entry;
+        int category;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            category = (await db.ParadeCategories.OrderBy(x => x.SortOrder).FirstAsync(x => x.HasVehicle)).Id;
+            var registration = new ParadeRegistration
+            {
+                Id = IdGenerator.NewId(),
+                ParadeId = _paradeId,
+                CarnivalYearId = 1,
+                RegistrationNumber = 1,
+                StartNumber = 5,
+                CategoryId = category,
+                GroupName = "De Snotapen",
+                Status = RegistrationStatus.Approved,
+                Source = RegistrationSource.App,
+            };
+            db.ParadeRegistrations.Add(registration);
+            await db.SaveChangesAsync();
+            entry = registration.Id;
+        }
+
+        var upload = await _uitslag.PostAsync($"/api/v1/admin/results/entries/{entry}/photos", ContentTests.Multipart("files", "wagen.jpg", TestImages.JpegWithGps()));
+        Assert.Equal(HttpStatusCode.Created, upload.StatusCode);
+        var processor = new OutboxProcessor(_api.Services.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
+        while (await processor.ProcessBatchAsync(default) > 0)
+        {
+        }
+
+        Guid albumId;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            albumId = (await db.Parades.SingleAsync(p => p.Id == _paradeId)).ResultsAlbumId!.Value;
+            var photo = await db.Photos.SingleAsync(f => f.AlbumId == albumId);
+            Assert.Equal((entry, "De Snotapen"), (photo.RegistrationId!.Value, photo.Caption));
+        }
+
+        Assert.Equal(1, (await _uitslag.GetFromJsonAsync<JsonElement>("/api/v1/admin/results")).GetProperty("categories").EnumerateArray()
+            .Single(c => c.GetProperty("categoryId").GetInt32() == category).GetProperty("entries").GetInt32());
+        Assert.Equal(HttpStatusCode.NotFound, (await _api.CreateClient().GetAsync($"/fotos/{albumId:N}")).StatusCode);
+
+        // Deze categorie wordt (hier) niet beoordeeld, dus publiceren kan meteen; het album gaat mee open.
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/categories/{category}",
+            new { judged = false, originality = 1, carnivalesque = 1, quality = 1, overall = 1 });
+        Assert.Equal(HttpStatusCode.OK, (await _uitslag.PostAsJsonAsync("/api/v1/admin/results/publish", new { paradeId = _paradeId, prizeCeremonyHeld = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _api.CreateClient().GetAsync($"/fotos/{albumId:N}")).StatusCode);
+        Assert.Equal(albumId, (await _api.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/parade/results")).GetProperty("albumId").GetGuid());
     }
 }

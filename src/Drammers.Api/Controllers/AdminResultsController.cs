@@ -93,6 +93,28 @@ public sealed class AdminResultsController(ParadeResults results, IAuditLogger a
     public async Task<PublishResultsResponse> Publish(PublishResultsRequest request, CancellationToken cancellationToken) =>
         new(await results.PublishAsync(request.ParadeId, request.PrizeCeremonyHeld, cancellationToken));
 
+    /// <summary>
+    /// Foto's bij een inzending (fase 22d, ook achteraf): in het album van de uitslag, dat pas met de uitslag zichtbaar
+    /// wordt. Hooguit 20 per keer.
+    /// </summary>
+    [HttpPost("entries/{registrationId:guid}/photos")]
+    [RequestSizeLimit(20 * Infrastructure.Content.ContentFiles.MaxPhotoBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 20 * Infrastructure.Content.ContentFiles.MaxPhotoBytes)]
+    [ProducesResponseType<IReadOnlyList<CreatedResponse>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<IReadOnlyList<CreatedResponse>>> AddPhotos(Guid registrationId, IFormFileCollection files, CancellationToken cancellationToken)
+    {
+        if (files.Count is 0 or > 20)
+        {
+            throw new SharedKernel.Errors.DomainException(SharedKernel.Errors.ErrorCodes.Validation, "Upload 1 tot 20 foto's per keer.");
+        }
+
+        var ids = await results.AddPhotosAsync(registrationId,
+            [.. files.Select(f => new Infrastructure.Content.UploadedFile(f.FileName, f.Length, f.OpenReadStream))], cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, ids.Select(x => new CreatedResponse(x)).ToList());
+    }
+
     // Excel: hooguit 31 tekens, geen : \ / ? * [ ] en uniek.
     private static string SheetName(string name, XLWorkbook workbook)
     {
@@ -110,7 +132,7 @@ public sealed class AdminResultsController(ParadeResults results, IAuditLogger a
 
 public sealed record ResultRowResponse(
     int Place, Guid RegistrationId, int? StartNumber, string GroupName, string? Motto,
-    decimal Originality, decimal Carnivalesque, decimal Quality, decimal Overall, decimal Total);
+    decimal Originality, decimal Carnivalesque, decimal Quality, decimal Overall, decimal Total, int PhotoCount);
 
 public sealed record CategoryResultResponse(
     int CategoryId, string Name, int Jurors, int Submitted, bool Ready, int WeightOriginality, int WeightCarnivalesque,
@@ -122,7 +144,7 @@ public sealed record ResultOverviewResponse(Guid ParadeId, string ParadeName, Da
         [.. o.Categories.Select(c => new CategoryResultResponse(c.CategoryId, c.Name, c.Jurors, c.Submitted, c.Ready, c.WeightOriginality,
             c.WeightCarnivalesque, c.WeightQuality, c.WeightOverall, c.MaxPoints, c.Entries,
             [.. c.Rows.Select(r => new ResultRowResponse(r.Place, r.RegistrationId, r.StartNumber, r.GroupName, r.Motto,
-                r.Originality, r.Carnivalesque, r.Quality, r.Overall, r.Total))]))]);
+                r.Originality, r.Carnivalesque, r.Quality, r.Overall, r.Total, r.PhotoCount))]))]);
 }
 
 public sealed record PublishResultsRequest(Guid ParadeId, [Required] bool PrizeCeremonyHeld);

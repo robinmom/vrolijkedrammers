@@ -5,7 +5,7 @@ import { queryKeys, useNews, useParadeResults } from '../api/queries';
 import { useRefresh } from '../api/useRefresh';
 import { NewsFeed } from '../features/NewsFeed';
 import { useTheme } from '../theme/ThemeProvider';
-import { AppText, BackLink, Card, EmptyState, LargeTitleHeader, QueryState, Screen, SectionHeader } from '../ui';
+import { AppText, BackLink, Card, EmptyState, LargeTitleHeader, QueryState, RemoteImage, Screen, SectionHeader } from '../ui';
 
 const points = (n: number) => n.toLocaleString('nl-NL', { maximumFractionDigits: 1 });
 
@@ -42,6 +42,7 @@ export default function UitslagenScreen() {
                   <View style={[styles.place, { backgroundColor: r.place === 1 ? brand.yellow : colors.surfaceMuted }]}>
                     <AppText variant="bodyStrong">{r.place}</AppText>
                   </View>
+                  {r.photoUrl ? <RemoteImage uri={r.photoUrl} cacheKey={`uitslag-${parade.paradeDate}-${r.startNumber ?? r.groupName}`} style={styles.photo} /> : null}
                   <View style={styles.flex}>
                     <AppText variant="bodyStrong">{r.groupName}</AppText>
                     {r.motto ? (
@@ -74,4 +75,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
   place: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
+  photo: { width: 56, height: 42, borderRadius: 8 },
 });

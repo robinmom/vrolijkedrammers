@@ -965,6 +965,7 @@ export class MockApi {
             quality: 912,
             overall: 440,
             total: 2204,
+            photoCount: 0,
           },
           {
             place: 2,
@@ -977,6 +978,7 @@ export class MockApi {
             quality: 846,
             overall: 425,
             total: 2101,
+            photoCount: 2,
           },
         ],
       },
@@ -2057,6 +2059,13 @@ export class MockApi {
         },
         body: 'xlsx',
       });
+    }
+    if ((m = path.match(/^\/admin\/results\/entries\/([^/]+)\/photos$/)) && method === 'POST') {
+      const row = (this.results.categories[0]!.rows as { registrationId: string; photoCount: number }[]).find(
+        (r) => r.registrationId === m![1],
+      )!;
+      row.photoCount += 1;
+      return json([{ id: `f-${row.photoCount}` }], 201);
     }
     if (path === '/admin/results/publish' && method === 'POST') {
       if (!body.prizeCeremonyHeld) return json({ title: 'Na de prijsuitreiking' }, 422);

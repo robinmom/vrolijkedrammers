@@ -9055,6 +9055,111 @@
         }
       }
     },
+    "/api/v1/admin/results/entries/{registrationId}/photos": {
+      "post": {
+        "tags": [
+          "AdminResults"
+        ],
+        "summary": "Foto's bij een inzending (fase 22d, ook achteraf): in het album van de uitslag, dat pas met de uitslag zichtbaar\nwordt. Hooguit 20 per keer.",
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "$ref": "#/components/schemas/IFormFileCollection"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreatedResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreatedResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreatedResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/permissions": {
       "get": {
         "tags": [
@@ -27518,7 +27623,8 @@
           "startNumber",
           "groupName",
           "motto",
-          "total"
+          "total",
+          "photoUrl"
         ],
         "type": "object",
         "properties": {
@@ -27545,6 +27651,12 @@
           "total": {
             "type": "number",
             "format": "double"
+          },
+          "photoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -27553,6 +27665,7 @@
           "paradeName",
           "paradeDate",
           "publishedAt",
+          "albumId",
           "categories"
         ],
         "type": "object",
@@ -27567,6 +27680,13 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "albumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           },
           "categories": {
             "type": "array",
@@ -28139,7 +28259,8 @@
           "carnivalesque",
           "quality",
           "overall",
-          "total"
+          "total",
+          "photoCount"
         ],
         "type": "object",
         "properties": {
@@ -28186,6 +28307,10 @@
           "total": {
             "type": "number",
             "format": "double"
+          },
+          "photoCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

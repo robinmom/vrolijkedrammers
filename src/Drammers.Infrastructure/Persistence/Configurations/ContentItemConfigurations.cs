@@ -132,5 +132,6 @@ internal sealed class PhotoConfiguration : IEntityTypeConfiguration<Photo>
         builder.Property(p => p.Photographer).HasMaxLength(100);
         builder.HasOne<PhotoAlbum>().WithMany().HasForeignKey(p => p.AlbumId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(p => new { p.AlbumId, p.SortOrder });
+        builder.HasIndex(p => p.RegistrationId).HasFilter("[registration_id] IS NOT NULL");
     }
 }

@@ -473,3 +473,5 @@ ul.grid-3, ul.grid-4, ul.grid-5 { list-style: none; padding: 0; margin: 0; }
 .result-category h2 { margin-bottom: 12px; }
 .data-table tr.podium-1 td:first-child, .data-table tr.podium-2 td:first-child, .data-table tr.podium-3 td:first-child { font-family: var(--kop); font-weight: 700; }
 .data-table tr.podium-1 td:first-child { color: var(--rood-tekst); }
+.result-photo { width: 88px; }
+.result-photo img { width: 72px; height: 54px; object-fit: cover; border-radius: 8px; }

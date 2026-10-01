@@ -3560,6 +3560,70 @@
         }
       }
     },
+    "/api/v1/admin/jury/parades/{paradeId}/outside": {
+      "put": {
+        "tags": [
+          "AdminJury"
+        ],
+        "summary": "Beoordelingen buiten categorie goedkeuren of afwijzen (`null` = weer open); de scores blijven verborgen.",
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutsideDecisionsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutsideDecisionsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutsideDecisionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/jury/jurors": {
       "post": {
         "tags": [
@@ -12483,6 +12547,215 @@
             "description": "Not Found",
             "content": {
               "text/calendar": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jury/current": {
+      "get": {
+        "tags": [
+          "Jury"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/JurorSessionResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JurorSessionResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JurorSessionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jury/parades/{paradeId}/scores": {
+      "put": {
+        "tags": [
+          "Jury"
+        ],
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScoresRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScoresRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScoresRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveScoresResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveScoresResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveScoresResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jury/parades/{paradeId}/submit": {
+      "post": {
+        "tags": [
+          "Jury"
+        ],
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJudgingResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJudgingResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitJudgingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -22295,6 +22568,22 @@
           }
         }
       },
+      "JudgingCategoryRefResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "JudgingCategoryResponse": {
         "required": [
           "categoryId",
@@ -22342,6 +22631,90 @@
           "entryCount": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "JudgingCriterion": {
+        "enum": [
+          "Originality",
+          "Carnivalesque",
+          "Quality",
+          "Overall"
+        ],
+        "description": "De vier criteria waarop de jury beoordeelt (fase 22), elk van 0 tot en met 100."
+      },
+      "JudgingEntryResponse": {
+        "required": [
+          "registrationId",
+          "startNumber",
+          "groupName",
+          "motto",
+          "categoryId",
+          "categoryName",
+          "assigned"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "motto": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "assigned": {
+            "type": "boolean"
+          }
+        }
+      },
+      "JudgingScoreResponse": {
+        "required": [
+          "registrationId",
+          "pass",
+          "criterion",
+          "value",
+          "scoredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "criterion": {
+            "$ref": "#/components/schemas/JudgingCriterion"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -22398,7 +22771,10 @@
           "email",
           "invited",
           "headJury",
-          "categoryIds"
+          "categoryIds",
+          "submittedAt",
+          "scored",
+          "assigned"
         ],
         "type": "object",
         "properties": {
@@ -22424,6 +22800,77 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "scored": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assigned": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Een jurylid met voortgang: `Scored` van `Assigned` toegewezen inzendingen (deels) beoordeeld."
+      },
+      "JurorSessionResponse": {
+        "required": [
+          "paradeId",
+          "paradeName",
+          "paradeDate",
+          "startTime",
+          "submittedAt",
+          "categories",
+          "entries",
+          "scores"
+        ],
+        "type": "object",
+        "properties": {
+          "paradeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paradeName": {
+            "type": "string"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "time"
+          },
+          "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JudgingCategoryRefResponse"
+            }
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JudgingEntryResponse"
+            }
+          },
+          "scores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JudgingScoreResponse"
+            }
           }
         }
       },
@@ -22433,7 +22880,8 @@
           "paradeName",
           "paradeDate",
           "jurors",
-          "categories"
+          "categories",
+          "outside"
         ],
         "type": "object",
         "properties": {
@@ -22458,6 +22906,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JudgingCategoryResponse"
+            }
+          },
+          "outside": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutsideScoreResponse"
             }
           }
         }
@@ -24902,6 +25356,109 @@
           }
         },
         "description": "De bestelling zoals de koper hem ziet (na betalen of via de link in de e-mail)."
+      },
+      "OutsideDecision": {
+        "enum": [
+          "Approved",
+          "Rejected",
+          null
+        ]
+      },
+      "OutsideDecisionRequest": {
+        "required": [
+          "userId",
+          "registrationId",
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decision": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OutsideDecision"
+              }
+            ]
+          }
+        }
+      },
+      "OutsideDecisionsRequest": {
+        "required": [
+          "decisions"
+        ],
+        "type": "object",
+        "properties": {
+          "decisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutsideDecisionRequest"
+            }
+          }
+        }
+      },
+      "OutsideScoreResponse": {
+        "required": [
+          "userId",
+          "jurorName",
+          "registrationId",
+          "startNumber",
+          "groupName",
+          "categoryName",
+          "passes",
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jurorName": {
+            "type": "string"
+          },
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "passes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "decision": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OutsideDecision"
+              }
+            ]
+          }
+        },
+        "description": "Beoordeling buiten de eigen categorieën: alleen hoeveel passages, nooit de scores."
       },
       "OwnAccountInfo": {
         "required": [
@@ -27801,6 +28358,32 @@
           }
         }
       },
+      "SaveScoresRequest": {
+        "required": [
+          "scores"
+        ],
+        "type": "object",
+        "properties": {
+          "scores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScoreRequest"
+            }
+          }
+        }
+      },
+      "SaveScoresResponse": {
+        "required": [
+          "changed"
+        ],
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ScanRequest": {
         "required": [
           "code"
@@ -27819,6 +28402,37 @@
         "type": "object",
         "properties": {
           "publishAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ScoreRequest": {
+        "required": [
+          "registrationId",
+          "pass",
+          "criterion",
+          "value",
+          "scoredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "criterion": {
+            "$ref": "#/components/schemas/JudgingCriterion"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -28191,6 +28805,18 @@
             ]
           },
           "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SubmitJudgingResponse": {
+        "required": [
+          "submittedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "submittedAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -29662,6 +30288,9 @@
     },
     {
       "name": "Events"
+    },
+    {
+      "name": "Jury"
     },
     {
       "name": "Kassa"

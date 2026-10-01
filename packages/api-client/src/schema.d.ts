@@ -2944,6 +2944,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jury/parades/{paradeId}/outside": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Beoordelingen buiten categorie goedkeuren of afwijzen (`null` = weer open); de scores blijven verborgen. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OutsideDecisionsRequest"];
+                    "text/json": components["schemas"]["OutsideDecisionsRequest"];
+                    "application/*+json": components["schemas"]["OutsideDecisionsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/jury/jurors": {
         parameters: {
             query?: never;
@@ -10305,6 +10358,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jury/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["JurorSessionResponse"];
+                        "application/json": components["schemas"]["JurorSessionResponse"];
+                        "text/json": components["schemas"]["JurorSessionResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jury/parades/{paradeId}/scores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveScoresRequest"];
+                    "text/json": components["schemas"]["SaveScoresRequest"];
+                    "application/*+json": components["schemas"]["SaveScoresRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SaveScoresResponse"];
+                        "application/json": components["schemas"]["SaveScoresResponse"];
+                        "text/json": components["schemas"]["SaveScoresResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jury/parades/{paradeId}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SubmitJudgingResponse"];
+                        "application/json": components["schemas"]["SubmitJudgingResponse"];
+                        "text/json": components["schemas"]["SubmitJudgingResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/kassa/scan": {
         parameters: {
             query?: never;
@@ -15448,6 +15666,11 @@ export interface components {
             /** Format: int32 */
             issued: number;
         };
+        JudgingCategoryRefResponse: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+        };
         JudgingCategoryResponse: {
             /** Format: int32 */
             categoryId: number;
@@ -15466,6 +15689,34 @@ export interface components {
             /** Format: int32 */
             entryCount: number;
         };
+        /**
+         * @description De vier criteria waarop de jury beoordeelt (fase 22), elk van 0 tot en met 100.
+         * @enum {unknown}
+         */
+        JudgingCriterion: "Originality" | "Carnivalesque" | "Quality" | "Overall";
+        JudgingEntryResponse: {
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            startNumber: null | number;
+            groupName: string;
+            motto: null | string;
+            /** Format: int32 */
+            categoryId: number;
+            categoryName: string;
+            assigned: boolean;
+        };
+        JudgingScoreResponse: {
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            pass: number;
+            criterion: components["schemas"]["JudgingCriterion"];
+            /** Format: int32 */
+            value: number;
+            /** Format: date-time */
+            scoredAt: string;
+        };
         JudgingWeightsRequest: {
             judged: boolean;
             /** Format: int32 */
@@ -15480,6 +15731,7 @@ export interface components {
         JurorCategoriesRequest: {
             categoryIds: number[];
         };
+        /** @description Een jurylid met voortgang: `Scored` van `Assigned` toegewezen inzendingen (deels) beoordeeld. */
         JurorResponse: {
             /** Format: uuid */
             userId: string;
@@ -15488,6 +15740,26 @@ export interface components {
             invited: boolean;
             headJury: boolean;
             categoryIds: number[];
+            /** Format: date-time */
+            submittedAt: null | string;
+            /** Format: int32 */
+            scored: number;
+            /** Format: int32 */
+            assigned: number;
+        };
+        JurorSessionResponse: {
+            /** Format: uuid */
+            paradeId: string;
+            paradeName: string;
+            /** Format: date */
+            paradeDate: string;
+            /** Format: time */
+            startTime: string;
+            /** Format: date-time */
+            submittedAt: null | string;
+            categories: components["schemas"]["JudgingCategoryRefResponse"][];
+            entries: components["schemas"]["JudgingEntryResponse"][];
+            scores: components["schemas"]["JudgingScoreResponse"][];
         };
         JuryOverviewResponse: {
             /** Format: uuid */
@@ -15497,6 +15769,7 @@ export interface components {
             paradeDate: string;
             jurors: components["schemas"]["JurorResponse"][];
             categories: components["schemas"]["JudgingCategoryResponse"][];
+            outside: components["schemas"]["OutsideScoreResponse"][];
         };
         KaderCandidateResponse: {
             /** Format: uuid */
@@ -16123,6 +16396,33 @@ export interface components {
             tickets: components["schemas"]["OrderTicketView"][];
             sharedBy: null | string;
             sharedWith: components["schemas"]["SharedTicket"][];
+        };
+        /** @enum {unknown} */
+        OutsideDecision: "Approved" | "Rejected" | null;
+        OutsideDecisionRequest: {
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            registrationId: string;
+            decision: null | components["schemas"]["OutsideDecision"];
+        };
+        OutsideDecisionsRequest: {
+            decisions: components["schemas"]["OutsideDecisionRequest"][];
+        };
+        /** @description Beoordeling buiten de eigen categorieën: alleen hoeveel passages, nooit de scores. */
+        OutsideScoreResponse: {
+            /** Format: uuid */
+            userId: string;
+            jurorName: string;
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            startNumber: null | number;
+            groupName: string;
+            categoryName: string;
+            /** Format: int32 */
+            passes: number;
+            decision: null | components["schemas"]["OutsideDecision"];
         };
         /**
          * @description Eigen account van een lid: vanaf 15 kan het bestuur een eigen account geven (DateOnly? OwnAccountInfo.AvailableFrom); tot 18 blijven
@@ -16908,12 +17208,30 @@ export interface components {
             version: number;
             orderedIds: string[];
         };
+        SaveScoresRequest: {
+            scores: components["schemas"]["ScoreRequest"][];
+        };
+        SaveScoresResponse: {
+            /** Format: int32 */
+            changed: number;
+        };
         ScanRequest: {
             code: string;
         };
         ScheduleRequest: {
             /** Format: date-time */
             publishAt: string;
+        };
+        ScoreRequest: {
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            pass: number;
+            criterion: components["schemas"]["JudgingCriterion"];
+            /** Format: int32 */
+            value: number;
+            /** Format: date-time */
+            scoredAt: string;
         };
         /** @description Een carnavalsjaar in het archief, bijvoorbeeld `2025-2026` (fase 21g). */
         SeasonResponse: {
@@ -17017,6 +17335,10 @@ export interface components {
             actorName: null | string;
             /** Format: date-time */
             occurredAt: string;
+        };
+        SubmitJudgingResponse: {
+            /** Format: date-time */
+            submittedAt: string;
         };
         SyncConflictResponse: {
             /** Format: uuid */

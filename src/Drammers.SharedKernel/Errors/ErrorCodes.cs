@@ -22,6 +22,7 @@ public static class ErrorCodes
     public const string CarnivalYearNameTaken = "CARNIVAL_YEAR_NAME_TAKEN";
     public const string CarnivalYearNotContiguous = "CARNIVAL_YEAR_NOT_CONTIGUOUS";
     public const string SeasonNotFound = "SEASON_NOT_FOUND";
+    public const string JudgingSubmitted = "JUDGING_SUBMITTED";
     public const string ConfigKeyUnknown = "CONFIG_KEY_UNKNOWN";
     public const string FileTooLarge = "FILE_TOO_LARGE";
     public const string FileTypeNotAllowed = "FILE_TYPE_NOT_ALLOWED";

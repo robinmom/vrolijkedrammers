@@ -1795,3 +1795,15 @@ fieldset {
   background: transparent;
   color: var(--dvd-action-danger);
 }
+
+.outside-alert {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.outside-alert p {
+  margin: 0;
+}

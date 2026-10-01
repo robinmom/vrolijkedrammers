@@ -14,7 +14,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/admin/jury")]
 [RequirePermission(Permissions.JuryAssign)]
-public sealed class AdminJuryController(ParadeJury jury) : ControllerBase
+public sealed class AdminJuryController(ParadeJury jury, ParadeJudging judging) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<JuryOverviewResponse>(StatusCodes.Status200OK)]
@@ -22,10 +22,27 @@ public sealed class AdminJuryController(ParadeJury jury) : ControllerBase
     public async Task<JuryOverviewResponse> Get([FromQuery] Guid? paradeId, CancellationToken cancellationToken)
     {
         var o = await jury.OverviewAsync(paradeId, cancellationToken);
+        var progress = await judging.ProgressAsync(o.ParadeId, cancellationToken);
+        var outside = await judging.OutsideAsync(o.ParadeId, cancellationToken);
         return new JuryOverviewResponse(o.ParadeId, o.ParadeName, o.ParadeDate,
-            [.. o.Jurors.Select(j => new JurorResponse(j.UserId, j.Name, j.Email, j.Invited, j.HeadJury, j.CategoryIds))],
+            [.. o.Jurors.Select(j =>
+            {
+                var p = progress.SingleOrDefault(x => x.UserId == j.UserId);
+                return new JurorResponse(j.UserId, j.Name, j.Email, j.Invited, j.HeadJury, j.CategoryIds, p?.SubmittedAt, p?.Scored ?? 0, p?.Assigned ?? 0);
+            })],
             [.. o.Categories.Select(c => new JudgingCategoryResponse(c.CategoryId, c.Name, c.Judged, c.WeightOriginality, c.WeightCarnivalesque,
-                c.WeightQuality, c.WeightOverall, c.JurorCount, c.EntryCount))]);
+                c.WeightQuality, c.WeightOverall, c.JurorCount, c.EntryCount))],
+            [.. outside.Select(x => new OutsideScoreResponse(x.UserId, x.JurorName, x.RegistrationId, x.StartNumber, x.GroupName, x.CategoryName, x.Passes, x.Decision))]);
+    }
+
+    /// <summary>Beoordelingen buiten categorie goedkeuren of afwijzen (<c>null</c> = weer open); de scores blijven verborgen.</summary>
+    [HttpPut("parades/{paradeId:guid}/outside")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> DecideOutside(Guid paradeId, OutsideDecisionsRequest request, CancellationToken cancellationToken)
+    {
+        await judging.DecideOutsideAsync(paradeId, [.. request.Decisions.Select(d => new OutsideDecisionInput(d.UserId, d.RegistrationId, d.Decision))], cancellationToken);
+        return NoContent();
     }
 
     [HttpPost("jurors")]
@@ -94,9 +111,20 @@ public sealed class AdminJuryController(ParadeJury jury) : ControllerBase
 }
 
 public sealed record JuryOverviewResponse(
-    Guid ParadeId, string ParadeName, DateOnly ParadeDate, IReadOnlyList<JurorResponse> Jurors, IReadOnlyList<JudgingCategoryResponse> Categories);
+    Guid ParadeId, string ParadeName, DateOnly ParadeDate, IReadOnlyList<JurorResponse> Jurors, IReadOnlyList<JudgingCategoryResponse> Categories,
+    IReadOnlyList<OutsideScoreResponse> Outside);
 
-public sealed record JurorResponse(Guid UserId, string Name, string Email, bool Invited, bool HeadJury, IReadOnlyList<int> CategoryIds);
+/// <summary>Een jurylid met voortgang: <c>Scored</c> van <c>Assigned</c> toegewezen inzendingen (deels) beoordeeld.</summary>
+public sealed record JurorResponse(
+    Guid UserId, string Name, string Email, bool Invited, bool HeadJury, IReadOnlyList<int> CategoryIds, DateTime? SubmittedAt, int Scored, int Assigned);
+
+/// <summary>Beoordeling buiten de eigen categorieën: alleen hoeveel passages, nooit de scores.</summary>
+public sealed record OutsideScoreResponse(
+    Guid UserId, string JurorName, Guid RegistrationId, int? StartNumber, string GroupName, string CategoryName, int Passes, Modules.Parade.Judging.OutsideDecision? Decision);
+
+public sealed record OutsideDecisionRequest(Guid UserId, Guid RegistrationId, Modules.Parade.Judging.OutsideDecision? Decision);
+
+public sealed record OutsideDecisionsRequest([Required, MaxLength(500)] IReadOnlyList<OutsideDecisionRequest> Decisions);
 
 public sealed record JudgingCategoryResponse(
     int CategoryId, string Name, bool Judged, int Originality, int Carnivalesque, int Quality, int Overall, int JurorCount, int EntryCount);

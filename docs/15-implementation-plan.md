@@ -1075,9 +1075,27 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
   - categorieën met weging.
   - De hoofdjury ziet alleen deze pagina, zonder uitnodigen en zonder weging.
 
-**22b — jureren in de app (gepland).** Het jureerscherm: startnummer, groep en motto, 3 passages × 4 sliders, en swipen door de toegewezen categorieën.
-- De knop "Hele optocht" met melding. Beoordelingen buiten categorie wachten op akkoord van het bestuur of de hoofdjury (per wagen of groep, zonder scores).
-- Scores worden offline bewaard en gesynchroniseerd. Het jurylid dient in met bevestiging en kan daarna niets meer wijzigen.
+**22b — jureren in de app (gebouwd).**
+- App: Optocht → **Jureren** (alleen met `parade.judge`).
+  - J1: de optocht, jouw categorieën en de voortgang per voorbijtrekken, met "Verder jureren (nr. X)".
+  - J2–J7: van links naar rechts swipen door de inzendingen in startvolgorde. Per inzending: startnummer, groep, categorie en motto; per voorbijtrekken (tabbladen 1, 2, 3) 4 sliders van 0 tot 100, met een samenvatting van de vorige passage.
+  - De slider is eigen code met PanResponder: geen nieuwe native module, dus geen nieuwe app-build nodig. Met VoiceOver/TalkBack verander je hem met vegen, 5 per keer.
+- **Hele optocht:** pas na bevestiging. Inzendingen buiten de eigen categorieën staan gemarkeerd met "telt pas mee na goedkeuring".
+- **Offline:** scores staan direct op de telefoon (AsyncStorage) en worden na 1,5 s in porties verstuurd, of zodra er weer verbinding is.
+  - Server en telefoon: per score wint de nieuwste invulling (tijd op het toestel, hooguit 5 minuten in de toekomst).
+  - De sessie staat in de querycache, dus het jureren werkt ook na herstarten zonder netwerk.
+- **Einde optocht:** een overzicht van wat nog openstaat per passage, de beoordelingen buiten categorie ("wacht op akkoord"), en "Jurering indienen" met bevestiging.
+  - Eerst worden alle scores verstuurd. Lukt dat niet, dan een melding dat de scores veilig op de telefoon staan.
+  - Na indienen geeft de server 409 op wijzigingen.
+- API:
+  - `GET /jury/current`;
+  - `PUT /jury/parades/{id}/scores` (hooguit 1000 per keer);
+  - `POST /jury/parades/{id}/submit`.
+  - Tabellen: `JudgingScore` (inzending × jurylid × passage × criterium), `JudgingSubmission` en `JudgingOutsideReview`.
+- Portal (Jury):
+  - een kolom Jurering (Ingediend / Bezig x/y / Nog niet);
+  - per jurylid een melding over beoordelingen buiten categorie, met Akkoord, Afwijzen en Aanpassen (per inzending, met hoeveel passages, zonder scores);
+  - via `PUT /admin/jury/parades/{id}/outside`.
 
 **22c — uitslag (gepland).** De uitslag per categorie voor de uitslagcommissie, zodra alle juryleden van die categorie hebben ingediend.
 - Excel-export: uitslag per categorie en zaallijst.

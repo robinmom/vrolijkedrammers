@@ -869,6 +869,9 @@ export class MockApi {
         invited: false,
         headJury: true,
         categoryIds: [1],
+        submittedAt: '2027-02-07T15:40:00Z' as string | null,
+        scored: 13,
+        assigned: 13,
       },
       {
         userId: 'j-2',
@@ -877,6 +880,9 @@ export class MockApi {
         invited: false,
         headJury: false,
         categoryIds: [1, 3],
+        submittedAt: null as string | null,
+        scored: 9,
+        assigned: 19,
       },
     ],
     categories: [
@@ -903,6 +909,29 @@ export class MockApi {
         entryCount: 6,
       },
     ],
+    // Fase 22b: Bert heeft via "Hele optocht" ook loopgroepen gejureerd die niet aan hem zijn toegewezen.
+    outside: [
+      {
+        userId: 'j-2',
+        jurorName: 'Bert de Vries',
+        registrationId: 'r-6',
+        startNumber: 6,
+        groupName: 'De jeugdige Sökkels',
+        categoryName: 'Loopgroepen groot jeugd',
+        passes: 3,
+        decision: null as 'Approved' | 'Rejected' | null,
+      },
+      {
+        userId: 'j-2',
+        jurorName: 'Bert de Vries',
+        registrationId: 'r-12',
+        startNumber: 12,
+        groupName: 'DwarZ',
+        categoryName: 'Loopgroepen groot jeugd',
+        passes: 2,
+        decision: null as 'Approved' | 'Rejected' | null,
+      },
+    ],
   };
 
   private handleJury(
@@ -918,6 +947,18 @@ export class MockApi {
         (c) => (c.jurorCount = this.jury.jurors.filter((j) => j.categoryIds.includes(c.categoryId)).length),
       );
     if (path === '/admin/jury' && method === 'GET') return json(this.jury);
+    if (/^\/admin\/jury\/parades\/[^/]+\/outside$/.test(path)) {
+      for (const d of body.decisions as {
+        userId: string;
+        registrationId: string;
+        decision: 'Approved' | 'Rejected' | null;
+      }[]) {
+        const o = this.jury.outside.find((x) => x.userId === d.userId && x.registrationId === d.registrationId)!;
+        o.decision = d.decision;
+      }
+      this.record('jury.outside-decided', 'Parade', this.jury.paradeId, body);
+      return noContent();
+    }
     if (path === '/admin/jury/jurors' && method === 'POST') {
       const juror = {
         userId: `j-${this.jury.jurors.length + 1}`,
@@ -926,6 +967,9 @@ export class MockApi {
         invited: true,
         headJury: false,
         categoryIds: [] as number[],
+        submittedAt: null,
+        scored: 0,
+        assigned: 0,
       };
       this.jury.jurors.push(juror);
       this.record('jury.invited', 'User', juror.userId, body);

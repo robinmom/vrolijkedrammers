@@ -66,3 +66,64 @@ public sealed class ParadeJurorAssignment
 
     public DateTime AssignedAt { get; set; }
 }
+
+/// <summary>
+/// Eén score: een jurylid, een inzending, een passage (voorbijtrekken 1–3) en een criterium, 0 tot en met 100 (fase 22b).
+/// De app bewaart scores eerst op de telefoon en stuurt ze later; de nieuwste wijziging (tijd op het toestel) wint.
+/// </summary>
+public sealed class JudgingScore
+{
+    public Guid ParadeId { get; set; }
+
+    public Guid RegistrationId { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public int Pass { get; set; }
+
+    public JudgingCriterion Criterion { get; set; }
+
+    public int Value { get; set; }
+
+    /// <summary>Moment van invullen op het toestel (UTC); bepaalt welke versie wint bij later versturen.</summary>
+    public DateTime ScoredAt { get; set; }
+
+    public DateTime ReceivedAt { get; set; }
+
+    public const int Passes = 3;
+}
+
+/// <summary>Een jurylid heeft voor deze optocht ingediend; daarna kan hij niets meer wijzigen.</summary>
+public sealed class JudgingSubmission
+{
+    public Guid ParadeId { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public DateTime SubmittedAt { get; set; }
+}
+
+public enum OutsideDecision
+{
+    Approved,
+    Rejected,
+}
+
+/// <summary>
+/// Beslissing van het bestuur of de hoofdjury over de beoordeling van een inzending buiten de categorieën van het
+/// jurylid (via "Hele optocht"). Zonder beslissing telt die beoordeling niet mee.
+/// </summary>
+public sealed class JudgingOutsideReview
+{
+    public Guid ParadeId { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public Guid RegistrationId { get; set; }
+
+    public OutsideDecision Decision { get; set; }
+
+    public Guid? DecidedBy { get; set; }
+
+    public DateTime DecidedAt { get; set; }
+}

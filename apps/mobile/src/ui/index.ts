@@ -23,6 +23,7 @@ export { QueryState } from './QueryState';
 export { RemoteImage } from './RemoteImage';
 export { RichText } from './RichText';
 export { SearchField } from './SearchField';
+export { ScoreSlider } from './ScoreSlider';
 export { SectionHeader } from './SectionHeader';
 export { SettingsList } from './SettingsList';
 export type { SettingsItem } from './SettingsList';

@@ -10,6 +10,8 @@ import { formatDate } from '../format';
 type Juror = Schemas['JurorResponse'];
 type JudgingCategory = Schemas['JudgingCategoryResponse'];
 type Weights = Schemas['JudgingWeightsRequest'];
+type Outside = Schemas['OutsideScoreResponse'];
+type Decision = NonNullable<Outside['decision']>;
 
 const criteria: { key: keyof Omit<Weights, 'judged'>; label: string; short: string }[] = [
   { key: 'originality', label: 'Originaliteit', short: 'Org.' },
@@ -31,6 +33,7 @@ export function JuryPage() {
   const [editing, setEditing] = useState<{ juror: Juror; categoryIds: number[]; headJury: boolean } | null>(null);
   const [weighing, setWeighing] = useState<{ category: JudgingCategory; form: Weights } | null>(null);
   const [removing, setRemoving] = useState<Juror | null>(null);
+  const [reviewing, setReviewing] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const data = jury.data;
@@ -70,6 +73,20 @@ export function JuryPage() {
       }),
     [['jury']],
   );
+
+  // Fase 22b: beoordelingen buiten categorie (alleen hoeveel passages, nooit de scores).
+  const decide = useApiMutation(
+    (decisions: { userId: string; registrationId: string; decision: Decision | null }[]) =>
+      api.PUT('/api/v1/admin/jury/parades/{paradeId}/outside', { params: { path: { paradeId } }, body: { decisions } }),
+    [['jury']],
+  );
+  const outside = data?.outside ?? [];
+  const pendingByJuror = [...new Set(outside.filter((o) => !o.decision).map((o) => o.userId))].map((userId) => {
+    const items = outside.filter((o) => o.userId === userId);
+    return { userId, name: items[0]!.jurorName, pending: items.filter((o) => !o.decision) };
+  });
+  const decideAll = (items: Outside[], decision: Decision) =>
+    decide.mutate(items.map((o) => ({ userId: o.userId, registrationId: o.registrationId, decision })));
 
   const categoryName = (id: number) => data?.categories.find((c) => c.categoryId === id)?.name ?? `Categorie ${id}`;
 
@@ -126,7 +143,36 @@ export function JuryPage() {
         ) : null}
       </div>
       <SuccessMessage message={message} />
-      <ProblemAlert error={jury.error ?? resend.error ?? remove.error} />
+      <ProblemAlert error={jury.error ?? resend.error ?? remove.error ?? decide.error} />
+      {pendingByJuror.map((j) => (
+        <div key={j.userId} className="alert alert-warning outside-alert">
+          <p>
+            {j.name} heeft {j.pending.length === 1 ? '1 inzending' : `${j.pending.length} inzendingen`} gejureerd buiten
+            de eigen categorieën ({[...new Set(j.pending.map((o) => o.categoryName))].join(', ')}).
+          </p>
+          <span className="actions">
+            <button type="button" className="button secondary small" onClick={() => setReviewing(j.userId)}>
+              Aanpassen <span className="visually-hidden">beoordelingen buiten categorie van {j.name}</span>
+            </button>
+            <button
+              type="button"
+              className="button ghost small"
+              disabled={decide.isPending}
+              onClick={() => decideAll(j.pending, 'Rejected')}
+            >
+              Afwijzen <span className="visually-hidden">alles van {j.name}</span>
+            </button>
+            <button
+              type="button"
+              className="button small"
+              disabled={decide.isPending}
+              onClick={() => decideAll(j.pending, 'Approved')}
+            >
+              Akkoord <span className="visually-hidden">alles van {j.name}</span>
+            </button>
+          </span>
+        </div>
+      ))}
 
       {data ? (
         <>
@@ -146,6 +192,7 @@ export function JuryPage() {
                       <th scope="col">Rol</th>
                       <th scope="col">Categorieën</th>
                       <th scope="col">Account</th>
+                      <th scope="col">Jurering</th>
                       <th scope="col">
                         <span className="visually-hidden">Acties</span>
                       </th>
@@ -175,6 +222,17 @@ export function JuryPage() {
                             <span className="badge warn">Uitgenodigd</span>
                           ) : (
                             <span className="badge ok">Actief</span>
+                          )}
+                        </td>
+                        <td>
+                          {j.submittedAt ? (
+                            <span className="badge ok">Ingediend</span>
+                          ) : j.scored > 0 ? (
+                            <span className="badge info">
+                              Bezig {j.scored}/{j.assigned}
+                            </span>
+                          ) : (
+                            <span className="muted">Nog niet</span>
                           )}
                         </td>
                         <td className="actions">
@@ -450,6 +508,72 @@ export function JuryPage() {
             </div>
           </form>
         ) : null}
+      </Dialog>
+
+      <Dialog
+        open={reviewing !== null}
+        title={`Beoordeling buiten categorie: ${outside.find((o) => o.userId === reviewing)?.jurorName ?? ''}`}
+        onClose={() => setReviewing(null)}
+      >
+        <p className="muted">
+          De scores zijn alleen voor het jurylid zelf. Geef per wagen of groep akkoord (telt mee in de uitslag) of wijs
+          af (telt niet mee).
+        </p>
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Beoordelingen buiten categorie">
+          <table className="table">
+            <caption className="visually-hidden">Beoordelingen buiten categorie</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nr.</th>
+                <th scope="col">Groep</th>
+                <th scope="col">Categorie</th>
+                <th scope="col">Beoordeeld</th>
+                <th scope="col">Beslissing</th>
+              </tr>
+            </thead>
+            <tbody>
+              {outside
+                .filter((o) => o.userId === reviewing)
+                .map((o) => (
+                  <tr key={o.registrationId}>
+                    <td>{o.startNumber ?? '–'}</td>
+                    <td>{o.groupName}</td>
+                    <td>{o.categoryName}</td>
+                    <td>{o.passes === 1 ? '1 passage' : `${o.passes} passages`}</td>
+                    <td className="actions">
+                      {o.decision === 'Approved' ? <span className="badge ok">Akkoord</span> : null}
+                      {o.decision === 'Rejected' ? <span className="badge error">Afgewezen</span> : null}
+                      {o.decision !== 'Rejected' ? (
+                        <button
+                          type="button"
+                          className="button ghost small"
+                          disabled={decide.isPending}
+                          onClick={() => decideAll([o], 'Rejected')}
+                        >
+                          Afwijzen <span className="visually-hidden">{o.groupName}</span>
+                        </button>
+                      ) : null}
+                      {o.decision !== 'Approved' ? (
+                        <button
+                          type="button"
+                          className="button secondary small"
+                          disabled={decide.isPending}
+                          onClick={() => decideAll([o], 'Approved')}
+                        >
+                          Akkoord <span className="visually-hidden">{o.groupName}</span>
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="actions">
+          <button type="button" className="button" onClick={() => setReviewing(null)}>
+            Klaar
+          </button>
+        </div>
       </Dialog>
 
       <ConfirmDialog

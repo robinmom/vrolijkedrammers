@@ -33,6 +33,8 @@ export const queryKeys = {
   myNotifications: ['me', 'notifications'] as const,
   myNotificationPreferences: ['me', 'notification-preferences'] as const,
   parade: ['parade'] as const,
+  /** Jureren (fase 22b): bewaard in de cache, zodat het jurylid ook zonder netwerk de optocht ziet. */
+  jury: ['jury', 'current'] as const,
   paradeCategories: ['parade', 'categories'] as const,
   arrivalTimes: ['parade', 'arrival-times'] as const,
   myRegistrations: ['me', 'parade-registrations'] as const,
@@ -285,3 +287,7 @@ export const useOfflinePack = (enabled: boolean) => {
     gcTime: 0,
   });
 };
+
+/** De optocht om te jureren met de eigen scores (alleen met <c>parade.judge</c>). */
+export const useJurySession = (enabled: boolean) =>
+  useQuery({ queryKey: queryKeys.jury, queryFn: () => unwrap(api.GET('/api/v1/jury/current')), enabled });

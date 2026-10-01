@@ -16,7 +16,10 @@ namespace Drammers.IntegrationTests.Infrastructure;
 public sealed class SqlServerFixture : IAsyncLifetime
 {
     private readonly MsSqlContainer _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
-    private readonly AzuriteContainer _azurite = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:latest").WithInMemoryPersistence().Build();
+    // --skipApiVersionCheck: een nieuwere Azure.Storage-bibliotheek (Dependabot) vraagt soms een API-versie die het
+    // Azurite-image nog niet kent; de blobfuncties die wij gebruiken werken dan gewoon.
+    private readonly AzuriteContainer _azurite = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:latest")
+        .WithInMemoryPersistence().WithCommand("--skipApiVersionCheck").Build();
 
     public string ServerConnectionString => _container.GetConnectionString();
 

@@ -160,6 +160,44 @@ code {
   padding: 16px 12px 6px;
 }
 
+/* Inklapbare menukop: de hele regel is de knop, het pijltje draait mee. */
+button.nav-heading {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.nav-heading:hover {
+  color: var(--dvd-text-primary);
+}
+
+button.nav-heading svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s ease;
+}
+
+button.nav-heading[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+.sidebar nav ul[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.nav-heading svg {
+    transition: none;
+  }
+}
+
 .sidebar nav ul {
   list-style: none;
   margin: 0;

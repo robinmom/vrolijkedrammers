@@ -144,6 +144,20 @@ public sealed class CarnivalSeasons(DrammersDbContext db, IClock clock)
 /// <summary>Filters op seizoen: nieuws op publicatiedatum, albums op albumdatum (anders publicatie- of aanmaakdatum).</summary>
 public static class SeasonFilters
 {
+    /// <summary>Het actuele nieuws toont altijd minstens zoveel berichten, desnoods uit het vorige carnavalsjaar.</summary>
+    public const int MinimumCurrentNews = 5;
+
+    /// <summary>
+    /// Nieuws van het actieve carnavalsjaar, aangevuld met de nieuwste oudere berichten tot er minstens
+    /// <see cref="MinimumCurrentNews"/> zijn. Komt er in het actieve jaar een bericht bij, dan valt het oudste aangevulde weg.
+    /// </summary>
+    public static IQueryable<Modules.Content.News.NewsItem> CurrentWithLatest(this IQueryable<Modules.Content.News.NewsItem> query, CarnivalSeason current)
+    {
+        var ids = query.InSeason(current).Select(n => n.Id)
+            .Union(query.OrderByDescending(n => n.PublishAt ?? n.CreatedAt).Take(MinimumCurrentNews).Select(n => n.Id));
+        return query.Where(n => ids.Contains(n.Id));
+    }
+
     public static IQueryable<Modules.Content.News.NewsItem> InSeason(this IQueryable<Modules.Content.News.NewsItem> query, CarnivalSeason season)
     {
         var (start, end) = (season.StartUtc, season.EndUtc);

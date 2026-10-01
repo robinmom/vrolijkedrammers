@@ -26,7 +26,9 @@ public sealed class NewsController(DrammersDbContext db, ContentViewerResolver v
     {
         var (p, size) = PagedResult<NewsSummaryResponse>.Normalize(page, pageSize);
         var shown = await SeasonEndpoints.ResolveAsync(seasons, season, cancellationToken);
-        var query = db.News.AsNoTracking().VisibleTo(await viewers.ResolveAsync(), clock.UtcNow.UtcDateTime).InSeason(shown);
+        var visible = db.News.AsNoTracking().VisibleTo(await viewers.ResolveAsync(), clock.UtcNow.UtcDateTime);
+        // Zonder jaar: het actieve jaar, altijd met minstens de 5 nieuwste berichten (ook uit het vorige jaar).
+        var query = season is null ? visible.CurrentWithLatest(shown) : visible.InSeason(shown);
         var total = await query.CountAsync(cancellationToken);
         var rows = await query.OrderByDescending(n => n.PublishAt).Skip((p - 1) * size).Take(size).ToListAsync(cancellationToken);
         var items = new List<NewsSummaryResponse>();

@@ -109,6 +109,9 @@ public sealed class Photo
 
     public string? Photographer { get; set; }
 
+    /// <summary>Foto van deze optochtinschrijving (fase 22d), getoond bij de uitslag.</summary>
+    public Guid? RegistrationId { get; set; }
+
     /// <summary>Verborgen (bijv. portretrecht-verzoek): direct onzichtbaar.</summary>
     public bool Hidden { get; set; }
 

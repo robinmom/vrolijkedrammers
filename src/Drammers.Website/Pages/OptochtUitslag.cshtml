@@ -20,6 +20,7 @@
                         <tr>
                             <th scope="col">Plaats</th>
                             <th scope="col">Startnr.</th>
+                            <th scope="col"><span class="visually-hidden">Foto</span></th>
                             <th scope="col">Groep en motto</th>
                             <th scope="col">Punten</th>
                         </tr>
@@ -30,6 +31,14 @@
                             <tr class="@(row.Place <= 3 ? $"podium-{row.Place}" : null)">
                                 <td>@row.Place</td>
                                 <td>@row.StartNumber</td>
+                                <td class="result-photo">
+                                    @if (row.Photo is { } photo && r.AlbumId is { } albumId)
+                                    {
+                                        <a href="/fotos/@albumId.ToString("N")" aria-label="Foto's van @row.GroupName">
+                                            <img src="@MediaUrls.For("photo-thumb", photo.Id, photo.ThumbnailBlobPath)" alt="" width="72" height="54" loading="lazy">
+                                        </a>
+                                    }
+                                </td>
                                 <td><strong>@row.GroupName</strong>@if (row.Motto is not null)
                                     {
                                         <br /><span class="muted">@row.Motto</span>

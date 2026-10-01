@@ -45,3 +45,16 @@ test('fase 22c: uitslag per categorie, Excel-exports en publiceren pas na bevest
   await expect(page.getByRole('button', { name: 'Nu publiceren' })).toHaveCount(0);
   expect(api.audit.map((a) => a.action)).toContain('parade.results-published');
 });
+
+test('fase 22d: foto bij een inzending toevoegen, ook achteraf', async ({ page }) => {
+  const api = new MockApi(['parade.result']);
+  await open(page, api, 'optocht/uitslag');
+  await expect(page.getByRole('row', { name: /De Druktemoakers .*2 · toevoegen/ })).toBeVisible();
+  await page.getByLabel(/foto's bij De Droatneagels/).setInputFiles({
+    name: 'wagen.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.from('/9j/4AAQSkZJRg==', 'base64'),
+  });
+  await expect(page.getByText('1 foto toegevoegd bij De Droatneagels.')).toBeVisible();
+  await expect(page.getByRole('row', { name: /De Droatneagels .*1 · toevoegen/ })).toBeVisible();
+});

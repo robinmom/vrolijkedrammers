@@ -7493,6 +7493,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/results/entries/{registrationId}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Foto's bij een inzending (fase 22d, ook achteraf): in het album van de uitslag, dat pas met de uitslag zichtbaar
+         *     wordt. Hooguit 20 per keer.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    registrationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        files?: components["schemas"]["IFormFileCollection"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"][];
+                        "application/json": components["schemas"]["CreatedResponse"][];
+                        "text/json": components["schemas"]["CreatedResponse"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/permissions": {
         parameters: {
             query?: never;
@@ -17155,6 +17226,7 @@ export interface components {
             motto: null | string;
             /** Format: double */
             total: number;
+            photoUrl: null | string;
         };
         PublicResultsResponse: {
             paradeName: string;
@@ -17162,6 +17234,8 @@ export interface components {
             paradeDate: string;
             /** Format: date-time */
             publishedAt: string;
+            /** Format: uuid */
+            albumId: null | string;
             categories: components["schemas"]["PublicCategoryResultResponse"][];
         };
         PublicStatus: {
@@ -17322,6 +17396,8 @@ export interface components {
             overall: number;
             /** Format: double */
             total: number;
+            /** Format: int32 */
+            photoCount: number;
         };
         /** @enum {unknown} */
         ResultsExportKind: "Uitslag" | "Zaallijst";

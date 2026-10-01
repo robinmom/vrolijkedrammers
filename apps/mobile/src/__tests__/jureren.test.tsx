@@ -114,13 +114,14 @@ describe('Jureren (fase 22b)', () => {
         paradeName: 'Optocht Loil 2027',
         paradeDate: '2027-02-07',
         publishedAt: '2027-02-07T21:00:00Z',
+        albumId: 'a-1',
         categories: [
           {
             name: 'Getrokken wagens volwassenen',
             maxPoints: 2500,
             rows: [
-              { place: 1, startNumber: 64, groupName: 'De Droatneagels', motto: 'We-j goan deur tot in de 7de hemel.', total: 2204 },
-              { place: 2, startNumber: 66, groupName: 'De Druktemoakers', motto: null, total: 2101.5 },
+              { place: 1, startNumber: 64, groupName: 'De Droatneagels', motto: 'We-j goan deur tot in de 7de hemel.', total: 2204, photoUrl: 'https://example.test/f.jpg' },
+              { place: 2, startNumber: 66, groupName: 'De Druktemoakers', motto: null, total: 2101.5, photoUrl: null },
             ],
           },
         ],

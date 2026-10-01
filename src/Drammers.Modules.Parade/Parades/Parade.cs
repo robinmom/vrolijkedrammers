@@ -81,6 +81,9 @@ public sealed class Parade : IAuditable
 
     public Guid? ResultsPublishedBy { get; set; }
 
+    /// <summary>Album met foto's van de inzendingen bij de uitslag (fase 22d); gepubliceerd samen met de uitslag.</summary>
+    public Guid? ResultsAlbumId { get; set; }
+
     /// <summary>Optimistic concurrency voor het samenstellen (fase 12, ADR-012).</summary>
     public int CompositionVersion { get; set; }
 

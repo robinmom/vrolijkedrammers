@@ -1121,7 +1121,14 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
   - de website: `/optocht/uitslag`, met een link vanaf `/optocht`;
   - de app: bovenaan Uitslagen.
 
-**22d — foto's bij de inzendingen (gepland).** Achteraf foto's toevoegen per wagen of groep en tonen bij de uitslag op de website en in de app.
+**22d — foto's bij de inzendingen (gebouwd).**
+- In de portal op Uitslag kun je per wagen of groep foto's toevoegen, ook achteraf: `POST /admin/results/entries/{id}/photos`, hooguit 20 per keer, met `parade.result`.
+- Ze komen in het album "Uitslag ‹optocht›" (soort Optocht, voor iedereen, `Parade.ResultsAlbumId`). Elke foto krijgt `Photo.RegistrationId` en als bijschrift de groepsnaam.
+- Het album blijft concept tot de uitslag wordt gepubliceerd en gaat dan tegelijk open. Foto's die later worden toegevoegd, zijn direct zichtbaar.
+- De eerste foto per inzending staat bij de uitslag:
+  - op de website, met een link naar het album;
+  - in de app (`photoUrl`).
+- Ook hier is niets eerder openbaar dan de uitslag.
 
 ## 5. Buiten het plan (LATER)
 

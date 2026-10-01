@@ -1817,3 +1817,13 @@ fieldset {
 .chip.active .chip-count {
   color: inherit;
 }
+
+.file-button {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-button:focus-within {
+  outline: 3px solid var(--dvd-focus, #087bc1);
+  outline-offset: 2px;
+}

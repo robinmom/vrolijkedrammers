@@ -790,3 +790,27 @@ test('fase 21g: melding als nieuws gepland wordt na het laatste carnavalsjaar', 
   ).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });
+
+test('menukoppen inklappen: onthouden na herladen en open bij de huidige pagina', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, '');
+  await openMenuIfMobile(page);
+  const nav = page.getByRole('navigation', { name: 'Navigatie' });
+  const beheer = nav.getByRole('button', { name: 'Beheer' });
+  await expect(beheer).toHaveAttribute('aria-expanded', 'true');
+  await beheer.click();
+  await expect(beheer).toHaveAttribute('aria-expanded', 'false');
+  await expect(nav.getByRole('link', { name: 'Auditlog' })).toBeHidden();
+  await expect(nav.getByRole('link', { name: 'Agenda' })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+
+  await page.reload();
+  await openMenuIfMobile(page);
+  await expect(nav.getByRole('button', { name: 'Beheer' })).toHaveAttribute('aria-expanded', 'false');
+
+  // Een pagina uit een ingeklapte kop: die kop gaat vanzelf open.
+  await page.goto('/beheer/auditlog');
+  await openMenuIfMobile(page);
+  await expect(nav.getByRole('button', { name: 'Beheer' })).toHaveAttribute('aria-expanded', 'true');
+  await expect(nav.getByRole('link', { name: 'Auditlog' })).toBeVisible();
+});

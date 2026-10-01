@@ -4210,6 +4210,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/news/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Afbeelding vooraf uploaden (ook vóór het eerste opslaan); stuur het pad mee in `image`. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UploadedImageResponse"];
+                        "application/json": components["schemas"]["UploadedImageResponse"];
+                        "text/json": components["schemas"]["UploadedImageResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/news/{id}/publish": {
         parameters: {
             query?: never;
@@ -8433,6 +8488,959 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/website/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UploadedImageResponse"];
+                        "application/json": components["schemas"]["UploadedImageResponse"];
+                        "text/json": components["schemas"]["UploadedImageResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsiteSettingsResponse"];
+                        "application/json": components["schemas"]["WebsiteSettingsResponse"];
+                        "text/json": components["schemas"]["WebsiteSettingsResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WebsiteSettingsRequest"];
+                    "text/json": components["schemas"]["WebsiteSettingsRequest"];
+                    "application/*+json": components["schemas"]["WebsiteSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsitePageSummaryResponse"][];
+                        "application/json": components["schemas"]["WebsitePageSummaryResponse"][];
+                        "text/json": components["schemas"]["WebsitePageSummaryResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WebsitePageRequest"];
+                    "text/json": components["schemas"]["WebsitePageRequest"];
+                    "application/*+json": components["schemas"]["WebsitePageRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/pages/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsitePageResponse"];
+                        "application/json": components["schemas"]["WebsitePageResponse"];
+                        "text/json": components["schemas"]["WebsitePageResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WebsitePageRequest"];
+                    "text/json": components["schemas"]["WebsitePageRequest"];
+                    "application/*+json": components["schemas"]["WebsitePageRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/committees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CommitteeResponse"][];
+                        "application/json": components["schemas"]["CommitteeResponse"][];
+                        "text/json": components["schemas"]["CommitteeResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommitteeRequest"];
+                    "text/json": components["schemas"]["CommitteeRequest"];
+                    "application/*+json": components["schemas"]["CommitteeRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedIntResponse"];
+                        "application/json": components["schemas"]["CreatedIntResponse"];
+                        "text/json": components["schemas"]["CreatedIntResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/member-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Leden zoeken om als kaderlid te kiezen; alleen lidnummer, naam en woonplaats (geen andere persoonsgegevens). */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KaderCandidateResponse"][];
+                        "application/json": components["schemas"]["KaderCandidateResponse"][];
+                        "text/json": components["schemas"]["KaderCandidateResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/committees/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommitteeRequest"];
+                    "text/json": components["schemas"]["CommitteeRequest"];
+                    "application/*+json": components["schemas"]["CommitteeRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/committees/{id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["KaderOrderRequest"];
+                    "text/json": components["schemas"]["KaderOrderRequest"];
+                    "application/*+json": components["schemas"]["KaderOrderRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/kader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommitteeMemberRequest"];
+                    "text/json": components["schemas"]["CommitteeMemberRequest"];
+                    "application/*+json": components["schemas"]["CommitteeMemberRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/kader/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommitteeMemberRequest"];
+                    "text/json": components["schemas"]["CommitteeMemberRequest"];
+                    "application/*+json": components["schemas"]["CommitteeMemberRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/princes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    kind?: components["schemas"]["PrinceKind"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrinceResponse"][];
+                        "application/json": components["schemas"]["PrinceResponse"][];
+                        "text/json": components["schemas"]["PrinceResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PrinceRequest"];
+                    "text/json": components["schemas"]["PrinceRequest"];
+                    "application/*+json": components["schemas"]["PrinceRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/princes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PrinceRequest"];
+                    "text/json": components["schemas"]["PrinceRequest"];
+                    "application/*+json": components["schemas"]["PrinceRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/awards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    type?: components["schemas"]["AwardType"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AwardResponse"][];
+                        "application/json": components["schemas"]["AwardResponse"][];
+                        "text/json": components["schemas"]["AwardResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AwardRequest"];
+                    "text/json": components["schemas"]["AwardRequest"];
+                    "application/*+json": components["schemas"]["AwardRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/website/awards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AwardRequest"];
+                    "text/json": components["schemas"]["AwardRequest"];
+                    "application/*+json": components["schemas"]["AwardRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/app-auth-config": {
         parameters: {
             query?: never;
@@ -12334,6 +13342,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/website/hero": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsiteHeroResponse"];
+                        "application/json": components["schemas"]["WebsiteHeroResponse"];
+                        "text/json": components["schemas"]["WebsiteHeroResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -12588,6 +13633,10 @@ export interface components {
             imageUrl: null | string;
             pushOnPublish: boolean;
             pushStatus: null | components["schemas"]["NotificationStatus"];
+            /** @default false */
+            showOnWebsite: boolean;
+            websiteBody?: null | string;
+            slug?: null | string;
         };
         AdminNewsSummaryResponse: {
             /** Format: uuid */
@@ -12599,6 +13648,8 @@ export interface components {
             publishAt: null | string;
             /** Format: date-time */
             expireAt: null | string;
+            /** @default false */
+            showOnWebsite: boolean;
         };
         AdminParadeResponse: {
             /** Format: uuid */
@@ -12983,6 +14034,29 @@ export interface components {
             oldValues: null | string;
             newValues: null | string;
         };
+        AwardRequest: {
+            type: components["schemas"]["AwardType"];
+            /** Format: int32 */
+            year: number;
+            recipient: string;
+            body: null | string;
+            photo: null | string;
+            isPublished: boolean;
+        };
+        AwardResponse: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["AwardType"];
+            /** Format: int32 */
+            year: number;
+            recipient: string;
+            body: null | string;
+            photoUrl: null | string;
+            slug: string;
+            isPublished: boolean;
+        };
+        /** @enum {unknown} */
+        AwardType: "Drammertje" | "VerdienstelijkeDidammer" | "EikenloofVanBoschslag";
         BindDeviceRequest: {
             challenge: null | string;
             signature: null | string;
@@ -13070,6 +14144,46 @@ export interface components {
             startNumber: null | number;
             status: string;
         };
+        CommitteeMemberRequest: {
+            /** Format: int32 */
+            committeeId: number;
+            /** Format: uuid */
+            memberId: null | string;
+            name: string;
+            function: null | string;
+            photo: null | string;
+        };
+        CommitteeMemberResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            committeeId: number;
+            /** Format: uuid */
+            memberId: null | string;
+            memberNumber: null | string;
+            name: string;
+            function: null | string;
+            photoUrl: null | string;
+            /** Format: int32 */
+            sortOrder: number;
+        };
+        CommitteeRequest: {
+            name: string;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            sortOrder: number;
+        };
+        CommitteeResponse: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            slug: string;
+            /** Format: int32 */
+            sortOrder: number;
+            members: components["schemas"]["CommitteeMemberResponse"][];
+        };
         Composition: {
             /** Format: int32 */
             version: number;
@@ -13119,6 +14233,10 @@ export interface components {
          * @enum {unknown}
          */
         ContentVisibility: "Public" | "Members" | "Restricted";
+        CreatedIntResponse: {
+            /** Format: int32 */
+            id: number;
+        };
         CreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -13650,6 +14768,16 @@ export interface components {
             /** Format: int32 */
             issued: number;
         };
+        KaderCandidateResponse: {
+            /** Format: uuid */
+            id: string;
+            memberNumber: string;
+            fullName: string;
+            city: null | string;
+        };
+        KaderOrderRequest: {
+            ids: string[];
+        };
         KassaDay: {
             /** Format: date */
             day: string;
@@ -13806,6 +14934,7 @@ export interface components {
             account: null | components["schemas"]["MemberAccountResponse"];
             groups: components["schemas"]["MemberGroupResponse"][];
             provisioning: null | components["schemas"]["MemberProvisioningResponse"];
+            kader?: null | components["schemas"]["MemberKaderResponse"][];
         };
         /**
          * @description Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld
@@ -13841,6 +14970,15 @@ export interface components {
             suggestions: components["schemas"]["GuardianSuggestion"][];
             requests: components["schemas"]["GuardianRequestView"][];
             ownAccount: components["schemas"]["OwnAccountInfo"];
+        };
+        /** @description Functie in het kader op de website (fase 21a); beheer onder Website → Kader. */
+        MemberKaderResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            committeeId: number;
+            committee: string;
+            function: null | string;
         };
         MemberLocalUpdateRequest: {
             localStatusOverride: null | components["schemas"]["MembershipStatus"];
@@ -14058,6 +15196,11 @@ export interface components {
             publication: components["schemas"]["PublicationRequest"];
             /** @default false */
             pushOnPublish: boolean;
+            /** @default false */
+            showOnWebsite: boolean;
+            websiteBody?: null | string;
+            slug?: null | string;
+            image?: null | string;
         };
         NewsSummaryResponse: {
             /** Format: uuid */
@@ -14577,6 +15720,28 @@ export interface components {
         PreferenceChange: {
             category: components["schemas"]["NotificationCategory"];
             enabled: boolean;
+        };
+        /** @enum {unknown} */
+        PrinceKind: "Prince" | "YouthPrince";
+        PrinceRequest: {
+            kind: components["schemas"]["PrinceKind"];
+            /** Format: int32 */
+            year: number;
+            princeName: string;
+            name: null | string;
+            motto: null | string;
+            photo: null | string;
+        };
+        PrinceResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["PrinceKind"];
+            /** Format: int32 */
+            year: number;
+            princeName: string;
+            name: null | string;
+            motto: null | string;
+            photoUrl: null | string;
         };
         PrivacyExportResponse: {
             /** Format: uuid */
@@ -15226,6 +16391,11 @@ export interface components {
             name: string;
             description: null | string;
         };
+        /** @description Een vooraf geüploade afbeelding: stuur string UploadedImageResponse.Path mee bij het opslaan; string UploadedImageResponse.Url is voor het voorbeeld. */
+        UploadedImageResponse: {
+            path: string;
+            url: string;
+        };
         UserRoleResponse: {
             code: string;
             name: string;
@@ -15296,6 +16466,84 @@ export interface components {
         };
         /** @enum {unknown} */
         WaitlistStatus: "Waiting" | "Invited" | "Granted" | "Expired" | "Withdrawn";
+        WebsiteHeroButton: {
+            label: string;
+            link: components["schemas"]["WebsiteLink"];
+        };
+        WebsiteHeroResponse: {
+            eyebrow: null | string;
+            title: string;
+            subtitle: null | string;
+            imageUrl: null | string;
+            primary: null | components["schemas"]["WebsiteHeroButton"];
+            secondary: null | components["schemas"]["WebsiteHeroButton"];
+        };
+        /** @enum {unknown} */
+        WebsiteLink: "Agenda" | "News" | "Photos" | "Parade" | "ParadeRegistration" | "Membership" | "Tickets" | "App" | "Contact" | null;
+        WebsitePageRequest: {
+            slug: null | string;
+            title: string;
+            intro: null | string;
+            body: string;
+            image: null | string;
+            isPublished: boolean;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            sortOrder: number;
+        };
+        WebsitePageResponse: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            intro: null | string;
+            body: string;
+            imageUrl: null | string;
+            isPublished: boolean;
+            /** Format: int32 */
+            sortOrder: number;
+        };
+        WebsitePageSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            isPublished: boolean;
+            /** Format: int32 */
+            sortOrder: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        WebsiteSettingsRequest: {
+            heroEyebrow: null | string;
+            heroTitle: string;
+            heroSubtitle: null | string;
+            heroPrimaryLabel: null | string;
+            heroPrimaryLink: null | components["schemas"]["WebsiteLink"];
+            heroSecondaryLabel: null | string;
+            heroSecondaryLink: null | components["schemas"]["WebsiteLink"];
+            heroImage: null | string;
+            facebookPageUrl: null | string;
+            instagramUrl: null | string;
+            showYouthPrinces: boolean;
+        };
+        WebsiteSettingsResponse: {
+            heroEyebrow: null | string;
+            heroTitle: string;
+            heroSubtitle: null | string;
+            heroPrimaryLabel: null | string;
+            heroPrimaryLink: null | components["schemas"]["WebsiteLink"];
+            heroSecondaryLabel: null | string;
+            heroSecondaryLink: null | components["schemas"]["WebsiteLink"];
+            heroImageUrl: null | string;
+            facebookPageUrl: null | string;
+            instagramUrl: null | string;
+            showYouthPrinces: boolean;
+            /** Format: int32 */
+            youthPrinceCount: number;
+        };
         WithdrawRequest: {
             reason: null | string;
         };

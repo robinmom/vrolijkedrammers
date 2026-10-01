@@ -33,6 +33,15 @@ public sealed class NewsItem : IAuditable, IPublishable
     /// <summary>Bij publicatie (direct of op het geplande moment) één pushmelding aan de doelgroep van het bericht.</summary>
     public bool PushOnPublish { get; set; }
 
+    /// <summary>Ook tonen op de website (fase 21a); alleen voor openbaar nieuws.</summary>
+    public bool ShowOnWebsite { get; set; }
+
+    /// <summary>Optionele langere tekst voor de website (Markdown), onder de tekst uit de app.</summary>
+    public string? WebsiteBody { get; set; }
+
+    /// <summary>Webadres op de website, bijvoorbeeld <c>drammertje-2026-raymond-raben</c>; uniek.</summary>
+    public string? Slug { get; set; }
+
     public List<NewsAudience> Audiences { get; set; } = [];
 
     public byte[] RowVersion { get; set; } = [];

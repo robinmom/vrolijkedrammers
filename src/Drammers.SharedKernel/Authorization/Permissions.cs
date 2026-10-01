@@ -48,6 +48,7 @@ public static class Permissions
     public const string MemberPurge = "member.purge";
     public const string SaleManage = "sale.manage";
     public const string SaleCollect = "sale.collect";
+    public const string WebsiteManage = "website.manage";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -95,6 +96,7 @@ public static class Permissions
         new(MemberPurge, "Alle leden uit de test-/acceptatieomgeving verwijderen (niet in productie)", "Leden"),
         new(SaleManage, "Kaartverkoop beheren: producten, bestellingen, contant, betaallinks en wachtlijst", "Financieel"),
         new(SaleCollect, "Kassa: munten-QR scannen en bestellingen uitgeven", "Financieel"),
+        new(WebsiteManage, "Website beheren: homepage, pagina's, kader, prinsen en onderscheidingen", "Content"),
     ];
 }
 

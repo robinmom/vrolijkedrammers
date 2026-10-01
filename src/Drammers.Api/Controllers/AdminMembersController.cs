@@ -85,6 +85,9 @@ public sealed class AdminMembersController(
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => new MemberProvisioningResponse(p.Id, p.Step, p.Attempts, p.LastError, p.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);
+        var kader = await db.CommitteeMembers.AsNoTracking().Where(k => k.MemberId == id)
+            .Join(db.Committees, k => k.CommitteeId, c => c.Id, (k, c) => new MemberKaderResponse(k.Id, c.Id, c.Name, k.Function))
+            .ToListAsync(cancellationToken);
         return new MemberDetailResponse(
             m.Id, m.MemberNumber, m.EbMemberId, m.FullName, m.FirstName, m.NamePrefix, m.LastName, m.NameCorrectedManually,
             m.Salutation, m.Gender, m.AddressLine, m.PostalCode, m.City, m.Country, m.Email, m.Phone, m.MobilePhone,
@@ -92,7 +95,7 @@ public sealed class AdminMembersController(
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),
-            account, groups, provisioning);
+            account, groups, provisioning, kader);
     }
 
     [HttpPatch("{id:guid}")]
@@ -266,7 +269,10 @@ public sealed record MemberDetailResponse(
     string? MemberCategory, string? ParadeGroupName, int Persons, MembershipStatus SyncedStatus, MembershipStatus? LocalStatusOverride, MembershipStatus EffectiveStatus,
     DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, MemberSyncState SyncState, DateTime? EbLastSeenAt,
     DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups,
-    MemberProvisioningResponse? Provisioning);
+    MemberProvisioningResponse? Provisioning, IReadOnlyList<MemberKaderResponse>? Kader = null);
+
+/// <summary>Functie in het kader op de website (fase 21a); beheer onder Website → Kader.</summary>
+public sealed record MemberKaderResponse(Guid Id, int CommitteeId, string Committee, string? Function);
 
 /// <summary>Laatste provisioning van een account voor dit lid (fase 9).</summary>
 public sealed record MemberProvisioningResponse(

@@ -1469,3 +1469,110 @@ ul.alert {
 .warnings-panel ul {
   margin: 8px 0 0;
 }
+
+/* Websitebeheer (fase 21a). */
+.preview-round {
+  width: 112px;
+  height: 112px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.thumb {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.thumb-round {
+  border-radius: 50%;
+}
+
+.thumb-empty {
+  background: var(--dvd-surface-muted, #f0f1f2);
+}
+
+.image-picker {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.order-buttons,
+.actions-cell {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pick-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 1px solid var(--dvd-border);
+  border-radius: 10px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.pick {
+  display: grid;
+  width: 100%;
+  text-align: left;
+  gap: 2px;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pick:hover,
+.pick.selected {
+  background: var(--dvd-tint-blue);
+}
+
+.row-edit {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+}
+
+.row-edit > .field {
+  flex: 1;
+}
+
+.plain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.span-2 {
+  grid-column: 1 / -1;
+}
+
+.truncate {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card.compact {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+/* Een fieldset groeit standaard mee met de breedte van een bestandsveld; op mobiel niet buiten het scherm. */
+fieldset {
+  min-width: 0;
+}
+
+.image-picker input[type='file'] {
+  max-width: 100%;
+}

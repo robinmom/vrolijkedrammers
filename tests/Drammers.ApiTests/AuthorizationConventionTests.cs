@@ -54,6 +54,7 @@ public class AuthorizationConventionTests
         $"{nameof(SalesController)}.{nameof(SalesController.QrImage)}",
         $"{nameof(SalesController)}.{nameof(SalesController.Waitlist)}",
         $"{nameof(MollieWebhookController)}.{nameof(MollieWebhookController.Webhook)}",
+        $"{nameof(WebsiteController)}.{nameof(WebsiteController.Hero)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

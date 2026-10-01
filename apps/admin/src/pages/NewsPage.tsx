@@ -2,10 +2,9 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useAdminNews, useAdminNewsItem, useApiMutation, useMe, type NewsRequest } from '../api/hooks';
-import { upload } from '../api/upload';
-import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
+import { ImagePicker } from '../components/ImagePicker';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { PublicationFields, defaultPublication } from '../components/PublicationFields';
 import { formatDateTime, fromLocalInput, notificationStatusLabels, statusLabels, toLocalInput, visibilityLabels } from '../format';
@@ -28,6 +27,7 @@ export function NewsPage() {
             <tr>
               <th scope="col">Titel</th>
               <th scope="col">Zichtbaar voor</th>
+              <th scope="col">Website</th>
               <th scope="col">Status</th>
               <th scope="col">Publicatie</th>
             </tr>
@@ -41,6 +41,7 @@ export function NewsPage() {
                   </Link>
                 </td>
                 <td>{visibilityLabels[n.visibility]}</td>
+                <td>{n.showOnWebsite ? <span className="badge info">Website</span> : null}</td>
                 <td>{statusLabels[n.status]}</td>
                 <td>{formatDateTime(n.publishAt)}</td>
               </tr>
@@ -60,18 +61,20 @@ const emptyNews: NewsRequest = {
   expireAt: null,
   publication: defaultPublication,
   pushOnPublish: false,
+  showOnWebsite: false,
+  websiteBody: null,
+  slug: null,
+  image: null,
 };
 
 export function NewsEditorPage() {
   const { id } = useParams({ from: '/nieuws/$id' });
   const isNew = id === 'nieuw';
   const api = useApi();
-  const auth = useAuth();
   const navigate = useNavigate();
   const existing = useAdminNewsItem(isNew ? null : id);
   const [form, setForm] = useState<NewsRequest>(emptyNews);
   const [message, setMessage] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<unknown>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const me = useMe();
   const permissions = me.data?.permissions ?? [];
@@ -89,6 +92,10 @@ export function NewsEditorPage() {
         expireAt: n.expireAt,
         publication: n.publication,
         pushOnPublish: n.pushOnPublish,
+        showOnWebsite: n.showOnWebsite ?? false,
+        websiteBody: n.websiteBody ?? null,
+        slug: n.slug ?? null,
+        image: null,
       });
     }
   }, [existing.data]);
@@ -115,18 +122,6 @@ export function NewsEditorPage() {
     });
   }
 
-  async function uploadImage(file: File) {
-    setFileError(null);
-    const data = new FormData();
-    data.append('file', file);
-    try {
-      await upload(auth, 'PUT', `/api/v1/admin/news/${id}/image`, data);
-      await existing.refetch();
-      setMessage('Afbeelding opgeslagen.');
-    } catch (error) {
-      setFileError(error);
-    }
-  }
 
   return (
     <>
@@ -147,6 +142,50 @@ export function NewsEditorPage() {
           <Field label="Zichtbaar tot" type="datetime-local" value={toLocalInput(form.expireAt)} onChange={(e) => set({ expireAt: fromLocalInput(e.target.value) })} />
         </div>
         <PublicationFields value={form.publication} onChange={(publication) => set({ publication })} />
+        <fieldset>
+          <legend>Afbeelding</legend>
+          <ImagePicker
+            label="Afbeelding"
+            uploadPath="/api/v1/admin/news/images"
+            currentUrl={existing.data?.imageUrl}
+            onChange={(image) => set({ image })}
+          />
+        </fieldset>
+        <fieldset className="website-fieldset">
+          <legend>Website</legend>
+          <Checkbox
+            label="Ook tonen op de website (bij Nieuws en op de homepage)"
+            checked={form.showOnWebsite ?? false}
+            disabled={form.publication.visibility !== 'Public'}
+            onChange={(e) => set({ showOnWebsite: e.target.checked })}
+          />
+          {form.publication.visibility !== 'Public' ? (
+            <p className="muted">Alleen openbaar nieuws kan op de website. Zet de zichtbaarheid op Openbaar.</p>
+          ) : null}
+          {form.showOnWebsite ? (
+            <>
+              <div className="field">
+                <label htmlFor="websitetekst">Langere tekst voor de website (optioneel, Markdown)</label>
+                <textarea
+                  id="websitetekst"
+                  rows={10}
+                  aria-describedby="websitetekst-hint"
+                  value={form.websiteBody ?? ''}
+                  onChange={(e) => set({ websiteBody: e.target.value || null })}
+                />
+                <small id="websitetekst-hint" className="muted">
+                  Staat op de website onder de tekst uit de app. Laat leeg als de tekst uit de app genoeg is.
+                </small>
+              </div>
+              <Field
+                label="Webadres"
+                hint="Wordt uit de titel gemaakt als je het leeg laat. Alleen kleine letters, cijfers en streepjes."
+                value={form.slug ?? ''}
+                onChange={(e) => set({ slug: e.target.value || null })}
+              />
+            </>
+          ) : null}
+        </fieldset>
         <fieldset>
           <legend>Pushmelding</legend>
           {existing.data?.pushStatus ? (
@@ -181,17 +220,6 @@ export function NewsEditorPage() {
           </button>
         </div>
       </form>
-      {!isNew && existing.data ? (
-        <section className="card" aria-labelledby="nieuwsafbeelding">
-          <h2 id="nieuwsafbeelding">Afbeelding</h2>
-          {existing.data.imageUrl ? <img src={existing.data.imageUrl} alt="" className="preview" /> : <p className="muted">Nog geen afbeelding.</p>}
-          <div className="field">
-            <label htmlFor="nieuws-afbeelding">Afbeelding (JPEG, PNG of WebP, max. 10 MB)</label>
-            <input id="nieuws-afbeelding" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => e.target.files?.[0] && void uploadImage(e.target.files[0])} />
-          </div>
-          <ProblemAlert error={fileError} />
-        </section>
-      ) : null}
       <ConfirmDialog
         open={confirmDelete}
         title="Bericht verwijderen?"

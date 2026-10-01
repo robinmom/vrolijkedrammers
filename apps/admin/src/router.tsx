@@ -19,6 +19,11 @@ import { ParadePage } from './pages/ParadePage';
 import { TicketsPage } from './pages/TicketsPage';
 import { PronkzittingPage } from './pages/PronkzittingPage';
 import { KassaLogPage } from './pages/KassaLogPage';
+import { AwardsPage } from './pages/AwardsPage';
+import { KaderPage } from './pages/KaderPage';
+import { PrincesPage } from './pages/PrincesPage';
+import { WebsiteContentPagesPage, WebsitePageEditorPage } from './pages/WebsiteContentPages';
+import { WebsiteHomePage, WebsiteSettingsPage } from './pages/WebsiteHomePage';
 import { DayTicketsPage, EventTicketsPage, TokensPage } from './pages/SalesKindPage';
 import { AccessLogPage } from './pages/AccessLogPage';
 import { ArrivalTimesPage } from './pages/ArrivalTimesPage';
@@ -56,6 +61,13 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/nieuws', component: guarded('news.manage', NewsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/nieuws/$id', component: guarded('news.manage', NewsEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/fotos', component: guarded('photo.manage', PhotosPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/homepage', component: guarded('website.manage', WebsiteHomePage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/paginas', component: guarded('website.manage', WebsiteContentPagesPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/paginas/$id', component: guarded('website.manage', WebsitePageEditorPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/kader', component: guarded('website.manage', KaderPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/prinsen', component: guarded('website.manage', PrincesPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/onderscheidingen', component: guarded('website.manage', AwardsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/website/instellingen', component: guarded('website.manage', WebsiteSettingsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/fotos/$id', component: guarded('photo.manage', AlbumEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/leden', component: guarded('member.read', MembersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/leden/$id', component: guarded('member.read', MemberDetailPage) }),

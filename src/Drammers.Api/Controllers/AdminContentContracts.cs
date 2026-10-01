@@ -44,10 +44,18 @@ public sealed record NewsRequest(
     [StringLength(50)] string? Category,
     DateTime? ExpireAt,
     [Required] PublicationRequest Publication,
-    bool PushOnPublish = false)
+    bool PushOnPublish = false,
+    bool ShowOnWebsite = false,
+    [StringLength(100000)] string? WebsiteBody = null,
+    [StringLength(100)] string? Slug = null,
+    [StringLength(300)] string? Image = null)
 {
-    public NewsInput ToInput() => new(Title, Summary, Body, Category, ExpireAt?.ToUniversalTime(), Publication.ToInput(), PushOnPublish);
+    public NewsInput ToInput() => new(Title, Summary, Body, Category, ExpireAt?.ToUniversalTime(), Publication.ToInput(), PushOnPublish,
+        ShowOnWebsite, WebsiteBody, Slug, Image);
 }
+
+/// <summary>Een vooraf geüploade afbeelding: stuur <see cref="Path"/> mee bij het opslaan; <see cref="Url"/> is voor het voorbeeld.</summary>
+public sealed record UploadedImageResponse(string Path, string Url);
 
 public sealed record AlbumRequest(
     [Required, StringLength(200, MinimumLength = 2)] string Title,

@@ -21,7 +21,7 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
     [ProducesResponseType<IReadOnlyList<AdminNewsSummaryResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<AdminNewsSummaryResponse>> GetAll(CancellationToken cancellationToken) =>
         await db.News.AsNoTracking().OrderByDescending(n => n.PublishAt ?? n.CreatedAt).Take(200)
-            .Select(n => new AdminNewsSummaryResponse(n.Id, n.Title, n.Visibility, n.Status, n.PublishAt, n.ExpireAt))
+            .Select(n => new AdminNewsSummaryResponse(n.Id, n.Title, n.Visibility, n.Status, n.PublishAt, n.ExpireAt, n.ShowOnWebsite))
             .ToListAsync(cancellationToken);
 
     [HttpGet("{id:guid}")]
@@ -35,7 +35,19 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
             .Select(x => (Modules.Notification.Notifications.NotificationStatus?)x.Status).SingleOrDefaultAsync(cancellationToken);
         return new AdminNewsResponse(n.Id, n.Title, n.Summary, n.Body, n.Category, n.ExpireAt,
             PublicationResponse.From(n.Visibility, n.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), n.Status, n.PublishAt),
-            await urls.ForAsync(FileContainers.Content, n.ImageBlobPath, cancellationToken), n.PushOnPublish, push);
+            await urls.ForAsync(FileContainers.Content, n.ImageBlobPath, cancellationToken), n.PushOnPublish, push,
+            n.ShowOnWebsite, n.WebsiteBody, n.Slug);
+    }
+
+    /// <summary>Afbeelding vooraf uploaden (ook vóór het eerste opslaan); stuur het pad mee in <c>image</c>.</summary>
+    [HttpPost("images")]
+    [RequestSizeLimit(ContentFiles.MaxImageBytes + 1_000_000)]
+    [ProducesResponseType<UploadedImageResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<UploadedImageResponse> UploadImage(IFormFile file, [FromServices] WebsiteAdministration website, CancellationToken cancellationToken)
+    {
+        var stored = await website.StoreImageAsync(new UploadedFile(file.FileName, file.Length, file.OpenReadStream), cancellationToken);
+        return new UploadedImageResponse(stored.Path, (await urls.ForAsync(FileContainers.Content, stored.Path, cancellationToken))!);
     }
 
     [HttpPost]
@@ -123,8 +135,10 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
 
 public sealed record ScheduleRequest(DateTime PublishAt);
 
-public sealed record AdminNewsSummaryResponse(Guid Id, string Title, ContentVisibility Visibility, PublicationStatus Status, DateTime? PublishAt, DateTime? ExpireAt);
+public sealed record AdminNewsSummaryResponse(
+    Guid Id, string Title, ContentVisibility Visibility, PublicationStatus Status, DateTime? PublishAt, DateTime? ExpireAt, bool ShowOnWebsite = false);
 
 public sealed record AdminNewsResponse(
     Guid Id, string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationResponse Publication, string? ImageUrl,
-    bool PushOnPublish, Modules.Notification.Notifications.NotificationStatus? PushStatus);
+    bool PushOnPublish, Modules.Notification.Notifications.NotificationStatus? PushStatus,
+    bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null);

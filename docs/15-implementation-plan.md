@@ -919,9 +919,55 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 ---
 
+### Fase 21 — Nieuwe website (vrolijkedrammers.nl)
+
+**Doel.** De WordPress-site vervangen door een eigen, lichte website die haar inhoud uit de backend haalt en in het portal wordt beheerd. Ontwerp: Figma-pagina's "🌐 Website (huidig)" (analyse) en "🌐 Website (nieuw)" (goedgekeurd 30-09-2026).
+
+**Besluiten (30-09-2026).**
+- Nieuwe site (optie B), beheerd onder een eigen menukop **Website** in het portal; de gebruiker regelt de DNS.
+- **Hero** zonder teller: een foto met bovenregel, titel, ondertitel en twee knoppen, aan te passen in het portal. De app toont dezelfde foto, titel en ondertitel.
+- **Nieuws:** het bestaande nieuws, met de optie "Ook tonen op de website" (alleen voor openbaar nieuws) en een optionele langere websitetekst. De afbeelding kan al vóór het eerste opslaan worden gekozen.
+- **Kader:** per commissie, gekozen uit de ledenlijst. Functie en pasfoto staan alleen in de backend, niet in e-Boekhouden.
+- **Prinsen:** jaar, prinsennaam, naam, motto en foto; niet gekoppeld aan leden. Klik op een prins opent de details. **Jeugdprinsen** krijgen een eigen pagina, die het bestuur pas zichtbaar zet als hij gevuld is.
+- **Onderscheidingen:** 't Drammertje, De Verdienstelijke Didammer en Het Eikenloof van Boschslag, per jaar, in dezelfde opzet als nu; link "Kijk verder".
+- **Lid worden:** alleen Lid of Dansgarde. 65+ volgt uit de geboortedatum. Het juiste lidmaatschap naar e-Boekhouden schrijven komt later.
+- **Optocht:** bij inschrijven altijd eerst de keuze om in te loggen (zelfde account als de app); ingelogd zie je "Mijn inschrijving".
+- **Facebook:** de backend haalt de laatste berichten op en toont ze in de huisstijl (geen Facebook-cookies). Het paginatoken zet de gebruiker in Key Vault.
+- Footer met afgeronde hoeken en "powered by Movement-IT"; geen sponsoren.
+- **Foto's:** licht voor de telefoon (thumbnails, lui laden, lightbox met vegen). In het portal bulk-uploaden en galerijen maken.
+- Alle test-, dubbele en lege pagina's van de oude site vervallen; oude adressen krijgen een doorverwijzing.
+
+**21a — websitebeheer in backend en portal (gebouwd).**
+- Datamodel (schema `content`):
+  - `WebsiteSettings` (één rij): de hero, Facebook, Instagram en `show_youth_princes`;
+  - `WebsitePage` (vaste pagina's, Markdown, uniek webadres);
+  - `Committee` (vier commissies als startgegevens) en `CommitteeMember` (optioneel gekoppeld aan `membership.Member`, bij verwijderen van het lid `SET NULL`);
+  - `Prince` (`Prince` of `YouthPrince`);
+  - `Award` (drie soorten, uniek webadres);
+  - `News`: `show_on_website`, `website_body` en `slug` (uniek als gevuld).
+- Afbeeldingen vooraf uploaden: `POST /admin/website/images` en `POST /admin/news/images` (typecontrole, virusscan, herschalen, zonder metadata) naar `content/uploads/…`. Bij het opslaan gaat het pad mee; alleen paden uit die map worden geaccepteerd.
+- Nieuw recht `website.manage` (rollen Redactie en Bestuur).
+- API:
+  - Portal (`website.manage`): `GET|PUT /admin/website/settings`; `GET|POST /admin/website/pages`; `GET|PUT|DELETE /admin/website/pages/{id}`; `GET|POST /admin/website/committees`; `PUT|DELETE /admin/website/committees/{id}`; `PUT /admin/website/committees/{id}/order`; `POST /admin/website/kader`; `PUT|DELETE /admin/website/kader/{id}`; `GET /admin/website/member-search` (alleen lidnummer, naam en woonplaats); `GET|POST /admin/website/princes`; `PUT|DELETE /admin/website/princes/{id}`; `GET|POST /admin/website/awards`; `PUT|DELETE /admin/website/awards/{id}`.
+  - Openbaar: `GET /website/hero` (ook voor de app).
+- Portal: menukop Website met Homepage, Pagina's, Kader, Prinsen (tabbladen Prinsen en Jeugdprinsen, met de schakelaar), Onderscheidingen en Instellingen website. Nieuws heeft een blok Website en de afbeelding in het formulier. Bij een lid staat de kaart "Kader (website)".
+- Tests: integratie (`WebsiteTests`), portal-e2e met axe (`website.spec.ts`).
+
+**21b — foto's.** Bulk-upload in het portal (slepen, wachtrij met voortgang per foto, opnieuw proberen), galerijen per soort en jaar, meerdere foto's tegelijk verbergen, verplaatsen of verwijderen.
+
+**21c — de website.** Server-side gerenderde pagina's in dezelfde App Service (snel en vindbaar, weinig JavaScript), met een cachebaar media-adres voor afbeeldingen (de SAS-links van 15 minuten passen niet in een gecachte pagina). Pagina's: home, agenda, nieuws, vereniging (kader, prinsengalerie, jeugdprinsen, onderscheidingen, vaste pagina's), optocht, foto's, contact en "Doe mee". Facebook-feed via de Graph API.
+
+**21d — inloggen op de website** voor de optocht (MSAL, zelfde Entra External ID als de app) en "Mijn inschrijving"; een inschrijving zonder account wordt gekoppeld zodra iemand met hetzelfde e-mailadres inlogt.
+
+**21e — overzetten** van de WordPress-inhoud via de openbare WordPress-API (berichten, prinsen, onderscheidingen, kader, vaste pagina's en foto's) en doorverwijzingen van de oude adressen.
+
+**21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
+
+---
+
 ## 5. Buiten het plan (LATER)
 
-Website-integratie (widgets, afgezien van het optochtformulier en lid worden), nieuwsbrief (in-app + e-mail, OQ-43), pasfoto in de scanner (OQ-22), VNet/private endpoints/Front Door (OQ-72), migratie naar Notification Hubs, Mollie next-gen webhooks (OQ-24), uitslagenmodule (OQ-40), 
+Nieuwsbrief (in-app + e-mail, OQ-43), pasfoto in de scanner (OQ-22), VNet/private endpoints/Front Door (OQ-72), migratie naar Notification Hubs, Mollie next-gen webhooks (OQ-24), uitslagenmodule (OQ-40), 
 
 ## 6. Werkafspraken per fase
 

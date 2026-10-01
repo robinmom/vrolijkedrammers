@@ -78,9 +78,11 @@ internal sealed class NewsItemConfiguration : IEntityTypeConfiguration<NewsItem>
         builder.Property(n => n.Summary).HasMaxLength(500);
         builder.Property(n => n.Category).HasMaxLength(50);
         builder.Property(n => n.ImageBlobPath).HasMaxLength(300);
+        builder.Property(n => n.Slug).HasMaxLength(120).IsUnicode(false);
         builder.Property(n => n.RowVersion).IsRowVersion();
         builder.HasMany(n => n.Audiences).WithOne().HasForeignKey(a => a.NewsId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(n => new { n.Status, n.PublishAt });
+        builder.HasIndex(n => n.Slug).IsUnique().HasFilter("[slug] IS NOT NULL");
     }
 }
 

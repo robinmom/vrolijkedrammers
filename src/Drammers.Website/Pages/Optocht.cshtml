@@ -11,6 +11,14 @@
 }
 <partial name="_PageBand" model="band" />
 <div class="wrap content">
+    @if (Model.Results is not null)
+    {
+        <div class="card cta-card results-cta">
+            <h2 class="h3">Uitslag @Model.Results</h2>
+            <p>Bekijk alle prijswinnaars per categorie.</p>
+            <p><a class="button" href="/optocht/uitslag">Naar de uitslag</a></p>
+        </div>
+    }
     <div class="grid-3">
         <div class="card cta-card">
             @if (p?.RegistrationOpen == true)

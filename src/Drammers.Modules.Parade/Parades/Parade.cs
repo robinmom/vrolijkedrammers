@@ -73,6 +73,14 @@ public sealed class Parade : IAuditable
     /// <summary>Het eerste startnummer dat een groep kan krijgen.</summary>
     public int FirstGroupStartNumber => FixedEntries.Count + 1;
 
+    /// <summary>
+    /// Uitslag gepubliceerd (fase 22c): pas daarna staat de uitslag op de website en in de app. Alleen na de
+    /// prijsuitreiking; daarna is de optocht afgerond.
+    /// </summary>
+    public DateTime? ResultsPublishedAt { get; set; }
+
+    public Guid? ResultsPublishedBy { get; set; }
+
     /// <summary>Optimistic concurrency voor het samenstellen (fase 12, ADR-012).</summary>
     public int CompositionVersion { get; set; }
 

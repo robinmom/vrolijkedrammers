@@ -7339,6 +7339,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    paradeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ResultOverviewResponse"];
+                        "application/json": components["schemas"]["ResultOverviewResponse"];
+                        "text/json": components["schemas"]["ResultOverviewResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/results/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    paradeId?: string;
+                    kind?: components["schemas"]["ResultsExportKind"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/results/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publiceren na de prijsuitreiking: daarna op website en in de app, optocht afgerond, mail naar secretaris en voorzitter. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PublishResultsRequest"];
+                    "text/json": components["schemas"]["PublishResultsRequest"];
+                    "application/*+json": components["schemas"]["PublishResultsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublishResultsResponse"];
+                        "application/json": components["schemas"]["PublishResultsResponse"];
+                        "text/json": components["schemas"]["PublishResultsResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/permissions": {
         parameters: {
             query?: never;
@@ -12320,6 +12474,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/parade/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * De gepubliceerde uitslag (fase 22c): de laatste optocht waarvan de uitslag na de prijsuitreiking is gepubliceerd.
+         *     Daarvoor 404, zodat de uitslag nergens te vinden is. Alleen plaats, groep, motto en totaal.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicResultsResponse"];
+                        "application/json": components["schemas"]["PublicResultsResponse"];
+                        "text/json": components["schemas"]["PublicResultsResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/parade/categories": {
         parameters: {
             query?: never;
@@ -15007,6 +15213,29 @@ export interface components {
             /** Format: int32 */
             sortOrder: number;
         };
+        CategoryResultResponse: {
+            /** Format: int32 */
+            categoryId: number;
+            name: string;
+            /** Format: int32 */
+            jurors: number;
+            /** Format: int32 */
+            submitted: number;
+            ready: boolean;
+            /** Format: int32 */
+            weightOriginality: number;
+            /** Format: int32 */
+            weightCarnivalesque: number;
+            /** Format: int32 */
+            weightQuality: number;
+            /** Format: int32 */
+            weightOverall: number;
+            /** Format: int32 */
+            maxPoints: number;
+            /** Format: int32 */
+            entries: number;
+            rows: components["schemas"]["ResultRowResponse"][];
+        };
         CategoryTotals: {
             name: string;
             /** Format: int32 */
@@ -16898,6 +17127,12 @@ export interface components {
         };
         /** @enum {unknown} */
         PublicationStatus: "Draft" | "Scheduled" | "Published" | "Archived";
+        PublicCategoryResultResponse: {
+            name: string;
+            /** Format: int32 */
+            maxPoints: number;
+            rows: components["schemas"]["PublicResultRowResponse"][];
+        };
         PublicRegistrationRequest: {
             registration: components["schemas"]["UpdateRegistrationRequest"];
             rulesAccepted: boolean;
@@ -16910,6 +17145,24 @@ export interface components {
             /** Format: int32 */
             registrationNumber: number;
             statusToken: string;
+        };
+        PublicResultRowResponse: {
+            /** Format: int32 */
+            place: number;
+            /** Format: int32 */
+            startNumber: null | number;
+            groupName: string;
+            motto: null | string;
+            /** Format: double */
+            total: number;
+        };
+        PublicResultsResponse: {
+            paradeName: string;
+            /** Format: date */
+            paradeDate: string;
+            /** Format: date-time */
+            publishedAt: string;
+            categories: components["schemas"]["PublicCategoryResultResponse"][];
         };
         PublicStatus: {
             paradeName: string;
@@ -16927,6 +17180,15 @@ export interface components {
             published: number;
             /** Format: int32 */
             withoutStartNumber: number;
+        };
+        PublishResultsRequest: {
+            /** Format: uuid */
+            paradeId: string;
+            prizeCeremonyHeld: boolean;
+        };
+        PublishResultsResponse: {
+            /** Format: date-time */
+            publishedAt: string;
         };
         PushTokenRequest: {
             token: string;
@@ -17031,6 +17293,38 @@ export interface components {
             resolution: components["schemas"]["SyncConflictStatus"];
             note: null | string;
         };
+        ResultOverviewResponse: {
+            /** Format: uuid */
+            paradeId: string;
+            paradeName: string;
+            /** Format: date */
+            paradeDate: string;
+            /** Format: date-time */
+            publishedAt: null | string;
+            categories: components["schemas"]["CategoryResultResponse"][];
+        };
+        ResultRowResponse: {
+            /** Format: int32 */
+            place: number;
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            startNumber: null | number;
+            groupName: string;
+            motto: null | string;
+            /** Format: double */
+            originality: number;
+            /** Format: double */
+            carnivalesque: number;
+            /** Format: double */
+            quality: number;
+            /** Format: double */
+            overall: number;
+            /** Format: double */
+            total: number;
+        };
+        /** @enum {unknown} */
+        ResultsExportKind: "Uitslag" | "Zaallijst";
         /** @enum {unknown} */
         RetentionAction: "Delete" | "Anonymize" | "Aggregate";
         RetentionPolicyRequest: {

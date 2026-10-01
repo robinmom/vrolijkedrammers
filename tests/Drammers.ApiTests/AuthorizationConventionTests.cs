@@ -45,6 +45,7 @@ public class AuthorizationConventionTests
         $"{nameof(ParadeController)}.{nameof(ParadeController.Current)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.Categories)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.ArrivalTimes)}",
+        $"{nameof(ParadeController)}.{nameof(ParadeController.Results)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.StartPublic)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.VerifyPublic)}",
         $"{nameof(ParadeController)}.{nameof(ParadeController.ResendPublic)}",

@@ -934,6 +934,69 @@ export class MockApi {
     ],
   };
 
+  // Fase 22c: uitslag (alleen de uitslagcommissie).
+  results = {
+    paradeId: 'p-1',
+    paradeName: 'Optocht Loil 2027',
+    paradeDate: '2027-02-07',
+    publishedAt: null as string | null,
+    categories: [
+      {
+        categoryId: 1,
+        name: 'Getrokken wagens volwassenen',
+        jurors: 5,
+        submitted: 5,
+        ready: true,
+        weightOriginality: 1,
+        weightCarnivalesque: 1,
+        weightQuality: 2,
+        weightOverall: 1,
+        maxPoints: 2500,
+        entries: 2,
+        rows: [
+          {
+            place: 1,
+            registrationId: 'r-64',
+            startNumber: 64,
+            groupName: 'De Droatneagels',
+            motto: 'We-j goan deur tot in de 7de hemel.',
+            originality: 420,
+            carnivalesque: 432,
+            quality: 912,
+            overall: 440,
+            total: 2204,
+          },
+          {
+            place: 2,
+            registrationId: 'r-66',
+            startNumber: 66,
+            groupName: 'De Druktemoakers',
+            motto: 'Veltinzz in de kerk',
+            originality: 412,
+            carnivalesque: 418,
+            quality: 846,
+            overall: 425,
+            total: 2101,
+          },
+        ],
+      },
+      {
+        categoryId: 2,
+        name: 'Wagens jeugd',
+        jurors: 5,
+        submitted: 3,
+        ready: false,
+        weightOriginality: 1,
+        weightCarnivalesque: 1,
+        weightQuality: 2,
+        weightOverall: 1,
+        maxPoints: 2500,
+        entries: 4,
+        rows: [] as unknown[],
+      },
+    ],
+  };
+
   private handleJury(
     path: string,
     method: string,
@@ -1983,6 +2046,23 @@ export class MockApi {
     }
     if ((m = path.match(/^\/admin\/news\/([^/]+)$/)) && method === 'GET') {
       return json(this.news.find((n) => n.id === m![1]));
+    }
+    if (path === '/admin/results') return json(this.results);
+    if (path === '/admin/results/export') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers: {
+          'content-disposition': `attachment; filename=${url.searchParams.get('kind') === 'Zaallijst' ? 'zaallijst' : 'uitslag'}-20270207.xlsx`,
+        },
+        body: 'xlsx',
+      });
+    }
+    if (path === '/admin/results/publish' && method === 'POST') {
+      if (!body.prizeCeremonyHeld) return json({ title: 'Na de prijsuitreiking' }, 422);
+      this.results.publishedAt = '2027-02-07T21:00:00Z';
+      this.record('parade.results-published', 'Parade', 'p-1', body);
+      return json({ publishedAt: this.results.publishedAt });
     }
     if (path.startsWith('/admin/jury')) {
       return this.handleJury(path, method, body, json, noContent);

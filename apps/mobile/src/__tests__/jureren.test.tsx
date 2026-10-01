@@ -3,13 +3,14 @@ import { Alert } from 'react-native';
 import OptochtScreen from '../app/(tabs)/optocht';
 import BeoordelenScreen from '../app/jureren/beoordelen';
 import JurerenScreen from '../app/jureren';
+import UitslagenScreen from '../app/uitslagen';
 import { setSessionForTest } from '../auth/session';
 import { api } from '../test/api-fixture';
 import { mockApi, renderApp } from '../test/render';
 
 /** Fase 22b: jureren in de app — eigen categorieën, sliders per voorbijtrekken, hele optocht en indienen. */
 
-const routes = { 'jureren/index': JurerenScreen, 'jureren/beoordelen': BeoordelenScreen, '(tabs)/optocht': OptochtScreen };
+const routes = { 'jureren/index': JurerenScreen, 'jureren/beoordelen': BeoordelenScreen, '(tabs)/optocht': OptochtScreen, uitslagen: UitslagenScreen };
 
 const me = {
   id: 'u-1',
@@ -104,5 +105,30 @@ describe('Jureren (fase 22b)', () => {
     expect(await screen.findByText('Bedankt, je jurering is ingediend')).toBeTruthy();
     expect(requests('/submit', 'POST')).toHaveLength(1);
     alert.mockRestore();
+  });
+
+  it('fase 22c: de gepubliceerde uitslag staat onder Uitslagen', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/parade/results': {
+        paradeName: 'Optocht Loil 2027',
+        paradeDate: '2027-02-07',
+        publishedAt: '2027-02-07T21:00:00Z',
+        categories: [
+          {
+            name: 'Getrokken wagens volwassenen',
+            maxPoints: 2500,
+            rows: [
+              { place: 1, startNumber: 64, groupName: 'De Droatneagels', motto: 'We-j goan deur tot in de 7de hemel.', total: 2204 },
+              { place: 2, startNumber: 66, groupName: 'De Druktemoakers', motto: null, total: 2101.5 },
+            ],
+          },
+        ],
+      },
+    });
+    await renderApp(routes, '/uitslagen');
+    expect(await screen.findByText('Uitslag Optocht Loil 2027')).toBeTruthy();
+    expect(screen.getByLabelText('1e plaats: De Droatneagels, startnummer 64, 2.204 punten')).toBeTruthy();
+    expect(screen.getByText('2.101,5')).toBeTruthy();
   });
 });

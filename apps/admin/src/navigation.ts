@@ -44,6 +44,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Aanrijtijden', to: '/optocht/aanrijtijden', permission: 'parade.import-arrival-times', icon: 'agenda', section: 'Optocht' },
   // Fase 22a: jury; de hoofdjury ziet in het portal alleen deze pagina.
   { label: 'Jury', to: '/optocht/jury', permission: 'jury.assign', icon: 'groepen', section: 'Optocht' },
+  // Fase 22c: alleen de uitslagcommissie.
+  { label: 'Uitslag', to: '/optocht/uitslag', permission: 'parade.result', icon: 'rapport', section: 'Optocht' },
   { label: 'Optocht en categorieën', to: '/optocht', permission: 'parade.config', icon: 'instellingen', section: 'Optocht' },
   { label: 'Ledentickets', to: '/tickets', permission: 'ticket.read', icon: 'rollen', section: 'Toegang' },
   { label: 'Toegangslog', to: '/toegangslog', permission: 'ticket.read', icon: 'audit', section: 'Toegang' },

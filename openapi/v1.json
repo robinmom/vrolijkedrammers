@@ -8874,6 +8874,187 @@
         }
       }
     },
+    "/api/v1/admin/results": {
+      "get": {
+        "tags": [
+          "AdminResults"
+        ],
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOverviewResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOverviewResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOverviewResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/results/export": {
+      "get": {
+        "tags": [
+          "AdminResults"
+        ],
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ResultsExportKind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/results/publish": {
+      "post": {
+        "tags": [
+          "AdminResults"
+        ],
+        "summary": "Publiceren na de prijsuitreiking: daarna op website en in de app, optocht afgerond, mail naar secretaris en voorzitter.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishResultsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishResultsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishResultsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResultsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResultsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResultsResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/permissions": {
       "get": {
         "tags": [
@@ -14879,6 +15060,56 @@
         }
       }
     },
+    "/api/v1/parade/results": {
+      "get": {
+        "tags": [
+          "Parade"
+        ],
+        "summary": "De gepubliceerde uitslag (fase 22c): de laatste optocht waarvan de uitslag na de prijsuitreiking is gepubliceerd.\nDaarvoor 404, zodat de uitslag nergens te vinden is. Alleen plaats, groep, motto en totaal.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicResultsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicResultsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicResultsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/parade/categories": {
       "get": {
         "tags": [
@@ -20178,6 +20409,73 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "CategoryResultResponse": {
+        "required": [
+          "categoryId",
+          "name",
+          "jurors",
+          "submitted",
+          "ready",
+          "weightOriginality",
+          "weightCarnivalesque",
+          "weightQuality",
+          "weightOverall",
+          "maxPoints",
+          "entries",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "jurors": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "submitted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "weightOriginality": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "weightCarnivalesque": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "weightQuality": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "weightOverall": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "entries": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultRowResponse"
+            }
           }
         }
       },
@@ -27148,6 +27446,29 @@
           "Archived"
         ]
       },
+      "PublicCategoryResultResponse": {
+        "required": [
+          "name",
+          "maxPoints",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "maxPoints": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicResultRowResponse"
+            }
+          }
+        }
+      },
       "PublicRegistrationRequest": {
         "required": [
           "registration",
@@ -27188,6 +27509,70 @@
           },
           "statusToken": {
             "type": "string"
+          }
+        }
+      },
+      "PublicResultRowResponse": {
+        "required": [
+          "place",
+          "startNumber",
+          "groupName",
+          "motto",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "motto": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PublicResultsResponse": {
+        "required": [
+          "paradeName",
+          "paradeDate",
+          "publishedAt",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "paradeName": {
+            "type": "string"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCategoryResultResponse"
+            }
           }
         }
       },
@@ -27257,6 +27642,34 @@
           "withoutStartNumber": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "PublishResultsRequest": {
+        "required": [
+          "paradeId",
+          "prizeCeremonyHeld"
+        ],
+        "type": "object",
+        "properties": {
+          "paradeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prizeCeremonyHeld": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PublishResultsResponse": {
+        "required": [
+          "publishedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -27678,6 +28091,109 @@
             ]
           }
         }
+      },
+      "ResultOverviewResponse": {
+        "required": [
+          "paradeId",
+          "paradeName",
+          "paradeDate",
+          "publishedAt",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "paradeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paradeName": {
+            "type": "string"
+          },
+          "paradeDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "publishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryResultResponse"
+            }
+          }
+        }
+      },
+      "ResultRowResponse": {
+        "required": [
+          "place",
+          "registrationId",
+          "startNumber",
+          "groupName",
+          "motto",
+          "originality",
+          "carnivalesque",
+          "quality",
+          "overall",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "motto": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "originality": {
+            "type": "number",
+            "format": "double"
+          },
+          "carnivalesque": {
+            "type": "number",
+            "format": "double"
+          },
+          "quality": {
+            "type": "number",
+            "format": "double"
+          },
+          "overall": {
+            "type": "number",
+            "format": "double"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ResultsExportKind": {
+        "enum": [
+          "Uitslag",
+          "Zaallijst"
+        ]
       },
       "RetentionAction": {
         "enum": [
@@ -30261,6 +30777,9 @@
     },
     {
       "name": "AdminReports"
+    },
+    {
+      "name": "AdminResults"
     },
     {
       "name": "AdminRoles"

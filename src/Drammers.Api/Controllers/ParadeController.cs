@@ -16,7 +16,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/parade")]
-public sealed class ParadeController(ParadeAdministration parades, ParadePublicRegistrations publicRegistrations) : ControllerBase
+public sealed class ParadeController(ParadeAdministration parades, ParadePublicRegistrations publicRegistrations, ParadeResults results) : ControllerBase
 {
     [HttpGet("current")]
     [ProducesResponseType<ParadeInfoResponse>(StatusCodes.Status200OK)]
@@ -35,6 +35,23 @@ public sealed class ParadeController(ParadeAdministration parades, ParadePublicR
     [ProducesResponseType<PublicArrivals>(StatusCodes.Status200OK)]
     public Task<PublicArrivals> ArrivalTimes([FromServices] ParadeArrivals arrivals, CancellationToken cancellationToken) =>
         arrivals.PublicAsync(cancellationToken);
+
+    /// <summary>
+    /// De gepubliceerde uitslag (fase 22c): de laatste optocht waarvan de uitslag na de prijsuitreiking is gepubliceerd.
+    /// Daarvoor 404, zodat de uitslag nergens te vinden is. Alleen plaats, groep, motto en totaal.
+    /// </summary>
+    [HttpGet("results")]
+    [ProducesResponseType<PublicResultsResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PublicResultsResponse>> Results(CancellationToken cancellationToken)
+    {
+        var o = await results.PublishedAsync(cancellationToken);
+        return o is null
+            ? Problem(statusCode: StatusCodes.Status404NotFound, detail: "Er is nog geen uitslag gepubliceerd.")
+            : new PublicResultsResponse(o.ParadeName, o.ParadeDate, o.PublishedAt!.Value,
+                [.. o.Categories.Select(c => new PublicCategoryResultResponse(c.Name, c.MaxPoints,
+                    [.. c.Rows.Select(r => new PublicResultRowResponse(r.Place, r.StartNumber, r.GroupName, r.Motto, r.Total))]))]);
+    }
 
     [HttpGet("categories")]
     [ProducesResponseType<IReadOnlyList<ParadeCategoryResponse>>(StatusCodes.Status200OK)]
@@ -108,3 +125,9 @@ public sealed record ParadeCategoryResponse(
     public static ParadeCategoryResponse From(ParadeCategory c) => new(
         c.Id, c.Code, c.Name, c.AgeGroup, c.Type, c.MinimumParticipants, c.MaximumParticipants, c.ParticipantCountBasis, c.ValidationMode, c.HasVehicle, c.Active, c.SortOrder);
 }
+
+public sealed record PublicResultsResponse(string ParadeName, DateOnly ParadeDate, DateTime PublishedAt, IReadOnlyList<PublicCategoryResultResponse> Categories);
+
+public sealed record PublicCategoryResultResponse(string Name, int MaxPoints, IReadOnlyList<PublicResultRowResponse> Rows);
+
+public sealed record PublicResultRowResponse(int Place, int? StartNumber, string GroupName, string? Motto, decimal Total);

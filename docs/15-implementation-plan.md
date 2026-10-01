@@ -1097,10 +1097,31 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
   - per jurylid een melding over beoordelingen buiten categorie, met Akkoord, Afwijzen en Aanpassen (per inzending, met hoeveel passages, zonder scores);
   - via `PUT /admin/jury/parades/{id}/outside`.
 
-**22c — uitslag (gepland).** De uitslag per categorie voor de uitslagcommissie, zodra alle juryleden van die categorie hebben ingediend.
-- Excel-export: uitslag per categorie en zaallijst.
-- "Nu publiceren": met de vraag of de prijsuitreiking is geweest en een mail naar secretaris@ en voorzitter@. Daarna is de optocht afgerond.
-- Daarna de uitslag op de website en in de app, en achteraf foto's bij de inzendingen.
+**22c — uitslag (gebouwd).**
+- **Rekenregel** (`ParadeResults`):
+  - per jurylid en criterium het gemiddelde van de ingevulde passages;
+  - per criterium de som over de juryleden, maal de weging;
+  - het totaal is de som van de vier criteria, afgerond op 1 decimaal;
+  - bij een gelijk totaal dezelfde plaats.
+- **Wat meetelt:**
+  - alleen juryleden die hebben ingediend;
+  - in hun eigen categorieën, plus beoordelingen buiten categorie met akkoord.
+  - Een categorie is klaar als al haar juryleden hebben ingediend.
+  - Maximum: juryleden × 100 × de som van de wegingen.
+- **Portal → Optocht → Uitslag** (alleen de rol Uitslagcommissie, `parade.result`; ook het bestuur niet):
+  - per categorie de stand van het indienen;
+  - de uitslag (plaats, nr., groep en motto, punten per criterium, totaal) zodra de categorie klaar is.
+- **Excel** (`/admin/results/export?kind=Uitslag|Zaallijst`), een tabblad per categorie: de uitslag per categorie, en de zaallijst van de laatste naar de eerste plaats.
+- **"Nu publiceren"** gaat pas als alle categorieën klaar zijn:
+  - eerst de vraag "Is de prijsuitreiking al geweest?" met een verplicht vinkje;
+  - daarna is de optocht afgerond (`Completed`, `ResultsPublishedAt`);
+  - een mail naar `Results:NotifyAddresses` (standaard secretaris@ en voorzitter@vrolijkedrammers.nl).
+- **Openbaar pas na publiceren** (daarvoor 404):
+  - `GET /parade/results` met plaats, startnummer, groep, motto en totaal (geen scores per criterium of jurylid);
+  - de website: `/optocht/uitslag`, met een link vanaf `/optocht`;
+  - de app: bovenaan Uitslagen.
+
+**22d — foto's bij de inzendingen (gepland).** Achteraf foto's toevoegen per wagen of groep en tonen bij de uitslag op de website en in de app.
 
 ## 5. Buiten het plan (LATER)
 

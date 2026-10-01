@@ -1807,3 +1807,13 @@ fieldset {
 .outside-alert p {
   margin: 0;
 }
+
+/* Fase 22c: uitslag */
+.chip .chip-count {
+  color: var(--dvd-text-secondary);
+  font-weight: 500;
+}
+
+.chip.active .chip-count {
+  color: inherit;
+}

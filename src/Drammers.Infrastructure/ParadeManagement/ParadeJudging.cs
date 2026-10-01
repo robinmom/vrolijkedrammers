@@ -63,7 +63,7 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
     }
 
     /// <summary>De inzendingen die beoordeeld worden: ingediend, niet ingetrokken of afgewezen, in een beoordeelde categorie.</summary>
-    private async Task<List<JudgingEntry>> EntriesAsync(Guid paradeId, CancellationToken cancellationToken) =>
+    public async Task<List<JudgingEntry>> EntriesAsync(Guid paradeId, CancellationToken cancellationToken) =>
         await (
             from r in db.ParadeRegistrations.AsNoTracking()
             join j in db.ParadeJudgingCategories.AsNoTracking() on new { r.ParadeId, CategoryId = r.CategoryId!.Value } equals new { j.ParadeId, j.CategoryId }

@@ -1,0 +1,45 @@
+@page "/optocht/uitslag"
+@model OptochtUitslagModel
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var r = Model.Results!;
+}
+<partial name="_PageBand" model='new PageBand($"Uitslag {r.ParadeName}", "Alle prijswinnaars per categorie. Gefeliciteerd!", ("/optocht", "Optocht"), (null, "Uitslag"))' />
+<div class="wrap content results">
+    @foreach (var c in r.Categories)
+    {
+        <section class="result-category" aria-labelledby="cat-@c.CategoryId">
+            <h2 id="cat-@c.CategoryId" class="h3">@c.Name</h2>
+            <div class="table-wrap" tabindex="0" role="region" aria-labelledby="cat-@c.CategoryId">
+                <table class="data-table">
+                    <caption class="visually-hidden">Uitslag @c.Name</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Plaats</th>
+                            <th scope="col">Startnr.</th>
+                            <th scope="col">Groep en motto</th>
+                            <th scope="col">Punten</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in c.Rows)
+                        {
+                            <tr class="@(row.Place <= 3 ? $"podium-{row.Place}" : null)">
+                                <td>@row.Place</td>
+                                <td>@row.StartNumber</td>
+                                <td><strong>@row.GroupName</strong>@if (row.Motto is not null)
+                                    {
+                                        <br /><span class="muted">@row.Motto</span>
+                                    }</td>
+                                <td>@row.Total.ToString("0.#", Nl.Culture)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>

@@ -953,7 +953,11 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Portal: menukop Website met Homepage, Pagina's, Kader, Prinsen (tabbladen Prinsen en Jeugdprinsen, met de schakelaar), Onderscheidingen en Instellingen website. Nieuws heeft een blok Website en de afbeelding in het formulier. Bij een lid staat de kaart "Kader (website)".
 - Tests: integratie (`WebsiteTests`), portal-e2e met axe (`website.spec.ts`).
 
-**21b — foto's.** Bulk-upload in het portal (slepen, wachtrij met voortgang per foto, opnieuw proberen), galerijen per soort en jaar, meerdere foto's tegelijk verbergen, verplaatsen of verwijderen.
+**21b — foto's (gebouwd).**
+- Galerijen hebben een soort (`PhotoAlbum.category`: Pronkzitting, Carnaval, Optocht, Dansgarde, Jeugd, Evenementen, Overig; bestaande albums worden Overig). Het portal toont de galerijen als kaarten met omslag en filter; de openbare API filtert met `GET /photo-albums?category=`.
+- Bulk-upload: onbeperkt veel foto's slepen of kiezen. Het portal stuurt ze één voor één (drie tegelijk, `XMLHttpRequest` voor de voortgang), met een wachtrij, voortgang per foto en "opnieuw proberen". Verkleinen, EXIF en GPS blijven op de server (derivaten 1600 px en thumbnail), zodat de opnamedatum bewaard blijft.
+- Bulkacties: `POST /admin/photo-albums/{id}/photos/bulk` met `Hide`, `Show`, `Move` (naar een andere galerij), `SetPhotographer` en `Delete`; één auditregel (`photo.bulk-…`) per actie; een omslagfoto die verdwijnt, wordt leeggemaakt.
+- Tests: integratie (`PhotoGalleryTests`), portal-e2e met axe (`fotos.spec.ts`).
 
 **21c — de website.** Server-side gerenderde pagina's in dezelfde App Service (snel en vindbaar, weinig JavaScript), met een cachebaar media-adres voor afbeeldingen (de SAS-links van 15 minuten passen niet in een gecachte pagina). Pagina's: home, agenda, nieuws, vereniging (kader, prinsengalerie, jeugdprinsen, onderscheidingen, vaste pagina's), optocht, foto's, contact en "Doe mee". Facebook-feed via de Graph API.
 

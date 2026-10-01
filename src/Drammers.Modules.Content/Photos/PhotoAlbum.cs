@@ -18,6 +18,9 @@ public sealed class PhotoAlbum : IAuditable, IPublishable
 
     public string? Description { get; set; }
 
+    /// <summary>Soort galerij (fase 21b), voor de filters op de website en in het portal.</summary>
+    public PhotoCategory Category { get; set; } = PhotoCategory.Other;
+
     public ContentVisibility Visibility { get; set; }
 
     public PublicationStatus Status { get; set; }
@@ -44,6 +47,28 @@ public sealed class PhotoAlbumAudience
     public AudienceType AudienceType { get; set; }
 
     public required string AudienceRef { get; set; }
+}
+
+/// <summary>Soort fotogalerij (fase 21b).</summary>
+public enum PhotoCategory
+{
+    Pronkzitting,
+    Carnival,
+    Parade,
+    Dansgarde,
+    Youth,
+    Events,
+    Other,
+}
+
+/// <summary>Wat een bulkactie met de gekozen foto's doet (fase 21b).</summary>
+public enum PhotoBulkAction
+{
+    Hide,
+    Show,
+    Delete,
+    Move,
+    SetPhotographer,
 }
 
 public enum PhotoProcessingStatus

@@ -62,9 +62,10 @@ public sealed record AlbumRequest(
     DateOnly? AlbumDate,
     [StringLength(2000)] string? Description,
     Guid? EventId,
-    [Required] PublicationRequest Publication)
+    [Required] PublicationRequest Publication,
+    Modules.Content.Photos.PhotoCategory Category = Modules.Content.Photos.PhotoCategory.Other)
 {
-    public AlbumInput ToInput() => new(Title, AlbumDate, Description, EventId, Publication.ToInput());
+    public AlbumInput ToInput() => new(Title, AlbumDate, Description, EventId, Publication.ToInput(), Category);
 }
 
 public sealed record PublicationResponse(

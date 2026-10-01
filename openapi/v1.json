@@ -7749,12 +7749,93 @@
         }
       }
     },
+    "/api/v1/admin/photo-albums/{id}/photos/bulk": {
+      "post": {
+        "tags": [
+          "AdminPhotoAlbums"
+        ],
+        "summary": "Bulkactie op meerdere foto's tegelijk (fase 21b): verbergen, tonen, verplaatsen, fotograaf instellen of verwijderen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoBulkRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoBulkRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoBulkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoBulkResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoBulkResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoBulkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/photo-albums/{id}/photos": {
       "post": {
         "tags": [
           "AdminPhotoAlbums"
         ],
-        "summary": "Foto's uploaden (maximaal 20 per keer); ze verschijnen zodra de verwerking klaar is.",
+        "summary": "Foto's uploaden (maximaal 20 per verzoek; het portal stuurt ze één voor één met voortgang en opnieuw proberen);\nze verschijnen zodra de verwerking klaar is.",
         "parameters": [
           {
             "name": "id",
@@ -15240,6 +15321,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PhotoCategory"
+            }
           }
         ],
         "responses": {
@@ -16955,6 +17043,9 @@
             "items": {
               "$ref": "#/components/schemas/AdminPhotoResponse"
             }
+          },
+          "category": {
+            "$ref": "#/components/schemas/PhotoCategory"
           }
         }
       },
@@ -16992,6 +17083,15 @@
           "photoCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PhotoCategory"
+          },
+          "coverUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -17814,6 +17914,9 @@
           },
           "publication": {
             "$ref": "#/components/schemas/PublicationRequest"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PhotoCategory"
           }
         }
       },
@@ -24790,8 +24893,80 @@
               "null",
               "string"
             ]
+          },
+          "category": {
+            "$ref": "#/components/schemas/PhotoCategory"
           }
         }
+      },
+      "PhotoBulkAction": {
+        "enum": [
+          "Hide",
+          "Show",
+          "Delete",
+          "Move",
+          "SetPhotographer"
+        ],
+        "description": "Wat een bulkactie met de gekozen foto's doet (fase 21b)."
+      },
+      "PhotoBulkRequest": {
+        "required": [
+          "photoIds",
+          "action",
+          "targetAlbumId",
+          "photographer"
+        ],
+        "type": "object",
+        "properties": {
+          "photoIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "action": {
+            "$ref": "#/components/schemas/PhotoBulkAction"
+          },
+          "targetAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "photographer": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PhotoBulkResponse": {
+        "required": [
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PhotoCategory": {
+        "enum": [
+          "Pronkzitting",
+          "Carnival",
+          "Parade",
+          "Dansgarde",
+          "Youth",
+          "Events",
+          "Other"
+        ],
+        "description": "Soort fotogalerij (fase 21b).",
+        "default": "Other"
       },
       "PhotoOrderRequest": {
         "required": [

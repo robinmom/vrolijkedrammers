@@ -22,10 +22,24 @@ public sealed class AdminPhotoAlbumsController(DrammersDbContext db, ContentAdmi
 
     [HttpGet("photo-albums")]
     [ProducesResponseType<IReadOnlyList<AdminAlbumSummaryResponse>>(StatusCodes.Status200OK)]
-    public async Task<IReadOnlyList<AdminAlbumSummaryResponse>> GetAll(CancellationToken cancellationToken) =>
-        await db.PhotoAlbums.AsNoTracking().OrderByDescending(a => a.AlbumDate).ThenByDescending(a => a.CreatedAt)
-            .Select(a => new AdminAlbumSummaryResponse(a.Id, a.Title, a.AlbumDate, a.Visibility, a.Status, db.Photos.Count(p => p.AlbumId == a.Id)))
+    public async Task<IReadOnlyList<AdminAlbumSummaryResponse>> GetAll(CancellationToken cancellationToken)
+    {
+        var rows = await db.PhotoAlbums.AsNoTracking().OrderByDescending(a => a.AlbumDate).ThenByDescending(a => a.CreatedAt)
+            .Select(a => new
+            {
+                Summary = new AdminAlbumSummaryResponse(a.Id, a.Title, a.AlbumDate, a.Visibility, a.Status, db.Photos.Count(p => p.AlbumId == a.Id), a.Category, null),
+                Cover = db.Photos.Where(p => p.AlbumId == a.Id && p.ProcessingStatus == PhotoProcessingStatus.Ready && (a.CoverPhotoId == null || p.Id == a.CoverPhotoId))
+                    .OrderBy(p => p.SortOrder).Select(p => p.ThumbnailBlobPath).FirstOrDefault(),
+            })
             .ToListAsync(cancellationToken);
+        var result = new List<AdminAlbumSummaryResponse>(rows.Count);
+        foreach (var row in rows)
+        {
+            result.Add(row.Summary with { CoverUrl = await urls.ForAsync(FileContainers.PhotosDerived, row.Cover, cancellationToken) });
+        }
+
+        return result;
+    }
 
     [HttpGet("photo-albums/{id:guid}")]
     [ProducesResponseType<AdminAlbumResponse>(StatusCodes.Status200OK)]
@@ -43,8 +57,18 @@ public sealed class AdminPhotoAlbumsController(DrammersDbContext db, ContentAdmi
         }
 
         return new AdminAlbumResponse(album.Id, album.Title, album.AlbumDate, album.Description, album.EventId, album.CoverPhotoId,
-            PublicationResponse.From(album.Visibility, album.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), album.Status, album.PublishAt), items);
+            PublicationResponse.From(album.Visibility, album.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), album.Status, album.PublishAt), items,
+            album.Category);
     }
+
+    /// <summary>
+    /// Bulkactie op meerdere foto's tegelijk (fase 21b): verbergen, tonen, verplaatsen, fotograaf instellen of verwijderen.
+    /// </summary>
+    [HttpPost("photo-albums/{id:guid}/photos/bulk")]
+    [ProducesResponseType<PhotoBulkResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<PhotoBulkResponse> Bulk(Guid id, PhotoBulkRequest request, CancellationToken cancellationToken) =>
+        new(await content.BulkPhotosAsync(id, request.PhotoIds, request.Action, request.TargetAlbumId, request.Photographer, cancellationToken));
 
     [HttpPost("photo-albums")]
     [ProducesResponseType<CreatedResponse>(StatusCodes.Status201Created)]
@@ -70,7 +94,10 @@ public sealed class AdminPhotoAlbumsController(DrammersDbContext db, ContentAdmi
         return NoContent();
     }
 
-    /// <summary>Foto's uploaden (maximaal 20 per keer); ze verschijnen zodra de verwerking klaar is.</summary>
+    /// <summary>
+    /// Foto's uploaden (maximaal 20 per verzoek; het portal stuurt ze één voor één met voortgang en opnieuw proberen);
+    /// ze verschijnen zodra de verwerking klaar is.
+    /// </summary>
     [HttpPost("photo-albums/{id:guid}/photos")]
     [RequestSizeLimit(MaxPhotosPerUpload * ContentFiles.MaxPhotoBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxPhotosPerUpload * ContentFiles.MaxPhotoBytes)]
@@ -125,10 +152,19 @@ public sealed record PhotoOrderRequest([Required] IReadOnlyList<Guid> PhotoIds);
 public sealed record PhotoUpdateRequest(bool Hidden, [StringLength(500)] string? Caption, [StringLength(100)] string? Photographer);
 
 public sealed record AdminAlbumSummaryResponse(
-    Guid Id, string Title, DateOnly? AlbumDate, Modules.Content.Shared.ContentVisibility Visibility, Modules.Content.Shared.PublicationStatus Status, int PhotoCount);
+    Guid Id, string Title, DateOnly? AlbumDate, Modules.Content.Shared.ContentVisibility Visibility, Modules.Content.Shared.PublicationStatus Status, int PhotoCount,
+    PhotoCategory Category = PhotoCategory.Other, string? CoverUrl = null);
 
 public sealed record AdminAlbumResponse(
     Guid Id, string Title, DateOnly? AlbumDate, string? Description, Guid? EventId, Guid? CoverPhotoId, PublicationResponse Publication,
-    IReadOnlyList<AdminPhotoResponse> Photos);
+    IReadOnlyList<AdminPhotoResponse> Photos, PhotoCategory Category = PhotoCategory.Other);
+
+public sealed record PhotoBulkRequest(
+    [Required, MinLength(1), MaxLength(1000)] IReadOnlyList<Guid> PhotoIds,
+    PhotoBulkAction Action,
+    Guid? TargetAlbumId,
+    [StringLength(100)] string? Photographer);
+
+public sealed record PhotoBulkResponse(int Count);
 
 public sealed record AdminPhotoResponse(Guid Id, PhotoProcessingStatus ProcessingStatus, bool Hidden, string? Caption, string? Photographer, string? ThumbnailUrl);

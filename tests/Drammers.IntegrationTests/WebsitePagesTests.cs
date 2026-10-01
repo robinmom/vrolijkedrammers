@@ -94,11 +94,24 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
             await db.News.Where(n => n.Id == old).ExecuteUpdateAsync(u => u.SetProperty(n => n.PublishAt, new DateTime(2025, 12, 1, 10, 0, 0, DateTimeKind.Utc)));
         }
 
-        // Actief jaar 2026/2027 (seed); december 2025 hoort bij 2025-2026.
+        // Actief jaar 2026/2027 (seed); december 2025 hoort bij 2025-2026. Er staan altijd minstens 5 berichten: zolang het
+        // actieve jaar er minder heeft, vult het nieuwste nieuws van vorig jaar aan.
         var current = await HtmlAsync("/nieuws");
         Assert.Contains("Nieuw seizoen", current);
-        Assert.DoesNotContain("Optocht van vorig jaar", current);
+        Assert.Contains("Optocht van vorig jaar", current);
         Assert.Contains("href=\"/nieuws?seizoen=2025-2026\"", current);
+        Assert.Contains("Optocht van vorig jaar", await HtmlAsync("/"));
+        var filled = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/news");
+        Assert.Equal(["Nieuw seizoen", "Optocht van vorig jaar"], filled.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
+
+        // Vijf berichten in het actieve jaar: het bericht van vorig jaar valt weg (alleen nog onder de knop 2025-2026).
+        foreach (var n in new[] { "Twee", "Drie", "Vier", "Vijf" })
+        {
+            await NewsAsync($"Nieuws {n}");
+        }
+
+        current = await HtmlAsync("/nieuws");
+        Assert.DoesNotContain("Optocht van vorig jaar", current);
         Assert.DoesNotContain("Optocht van vorig jaar", await HtmlAsync("/"));
 
         var archive = await HtmlAsync("/nieuws?seizoen=2025-2026");
@@ -109,7 +122,8 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
 
         // De app: zelfde verdeling via de API.
         var news = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/news");
-        Assert.Equal(["Nieuw seizoen"], news.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
+        Assert.Equal(5, news.GetProperty("totalCount").GetInt32());
+        Assert.DoesNotContain("Optocht van vorig jaar", news.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
         var seasons = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/news/seasons");
         Assert.Equal("2026-2027", seasons.GetProperty("current").GetProperty("slug").GetString());
         Assert.Equal(["2025-2026"], seasons.GetProperty("archive").EnumerateArray().Select(i => i.GetProperty("slug").GetString()));

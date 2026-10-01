@@ -104,7 +104,8 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
     /// <summary>Nieuws van één seizoen (het actieve jaar of een jaar uit het archief), nieuwste eerst.</summary>
     public async Task<(IReadOnlyList<NewsCard> Items, int Total)> NewsAsync(CarnivalSeason season, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var query = WebsiteNews().InSeason(season);
+        // Het actieve jaar (open einde) altijd met minstens de 5 nieuwste berichten; een ouder jaar precies dat jaar.
+        var query = season.End is null ? WebsiteNews().CurrentWithLatest(season) : WebsiteNews().InSeason(season);
         var total = await query.CountAsync(cancellationToken);
         var rows = await query.OrderByDescending(n => n.PublishAt ?? n.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         return ([.. rows.Select(ToCard)], total);

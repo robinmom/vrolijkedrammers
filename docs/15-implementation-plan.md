@@ -1033,6 +1033,11 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - De portal geeft dan een melding bij het plannen van nieuws of een album.
 - De agenda loopt gewoon door en heeft geen archief.
 
+**21h — altijd minstens 5 nieuwsberichten (gebouwd).**
+- Het actuele nieuws toont altijd minstens de 5 nieuwste berichten, ook als die uit het vorige carnavalsjaar komen. Dat geldt voor de homepage, `/nieuws`, "meer nieuws" bij een bericht en het nieuws in de app.
+- Komt er een bericht bij in het actieve jaar, dan valt het oudste aangevulde bericht weg.
+- Heeft het actieve jaar 5 of meer berichten, dan staan er alleen berichten van dit jaar. Het archief per jaar blijft hetzelfde.
+
 **21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 
 ---

@@ -35,6 +35,7 @@ public static class WebsiteSetup
         services.AddScoped<WebsiteReader>();
         services.AddScoped<SiteShell>();
         services.AddScoped<Redirects>();
+        services.AddScoped<ContactLinks>();
         services.Configure<FacebookOptions>(configuration.GetSection(FacebookOptions.SectionName));
         services.AddMemoryCache();
         services.AddHttpClient<FacebookFeed>(http => http.Timeout = TimeSpan.FromSeconds(10));

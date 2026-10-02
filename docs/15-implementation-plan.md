@@ -1063,6 +1063,19 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Komt er een bericht bij in het actieve jaar, dan valt het oudste aangevulde bericht weg.
 - Heeft het actieve jaar 5 of meer berichten, dan staan er alleen berichten van dit jaar. Het archief per jaar blijft hetzelfde.
 
+**21i — contactformulier in plaats van e-mailadressen (gebouwd, 2026-10-02).** De website toont geen e-mailadressen van de vereniging meer.
+- **Het formulier:** `/contact` heeft één formulier met de velden naam, e-mail, telefoon (niet verplicht) en bericht. De bezoeker kiest de ontvanger: Ledenadministratie, Optocht of Kaarten en betalingen.
+- **Links naar het formulier:** links als `/contact?aan=optocht` kiezen de ontvanger vooraf. Het gaat om:
+  - de voettekst;
+  - de optochtpagina;
+  - inhoud uit het portal en de WordPress-import. Daarin worden `mailto:`-links en losse adressen van `@vrolijkedrammers.nl` bij het tonen vervangen door een link naar het formulier (`ContactLinks`).
+- **Verzending:** `POST /api/v1/contact` stuurt het bericht per e-mail naar de ontvanger, met Reply-To naar de afzender. Er wordt niets opgeslagen; de audit bevat alleen de ontvanger.
+- **Ontvangers:** de adressen staan in `Contact:Recipients` en nooit in de HTML.
+- **Spam (OQ-45):**
+  - een rate limit per IP (`AnonymousForms`);
+  - een verborgen veld en een minimale invultijd van 3 seconden. Wordt een bericht daarop afgewezen, dan krijgt de bezoeker hetzelfde antwoord als bij succes en wordt er niets verstuurd.
+  - Cloudflare Turnstile gaat aan zodra `Turnstile__SiteKey` en `Turnstile__SecretKey` zijn gezet: het geheim in Key Vault, door de gebruiker. De website-CSP staat dan `challenges.cloudflare.com` toe.
+
 **21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 
 ---

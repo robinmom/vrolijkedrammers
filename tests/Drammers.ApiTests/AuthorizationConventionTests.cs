@@ -35,6 +35,9 @@ public class AuthorizationConventionTests
         $"{nameof(AppAuthController)}.{nameof(AppAuthController.GetConfig)}",
         $"{nameof(AppAuthController)}.{nameof(AppAuthController.Bridge)}",
         // Fase 9b: lid worden (openbaar formulier; e-mailcode, rate limit, handmatige goedkeuring).
+        // Fase 21i: contactformulier van de website.
+        $"{nameof(ContactController)}.{nameof(ContactController.Get)}",
+        $"{nameof(ContactController)}.{nameof(ContactController.Send)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Start)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Verify)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.ResendCode)}",

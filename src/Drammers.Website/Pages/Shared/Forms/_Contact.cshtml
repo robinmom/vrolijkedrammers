@@ -1,0 +1,31 @@
+<section id="formulier" class="form-card" aria-labelledby="titel-formulier">
+  <h2 id="titel-formulier" tabindex="-1">Stuur ons een bericht</h2>
+  <p class="muted">Kies waar je vraag over gaat; je bericht komt dan direct bij de juiste persoon. We reageren per e-mail.</p>
+
+  <form id="contact" novalidate>
+    <label>Waar gaat je vraag over?
+      <select name="recipient" required>
+        <option value="secretariaat">Ledenadministratie: lid worden, adreswijziging, opzeggen of de app</option>
+        <option value="optocht">Optocht: inschrijving, startnummers, aanrijtijden of de jury</option>
+        <option value="penningmeester">Kaarten en betalingen: kaarten, munten of de contributie</option>
+      </select>
+    </label>
+    <div class="row two">
+      <label>Naam<input name="name" required maxlength="100" autocomplete="name" /></label>
+      <label>E-mail<input name="email" type="email" required maxlength="254" autocomplete="email" /></label>
+    </div>
+    <label>Telefoon (niet verplicht)<input name="phone" type="tel" maxlength="30" autocomplete="tel" /></label>
+    <label>Bericht<textarea name="message" required minlength="2" maxlength="5000" rows="6"></textarea></label>
+    <div class="visually-hidden" aria-hidden="true">
+      <label>Laat dit veld leeg<input name="website" tabindex="-1" autocomplete="off" /></label>
+    </div>
+    <div id="turnstile-widget"></div>
+    <p id="fout" class="error" role="alert" hidden></p>
+    <button type="submit">Versturen</button>
+  </form>
+</section>
+
+<section id="klaar" class="form-card" aria-labelledby="titel-klaar" hidden>
+  <h2 id="titel-klaar" tabindex="-1">Bedankt voor je bericht!</h2>
+  <p>We hebben je bericht ontvangen en reageren zo snel mogelijk per e-mail.</p>
+</section>

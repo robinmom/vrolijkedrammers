@@ -13099,6 +13099,106 @@
         }
       }
     },
+    "/api/v1/contact": {
+      "get": {
+        "tags": [
+          "Contact"
+        ],
+        "summary": "Ontvangers (zonder adres) en de openbare Turnstile-sleutel als die aan staat.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactConfigResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactConfigResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Contact"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactMessageRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactMessageRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/event-categories": {
       "get": {
         "tags": [
@@ -21450,6 +21550,95 @@
           "version": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "ContactConfigResponse": {
+        "required": [
+          "recipients",
+          "turnstileSiteKey"
+        ],
+        "type": "object",
+        "properties": {
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactRecipientResponse"
+            }
+          },
+          "turnstileSiteKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ContactMessageRequest": {
+        "required": [
+          "recipient",
+          "name",
+          "email",
+          "phone",
+          "message",
+          "website",
+          "elapsedMs",
+          "turnstileToken"
+        ],
+        "type": "object",
+        "properties": {
+          "recipient": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "elapsedMs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "turnstileToken": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "`Website` is het verborgen veld voor bots; `ElapsedMs` de tijd sinds het openen van het formulier."
+      },
+      "ContactRecipientResponse": {
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
           }
         }
       },
@@ -31742,6 +31931,9 @@
     },
     {
       "name": "CarnivalYears"
+    },
+    {
+      "name": "Contact"
     },
     {
       "name": "Events"

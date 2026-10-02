@@ -10801,6 +10801,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ontvangers (zonder adres) en de openbare Turnstile-sleutel als die aan staat. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ContactConfigResponse"];
+                        "application/json": components["schemas"]["ContactConfigResponse"];
+                        "text/json": components["schemas"]["ContactConfigResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ContactMessageRequest"];
+                    "text/json": components["schemas"]["ContactMessageRequest"];
+                    "application/*+json": components["schemas"]["ContactMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-categories": {
         parameters: {
             query?: never;
@@ -15813,6 +15896,26 @@ export interface components {
         CompositionVersionResponse: {
             /** Format: int32 */
             version: number;
+        };
+        ContactConfigResponse: {
+            recipients: components["schemas"]["ContactRecipientResponse"][];
+            turnstileSiteKey: null | string;
+        };
+        /** @description `Website` is het verborgen veld voor bots; `ElapsedMs` de tijd sinds het openen van het formulier. */
+        ContactMessageRequest: {
+            recipient: string;
+            name: string;
+            email: string;
+            phone: null | string;
+            message: string;
+            website: null | string;
+            /** Format: int32 */
+            elapsedMs: null | number;
+            turnstileToken: null | string;
+        };
+        ContactRecipientResponse: {
+            key: string;
+            label: string;
         };
         /**
          * @description Wie content mag zien (docs/07 §4). Beheren gaat via permissions, niet via zichtbaarheid.

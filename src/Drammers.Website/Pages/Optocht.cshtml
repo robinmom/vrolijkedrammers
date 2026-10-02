@@ -77,17 +77,17 @@
                 {
                     <p><strong>Route:</strong> @p.RouteDescription</p>
                 }
-                @Html.Raw(p.InfoHtml)
+                @Html.Raw(ContactLinks.Rewrite(p.InfoHtml))
             }
             @if (Model.Extra is not null)
             {
-                @Html.Raw(Model.Extra.BodyHtml)
+                @Html.Raw(ContactLinks.Rewrite(Model.Extra.BodyHtml))
             }
         </section>
         <aside class="card downloads" aria-labelledby="vragen-kop">
             <h2 id="vragen-kop" class="h3">Vragen over de optocht?</h2>
-            <p class="muted">Mail de optochtcommissie:</p>
-            <p><a href="mailto:optocht@vrolijkedrammers.nl">optocht@vrolijkedrammers.nl</a></p>
+            <p class="muted">Stuur de optochtcommissie een bericht.</p>
+            <p><a class="button outline" href="@ContactLinks.Href("optocht")">Bericht sturen</a></p>
         </aside>
     </div>
 </div>

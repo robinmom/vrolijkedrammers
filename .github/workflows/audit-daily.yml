@@ -1,0 +1,43 @@
+# Dagelijkse controle van npm-pakketten. Faalt (en GitHub mailt) als:
+# - er op main een nieuwe high/critical-kwetsbaarheid is (CI draait alleen bij een push of PR), of
+# - er voor een uitzondering in pnpm-workspace.yaml (auditConfig.ignoreGhsas) een gepatchte versie is: dan kan de
+#   uitzondering eruit en het pakket worden bijgewerkt.
+name: Dagelijkse audit
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: npm-audit en uitzonderingen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Kwetsbare npm-pakketten (high/critical)
+        run: pnpm audit --audit-level high
+      - name: Uitzonderingen nog nodig?
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=0
+          for id in $(sed -n '/ignoreGhsas:/,/^[^ #]/p' pnpm-workspace.yaml | grep -oE 'GHSA-[a-z0-9-]+'); do
+            patched=$(gh api "/advisories/$id" --jq '[.vulnerabilities[] | select(.first_patched_version != null) | "\(.package.name) \(.first_patched_version)"] | join(", ")')
+            if [ -n "$patched" ]; then
+              echo "::error::$id heeft nu een patch ($patched): werk het pakket bij en haal de uitzondering uit pnpm-workspace.yaml."
+              status=1
+            else
+              echo "$id: nog geen patch, uitzondering blijft nodig."
+            fi
+          done
+          exit $status

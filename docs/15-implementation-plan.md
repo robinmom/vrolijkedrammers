@@ -912,6 +912,23 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 **Afhankelijkheden.** Fase 18; OQ-30.
 
+**20a — jubilarissen (gebouwd, 2026-10-02).** Besluit van het bestuur (OQ-30): het jubileum telt in het kalenderjaar waarin carnaval valt. Aantal jaren lid = dat jaar − inschrijfjaar; het inschrijfjaar zelf telt niet als jaar 1. Voorbeeld: in carnavalsjaar 2025/2026 (carnaval februari 2026) waren de jubileumjaren 2015, 2004 en 1993 (11, 22 en 33 jaar).
+- **Jubilea:** standaard 11, 22, 33, 44, 55, 66 en 77. Dit is aan te passen in het portal (`config.manage`) en wordt opgeslagen in `config.AppConfiguration` onder `jubilee_milestones`. In plaats van een aparte tabel `JubileeRule` is er één configuratiesleutel.
+- **Alleen actieve leden:** de effectieve status (inclusief override) moet Actief zijn; inactief, geschorst en overleden tellen niet mee.
+- **Correctie per lid:** de lokale velden `Member.JubileeJoinYearOverride` en `JubileeNote` gelden als iemand een tijd geen lid was. Het jubileum telt dan vanaf dat jaar. De sync met e-Boekhouden raakt deze velden nooit aan. Elke wijziging wordt geaudit (`member.jubilee-year.changed`).
+- **Portal, pagina Leden → Jubilarissen (`member.read`):**
+  - per carnavalsjaar, gegroepeerd per jubileum;
+  - een lijst van actieve leden zonder inschrijfjaar;
+  - een Excel-export (`member.export`, geaudit): tabblad Jubilarissen met de vaste kolommen uit docs/04 §14, plus een tabblad Zonder inschrijfjaar.
+  - Op de pagina van een lid staat de kaart Jubileum, waarmee je het jaar corrigeert (`member.update`).
+- **API:**
+  - `GET /admin/jubilees?carnivalYearId=`, `GET /admin/jubilees/export`;
+  - `GET/PUT /admin/jubilees/settings`;
+  - `PUT /admin/jubilees/members/{id}`;
+  - `GET /me/member` geeft nu ook `yearsMember` en `isJubilee`.
+- **App:** onder Mijn gegevens staat "Jaren lid". Een jubilaris ziet daar ook "Jubilaris: dit carnavalsjaar N jaar lid". Dit vraagt een nieuwe app-build.
+- **Nog open in fase 20:** trends, drukste dag en uur, en PDF-exports.
+
 **Acceptatiecriteria.**
 - [ ] Voor een gekozen carnavalsjaar levert het rapport alle leden met 11/22/…/77 jaar lidmaatschap volgens de ingestelde regel.
 - [ ] Een wijziging van de regel (bijv. inschrijfjaar telt als jaar 1) verandert het rapport zonder deploy.

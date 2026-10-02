@@ -14,3 +14,10 @@ allowBuilds:
 overrides:
   react: 19.2.3
   react-dom: 19.2.3
+
+# Bewuste uitzonderingen op `pnpm audit` (CI-stap "Kwetsbare npm-pakketten"). Alleen voor advisories zonder
+# gepatchte versie en buiten de geleverde app. De workflow "Dagelijkse audit" faalt zodra er een patch is.
+auditConfig:
+  ignoreGhsas:
+    # node-forge <=1.4.0 (2026-10-02): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel.
+    - GHSA-86w9-cpqp-85rv

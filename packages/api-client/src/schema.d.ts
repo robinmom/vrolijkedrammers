@@ -2894,6 +2894,230 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jubilees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jubilarissen en actieve leden zonder inschrijfjaar; zonder `carnivalYearId` het actieve carnavalsjaar. */
+        get: {
+            parameters: {
+                query?: {
+                    carnivalYearId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["JubileeReport"];
+                        "application/json": components["schemas"]["JubileeReport"];
+                        "text/json": components["schemas"]["JubileeReport"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jubilees/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Excel met de vaste kolommen uit docs/04 §14 en een tabblad met leden zonder inschrijfjaar; geaudit. */
+        get: {
+            parameters: {
+                query?: {
+                    carnivalYearId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jubilees/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["JubileeSettingsResponse"];
+                        "application/json": components["schemas"]["JubileeSettingsResponse"];
+                        "text/json": components["schemas"]["JubileeSettingsResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JubileeSettingsRequest"];
+                    "text/json": components["schemas"]["JubileeSettingsRequest"];
+                    "application/*+json": components["schemas"]["JubileeSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jubilees/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Het jaar waarvanaf het jubileum van dit lid telt; leeg = het inschrijfjaar volgen. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JubileeOverrideRequest"];
+                    "text/json": components["schemas"]["JubileeOverrideRequest"];
+                    "application/*+json": components["schemas"]["JubileeOverrideRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/jury": {
         parameters: {
             query?: never;
@@ -16010,6 +16234,50 @@ export interface components {
             /** Format: int32 */
             issued: number;
         };
+        Jubilarian: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            /** Format: int16 */
+            joinYear: null | number;
+            /** Format: int16 */
+            joinYearOverride: null | number;
+            /** Format: int16 */
+            baseYear: number;
+            /** Format: int32 */
+            years: number;
+            note: null | string;
+        };
+        JubileeOverrideRequest: {
+            /** Format: int16 */
+            joinYearOverride: null | number;
+            note: null | string;
+        };
+        JubileeReport: {
+            /** Format: int32 */
+            carnivalYearId: number;
+            carnivalYearName: string;
+            /** Format: int32 */
+            referenceYear: number;
+            milestones: number[];
+            jubilarians: components["schemas"]["Jubilarian"][];
+            withoutJoinYear: components["schemas"]["MemberWithoutJoinYear"][];
+            carnivalYears: components["schemas"]["JubileeYearOption"][];
+        };
+        JubileeSettingsRequest: {
+            milestones: number[];
+        };
+        JubileeSettingsResponse: {
+            milestones: number[];
+        };
+        /** @description Keuzelijst van carnavalsjaren; ook voor gebruikers zonder `config.manage`. */
+        JubileeYearOption: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            active: boolean;
+        };
         JudgingCategoryRefResponse: {
             /** Format: int32 */
             id: number;
@@ -16282,6 +16550,9 @@ export interface components {
             groups: components["schemas"]["MemberGroupResponse"][];
             provisioning: null | components["schemas"]["MemberProvisioningResponse"];
             kader?: null | components["schemas"]["MemberKaderResponse"][];
+            /** Format: int16 */
+            jubileeJoinYearOverride?: null | number;
+            jubileeNote?: null | string;
         };
         /**
          * @description Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld
@@ -16425,6 +16696,13 @@ export interface components {
         };
         /** @enum {unknown} */
         MemberSyncState: "InSync" | "Missing" | "Conflict";
+        MemberWithoutJoinYear: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            city: null | string;
+        };
         MeResponse: {
             /** Format: uuid */
             id: string;
@@ -16500,6 +16778,10 @@ export interface components {
             /** Format: date */
             membershipValidTo: null | string;
             groups: components["schemas"]["MyGroupResponse"][];
+            /** Format: int32 */
+            yearsMember?: null | number;
+            /** @default false */
+            isJubilee: boolean;
         };
         /** @description "Mijn QR": alles wat de app nodig heeft om de code te maken (geen persoonsgegevens in de code zelf). */
         MyTicket: {

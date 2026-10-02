@@ -398,6 +398,8 @@ DB-rechten: de API-identiteit heeft alleen `INSERT` en `SELECT` op `audit.AuditL
 
 Berekening (standaard): `years = startjaar(CarnivalYear) − join_year (+1 indien count_join_year_as_year_one)`. Rapport: Carnavalsjaar, Lidnummer, Naam, Inschrijfjaar, Aantal jaren lid, Jubileumcategorie. De definitieve regel is OQ-30.
 
+**Besloten (OQ-30, 2026-10-02):** `years = jaar(CarnivalStartDate) − (JubileeJoinYearOverride ?? join_year)`. Het inschrijfjaar telt niet als jaar 1. De jubilea staan in `config.AppConfiguration` (`jubilee_milestones`, standaard `11,22,33,44,55,66,77`) in plaats van in een tabel `JubileeRule`. Alleen leden met effectieve status Actief tellen mee. Zie fase 20a in [15](15-implementation-plan.md).
+
 ## 15. Indexen (selectie)
 
 | Tabel | Index |

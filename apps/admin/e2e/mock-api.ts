@@ -142,6 +142,8 @@ export class MockApi {
       joinYear: 1995 as number | null,
       hasAccount: false,
       localStatusOverride: null as string | null,
+      jubileeJoinYearOverride: null as number | null,
+      jubileeNote: null as string | null,
     },
     {
       id: 'm-2',
@@ -154,9 +156,12 @@ export class MockApi {
       joinYear: null as number | null,
       hasAccount: false,
       localStatusOverride: null as string | null,
+      jubileeJoinYearOverride: null as number | null,
+      jubileeNote: null as string | null,
     },
   ];
   syncJobs: Record<string, unknown>[] = [];
+  jubileeMilestones = [11, 22, 33, 44, 55, 66, 77];
 
   // Fase 9b-2: AVG-verzoeken.
   privacyRequests: Record<string, unknown>[] = [
@@ -2508,6 +2513,8 @@ export class MockApi {
             }
           : null,
         groups: [{ groupId: 'g-1', name: 'Jeugdcommissie', function: 'Lead', validTo: null }],
+        jubileeJoinYearOverride: member.jubileeJoinYearOverride,
+        jubileeNote: member.jubileeNote,
         provisioning: (() => {
           const p = [...this.provisioning].reverse().find((x) => x.memberId === member.id);
           return p
@@ -2668,6 +2675,60 @@ export class MockApi {
         return noContent();
       }
       return json(group);
+    }
+    // Fase 20: jubilarissen; het actieve carnavalsjaar 2026/2027 heeft carnaval in 2027.
+    if (path === '/admin/jubilees' && method === 'GET') {
+      const reference = 2027;
+      const active = this.members.filter((x) => (x.localStatusOverride ?? x.status) === 'Active');
+      return json({
+        carnivalYearId: 1,
+        carnivalYearName: '2026/2027',
+        referenceYear: reference,
+        milestones: this.jubileeMilestones,
+        jubilarians: active
+          .map((x) => ({ x, base: x.jubileeJoinYearOverride ?? x.joinYear }))
+          .filter(({ base }) => base !== null && this.jubileeMilestones.includes(reference - base))
+          .map(({ x, base }) => ({
+            memberId: x.id,
+            memberNumber: x.memberNumber,
+            fullName: x.fullName,
+            joinYear: x.joinYear,
+            joinYearOverride: x.jubileeJoinYearOverride,
+            baseYear: base,
+            years: reference - base!,
+            note: x.jubileeNote,
+          })),
+        withoutJoinYear: active
+          .filter((x) => (x.jubileeJoinYearOverride ?? x.joinYear) === null)
+          .map((x) => ({ memberId: x.id, memberNumber: x.memberNumber, fullName: x.fullName, city: x.city })),
+        carnivalYears: [
+          { id: 1, name: '2026/2027', active: true },
+          { id: 2, name: '2025/2026', active: false },
+        ],
+      });
+    }
+    if (path === '/admin/jubilees/export') {
+      this.record('report.jubilees.exported', 'Report', 'jubilees', {});
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers: { 'content-disposition': 'attachment; filename=jubilarissen-2026-2027.xlsx' },
+        body: 'xlsx',
+      });
+    }
+    if (path === '/admin/jubilees/settings') {
+      if (method === 'PUT') {
+        this.jubileeMilestones = [...new Set(body.milestones as number[])].sort((a, b) => a - b);
+        return noContent();
+      }
+      return json({ milestones: this.jubileeMilestones });
+    }
+    if ((m = path.match(/^\/admin\/jubilees\/members\/([^/]+)$/)) && method === 'PUT') {
+      const member = this.members.find((x) => x.id === m![1])!;
+      member.jubileeJoinYearOverride = (body.joinYearOverride as number | null) ?? null;
+      member.jubileeNote = (body.note as string | null) ?? null;
+      this.record('member.jubilee-year.changed', 'Member', member.id, body);
+      return noContent();
     }
     if (path === '/admin/reports/members') {
       return json({

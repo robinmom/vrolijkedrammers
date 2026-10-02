@@ -927,6 +927,14 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - `PUT /admin/jubilees/members/{id}`;
   - `GET /me/member` geeft nu ook `yearsMember` en `isJubilee`.
 - **App:** onder Mijn gegevens staat "Jaren lid". Een jubilaris ziet daar ook "Jubilaris: dit carnavalsjaar N jaar lid". Dit vraagt een nieuwe app-build.
+**20b — jubilarissen uitnodigen (gebouwd, 2026-10-02).** Op de pagina Jubilarissen kun je een jubilaris per persoon uitnodigen, of alle jubilarissen van het carnavalsjaar tegelijk na een bevestiging (`member.update`).
+- **Eén uitnodiging per jaar:** elk lid krijgt per carnavalsjaar hooguit één uitnodiging (`membership.JubileeInvitation`, uniek op lid en carnavalsjaar). Wie al is uitgenodigd of geen e-mailadres heeft, wordt overgeslagen en geteld.
+- **Verzending:** via de outbox (`jubilee.invitation-mail`).
+- **Tekst:** een sjabloon in `config.AppConfiguration` (`jubilee_invitation_subject`, `jubilee_invitation_body`, `jubilee_invitation_reply_to`), aan te passen in het portal met een voorbeeld. De invulvelden zijn `{voornaam}`, `{naam}`, `{jaren}` en `{carnavalsjaar}`.
+- **Afzender:** zolang er geen eigen domein in ACS is, komt de mail van `DoNotReply@…azurecomm.net`. Antwoorden gaan via Reply-To naar het secretariaat.
+  - Zodra `Email__CustomSenderDomain` is gezet (fase 7 of 21f: domein `vrolijkedrammers.nl` in ACS met SPF/DKIM), wordt de afzender `secretaris@` dat domein, zonder codewijziging.
+- **API:** `GET/PUT /admin/jubilees/invitation-template` en `POST /admin/jubilees/invitations`. Het overzicht en de Excel-export tonen "uitgenodigd op".
+
 - **Nog open in fase 20:** trends, drukste dag en uur, en PDF-exports.
 
 **Acceptatiecriteria.**
@@ -1054,6 +1062,19 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Het actuele nieuws toont altijd minstens de 5 nieuwste berichten, ook als die uit het vorige carnavalsjaar komen. Dat geldt voor de homepage, `/nieuws`, "meer nieuws" bij een bericht en het nieuws in de app.
 - Komt er een bericht bij in het actieve jaar, dan valt het oudste aangevulde bericht weg.
 - Heeft het actieve jaar 5 of meer berichten, dan staan er alleen berichten van dit jaar. Het archief per jaar blijft hetzelfde.
+
+**21i — contactformulier in plaats van e-mailadressen (gebouwd, 2026-10-02).** De website toont geen e-mailadressen van de vereniging meer.
+- **Het formulier:** `/contact` heeft één formulier met de velden naam, e-mail, telefoon (niet verplicht) en bericht. De bezoeker kiest de ontvanger: Ledenadministratie, Optocht of Kaarten en betalingen.
+- **Links naar het formulier:** links als `/contact?aan=optocht` kiezen de ontvanger vooraf. Het gaat om:
+  - de voettekst;
+  - de optochtpagina;
+  - inhoud uit het portal en de WordPress-import. Daarin worden `mailto:`-links en losse adressen van `@vrolijkedrammers.nl` bij het tonen vervangen door een link naar het formulier (`ContactLinks`).
+- **Verzending:** `POST /api/v1/contact` stuurt het bericht per e-mail naar de ontvanger, met Reply-To naar de afzender. Er wordt niets opgeslagen; de audit bevat alleen de ontvanger.
+- **Ontvangers:** de adressen staan in `Contact:Recipients` en nooit in de HTML.
+- **Spam (OQ-45):**
+  - een rate limit per IP (`AnonymousForms`);
+  - een verborgen veld en een minimale invultijd van 3 seconden. Wordt een bericht daarop afgewezen, dan krijgt de bezoeker hetzelfde antwoord als bij succes en wordt er niets verstuurd.
+  - Cloudflare Turnstile gaat aan zodra `Turnstile__SiteKey` en `Turnstile__SecretKey` zijn gezet: het geheim in Key Vault, door de gebruiker. De website-CSP staat dan `challenges.cloudflare.com` toe.
 
 **21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 

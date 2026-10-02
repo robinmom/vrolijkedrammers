@@ -3054,6 +3054,133 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jubilees/invitation-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sjabloon van de uitnodiging met de invulvelden die je kunt gebruiken. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["JubileeInvitationTemplateResponse"];
+                        "application/json": components["schemas"]["JubileeInvitationTemplateResponse"];
+                        "text/json": components["schemas"]["JubileeInvitationTemplateResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JubileeInvitationTemplateRequest"];
+                    "text/json": components["schemas"]["JubileeInvitationTemplateRequest"];
+                    "application/*+json": components["schemas"]["JubileeInvitationTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/jubilees/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Jubilarissen uitnodigen (per e-mail, via de outbox); wie al is uitgenodigd of geen e-mailadres heeft, wordt overgeslagen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JubileeInviteRequest"];
+                    "text/json": components["schemas"]["JubileeInviteRequest"];
+                    "application/*+json": components["schemas"]["JubileeInviteRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["JubileeInvitationResult"];
+                        "application/json": components["schemas"]["JubileeInvitationResult"];
+                        "text/json": components["schemas"]["JubileeInvitationResult"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/jubilees/members/{memberId}": {
         parameters: {
             query?: never;
@@ -10674,6 +10801,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ontvangers (zonder adres) en de openbare Turnstile-sleutel als die aan staat. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ContactConfigResponse"];
+                        "application/json": components["schemas"]["ContactConfigResponse"];
+                        "text/json": components["schemas"]["ContactConfigResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ContactMessageRequest"];
+                    "text/json": components["schemas"]["ContactMessageRequest"];
+                    "application/*+json": components["schemas"]["ContactMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-categories": {
         parameters: {
             query?: never;
@@ -15687,6 +15897,26 @@ export interface components {
             /** Format: int32 */
             version: number;
         };
+        ContactConfigResponse: {
+            recipients: components["schemas"]["ContactRecipientResponse"][];
+            turnstileSiteKey: null | string;
+        };
+        /** @description `Website` is het verborgen veld voor bots; `ElapsedMs` de tijd sinds het openen van het formulier. */
+        ContactMessageRequest: {
+            recipient: string;
+            name: string;
+            email: string;
+            phone: null | string;
+            message: string;
+            website: null | string;
+            /** Format: int32 */
+            elapsedMs: null | number;
+            turnstileToken: null | string;
+        };
+        ContactRecipientResponse: {
+            key: string;
+            label: string;
+        };
         /**
          * @description Wie content mag zien (docs/07 §4). Beheren gaat via permissions, niet via zichtbaarheid.
          * @enum {unknown}
@@ -16248,6 +16478,35 @@ export interface components {
             /** Format: int32 */
             years: number;
             note: null | string;
+            /** @default false */
+            hasEmail: boolean;
+            /** Format: date-time */
+            invitedAt?: null | string;
+        };
+        JubileeInvitationResult: {
+            /** Format: int32 */
+            invited: number;
+            /** Format: int32 */
+            alreadyInvited: number;
+            /** Format: int32 */
+            withoutEmail: number;
+        };
+        JubileeInvitationTemplateRequest: {
+            subject: string;
+            body: string;
+            replyTo: string;
+        };
+        JubileeInvitationTemplateResponse: {
+            subject: string;
+            body: string;
+            replyTo: string;
+            placeholders: string[];
+        };
+        /** @description Zonder `MemberIds`: alle jubilarissen van het carnavalsjaar die nog niet zijn uitgenodigd. */
+        JubileeInviteRequest: {
+            /** Format: int32 */
+            carnivalYearId: null | number;
+            memberIds: null | string[];
         };
         JubileeOverrideRequest: {
             /** Format: int16 */

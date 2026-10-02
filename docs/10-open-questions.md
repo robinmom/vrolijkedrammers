@@ -69,7 +69,7 @@
 | OQ-42 | Ontbrekende Figma-schermen | IMPORTANT | 6/9/11/13/14 | 🟡 |
 | OQ-43 | Nieuwsbrief e-maildienst | LATER | — | 🟡 |
 | OQ-44 | 4-ogenprincipe push | IMPORTANT | 10 | 🟢 voorstel |
-| OQ-45 | Bot-bescherming openbare formulieren | IMPORTANT | 9 | 🟡 2026-09-27: voorlopig e-mailcode + rate limit + handmatige goedkeuring; Turnstile vóór productie (fase 7) |
+| OQ-45 | Bot-bescherming openbare formulieren | IMPORTANT | 9 | 🟡 2026-09-27: voorlopig e-mailcode + rate limit + handmatige goedkeuring; Turnstile vóór productie (fase 7). 2026-10-02: contactformulier met verborgen veld, invultijd en rate limit; Turnstile staat klaar en gaat aan met de sleutels |
 | OQ-50 | Privacyverklaring en verwerkersovereenkomsten | IMPORTANT | 7 (go-live) | 🟡 |
 | OQ-52 | Onderhoud en support | IMPORTANT | 7 (go-live) | 🟡 |
 | OQ-60 | SQL-firewall versus Functions-IP's | → opgelost door B-01 | — | 🟢 |

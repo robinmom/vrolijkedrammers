@@ -121,6 +121,12 @@ public static class DependencyInjection
             services.AddSingleton<IEmailSender, AcsEmailSender>();
         }
 
+        // Contactformulier van de website (fase 21i); Turnstile staat aan zodra beide sleutels zijn gezet.
+        services.Configure<Contact.ContactOptions>(configuration.GetSection(Contact.ContactOptions.SectionName));
+        services.Configure<Contact.TurnstileOptions>(configuration.GetSection(Contact.TurnstileOptions.SectionName));
+        services.AddHttpClient<Contact.ITurnstileVerifier, Contact.TurnstileVerifier>(http => http.Timeout = TimeSpan.FromSeconds(10));
+        services.AddScoped<Contact.ContactForm>();
+
         // Mollie (fase 19): API-sleutel uit Key Vault (secret mollie-api-key), test-sleutel buiten productie.
         services.Configure<Payments.MollieOptions>(configuration.GetSection(Payments.MollieOptions.SectionName));
         services.Configure<Sales.SalesOptions>(configuration.GetSection(Sales.SalesOptions.SectionName));
@@ -208,6 +214,8 @@ public static class DependencyInjection
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();
         services.AddScoped<Jubilees>();
+        services.AddScoped<JubileeInvitations>();
+        services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();
         services.AddScoped<ParadeManagement.ParadeExchange>();

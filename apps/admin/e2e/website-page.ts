@@ -69,6 +69,9 @@ export async function serveWebsitePages(
 }
 
 export const forms = {
+  contact: {
+    '/contact/': { title: 'Contact', form: '_Contact', scripts: ['forms/contact.js'] },
+  },
   lidWorden: {
     '/lid-worden/': { title: 'Word ook een Drammer!', form: '_LidWorden', scripts: ['forms/lid-worden.js'] },
   },

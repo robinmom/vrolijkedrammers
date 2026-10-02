@@ -2,11 +2,24 @@ import { Link } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useMe } from '../api/hooks';
-import { useJubilees, type Jubilarian } from '../api/jubilees';
+import { useJubilees, type Jubilarian, type JubileeInvitationResult } from '../api/jubilees';
+import { ConfirmDialog } from '../components/Dialog';
 import { Field } from '../components/Field';
+import { JubileeInvitationCard } from '../components/JubileeInvitationCard';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
+import { formatDate } from '../format';
 
-function JubileeTable({ title, rows }: { title: string; rows: Jubilarian[] }) {
+function JubileeTable({
+  title,
+  rows,
+  onInvite,
+  busy,
+}: {
+  title: string;
+  rows: Jubilarian[];
+  onInvite: ((j: Jubilarian) => void) | null;
+  busy: boolean;
+}) {
   return (
     <div className="table-scroll" tabIndex={0} role="region" aria-label={title}>
       <table className="table compact">
@@ -17,6 +30,7 @@ function JubileeTable({ title, rows }: { title: string; rows: Jubilarian[] }) {
             <th scope="col">Naam</th>
             <th scope="col">Inschrijfjaar</th>
             <th scope="col">Opmerking</th>
+            <th scope="col">Uitnodiging</th>
           </tr>
         </thead>
         <tbody>
@@ -37,6 +51,25 @@ function JubileeTable({ title, rows }: { title: string; rows: Jubilarian[] }) {
                 ) : null}
               </td>
               <td>{j.note ?? ''}</td>
+              <td>
+                {j.invitedAt ? (
+                  <span className="badge">uitgenodigd {formatDate(j.invitedAt.slice(0, 10))}</span>
+                ) : !j.hasEmail ? (
+                  <span className="muted">geen e-mailadres</span>
+                ) : onInvite ? (
+                  <button
+                    type="button"
+                    className="button ghost small"
+                    disabled={busy}
+                    aria-label={`${j.fullName} uitnodigen`}
+                    onClick={() => onInvite(j)}
+                  >
+                    Uitnodigen
+                  </button>
+                ) : (
+                  '—'
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -101,6 +134,34 @@ export function JubileesPage() {
   const permissions = me.data?.permissions ?? [];
   const canExport = permissions.includes('member.export');
   const canConfigure = permissions.includes('config.manage');
+  const canEdit = permissions.includes('member.update');
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+
+  const invite = useApiMutation(
+    async (memberIds: string[] | null) => {
+      const { data } = await api.POST('/api/v1/admin/jubilees/invitations', {
+        body: { carnivalYearId: report.data?.carnivalYearId ?? null, memberIds },
+      });
+      return data;
+    },
+    [['jubilees']],
+  );
+
+  function runInvite(memberIds: string[] | null) {
+    setInviteMessage(null);
+    invite.mutate(memberIds, {
+      onSuccess: (data) => {
+        setConfirmAll(false);
+        const result = data as JubileeInvitationResult | undefined;
+        if (!result) return;
+        const parts = [`${result.invited} ${result.invited === 1 ? 'uitnodiging' : 'uitnodigingen'} verstuurd`];
+        if (result.alreadyInvited > 0) parts.push(`${result.alreadyInvited} al eerder uitgenodigd`);
+        if (result.withoutEmail > 0) parts.push(`${result.withoutEmail} zonder e-mailadres overgeslagen`);
+        setInviteMessage(`${parts.join(', ')}.`);
+      },
+    });
+  }
 
   async function exportExcel() {
     setExportError(null);
@@ -129,6 +190,14 @@ export function JubileesPage() {
         .map((years) => ({ years, rows: r.jubilarians.filter((j) => j.years === years) }))
         .filter((g) => g.rows.length > 0)
     : [];
+  const pending = r ? r.jubilarians.filter((j) => !j.invitedAt && j.hasEmail).length : 0;
+  const first = r?.jubilarians[0];
+  const example = {
+    voornaam: first ? first.fullName.split(' ')[0]! : 'Piet',
+    naam: first?.fullName ?? 'Piet van der Berg',
+    jaren: first?.years ?? 11,
+    carnavalsjaar: r?.carnivalYearName ?? '',
+  };
 
   return (
     <>
@@ -149,6 +218,16 @@ export function JubileesPage() {
               ))}
             </select>
           ) : null}
+          {canEdit && r ? (
+            <button
+              type="button"
+              className="button"
+              disabled={pending === 0 || invite.isPending}
+              onClick={() => setConfirmAll(true)}
+            >
+              Alle jubilarissen uitnodigen ({pending})
+            </button>
+          ) : null}
           {canExport ? (
             <button type="button" className="button secondary" onClick={() => void exportExcel()} disabled={!r}>
               Exporteren (Excel)
@@ -156,7 +235,8 @@ export function JubileesPage() {
           ) : null}
         </div>
       </div>
-      <ProblemAlert error={exportError ?? report.error} />
+      <ProblemAlert error={exportError ?? report.error ?? invite.error} />
+      <SuccessMessage message={inviteMessage} />
       {r ? (
         <>
           <p>
@@ -177,7 +257,12 @@ export function JubileesPage() {
                 <h2 id={`jubileum-${g.years}`}>
                   {g.years} jaar lid <span className="muted">({g.rows.length})</span>
                 </h2>
-                <JubileeTable title={`${g.years} jaar lid`} rows={g.rows} />
+                <JubileeTable
+                  title={`${g.years} jaar lid`}
+                  rows={g.rows}
+                  busy={invite.isPending}
+                  onInvite={canEdit ? (j) => runInvite([j.memberId]) : null}
+                />
               </section>
             ))
           )}
@@ -221,7 +306,19 @@ export function JubileesPage() {
             )}
           </section>
 
+          <JubileeInvitationCard canEdit={canEdit} example={example} />
+
           {canConfigure ? <MilestonesCard current={r.milestones} /> : null}
+
+          <ConfirmDialog
+            open={confirmAll}
+            title="Alle jubilarissen uitnodigen?"
+            message={`Er gaat een uitnodiging per e-mail naar ${pending} ${pending === 1 ? 'jubilaris' : 'jubilarissen'} van ${r.carnivalYearName}. Wie al is uitgenodigd of geen e-mailadres heeft, wordt overgeslagen.`}
+            confirmLabel="Uitnodigingen versturen"
+            busy={invite.isPending}
+            onConfirm={() => runInvite(null)}
+            onCancel={() => setConfirmAll(false)}
+          />
         </>
       ) : report.error ? null : (
         <p>Laden…</p>

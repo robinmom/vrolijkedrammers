@@ -22,8 +22,8 @@
                 <p class="intro">@a.Card.Summary</p>
             }
             <div class="prose">
-                @Html.Raw(a.BodyHtml)
-                @Html.Raw(a.WebsiteBodyHtml)
+                @Html.Raw(ContactLinks.Rewrite(a.BodyHtml))
+                @Html.Raw(ContactLinks.Rewrite(a.WebsiteBodyHtml))
             </div>
             <div class="share">
                 <strong>Delen:</strong>

@@ -16,7 +16,7 @@
             {
                 <img class="article-image" src="@a.PhotoUrl" alt="@a.Recipient" width="1600" height="1000">
             }
-            <div class="prose">@Html.Raw(a.BodyHtml)</div>
+            <div class="prose">@Html.Raw(ContactLinks.Rewrite(a.BodyHtml))</div>
             <p><a class="button outline" href="/onderscheidingen">← Alle onderscheidingen</a></p>
         </div>
     </article>

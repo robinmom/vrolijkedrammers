@@ -20,6 +20,12 @@ public static class PortalHosting
         "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; connect-src 'self' https://*.ciamlogin.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
+    // Met Cloudflare Turnstile (fase 21i, alleen als de sleutels zijn gezet): het script en het iframe van Cloudflare.
+    private const string WebsiteWithTurnstileContentSecurityPolicy =
+        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; connect-src 'self' https://*.ciamlogin.com; " +
+        "script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; " +
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
+
     /// <summary>Headers voor alle responses; de portal-CSP alleen onder <see cref="BasePath"/>.</summary>
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app) =>
         app.Use((context, next) =>
@@ -35,7 +41,9 @@ public static class PortalHosting
             }
             else if (Website.WebsiteSetup.IsWebsitePath(context.Request.Path))
             {
-                headers.ContentSecurityPolicy = WebsiteContentSecurityPolicy;
+                var turnstile = context.RequestServices
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Contact.TurnstileOptions>>().Value.Enabled;
+                headers.ContentSecurityPolicy = turnstile ? WebsiteWithTurnstileContentSecurityPolicy : WebsiteContentSecurityPolicy;
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
                 headers.XFrameOptions = "DENY";
             }

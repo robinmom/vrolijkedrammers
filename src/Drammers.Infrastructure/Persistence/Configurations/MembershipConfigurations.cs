@@ -39,6 +39,18 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
     }
 }
 
+internal sealed class JubileeInvitationConfiguration : IEntityTypeConfiguration<JubileeInvitation>
+{
+    public void Configure(EntityTypeBuilder<JubileeInvitation> builder)
+    {
+        builder.ToTable("JubileeInvitation", Schemas.Membership);
+        builder.Property(i => i.Id).ValueGeneratedNever();
+        builder.Property(i => i.SentTo).HasMaxLength(254);
+        builder.HasIndex(i => new { i.MemberId, i.CarnivalYearId }).IsUnique();
+        builder.HasOne<Member>().WithMany().HasForeignKey(i => i.MemberId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 internal sealed class SyncJobConfiguration : IEntityTypeConfiguration<SyncJob>
 {
     public void Configure(EntityTypeBuilder<SyncJob> builder)

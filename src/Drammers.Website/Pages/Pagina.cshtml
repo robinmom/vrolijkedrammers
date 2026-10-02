@@ -16,7 +16,7 @@
             {
                 <img class="article-image" src="@c.ImageUrl" alt="" width="1600" height="900">
             }
-            <div class="prose">@Html.Raw(c.BodyHtml)</div>
+            <div class="prose">@Html.Raw(ContactLinks.Rewrite(c.BodyHtml))</div>
         </div>
     </article>
 </div>

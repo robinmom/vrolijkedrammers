@@ -6,8 +6,12 @@ using Microsoft.Extensions.Options;
 
 namespace Drammers.Infrastructure.Email;
 
-/// <summary>Een e-mail met platte tekst en HTML (docs/06: geen persoonsgegevens in logs).</summary>
-public sealed record EmailMessage(string To, string Subject, string PlainText, string Html);
+/// <summary>
+/// Een e-mail met platte tekst en HTML (docs/06: geen persoonsgegevens in logs). <paramref name="ReplyTo"/>: antwoorden
+/// gaan naar dit adres. <paramref name="From"/>: afzendernaam vóór de @ (bijv. <c>secretaris</c>), alleen gebruikt als er
+/// een eigen domein is ingesteld (<see cref="EmailOptions.CustomSenderDomain"/>); anders blijft het DoNotReply.
+/// </summary>
+public sealed record EmailMessage(string To, string Subject, string PlainText, string Html, string? ReplyTo = null, string? From = null);
 
 public interface IEmailSender
 {
@@ -24,6 +28,9 @@ public sealed class EmailOptions
     /// <summary>Bijv. <c>xxxx.azurecomm.net</c>; de afzender wordt <c>DoNotReply@</c> dit domein.</summary>
     public string? SenderDomain { get; set; }
 
+    /// <summary>Eigen, in ACS geverifieerd domein (bijv. <c>vrolijkedrammers.nl</c>); dan kan een bericht een eigen afzender hebben.</summary>
+    public string? CustomSenderDomain { get; set; }
+
     public bool IsConfigured => Endpoint is not null && !string.IsNullOrWhiteSpace(SenderDomain);
 }
 
@@ -35,7 +42,15 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
         var content = new EmailContent(message.Subject) { PlainText = message.PlainText, Html = message.Html };
-        var email = new Azure.Communication.Email.EmailMessage($"DoNotReply@{options.Value.SenderDomain}", message.To, content);
+        var sender = message.From is { Length: > 0 } from && options.Value.CustomSenderDomain is { Length: > 0 } custom
+            ? $"{from}@{custom}"
+            : $"DoNotReply@{options.Value.SenderDomain}";
+        var email = new Azure.Communication.Email.EmailMessage(sender, message.To, content);
+        if (message.ReplyTo is { Length: > 0 } replyTo)
+        {
+            email.ReplyTo.Add(new EmailAddress(replyTo));
+        }
+
         // WaitUntil.Started: ACS neemt het bericht aan en bezorgt het zelf; een fout bij aannemen gooit hier.
         await _client.SendAsync(WaitUntil.Started, email, cancellationToken);
     }

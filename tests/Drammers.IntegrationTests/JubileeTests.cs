@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Content.CarnivalYears;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Identifiers;
+using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,7 +33,8 @@ public class JubileeTests(SqlServerFixture sql) : IAsyncLifetime
 
     public async Task DisposeAsync() => await _api.DisposeAsync();
 
-    private async Task<Guid> MemberAsync(string number, short? joinYear, MembershipStatus status = MembershipStatus.Active, Guid? userId = null)
+    private async Task<Guid> MemberAsync(
+        string number, short? joinYear, MembershipStatus status = MembershipStatus.Active, Guid? userId = null, string? email = null, string? firstName = null)
     {
         using var scope = _api.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
@@ -43,6 +46,8 @@ public class JubileeTests(SqlServerFixture sql) : IAsyncLifetime
             LastName = $"Lid {number}",
             MembershipStatus = status,
             JoinYear = joinYear,
+            Email = email,
+            FirstName = firstName,
         };
         db.Members.Add(member);
         await db.SaveChangesAsync();
@@ -151,5 +156,68 @@ public class JubileeTests(SqlServerFixture sql) : IAsyncLifetime
 
         var other = await _api.ClientFor(otherOid).GetFromJsonAsync<JsonElement>("/api/v1/me/member");
         Assert.Equal((7, false), (other.GetProperty("yearsMember").GetInt32(), other.GetProperty("isJubilee").GetBoolean()));
+    }
+
+    private async Task RunOutboxAsync()
+    {
+        using var scope = _api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+        var messages = await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == JubileeInvitations.MailMessageType).ToListAsync();
+        foreach (var message in messages)
+        {
+            using var handlerScope = _api.Services.CreateScope();
+            var handler = handlerScope.ServiceProvider.GetServices<IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+            await handler.HandleAsync(new OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            await db.Outbox.Where(m => m.Id == message.Id).ExecuteUpdateAsync(x => x.SetProperty(m => m.ProcessedAt, DateTime.UtcNow));
+        }
+    }
+
+    [Fact]
+    public async Task Jubilarissen_uitnodigen_met_het_sjabloon()
+    {
+        var piet = await MemberAsync("1", 2016, email: "piet@example.com", firstName: "Piet");
+        await MemberAsync("2", 2005, email: "anna@example.com", firstName: "Anna");
+        await MemberAsync("3", 2016);
+        await MemberAsync("4", 2020, email: "geen-jubilaris@example.com");
+
+        var template = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/jubilees/invitation-template");
+        Assert.Contains("Dit jaar ben je {jaren} jaar lid.", template.GetProperty("body").GetString());
+        Assert.Equal("secretaris@vrolijkedrammers.nl", template.GetProperty("replyTo").GetString());
+
+        // Eén persoon: alleen Piet.
+        var one = await _bestuur.PostAsJsonAsync("/api/v1/admin/jubilees/invitations", new { memberIds = new[] { piet } });
+        var oneResult = await one.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal((1, 0, 0), (oneResult.GetProperty("invited").GetInt32(), oneResult.GetProperty("alreadyInvited").GetInt32(), oneResult.GetProperty("withoutEmail").GetInt32()));
+
+        // Tekst aanpassen; daarna alle jubilarissen: Piet is al uitgenodigd, lid 3 heeft geen e-mailadres.
+        var put = await _bestuur.PutAsJsonAsync("/api/v1/admin/jubilees/invitation-template", new
+        {
+            subject = "Huldiging {carnavalsjaar}",
+            body = "Beste {voornaam},\n\nDit jaar ben je {jaren} jaar lid ({naam}).\nTot dinsdag!",
+            replyTo = "secretaris@vrolijkedrammers.nl",
+        });
+        Assert.Equal(HttpStatusCode.NoContent, put.StatusCode);
+        var all = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/jubilees/invitations", new { })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal((1, 1, 1), (all.GetProperty("invited").GetInt32(), all.GetProperty("alreadyInvited").GetInt32(), all.GetProperty("withoutEmail").GetInt32()));
+
+        await RunOutboxAsync();
+        var mails = _api.Emails.Sent.Where(m => m.Subject.StartsWith("Huldiging", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, mails.Count);
+        var anna = Assert.Single(mails, m => m.To == "anna@example.com");
+        Assert.Equal("Huldiging 2026/2027", anna.Subject);
+        Assert.Contains("Beste Anna,", anna.PlainText);
+        Assert.Contains("Dit jaar ben je 22 jaar lid (Lid 2).", anna.PlainText);
+        Assert.Contains("<p>Dit jaar ben je 22 jaar lid (Lid 2).<br>Tot dinsdag!</p>", anna.Html);
+        Assert.Equal(("secretaris@vrolijkedrammers.nl", "secretaris"), (anna.ReplyTo, anna.From));
+
+        var report = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/jubilees");
+        var invited = report.GetProperty("jubilarians").EnumerateArray()
+            .ToDictionary(j => j.GetProperty("memberNumber").GetString()!, j => j.GetProperty("invitedAt").ValueKind != JsonValueKind.Null);
+        Assert.Equal(new Dictionary<string, bool> { ["1"] = true, ["2"] = true, ["3"] = false }, invited);
+
+        // Geen jubilaris: weigeren.
+        var other = await MemberAsync("5", 2020, email: "x@example.com");
+        var refused = await _bestuur.PostAsJsonAsync("/api/v1/admin/jubilees/invitations", new { memberIds = new[] { other } });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
     }
 }

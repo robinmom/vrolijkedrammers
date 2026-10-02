@@ -162,6 +162,12 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
   jubileeMilestones = [11, 22, 33, 44, 55, 66, 77];
+  jubileeInvitations: Record<string, string> = {};
+  jubileeTemplate = {
+    subject: 'Uitnodiging: huldiging jubilarissen {carnavalsjaar}',
+    body: 'Beste {voornaam},\n\nDit jaar ben je {jaren} jaar lid. Dit willen we niet zomaar voorbij laten gaan.\n\nMet vriendelijke groet,\n\nHet bestuur',
+    replyTo: 'secretaris@vrolijkedrammers.nl',
+  };
 
   // Fase 9b-2: AVG-verzoeken.
   privacyRequests: Record<string, unknown>[] = [
@@ -2697,6 +2703,8 @@ export class MockApi {
             baseYear: base,
             years: reference - base!,
             note: x.jubileeNote,
+            hasEmail: !!x.email,
+            invitedAt: this.jubileeInvitations[x.id] ?? null,
           })),
         withoutJoinYear: active
           .filter((x) => (x.jubileeJoinYearOverride ?? x.joinYear) === null)
@@ -2706,6 +2714,31 @@ export class MockApi {
           { id: 2, name: '2025/2026', active: false },
         ],
       });
+    }
+    if (path === '/admin/jubilees/invitation-template') {
+      if (method === 'PUT') {
+        this.jubileeTemplate = body as typeof this.jubileeTemplate;
+        return noContent();
+      }
+      return json({ ...this.jubileeTemplate, placeholders: ['{voornaam}', '{naam}', '{jaren}', '{carnavalsjaar}'] });
+    }
+    if (path === '/admin/jubilees/invitations' && method === 'POST') {
+      const jubilarians = this.members
+        .filter((x) => (x.jubileeJoinYearOverride ?? x.joinYear) !== null)
+        .filter((x) => this.jubileeMilestones.includes(2027 - (x.jubileeJoinYearOverride ?? x.joinYear)!))
+        .map((x) => x.id);
+      const ids = (body.memberIds as string[] | null) ?? jubilarians;
+      let invited = 0;
+      let alreadyInvited = 0;
+      for (const id of ids) {
+        if (this.jubileeInvitations[id]) alreadyInvited++;
+        else {
+          this.jubileeInvitations[id] = '2026-10-02T08:00:00Z';
+          invited++;
+        }
+      }
+      this.record('member.jubilee-invited', 'CarnivalYear', '1', { invited });
+      return json({ invited, alreadyInvited, withoutEmail: 0 });
     }
     if (path === '/admin/jubilees/export') {
       this.record('report.jubilees.exported', 'Report', 'jubilees', {});

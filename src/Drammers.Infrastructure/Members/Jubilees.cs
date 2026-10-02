@@ -12,7 +12,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Drammers.Infrastructure.Members;
 
 public sealed record Jubilarian(
-    Guid MemberId, string MemberNumber, string FullName, short? JoinYear, short? JoinYearOverride, short BaseYear, int Years, string? Note);
+    Guid MemberId, string MemberNumber, string FullName, short? JoinYear, short? JoinYearOverride, short BaseYear, int Years, string? Note,
+    bool HasEmail = false, DateTime? InvitedAt = null);
 
 public sealed record MemberWithoutJoinYear(Guid MemberId, string MemberNumber, string FullName, string? City);
 
@@ -95,8 +96,22 @@ public sealed class Jubilees(DrammersDbContext db, IAuditLogger audit, IClock cl
 
         var active = await db.Members.AsNoTracking()
             .Where(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active)
-            .Select(m => new { m.Id, m.MemberNumber, m.FullName, m.LastName, m.FirstName, m.City, m.JoinYear, m.JubileeJoinYearOverride, m.JubileeNote })
+            .Select(m => new
+            {
+                m.Id,
+                m.MemberNumber,
+                m.FullName,
+                m.LastName,
+                m.FirstName,
+                m.City,
+                m.JoinYear,
+                m.JubileeJoinYearOverride,
+                m.JubileeNote,
+                HasEmail = m.Email != null && m.Email != string.Empty,
+            })
             .ToListAsync(cancellationToken);
+        var invited = await db.JubileeInvitations.AsNoTracking().Where(i => i.CarnivalYearId == year.Id)
+            .ToDictionaryAsync(i => i.MemberId, i => i.InvitedAt, cancellationToken);
 
         var jubilarians = active
             .Select(m => new { Member = m, BaseYear = m.JubileeJoinYearOverride ?? m.JoinYear })
@@ -104,7 +119,8 @@ public sealed class Jubilees(DrammersDbContext db, IAuditLogger audit, IClock cl
             .Where(x => x.Years is { } years && milestones.Contains(years))
             .OrderByDescending(x => x.Years).ThenBy(x => x.Member.LastName ?? x.Member.FullName).ThenBy(x => x.Member.FirstName)
             .Select(x => new Jubilarian(x.Member.Id, x.Member.MemberNumber, x.Member.FullName, x.Member.JoinYear,
-                x.Member.JubileeJoinYearOverride, x.BaseYear!.Value, x.Years!.Value, x.Member.JubileeNote))
+                x.Member.JubileeJoinYearOverride, x.BaseYear!.Value, x.Years!.Value, x.Member.JubileeNote, x.Member.HasEmail,
+                invited.TryGetValue(x.Member.Id, out var at) ? at : null))
             .ToList();
 
         var withoutJoinYear = active.Where(m => (m.JubileeJoinYearOverride ?? m.JoinYear) is null)

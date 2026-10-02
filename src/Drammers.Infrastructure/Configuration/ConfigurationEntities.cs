@@ -90,4 +90,7 @@ public static class AppConfigurationKeys
     public const string MaintenanceMessage = "maintenance_message";
     public const string SupportEmail = "support_email";
     public const string JubileeMilestones = "jubilee_milestones";
+    public const string JubileeInvitationSubject = "jubilee_invitation_subject";
+    public const string JubileeInvitationBody = "jubilee_invitation_body";
+    public const string JubileeInvitationReplyTo = "jubilee_invitation_reply_to";
 }

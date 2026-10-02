@@ -11,7 +11,7 @@ namespace Drammers.Api.Controllers;
 /// <summary>Jubilarissen per carnavalsjaar, de instelbare jubilea en de correctie per lid (fase 20, OQ-30).</summary>
 [ApiController]
 [Route("api/v1/admin/jubilees")]
-public sealed class AdminJubileesController(Jubilees jubilees, IAuditLogger audit) : ControllerBase
+public sealed class AdminJubileesController(Jubilees jubilees, JubileeInvitations invitations, IAuditLogger audit) : ControllerBase
 {
     /// <summary>Jubilarissen en actieve leden zonder inschrijfjaar; zonder <c>carnivalYearId</c> het actieve carnavalsjaar.</summary>
     [HttpGet]
@@ -32,7 +32,7 @@ public sealed class AdminJubileesController(Jubilees jubilees, IAuditLogger audi
         using var workbook = new XLWorkbook();
 
         var sheet = workbook.AddWorksheet("Jubilarissen");
-        string[] headers = ["Carnavalsjaar", "Lidnummer", "Naam", "Inschrijfjaar", "Jubileum telt vanaf", "Aantal jaren lid", "Jubileumcategorie", "Opmerking"];
+        string[] headers = ["Carnavalsjaar", "Lidnummer", "Naam", "Inschrijfjaar", "Jubileum telt vanaf", "Aantal jaren lid", "Jubileumcategorie", "Opmerking", "Uitgenodigd op"];
         for (var c = 0; c < headers.Length; c++)
         {
             sheet.Cell(1, c + 1).Value = headers[c];
@@ -50,6 +50,11 @@ public sealed class AdminJubileesController(Jubilees jubilees, IAuditLogger audi
             sheet.Cell(row, 6).Value = j.Years;
             sheet.Cell(row, 7).Value = $"{j.Years} jaar";
             sheet.Cell(row, 8).Value = j.Note;
+            if (j.InvitedAt is { } invitedAt)
+            {
+                sheet.Cell(row, 9).Value = invitedAt;
+                sheet.Cell(row, 9).Style.DateFormat.Format = "dd-mm-yyyy";
+            }
         }
 
         sheet.Row(1).Style.Font.Bold = true;
@@ -95,6 +100,34 @@ public sealed class AdminJubileesController(Jubilees jubilees, IAuditLogger audi
         return NoContent();
     }
 
+    /// <summary>Sjabloon van de uitnodiging met de invulvelden die je kunt gebruiken.</summary>
+    [HttpGet("invitation-template")]
+    [RequirePermission(Permissions.MemberRead)]
+    [ProducesResponseType<JubileeInvitationTemplateResponse>(StatusCodes.Status200OK)]
+    public async Task<JubileeInvitationTemplateResponse> GetInvitationTemplate(CancellationToken cancellationToken)
+    {
+        var template = await invitations.GetTemplateAsync(cancellationToken);
+        return new(template.Subject, template.Body, template.ReplyTo, JubileeInvitations.Placeholders);
+    }
+
+    [HttpPut("invitation-template")]
+    [RequirePermission(Permissions.MemberUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> PutInvitationTemplate(JubileeInvitationTemplateRequest request, CancellationToken cancellationToken)
+    {
+        await invitations.SetTemplateAsync(new JubileeInvitationTemplate(request.Subject, request.Body, request.ReplyTo), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Jubilarissen uitnodigen (per e-mail, via de outbox); wie al is uitgenodigd of geen e-mailadres heeft, wordt overgeslagen.</summary>
+    [HttpPost("invitations")]
+    [RequirePermission(Permissions.MemberUpdate)]
+    [ProducesResponseType<JubileeInvitationResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public Task<JubileeInvitationResult> Invite(JubileeInviteRequest request, CancellationToken cancellationToken) =>
+        invitations.InviteAsync(request.CarnivalYearId, request.MemberIds, cancellationToken);
+
     /// <summary>Het jaar waarvanaf het jubileum van dit lid telt; leeg = het inschrijfjaar volgen.</summary>
     [HttpPut("members/{memberId:guid}")]
     [RequirePermission(Permissions.MemberUpdate)]
@@ -107,6 +140,16 @@ public sealed class AdminJubileesController(Jubilees jubilees, IAuditLogger audi
         return NoContent();
     }
 }
+
+public sealed record JubileeInvitationTemplateResponse(string Subject, string Body, string ReplyTo, IReadOnlyList<string> Placeholders);
+
+public sealed record JubileeInvitationTemplateRequest(
+    [param: Required, StringLength(200)] string Subject,
+    [param: Required, StringLength(4000)] string Body,
+    [param: Required, EmailAddress, StringLength(254)] string ReplyTo);
+
+/// <summary>Zonder <c>MemberIds</c>: alle jubilarissen van het carnavalsjaar die nog niet zijn uitgenodigd.</summary>
+public sealed record JubileeInviteRequest(int? CarnivalYearId, [param: MaxLength(500)] IReadOnlyList<Guid>? MemberIds);
 
 public sealed record JubileeSettingsResponse(IReadOnlyList<int> Milestones);
 

@@ -927,6 +927,14 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - `PUT /admin/jubilees/members/{id}`;
   - `GET /me/member` geeft nu ook `yearsMember` en `isJubilee`.
 - **App:** onder Mijn gegevens staat "Jaren lid". Een jubilaris ziet daar ook "Jubilaris: dit carnavalsjaar N jaar lid". Dit vraagt een nieuwe app-build.
+**20b — jubilarissen uitnodigen (gebouwd, 2026-10-02).** Op de pagina Jubilarissen kun je een jubilaris per persoon uitnodigen, of alle jubilarissen van het carnavalsjaar tegelijk na een bevestiging (`member.update`).
+- **Eén uitnodiging per jaar:** elk lid krijgt per carnavalsjaar hooguit één uitnodiging (`membership.JubileeInvitation`, uniek op lid en carnavalsjaar). Wie al is uitgenodigd of geen e-mailadres heeft, wordt overgeslagen en geteld.
+- **Verzending:** via de outbox (`jubilee.invitation-mail`).
+- **Tekst:** een sjabloon in `config.AppConfiguration` (`jubilee_invitation_subject`, `jubilee_invitation_body`, `jubilee_invitation_reply_to`), aan te passen in het portal met een voorbeeld. De invulvelden zijn `{voornaam}`, `{naam}`, `{jaren}` en `{carnavalsjaar}`.
+- **Afzender:** zolang er geen eigen domein in ACS is, komt de mail van `DoNotReply@…azurecomm.net`. Antwoorden gaan via Reply-To naar het secretariaat.
+  - Zodra `Email__CustomSenderDomain` is gezet (fase 7 of 21f: domein `vrolijkedrammers.nl` in ACS met SPF/DKIM), wordt de afzender `secretaris@` dat domein, zonder codewijziging.
+- **API:** `GET/PUT /admin/jubilees/invitation-template` en `POST /admin/jubilees/invitations`. Het overzicht en de Excel-export tonen "uitgenodigd op".
+
 - **Nog open in fase 20:** trends, drukste dag en uur, en PDF-exports.
 
 **Acceptatiecriteria.**

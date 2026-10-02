@@ -208,6 +208,8 @@ public static class DependencyInjection
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();
         services.AddScoped<Jubilees>();
+        services.AddScoped<JubileeInvitations>();
+        services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();
         services.AddScoped<ParadeManagement.ParadeExchange>();

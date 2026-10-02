@@ -4,6 +4,7 @@ import type { Schemas } from './hooks';
 
 export type JubileeReport = Schemas['JubileeReport'];
 export type Jubilarian = Schemas['Jubilarian'];
+export type JubileeInvitationResult = Schemas['JubileeInvitationResult'];
 
 /** openapi-fetch geeft `data | undefined`; fouten gooit de middleware al als ApiError. */
 function required<T>(data: T | undefined): T {

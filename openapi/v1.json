@@ -3666,6 +3666,156 @@
         }
       }
     },
+    "/api/v1/admin/jubilees/invitation-template": {
+      "get": {
+        "tags": [
+          "AdminJubilees"
+        ],
+        "summary": "Sjabloon van de uitnodiging met de invulvelden die je kunt gebruiken.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/JubileeInvitationTemplateResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JubileeInvitationTemplateResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JubileeInvitationTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminJubilees"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JubileeInvitationTemplateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JubileeInvitationTemplateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JubileeInvitationTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/jubilees/invitations": {
+      "post": {
+        "tags": [
+          "AdminJubilees"
+        ],
+        "summary": "Jubilarissen uitnodigen (per e-mail, via de outbox); wie al is uitgenodigd of geen e-mailadres heeft, wordt overgeslagen.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JubileeInviteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JubileeInviteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JubileeInviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/JubileeInvitationResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JubileeInvitationResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JubileeInvitationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/jubilees/members/{memberId}": {
       "put": {
         "tags": [
@@ -23340,8 +23490,113 @@
               "null",
               "string"
             ]
+          },
+          "hasEmail": {
+            "type": "boolean",
+            "default": false
+          },
+          "invitedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
+      },
+      "JubileeInvitationResult": {
+        "required": [
+          "invited",
+          "alreadyInvited",
+          "withoutEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "invited": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "alreadyInvited": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutEmail": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "JubileeInvitationTemplateRequest": {
+        "required": [
+          "subject",
+          "body",
+          "replyTo"
+        ],
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "replyTo": {
+            "type": "string"
+          }
+        }
+      },
+      "JubileeInvitationTemplateResponse": {
+        "required": [
+          "subject",
+          "body",
+          "replyTo",
+          "placeholders"
+        ],
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "replyTo": {
+            "type": "string"
+          },
+          "placeholders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "JubileeInviteRequest": {
+        "required": [
+          "carnivalYearId",
+          "memberIds"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "memberIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "Zonder `MemberIds`: alle jubilarissen van het carnavalsjaar die nog niet zijn uitgenodigd."
       },
       "JubileeOverrideRequest": {
         "required": [

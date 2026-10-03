@@ -29,6 +29,10 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.MemberCategory).HasMaxLength(50);
         builder.Property(m => m.ParadeGroupName).HasMaxLength(100);
         builder.Property(m => m.JubileeNote).HasMaxLength(200);
+        builder.Property(m => m.MembershipKind).HasConversion<string>().HasMaxLength(20);
+        builder.Property(m => m.ContributionExemptReason).HasMaxLength(200);
+        builder.HasOne<Member>().WithMany().HasForeignKey(m => m.PayerMemberId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasIndex(m => m.PayerMemberId).IsUnique().HasFilter("[payer_member_id] IS NOT NULL");
         builder.Ignore(m => m.JubileeBaseYear);
         builder.Property(m => m.FirstName).HasMaxLength(100);
         builder.Property(m => m.NamePrefix).HasMaxLength(30);
@@ -36,6 +40,31 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.EbHash).HasMaxLength(32).IsFixedLength();
         builder.Ignore(m => m.EffectiveStatus);
         builder.HasIndex(m => new { m.MembershipStatus, m.LastName });
+    }
+}
+
+internal sealed class ContributionRateConfiguration : IEntityTypeConfiguration<ContributionRate>
+{
+    public void Configure(EntityTypeBuilder<ContributionRate> builder)
+    {
+        builder.ToTable("ContributionRate", Schemas.Membership);
+        builder.HasIndex(r => r.ValidFrom).IsUnique();
+        foreach (var amount in new[] { "OnePerson", "TwoPersons", "OnePersonSenior", "TwoPersonsSenior", "Dansgarde" })
+        {
+            builder.Property<decimal>(amount).HasPrecision(9, 2);
+        }
+
+        // Tarieven 2026 (bestuur, 2026-10-03).
+        builder.HasData(new ContributionRate
+        {
+            Id = 1,
+            ValidFrom = new DateOnly(2026, 1, 1),
+            OnePerson = 32.50m,
+            TwoPersons = 57.50m,
+            OnePersonSenior = 22.00m,
+            TwoPersonsSenior = 44.00m,
+            Dansgarde = 85.00m,
+        });
     }
 }
 

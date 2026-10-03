@@ -1494,6 +1494,310 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Contributie per actief lid op de peildatum (standaard vandaag; bij een incasso de incassodatum). */
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ContributionOverview"];
+                        "application/json": components["schemas"]["ContributionOverview"];
+                        "text/json": components["schemas"]["ContributionOverview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/contributions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/contributions/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ContributionRate"][];
+                        "application/json": components["schemas"]["ContributionRate"][];
+                        "text/json": components["schemas"]["ContributionRate"][];
+                    };
+                };
+            };
+        };
+        /** Tarief toevoegen; met een bestaande ingangsdatum wordt dat tarief aangepast. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ContributionRateRequest"];
+                    "text/json": components["schemas"]["ContributionRateRequest"];
+                    "application/*+json": components["schemas"]["ContributionRateRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/contributions/rates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/contributions/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MembershipSettings"];
+                        "application/json": components["schemas"]["MembershipSettings"];
+                        "text/json": components["schemas"]["MembershipSettings"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        /** Soort lidmaatschap, betaler (partner) en vrijstelling (bijv. Convent) van een lid. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MembershipSettingsRequest"];
+                    "text/json": components["schemas"]["MembershipSettingsRequest"];
+                    "application/*+json": components["schemas"]["MembershipSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/dansgarde": {
         parameters: {
             query?: never;
@@ -15922,6 +16226,71 @@ export interface components {
          * @enum {unknown}
          */
         ContentVisibility: "Public" | "Members" | "Restricted";
+        ContributionLine: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            kind: null | components["schemas"]["MembershipKind"];
+            kindFromEBoekhouden: boolean;
+            senior: boolean;
+            /** Format: double */
+            amount: number;
+            status: components["schemas"]["ContributionStatus"];
+            note: null | string;
+            /** Format: uuid */
+            partnerMemberId: null | string;
+            partnerName: null | string;
+        };
+        ContributionOverview: {
+            /** Format: date */
+            date: string;
+            rate: components["schemas"]["ContributionRate"];
+            lines: components["schemas"]["ContributionLine"][];
+            totals: components["schemas"]["ContributionTotal"][];
+            /** Format: double */
+            total: number;
+        };
+        /** @description Contributie per jaar, geldig vanaf een datum (`membership.ContributionRate`); de nieuwste die al geldt telt. */
+        ContributionRate: {
+            /** Format: int32 */
+            id?: number;
+            /** Format: date */
+            validFrom?: string;
+            /** Format: double */
+            onePerson?: number;
+            /** Format: double */
+            twoPersons?: number;
+            /** Format: double */
+            onePersonSenior?: number;
+            /** Format: double */
+            twoPersonsSenior?: number;
+            /** Format: double */
+            dansgarde?: number;
+        };
+        ContributionRateRequest: {
+            /** Format: date */
+            validFrom: string;
+            /** Format: double */
+            onePerson: number;
+            /** Format: double */
+            twoPersons: number;
+            /** Format: double */
+            onePersonSenior: number;
+            /** Format: double */
+            twoPersonsSenior: number;
+            /** Format: double */
+            dansgarde: number;
+        };
+        /** @enum {unknown} */
+        ContributionStatus: "Due" | "Exempt" | "PaidByPartner" | "Unknown";
+        ContributionTotal: {
+            label: string;
+            /** Format: int32 */
+            count: number;
+            /** Format: double */
+            amount: number;
+        };
         CreatedIntResponse: {
             /** Format: int32 */
             id: number;
@@ -16914,6 +17283,22 @@ export interface components {
             byAgeClass: components["schemas"]["ReportRow"][];
             byJoinYear: components["schemas"]["ReportRow"][];
             byGroup: components["schemas"]["ReportRow"][];
+        };
+        /** @enum {unknown} */
+        MembershipKind: "OnePerson" | "TwoPersons" | "Partner" | "Dansgarde" | null;
+        MembershipSettings: {
+            kind: null | components["schemas"]["MembershipKind"];
+            /** Format: uuid */
+            payerMemberId: null | string;
+            exempt: boolean;
+            exemptReason: null | string;
+        };
+        MembershipSettingsRequest: {
+            kind: null | components["schemas"]["MembershipKind"];
+            /** Format: uuid */
+            payerMemberId: null | string;
+            exempt: boolean;
+            exemptReason: null | string;
         };
         /** @enum {unknown} */
         MembershipStatus: "Active" | "Inactive" | "Suspended" | "Deceased";

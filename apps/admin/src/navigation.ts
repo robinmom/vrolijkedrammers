@@ -37,6 +37,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden' },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
+  // Fase 23a: contributie zonder e-Boekhouden.
+  { label: 'Contributie', to: '/contributie', permission: 'contribution.manage', icon: 'rollen', section: 'Leden' },
   // Fase 20: jubilarissen per carnavalsjaar.
   { label: 'Jubilarissen', to: '/jubilarissen', permission: 'member.read', icon: 'jaar', section: 'Leden' },
   { label: 'Overzicht', to: '/dansgarde', permission: 'member.read', icon: 'leden', section: 'Dansgarde' },

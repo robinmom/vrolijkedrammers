@@ -1169,6 +1169,58 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
   - in de app (`photoUrl`).
 - Ook hier is niets eerder openbaar dan de uitslag.
 
+### Fase 23 — Ledenadministratie en contributie zonder e-Boekhouden
+
+**Doel.** De vereniging stopt met e-Boekhouden (besluit bestuur, 2026-10-03). De app wordt de ledenadministratie, berekent de contributie en maakt het incassobestand voor de Rabobank.
+
+**Besluiten (2026-10-03).**
+- **Lidmaatschappen van huidige leden:**
+
+  | Lidmaatschap | Contributie per jaar |
+  |---|---|
+  | Eén persoon | € 32,50 |
+  | Twee personen | € 57,50 |
+  | Eén persoon 65+ | € 22,00 |
+  | Twee personen 65+ | € 44,00 |
+  | Dansgarde | € 85,00 |
+
+  Nieuwe leden kiezen alleen Lid of Dansgarde.
+- **Twee personen:** dit zijn twee gekoppelde leden met een eigen account, QR-code en jubileum. Eén van de twee betaalt.
+- **65+:** de app bepaalt dat automatisch, met de leeftijd op de incassodatum. Bij twee personen geldt het seniorentarief alleen als beiden 65+ zijn.
+- **Convent:** leden van het Convent betalen niets (bewezen dienstjaren). Dat wordt handmatig toegekend.
+- **Incasso:** één keer per jaar, het volle bedrag, ook voor nieuwe leden.
+- **Rabobank:** eerst een pain.008-bestand dat de penningmeester uploadt in Rabo Internetbankieren. Daarna eventueel de Business Direct Debit API (Rabo BoekhoudKoppeling), na bevestiging door Rabobank.
+
+**23a — lidmaatschappen en contributie (gebouwd).**
+- **Per lid:** `Member.MembershipKind` (OnePerson, TwoPersons, Partner of Dansgarde), `PayerMemberId` (de partner wijst naar de betaler; hooguit één partner per betaler), `ContributionExempt` en de reden.
+  - Is de soort leeg, dan volgt die nog uit e-Boekhouden (statusveld "Eénpersoonslid DVD", "Tweepersoonslid DVD" of "Lidmaatschap dansgarde DVD").
+- **Tarieven:** `membership.ContributionRate` per ingangsdatum (seed 2026). Het tarief dat op de peildatum geldt, telt.
+- **Nieuwe permission:** `contribution.manage`, voor het Bestuur. Een eigen rol, zoals Penningmeester, maak je in het portal. Bewust geen vaste rol: een rol met die code of dat id kan in productie al bestaan.
+- **Portal, Leden → Contributie:**
+  - een peildatum (de incassodatum);
+  - totalen per soort;
+  - een tabel per lid met de filters betalen, vrijgesteld, via partner en aandacht nodig;
+  - Excel-export;
+  - tarieven toevoegen, aanpassen en verwijderen.
+  - Bij een lid staat de kaart "Lidmaatschap en contributie" (soort, betaler zoeken, vrijstelling met reden).
+- **API:**
+  - `GET /admin/contributions?date=` en `/export`;
+  - `GET/PUT /admin/contributions/rates` en `DELETE /admin/contributions/rates/{id}`;
+  - `GET/PUT /admin/contributions/members/{id}`.
+
+**23b — overstap van e-Boekhouden (gepland).**
+- Een laatste import van alle leden, inclusief IBAN, rekeninghouder, machtigingskenmerk en ondertekeningsdatum. IBAN's worden versleuteld opgeslagen (Data Protection) en alleen getoond aan `contribution.manage`.
+- De soort lidmaatschap wordt vastgezet vanuit e-Boekhouden. Daarna gaat de sync uit en worden alle ledengegevens in het portal bewerkt.
+- Een goedgekeurde aanmelding wordt direct een lid in de app, met de machtiging uit de aanmelding.
+- Een lijst van tweepersoonsleden zonder gekoppelde partner, zodat het bestuur de tweede persoon kan toevoegen.
+
+**23c — incassorun (gepland).**
+- Kies een incassodatum en bekijk eerst een voorbeeld. Daarin staat wie meedoet, wie overgeslagen wordt en waarom (geen machtiging, onbekende soort, vrijgesteld).
+- Het portal maakt een pain.008.001.08-bestand (FRST of RCUR per machtiging), met de incassant-ID, de IBAN en de naam van de vereniging uit de instellingen.
+- Run en regels worden vastgelegd. Per betaler houd je de status bij (geïncasseerd of gestorneerd). Dat kan later ook met een import van pain.002 of camt.
+
+**23d — Rabobank Business Direct Debit API (later).** Batches rechtstreeks aanleveren en de status ophalen (pain.002), zodra Rabobank aansluiting als directe aansluiter bevestigt (developer portal, overeenkomst Rabo Banking Link, sandbox).
+
 ## 5. Buiten het plan (LATER)
 
 Nieuwsbrief (in-app + e-mail, OQ-43), pasfoto in de scanner (OQ-22), VNet/private endpoints/Front Door (OQ-72), migratie naar Notification Hubs, Mollie next-gen webhooks (OQ-24), uitslagenmodule (OQ-40), 

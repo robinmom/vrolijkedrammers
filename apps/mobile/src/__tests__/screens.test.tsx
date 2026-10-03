@@ -16,6 +16,7 @@ import FotosScreen from '../app/fotos/index';
 import WeergaveScreen from '../app/meer/weergave';
 import NieuwsBerichtScreen from '../app/nieuws/[id]';
 import UitslagenScreen from '../app/uitslagen';
+import { setSessionForTest } from '../auth/session';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { api, paged } from '../test/api-fixture';
@@ -60,6 +61,31 @@ describe('01 Home', () => {
     expect(await screen.findByText('De optocht-inschrijving is geopend!')).toBeTruthy();
     // Fase 21f: geen aftelkaart meer in de hero (ontwerp Figma 3:2).
     expect(screen.queryByLabelText(/tot carnaval 2027/)).toBeNull();
+  });
+
+  it('gasten zien geen tegels die alleen voor leden zijn; leden wel', async () => {
+    mockApi(api);
+    await renderApp(routes, '/');
+    expect(await screen.findByLabelText('Uitslagen')).toBeTruthy();
+    // De belknop in de hero en de tegel.
+    expect(screen.getAllByLabelText('Meldingen')).toHaveLength(2);
+    expect(screen.queryByLabelText('QR code')).toBeNull();
+    expect(screen.queryByLabelText('Munten')).toBeNull();
+  });
+
+  it('leden zien hun voornaam in de groet, en QR code en Munten', async () => {
+    setSessionForTest('signedIn');
+    mockApi({
+      ...api,
+      '/api/v1/me': { id: 'u-1', email: 'piet@example.com', displayName: 'Piet van der Lid', memberId: 'm-1', roles: [], permissions: ['member.read.own'], features: {} },
+      '/api/v1/me/member': { status: 200, body: { memberNumber: '0101', fullName: 'Piet van der Lid', firstName: 'Piet', groups: [], status: 'Active' } },
+    });
+    await renderApp(routes, '/');
+    expect(await screen.findByText('Goedemorgen, Piet!')).toBeTruthy();
+    expect(await screen.findByLabelText('QR code')).toBeTruthy();
+    expect(screen.getByLabelText('Munten')).toBeTruthy();
+    expect(screen.queryByLabelText('Uitslagen')).toBeNull();
+    setSessionForTest('signedOut', null);
   });
 
   it('de snelkoppeling Foto’s opent de albums', async () => {

@@ -4,8 +4,9 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { queryKeys, useEvents, useNews, useWebsiteHero } from '../../api/queries';
+import { queryKeys, useEvents, useMe, useMyMember, useNews, useWebsiteHero } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
 import { dateBlockParts, greeting, newsDateLong, startTime } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -29,6 +30,11 @@ export default function HomeScreen() {
   const news = useNews();
   const refresh = useRefresh([queryKeys.websiteHero, queryKeys.events, queryKeys.news, queryKeys.myNotifications]);
   const unread = useUnreadCount();
+  const signedIn = useSessionStatus() === 'signedIn';
+  // Ingelogd: de voornaam van het lid in de groet; anders (of zonder gekoppeld lid) "Drammer".
+  const me = useMe();
+  const member = useMyMember(me.data ? me.data.memberId !== null : false);
+  const firstName = signedIn ? (member.data?.firstName ?? me.data?.displayName?.split(' ')[0]) : undefined;
   // Moment van openen: voor de groet.
   const [openedAt] = useState(() => new Date());
 
@@ -61,7 +67,7 @@ export default function HomeScreen() {
 
           <View style={styles.greeting}>
             <AppText variant="heroTitle" color="#FFFFFF">
-              {greeting(openedAt)}, Drammer!
+              {greeting(openedAt)}, {firstName || 'Drammer'}!
             </AppText>
             <AppText variant="caption" color="rgba(255,255,255,0.85)" style={styles.subtitle}>
               Alaaf! Het feest komt eraan 🎉
@@ -71,6 +77,24 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.content}>
+        <View style={styles.shortcuts}>
+          <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
+          {signedIn ? (
+            <>
+              {/* Fase 19b: voor leden QR code en Munten op de plek van Uitslagen en Meldingen (die staan onder Meer). */}
+              <ShortcutTile icon="qr" label="QR code" tint="yellow" onPress={() => router.push('/mijn-qr')} />
+              <ShortcutTile icon="munten" label="Munten" tint="red" onPress={() => router.push('/munten')} />
+            </>
+          ) : (
+            <>
+              {/* Gasten zien geen onderdelen die alleen voor leden zijn: de tegels uit het ontwerp (Figma 3:2). */}
+              <ShortcutTile icon="uitslagen" label="Uitslagen" tint="yellow" onPress={() => router.push('/uitslagen')} />
+              <ShortcutTile icon="meldingen" label="Meldingen" tint="red" onPress={() => router.push('/meldingen')} />
+            </>
+          )}
+          <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
+        </View>
+
         <SectionHeader title="Eerstvolgende activiteit" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
         {next ? (
           <EventCard
@@ -88,14 +112,6 @@ export default function HomeScreen() {
         ) : (
           <QueryState query={events} />
         )}
-
-        <View style={styles.shortcuts}>
-          <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
-          {/* Fase 19b: QR code op de plek van Uitslagen (die staat onder Meer), Munten op de oude plek van de QR. */}
-          <ShortcutTile icon="qr" label="QR code" tint="yellow" onPress={() => router.push('/mijn-qr')} />
-          <ShortcutTile icon="munten" label="Munten" tint="red" onPress={() => router.push('/munten')} />
-          <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
-        </View>
 
         <SectionHeader title="Laatste nieuws" linkLabel="Meer" onLinkPress={() => router.push('/nieuws')} />
         {latest ? (

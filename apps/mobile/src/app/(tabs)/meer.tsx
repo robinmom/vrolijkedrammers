@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
   // Drie tegels van 111 pt per rij; op smallere toestellen lopen ze netjes door naar de volgende rij.
   menu: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 4 },
-  logo: { width: 36, height: 36 },
+  logo: { width: 40, height: 40 },
   regular: { fontFamily: 'Inter_400Regular' },
 });

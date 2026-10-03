@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useMe } from '../api/hooks';
-import appIcon from '../assets/app-icoon.png';
+import appIcon from '../assets/logo-cirkel.png';
 import { useAuth } from '../auth/AuthContext';
 import { navSections } from '../navigation';
 import { Icon } from './Icon';

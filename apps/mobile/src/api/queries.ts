@@ -9,6 +9,7 @@ import { ApiError, api, unwrap } from './client';
 export const queryKeys = {
   appConfig: ['app-config'] as const,
   carnivalYear: ['carnival-year'] as const,
+  websiteHero: ['website-hero'] as const,
   categories: ['event-categories'] as const,
   events: ['events'] as const,
   event: (id: string) => ['events', id] as const,
@@ -53,6 +54,10 @@ const PAGE = { page: 1, pageSize: 100 };
 
 export const useAppConfig = () =>
   useQuery({ queryKey: queryKeys.appConfig, queryFn: () => unwrap(api.GET('/api/v1/app-config')) });
+
+/** Hero-foto van de website (portal → Website → Homepage), ook op het beginscherm van de app (fase 21f). */
+export const useWebsiteHero = () =>
+  useQuery({ queryKey: queryKeys.websiteHero, queryFn: () => unwrap(api.GET('/api/v1/website/hero')) });
 
 export const useCarnivalYear = () =>
   useQuery({ queryKey: queryKeys.carnivalYear, queryFn: () => unwrap(api.GET('/api/v1/carnival-years/current')) });

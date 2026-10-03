@@ -116,6 +116,10 @@ public static class DependencyInjection
         // E-mail via Azure Communication Services met de managed identity; lokaal alleen een logregel.
         var email = configuration.GetSection(EmailOptions.SectionName);
         services.Configure<EmailOptions>(email);
+        // Logo bovenaan de e-mails: standaard dat van de website op dezelfde host als de links in de mails.
+        services.PostConfigure<EmailOptions>(o => o.LogoUrl ??= configuration["Sales:PublicBaseUrl"] is { Length: > 0 } baseUrl
+            ? $"{baseUrl.TrimEnd('/')}/_content/Drammers.Website/img/logo.png"
+            : null);
         if (email.Get<EmailOptions>()?.IsConfigured == true)
         {
             services.AddSingleton<IEmailSender, AcsEmailSender>();

@@ -1076,7 +1076,15 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
   - een verborgen veld en een minimale invultijd van 3 seconden. Wordt een bericht daarop afgewezen, dan krijgt de bezoeker hetzelfde antwoord als bij succes en wordt er niets verstuurd.
   - Cloudflare Turnstile gaat aan zodra de site key is gezet: de GitHub-variabele `DVD_TURNSTILE_SITE_KEY` → Bicep → `Turnstile__SiteKey`. Het geheim staat als secret `turnstile-secret-key` in Key Vault; dat zet de gebruiker. De website-CSP staat dan `challenges.cloudflare.com` toe.
 
-**21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
+**21f — app en livegang.**
+- **Hero (gebouwd, 2026-10-03):** het beginscherm van de app heeft de hero uit Figma 3:2. Daarin:
+  - de hero-foto van de website (portal → Website → Homepage, `GET /website/hero`) onder een donkerblauw verloop, met ronde hoeken onderaan;
+  - het logo, de naam, "Loil · sinds 1958" en de belknop;
+  - de groet en de ondertitel.
+
+  De aftelkaart en de mascotte zijn vervallen. De rest van het beginscherm is ongewijzigd.
+- **Logo:** het logo van de vereniging (`vrdr-logo.png`, ongewijzigd) in een witte cirkel, zoals het app-icoon op Android. Het staat in de app (beginscherm, Meer, activiteit zonder foto, laadscherm), het portal (menu en dashboard), de website (kop, voettekst, favicon) en bovenaan elke e-mail (`EmailBranding`, logo van de website via `Sales:PublicBaseUrl`).
+- **Nog open:** het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 
 ---
 

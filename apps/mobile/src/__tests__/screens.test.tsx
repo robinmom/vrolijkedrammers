@@ -50,15 +50,16 @@ afterEach(() => {
 });
 
 describe('01 Home', () => {
-  it('toont groet, countdown, eerstvolgende activiteit en laatste nieuws', async () => {
+  it('toont de hero (zonder aftelkaart), eerstvolgende activiteit en laatste nieuws', async () => {
     mockApi(api);
     await renderApp(routes, '/');
     expect(await screen.findByText('Elfde van de Elfde')).toBeTruthy();
     expect(screen.getByText('Goedemorgen, Drammer!')).toBeTruthy();
+    expect(screen.getByText('Loil · sinds 1958')).toBeTruthy();
     expect(screen.getByText('11:11 uur · Dorpsplein Loil')).toBeTruthy();
     expect(await screen.findByText('De optocht-inschrijving is geopend!')).toBeTruthy();
-    // Voorleestekst van de countdown: tot 6 februari 2027 00:00 in Loil.
-    expect(screen.getByLabelText('Nog 133 dagen, 17 uur, 0 minuten tot carnaval 2027')).toBeTruthy();
+    // Fase 21f: geen aftelkaart meer in de hero (ontwerp Figma 3:2).
+    expect(screen.queryByLabelText(/tot carnaval 2027/)).toBeNull();
   });
 
   it('de snelkoppeling Foto’s opent de albums', async () => {

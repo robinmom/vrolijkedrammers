@@ -11,7 +11,7 @@ import {
   useMemberSummary,
   useSyncConflicts,
 } from '../api/hooks';
-import appIcon from '../assets/app-icoon.png';
+import appIcon from '../assets/logo-cirkel.png';
 import { AccessDashboardCard } from '../components/AccessDashboardCard';
 import { ProblemAlert } from '../components/ProblemAlert';
 import { formatDateTime, visibilityLabels } from '../format';

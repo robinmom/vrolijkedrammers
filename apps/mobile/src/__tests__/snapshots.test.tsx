@@ -24,7 +24,7 @@ jest.mock('expo-router', () => ({
 
 /** De 7 Figma-schermen met een tekst die pas verschijnt als alle data geladen is. */
 const screens: [string, ComponentType, string][] = [
-  ['01 Home', HomeScreen, 'Nog tot carnaval 2027'],
+  ['01 Home', HomeScreen, 'De optocht-inschrijving is geopend!'],
   ['02 Programma', ProgrammaScreen, 'Seizoen 2026–2027'],
   ['03 Nieuws', NieuwsScreen, 'Eerder nieuws'],
   ['04 Optocht', OptochtScreen, 'ZONDAG 7 FEBRUARI 2027'],

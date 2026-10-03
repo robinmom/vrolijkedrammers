@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ClosedXML.Excel;
 using Drammers.Api.Authorization;
 using Drammers.Api.Contracts;
@@ -95,7 +96,8 @@ public sealed class AdminMembersController(
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),
-            account, groups, provisioning, kader, m.JubileeJoinYearOverride, m.JubileeNote);
+            account, groups, provisioning, kader, m.JubileeJoinYearOverride, m.JubileeNote,
+            m.LocalFields is { Length: > 0 } local ? local.Split(',') : []);
     }
 
     [HttpPatch("{id:guid}")]
@@ -106,6 +108,29 @@ public sealed class AdminMembersController(
     {
         await members.UpdateLocalAsync(id, new MemberLocalUpdate(request.LocalStatusOverride, request.MembershipValidFrom, request.MembershipValidTo,
             request.FirstName, request.NamePrefix, request.LastName, request.BirthDate, request.JoinYear), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Alle gegevens bewerken, ook die uit e-Boekhouden (fase 24); gewijzigde velden overschrijft de sync niet meer.</summary>
+    [HttpPut("{id:guid}/data")]
+    [RequirePermission(Permissions.MemberUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> UpdateData(Guid id, MemberDataRequest request, CancellationToken cancellationToken)
+    {
+        await members.UpdateDataAsync(id, new MemberDataUpdate(request.FullName, request.Salutation, request.Gender, request.AddressLine,
+            request.PostalCode, request.City, request.Country, request.Email, request.Phone, request.MobilePhone, request.BirthDate,
+            request.JoinYear, request.MemberCategory, request.ParadeGroupName), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Handmatig aangepaste velden teruggeven aan e-Boekhouden; de volgende sync neemt ze weer over.</summary>
+    [HttpDelete("{id:guid}/local-fields")]
+    [RequirePermission(Permissions.MemberUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ReleaseLocalFields(Guid id, CancellationToken cancellationToken)
+    {
+        await members.ReleaseLocalFieldsAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -270,7 +295,24 @@ public sealed record MemberDetailResponse(
     DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, MemberSyncState SyncState, DateTime? EbLastSeenAt,
     DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups,
     MemberProvisioningResponse? Provisioning, IReadOnlyList<MemberKaderResponse>? Kader = null, short? JubileeJoinYearOverride = null,
-    string? JubileeNote = null);
+    string? JubileeNote = null, IReadOnlyList<string>? LocalFields = null);
+
+/// <summary>Alle velden die anders uit e-Boekhouden komen; zie <see cref="MemberDataUpdate"/>.</summary>
+public sealed record MemberDataRequest(
+    [param: Required, StringLength(100)] string FullName,
+    [param: StringLength(50)] string? Salutation,
+    [param: StringLength(1)] string? Gender,
+    [param: StringLength(150)] string? AddressLine,
+    [param: StringLength(50)] string? PostalCode,
+    [param: StringLength(50)] string? City,
+    [param: StringLength(50)] string? Country,
+    [param: StringLength(150)] string? Email,
+    [param: StringLength(50)] string? Phone,
+    [param: StringLength(50)] string? MobilePhone,
+    DateOnly? BirthDate,
+    short? JoinYear,
+    [param: StringLength(50)] string? MemberCategory,
+    [param: StringLength(100)] string? ParadeGroupName);
 
 /// <summary>Functie in het kader op de website (fase 21a); beheer onder Website → Kader.</summary>
 public sealed record MemberKaderResponse(Guid Id, int CommitteeId, string Committee, string? Function);

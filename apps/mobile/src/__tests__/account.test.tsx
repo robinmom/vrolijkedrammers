@@ -161,13 +161,13 @@ describe('Account aanvragen', () => {
     const button = await screen.findByRole('button', { name: 'Account aanvragen' });
     expect(button.props.accessibilityState.disabled).toBe(true);
 
-    await fireEvent.changeText(screen.getByLabelText('Lidnummer'), ' 0101 ');
-    await fireEvent.changeText(screen.getByLabelText('E-mailadres'), 'piet@example.com');
+    expect(screen.queryByLabelText('Lidnummer')).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText('E-mailadres'), ' piet@example.com ');
     await fireEvent.press(button);
 
     expect(await screen.findByText(PENDING_MESSAGE)).toBeTruthy();
     const post = requests().find((r) => r.url.endsWith('/api/v1/account-requests'))!;
-    expect(await post.clone().json()).toEqual({ memberNumber: '0101', email: 'piet@example.com' });
+    expect(await post.clone().json()).toEqual({ memberNumber: null, email: 'piet@example.com' });
     expect(post.headers.get('authorization')).toBeNull();
   });
 
@@ -179,8 +179,7 @@ describe('Account aanvragen', () => {
       throw new TypeError('Network request timed out');
     });
     await renderApp(routes, '/meer/account-aanvragen');
-    await fireEvent.changeText(await screen.findByLabelText('Lidnummer'), '0101');
-    await fireEvent.changeText(screen.getByLabelText('E-mailadres'), 'piet@example.com');
+    await fireEvent.changeText(await screen.findByLabelText('E-mailadres'), 'piet@example.com');
     await fireEvent.press(screen.getByRole('button', { name: 'Account aanvragen' }));
     expect(await screen.findByText(PENDING_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(/lukt nu niet/)).toBeNull();
@@ -191,8 +190,7 @@ describe('Account aanvragen', () => {
   it('te veel pogingen: duidelijke melding', async () => {
     mockApi({ ...api, '/api/v1/account-requests': { status: 429 } });
     await renderApp(routes, '/meer/account-aanvragen');
-    await fireEvent.changeText(await screen.findByLabelText('Lidnummer'), '0101');
-    await fireEvent.changeText(screen.getByLabelText('E-mailadres'), 'piet@example.com');
+    await fireEvent.changeText(await screen.findByLabelText('E-mailadres'), 'piet@example.com');
     await fireEvent.press(screen.getByRole('button', { name: 'Account aanvragen' }));
     expect(await screen.findByText(/Te veel aanvragen/)).toBeTruthy();
   });

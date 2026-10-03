@@ -13,6 +13,7 @@ import {
 import { AccessCard } from '../components/AccessCard';
 import { GuardiansCard } from '../components/GuardiansCard';
 import { JubileeCard } from '../components/JubileeCard';
+import { MemberDataCard } from '../components/MemberDataCard';
 import { MembershipCard } from '../components/MembershipCard';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
@@ -20,7 +21,6 @@ import { Icon } from '../components/Icon';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import {
   accountStatusLabels,
-  formatDate,
   formatDateTime,
   groupFunctionLabels,
   membershipStatusLabels,
@@ -129,7 +129,6 @@ export function MemberDetailPage() {
   }
 
   const statusTone: Record<string, string> = { Active: 'ok', Suspended: 'warn' };
-  const address = [m.addressLine, [m.postalCode, m.city].filter(Boolean).join(' '), m.country].filter(Boolean).join(', ');
 
   return (
     <>
@@ -174,52 +173,7 @@ export function MemberDetailPage() {
 
       <div className="columns">
         <div>
-          <section className="card" aria-labelledby="eboekhouden">
-            <div className="card-header">
-              <h2 id="eboekhouden">Gegevens uit e-Boekhouden</h2>
-              <span className="badge info">Bron: e-Boekhouden</span>
-            </div>
-            <p className="card-hint">Alleen-lezen. Wijzigen gaat via het secretariaat in e-Boekhouden; de sync neemt het daarna over.</p>
-            <dl className="details">
-              <dt>Naam</dt>
-              <dd>{m.fullName}</dd>
-              <dt>Adres</dt>
-              <dd>{address || '—'}</dd>
-              <dt>E-mailadres</dt>
-              <dd>{m.email ?? '—'}</dd>
-              <dt>Telefoon</dt>
-              <dd>{[m.phone, m.mobilePhone].filter(Boolean).join(' · ') || '—'}</dd>
-              {sources.birthDateFromEBoekhouden ? (
-                <>
-                  <dt>Geboortedatum</dt>
-                  <dd>{formatDate(m.birthDate)}</dd>
-                </>
-              ) : null}
-              {sources.joinYearFromEBoekhouden ? (
-                <>
-                  <dt>Inschrijfjaar</dt>
-                  <dd>{m.joinYear ?? '—'}</dd>
-                </>
-              ) : null}
-              {sources.statusFromEBoekhouden ? (
-                <>
-                  <dt>Status in e-Boekhouden</dt>
-                  <dd>
-                    {m.ebStatusRaw ?? '—'}
-                    {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}
-                  </dd>
-                </>
-              ) : null}
-              {sources.categoryFromEBoekhouden ? (
-                <>
-                  <dt>Categorie</dt>
-                  <dd>{m.memberCategory ?? '—'}</dd>
-                </>
-              ) : null}
-              <dt>Groep</dt>
-              <dd>{m.paradeGroupName ?? '—'}</dd>
-            </dl>
-          </section>
+          <MemberDataCard member={m} canEdit={canEdit} />
 
           <section className="card" aria-labelledby="lokaal">
             <h2 id="lokaal">Gegevens van de app</h2>

@@ -5005,6 +5005,94 @@
         }
       }
     },
+    "/api/v1/admin/members/{id}/data": {
+      "put": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Alle gegevens bewerken, ook die uit e-Boekhouden (fase 24); gewijzigde velden overschrijft de sync niet meer.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberDataRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberDataRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberDataRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/local-fields": {
+      "delete": {
+        "tags": [
+          "AdminMembers"
+        ],
+        "summary": "Handmatig aangepaste velden teruggeven aan e-Boekhouden; de volgende sync neemt ze weer over.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/admin/members/{id}/confirm-inactive": {
       "post": {
         "tags": [
@@ -19067,7 +19155,10 @@
         "type": "object",
         "properties": {
           "memberNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "email": {
             "type": "string"
@@ -19093,7 +19184,10 @@
             "format": "uuid"
           },
           "memberNumber": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "email": {
             "type": "string"
@@ -19133,6 +19227,15 @@
                 "$ref": "#/components/schemas/AccountRequestMemberResponse"
               }
             ]
+          },
+          "candidates": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AccountRequestMemberResponse"
+            }
           }
         }
       },
@@ -25277,6 +25380,111 @@
           }
         }
       },
+      "MemberDataRequest": {
+        "required": [
+          "fullName",
+          "salutation",
+          "gender",
+          "addressLine",
+          "postalCode",
+          "city",
+          "country",
+          "email",
+          "phone",
+          "mobilePhone",
+          "birthDate",
+          "joinYear",
+          "memberCategory",
+          "paradeGroupName"
+        ],
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "salutation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "gender": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "addressLine": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mobilePhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "birthDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "joinYear": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int16"
+          },
+          "memberCategory": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paradeGroupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Alle velden die anders uit e-Boekhouden komen; zie MemberDataUpdate."
+      },
       "MemberDetailResponse": {
         "required": [
           "id",
@@ -25542,6 +25750,15 @@
               "null",
               "string"
             ]
+          },
+          "localFields": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

@@ -1080,6 +1080,22 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 ---
 
+### Fase 24 — Ledengegevens bewerken en account aanvragen met e-mail (gebouwd, 2026-10-03)
+
+Voorbereiding op het afscheid van e-Boekhouden (fase 23). De sync blijft voorlopig aanstaan, tot de livegang.
+- **Alles bewerkbaar:** in het portal kun je alle gegevens van een lid aanpassen, ook die uit e-Boekhouden (kaart "Gegevens van het lid", `PUT /admin/members/{id}/data`).
+  - Een gewijzigd veld komt in `Member.LocalFields` (sleutels uit `MemberFields`) en is daarmee "handmatig": de sync overschrijft het niet meer, het portal wint.
+  - Wijkt e-Boekhouden af, dan staat dat als waarschuwing in de syncrun.
+  - Met "Teruggeven aan e-Boekhouden" (`DELETE /admin/members/{id}/local-fields`) neemt de volgende sync alles weer over.
+  - Het inlogadres van een bestaand account verandert niet mee met het e-mailadres.
+- **Account aanvragen met alleen e-mail:** het lidnummer is niet meer nodig.
+  - Het lid wordt gezocht op het e-mailadres.
+  - Delen meerdere leden het adres, dan telt alleen wie een eigen account kan krijgen: actief, oud genoeg en nog zonder account. Blijft er precies één over (bijvoorbeeld de ouder in een gezin), dan gaat het automatisch.
+  - Anders komt het verzoek bij Accountverzoeken (`multiple-members`) en kiest het bestuur het lid uit de kandidaten.
+  - Een onbekend adres geeft `unknown-email`.
+  - Met lidnummer werkt het nog zoals vroeger.
+- **Vastgelopen ledensync (fix):** een run die door een herstart op "bezig" bleef staan, wordt nu ook afgebroken bij het ophalen van de lijst. Voorheen zette het portal dan de startknoppen uit, waardoor de opruiming nooit gebeurde.
+
 ### Fase 22 — Jury en uitslag van de optocht
 
 Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalschermen Jury, Uitnodigen, Aanpassen, Buiten categorie, Uitslag en Publiceren. Afspraken met de product owner (1 oktober 2026):

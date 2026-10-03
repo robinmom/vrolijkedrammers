@@ -31,15 +31,22 @@ public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts
             .ToListAsync(cancellationToken);
 
         // Suggestie voor het bestuur: het lid met het ingevulde lidnummer (ook bij een verkeerd e-mailadres).
-        var numbers = rows.Select(x => x.r.MemberNumber).Distinct().ToList();
+        var numbers = rows.Where(x => x.r.MemberNumber != null).Select(x => x.r.MemberNumber!).Distinct().ToList();
         var byNumber = await db.Members.AsNoTracking().Where(m => numbers.Contains(m.MemberNumber))
             .ToDictionaryAsync(m => m.MemberNumber, cancellationToken);
+        // Alleen een e-mailadres (fase 24): de leden met dat adres, waaruit het bestuur kiest.
+        var emails = rows.Where(x => x.r.Status == AccountRequestStatus.Pending && x.member is null).Select(x => x.r.Email).Distinct().ToList();
+        var byEmail = (await db.Members.AsNoTracking().Where(m => m.Email != null && emails.Contains(m.Email)).ToListAsync(cancellationToken))
+            .ToLookup(m => m.Email!, StringComparer.OrdinalIgnoreCase);
+        static AccountRequestMemberResponse ToMember(Modules.Membership.Members.Member m) =>
+            new(m.Id, m.MemberNumber, m.FullName, m.Email, m.LocalStatusOverride ?? m.MembershipStatus);
         var items = rows.Select(x =>
         {
-            var suggested = x.member ?? byNumber.GetValueOrDefault(x.r.MemberNumber);
+            var suggested = x.member ?? (x.r.MemberNumber is { } n ? byNumber.GetValueOrDefault(n) : null);
+            var candidates = suggested is null ? byEmail[x.r.Email].OrderBy(m => m.FullName).Select(ToMember).ToList() : [];
             return new AccountRequestResponse(
                 x.r.Id, x.r.MemberNumber, x.r.Email, x.r.Status, x.r.MismatchReason, x.r.RejectionReason, x.r.RequestedAt, x.r.DecidedAt,
-                suggested is null ? null : new AccountRequestMemberResponse(suggested.Id, suggested.MemberNumber, suggested.FullName, suggested.Email, suggested.LocalStatusOverride ?? suggested.MembershipStatus));
+                suggested is null ? null : ToMember(suggested), candidates);
         }).ToList();
         return new PagedResult<AccountRequestResponse>(items, p, size, total);
     }
@@ -131,8 +138,8 @@ public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts
 public sealed record AccountRequestMemberResponse(Guid Id, string MemberNumber, string FullName, string? Email, Modules.Membership.Members.MembershipStatus Status);
 
 public sealed record AccountRequestResponse(
-    Guid Id, string MemberNumber, string Email, AccountRequestStatus Status, string? MismatchReason, string? RejectionReason,
-    DateTime RequestedAt, DateTime? DecidedAt, AccountRequestMemberResponse? Member);
+    Guid Id, string? MemberNumber, string Email, AccountRequestStatus Status, string? MismatchReason, string? RejectionReason,
+    DateTime RequestedAt, DateTime? DecidedAt, AccountRequestMemberResponse? Member, IReadOnlyList<AccountRequestMemberResponse>? Candidates = null);
 
 public sealed record ApproveAccountRequestRequest([param: Required] Guid MemberId);
 

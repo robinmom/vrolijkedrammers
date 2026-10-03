@@ -29,6 +29,7 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.MemberCategory).HasMaxLength(50);
         builder.Property(m => m.ParadeGroupName).HasMaxLength(100);
         builder.Property(m => m.JubileeNote).HasMaxLength(200);
+        builder.Property(m => m.LocalFields).HasMaxLength(400);
         builder.Property(m => m.MembershipKind).HasConversion<string>().HasMaxLength(20);
         builder.Property(m => m.ContributionExemptReason).HasMaxLength(200);
         builder.HasOne<Member>().WithMany().HasForeignKey(m => m.PayerMemberId).OnDelete(DeleteBehavior.NoAction);

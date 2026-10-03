@@ -58,9 +58,9 @@ public sealed class MemberAccounts(
     /// Legt het verzoek vast. Het zware werk (Graph, mail) gebeurt in de worker, zodat het antwoord en de responstijd
     /// bij een match en een mismatch gelijk zijn (geen enumeratie van leden of e-mailadressen).
     /// </summary>
-    public async Task SubmitAccountRequestAsync(string memberNumber, string emailAddress, string? ipAddress, CancellationToken cancellationToken)
+    public async Task SubmitAccountRequestAsync(string? memberNumber, string emailAddress, string? ipAddress, CancellationToken cancellationToken)
     {
-        var number = memberNumber.Trim();
+        var number = string.IsNullOrWhiteSpace(memberNumber) ? null : memberNumber.Trim();
         var normalizedEmail = emailAddress.Trim().ToLowerInvariant();
         var now = clock.UtcNow.UtcDateTime;
 
@@ -81,9 +81,12 @@ public sealed class MemberAccounts(
             RequestedAt = now,
         };
 
-        var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.MemberNumber == number, cancellationToken);
+        var (member, emailOnlyReason) = number is null
+            ? await MatchByEmailAsync(normalizedEmail, cancellationToken)
+            : (await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.MemberNumber == number, cancellationToken), null);
         var (status, reason) = member switch
         {
+            null when emailOnlyReason is not null => (AccountRequestStatus.Pending, emailOnlyReason),
             null => (AccountRequestStatus.Pending, "unknown-member-number"),
             _ when !string.Equals(member.Email?.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase) => (AccountRequestStatus.Pending, "email-mismatch"),
             _ when member.EffectiveStatus != MembershipStatus.Active => (AccountRequestStatus.Pending, "member-not-active"),
@@ -117,6 +120,41 @@ public sealed class MemberAccounts(
                 JsonSerializer.Serialize(new { status = status.ToString(), reason, memberId = member?.Id }, Json)),
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Alleen een e-mailadres (fase 24): het lid met dat adres. Delen meerdere leden het adres (bijvoorbeeld een gezin), dan
+    /// telt alleen wie een eigen account kan krijgen (actief, oud genoeg, nog geen account); blijft er precies één over,
+    /// dan is dat het lid. Anders beslist het bestuur (<c>multiple-members</c>) of volgt de gewone afhandeling.
+    /// </summary>
+    private async Task<(Member? Member, string? Reason)> MatchByEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        var members = await db.Members.AsNoTracking().Where(m => m.Email == email).ToListAsync(cancellationToken);
+        if (members.Count == 0)
+        {
+            return (null, "unknown-email");
+        }
+
+        if (members.Count == 1)
+        {
+            return (members[0], null);
+        }
+
+        var candidates = new List<Member>();
+        foreach (var m in members.Where(m => m.EffectiveStatus == MembershipStatus.Active && !IsYoungerThanOwnAccountAge(m.BirthDate)))
+        {
+            if (!await HasAccountAsync(m.Id, cancellationToken))
+            {
+                candidates.Add(m);
+            }
+        }
+
+        return candidates.Count switch
+        {
+            1 => (candidates[0], null),
+            0 => (members.FirstOrDefault(m => m.EffectiveStatus == MembershipStatus.Active && !IsYoungerThanOwnAccountAge(m.BirthDate)) ?? members[0], null),
+            _ => (null, "multiple-members"),
+        };
     }
 
     /// <summary>

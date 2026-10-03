@@ -137,7 +137,7 @@ function Activiteit({ id }: { id: string }) {
 const styles = StyleSheet.create({
   hero: { height: 280, backgroundColor: brand.navy, overflow: 'hidden' },
   heroFallback: { backgroundColor: brand.blue, alignItems: 'center', justifyContent: 'center' },
-  heroLogo: { width: 140, height: 122 },
+  heroLogo: { width: 132, height: 132 },
   heroButtons: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 },
   content: { padding: 20, gap: 18 },
   badges: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },

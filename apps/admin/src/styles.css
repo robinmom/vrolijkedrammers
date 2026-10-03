@@ -125,7 +125,7 @@ code {
 }
 
 .brand-icon {
-  border-radius: 10px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
@@ -988,7 +988,7 @@ ul.alert {
 }
 
 .hero-icon {
-  border-radius: 18px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 

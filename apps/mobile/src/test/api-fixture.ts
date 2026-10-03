@@ -6,6 +6,14 @@ export const paged = <T,>(items: T[]) => ({ items, page: 1, pageSize: 100, total
 export const api = {
   '/api/v1/app-config': data.appConfig,
   '/api/v1/carnival-years/current': data.carnivalYear,
+  '/api/v1/website/hero': {
+    eyebrow: null,
+    title: 'Alaaf!',
+    subtitle: null,
+    imageUrl: 'https://example.blob.core.windows.net/content/website/hero.jpg?sig=x',
+    primary: null,
+    secondary: null,
+  },
   '/api/v1/event-categories': [
     { id: 1, code: 'carnaval', name: 'Carnaval' },
     { id: 2, code: 'jeugd', name: 'Jeugd' },

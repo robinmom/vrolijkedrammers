@@ -31,6 +31,12 @@ public sealed class EmailOptions
     /// <summary>Eigen, in ACS geverifieerd domein (bijv. <c>vrolijkedrammers.nl</c>); dan kan een bericht een eigen afzender hebben.</summary>
     public string? CustomSenderDomain { get; set; }
 
+    /// <summary>
+    /// Openbare URL van het logo (in een witte cirkel) bovenaan elke e-mail; standaard het logo van de website op
+    /// <c>Sales:PublicBaseUrl</c>. Leeg = geen logo.
+    /// </summary>
+    public string? LogoUrl { get; set; }
+
     public bool IsConfigured => Endpoint is not null && !string.IsNullOrWhiteSpace(SenderDomain);
 }
 
@@ -41,7 +47,7 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
-        var content = new EmailContent(message.Subject) { PlainText = message.PlainText, Html = message.Html };
+        var content = new EmailContent(message.Subject) { PlainText = message.PlainText, Html = EmailBranding.WithLogo(message.Html, options.Value.LogoUrl) };
         var sender = message.From is { Length: > 0 } from && options.Value.CustomSenderDomain is { Length: > 0 } custom
             ? $"{from}@{custom}"
             : $"DoNotReply@{options.Value.SenderDomain}";
@@ -53,6 +59,21 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
 
         // WaitUntil.Started: ACS neemt het bericht aan en bezorgt het zelf; een fout bij aannemen gooit hier.
         await _client.SendAsync(WaitUntil.Started, email, cancellationToken);
+    }
+}
+
+/// <summary>Het logo van de vereniging bovenaan elke e-mail (opmaak in de huisstijl volgt met de e-mailsjablonen).</summary>
+public static class EmailBranding
+{
+    public static string WithLogo(string html, string? logoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl) || html.Contains(logoUrl, StringComparison.Ordinal))
+        {
+            return html;
+        }
+
+        var src = System.Net.WebUtility.HtmlEncode(logoUrl);
+        return $"<div style=\"text-align:center;margin:0 0 20px\"><img src=\"{src}\" width=\"80\" height=\"80\" alt=\"De Vrolijke Drammers\" style=\"display:inline-block;border:0\"></div>\n{html}";
     }
 }
 

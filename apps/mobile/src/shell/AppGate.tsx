@@ -60,6 +60,6 @@ function Blocking({ title, message, action }: { title: string; message: string; 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 32, gap: 16 },
-  logo: { width: 120, height: 104, alignSelf: 'center' },
+  logo: { width: 120, height: 120, alignSelf: 'center' },
   center: { textAlign: 'center' },
 });

@@ -45,39 +45,109 @@ exports[`snapshot dark 01 Home 1`] = `
       <View>
         <View
           style={
-            [
-              {
-                "backgroundColor": "#087BC1",
-                "borderBottomLeftRadius": 28,
-                "borderBottomRightRadius": 28,
-                "gap": 20,
-                "paddingBottom": 24,
-                "paddingHorizontal": 20,
-              },
-              {
-                "paddingTop": 62,
-              },
-            ]
+            {
+              "backgroundColor": "#087BC1",
+              "borderBottomLeftRadius": 28,
+              "borderBottomRightRadius": 28,
+              "overflow": "hidden",
+            }
           }
         >
-          <View
+          <ViewManagerAdapter_ExpoImage
+            accessible={false}
+            backgroundColor={604535745}
+            bottom={0}
+            cachePolicy="disk"
+            containerViewRef={"[React.ref]"}
+            contentFit="cover"
+            contentPosition={
+              {
+                "left": "50%",
+                "top": "50%",
+              }
+            }
+            left={0}
+            nativeViewRef={"[React.ref]"}
+            onError={[Function]}
+            onLoad={[Function]}
+            onLoadStart={[Function]}
+            onProgress={[Function]}
+            placeholder={[]}
+            position="absolute"
+            right={0}
+            sfEffect={null}
+            source={
+              [
+                {
+                  "cacheKey": "website-hero",
+                  "uri": "https://example.blob.core.windows.net/content/website/hero.jpg?sig=x",
+                },
+              ]
+            }
             style={
               {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 12,
+                "backgroundColor": "rgba(8,123,193,0.14)",
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
               }
+            }
+            symbolSize={null}
+            symbolWeight={null}
+            top={0}
+            transition={
+              {
+                "duration": 150,
+              }
+            }
+          />
+          <ViewManagerAdapter_ExpoLinearGradient
+            colors={
+              [
+                3205640263,
+                2350002247,
+                3641847879,
+              ]
+            }
+            locations={
+              [
+                0,
+                0.6,
+                1,
+              ]
+            }
+            style={
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <View
+            style={
+              [
+                {
+                  "gap": 20,
+                  "paddingBottom": 44,
+                  "paddingHorizontal": 20,
+                },
+                {
+                  "paddingTop": 62,
+                },
+              ]
             }
           >
             <View
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#FFFFFF",
-                  "borderRadius": 22,
-                  "height": 44,
-                  "justifyContent": "center",
-                  "width": 44,
+                  "flexDirection": "row",
+                  "gap": 12,
                 }
               }
             >
@@ -91,235 +161,224 @@ exports[`snapshot dark 01 Home 1`] = `
                 }
                 style={
                   {
-                    "height": 40,
-                    "width": 40,
+                    "height": 44,
+                    "width": 44,
                   }
                 }
               />
-            </View>
-            <View
-              style={
-                {
-                  "flex": 1,
+              <View
+                style={
+                  {
+                    "flex": 1,
+                  }
                 }
-              }
-            >
-              <Text
-                accessibilityRole="header"
-                maxFontSizeMultiplier={2}
+              >
+                <Text
+                  accessibilityRole="header"
+                  maxFontSizeMultiplier={2}
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "Poppins_600SemiBold",
+                        "fontSize": 16,
+                        "lineHeight": undefined,
+                        "textTransform": undefined,
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  De Vrolijke Drammers
+                </Text>
+                <Text
+                  maxFontSizeMultiplier={2}
+                  style={
+                    [
+                      {
+                        "color": "rgba(255,255,255,0.8)",
+                        "fontFamily": "Inter_500Medium",
+                        "fontSize": 12,
+                        "lineHeight": undefined,
+                        "textTransform": undefined,
+                      },
+                      {
+                        "fontFamily": "Inter_400Regular",
+                      },
+                    ]
+                  }
+                >
+                  Loil · sinds 1958
+                </Text>
+              </View>
+              <View
+                accessibilityLabel="Meldingen"
+                accessibilityRole="button"
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                hitSlop={4}
+                onBlur={[Function]}
+                onClick={[Function]}
+                onFocus={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
                 style={
                   [
                     {
-                      "color": "#FFFFFF",
-                      "fontFamily": "Poppins_600SemiBold",
-                      "fontSize": 16,
-                      "lineHeight": undefined,
-                      "textTransform": undefined,
+                      "alignItems": "center",
+                      "borderRadius": 20,
+                      "height": 40,
+                      "justifyContent": "center",
+                      "width": 40,
                     },
-                    undefined,
+                    {
+                      "backgroundColor": "rgba(255,255,255,0.16)",
+                    },
                   ]
                 }
               >
-                De Vrolijke Drammers
-              </Text>
-              <Text
-                maxFontSizeMultiplier={2}
-                style={
-                  [
-                    {
-                      "color": "rgba(255,255,255,0.8)",
-                      "fontFamily": "Inter_500Medium",
-                      "fontSize": 12,
-                      "lineHeight": undefined,
-                      "textTransform": undefined,
-                    },
-                    {
-                      "fontFamily": "Inter_400Regular",
-                    },
-                  ]
-                }
-              >
-                Loil · sinds 1958
-              </Text>
-            </View>
-            <View
-              accessibilityLabel="Meldingen"
-              accessibilityRole="button"
-              accessibilityState={
-                {
-                  "busy": undefined,
-                  "checked": undefined,
-                  "disabled": undefined,
-                  "expanded": undefined,
-                  "selected": undefined,
-                }
-              }
-              accessibilityValue={
-                {
-                  "max": undefined,
-                  "min": undefined,
-                  "now": undefined,
-                  "text": undefined,
-                }
-              }
-              accessible={true}
-              collapsable={false}
-              focusable={true}
-              hitSlop={4}
-              onBlur={[Function]}
-              onClick={[Function]}
-              onFocus={[Function]}
-              onResponderGrant={[Function]}
-              onResponderMove={[Function]}
-              onResponderRelease={[Function]}
-              onResponderTerminate={[Function]}
-              onResponderTerminationRequest={[Function]}
-              onStartShouldSetResponder={[Function]}
-              style={
-                [
-                  {
-                    "alignItems": "center",
-                    "borderRadius": 20,
-                    "height": 40,
-                    "justifyContent": "center",
-                    "width": 40,
-                  },
-                  {
-                    "backgroundColor": "rgba(255,255,255,0.16)",
-                  },
-                ]
-              }
-            >
-              <RNSVGSvgView
-                accessibilityElementsHidden={true}
-                accessible={false}
-                align="none"
-                bbHeight={22}
-                bbWidth={22}
-                fill="none"
-                focusable={false}
-                height={22}
-                importantForAccessibility="no-hide-descendants"
-                meetOrSlice={0}
-                minX={0}
-                minY={0}
-                overflow="visible"
-                style={
-                  [
-                    {
-                      "backgroundColor": "transparent",
-                      "borderWidth": 0,
-                    },
-                    {
-                      "display": "block",
-                    },
-                    {
-                      "flex": 0,
-                      "height": 22,
-                      "width": 22,
-                    },
-                  ]
-                }
-                vbHeight={22}
-                vbWidth={22}
-                width={22}
-                xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <RNSVGSvgView
+                  accessibilityElementsHidden={true}
+                  accessible={false}
+                  align="none"
+                  bbHeight={22}
+                  bbWidth={22}
+                  fill="none"
+                  focusable={false}
+                  height={22}
+                  importantForAccessibility="no-hide-descendants"
+                  meetOrSlice={0}
+                  minX={0}
+                  minY={0}
+                  overflow="visible"
+                  style={
+                    [
+                      {
+                        "backgroundColor": "transparent",
+                        "borderWidth": 0,
+                      },
+                      {
+                        "display": "block",
+                      },
+                      {
+                        "flex": 0,
+                        "height": 22,
+                        "width": 22,
+                      },
+                    ]
+                  }
+                  vbHeight={22}
+                  vbWidth={22}
+                  width={22}
+                  xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="Icon/meldingen">
 <path id="Vector" d="M5.5 7.33333C5.5 5.87464 6.07946 4.4757 7.11091 3.44425C8.14236 2.4128 9.54131 1.83333 11 1.83333C12.4587 1.83333 13.8576 2.4128 14.8891 3.44425C15.9205 4.4757 16.5 5.87464 16.5 7.33333C16.5 13.75 19.25 15.5833 19.25 15.5833H2.75C2.75 15.5833 5.5 13.75 5.5 7.33333Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path id="Vector_2" d="M9.44167 19.25C9.5951 19.5291 9.82066 19.7618 10.0948 19.9239C10.3689 20.086 10.6815 20.1716 11 20.1716C11.3185 20.1716 11.6311 20.086 11.9052 19.9239C12.1793 19.7618 12.4049 19.5291 12.5583 19.25" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <RNSVGGroup
-                  fill={null}
-                  propList={
-                    [
-                      "fill",
-                    ]
-                  }
+                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <RNSVGGroup
-                    fill={
-                      {
-                        "payload": 4278190080,
-                        "type": 0,
-                      }
+                    fill={null}
+                    propList={
+                      [
+                        "fill",
+                      ]
                     }
-                    name="Icon/meldingen"
                   >
-                    <RNSVGPath
-                      d="M5.5 7.33333C5.5 5.87464 6.07946 4.4757 7.11091 3.44425C8.14236 2.4128 9.54131 1.83333 11 1.83333C12.4587 1.83333 13.8576 2.4128 14.8891 3.44425C15.9205 4.4757 16.5 5.87464 16.5 7.33333C16.5 13.75 19.25 15.5833 19.25 15.5833H2.75C2.75 15.5833 5.5 13.75 5.5 7.33333Z"
+                    <RNSVGGroup
                       fill={
                         {
                           "payload": 4278190080,
                           "type": 0,
                         }
                       }
-                      name="Vector"
-                      propList={
-                        [
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "payload": 4294967295,
-                          "type": 0,
+                      name="Icon/meldingen"
+                    >
+                      <RNSVGPath
+                        d="M5.5 7.33333C5.5 5.87464 6.07946 4.4757 7.11091 3.44425C8.14236 2.4128 9.54131 1.83333 11 1.83333C12.4587 1.83333 13.8576 2.4128 14.8891 3.44425C15.9205 4.4757 16.5 5.87464 16.5 7.33333C16.5 13.75 19.25 15.5833 19.25 15.5833H2.75C2.75 15.5833 5.5 13.75 5.5 7.33333Z"
+                        fill={
+                          {
+                            "payload": 4278190080,
+                            "type": 0,
+                          }
                         }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2}
-                    />
-                    <RNSVGPath
-                      d="M9.44167 19.25C9.5951 19.5291 9.82066 19.7618 10.0948 19.9239C10.3689 20.086 10.6815 20.1716 11 20.1716C11.3185 20.1716 11.6311 20.086 11.9052 19.9239C12.1793 19.7618 12.4049 19.5291 12.5583 19.25"
-                      fill={
-                        {
-                          "payload": 4278190080,
-                          "type": 0,
+                        name="Vector"
+                        propList={
+                          [
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
                         }
-                      }
-                      name="Vector_2"
-                      propList={
-                        [
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "payload": 4294967295,
-                          "type": 0,
+                        stroke={
+                          {
+                            "payload": 4294967295,
+                            "type": 0,
+                          }
                         }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2}
-                    />
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      />
+                      <RNSVGPath
+                        d="M9.44167 19.25C9.5951 19.5291 9.82066 19.7618 10.0948 19.9239C10.3689 20.086 10.6815 20.1716 11 20.1716C11.3185 20.1716 11.6311 20.086 11.9052 19.9239C12.1793 19.7618 12.4049 19.5291 12.5583 19.25"
+                        fill={
+                          {
+                            "payload": 4278190080,
+                            "type": 0,
+                          }
+                        }
+                        name="Vector_2"
+                        propList={
+                          [
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
+                        }
+                        stroke={
+                          {
+                            "payload": 4294967295,
+                            "type": 0,
+                          }
+                        }
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      />
+                    </RNSVGGroup>
                   </RNSVGGroup>
-                </RNSVGGroup>
-              </RNSVGSvgView>
+                </RNSVGSvgView>
+              </View>
             </View>
-          </View>
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 12,
-              }
-            }
-          >
             <View
               style={
                 {
-                  "flex": 1,
                   "gap": 6,
                 }
               }
@@ -361,274 +420,6 @@ exports[`snapshot dark 01 Home 1`] = `
               >
                 Alaaf! Het feest komt eraan 🎉
               </Text>
-            </View>
-            <Image
-              accessibilityIgnoresInvertColors={true}
-              source={
-                {
-                  "testUri": "../../../apps/mobile/assets/images/mascotte.png",
-                }
-              }
-              style={
-                {
-                  "borderColor": "rgba(255,255,255,0.35)",
-                  "borderRadius": 52,
-                  "borderWidth": 4,
-                  "height": 104,
-                  "width": 104,
-                }
-              }
-            />
-          </View>
-          <View
-            accessibilityLabel="Nog 133 dagen, 16 uur, 59 minuten tot carnaval 2027"
-            accessibilityRole="text"
-            accessible={true}
-            style={
-              {
-                "backgroundColor": "#ED0012",
-                "borderRadius": 20,
-                "elevation": 3,
-                "gap": 10,
-                "padding": 16,
-                "shadowColor": "rgba(18,48,71,0.08)",
-                "shadowOffset": {
-                  "height": 4,
-                  "width": 0,
-                },
-                "shadowOpacity": 1,
-                "shadowRadius": 8,
-              }
-            }
-          >
-            <Text
-              maxFontSizeMultiplier={2}
-              style={
-                [
-                  {
-                    "color": "rgba(255,255,255,0.9)",
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 13,
-                    "lineHeight": undefined,
-                    "textTransform": undefined,
-                  },
-                  {
-                    "fontFamily": "Inter_500Medium",
-                  },
-                ]
-              }
-            >
-              Nog tot 
-              carnaval 2027
-            </Text>
-            <View
-              style={
-                {
-                  "flexDirection": "row",
-                  "gap": 8,
-                }
-              }
-            >
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  133
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Dagen
-                </Text>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  16
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Uur
-                </Text>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  59
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Minuten
-                </Text>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  59
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Seconden
-                </Text>
-              </View>
             </View>
           </View>
         </View>
@@ -9057,8 +8848,8 @@ exports[`snapshot dark 05 Meer 1`] = `
               }
               style={
                 {
-                  "height": 36,
-                  "width": 36,
+                  "height": 40,
+                  "width": 40,
                 }
               }
             />
@@ -9169,8 +8960,8 @@ exports[`snapshot dark 06 Activiteit detail 1`] = `
               }
               style={
                 {
-                  "height": 122,
-                  "width": 140,
+                  "height": 132,
+                  "width": 132,
                 }
               }
             />
@@ -11198,39 +10989,109 @@ exports[`snapshot light 01 Home 1`] = `
       <View>
         <View
           style={
-            [
-              {
-                "backgroundColor": "#087BC1",
-                "borderBottomLeftRadius": 28,
-                "borderBottomRightRadius": 28,
-                "gap": 20,
-                "paddingBottom": 24,
-                "paddingHorizontal": 20,
-              },
-              {
-                "paddingTop": 62,
-              },
-            ]
+            {
+              "backgroundColor": "#087BC1",
+              "borderBottomLeftRadius": 28,
+              "borderBottomRightRadius": 28,
+              "overflow": "hidden",
+            }
           }
         >
-          <View
+          <ViewManagerAdapter_ExpoImage
+            accessible={false}
+            backgroundColor={604535745}
+            bottom={0}
+            cachePolicy="disk"
+            containerViewRef={"[React.ref]"}
+            contentFit="cover"
+            contentPosition={
+              {
+                "left": "50%",
+                "top": "50%",
+              }
+            }
+            left={0}
+            nativeViewRef={"[React.ref]"}
+            onError={[Function]}
+            onLoad={[Function]}
+            onLoadStart={[Function]}
+            onProgress={[Function]}
+            placeholder={[]}
+            position="absolute"
+            right={0}
+            sfEffect={null}
+            source={
+              [
+                {
+                  "cacheKey": "website-hero",
+                  "uri": "https://example.blob.core.windows.net/content/website/hero.jpg?sig=x",
+                },
+              ]
+            }
             style={
               {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 12,
+                "backgroundColor": "rgba(8,123,193,0.14)",
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
               }
+            }
+            symbolSize={null}
+            symbolWeight={null}
+            top={0}
+            transition={
+              {
+                "duration": 150,
+              }
+            }
+          />
+          <ViewManagerAdapter_ExpoLinearGradient
+            colors={
+              [
+                3205640263,
+                2350002247,
+                3641847879,
+              ]
+            }
+            locations={
+              [
+                0,
+                0.6,
+                1,
+              ]
+            }
+            style={
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <View
+            style={
+              [
+                {
+                  "gap": 20,
+                  "paddingBottom": 44,
+                  "paddingHorizontal": 20,
+                },
+                {
+                  "paddingTop": 62,
+                },
+              ]
             }
           >
             <View
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#FFFFFF",
-                  "borderRadius": 22,
-                  "height": 44,
-                  "justifyContent": "center",
-                  "width": 44,
+                  "flexDirection": "row",
+                  "gap": 12,
                 }
               }
             >
@@ -11244,235 +11105,224 @@ exports[`snapshot light 01 Home 1`] = `
                 }
                 style={
                   {
-                    "height": 40,
-                    "width": 40,
+                    "height": 44,
+                    "width": 44,
                   }
                 }
               />
-            </View>
-            <View
-              style={
-                {
-                  "flex": 1,
+              <View
+                style={
+                  {
+                    "flex": 1,
+                  }
                 }
-              }
-            >
-              <Text
-                accessibilityRole="header"
-                maxFontSizeMultiplier={2}
+              >
+                <Text
+                  accessibilityRole="header"
+                  maxFontSizeMultiplier={2}
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "Poppins_600SemiBold",
+                        "fontSize": 16,
+                        "lineHeight": undefined,
+                        "textTransform": undefined,
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  De Vrolijke Drammers
+                </Text>
+                <Text
+                  maxFontSizeMultiplier={2}
+                  style={
+                    [
+                      {
+                        "color": "rgba(255,255,255,0.8)",
+                        "fontFamily": "Inter_500Medium",
+                        "fontSize": 12,
+                        "lineHeight": undefined,
+                        "textTransform": undefined,
+                      },
+                      {
+                        "fontFamily": "Inter_400Regular",
+                      },
+                    ]
+                  }
+                >
+                  Loil · sinds 1958
+                </Text>
+              </View>
+              <View
+                accessibilityLabel="Meldingen"
+                accessibilityRole="button"
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                hitSlop={4}
+                onBlur={[Function]}
+                onClick={[Function]}
+                onFocus={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
                 style={
                   [
                     {
-                      "color": "#FFFFFF",
-                      "fontFamily": "Poppins_600SemiBold",
-                      "fontSize": 16,
-                      "lineHeight": undefined,
-                      "textTransform": undefined,
+                      "alignItems": "center",
+                      "borderRadius": 20,
+                      "height": 40,
+                      "justifyContent": "center",
+                      "width": 40,
                     },
-                    undefined,
+                    {
+                      "backgroundColor": "rgba(255,255,255,0.16)",
+                    },
                   ]
                 }
               >
-                De Vrolijke Drammers
-              </Text>
-              <Text
-                maxFontSizeMultiplier={2}
-                style={
-                  [
-                    {
-                      "color": "rgba(255,255,255,0.8)",
-                      "fontFamily": "Inter_500Medium",
-                      "fontSize": 12,
-                      "lineHeight": undefined,
-                      "textTransform": undefined,
-                    },
-                    {
-                      "fontFamily": "Inter_400Regular",
-                    },
-                  ]
-                }
-              >
-                Loil · sinds 1958
-              </Text>
-            </View>
-            <View
-              accessibilityLabel="Meldingen"
-              accessibilityRole="button"
-              accessibilityState={
-                {
-                  "busy": undefined,
-                  "checked": undefined,
-                  "disabled": undefined,
-                  "expanded": undefined,
-                  "selected": undefined,
-                }
-              }
-              accessibilityValue={
-                {
-                  "max": undefined,
-                  "min": undefined,
-                  "now": undefined,
-                  "text": undefined,
-                }
-              }
-              accessible={true}
-              collapsable={false}
-              focusable={true}
-              hitSlop={4}
-              onBlur={[Function]}
-              onClick={[Function]}
-              onFocus={[Function]}
-              onResponderGrant={[Function]}
-              onResponderMove={[Function]}
-              onResponderRelease={[Function]}
-              onResponderTerminate={[Function]}
-              onResponderTerminationRequest={[Function]}
-              onStartShouldSetResponder={[Function]}
-              style={
-                [
-                  {
-                    "alignItems": "center",
-                    "borderRadius": 20,
-                    "height": 40,
-                    "justifyContent": "center",
-                    "width": 40,
-                  },
-                  {
-                    "backgroundColor": "rgba(255,255,255,0.16)",
-                  },
-                ]
-              }
-            >
-              <RNSVGSvgView
-                accessibilityElementsHidden={true}
-                accessible={false}
-                align="none"
-                bbHeight={22}
-                bbWidth={22}
-                fill="none"
-                focusable={false}
-                height={22}
-                importantForAccessibility="no-hide-descendants"
-                meetOrSlice={0}
-                minX={0}
-                minY={0}
-                overflow="visible"
-                style={
-                  [
-                    {
-                      "backgroundColor": "transparent",
-                      "borderWidth": 0,
-                    },
-                    {
-                      "display": "block",
-                    },
-                    {
-                      "flex": 0,
-                      "height": 22,
-                      "width": 22,
-                    },
-                  ]
-                }
-                vbHeight={22}
-                vbWidth={22}
-                width={22}
-                xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <RNSVGSvgView
+                  accessibilityElementsHidden={true}
+                  accessible={false}
+                  align="none"
+                  bbHeight={22}
+                  bbWidth={22}
+                  fill="none"
+                  focusable={false}
+                  height={22}
+                  importantForAccessibility="no-hide-descendants"
+                  meetOrSlice={0}
+                  minX={0}
+                  minY={0}
+                  overflow="visible"
+                  style={
+                    [
+                      {
+                        "backgroundColor": "transparent",
+                        "borderWidth": 0,
+                      },
+                      {
+                        "display": "block",
+                      },
+                      {
+                        "flex": 0,
+                        "height": 22,
+                        "width": 22,
+                      },
+                    ]
+                  }
+                  vbHeight={22}
+                  vbWidth={22}
+                  width={22}
+                  xml="<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="Icon/meldingen">
 <path id="Vector" d="M5.5 7.33333C5.5 5.87464 6.07946 4.4757 7.11091 3.44425C8.14236 2.4128 9.54131 1.83333 11 1.83333C12.4587 1.83333 13.8576 2.4128 14.8891 3.44425C15.9205 4.4757 16.5 5.87464 16.5 7.33333C16.5 13.75 19.25 15.5833 19.25 15.5833H2.75C2.75 15.5833 5.5 13.75 5.5 7.33333Z" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path id="Vector_2" d="M9.44167 19.25C9.5951 19.5291 9.82066 19.7618 10.0948 19.9239C10.3689 20.086 10.6815 20.1716 11 20.1716C11.3185 20.1716 11.6311 20.086 11.9052 19.9239C12.1793 19.7618 12.4049 19.5291 12.5583 19.25" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <RNSVGGroup
-                  fill={null}
-                  propList={
-                    [
-                      "fill",
-                    ]
-                  }
+                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <RNSVGGroup
-                    fill={
-                      {
-                        "payload": 4278190080,
-                        "type": 0,
-                      }
+                    fill={null}
+                    propList={
+                      [
+                        "fill",
+                      ]
                     }
-                    name="Icon/meldingen"
                   >
-                    <RNSVGPath
-                      d="M5.5 7.33333C5.5 5.87464 6.07946 4.4757 7.11091 3.44425C8.14236 2.4128 9.54131 1.83333 11 1.83333C12.4587 1.83333 13.8576 2.4128 14.8891 3.44425C15.9205 4.4757 16.5 5.87464 16.5 7.33333C16.5 13.75 19.25 15.5833 19.25 15.5833H2.75C2.75 15.5833 5.5 13.75 5.5 7.33333Z"
+                    <RNSVGGroup
                       fill={
                         {
                           "payload": 4278190080,
                           "type": 0,
                         }
                       }
-                      name="Vector"
-                      propList={
-                        [
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "payload": 4294967295,
-                          "type": 0,
+                      name="Icon/meldingen"
+                    >
+                      <RNSVGPath
+                        d="M5.5 7.33333C5.5 5.87464 6.07946 4.4757 7.11091 3.44425C8.14236 2.4128 9.54131 1.83333 11 1.83333C12.4587 1.83333 13.8576 2.4128 14.8891 3.44425C15.9205 4.4757 16.5 5.87464 16.5 7.33333C16.5 13.75 19.25 15.5833 19.25 15.5833H2.75C2.75 15.5833 5.5 13.75 5.5 7.33333Z"
+                        fill={
+                          {
+                            "payload": 4278190080,
+                            "type": 0,
+                          }
                         }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2}
-                    />
-                    <RNSVGPath
-                      d="M9.44167 19.25C9.5951 19.5291 9.82066 19.7618 10.0948 19.9239C10.3689 20.086 10.6815 20.1716 11 20.1716C11.3185 20.1716 11.6311 20.086 11.9052 19.9239C12.1793 19.7618 12.4049 19.5291 12.5583 19.25"
-                      fill={
-                        {
-                          "payload": 4278190080,
-                          "type": 0,
+                        name="Vector"
+                        propList={
+                          [
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
                         }
-                      }
-                      name="Vector_2"
-                      propList={
-                        [
-                          "stroke",
-                          "strokeWidth",
-                          "strokeLinecap",
-                          "strokeLinejoin",
-                        ]
-                      }
-                      stroke={
-                        {
-                          "payload": 4294967295,
-                          "type": 0,
+                        stroke={
+                          {
+                            "payload": 4294967295,
+                            "type": 0,
+                          }
                         }
-                      }
-                      strokeLinecap={1}
-                      strokeLinejoin={1}
-                      strokeWidth={2}
-                    />
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      />
+                      <RNSVGPath
+                        d="M9.44167 19.25C9.5951 19.5291 9.82066 19.7618 10.0948 19.9239C10.3689 20.086 10.6815 20.1716 11 20.1716C11.3185 20.1716 11.6311 20.086 11.9052 19.9239C12.1793 19.7618 12.4049 19.5291 12.5583 19.25"
+                        fill={
+                          {
+                            "payload": 4278190080,
+                            "type": 0,
+                          }
+                        }
+                        name="Vector_2"
+                        propList={
+                          [
+                            "stroke",
+                            "strokeWidth",
+                            "strokeLinecap",
+                            "strokeLinejoin",
+                          ]
+                        }
+                        stroke={
+                          {
+                            "payload": 4294967295,
+                            "type": 0,
+                          }
+                        }
+                        strokeLinecap={1}
+                        strokeLinejoin={1}
+                        strokeWidth={2}
+                      />
+                    </RNSVGGroup>
                   </RNSVGGroup>
-                </RNSVGGroup>
-              </RNSVGSvgView>
+                </RNSVGSvgView>
+              </View>
             </View>
-          </View>
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "gap": 12,
-              }
-            }
-          >
             <View
               style={
                 {
-                  "flex": 1,
                   "gap": 6,
                 }
               }
@@ -11514,274 +11364,6 @@ exports[`snapshot light 01 Home 1`] = `
               >
                 Alaaf! Het feest komt eraan 🎉
               </Text>
-            </View>
-            <Image
-              accessibilityIgnoresInvertColors={true}
-              source={
-                {
-                  "testUri": "../../../apps/mobile/assets/images/mascotte.png",
-                }
-              }
-              style={
-                {
-                  "borderColor": "rgba(255,255,255,0.35)",
-                  "borderRadius": 52,
-                  "borderWidth": 4,
-                  "height": 104,
-                  "width": 104,
-                }
-              }
-            />
-          </View>
-          <View
-            accessibilityLabel="Nog 133 dagen, 16 uur, 59 minuten tot carnaval 2027"
-            accessibilityRole="text"
-            accessible={true}
-            style={
-              {
-                "backgroundColor": "#ED0012",
-                "borderRadius": 20,
-                "elevation": 3,
-                "gap": 10,
-                "padding": 16,
-                "shadowColor": "rgba(18,48,71,0.08)",
-                "shadowOffset": {
-                  "height": 4,
-                  "width": 0,
-                },
-                "shadowOpacity": 1,
-                "shadowRadius": 8,
-              }
-            }
-          >
-            <Text
-              maxFontSizeMultiplier={2}
-              style={
-                [
-                  {
-                    "color": "rgba(255,255,255,0.9)",
-                    "fontFamily": "Inter_400Regular",
-                    "fontSize": 13,
-                    "lineHeight": undefined,
-                    "textTransform": undefined,
-                  },
-                  {
-                    "fontFamily": "Inter_500Medium",
-                  },
-                ]
-              }
-            >
-              Nog tot 
-              carnaval 2027
-            </Text>
-            <View
-              style={
-                {
-                  "flexDirection": "row",
-                  "gap": 8,
-                }
-              }
-            >
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  133
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Dagen
-                </Text>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  16
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Uur
-                </Text>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  59
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Minuten
-                </Text>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "rgba(255,255,255,0.14)",
-                    "borderRadius": 12,
-                    "flex": 1,
-                    "paddingHorizontal": 4,
-                    "paddingVertical": 8,
-                  }
-                }
-              >
-                <Text
-                  maxFontSizeMultiplier={1.6}
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "Poppins_700Bold",
-                        "fontSize": 26,
-                        "lineHeight": 30,
-                        "textTransform": undefined,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  59
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={2}
-                  style={
-                    [
-                      {
-                        "color": "rgba(255,255,255,0.85)",
-                        "fontFamily": "Inter_600SemiBold",
-                        "fontSize": 11,
-                        "lineHeight": undefined,
-                        "textTransform": "uppercase",
-                      },
-                      {
-                        "fontFamily": "Inter_400Regular",
-                        "textTransform": "none",
-                      },
-                    ]
-                  }
-                >
-                  Seconden
-                </Text>
-              </View>
             </View>
           </View>
         </View>
@@ -20210,8 +19792,8 @@ exports[`snapshot light 05 Meer 1`] = `
               }
               style={
                 {
-                  "height": 36,
-                  "width": 36,
+                  "height": 40,
+                  "width": 40,
                 }
               }
             />
@@ -20322,8 +19904,8 @@ exports[`snapshot light 06 Activiteit detail 1`] = `
               }
               style={
                 {
-                  "height": 122,
-                  "width": 140,
+                  "height": 132,
+                  "width": 132,
                 }
               }
             />

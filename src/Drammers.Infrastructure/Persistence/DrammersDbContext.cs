@@ -68,6 +68,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<CombinationBreakRequest> CombinationBreakRequests => Set<CombinationBreakRequest>();
 
+    public DbSet<CollectionRun> CollectionRuns => Set<CollectionRun>();
+
+    public DbSet<CollectionRunLine> CollectionRunLines => Set<CollectionRunLine>();
+
     public DbSet<ExcludedMember> ExcludedMembers => Set<ExcludedMember>();
 
     public DbSet<Group> Groups => Set<Group>();

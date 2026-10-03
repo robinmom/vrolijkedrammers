@@ -171,10 +171,12 @@ public class EBoekhoudenClientTests
     }
 
     [Fact]
-    public void Bankgegevens_en_notities_hebben_geen_plek_in_het_model()
+    public void Alleen_IBAN_en_machtiging_geen_BIC_notities_of_factuuradressen()
     {
-        string[] forbidden = ["Iban", "Bic", "Note", "Mandate", "MandateId", "EmailAddressInvoice", "EmailAddressReminder"];
+        // Sinds fase 23b bewust wel IBAN en machtiging (versleuteld opgeslagen, voor de incasso); de rest blijft weg.
+        string[] forbidden = ["Bic", "Note", "EmailAddressInvoice", "EmailAddressReminder"];
         Assert.All(forbidden, name => Assert.Null(typeof(EbMember).GetProperty(name)));
+        Assert.All(["Iban", "Mandate", "MandateId", "MandateSignedDate"], name => Assert.NotNull(typeof(EbMember).GetProperty(name)));
     }
 
     [Fact]

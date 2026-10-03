@@ -49,6 +49,9 @@ param environmentAccessAttribute string = ''
 @description('Push (ADR-009): Expo zodra het access token in Key Vault staat (infra/push/set-expo-token.sh), anders Simulated. Leeg (GitHub-variabele niet gezet) = Simulated.')
 param pushProvider string = 'Simulated'
 
+@description('Openbare site key van Cloudflare Turnstile (contactformulier, fase 21i); leeg = uit. Het geheim staat in Key Vault (turnstile-secret-key).')
+param turnstileSiteKey string = ''
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -152,6 +155,7 @@ module api 'modules/appservice.bicep' = {
       Graph__CertificateName: graphCertificateName
       Graph__TestersGroupId: testersGroupId
       Graph__EnvironmentAccessAttribute: environmentAccessAttribute
+      Turnstile__SiteKey: turnstileSiteKey
     }
   }
 }

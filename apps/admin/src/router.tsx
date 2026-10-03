@@ -41,6 +41,7 @@ import { JubileesPage } from './pages/JubileesPage';
 import { ContributionsPage } from './pages/ContributionsPage';
 import { MembershipsPage } from './pages/MembershipsPage';
 import { MemberRequestsPage } from './pages/MemberRequestsPage';
+import { CollectionsPage } from './pages/CollectionsPage';
 import { RolesPage } from './pages/RolesPage';
 import { UserDetailPage } from './pages/UserDetailPage';
 import { UsersPage } from './pages/UsersPage';
@@ -110,6 +111,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/contributie', component: guarded('contribution.manage', ContributionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/lidmaatschappen', component: guarded('contribution.manage', MembershipsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/wijzigingsverzoeken', component: guarded('member.update', MemberRequestsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/incasso', component: guarded('contribution.manage', CollectionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/gebruikers', component: guarded('role.manage', UsersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/gebruikers/$id', component: guarded('role.manage', UserDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/rollen', component: guarded('role.manage', RolesPage) }),

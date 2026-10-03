@@ -1074,7 +1074,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - **Spam (OQ-45):**
   - een rate limit per IP (`AnonymousForms`);
   - een verborgen veld en een minimale invultijd van 3 seconden. Wordt een bericht daarop afgewezen, dan krijgt de bezoeker hetzelfde antwoord als bij succes en wordt er niets verstuurd.
-  - Cloudflare Turnstile gaat aan zodra `Turnstile__SiteKey` en `Turnstile__SecretKey` zijn gezet: het geheim in Key Vault, door de gebruiker. De website-CSP staat dan `challenges.cloudflare.com` toe.
+  - Cloudflare Turnstile gaat aan zodra de site key is gezet: de GitHub-variabele `DVD_TURNSTILE_SITE_KEY` → Bicep → `Turnstile__SiteKey`. Het geheim staat als secret `turnstile-secret-key` in Key Vault; dat zet de gebruiker. De website-CSP staat dan `challenges.cloudflare.com` toe.
 
 **21f — app en livegang.** Het beginscherm van de app met de foto-hero uit het portal (zonder teller) en "Lid" in plaats van "Lidmaatschap 1 persoon"; het eigen domein op de App Service (na akkoord) en de DNS (door de gebruiker).
 
@@ -1263,16 +1263,25 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
   - `GET/PUT /admin/contributions/rates` en `DELETE /admin/contributions/rates/{id}`;
   - `GET/PUT /admin/contributions/members/{id}`.
 
-**23b — overstap van e-Boekhouden (gepland).**
-- Een laatste import van alle leden, inclusief IBAN, rekeninghouder, machtigingskenmerk en ondertekeningsdatum. IBAN's worden versleuteld opgeslagen (Data Protection) en alleen getoond aan `contribution.manage`.
-- De soort lidmaatschap wordt vastgezet vanuit e-Boekhouden. Daarna gaat de sync uit en worden alle ledengegevens in het portal bewerkt.
-- Een goedgekeurde aanmelding wordt direct een lid in de app, met de machtiging uit de aanmelding.
-- Een lijst van tweepersoonsleden zonder gekoppelde partner, zodat het bestuur de tweede persoon kan toevoegen.
+**23b — IBAN's en machtigingen uit e-Boekhouden (gebouwd, 2026-10-03).** De ledensync neemt nu ook `iban`, `mandate`, `mandateId` en `mandateSignedDate` over.
+- **Opslag:** versleuteld in `Member.IbanProtected`, met `IbanLast4`, `MandateReference` en `MandateSignedOn`. De rekeninghouder is de naam van het lid.
+- **Alleen met een machtiging:** zonder machtiging, of met een ongeldige IBAN (waarschuwing in de run), worden de bankgegevens gewist.
+- **De app wint:** een IBAN die via de app is opgegeven (fase 26, veld `iban` "handmatig") laat de sync staan.
+- **Eerste sync na de update:** omdat de bankvelden in de hash zitten, werkt de eerste sync na de update alle leden bij.
+- **Nog gepland:** de sync uitzetten en e-Boekhouden loslaten, na de livegang.
 
-**23c — incassorun (gepland).**
-- Kies een incassodatum en bekijk eerst een voorbeeld. Daarin staat wie meedoet, wie overgeslagen wordt en waarom (geen machtiging, onbekende soort, vrijgesteld).
-- Het portal maakt een pain.008.001.08-bestand (FRST of RCUR per machtiging), met de incassant-ID, de IBAN en de naam van de vereniging uit de instellingen.
-- Run en regels worden vastgelegd. Per betaler houd je de status bij (geïncasseerd of gestorneerd). Dat kan later ook met een import van pain.002 of camt.
+**23c — SEPA-incasso (gebouwd, 2026-10-03).** Portal: Leden → Incasso (`contribution.manage`).
+- **Vereniging als incassant:** naam, IBAN en incassant-ID (`config.AppConfiguration`, niet geheim).
+- **Nieuwe incasso:**
+  - Je kiest een incassodatum en ziet een voorbeeld met het bedrag uit Contributie op die datum (inclusief 65+), het gemaskeerde IBAN, de machtiging, eerste of herhaald, en de overgeslagen leden met reden.
+  - Er komen waarschuwingen bij een datum in het verleden, in het weekend of als de gegevens van de vereniging ontbreken.
+- **Run (`membership.CollectionRun`, `CollectionRunLine`):** legt per lid het bedrag, de machtiging en de IBAN (versleuteld) vast. Het bestand is daardoor later precies opnieuw te maken.
+- **Bestand pain.008.001.08:** CORE, met per volgordetype één `PmtInf`. Daarin:
+  - FRST alleen voor een machtiging uit de app (kenmerk `DVD-lidnummer-datum`) die nog nooit in een gedownloade run zat, anders RCUR;
+  - `NOTPROVIDED` als BIC;
+  - de tekenset geschoond (accenten weg);
+  - een onbekende ondertekeningsdatum wordt 2009-11-01 (gemigreerde machtiging).
+- **Aanleveren:** in Rabo Internetbankieren. De bank valideert het bestand, en er wordt pas geïncasseerd na ondertekenen.
 
 **23d — Rabobank Business Direct Debit API (later).** Batches rechtstreeks aanleveren en de status ophalen (pain.002), zodra Rabobank aansluiting als directe aansluiter bevestigt (developer portal, overeenkomst Rabo Banking Link, sandbox).
 

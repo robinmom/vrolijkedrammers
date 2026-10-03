@@ -18,6 +18,9 @@ public static class MemberFields
     public const string Category = "category";
     public const string ParadeGroupName = "paradeGroupName";
 
+    /// <summary>IBAN en machtiging (fase 26/23b); via de app gewijzigd = de sync laat ze staan.</summary>
+    public const string Iban = "iban";
+
     public static readonly IReadOnlyDictionary<string, string> Labels = new Dictionary<string, string>
     {
         [Name] = "Naam",
@@ -34,5 +37,6 @@ public static class MemberFields
         [JoinYear] = "Inschrijfjaar",
         [Category] = "Categorie",
         [ParadeGroupName] = "Groep",
+        [Iban] = "IBAN en machtiging",
     };
 }

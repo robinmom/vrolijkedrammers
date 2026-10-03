@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { queryKeys, useEvents, useNews, useWebsiteHero } from '../../api/queries';
+import { queryKeys, useEvents, useMe, useMyMember, useNews, useWebsiteHero } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
@@ -31,6 +31,10 @@ export default function HomeScreen() {
   const refresh = useRefresh([queryKeys.websiteHero, queryKeys.events, queryKeys.news, queryKeys.myNotifications]);
   const unread = useUnreadCount();
   const signedIn = useSessionStatus() === 'signedIn';
+  // Ingelogd: de voornaam van het lid in de groet; anders (of zonder gekoppeld lid) "Drammer".
+  const me = useMe();
+  const member = useMyMember(me.data ? me.data.memberId !== null : false);
+  const firstName = signedIn ? (member.data?.firstName ?? me.data?.displayName?.split(' ')[0]) : undefined;
   // Moment van openen: voor de groet.
   const [openedAt] = useState(() => new Date());
 
@@ -63,7 +67,7 @@ export default function HomeScreen() {
 
           <View style={styles.greeting}>
             <AppText variant="heroTitle" color="#FFFFFF">
-              {greeting(openedAt)}, Drammer!
+              {greeting(openedAt)}, {firstName || 'Drammer'}!
             </AppText>
             <AppText variant="caption" color="rgba(255,255,255,0.85)" style={styles.subtitle}>
               Alaaf! Het feest komt eraan 🎉
@@ -73,24 +77,6 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.content}>
-        <SectionHeader title="Eerstvolgende activiteit" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
-        {next ? (
-          <EventCard
-            title={next.title}
-            date={dateBlockParts(next.startAt)}
-            dateVariant="solid"
-            meta="inline"
-            time={next.allDay ? 'Hele dag' : startTime(next.startAt)}
-            location={next.locationName ?? undefined}
-            onPress={() => router.push(`/activiteit/${next.id}`)}
-            testID="next-event"
-          />
-        ) : events.data ? (
-          <EmptyState title="Nog geen activiteiten" message="Nieuwe activiteiten verschijnen hier vanzelf." />
-        ) : (
-          <QueryState query={events} />
-        )}
-
         <View style={styles.shortcuts}>
           <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
           {signedIn ? (
@@ -108,6 +94,24 @@ export default function HomeScreen() {
           )}
           <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
         </View>
+
+        <SectionHeader title="Eerstvolgende activiteit" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
+        {next ? (
+          <EventCard
+            title={next.title}
+            date={dateBlockParts(next.startAt)}
+            dateVariant="solid"
+            meta="inline"
+            time={next.allDay ? 'Hele dag' : startTime(next.startAt)}
+            location={next.locationName ?? undefined}
+            onPress={() => router.push(`/activiteit/${next.id}`)}
+            testID="next-event"
+          />
+        ) : events.data ? (
+          <EmptyState title="Nog geen activiteiten" message="Nieuwe activiteiten verschijnen hier vanzelf." />
+        ) : (
+          <QueryState query={events} />
+        )}
 
         <SectionHeader title="Laatste nieuws" linkLabel="Meer" onLinkPress={() => router.push('/nieuws')} />
         {latest ? (

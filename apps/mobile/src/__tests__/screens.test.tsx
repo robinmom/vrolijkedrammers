@@ -73,10 +73,15 @@ describe('01 Home', () => {
     expect(screen.queryByLabelText('Munten')).toBeNull();
   });
 
-  it('leden zien QR code en Munten', async () => {
+  it('leden zien hun voornaam in de groet, en QR code en Munten', async () => {
     setSessionForTest('signedIn');
-    mockApi(api);
+    mockApi({
+      ...api,
+      '/api/v1/me': { id: 'u-1', email: 'piet@example.com', displayName: 'Piet van der Lid', memberId: 'm-1', roles: [], permissions: ['member.read.own'], features: {} },
+      '/api/v1/me/member': { status: 200, body: { memberNumber: '0101', fullName: 'Piet van der Lid', firstName: 'Piet', groups: [], status: 'Active' } },
+    });
     await renderApp(routes, '/');
+    expect(await screen.findByText('Goedemorgen, Piet!')).toBeTruthy();
     expect(await screen.findByLabelText('QR code')).toBeTruthy();
     expect(screen.getByLabelText('Munten')).toBeTruthy();
     expect(screen.queryByLabelText('Uitslagen')).toBeNull();

@@ -319,28 +319,45 @@ public sealed class MemberSync(
         {
             var warnings = new List<string>();
             var oldFullName = member.FullName;
+
+            // Een in het portal aangepast veld blijft staan; wijkt e-Boekhouden af, dan staat dat als waarschuwing in de run.
+            void Set<T>(string field, T value, T current, Action<T> assign)
+            {
+                if (member.IsLocal(field))
+                {
+                    if (!EqualityComparer<T>.Default.Equals(value, current))
+                    {
+                        warnings.Add($"{MemberFields.Labels[field]}: e-Boekhouden wijkt af van de waarde die in het portal is aangepast; die blijft staan.");
+                    }
+
+                    return;
+                }
+
+                assign(value);
+            }
+
             member.EbMemberId = source.Id;
-            member.FullName = Clip(source.Name, 100) ?? member.MemberNumber;
-            member.Salutation = Clip(source.Salutation, 50);
-            member.Gender = source.Gender is "m" or "v" or "a" ? source.Gender : null;
-            member.AddressLine = Clip(source.Address, 150);
-            member.PostalCode = Clip(source.PostalCode, 50);
-            member.City = Clip(source.City, 50);
-            member.Country = Clip(source.Country, 50);
-            member.Email = Clip(Normalize(source.EmailAddress), 150);
-            member.Phone = Clip(source.PhoneNumber, 50);
-            member.MobilePhone = Clip(source.MobilePhoneNumber, 50);
+            Set(MemberFields.Name, Clip(source.Name, 100) ?? member.MemberNumber, member.FullName, v => member.FullName = v);
+            Set(MemberFields.Salutation, Clip(source.Salutation, 50), member.Salutation, v => member.Salutation = v);
+            Set(MemberFields.Gender, source.Gender is "m" or "v" or "a" ? source.Gender : null, member.Gender, v => member.Gender = v);
+            Set(MemberFields.Address, Clip(source.Address, 150), member.AddressLine, v => member.AddressLine = v);
+            Set(MemberFields.PostalCode, Clip(source.PostalCode, 50), member.PostalCode, v => member.PostalCode = v);
+            Set(MemberFields.City, Clip(source.City, 50), member.City, v => member.City = v);
+            Set(MemberFields.Country, Clip(source.Country, 50), member.Country, v => member.Country = v);
+            Set(MemberFields.Email, Clip(Normalize(source.EmailAddress), 150), member.Email, v => member.Email = v);
+            Set(MemberFields.Phone, Clip(source.PhoneNumber, 50), member.Phone, v => member.Phone = v);
+            Set(MemberFields.MobilePhone, Clip(source.MobilePhoneNumber, 50), member.MobilePhone, v => member.MobilePhone = v);
 
             if (mapping.BirthDate is { } birthField)
             {
                 var raw = source.FreeText(birthField)?.Trim();
                 if (string.IsNullOrEmpty(raw))
                 {
-                    member.BirthDate = null;
+                    Set<DateOnly?>(MemberFields.BirthDate, null, member.BirthDate, v => member.BirthDate = v);
                 }
                 else if (TryParseDate(raw, out var date))
                 {
-                    member.BirthDate = date;
+                    Set<DateOnly?>(MemberFields.BirthDate, date, member.BirthDate, v => member.BirthDate = v);
                 }
                 else
                 {
@@ -353,11 +370,11 @@ public sealed class MemberSync(
                 var raw = source.FreeText(yearField)?.Trim();
                 if (string.IsNullOrEmpty(raw))
                 {
-                    member.JoinYear = null;
+                    Set<short?>(MemberFields.JoinYear, null, member.JoinYear, v => member.JoinYear = v);
                 }
                 else if (short.TryParse(raw, NumberStyles.None, CultureInfo.InvariantCulture, out var year) && year >= 1900 && year <= DateTime.UtcNow.Year + 1)
                 {
-                    member.JoinYear = year;
+                    Set<short?>(MemberFields.JoinYear, year, member.JoinYear, v => member.JoinYear = v);
                 }
                 else
                 {
@@ -372,12 +389,12 @@ public sealed class MemberSync(
 
             if (mapping.Category is { } categoryField)
             {
-                member.MemberCategory = Clip(source.FreeText(categoryField)?.Trim(), 50);
+                Set(MemberFields.Category, Clip(source.FreeText(categoryField)?.Trim(), 50), member.MemberCategory, v => member.MemberCategory = v);
             }
 
             if (mapping.ParadeGroupName is { } groupField)
             {
-                member.ParadeGroupName = Clip(source.FreeText(groupField)?.Trim(), 100);
+                Set(MemberFields.ParadeGroupName, Clip(source.FreeText(groupField)?.Trim(), 100), member.ParadeGroupName, v => member.ParadeGroupName = v);
             }
 
             if ((isNew || oldFullName != member.FullName) && !member.NameCorrectedManually)

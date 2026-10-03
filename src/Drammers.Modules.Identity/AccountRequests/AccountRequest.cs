@@ -23,7 +23,8 @@ public sealed class AccountRequest
     public Guid Id { get; set; }
 
     /// <summary>Zoals ingevuld (genormaliseerd), voor de beoordeling door het bestuur.</summary>
-    public required string MemberNumber { get; set; }
+    /// <summary>Leeg als alleen het e-mailadres is ingevuld (fase 24).</summary>
+    public string? MemberNumber { get; set; }
 
     public required string Email { get; set; }
 

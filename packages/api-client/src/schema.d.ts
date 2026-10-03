@@ -3843,6 +3843,95 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/admin/members/{id}/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Alle gegevens bewerken, ook die uit e-Boekhouden (fase 24); gewijzigde velden overschrijft de sync niet meer. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberDataRequest"];
+                    "text/json": components["schemas"]["MemberDataRequest"];
+                    "application/*+json": components["schemas"]["MemberDataRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/local-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Handmatig aangepaste velden teruggeven aan e-Boekhouden; de volgende sync neemt ze weer over. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members/{id}/confirm-inactive": {
         parameters: {
             query?: never;
@@ -15154,13 +15243,13 @@ export interface components {
             status: components["schemas"]["MembershipStatus"];
         };
         AccountRequestRequest: {
-            memberNumber: string;
+            memberNumber: null | string;
             email: string;
         };
         AccountRequestResponse: {
             /** Format: uuid */
             id: string;
-            memberNumber: string;
+            memberNumber: null | string;
             email: string;
             status: components["schemas"]["AccountRequestStatus"];
             mismatchReason: null | string;
@@ -15170,6 +15259,7 @@ export interface components {
             /** Format: date-time */
             decidedAt: null | string;
             member: null | components["schemas"]["AccountRequestMemberResponse"];
+            candidates?: null | components["schemas"]["AccountRequestMemberResponse"][];
         };
         /** @enum {unknown} */
         AccountRequestStatus: "Pending" | "Approved" | "Rejected" | "Duplicate";
@@ -16763,6 +16853,25 @@ export interface components {
             /** Format: int32 */
             guardians: number;
         };
+        /** @description Alle velden die anders uit e-Boekhouden komen; zie MemberDataUpdate. */
+        MemberDataRequest: {
+            fullName: string;
+            salutation: null | string;
+            gender: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            country: null | string;
+            email: null | string;
+            phone: null | string;
+            mobilePhone: null | string;
+            /** Format: date */
+            birthDate: null | string;
+            /** Format: int16 */
+            joinYear: null | number;
+            memberCategory: null | string;
+            paradeGroupName: null | string;
+        };
         MemberDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -16812,6 +16921,7 @@ export interface components {
             /** Format: int16 */
             jubileeJoinYearOverride?: null | number;
             jubileeNote?: null | string;
+            localFields?: null | string[];
         };
         /**
          * @description Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld

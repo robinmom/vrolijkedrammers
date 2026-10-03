@@ -445,4 +445,54 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Forbidden, (await redactie.PostAsJsonAsync("/api/v1/admin/members/purge", new { confirmation = MemberAdministration.PurgeConfirmation })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await redactie.PostAsync("/api/v1/admin/members/import", null)).StatusCode);
     }
+
+    [Fact]
+    public async Task Gegevens_bewerken_in_het_portal_wint_van_de_sync()
+    {
+        AddMembers(1);
+        await SyncAsync();
+        var member = await WithDbAsync(db => db.Members.AsNoTracking().FirstAsync());
+        var detail = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{member.Id}");
+        Assert.Empty(detail.GetProperty("localFields").EnumerateArray());
+
+        var put = await _admin.PutAsJsonAsync($"/api/v1/admin/members/{member.Id}/data", new
+        {
+            fullName = member.FullName,
+            salutation = member.Salutation,
+            gender = member.Gender,
+            addressLine = "Kerkstraat 9",
+            postalCode = member.PostalCode,
+            city = member.City,
+            country = member.Country,
+            email = "Nieuw@Example.com",
+            phone = member.Phone,
+            mobilePhone = member.MobilePhone,
+            birthDate = "1980-04-01",
+            joinYear = (short?)2001,
+            memberCategory = member.MemberCategory,
+            paradeGroupName = member.ParadeGroupName,
+        });
+        Assert.Equal(HttpStatusCode.NoContent, put.StatusCode);
+        detail = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{member.Id}");
+        Assert.Equal(["address", "birthDate", "email", "joinYear"], detail.GetProperty("localFields").EnumerateArray().Select(f => f.GetString()));
+        Assert.Equal("nieuw@example.com", detail.GetProperty("email").GetString());
+
+        // e-Boekhouden verandert het adres en de plaats: het adres blijft (portal wint), de plaats volgt e-Boekhouden.
+        _eb.Update(member.MemberNumber, m => m with { Address = "Andere straat 1", City = "Didam" });
+        var job = await SyncAsync();
+        var after = await WithDbAsync(db => db.Members.AsNoTracking().SingleAsync(m => m.Id == member.Id));
+        Assert.Equal(("Kerkstraat 9", "Didam", "nieuw@example.com"), (after.AddressLine, after.City, after.Email));
+        Assert.True(job.Warnings > 0);
+        var items = await WithDbAsync(db => db.SyncJobItems.AsNoTracking().Where(i => i.SyncJobId == job.Id && i.MemberId == member.Id).ToListAsync());
+        Assert.Contains(items, i => (i.Message ?? string.Empty).Contains("Adres: e-Boekhouden wijkt af", StringComparison.Ordinal));
+
+        // Teruggeven aan e-Boekhouden: de volgende sync neemt alles weer over.
+        Assert.Equal(HttpStatusCode.NoContent, (await _admin.DeleteAsync($"/api/v1/admin/members/{member.Id}/local-fields")).StatusCode);
+        await SyncAsync();
+        after = await WithDbAsync(db => db.Members.AsNoTracking().SingleAsync(m => m.Id == member.Id));
+        Assert.Equal(("Andere straat 1", null), (after.AddressLine, after.LocalFields));
+
+        var invalid = await _admin.PutAsJsonAsync($"/api/v1/admin/members/{member.Id}/data", new { fullName = "X", email = "geen-adres" });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, invalid.StatusCode);
+    }
 }

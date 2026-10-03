@@ -454,4 +454,45 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Null(AppAuthController.ReturnUrl(web));
         Assert.Null(AppAuthController.ReturnUrl("zonder-punt"));
     }
+
+    [Fact]
+    public async Task Account_aanvragen_met_alleen_een_e_mailadres()
+    {
+        async Task<AccountRequest> RequestAsync(string email)
+        {
+            Assert.Equal(HttpStatusCode.Accepted, (await _anonymous.PostAsJsonAsync("/api/v1/account-requests", new { email })).StatusCode);
+            return await WithDbAsync(db => db.AccountRequests.AsNoTracking().OrderByDescending(r => r.RequestedAt).FirstAsync(r => r.Email == email));
+        }
+
+        // Eén lid met dit adres: direct goedgekeurd.
+        var solo = await AddMemberAsync("0701", "solo@example.com");
+        var single = await RequestAsync("solo@example.com");
+        Assert.Equal((AccountRequestStatus.Approved, solo, (string?)null), (single.Status, single.MemberId, single.MemberNumber));
+
+        // Gezin: ouder en kind met hetzelfde adres; alleen de ouder kan een eigen account krijgen.
+        var parent = await AddMemberAsync("0702", "gezin@example.com");
+        var child = await AddMemberAsync("0703", "gezin@example.com");
+        await WithDbAsync(db => db.Members.Where(m => m.Id == child).ExecuteUpdateAsync(x => x.SetProperty(m => m.BirthDate, DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-8))));
+        var family = await RequestAsync("gezin@example.com");
+        Assert.Equal((AccountRequestStatus.Approved, parent), (family.Status, family.MemberId));
+
+        // Twee volwassenen: het bestuur kiest.
+        await AddMemberAsync("0704", "samen@example.com");
+        var second = await AddMemberAsync("0705", "samen@example.com");
+        var shared = await RequestAsync("samen@example.com");
+        Assert.Equal((AccountRequestStatus.Pending, "multiple-members", (Guid?)null), (shared.Status, shared.MismatchReason, shared.MemberId));
+        var list = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/account-requests?status=Pending");
+        var row = list.GetProperty("items").EnumerateArray().Single(r => r.GetProperty("id").GetGuid() == shared.Id);
+        Assert.Equal(["0704", "0705"], row.GetProperty("candidates").EnumerateArray().Select(c => c.GetProperty("memberNumber").GetString()));
+        var approve = await _bestuur.PostAsJsonAsync($"/api/v1/admin/account-requests/{shared.Id}/approve", new { memberId = second });
+        Assert.Equal(HttpStatusCode.NoContent, approve.StatusCode);
+
+        // Onbekend adres.
+        var unknown = await RequestAsync("onbekend@example.com");
+        Assert.Equal((AccountRequestStatus.Pending, "unknown-email"), (unknown.Status, unknown.MismatchReason));
+
+        // Met lidnummer werkt het zoals altijd.
+        await AddMemberAsync("0706", "nummer@example.com");
+        Assert.Equal(HttpStatusCode.Accepted, (await RequestAccountAsync("0706", "nummer@example.com")).StatusCode);
+    }
 }

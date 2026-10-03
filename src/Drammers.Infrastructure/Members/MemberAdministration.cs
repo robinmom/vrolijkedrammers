@@ -22,6 +22,23 @@ public sealed record MemberLocalUpdate(
     DateOnly? BirthDate,
     short? JoinYear);
 
+/// <summary>De velden die anders uit e-Boekhouden komen (fase 24); een gewijzigd veld wordt "handmatig".</summary>
+public sealed record MemberDataUpdate(
+    string FullName,
+    string? Salutation,
+    string? Gender,
+    string? AddressLine,
+    string? PostalCode,
+    string? City,
+    string? Country,
+    string? Email,
+    string? Phone,
+    string? MobilePhone,
+    DateOnly? BirthDate,
+    short? JoinYear,
+    string? MemberCategory,
+    string? ParadeGroupName);
+
 public sealed record MemberPurgeResult(int Members, int SyncJobs, int UnlinkedAccounts);
 
 public sealed record MemberRemovalResult(string MemberNumber, int Accounts, int Applications);
@@ -87,6 +104,87 @@ public sealed class MemberAdministration(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("member.updated", "Member", id.ToString(), before, Snapshot(member)), cancellationToken);
         await lifecycle.ReconcileAsync([id], cancellationToken);
+    }
+
+    /// <summary>
+    /// Alle gegevens van een lid bewerken, ook die uit e-Boekhouden (fase 24). Elk veld dat verandert, wordt "handmatig":
+    /// de sync overschrijft het niet meer (het portal wint). Het inlogadres van een bestaand account verandert niet mee.
+    /// </summary>
+    public async Task UpdateDataAsync(Guid id, MemberDataUpdate update, CancellationToken cancellationToken)
+    {
+        var member = await FindAsync(id, cancellationToken);
+        var fullName = Clean(update.FullName) ?? throw new DomainException(ErrorCodes.Validation, "De naam is verplicht.");
+        var email = Clean(update.Email)?.ToLowerInvariant();
+        if (email is not null && !System.Net.Mail.MailAddress.TryCreate(email, out _))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het e-mailadres is ongeldig.");
+        }
+
+        if (update.Gender is not (null or "" or "m" or "v" or "a"))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Geslacht is m, v of a (of leeg).");
+        }
+
+        var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        if (update.BirthDate is { } birth && (birth > today || birth.Year < 1900))
+        {
+            throw new DomainException(ErrorCodes.Validation, "De geboortedatum ligt in de toekomst of vóór 1900.");
+        }
+
+        if (update.JoinYear is { } joinYear && (joinYear < 1900 || joinYear > today.Year + 1))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Het inschrijfjaar ligt tussen 1900 en {today.Year + 1}.");
+        }
+
+        var before = Snapshot(member);
+        var local = new HashSet<string>((member.LocalFields ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal);
+        void Set<T>(string field, T value, T current, Action<T> assign)
+        {
+            if (!EqualityComparer<T>.Default.Equals(value, current))
+            {
+                assign(value);
+                local.Add(field);
+            }
+        }
+
+        var oldFullName = member.FullName;
+        Set(MemberFields.Name, fullName, member.FullName, v => member.FullName = v);
+        Set(MemberFields.Salutation, Clean(update.Salutation), member.Salutation, v => member.Salutation = v);
+        Set(MemberFields.Gender, Clean(update.Gender), member.Gender, v => member.Gender = v);
+        Set(MemberFields.Address, Clean(update.AddressLine), member.AddressLine, v => member.AddressLine = v);
+        Set(MemberFields.PostalCode, Clean(update.PostalCode)?.ToUpperInvariant(), member.PostalCode, v => member.PostalCode = v);
+        Set(MemberFields.City, Clean(update.City), member.City, v => member.City = v);
+        Set(MemberFields.Country, Clean(update.Country), member.Country, v => member.Country = v);
+        Set(MemberFields.Email, email, member.Email, v => member.Email = v);
+        Set(MemberFields.Phone, Clean(update.Phone), member.Phone, v => member.Phone = v);
+        Set(MemberFields.MobilePhone, Clean(update.MobilePhone), member.MobilePhone, v => member.MobilePhone = v);
+        Set(MemberFields.BirthDate, update.BirthDate, member.BirthDate, v => member.BirthDate = v);
+        Set(MemberFields.JoinYear, update.JoinYear, member.JoinYear, v => member.JoinYear = v);
+        Set(MemberFields.Category, Clean(update.MemberCategory), member.MemberCategory, v => member.MemberCategory = v);
+        Set(MemberFields.ParadeGroupName, Clean(update.ParadeGroupName), member.ParadeGroupName, v => member.ParadeGroupName = v);
+
+        if (oldFullName != member.FullName && !member.NameCorrectedManually)
+        {
+            var name = DutchNameParser.Parse(member.FullName);
+            (member.FirstName, member.NamePrefix, member.LastName) = (name.FirstName, name.NamePrefix, name.LastName);
+        }
+
+        member.LocalFields = local.Count == 0 ? null : string.Join(',', local.Order(StringComparer.Ordinal));
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("member.data-updated", "Member", id.ToString(), before, Snapshot(member)), cancellationToken);
+        await lifecycle.ReconcileAsync([id], cancellationToken);
+    }
+
+    /// <summary>Handmatig aangepaste velden weer aan e-Boekhouden teruggeven: de volgende sync neemt ze weer over.</summary>
+    public async Task ReleaseLocalFieldsAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var member = await FindAsync(id, cancellationToken);
+        var before = member.LocalFields;
+        member.LocalFields = null;
+        // Zorg dat de volgende sync het lid opnieuw verwerkt, ook als e-Boekhouden niet is veranderd.
+        member.EbHash = [];
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("member.local-fields-released", "Member", id.ToString(), before, null), cancellationToken);
     }
 
     /// <summary>Een lid dat uit e-Boekhouden verdwenen is, direct op inactief zetten (in plaats van de volgende run af te wachten).</summary>

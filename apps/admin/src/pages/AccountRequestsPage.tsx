@@ -23,11 +23,14 @@ export function AccountRequestsPage() {
   const [rejecting, setRejecting] = useState<AccountRequest | null>(null);
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  // Alleen een e-mailadres met meerdere leden (fase 24): het bestuur kiest het lid.
+  const [chosen, setChosen] = useState<Record<string, string>>({});
+  const target = (r: AccountRequest) => r.member ?? r.candidates?.find((c) => c.id === chosen[r.id]) ?? null;
   const requests = useAccountRequests(status, page);
   const provisioning = useProvisioning();
 
   const approve = useApiMutation(
-    (r: AccountRequest) => api.POST('/api/v1/admin/account-requests/{id}/approve', { params: { path: { id: r.id } }, body: { memberId: r.member!.id } }),
+    (r: AccountRequest) => api.POST('/api/v1/admin/account-requests/{id}/approve', { params: { path: { id: r.id } }, body: { memberId: target(r)!.id } }),
     [['account-requests'], ['account-provisioning']],
   );
   const reject = useApiMutation(
@@ -42,7 +45,7 @@ export function AccountRequestsPage() {
   const helper = columnHelper<AccountRequest>();
   const columns = [
     helper.accessor('requestedAt', { header: 'Aangevraagd', cell: (info) => formatDateTime(info.getValue()) }),
-    helper.accessor('memberNumber', { header: 'Lidnummer' }),
+    helper.accessor('memberNumber', { header: 'Lidnummer', cell: (info) => info.getValue() ?? '—' }),
     helper.accessor('email', { header: 'Ingevuld e-mailadres' }),
     helper.accessor('status', {
       header: 'Status',
@@ -61,6 +64,23 @@ export function AccountRequestsPage() {
       enableSorting: false,
       cell: (info) => {
         const m = info.getValue();
+        const r = info.row.original;
+        if (!m && (r.candidates?.length ?? 0) > 0) {
+          return (
+            <select
+              aria-label={`Kies het lid voor ${r.email}`}
+              value={chosen[r.id] ?? ''}
+              onChange={(e) => setChosen({ ...chosen, [r.id]: e.target.value })}
+            >
+              <option value="">Kies een lid…</option>
+              {r.candidates!.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.fullName} ({c.memberNumber})
+                </option>
+              ))}
+            </select>
+          );
+        }
         return m ? (
           <>
             <Link to="/leden/$id" params={{ id: m.id }}>
@@ -81,7 +101,8 @@ export function AccountRequestsPage() {
         if (r.status !== 'Pending') {
           return <span className="muted small-text">{formatDateTime(r.decidedAt)}</span>;
         }
-        const canApprove = Boolean(r.member?.email) && r.member?.status === 'Active';
+        const member = target(r);
+        const canApprove = Boolean(member?.email) && member?.status === 'Active';
         return (
           <div className="actions">
             <button
@@ -89,14 +110,14 @@ export function AccountRequestsPage() {
               className="button small"
               disabled={!canApprove || approve.isPending}
               title={canApprove ? undefined : 'Alleen voor een actief lid met een e-mailadres in e-Boekhouden'}
-              aria-label={`Account aanmaken voor ${r.member?.fullName ?? r.memberNumber}`}
+              aria-label={`Account aanmaken voor ${member?.fullName ?? r.memberNumber ?? r.email}`}
               onClick={() =>
-                approve.mutate(r, { onSuccess: () => setMessage(`Het account voor ${r.member!.fullName} wordt aangemaakt met ${r.member!.email}.`) })
+                approve.mutate(r, { onSuccess: () => setMessage(`Het account voor ${member!.fullName} wordt aangemaakt met ${member!.email}.`) })
               }
             >
               Account aanmaken
             </button>
-            <button type="button" className="button secondary small" aria-label={`Verzoek ${r.memberNumber} afwijzen`} onClick={() => setRejecting(r)}>
+            <button type="button" className="button secondary small" aria-label={`Verzoek ${r.memberNumber ?? r.email} afwijzen`} onClick={() => setRejecting(r)}>
               Afwijzen
             </button>
           </div>
@@ -191,7 +212,7 @@ export function AccountRequestsPage() {
           }}
         >
           <p>
-            Lidnummer {rejecting?.memberNumber}, {rejecting?.email}. De aanvrager krijgt hiervan geen bericht; neem zo nodig zelf contact
+            {rejecting?.memberNumber ? `Lidnummer ${rejecting.memberNumber}, ` : ''}{rejecting?.email}. De aanvrager krijgt hiervan geen bericht; neem zo nodig zelf contact
             op.
           </p>
           <Field label="Reden (intern, optioneel)" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} />

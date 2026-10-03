@@ -29,6 +29,7 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.MemberCategory).HasMaxLength(50);
         builder.Property(m => m.ParadeGroupName).HasMaxLength(100);
         builder.Property(m => m.JubileeNote).HasMaxLength(200);
+        builder.Property(m => m.LocalFields).HasMaxLength(400);
         builder.Ignore(m => m.JubileeBaseYear);
         builder.Property(m => m.FirstName).HasMaxLength(100);
         builder.Property(m => m.NamePrefix).HasMaxLength(30);

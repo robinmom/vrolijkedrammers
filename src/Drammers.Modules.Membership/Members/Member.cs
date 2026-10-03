@@ -72,6 +72,15 @@ public sealed class Member : IAuditable
 
     public string? LastName { get; set; }
 
+    /// <summary>
+    /// Velden uit e-Boekhouden die in het portal zijn aangepast (komma-gescheiden sleutels, zie
+    /// <see cref="MemberFields"/>). De sync overschrijft ze niet meer, maar meldt het als e-Boekhouden afwijkt.
+    /// </summary>
+    public string? LocalFields { get; set; }
+
+    public bool IsLocal(string field) =>
+        LocalFields is { Length: > 0 } fields && fields.Split(',').Contains(field, StringComparer.Ordinal);
+
     /// <summary>Naamdelen handmatig gecorrigeerd: de sync leidt ze dan niet opnieuw af.</summary>
     public bool NameCorrectedManually { get; set; }
 

@@ -162,6 +162,8 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
   jubileeMilestones = [11, 22, 33, 44, 55, 66, 77];
+  // Fase 24: handmatig aangepaste velden per lid.
+  memberLocalFields: Record<string, string[]> = {};
   jubileeInvitations: Record<string, string> = {};
   jubileeTemplate = {
     subject: 'Uitnodiging: huldiging jubilarissen {carnavalsjaar}',
@@ -646,7 +648,19 @@ export class MockApi {
       decidedAt: null as string | null,
       member: null as Record<string, unknown> | null,
     },
-  ];
+  ] as {
+    id: string;
+    memberNumber: string | null;
+    email: string;
+    status: string;
+    mismatchReason: string | null;
+    rejectionReason: string | null;
+    requestedAt: string;
+    decidedAt: string | null;
+    member: Record<string, unknown> | null;
+    candidates?: Record<string, unknown>[];
+    approvedMemberId?: string;
+  }[];
   provisioning: Record<string, unknown>[] = [
     {
       id: 'p-9',
@@ -2353,6 +2367,24 @@ export class MockApi {
           return noContent();
       }
     }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/data$/)) && method === 'PUT') {
+      const member = this.members.find((x) => x.id === m![1])!;
+      const changed: string[] = [];
+      if (body.email !== member.email) changed.push('email');
+      if (body.city !== member.city) changed.push('city');
+      if (body.fullName !== member.fullName) changed.push('name');
+      member.email = body.email as string;
+      member.city = body.city as string;
+      member.fullName = body.fullName as string;
+      this.memberLocalFields[member.id] = [...new Set([...(this.memberLocalFields[member.id] ?? []), ...changed])];
+      this.record('member.data-updated', 'Member', member.id, body);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/members\/([^/]+)\/local-fields$/)) && method === 'DELETE') {
+      delete this.memberLocalFields[m[1]!];
+      this.record('member.local-fields-released', 'Member', m[1]!, {});
+      return noContent();
+    }
     if (path === '/admin/account-requests') {
       const status = url.searchParams.get('status');
       const items = this.accountRequests.filter((r) => !status || r.status === status);
@@ -2361,6 +2393,7 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/account-requests\/([^/]+)\/(approve|reject)$/))) {
       const request = this.accountRequests.find((r) => r.id === m![1])!;
       request.status = m[2] === 'approve' ? 'Approved' : 'Rejected';
+      request.approvedMemberId = body.memberId as string | undefined;
       request.decidedAt = new Date().toISOString();
       if (m[2] === 'approve') {
         this.provisioning.push({
@@ -2519,6 +2552,7 @@ export class MockApi {
             }
           : null,
         groups: [{ groupId: 'g-1', name: 'Jeugdcommissie', function: 'Lead', validTo: null }],
+        localFields: this.memberLocalFields[member.id] ?? [],
         jubileeJoinYearOverride: member.jubileeJoinYearOverride,
         jubileeNote: member.jubileeNote,
         provisioning: (() => {

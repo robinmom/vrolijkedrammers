@@ -126,6 +126,9 @@ export const mismatchReasonLabels: Record<string, string> = {
   'email-mismatch': 'E-mailadres wijkt af van e-Boekhouden',
   'member-not-active': 'Lid is niet actief',
   'has-account': 'Lid heeft al een account',
+  'unknown-email': 'Geen lid met dit e-mailadres',
+  'multiple-members': 'Meerdere leden met dit e-mailadres: kies het lid',
+  minor: 'Lid is te jong voor een eigen account',
 };
 
 export const provisioningStepLabels: Record<string, string> = {

@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Drammers.Api.Controllers;
 
 /// <summary>
-/// "Ik ben al lid": account aanvragen met lidnummer en e-mailadres (ADR-014, fase 9). Altijd hetzelfde antwoord
+/// "Ik ben al lid": account aanvragen met het e-mailadres uit de ledenadministratie, eventueel met lidnummer (ADR-014,
+/// fase 9; sinds fase 24 is het lidnummer niet meer nodig). Altijd hetzelfde antwoord
 /// (202), ongeacht of er een lid is, het e-mailadres klopt of er al een account bestaat: geen enumeratie.
 /// </summary>
 [ApiController]
@@ -32,7 +33,7 @@ public sealed class AccountRequestsController(MemberAccounts accounts) : Control
 }
 
 public sealed record AccountRequestRequest(
-    [param: Required, StringLength(15, MinimumLength = 1)] string MemberNumber,
+    [param: StringLength(15)] string? MemberNumber,
     [param: Required, EmailAddress, StringLength(254)] string Email);
 
 public sealed record AccountRequestAcceptedResponse(string Message);

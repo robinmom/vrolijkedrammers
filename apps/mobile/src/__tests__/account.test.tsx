@@ -205,7 +205,7 @@ describe('Mijn gegevens', () => {
     expect(screen.getByText('Dorpsstraat 1, 6999 AA Loil')).toBeTruthy();
     expect(screen.getByText('12 maart 1980')).toBeTruthy();
     expect(screen.getByText('Jeugdcommissie · Leiding')).toBeTruthy();
-    expect(screen.getByText(/secretariaat/)).toBeTruthy();
+    expect(screen.getByText(/ledenadministratie controleert/)).toBeTruthy();
     // Fase 20: jaren lid en jubileum.
     expect(screen.getByText('33 jaar')).toBeTruthy();
     expect(screen.getByLabelText('Jubilaris: dit carnavalsjaar 33 jaar lid')).toBeTruthy();

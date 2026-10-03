@@ -162,6 +162,48 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
   jubileeMilestones = [11, 22, 33, 44, 55, 66, 77];
+  // Fase 26: wijzigingsverzoeken en verbreken.
+  memberRequests = {
+    changes: [
+      {
+        id: 'c-1',
+        memberId: 'm-1',
+        memberNumber: '001',
+        fullName: 'Piet van der Berg',
+        requestedAt: '2026-10-03T09:00:00Z',
+        fields: [
+          {
+            field: 'address',
+            label: 'Adres',
+            current: 'Dorpsstraat 1' as string | null,
+            requested: 'Kerkstraat 5' as string | null,
+          },
+          {
+            field: 'iban',
+            label: 'IBAN',
+            current: null as string | null,
+            requested: '**** 4300 (P. Berg), machtiging gegeven' as string | null,
+          },
+        ],
+      },
+    ],
+    breaks: [
+      {
+        id: 'b-1',
+        payerMemberId: 'm-1',
+        payerName: 'Piet van der Berg',
+        partnerMemberId: 'm-2',
+        partnerName: 'Anna Jansen',
+        initiatedBy: 'Anna Jansen',
+        initiatedAt: '2026-10-02T09:00:00Z',
+        status: 'AwaitingApproval',
+        payerAgreedAt: '2026-10-02T10:00:00Z' as string | null,
+        partnerAgreedAt: '2026-10-02T09:00:00Z' as string | null,
+        partnerIbanMasked: '**** 1234' as string | null,
+        partnerAccountHolder: 'A. Jansen' as string | null,
+      },
+    ],
+  };
   // Fase 25: tweepersoonsleden splitsen.
   splitCandidates = [
     {
@@ -2756,6 +2798,17 @@ export class MockApi {
         return noContent();
       }
       return json(group);
+    }
+    if (path === '/admin/member-requests') return json(this.memberRequests);
+    if (
+      (m = path.match(/^\/admin\/member-requests\/(changes|breaks)\/([^/]+)\/(approve|reject)$/)) &&
+      method === 'POST'
+    ) {
+      const list = m[1] === 'changes' ? this.memberRequests.changes : this.memberRequests.breaks;
+      const index = list.findIndex((x) => x.id === m![2]);
+      list.splice(index, 1);
+      this.record(`member.${m[1]}-${m[3]}`, 'Member', m[2]!, body);
+      return noContent();
     }
     if (path === '/admin/memberships/overview') {
       return json({

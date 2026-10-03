@@ -1080,6 +1080,25 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 ---
 
+### Fase 26 — Combinatie verbreken en gegevens wijzigen vanuit de app (gebouwd, 2026-10-03)
+
+Besluiten van het bestuur: leden mogen in de app hun adres, e-mail en telefoon en hun IBAN wijzigen, en een combinatie verbreken. Niets wordt doorgevoerd zonder goedkeuring van de ledenadministratie. Meldingen staan alleen in het portal, zonder e-mail aan de ledenadministratie.
+- **Bankgegevens per lid:** `Member.IbanProtected` (Data Protection, purpose `Drammers.MemberIban.v1`), `IbanLast4`, `AccountHolder`, `MandateReference` en `MandateSignedOn`.
+  - Ze worden alleen gevuld voor leden die een IBAN via de app opgeven. De volledige overstap volgt in 23b.
+  - Het portal toont een IBAN alleen gemaskeerd (`**** 1234`). Een afgewezen IBAN wordt niet bewaard.
+- **Gegevens wijzigen:**
+  - In de app staat "Gegevens wijzigen" onder Mijn gegevens (`POST /me/change-requests`). Een nieuw verzoek vervangt een openstaand verzoek.
+  - Bij een IBAN horen de naam van de rekeninghouder en een machtiging.
+  - Na goedkeuring (`/admin/member-requests/changes/{id}/approve`) worden de velden "handmatig" (fase 24), zodat de sync ze niet overschrijft. Het lid krijgt een e-mail.
+- **Combinatie verbreken:**
+  - In de app staat de kaart "Combinatie" onder Mijn gegevens, met het scherm Combinatie beheren (`/me/combination-break`, `/agree`, `/cancel`).
+  - Wie het aanvraagt, geeft daarmee direct akkoord. De ander krijgt een e-mail en geeft akkoord of niet in de app.
+  - Het tweede lid gaat zelf betalen en geeft daarbij een IBAN en machtiging.
+  - Na beide akkoorden keurt de ledenadministratie het goed of af. Na goedkeuring worden beiden `OnePerson` (tarief voor één lid, of 65+), krijgt het tweede lid zijn eigen bankgegevens, en blijven de jaren lid gelijk.
+  - Beide leden krijgen een e-mail.
+- **Portal, Leden → Wijzigingsverzoeken (`member.update`):** per verzoek de huidige en de nieuwe waarde, met de knoppen Goedkeuren en Afwijzen (met reden). Daaronder de lopende verzoeken om een combinatie te verbreken, met de stand van de akkoorden.
+- **App-build:** de nieuwe schermen zijn pas zichtbaar na een nieuwe app-build.
+
 ### Fase 25 — Tweepersoonsleden splitsen en de pagina Lidmaatschappen (gebouwd, 2026-10-03)
 
 Besluit van het bestuur: een tweepersoonslidmaatschap wordt gesplitst in twee eigen leden. Die zijn samen een combinatie (€ 57,50, of € 44,00 als beiden 65+ zijn), en het hoofdlid betaalt.

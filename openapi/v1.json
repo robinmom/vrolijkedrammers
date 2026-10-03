@@ -4786,6 +4786,247 @@
         }
       }
     },
+    "/api/v1/admin/member-requests": {
+      "get": {
+        "tags": [
+          "AdminMemberRequests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRequestsOverview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRequestsOverview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberRequestsOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/member-requests/changes/{id}/approve": {
+      "post": {
+        "tags": [
+          "AdminMemberRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/member-requests/changes/{id}/reject": {
+      "post": {
+        "tags": [
+          "AdminMemberRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequestRejection"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequestRejection"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequestRejection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/member-requests/breaks/{id}/approve": {
+      "post": {
+        "tags": [
+          "AdminMemberRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/member-requests/breaks/{id}/reject": {
+      "post": {
+        "tags": [
+          "AdminMemberRequests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequestRejection"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequestRejection"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequestRejection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/members": {
       "get": {
         "tags": [
@@ -16137,6 +16378,326 @@
         }
       }
     },
+    "/api/v1/me/membership-requests": {
+      "get": {
+        "tags": [
+          "MyMembership"
+        ],
+        "summary": "Het laatste wijzigingsverzoek en, bij een combinatie, de stand van een verzoek om te verbreken.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyMemberRequests"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyMemberRequests"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyMemberRequests"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/change-requests": {
+      "post": {
+        "tags": [
+          "MyMembership"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyChangeRequestInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyChangeRequestInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyChangeRequestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/change-requests/{id}": {
+      "delete": {
+        "tags": [
+          "MyMembership"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/combination-break": {
+      "post": {
+        "tags": [
+          "MyMembership"
+        ],
+        "summary": "Verbreken aanvragen (telt als eigen akkoord). Het tweede lid geeft hierbij zijn IBAN en machtiging.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyBankInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyBankInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyBankInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/combination-break/agree": {
+      "post": {
+        "tags": [
+          "MyMembership"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyBankInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyBankInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyBankInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/combination-break/cancel": {
+      "post": {
+        "tags": [
+          "MyMembership"
+        ],
+        "summary": "Niet akkoord of toch niet verbreken.",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/news": {
       "get": {
         "tags": [
@@ -21613,6 +22174,79 @@
           }
         }
       },
+      "BreakRequestItem": {
+        "required": [
+          "id",
+          "payerMemberId",
+          "payerName",
+          "partnerMemberId",
+          "partnerName",
+          "initiatedBy",
+          "initiatedAt",
+          "status",
+          "payerAgreedAt",
+          "partnerAgreedAt",
+          "partnerIbanMasked",
+          "partnerAccountHolder"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payerMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payerName": {
+            "type": "string"
+          },
+          "partnerMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "initiatedBy": {
+            "type": "string"
+          },
+          "initiatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CombinationBreakStatus"
+          },
+          "payerAgreedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "partnerAgreedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "partnerIbanMasked": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "partnerAccountHolder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "BuildLocationResponse": {
         "required": [
           "id",
@@ -21908,6 +22542,72 @@
           }
         }
       },
+      "ChangeRequestField": {
+        "required": [
+          "field",
+          "label",
+          "current",
+          "requested"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "current": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "requested": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ChangeRequestItem": {
+        "required": [
+          "id",
+          "memberId",
+          "memberNumber",
+          "fullName",
+          "requestedAt",
+          "fields"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestField"
+            }
+          }
+        }
+      },
       "CheckInRequest": {
         "type": "object",
         "properties": {
@@ -21949,6 +22649,15 @@
           }
         },
         "description": "Optochtinschrijving waarin het kind meeloopt: de groep uit e-Boekhouden (vrij veld groep) staat erop."
+      },
+      "CombinationBreakStatus": {
+        "enum": [
+          "AwaitingAgreement",
+          "AwaitingApproval",
+          "Approved",
+          "Rejected",
+          "Cancelled"
+        ]
       },
       "CommitteeMemberRequest": {
         "required": [
@@ -26407,6 +27116,46 @@
         },
         "description": "Rollen, leeftijd, inschrijfjaar en groepen tellen alleen actieve leden; status telt alle leden."
       },
+      "MemberRequestRejection": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "MemberRequestsOverview": {
+        "required": [
+          "changes",
+          "breaks"
+        ],
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestItem"
+            }
+          },
+          "breaks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BreakRequestItem"
+            }
+          }
+        }
+      },
+      "MemberRequestStatus": {
+        "enum": [
+          "Pending",
+          "Approved",
+          "Rejected",
+          "Cancelled"
+        ]
+      },
       "MembershipCountResponse": {
         "required": [
           "label",
@@ -26757,6 +27506,133 @@
           }
         }
       },
+      "MyBankInput": {
+        "required": [
+          "iban",
+          "accountHolder",
+          "mandateConsent"
+        ],
+        "type": "object",
+        "properties": {
+          "iban": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "accountHolder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mandateConsent": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MyChangeRequest": {
+        "required": [
+          "id",
+          "requestedAt",
+          "status",
+          "fields",
+          "rejectionReason"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MemberRequestStatus"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rejectionReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MyChangeRequestInput": {
+        "required": [
+          "addressLine",
+          "postalCode",
+          "city",
+          "email",
+          "phone",
+          "mobilePhone",
+          "iban",
+          "accountHolder",
+          "mandateConsent"
+        ],
+        "type": "object",
+        "properties": {
+          "addressLine": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mobilePhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "iban": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "accountHolder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mandateConsent": {
+            "type": "boolean"
+          }
+        }
+      },
       "MyChild": {
         "required": [
           "memberId",
@@ -26858,6 +27734,57 @@
           }
         }
       },
+      "MyCombination": {
+        "required": [
+          "role",
+          "otherMemberId",
+          "otherName",
+          "breakRequestId",
+          "breakStatus",
+          "iAgreed",
+          "otherAgreed",
+          "ibanRequiredFromMe"
+        ],
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "otherMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "otherName": {
+            "type": "string"
+          },
+          "breakRequestId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "breakStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CombinationBreakStatus"
+              }
+            ]
+          },
+          "iAgreed": {
+            "type": "boolean"
+          },
+          "otherAgreed": {
+            "type": "boolean"
+          },
+          "ibanRequiredFromMe": {
+            "type": "boolean"
+          }
+        }
+      },
       "MyGroupResponse": {
         "required": [
           "name",
@@ -26907,6 +27834,35 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "MyMemberRequests": {
+        "required": [
+          "latestChange",
+          "combination"
+        ],
+        "type": "object",
+        "properties": {
+          "latestChange": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyChangeRequest"
+              }
+            ]
+          },
+          "combination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyCombination"
+              }
+            ]
           }
         }
       },
@@ -33190,6 +34146,9 @@
       "name": "AdminJury"
     },
     {
+      "name": "AdminMemberRequests"
+    },
+    {
       "name": "AdminMembers"
     },
     {
@@ -33284,6 +34243,9 @@
     },
     {
       "name": "MeTicket"
+    },
+    {
+      "name": "MyMembership"
     },
     {
       "name": "News"

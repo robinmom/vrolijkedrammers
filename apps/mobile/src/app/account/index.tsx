@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
-import { queryKeys, useMe, useMyChildren, useMyMember } from '../../api/queries';
+import { queryKeys, useMe, useMyChildren, useMyMember, useMyMemberRequests } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { useSessionStatus } from '../../auth/useSession';
 import { groupFunctionLabels, signOut, statusLabels } from '../../features/account';
@@ -22,7 +22,13 @@ export default function MijnGegevensScreen() {
   // Een ouder/verzorger zonder eigen lidmaatschap heeft geen lidgegevens, wel kinderen.
   const member = useMyMember(me.data ? me.data.memberId !== null : false);
   const children = useMyChildren();
-  const { refreshing, onRefresh } = useRefresh([queryKeys.me, queryKeys.myMember, queryKeys.myChildren]);
+  const requests = useMyMemberRequests(me.data ? me.data.memberId !== null : false);
+  const { refreshing, onRefresh } = useRefresh([
+    queryKeys.me,
+    queryKeys.myMember,
+    queryKeys.myChildren,
+    queryKeys.myMemberRequests,
+  ]);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   if (status === 'signedOut') {
@@ -95,9 +101,39 @@ export default function MijnGegevensScreen() {
               </View>
             ))}
             <AppText variant="caption" color={colors.textSecondary}>
-              Klopt er iets niet? Geef wijzigingen door aan het secretariaat; zij passen het aan in de
-              ledenadministratie.
+              Klopt er iets niet? Pas het aan met Gegevens wijzigen; de ledenadministratie controleert elke wijziging.
             </AppText>
+            {requests.data?.latestChange?.status === 'Pending' ? (
+              <AppText variant="body" accessibilityRole="alert">
+                Je wijziging ({requests.data.latestChange.fields.join(', ').toLowerCase()}) wacht op goedkeuring.
+              </AppText>
+            ) : requests.data?.latestChange?.status === 'Rejected' ? (
+              <AppText variant="body" color={colors.accentText}>
+                Je laatste wijziging is niet doorgevoerd
+                {requests.data.latestChange.rejectionReason ? `: ${requests.data.latestChange.rejectionReason}` : '.'}
+              </AppText>
+            ) : null}
+            <Button label="Gegevens wijzigen" variant="secondary" onPress={() => router.push('/account/wijzigen')} />
+          </Card>
+        ) : null}
+
+        {requests.data?.combination ? (
+          <Card style={styles.card}>
+            <AppText variant="sectionHeader" accessibilityRole="header">
+              Combinatie
+            </AppText>
+            <AppText variant="body">
+              Je bent samen met {requests.data.combination.otherName} lid.{' '}
+              {requests.data.combination.role === 'Payer'
+                ? 'Jij betaalt de contributie voor jullie beiden.'
+                : `${requests.data.combination.otherName} betaalt de contributie.`}
+            </AppText>
+            {requests.data.combination.breakStatus === 'AwaitingAgreement' && !requests.data.combination.iAgreed ? (
+              <AppText variant="bodyStrong" accessibilityRole="alert">
+                {requests.data.combination.otherName} wil de combinatie verbreken. Geef je akkoord?
+              </AppText>
+            ) : null}
+            <Button label="Combinatie beheren" variant="secondary" onPress={() => router.push('/account/combinatie')} />
           </Card>
         ) : null}
 

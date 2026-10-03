@@ -217,6 +217,8 @@ public static class DependencyInjection
         services.AddScoped<JubileeInvitations>();
         services.AddScoped<Contributions>();
         services.AddScoped<MemberSplits>();
+        services.AddScoped<MemberRequests>();
+        services.AddSingleton<MemberIbanProtector>();
         services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();

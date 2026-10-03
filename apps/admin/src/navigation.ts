@@ -32,6 +32,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Instellingen website', to: '/website/instellingen', permission: 'website.manage', icon: 'instellingen', section: 'Website' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
+  // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.
+  { label: 'Wijzigingsverzoeken', to: '/wijzigingsverzoeken', permission: 'member.update', icon: 'sync', section: 'Leden' },
   { label: 'Accountverzoeken', to: '/accountverzoeken', permission: 'member.approve', icon: 'gebruiker', section: 'Leden' },
   { label: 'Koppelverzoeken', to: '/koppelverzoeken', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },

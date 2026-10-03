@@ -64,6 +64,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<MembershipSplitInvitation> MembershipSplitInvitations => Set<MembershipSplitInvitation>();
 
+    public DbSet<MemberChangeRequest> MemberChangeRequests => Set<MemberChangeRequest>();
+
+    public DbSet<CombinationBreakRequest> CombinationBreakRequests => Set<CombinationBreakRequest>();
+
     public DbSet<ExcludedMember> ExcludedMembers => Set<ExcludedMember>();
 
     public DbSet<Group> Groups => Set<Group>();

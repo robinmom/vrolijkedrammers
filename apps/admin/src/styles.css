@@ -369,6 +369,13 @@ main {
   margin: 0 0 12px;
 }
 
+/* Fase 26: een verzoek binnen een kaart. */
+.card.nested {
+  box-shadow: none;
+  border: 1px solid var(--dvd-border);
+  margin-top: 12px;
+}
+
 /* Fase 20b: voorbeeld van de uitnodiging voor jubilarissen. */
 .letter-preview {
   border: 1px solid var(--dvd-border);

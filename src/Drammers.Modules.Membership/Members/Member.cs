@@ -19,8 +19,9 @@ public enum MemberSyncState
 
 /// <summary>
 /// Lokale kopie van een lid uit e-Boekhouden (docs/04 §4, ADR-010). De e-Boekhouden-velden worden alleen door de
-/// sync gezet; lokale velden (override, geldigheid, naamcorrectie) raakt de sync nooit aan. IBAN, BIC, mandaat,
-/// notities en factuuradressen worden bewust niet opgeslagen (dataminimalisatie).
+/// sync gezet; lokale velden (override, geldigheid, naamcorrectie) raakt de sync nooit aan. Sinds fase 26 staan IBAN en
+/// machtiging lokaal (versleuteld) voor leden die ze via de app opgeven; BIC, notities en factuuradressen worden niet
+/// opgeslagen (dataminimalisatie).
 /// </summary>
 public sealed class Member : IAuditable
 {
@@ -114,6 +115,21 @@ public sealed class Member : IAuditable
     public bool ContributionExempt { get; set; }
 
     public string? ContributionExemptReason { get; set; }
+
+    // --- Bankgegevens (fase 26; lokaal, versleuteld met Data Protection) ---
+
+    /// <summary>IBAN, versleuteld; alleen in te zien met <c>contribution.manage</c>.</summary>
+    public string? IbanProtected { get; set; }
+
+    /// <summary>Laatste 4 tekens van de IBAN, voor de weergave.</summary>
+    public string? IbanLast4 { get; set; }
+
+    public string? AccountHolder { get; set; }
+
+    /// <summary>Kenmerk van de machtiging (max. 35 tekens, SEPA).</summary>
+    public string? MandateReference { get; set; }
+
+    public DateOnly? MandateSignedOn { get; set; }
 
     // --- Sync ---
     public byte[] EbHash { get; set; } = [];

@@ -3980,6 +3980,239 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/member-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberRequestsOverview"];
+                        "application/json": components["schemas"]["MemberRequestsOverview"];
+                        "text/json": components["schemas"]["MemberRequestsOverview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/member-requests/changes/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/member-requests/changes/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberRequestRejection"];
+                    "text/json": components["schemas"]["MemberRequestRejection"];
+                    "application/*+json": components["schemas"]["MemberRequestRejection"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/member-requests/breaks/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/member-requests/breaks/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberRequestRejection"];
+                    "text/json": components["schemas"]["MemberRequestRejection"];
+                    "application/*+json": components["schemas"]["MemberRequestRejection"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members": {
         parameters: {
             query?: never;
@@ -13372,6 +13605,312 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/membership-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Het laatste wijzigingsverzoek en, bij een combinatie, de stand van een verzoek om te verbreken. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyMemberRequests"];
+                        "application/json": components["schemas"]["MyMemberRequests"];
+                        "text/json": components["schemas"]["MyMemberRequests"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/change-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MyChangeRequestInput"];
+                    "text/json": components["schemas"]["MyChangeRequestInput"];
+                    "application/*+json": components["schemas"]["MyChangeRequestInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/change-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/combination-break": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verbreken aanvragen (telt als eigen akkoord). Het tweede lid geeft hierbij zijn IBAN en machtiging. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MyBankInput"];
+                    "text/json": components["schemas"]["MyBankInput"];
+                    "application/*+json": components["schemas"]["MyBankInput"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/combination-break/agree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MyBankInput"];
+                    "text/json": components["schemas"]["MyBankInput"];
+                    "application/*+json": components["schemas"]["MyBankInput"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/combination-break/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Niet akkoord of toch niet verbreken. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/news": {
         parameters: {
             query?: never;
@@ -16294,6 +16833,26 @@ export interface components {
             challenge: null | string;
             signature: null | string;
         };
+        BreakRequestItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            payerMemberId: string;
+            payerName: string;
+            /** Format: uuid */
+            partnerMemberId: string;
+            partnerName: string;
+            initiatedBy: string;
+            /** Format: date-time */
+            initiatedAt: string;
+            status: components["schemas"]["CombinationBreakStatus"];
+            /** Format: date-time */
+            payerAgreedAt: null | string;
+            /** Format: date-time */
+            partnerAgreedAt: null | string;
+            partnerIbanMasked: null | string;
+            partnerAccountHolder: null | string;
+        };
         BuildLocationResponse: {
             /** Format: uuid */
             id: string;
@@ -16386,6 +16945,23 @@ export interface components {
         ChallengeResponse: {
             challenge: string;
         };
+        ChangeRequestField: {
+            field: string;
+            label: string;
+            current: null | string;
+            requested: null | string;
+        };
+        ChangeRequestItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            /** Format: date-time */
+            requestedAt: string;
+            fields: components["schemas"]["ChangeRequestField"][];
+        };
         CheckInRequest: {
             /** @default false */
             force: boolean;
@@ -16400,6 +16976,8 @@ export interface components {
             startNumber: null | number;
             status: string;
         };
+        /** @enum {unknown} */
+        CombinationBreakStatus: "AwaitingAgreement" | "AwaitingApproval" | "Approved" | "Rejected" | "Cancelled";
         CommitteeMemberRequest: {
             /** Format: int32 */
             committeeId: number;
@@ -17588,6 +18166,15 @@ export interface components {
             byJoinYear: components["schemas"]["ReportRow"][];
             byGroup: components["schemas"]["ReportRow"][];
         };
+        MemberRequestRejection: {
+            reason: string;
+        };
+        MemberRequestsOverview: {
+            changes: components["schemas"]["ChangeRequestItem"][];
+            breaks: components["schemas"]["BreakRequestItem"][];
+        };
+        /** @enum {unknown} */
+        MemberRequestStatus: "Pending" | "Approved" | "Rejected" | "Cancelled";
         MembershipCountResponse: {
             label: string;
             /** Format: int32 */
@@ -17684,6 +18271,31 @@ export interface components {
             ios: string;
             android: string;
         };
+        MyBankInput: {
+            iban: null | string;
+            accountHolder: null | string;
+            mandateConsent: boolean;
+        };
+        MyChangeRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            requestedAt: string;
+            status: components["schemas"]["MemberRequestStatus"];
+            fields: string[];
+            rejectionReason: null | string;
+        };
+        MyChangeRequestInput: {
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            email: null | string;
+            phone: null | string;
+            mobilePhone: null | string;
+            iban: null | string;
+            accountHolder: null | string;
+            mandateConsent: boolean;
+        };
         MyChild: {
             /** Format: uuid */
             memberId: string;
@@ -17706,6 +18318,18 @@ export interface components {
             notifications: components["schemas"]["InboxItem"][];
             parade: components["schemas"]["ChildParadeEntry"][];
         };
+        MyCombination: {
+            role: string;
+            /** Format: uuid */
+            otherMemberId: string;
+            otherName: string;
+            /** Format: uuid */
+            breakRequestId: null | string;
+            breakStatus: null | components["schemas"]["CombinationBreakStatus"];
+            iAgreed: boolean;
+            otherAgreed: boolean;
+            ibanRequiredFromMe: boolean;
+        };
         MyGroupResponse: {
             name: string;
             function: components["schemas"]["GroupFunction"];
@@ -17720,6 +18344,10 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             decidedAt: null | string;
+        };
+        MyMemberRequests: {
+            latestChange: null | components["schemas"]["MyChangeRequest"];
+            combination: null | components["schemas"]["MyCombination"];
         };
         MyMemberResponse: {
             memberNumber: string;

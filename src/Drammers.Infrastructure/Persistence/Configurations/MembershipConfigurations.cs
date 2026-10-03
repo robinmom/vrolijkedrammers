@@ -29,6 +29,10 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.MemberCategory).HasMaxLength(50);
         builder.Property(m => m.ParadeGroupName).HasMaxLength(100);
         builder.Property(m => m.SecondMemberName).HasMaxLength(150);
+        builder.Property(m => m.IbanProtected).HasMaxLength(1000);
+        builder.Property(m => m.IbanLast4).HasMaxLength(4);
+        builder.Property(m => m.AccountHolder).HasMaxLength(100);
+        builder.Property(m => m.MandateReference).HasMaxLength(35);
         builder.Property(m => m.JubileeNote).HasMaxLength(200);
         builder.Property(m => m.LocalFields).HasMaxLength(400);
         builder.Property(m => m.MembershipKind).HasConversion<string>().HasMaxLength(20);
@@ -56,6 +60,45 @@ internal sealed class MembershipSplitInvitationConfiguration : IEntityTypeConfig
         builder.HasIndex(i => i.MemberId).IsUnique();
         builder.HasIndex(i => i.TokenHash).IsUnique();
         builder.HasOne<Member>().WithMany().HasForeignKey(i => i.MemberId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class MemberChangeRequestConfiguration : IEntityTypeConfiguration<MemberChangeRequest>
+{
+    public void Configure(EntityTypeBuilder<MemberChangeRequest> builder)
+    {
+        builder.ToTable("MemberChangeRequest", Schemas.Membership);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(r => r.AddressLine).HasMaxLength(150);
+        builder.Property(r => r.PostalCode).HasMaxLength(10);
+        builder.Property(r => r.City).HasMaxLength(50);
+        builder.Property(r => r.Email).HasMaxLength(150);
+        builder.Property(r => r.Phone).HasMaxLength(50);
+        builder.Property(r => r.MobilePhone).HasMaxLength(50);
+        builder.Property(r => r.IbanProtected).HasMaxLength(1000);
+        builder.Property(r => r.IbanLast4).HasMaxLength(4);
+        builder.Property(r => r.AccountHolder).HasMaxLength(100);
+        builder.Property(r => r.RejectionReason).HasMaxLength(500);
+        builder.HasIndex(r => new { r.MemberId, r.Status });
+        builder.HasOne<Member>().WithMany().HasForeignKey(r => r.MemberId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class CombinationBreakRequestConfiguration : IEntityTypeConfiguration<CombinationBreakRequest>
+{
+    public void Configure(EntityTypeBuilder<CombinationBreakRequest> builder)
+    {
+        builder.ToTable("CombinationBreakRequest", Schemas.Membership);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(r => r.PartnerIbanProtected).HasMaxLength(1000);
+        builder.Property(r => r.PartnerIbanLast4).HasMaxLength(4);
+        builder.Property(r => r.PartnerAccountHolder).HasMaxLength(100);
+        builder.Property(r => r.RejectionReason).HasMaxLength(500);
+        builder.HasIndex(r => new { r.PayerMemberId, r.Status });
+        builder.HasOne<Member>().WithMany().HasForeignKey(r => r.PayerMemberId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne<Member>().WithMany().HasForeignKey(r => r.PartnerMemberId).OnDelete(DeleteBehavior.NoAction);
     }
 }
 

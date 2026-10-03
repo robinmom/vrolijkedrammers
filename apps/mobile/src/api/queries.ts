@@ -25,6 +25,7 @@ export const queryKeys = {
   /** Persoonlijke gegevens: nooit in de persistente cache (zie QueryProvider). */
   me: ['me'] as const,
   myMember: ['me', 'member'] as const,
+  myMemberRequests: ['me', 'membership-requests'] as const,
   myDevices: ['me', 'devices'] as const,
   myChildren: ['me', 'children'] as const,
   child: (id: string) => ['me', 'children', id] as const,
@@ -131,6 +132,16 @@ export const useMyMember = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.myMember,
     queryFn: () => unwrap(api.GET('/api/v1/me/member')),
+    enabled: status === 'signedIn' && enabled,
+  });
+};
+
+/** Wijzigingsverzoek en combinatie (fase 26): de stand van het laatste verzoek en van het verbreken. */
+export const useMyMemberRequests = (enabled = true) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myMemberRequests,
+    queryFn: () => unwrap(api.GET('/api/v1/me/membership-requests')),
     enabled: status === 'signedIn' && enabled,
   });
 };

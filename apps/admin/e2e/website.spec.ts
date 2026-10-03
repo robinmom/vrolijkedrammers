@@ -123,7 +123,7 @@ test('fase 21a: onderscheiding toevoegen, filteren en verwijderen', async ({ pag
 test('fase 21a: pagina maken en instellingen voor social media', async ({ page }) => {
   const api = new MockApi(['website.manage']);
   await open(page, api, 'website/paginas');
-  await expect(page.getByRole('row', { name: /Over ons \/over-ons Online/ })).toBeVisible();
+  await expect(page.getByRole('row', { name: /Over ons \/over-ons Vereniging · 0 Online/ })).toBeVisible();
   await page.getByRole('link', { name: 'Pagina toevoegen' }).click();
   await page.getByLabel('Titel').fill('Loillands');
   await page.getByLabel('Webadres').fill('loillands');
@@ -131,7 +131,23 @@ test('fase 21a: pagina maken en instellingen voor social media', async ({ page }
   await page.getByLabel('Online (zichtbaar op de website)').check();
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Pagina opgeslagen.')).toBeVisible();
-  expect(api.websitePages.at(-1)).toMatchObject({ slug: 'loillands', isPublished: true });
+  expect(api.websitePages.at(-1)).toMatchObject({ slug: 'loillands', isPublished: true, menu: 'None' });
+
+  // Een pagina onder Carnaval, met een album eronder (zonder tekst).
+  await page.goto('/beheer/website/paginas/nieuw');
+  await page.getByLabel('Titel').fill('Optocht 2027');
+  await page.getByLabel('Menu', { exact: true }).selectOption({ label: 'Carnaval' });
+  await page.getByLabel('Volgorde in het menu').fill('30');
+  await page.getByLabel('Fotoalbum onder de tekst').selectOption({ label: 'Optocht 2027 (1 foto)' });
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Pagina opgeslagen.')).toBeVisible();
+  expect(api.websitePages.at(-1)).toMatchObject({
+    title: 'Optocht 2027',
+    menu: 'Carnival',
+    sortOrder: 30,
+    photoAlbumId: 'a-1',
+    body: '',
+  });
 
   await page.goto('/beheer/website/instellingen');
   await page.getByLabel('Instagram').fill('https://www.instagram.com/vrolijkedrammers');

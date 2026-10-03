@@ -13081,6 +13081,45 @@
         }
       }
     },
+    "/api/v1/admin/website/albums": {
+      "get": {
+        "tags": [
+          "AdminWebsite"
+        ],
+        "summary": "Albums om onder een pagina te zetten (zonder fotobeheer-rechten), nieuwste eerst.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteAlbumOptionResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteAlbumOptionResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteAlbumOptionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/website/pages/{id}": {
       "get": {
         "tags": [
@@ -34167,6 +34206,35 @@
           "Withdrawn"
         ]
       },
+      "WebsiteAlbumOptionResponse": {
+        "required": [
+          "id",
+          "title",
+          "albumDate",
+          "photoCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "albumDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "photoCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "WebsiteHeroButton": {
         "required": [
           "label",
@@ -34313,7 +34381,8 @@
           "Prince",
           "YouthPrince",
           "Award",
-          "Kader"
+          "Kader",
+          "CarnivalPage"
         ],
         "description": "Soort bron-item bij het overzetten van de oude WordPress-site (fase 21e)."
       },
@@ -34364,6 +34433,14 @@
           null
         ]
       },
+      "WebsiteMenu": {
+        "enum": [
+          "None",
+          "Association",
+          "Carnival"
+        ],
+        "description": "Het menu waarin een pagina staat."
+      },
       "WebsitePageRequest": {
         "required": [
           "slug",
@@ -34406,6 +34483,16 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "menu": {
+            "$ref": "#/components/schemas/WebsiteMenu"
+          },
+          "photoAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -34418,7 +34505,9 @@
           "body",
           "imageUrl",
           "isPublished",
-          "sortOrder"
+          "sortOrder",
+          "menu",
+          "photoAlbumId"
         ],
         "type": "object",
         "properties": {
@@ -34453,6 +34542,16 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "menu": {
+            "$ref": "#/components/schemas/WebsiteMenu"
+          },
+          "photoAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -34463,7 +34562,8 @@
           "title",
           "isPublished",
           "sortOrder",
-          "updatedAt"
+          "updatedAt",
+          "menu"
         ],
         "type": "object",
         "properties": {
@@ -34487,6 +34587,9 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "menu": {
+            "$ref": "#/components/schemas/WebsiteMenu"
           }
         }
       },

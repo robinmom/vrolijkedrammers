@@ -2,12 +2,27 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation } from '../api/hooks';
-import { useWebsitePage, useWebsitePages, WEBSITE_KEYS, type WebsitePageRequest } from '../api/website';
+import {
+  useWebsiteAlbums,
+  useWebsitePage,
+  useWebsitePages,
+  WEBSITE_KEYS,
+  type WebsiteMenu,
+  type WebsitePageRequest,
+} from '../api/website';
 import { ConfirmDialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ImagePicker } from '../components/ImagePicker';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { formatDateTime } from '../format';
+
+const MENUS: { value: WebsiteMenu; label: string }[] = [
+  { value: 'None', label: 'Geen menu' },
+  { value: 'Association', label: 'Vereniging' },
+  { value: 'Carnival', label: 'Carnaval' },
+];
+
+const menuLabel = (menu: WebsiteMenu) => MENUS.find((m) => m.value === menu)?.label ?? menu;
 
 /** Website → Pagina's: vaste tekstpagina's (Over ons, Ontstaan, Loillands, Volkslied …). */
 export function WebsiteContentPagesPage() {
@@ -17,7 +32,7 @@ export function WebsiteContentPagesPage() {
       <div className="page-header">
         <div>
           <h1>Pagina's</h1>
-          <p className="muted">Vaste tekstpagina's van de website, zoals Over ons, Ontstaan en Loillands.</p>
+          <p className="muted">Vaste tekstpagina's van de website, zoals Over ons, Ontstaan en Loillands. Per pagina kies je in welk menu hij staat.</p>
         </div>
         <Link to="/website/paginas/$id" params={{ id: 'nieuw' }} className="button">
           Pagina toevoegen
@@ -31,6 +46,7 @@ export function WebsiteContentPagesPage() {
             <tr>
               <th scope="col">Titel</th>
               <th scope="col">Webadres</th>
+              <th scope="col">Menu</th>
               <th scope="col">Status</th>
               <th scope="col">Laatst gewijzigd</th>
             </tr>
@@ -46,13 +62,14 @@ export function WebsiteContentPagesPage() {
                 <td>
                   <code>/{p.slug}</code>
                 </td>
+                <td>{p.menu === 'None' ? <span className="muted">Geen</span> : `${menuLabel(p.menu)} · ${p.sortOrder}`}</td>
                 <td>{p.isPublished ? <span className="badge ok">Online</span> : <span className="badge">Concept</span>}</td>
                 <td>{formatDateTime(p.updatedAt)}</td>
               </tr>
             ))}
             {pages.data?.length === 0 ? (
               <tr>
-                <td colSpan={4} className="muted">
+                <td colSpan={5} className="muted">
                   Nog geen pagina's.
                 </td>
               </tr>
@@ -64,7 +81,17 @@ export function WebsiteContentPagesPage() {
   );
 }
 
-const emptyPage: WebsitePageRequest = { slug: null, title: '', intro: null, body: '', image: null, isPublished: false, sortOrder: 0 };
+const emptyPage: WebsitePageRequest = {
+  slug: null,
+  title: '',
+  intro: null,
+  body: '',
+  image: null,
+  isPublished: false,
+  sortOrder: 0,
+  menu: 'None',
+  photoAlbumId: null,
+};
 
 export function WebsitePageEditorPage() {
   const { id } = useParams({ from: '/website/paginas/$id' });
@@ -72,13 +99,25 @@ export function WebsitePageEditorPage() {
   const api = useApi();
   const navigate = useNavigate();
   const existing = useWebsitePage(isNew ? null : id);
+  const albums = useWebsiteAlbums();
   const [form, setForm] = useState<WebsitePageRequest>(emptyPage);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     const p = existing.data;
-    if (p) setForm({ slug: p.slug, title: p.title, intro: p.intro, body: p.body, image: null, isPublished: p.isPublished, sortOrder: p.sortOrder });
+    if (p)
+      setForm({
+        slug: p.slug,
+        title: p.title,
+        intro: p.intro,
+        body: p.body,
+        image: null,
+        isPublished: p.isPublished,
+        sortOrder: p.sortOrder,
+        menu: p.menu,
+        photoAlbumId: p.photoAlbumId,
+      });
   }, [existing.data]);
 
   const save = useApiMutation(
@@ -122,7 +161,44 @@ export function WebsitePageEditorPage() {
         <Field label="Inleiding" maxLength={500} value={form.intro ?? ''} onChange={(e) => set({ intro: e.target.value || null })} />
         <div className="field">
           <label htmlFor="pagina-tekst">Tekst (Markdown)</label>
-          <textarea id="pagina-tekst" rows={16} required value={form.body} onChange={(e) => set({ body: e.target.value })} />
+          <textarea id="pagina-tekst" rows={16} value={form.body} onChange={(e) => set({ body: e.target.value })} />
+        </div>
+        <div className="form-grid">
+          <div className="field">
+            <label htmlFor="pagina-menu">Menu</label>
+            <select id="pagina-menu" value={form.menu} onChange={(e) => set({ menu: e.target.value as WebsiteMenu })}>
+              {MENUS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Field
+            label="Volgorde in het menu"
+            type="number"
+            hint={
+              form.menu === 'Association'
+                ? 'Laag eerst. Vaste onderdelen: Kader 10, Prinsengalerie 20, Jeugdprinsen 30, Onderscheidingen 40.'
+                : 'Laag eerst.'
+            }
+            value={form.sortOrder}
+            onChange={(e) => set({ sortOrder: Number(e.target.value) || 0 })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="pagina-album">Fotoalbum onder de tekst</label>
+          <select id="pagina-album" aria-describedby="pagina-album-hint" value={form.photoAlbumId ?? ''} onChange={(e) => set({ photoAlbumId: e.target.value || null })}>
+            <option value="">Geen album</option>
+            {(albums.data ?? []).map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.title} ({a.photoCount === 1 ? '1 foto' : `${a.photoCount} foto's`})
+              </option>
+            ))}
+          </select>
+          <small id="pagina-album-hint" className="muted">
+            Alleen een openbaar, gepubliceerd album is op de website te zien.
+          </small>
         </div>
         <ImagePicker label="Afbeelding bovenaan" uploadPath="/api/v1/admin/website/images" currentUrl={existing.data?.imageUrl} onChange={(image) => set({ image })} />
         <Checkbox label="Online (zichtbaar op de website)" checked={form.isPublished} onChange={(e) => set({ isPublished: e.target.checked })} />

@@ -275,6 +275,50 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.DoesNotContain("/concept</loc>", sitemap);
     }
 
+    [Fact]
+    public async Task Menus_Vereniging_en_Carnaval_uit_de_paginas_en_een_album_onder_de_pagina()
+    {
+        var album = await AlbumAsync("Optocht 2026", "Public");
+        await UploadPhotoAsync(album);
+        var restricted = await AlbumAsync("Alleen voor leden", "Members");
+        await UploadPhotoAsync(restricted);
+        async Task PageAsync(string slug, string title, string menu, int sortOrder, Guid? photoAlbumId = null, string body = "Tekst.")
+        {
+            var response = await _bestuur.PostAsJsonAsync("/api/v1/admin/website/pages",
+                new { slug, title, intro = (string?)null, body, image = (string?)null, isPublished = true, sortOrder, menu, photoAlbumId });
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        await PageAsync("optocht-2026", "Optocht 2026", "Carnival", 20, album, body: "");
+        await PageAsync("pronkzitting-2026", "Pronkzitting 2026", "Carnival", 10, restricted);
+        await PageAsync("loillands", "Loillands", "Association", 70);
+        await PageAsync("over-ons", "Over ons", "Association", 0);
+        await PageAsync("los", "Losse pagina", "None", 0);
+
+        var home = await HtmlAsync("/");
+        var nav = home[home.IndexOf("class=\"main-nav\"", StringComparison.Ordinal)..];
+        Assert.Contains(">Carnaval</summary>", nav);
+        int At(string href) => nav.IndexOf($"href=\"{href}\"", StringComparison.Ordinal);
+        Assert.True(At("/over-ons") < At("/kader") && At("/onderscheidingen") < At("/loillands"), "Vereniging in de verkeerde volgorde");
+        Assert.True(At("/pronkzitting-2026") > 0 && At("/pronkzitting-2026") < At("/optocht-2026"), "Carnaval in de verkeerde volgorde");
+        Assert.Equal(-1, At("/los"));
+
+        var optocht = await HtmlAsync("/optocht-2026");
+        Assert.Contains("aria-current=\"page\">Carnaval</summary>", optocht);
+        Assert.Contains("class=\"photo-grid\"", optocht);
+        Assert.Contains("1 foto. Tik", optocht);
+
+        // Een album dat niet openbaar is, staat niet onder de pagina.
+        Assert.DoesNotContain("class=\"photo-grid\"", await HtmlAsync("/pronkzitting-2026"));
+
+        var wrong = await _bestuur.PostAsJsonAsync("/api/v1/admin/website/pages",
+            new { slug = "fout", title = "Fout album", intro = (string?)null, body = "x", image = (string?)null, isPublished = true, sortOrder = 0, menu = "Carnival", photoAlbumId = Guid.NewGuid() });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, wrong.StatusCode);
+
+        var options = await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/website/albums");
+        Assert.Contains(options!, o => o.GetProperty("title").GetString() == "Optocht 2026" && o.GetProperty("photoCount").GetInt32() == 1);
+    }
+
     private async Task<Guid> AlbumAsync(string title, string visibility)
     {
         var response = await _bestuur.PostAsJsonAsync("/api/v1/admin/photo-albums", new

@@ -23,7 +23,8 @@ public sealed record NewsCard(Guid Id, string Slug, string Title, string? Summar
 
 public sealed record NewsArticle(NewsCard Card, string? BodyHtml, string? WebsiteBodyHtml);
 
-public sealed record PageContent(string Slug, string Title, string? Intro, string BodyHtml, string? ImageUrl);
+public sealed record PageContent(
+    string Slug, string Title, string? Intro, string BodyHtml, string? ImageUrl, WebsiteMenu Menu, AlbumCard? Album, IReadOnlyList<PhotoView> Photos);
 
 public sealed record KaderPerson(string Name, string? Function, string? PhotoUrl);
 
@@ -41,7 +42,7 @@ public sealed record ParadeView(
     string Name, DateOnly Date, TimeOnly StartTime, string? StartLocation, string? RouteDescription, DateTime RegistrationOpensAt,
     DateTime RegistrationClosesAt, bool RegistrationOpen, bool ArrivalTimesPublished, string? InfoHtml);
 
-public sealed record MenuPage(string Slug, string Title);
+public sealed record MenuPage(string Slug, string Title, WebsiteMenu Menu, int SortOrder);
 
 /// <summary>
 /// Leest de openbare inhoud voor de website (fase 21c): alleen wat voor een gast zichtbaar is (openbaar, gepubliceerd,
@@ -49,9 +50,6 @@ public sealed record MenuPage(string Slug, string Title);
 /// </summary>
 public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSeasons seasons)
 {
-    /// <summary>Vaste pagina's die in het menu Vereniging staan (als ze online zijn), in deze volgorde.</summary>
-    public static readonly string[] AssociationPages = ["over-ons", "dansgarde", "historie", "loillands"];
-
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
     public async Task<WebsiteSettings> SettingsAsync(CancellationToken cancellationToken) =>
@@ -68,9 +66,9 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
 
     public async Task<IReadOnlyList<MenuPage>> MenuPagesAsync(CancellationToken cancellationToken)
     {
-        var pages = await db.WebsitePages.AsNoTracking().Where(p => p.IsPublished && AssociationPages.Contains(p.Slug))
-            .Select(p => new MenuPage(p.Slug, p.Title)).ToListAsync(cancellationToken);
-        return [.. pages.OrderBy(p => Array.IndexOf(AssociationPages, p.Slug))];
+        return await db.WebsitePages.AsNoTracking().Where(p => p.IsPublished && p.Menu != WebsiteMenu.None)
+            .OrderBy(p => p.SortOrder).ThenBy(p => p.Title)
+            .Select(p => new MenuPage(p.Slug, p.Title, p.Menu, p.SortOrder)).ToListAsync(cancellationToken);
     }
 
     // ----- Agenda --------------------------------------------------------------------------------------------------
@@ -131,7 +129,15 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
     public async Task<PageContent?> PageAsync(string slug, CancellationToken cancellationToken)
     {
         var p = await db.WebsitePages.AsNoTracking().SingleOrDefaultAsync(x => x.Slug == slug && x.IsPublished, cancellationToken);
-        return p is null ? null : new PageContent(p.Slug, p.Title, p.Intro, MarkdownRenderer.ToSafeHtml(p.Body) ?? "", MediaUrls.For("page", p.Id, p.ImageBlobPath));
+        if (p is null)
+        {
+            return null;
+        }
+
+        // Het album alleen als het voor gasten zichtbaar is (gepubliceerd en openbaar).
+        var album = p.PhotoAlbumId is { } albumId ? await AlbumAsync(albumId, cancellationToken) : null;
+        return new PageContent(p.Slug, p.Title, p.Intro, MarkdownRenderer.ToSafeHtml(p.Body) ?? "", MediaUrls.For("page", p.Id, p.ImageBlobPath), p.Menu,
+            album?.Album, album?.Photos ?? []);
     }
 
     public async Task<IReadOnlyList<CommitteeView>> KaderAsync(CancellationToken cancellationToken)

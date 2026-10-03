@@ -11,6 +11,9 @@ public enum WebsiteImportKind
     YouthPrince,
     Award,
     Kader,
+
+    /// <summary>Pagina uit het menu Carnaval van de oude site: een pagina onder Carnaval met een fotoalbum eronder.</summary>
+    CarnivalPage,
 }
 
 public enum WebsiteImportStatus

@@ -19,4 +19,12 @@
             <div class="prose">@Html.Raw(ContactLinks.Rewrite(c.BodyHtml))</div>
         </div>
     </article>
+    @if (c.Album is { } album && c.Photos.Count > 0)
+    {
+        <section class="page-album" aria-labelledby="album-titel">
+            <h2 id="album-titel">Foto's</h2>
+            <p class="muted">@(c.Photos.Count == 1 ? "1 foto" : $"{c.Photos.Count} foto's"). Tik op een foto om hem groot te bekijken en veeg naar de volgende.</p>
+            <partial name="_PhotoGallery" model="new PhotoGallery(album.Title, c.Photos)" />
+        </section>
+    }
 </div>

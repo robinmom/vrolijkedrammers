@@ -15,6 +15,7 @@ const kindLabels: Record<ImportKind, string> = {
   YouthPrince: 'Jeugdprinsen',
   Award: 'Onderscheidingen',
   Kader: 'Kader',
+  CarnivalPage: "Pagina's onder Carnaval",
 };
 
 /**

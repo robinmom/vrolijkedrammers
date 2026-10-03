@@ -46,6 +46,15 @@ public sealed partial class WebsiteImporter(
         "aanmelden-lid", "contact", "tickets", "programma", "evenementen", "aanmelden-optocht-formulier", "optocht-2025",
     ];
 
+    /// <summary>Pagina's die in het menu Vereniging komen, met hun plek rond Kader (10) t/m Onderscheidingen (40).</summary>
+    private static readonly Dictionary<string, int> AssociationPages = new()
+    {
+        ["over-ons"] = 0,
+        ["dansgarde"] = 50,
+        ["historie"] = 60,
+        ["loillands"] = 70,
+    };
+
     /// <summary>Vaste doorverwijzingen van oude adressen.</summary>
     private static readonly Dictionary<string, string> StaticRedirects = new()
     {
@@ -120,9 +129,16 @@ public sealed partial class WebsiteImporter(
             Add(WebsiteImportKind.Award, award.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), award.Link, Decode(award.Title.Rendered), award);
         }
 
+        // Het menu Carnaval van de oude site (behalve Tickets): elke pagina wordt een pagina onder Carnaval met een album.
+        var carnival = await CarnivalMenuAsync(cancellationToken);
+        for (var i = 0; i < carnival.Count; i++)
+        {
+            Add(WebsiteImportKind.CarnivalPage, carnival[i], null, carnival[i], new CarnivalPagePayload(carnival[i], (i + 1) * 10));
+        }
+
         foreach (var page in await source.GetAllAsync("pages", embed: true, cancellationToken))
         {
-            var skip = SkippedPages.Contains(page.Slug);
+            var skip = SkippedPages.Contains(page.Slug) || carnival.Contains(page.Slug);
             Add(WebsiteImportKind.Page, page.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), page.Link, Decode(page.Title.Rendered), page,
                 skip ? WebsiteImportStatus.Skipped : WebsiteImportStatus.Pending);
         }
@@ -198,6 +214,7 @@ public sealed partial class WebsiteImporter(
         WebsiteImportKind.Page => await PageAsync(item, cancellationToken),
         WebsiteImportKind.Post => await PostAsync(item, cancellationToken),
         WebsiteImportKind.GalleryPhoto => await GalleryPhotoAsync(item, cancellationToken),
+        WebsiteImportKind.CarnivalPage => await CarnivalPageAsync(item, cancellationToken),
         _ => (WebsiteImportStatus.Skipped, null),
     };
 
@@ -289,7 +306,10 @@ public sealed partial class WebsiteImporter(
         }
 
         var image = images.Count > 0 ? await ImageAsync(images[0], cancellationToken) : await ImageAsync(wp.FeaturedImage, cancellationToken);
-        var id = await website.CreatePageAsync(new WebsitePageInput(slug, Truncate(title, 200)!, null, converted.Markdown, image, IsPublished: true, SortOrder: 100), cancellationToken);
+        var input = AssociationPages.TryGetValue(slug, out var order)
+            ? new WebsitePageInput(slug, Truncate(title, 200)!, null, converted.Markdown, image, IsPublished: true, order, WebsiteMenu.Association)
+            : new WebsitePageInput(slug, Truncate(title, 200)!, null, converted.Markdown, image, IsPublished: true, SortOrder: 100);
+        var id = await website.CreatePageAsync(input, cancellationToken);
         await RedirectAsync(PathOf(wp.Link), $"/{slug}", cancellationToken);
         return (WebsiteImportStatus.Done, id.ToString());
     }
@@ -312,6 +332,53 @@ public sealed partial class WebsiteImporter(
             wp.Categories, featured, cancellationToken);
         await RedirectAsync(PathOf(wp.Link), $"/nieuws/{slug}", cancellationToken);
         return (WebsiteImportStatus.Done, slug);
+    }
+
+    /// <summary>
+    /// Een pagina uit het menu Carnaval: de foto's als album (openbaar, in de app en op de website) en een pagina onder
+    /// Carnaval op hetzelfde webadres met de tekst en het album eronder. Een bestaande pagina met dat adres wordt gekoppeld.
+    /// </summary>
+    private async Task<(WebsiteImportStatus, string?)> CarnivalPageAsync(WebsiteImportItem item, CancellationToken cancellationToken)
+    {
+        var payload = Read<CarnivalPagePayload>(item);
+        var wp = await source.GetBySlugAsync("pages", payload.Slug, cancellationToken);
+        if (wp is null)
+        {
+            return (WebsiteImportStatus.Skipped, null);
+        }
+
+        var title = Decode(wp.Title.Rendered);
+        var converted = HtmlToMarkdown.Convert(wp.Content?.Rendered);
+        var images = converted.Images.Where(source.IsOwnHost).ToList();
+        Guid? album = images.Count > 0
+            ? await GalleryAsync(item, title, DateOnly.FromDateTime(wp.DateUtc), PlainIntro(converted.Markdown), images, cancellationToken)
+            : null;
+
+        var slug = Slugs.From(wp.Slug);
+        var existing = await db.WebsitePages.AsNoTracking().SingleOrDefaultAsync(p => p.Slug == slug, cancellationToken);
+        if (existing is not null)
+        {
+            await website.UpdatePageAsync(existing.Id, new WebsitePageInput(existing.Slug, existing.Title, existing.Intro, existing.Body, null,
+                existing.IsPublished, payload.SortOrder, WebsiteMenu.Carnival, album ?? existing.PhotoAlbumId), cancellationToken);
+            return (WebsiteImportStatus.Done, existing.Id.ToString());
+        }
+
+        var id = await website.CreatePageAsync(new WebsitePageInput(slug, Truncate(title, 200)!, null, converted.Markdown, null, IsPublished: true,
+            payload.SortOrder, WebsiteMenu.Carnival, album), cancellationToken);
+        await RedirectAsync(PathOf(wp.Link), $"/{slug}", cancellationToken);
+        return (WebsiteImportStatus.Done, id.ToString());
+    }
+
+    /// <summary>De webadressen onder Carnaval in het menu van de oude site, zonder Tickets; leeg als het menu er niet (meer) is.</summary>
+    private async Task<List<string>> CarnivalMenuAsync(CancellationToken cancellationToken)
+    {
+        var html = await TryGetHtmlAsync("", cancellationToken);
+        return html is null
+            ? []
+            : [.. WordPressSource.ParseSubmenu(html, "Carnaval").Where(source.IsOwnHost)
+                .Select(url => NormalizePath(url).TrimStart('/'))
+                .Where(slug => slug.Length > 0 && !slug.Contains('/', StringComparison.Ordinal) && slug != "tickets")
+                .Distinct()];
     }
 
     private async Task<(WebsiteImportStatus, string?)> GalleryPhotoAsync(WebsiteImportItem item, CancellationToken cancellationToken)
@@ -461,6 +528,8 @@ public sealed partial class WebsiteImporter(
     private sealed record KaderPayload(string Slug, WpPerson Person);
 
     private sealed record GalleryPhotoPayload(Guid AlbumId, string Url);
+
+    private sealed record CarnivalPagePayload(string Slug, int SortOrder);
 }
 
 /// <summary>Voert de import uit in de worker: eerst plannen, daarna porties verwerken (fase 21e).</summary>

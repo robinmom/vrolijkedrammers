@@ -60,8 +60,16 @@ public sealed class AdminWebsiteController(DrammersDbContext db, WebsiteAdminist
     [HttpGet("pages")]
     [ProducesResponseType<IReadOnlyList<WebsitePageSummaryResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<WebsitePageSummaryResponse>> GetPages(CancellationToken cancellationToken) =>
-        await db.WebsitePages.AsNoTracking().OrderBy(p => p.SortOrder).ThenBy(p => p.Title)
-            .Select(p => new WebsitePageSummaryResponse(p.Id, p.Slug, p.Title, p.IsPublished, p.SortOrder, p.UpdatedAt ?? p.CreatedAt))
+        await db.WebsitePages.AsNoTracking().OrderBy(p => p.Menu).ThenBy(p => p.SortOrder).ThenBy(p => p.Title)
+            .Select(p => new WebsitePageSummaryResponse(p.Id, p.Slug, p.Title, p.IsPublished, p.SortOrder, p.UpdatedAt ?? p.CreatedAt, p.Menu))
+            .ToListAsync(cancellationToken);
+
+    /// <summary>Albums om onder een pagina te zetten (zonder fotobeheer-rechten), nieuwste eerst.</summary>
+    [HttpGet("albums")]
+    [ProducesResponseType<IReadOnlyList<WebsiteAlbumOptionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<WebsiteAlbumOptionResponse>> GetAlbums(CancellationToken cancellationToken) =>
+        await db.PhotoAlbums.AsNoTracking().OrderByDescending(a => a.AlbumDate).ThenBy(a => a.Title)
+            .Select(a => new WebsiteAlbumOptionResponse(a.Id, a.Title, a.AlbumDate, db.Photos.Count(p => p.AlbumId == a.Id)))
             .ToListAsync(cancellationToken);
 
     [HttpGet("pages/{id:guid}")]
@@ -70,7 +78,8 @@ public sealed class AdminWebsiteController(DrammersDbContext db, WebsiteAdminist
     public async Task<WebsitePageResponse> GetPage(Guid id, CancellationToken cancellationToken)
     {
         var p = await db.WebsitePages.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw PageNotFound();
-        return new WebsitePageResponse(p.Id, p.Slug, p.Title, p.Intro, p.Body, await ImageUrl(p.ImageBlobPath, cancellationToken), p.IsPublished, p.SortOrder);
+        return new WebsitePageResponse(p.Id, p.Slug, p.Title, p.Intro, p.Body, await ImageUrl(p.ImageBlobPath, cancellationToken), p.IsPublished, p.SortOrder,
+            p.Menu, p.PhotoAlbumId);
     }
 
     [HttpPost("pages")]
@@ -361,17 +370,22 @@ public sealed record WebsitePageRequest(
     [StringLength(100)] string? Slug,
     [Required, StringLength(200, MinimumLength = 2)] string Title,
     [StringLength(500)] string? Intro,
-    [Required, StringLength(100000)] string Body,
+    [Required(AllowEmptyStrings = true), StringLength(100000)] string Body,
     [StringLength(300)] string? Image,
     bool IsPublished,
-    int SortOrder = 0)
+    int SortOrder = 0,
+    WebsiteMenu Menu = WebsiteMenu.None,
+    Guid? PhotoAlbumId = null)
 {
-    public WebsitePageInput ToInput() => new(Slug, Title, Intro, Body, Image, IsPublished, SortOrder);
+    public WebsitePageInput ToInput() => new(Slug, Title, Intro, Body, Image, IsPublished, SortOrder, Menu, PhotoAlbumId);
 }
 
-public sealed record WebsitePageSummaryResponse(Guid Id, string Slug, string Title, bool IsPublished, int SortOrder, DateTime UpdatedAt);
+public sealed record WebsiteAlbumOptionResponse(Guid Id, string Title, DateOnly? AlbumDate, int PhotoCount);
 
-public sealed record WebsitePageResponse(Guid Id, string Slug, string Title, string? Intro, string Body, string? ImageUrl, bool IsPublished, int SortOrder);
+public sealed record WebsitePageSummaryResponse(Guid Id, string Slug, string Title, bool IsPublished, int SortOrder, DateTime UpdatedAt, WebsiteMenu Menu);
+
+public sealed record WebsitePageResponse(
+    Guid Id, string Slug, string Title, string? Intro, string Body, string? ImageUrl, bool IsPublished, int SortOrder, WebsiteMenu Menu, Guid? PhotoAlbumId);
 
 public sealed record CommitteeRequest([Required, StringLength(100, MinimumLength = 2)] string Name, int SortOrder = 0);
 

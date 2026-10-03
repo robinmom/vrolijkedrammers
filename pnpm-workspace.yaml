@@ -21,3 +21,5 @@ auditConfig:
   ignoreGhsas:
     # node-forge <=1.4.0 (2026-10-02): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel.
     - GHSA-86w9-cpqp-85rv
+    # braces (2026-10-03): alleen via Metro (bundler van Expo), zit niet in de app-bundel.
+    - GHSA-vfj7-8cjw-p6xm

@@ -6,6 +6,7 @@ import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { queryKeys, useEvents, useNews, useWebsiteHero } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
 import { dateBlockParts, greeting, newsDateLong, startTime } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const news = useNews();
   const refresh = useRefresh([queryKeys.websiteHero, queryKeys.events, queryKeys.news, queryKeys.myNotifications]);
   const unread = useUnreadCount();
+  const signedIn = useSessionStatus() === 'signedIn';
   // Moment van openen: voor de groet.
   const [openedAt] = useState(() => new Date());
 
@@ -91,9 +93,19 @@ export default function HomeScreen() {
 
         <View style={styles.shortcuts}>
           <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
-          {/* Fase 19b: QR code op de plek van Uitslagen (die staat onder Meer), Munten op de oude plek van de QR. */}
-          <ShortcutTile icon="qr" label="QR code" tint="yellow" onPress={() => router.push('/mijn-qr')} />
-          <ShortcutTile icon="munten" label="Munten" tint="red" onPress={() => router.push('/munten')} />
+          {signedIn ? (
+            <>
+              {/* Fase 19b: voor leden QR code en Munten op de plek van Uitslagen en Meldingen (die staan onder Meer). */}
+              <ShortcutTile icon="qr" label="QR code" tint="yellow" onPress={() => router.push('/mijn-qr')} />
+              <ShortcutTile icon="munten" label="Munten" tint="red" onPress={() => router.push('/munten')} />
+            </>
+          ) : (
+            <>
+              {/* Gasten zien geen onderdelen die alleen voor leden zijn: de tegels uit het ontwerp (Figma 3:2). */}
+              <ShortcutTile icon="uitslagen" label="Uitslagen" tint="yellow" onPress={() => router.push('/uitslagen')} />
+              <ShortcutTile icon="meldingen" label="Meldingen" tint="red" onPress={() => router.push('/meldingen')} />
+            </>
+          )}
           <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
         </View>
 

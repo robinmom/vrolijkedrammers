@@ -233,6 +233,8 @@ ul.chips { list-style: none; margin: 0; padding: 0; }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .photo-grid a { display: block; border-radius: 12px; overflow: hidden; background: var(--grijs); }
 .photo-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform 0.2s; }
+.page-album { margin-top: 40px; }
+.page-album h2 { margin: 0 0 4px; }
 .photo-grid a:hover img { transform: scale(1.03); }
 .lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(8, 18, 28, 0.94); display: grid; grid-template-rows: auto 1fr auto; color: #fff; touch-action: pan-y; }
 .lightbox[hidden] { display: none; }

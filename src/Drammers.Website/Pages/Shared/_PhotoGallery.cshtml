@@ -1,0 +1,25 @@
+@model Drammers.Website.Pages.PhotoGallery
+@* Fotogrid met lightbox (site.js: [data-gallery]); voor een album en voor een pagina met een album eronder. *@
+<ul class="photo-grid" role="list" data-gallery>
+    @for (var i = 0; i < Model.Photos.Count; i++)
+    {
+        var p = Model.Photos[i];
+        <li>
+            <a href="@p.DisplayUrl" data-index="@i" data-caption="@(p.Caption ?? "")@(p.Photographer is null ? "" : $" · Foto: {p.Photographer}")">
+                <img src="@p.ThumbnailUrl" alt="@(p.Caption ?? $"Foto {i + 1} van {Model.Title}")" loading="lazy" width="400" height="300">
+            </a>
+        </li>
+    }
+</ul>
+<div class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto bekijken" data-lightbox>
+    <div class="lightbox-top">
+        <span data-counter></span>
+        <button type="button" data-close aria-label="Sluiten">✕</button>
+    </div>
+    <div class="lightbox-stage">
+        <button type="button" class="prev" data-prev aria-label="Vorige foto">‹</button>
+        <img alt="" data-image>
+        <button type="button" class="next" data-next aria-label="Volgende foto">›</button>
+    </div>
+    <p class="lightbox-caption" data-caption></p>
+</div>

@@ -2,18 +2,15 @@
 @{
     var page = (SitePage)ViewContext.ViewData.Model!;
     var settings = await Shell.SettingsAsync();
-    var menuPages = (await Shell.MenuPagesAsync()).ToDictionary(p => p.Slug, p => p.Title);
+    var menuPages = await Shell.MenuPagesAsync();
     var title = string.IsNullOrEmpty(page.PageTitle) ? "De Vrolijke Drammers · Carnavalsvereniging Loil" : $"{page.PageTitle} · De Vrolijke Drammers";
-    var association = new List<(string Href, string Label)>();
-    if (menuPages.TryGetValue("over-ons", out var overOns)) association.Add(("/over-ons", overOns));
-    association.Add(("/kader", "Kader"));
-    association.Add(("/prinsengalerie", "Prinsengalerie"));
-    if (settings.ShowYouthPrinces) association.Add(("/jeugdprinsen", "Jeugdprinsen"));
-    association.Add(("/onderscheidingen", "Onderscheidingen"));
-    foreach (var slug in new[] { "dansgarde", "historie", "loillands" })
-    {
-        if (menuPages.TryGetValue(slug, out var label)) association.Add(($"/{slug}", label));
-    }
+    // Vereniging: de vaste onderdelen op volgorde 10–40, de pagina's uit het portal daartussen op hun eigen volgorde.
+    var fixedAssociation = new List<(int Order, string Href, string Label)> { (10, "/kader", "Kader"), (20, "/prinsengalerie", "Prinsengalerie") };
+    if (settings.ShowYouthPrinces) fixedAssociation.Add((30, "/jeugdprinsen", "Jeugdprinsen"));
+    fixedAssociation.Add((40, "/onderscheidingen", "Onderscheidingen"));
+    var association = menuPages.Where(p => p.Menu == Drammers.Modules.Content.Website.WebsiteMenu.Association).Select(p => (Order: p.SortOrder, Href: $"/{p.Slug}", Label: p.Title))
+        .Concat(fixedAssociation).OrderBy(i => i.Order).Select(i => (i.Href, i.Label)).ToList();
+    var carnival = menuPages.Where(p => p.Menu == Drammers.Modules.Content.Website.WebsiteMenu.Carnival).Select(p => (Href: $"/{p.Slug}", Label: p.Title)).ToList();
     var joinIn = new (string Href, string Label, string Hint)[]
     {
         ("/lid-worden/", "Lid worden", "Aanmelden als lid van de vereniging"),
@@ -85,6 +82,18 @@
                                 }
                             </ul>
                         </li>
+                        @if (carnival.Count > 0)
+                        {
+                            <li>
+                                <span class="mobile-group">Carnaval</span>
+                                <ul class="mobile-sub">
+                                    @foreach (var c in carnival)
+                                    {
+                                        <li><a href="@c.Href">@c.Label</a></li>
+                                    }
+                                </ul>
+                            </li>
+                        }
                         @foreach (var item in after)
                         {
                             <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>
@@ -118,6 +127,20 @@
                             </ul>
                         </details>
                     </li>
+                    @if (carnival.Count > 0)
+                    {
+                        <li>
+                            <details class="dropdown">
+                                <summary aria-current="@Current("carnaval")">Carnaval</summary>
+                                <ul class="dropdown-menu">
+                                    @foreach (var c in carnival)
+                                    {
+                                        <li><a href="@c.Href">@c.Label</a></li>
+                                    }
+                                </ul>
+                            </details>
+                        </li>
+                    }
                     @foreach (var item in after)
                     {
                         <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>

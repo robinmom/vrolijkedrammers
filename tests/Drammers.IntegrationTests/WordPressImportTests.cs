@@ -72,9 +72,18 @@ public class WordPressImportTests(SqlServerFixture sql) : IAsyncLifetime
             var gallery = await db.PhotoAlbums.AsNoTracking().SingleAsync(a => a.Title == "Pronkzitting 2027");
             Assert.Equal(5, await db.Photos.CountAsync(p => p.AlbumId == gallery.Id));
 
-            var page = await db.WebsitePages.AsNoTracking().SingleAsync();
-            Assert.Equal(("over-ons", true), (page.Slug, page.IsPublished));
+            var page = await db.WebsitePages.AsNoTracking().SingleAsync(p => p.Slug == "over-ons");
+            Assert.Equal((true, WebsiteMenu.Association, 0), (page.IsPublished, page.Menu, page.SortOrder));
             Assert.StartsWith("Sinds 1958", page.Body);
+
+            // Het menu Carnaval van de oude site (zonder Tickets): pagina's onder Carnaval met de galerij als album eronder.
+            var carnival = await db.WebsitePages.AsNoTracking().Where(p => p.Menu == WebsiteMenu.Carnival).OrderBy(p => p.SortOrder).ToListAsync();
+            Assert.Equal([("carnavalsmis-2027", 10), ("kindercarnaval-2027", 20)], carnival.Select(p => (p.Slug, p.SortOrder)));
+            var mis = await db.PhotoAlbums.AsNoTracking().SingleAsync(a => a.Id == carnival[0].PhotoAlbumId);
+            Assert.Equal("Carnavalsmis 2027", mis.Title);
+            Assert.Equal(3, await db.Photos.CountAsync(p => p.AlbumId == mis.Id));
+            Assert.Equal(2, await db.Photos.CountAsync(p => p.AlbumId == carnival[1].PhotoAlbumId));
+            Assert.Equal(1, await db.PhotoAlbums.CountAsync(a => a.Title == "Carnavalsmis 2027"));
 
             var princes = await db.Princes.AsNoTracking().OrderBy(p => p.Kind).ThenByDescending(p => p.Year).ToListAsync();
             Assert.Equal(["Prins Piet I", "Prins Klaas II", "Jeugdprinses Anna I"], princes.Select(p => p.PrinceName));
@@ -92,6 +101,8 @@ public class WordPressImportTests(SqlServerFixture sql) : IAsyncLifetime
 
             var items = await db.WebsiteImportItems.AsNoTracking().ToListAsync();
             Assert.Contains(items, i => i is { Kind: WebsiteImportKind.Page, Status: WebsiteImportStatus.Skipped, Title: "Home" });
+            Assert.Contains(items, i => i is { Kind: WebsiteImportKind.Page, Status: WebsiteImportStatus.Skipped, Title: "Carnavalsmis 2027" });
+            Assert.DoesNotContain(items, i => i.Kind == WebsiteImportKind.CarnivalPage && i.SourceKey == "tickets");
             Assert.DoesNotContain(items, i => i.Status is WebsiteImportStatus.Failed or WebsiteImportStatus.Pending);
         }
 
@@ -150,6 +161,19 @@ public class WordPressImportTests(SqlServerFixture sql) : IAsyncLifetime
                 },
             };
 
+        /// <summary>FooGallery: de link gaat naar het origineel, de img heeft alleen een plaatshouder en een cache-adres.</summary>
+        private static string FooGallery(int count, string name) =>
+            "<style>#foogallery-gallery-1 .fg-image { width: 270px; }</style><div class=\"foogallery\">" + string.Concat(Enumerable.Range(1, count).Select(i =>
+                $"<div class=\"fg-item\"><figure class=\"fg-item-inner\"><a href=\"https://wp.test/uploads/2027/02/{name}-{i}.jpg\" class=\"fg-thumb\">" +
+                $"<img class=\"fg-image\" data-src-fg=\"https://wp.test/uploads/cache/2027/02/{name}-{i}/123.jpg\" src=\"data:image/svg+xml,%3Csvg%3E\"></a></figure></div>")) + "</div>";
+
+        private const string Menu = """
+            <ul><li><div class="dropdown-container group"><a href="https://wp.test/over-ons/"><span>Vereniging</span></a><div class="dropdown"><a href="https://wp.test/ontstaan/">Ontstaan</a></div></div></li>
+            <li><div class="dropdown-container group"><a href="https://wp.test/carnaval/"><span>Carnaval</span><svg></svg></a><div class="dropdown"><div class="py-1">
+            <a href="https://wp.test/carnavalsmis-2027/">Carnavalsmis 2027</a><a href="https://wp.test/kindercarnaval-2027/">Kindercarnaval 2027</a>
+            <a href="https://wp.test/tickets/">Tickets</a><a href="https://elders.test/extern/">Extern</a></div></div></div></li></ul>
+            """;
+
         private static string Gallery(int count, string name) =>
             string.Concat(Enumerable.Range(1, count).Select(i => $"<figure><img src=\"https://wp.test/uploads/{name}-{i}-1024x768.jpg\"></figure>"));
 
@@ -174,10 +198,20 @@ public class WordPressImportTests(SqlServerFixture sql) : IAsyncLifetime
                     Item(21, "home", "Home", "<p>Welkom</p>"),
                     Item(22, "over-ons", "Over ons", "<p>Sinds 1958 vieren wij carnaval in Loil.</p>"),
                     Item(23, "pronkzitting-2027", "Pronkzitting 2027", "<p>De foto's.</p>" + Gallery(5, "pronk")),
+                    Item(24, "carnavalsmis-2027", "Carnavalsmis 2027", FooGallery(3, "mis")),
+                    Item(25, "kindercarnaval-2027", "Kindercarnaval 2027", "<p>Een middag vol plezier.</p>" + FooGallery(2, "kinder")),
+                    Item(26, "tickets", "Tickets", "<p>Kaarten</p>"),
                 },
                 "/wp-json/wp/v2/award" => new[] { Item(31, "jan-voorbeeld", "Jan Voorbeeld", "", classes: ["award", "award_type-drammertje"]) },
                 _ => null,
             };
+            // ?slug=… geeft alleen die pagina (zoals WordPress).
+            var slug = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query)["slug"];
+            if (json is object[] list && slug is not null)
+            {
+                json = list.Where(i => ((Dictionary<string, object?>)i)["slug"] as string == slug).ToArray();
+            }
+
             if (json is not null)
             {
                 var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(json) };
@@ -187,6 +221,7 @@ public class WordPressImportTests(SqlServerFixture sql) : IAsyncLifetime
 
             var html = path switch
             {
+                "/" => Menu,
                 "/prins/" => Profile("Prins Piet I", "Piet Test", "2025", "\"Alaaf!\"") + Profile("Prins Klaas II", "Klaas Test", "1999", null) + Profile("Prins Zonder Jaar", "Niemand", "", null),
                 "/jeugdprins/" => Profile("Jeugdprinses Anna I", "Anna", "2024", null),
                 "/commissies/bestuur/" => """<div class="member-profile"><img src="https://wp.test/uploads/karin.jpg"><h3 class="member-name">Karin Voorbeeld</h3><p class="member-function">Voorzitter</p></div>""",

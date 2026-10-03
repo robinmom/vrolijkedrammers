@@ -45,6 +45,44 @@ public class WordPressImportTests
     }
 
     [Fact]
+    public void FooGallery_levert_de_originelen_uit_de_links_en_geen_plaatshouders()
+    {
+        const string html = """
+            <style type="text/css">#foogallery-gallery-1 .fg-image { width: 270px; }</style>
+            <div class="foogallery" id="foogallery-gallery-1">
+              <div class="fg-item"><figure class="fg-item-inner"><a href="https://wp.test/uploads/2026/02/img-1.jpg" class="fg-thumb"><span class="fg-image-wrap">
+                <img class="skip-lazy fg-image" data-src-fg="https://wp.test/uploads/cache/2026/02/img-1/123.jpg" src="data:image/svg+xml,%3Csvg%3E"></span></a></figure></div>
+              <div class="fg-item"><figure class="fg-item-inner"><a href="https://wp.test/uploads/2026/02/img-2.jpg" class="fg-thumb">
+                <img class="fg-image" data-src-fg="https://wp.test/uploads/cache/2026/02/img-2/456.jpg" src="data:image/svg+xml,%3Csvg%3E"></a></figure></div>
+            </div>
+            <p><a href="https://wp.test/pronkzitting/"><img src="https://wp.test/uploads/2026/02/knop-300x200.jpg"></a></p>
+            """;
+
+        var converted = HtmlToMarkdown.Convert(html);
+
+        Assert.Equal("", converted.Markdown);
+        Assert.Equal(["https://wp.test/uploads/2026/02/img-1.jpg", "https://wp.test/uploads/2026/02/img-2.jpg", "https://wp.test/uploads/2026/02/knop.jpg"],
+            converted.Images);
+    }
+
+    [Fact]
+    public void Submenu_van_de_oude_site_in_menuvolgorde()
+    {
+        const string html = """
+            <nav><ul>
+              <li><div class="dropdown-container group"><a href="https://wp.test/over-ons/"><span>Vereniging</span></a>
+                <div class="dropdown"><a href="https://wp.test/ontstaan/">Ontstaan</a></div></div></li>
+              <li><div class="dropdown-container group"><a href="https://wp.test/carnaval/"><span>Carnaval</span><svg></svg></a>
+                <div class="dropdown"><div class="py-1"><a href="https://wp.test/pronkzitting-2026/">Pronkzitting 2026</a>
+                <a href="https://wp.test/optoch-2026/">Optocht 2026</a><a href="https://wp.test/tickets/">Tickets</a></div></div></div></li>
+            </ul></nav>
+            """;
+
+        Assert.Equal(["https://wp.test/pronkzitting-2026/", "https://wp.test/optoch-2026/", "https://wp.test/tickets/"], WordPressSource.ParseSubmenu(html, "Carnaval"));
+        Assert.Empty(WordPressSource.ParseSubmenu(html, "Bestaat niet"));
+    }
+
+    [Fact]
     public void Prinsen_uit_het_archief_met_prinsennaam_naam_jaar_en_motto()
     {
         const string html = """

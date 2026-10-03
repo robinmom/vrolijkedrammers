@@ -10846,6 +10846,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/website/albums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Albums om onder een pagina te zetten (zonder fotobeheer-rechten), nieuwste eerst. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsiteAlbumOptionResponse"][];
+                        "application/json": components["schemas"]["WebsiteAlbumOptionResponse"][];
+                        "text/json": components["schemas"]["WebsiteAlbumOptionResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/website/pages/{id}": {
         parameters: {
             query?: never;
@@ -20241,6 +20279,15 @@ export interface components {
         };
         /** @enum {unknown} */
         WaitlistStatus: "Waiting" | "Invited" | "Granted" | "Expired" | "Withdrawn";
+        WebsiteAlbumOptionResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date */
+            albumDate: null | string;
+            /** Format: int32 */
+            photoCount: number;
+        };
         WebsiteHeroButton: {
             label: string;
             link: components["schemas"]["WebsiteLink"];
@@ -20276,7 +20323,7 @@ export interface components {
          * @description Soort bron-item bij het overzetten van de oude WordPress-site (fase 21e).
          * @enum {unknown}
          */
-        WebsiteImportKind: "Post" | "Page" | "Gallery" | "GalleryPhoto" | "Prince" | "YouthPrince" | "Award" | "Kader";
+        WebsiteImportKind: "Post" | "Page" | "Gallery" | "GalleryPhoto" | "Prince" | "YouthPrince" | "Award" | "Kader" | "CarnivalPage";
         WebsiteImportSummary: {
             counts: components["schemas"]["WebsiteImportCount"][];
             failures: components["schemas"]["WebsiteImportFailure"][];
@@ -20286,6 +20333,11 @@ export interface components {
         };
         /** @enum {unknown} */
         WebsiteLink: "Agenda" | "News" | "Photos" | "Parade" | "ParadeRegistration" | "Membership" | "Tickets" | "App" | "Contact" | null;
+        /**
+         * @description Het menu waarin een pagina staat.
+         * @enum {unknown}
+         */
+        WebsiteMenu: "None" | "Association" | "Carnival";
         WebsitePageRequest: {
             slug: null | string;
             title: string;
@@ -20298,6 +20350,9 @@ export interface components {
              * @default 0
              */
             sortOrder: number;
+            menu?: components["schemas"]["WebsiteMenu"];
+            /** Format: uuid */
+            photoAlbumId?: null | string;
         };
         WebsitePageResponse: {
             /** Format: uuid */
@@ -20310,6 +20365,9 @@ export interface components {
             isPublished: boolean;
             /** Format: int32 */
             sortOrder: number;
+            menu: components["schemas"]["WebsiteMenu"];
+            /** Format: uuid */
+            photoAlbumId: null | string;
         };
         WebsitePageSummaryResponse: {
             /** Format: uuid */
@@ -20321,6 +20379,7 @@ export interface components {
             sortOrder: number;
             /** Format: date-time */
             updatedAt: string;
+            menu: components["schemas"]["WebsiteMenu"];
         };
         WebsiteSettingsRequest: {
             heroEyebrow: null | string;

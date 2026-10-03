@@ -837,6 +837,8 @@ export class MockApi {
     imageUrl: string | null;
     isPublished: boolean;
     sortOrder: number;
+    menu: 'None' | 'Association' | 'Carnival';
+    photoAlbumId: string | null;
   }[] = [
     {
       id: 'pg-1',
@@ -846,7 +848,9 @@ export class MockApi {
       body: '# Over ons',
       imageUrl: null,
       isPublished: true,
-      sortOrder: 10,
+      sortOrder: 0,
+      menu: 'Association',
+      photoAlbumId: null,
     },
   ];
   committees = [
@@ -1236,6 +1240,11 @@ export class MockApi {
         youthPrinceCount: this.princes.filter((p) => p.kind === 'YouthPrince').length,
       });
     }
+    if (path === '/admin/website/albums') {
+      return json(
+        this.albums.map((a) => ({ id: a.id, title: a.title, albumDate: a.albumDate, photoCount: a.photos.length })),
+      );
+    }
     if (path === '/admin/website/pages') {
       if (method === 'POST') {
         const id = `pg-${this.websitePages.length + 1}`;
@@ -1254,6 +1263,7 @@ export class MockApi {
           title: p.title,
           isPublished: p.isPublished,
           sortOrder: p.sortOrder,
+          menu: p.menu,
           updatedAt: '2026-09-30T20:00:00Z',
         })),
       );

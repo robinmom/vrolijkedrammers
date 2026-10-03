@@ -8,6 +8,8 @@ export type WebsiteSettingsRequest = Schemas['WebsiteSettingsRequest'];
 export type WebsiteLink = NonNullable<Schemas['WebsiteLink']>;
 export type WebsitePageSummary = Schemas['WebsitePageSummaryResponse'];
 export type WebsitePageRequest = Schemas['WebsitePageRequest'];
+export type WebsiteMenu = Schemas['WebsiteMenu'];
+export type WebsiteAlbumOption = Schemas['WebsiteAlbumOptionResponse'];
 export type Committee = Schemas['CommitteeResponse'];
 export type CommitteeMember = Schemas['CommitteeMemberResponse'];
 export type CommitteeMemberRequest = Schemas['CommitteeMemberRequest'];
@@ -81,6 +83,15 @@ export function useWebsitePages() {
   return useQuery({
     queryKey: ['website', 'pages'],
     queryFn: async () => required((await api.GET('/api/v1/admin/website/pages')).data),
+  });
+}
+
+/** Albums om onder een pagina te zetten (met alleen het recht websitebeheer). */
+export function useWebsiteAlbums() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['website', 'albums'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/website/albums')).data),
   });
 }
 

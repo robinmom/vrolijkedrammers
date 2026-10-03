@@ -14,7 +14,9 @@ public sealed record WebsiteSettingsInput(
     string? HeroSecondaryLabel, WebsiteLink? HeroSecondaryLink, string? HeroImage, string? FacebookPageUrl, string? InstagramUrl,
     bool ShowYouthPrinces);
 
-public sealed record WebsitePageInput(string? Slug, string Title, string? Intro, string Body, string? Image, bool IsPublished, int SortOrder);
+public sealed record WebsitePageInput(
+    string? Slug, string Title, string? Intro, string Body, string? Image, bool IsPublished, int SortOrder, WebsiteMenu Menu = WebsiteMenu.None,
+    Guid? PhotoAlbumId = null);
 
 public sealed record CommitteeInput(string Name, int SortOrder);
 
@@ -232,8 +234,13 @@ public sealed class WebsiteAdministration(DrammersDbContext db, ContentFiles con
             page.Slug = slug;
         }
 
-        (page.Title, page.Intro, page.Body, page.IsPublished, page.SortOrder) =
-            (input.Title.Trim(), Clean(input.Intro), input.Body, input.IsPublished, input.SortOrder);
+        if (input.PhotoAlbumId is { } albumId && !await db.PhotoAlbums.AnyAsync(a => a.Id == albumId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Dit fotoalbum bestaat niet (meer).");
+        }
+
+        (page.Title, page.Intro, page.Body, page.IsPublished, page.SortOrder, page.Menu, page.PhotoAlbumId) =
+            (input.Title.Trim(), Clean(input.Intro), input.Body, input.IsPublished, input.SortOrder, input.Menu, input.PhotoAlbumId);
         var (image, obsolete) = UploadedImages.Resolve(page.ImageBlobPath, input.Image);
         page.ImageBlobPath = image;
         return obsolete;

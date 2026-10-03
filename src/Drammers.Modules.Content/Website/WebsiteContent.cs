@@ -61,6 +61,15 @@ public enum WebsiteLink
     Contact,
 }
 
+/// <summary>Het menu waarin een pagina staat.</summary>
+public enum WebsiteMenu
+{
+    /// <summary>Niet in een menu; alleen via een link bereikbaar.</summary>
+    None,
+    Association,
+    Carnival,
+}
+
 /// <summary>Vaste tekstpagina van de website (Over ons, Ontstaan, Loillands …), in Markdown.</summary>
 public sealed class WebsitePage : IAuditable
 {
@@ -79,7 +88,13 @@ public sealed class WebsitePage : IAuditable
 
     public bool IsPublished { get; set; }
 
+    /// <summary>Het menu waarin de pagina staat; binnen het menu op <see cref="SortOrder"/>.</summary>
+    public WebsiteMenu Menu { get; set; }
+
     public int SortOrder { get; set; }
+
+    /// <summary>Fotoalbum dat onder de tekst staat (bijvoorbeeld bij de pagina's onder Carnaval).</summary>
+    public Guid? PhotoAlbumId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

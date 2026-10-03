@@ -1,3 +1,4 @@
+using Drammers.Modules.Content.Photos;
 using Drammers.Modules.Content.Website;
 using Drammers.Modules.Membership.Members;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,7 @@ internal sealed class WebsitePageConfiguration : IEntityTypeConfiguration<Websit
         builder.Property(p => p.Title).HasMaxLength(200);
         builder.Property(p => p.Intro).HasMaxLength(500);
         builder.Property(p => p.ImageBlobPath).HasMaxLength(300);
+        builder.HasOne<PhotoAlbum>().WithMany().HasForeignKey(p => p.PhotoAlbumId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

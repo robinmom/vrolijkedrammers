@@ -1,3 +1,4 @@
+using Drammers.Modules.Content.Website;
 using Drammers.Website.Content;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,8 +18,13 @@ public sealed class PaginaModel(WebsiteReader reader) : SitePage
         }
 
         Text = page;
-        ActiveMenu = WebsiteReader.AssociationPages.Contains(slug) ? "vereniging" : "";
-        (PageTitle, MetaDescription, ShareImage) = (page.Title, page.Intro, page.ImageUrl);
+        ActiveMenu = page.Menu switch
+        {
+            WebsiteMenu.Association => "vereniging",
+            WebsiteMenu.Carnival => "carnaval",
+            _ => "",
+        };
+        (PageTitle, MetaDescription, ShareImage) = (page.Title, page.Intro, page.ImageUrl ?? page.Album?.CoverUrl);
         return Page();
     }
 }

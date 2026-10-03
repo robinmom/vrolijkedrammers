@@ -88,6 +88,14 @@ public sealed partial class WordPressSource(HttpClient http, IOptions<WordPressI
         return result;
     }
 
+    /// <summary>Eén bericht of pagina op webadres; <c>null</c> als die niet (meer) bestaat.</summary>
+    public async Task<WpItem?> GetBySlugAsync(string type, string slug, CancellationToken cancellationToken)
+    {
+        var items = await http.GetFromJsonAsync<List<WpItem>>(
+            new Uri(Root, $"wp-json/wp/v2/{type}?slug={Uri.EscapeDataString(slug)}&_embed=wp:featuredmedia,wp:term"), cancellationToken);
+        return items?.FirstOrDefault();
+    }
+
     public async Task<string> GetHtmlAsync(string pathOrUrl, CancellationToken cancellationToken)
     {
         var uri = new Uri(Root, pathOrUrl);
@@ -132,6 +140,20 @@ public sealed partial class WordPressSource(HttpClient http, IOptions<WordPressI
     }
 
     // ----- Pagina's die niet in de REST-API staan --------------------------------------------------------------------
+
+    /// <summary>
+    /// De adressen onder een menu-item van de oude site (bijvoorbeeld Carnaval), in de volgorde van het menu. Het thema zet
+    /// elk uitklapmenu in een <c>.dropdown-container</c>: de eerste link is het menu-item, de links in <c>.dropdown</c> eronder.
+    /// </summary>
+    public static List<string> ParseSubmenu(string html, string label)
+    {
+        var document = Parser.ParseDocument(html);
+        var container = document.QuerySelectorAll(".dropdown-container")
+            .FirstOrDefault(c => string.Equals(Text(c.QuerySelector("a")), label, StringComparison.OrdinalIgnoreCase));
+        return container is null
+            ? []
+            : [.. container.QuerySelectorAll(".dropdown a[href]").Select(a => a.GetAttribute("href")!).Where(h => h.Length > 0).Distinct()];
+    }
 
     /// <summary>Prinsen of jeugdprinsen uit het archief: titel (prinsennaam), naam, jaar en motto per profiel.</summary>
     public static List<WpPerson> ParsePeople(string html)

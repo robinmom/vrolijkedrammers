@@ -212,8 +212,12 @@ public static partial class HtmlToMarkdown
 
     private static void AddImage(IElement img, List<string> images)
     {
-        // Lazy-loading thema's zetten het echte adres soms in data-src.
-        var src = img.GetAttribute("data-src") ?? img.GetAttribute("data-lazy-src") ?? img.GetAttribute("src");
+        // Galerijen (FooGallery) linken naar het origineel en zetten in src alleen een plaatshouder; lazy-loading thema's
+        // zetten het echte adres soms in data-src.
+        var link = img.Closest("a")?.GetAttribute("href");
+        var src = link is not null && ImageFile().IsMatch(link)
+            ? link
+            : img.GetAttribute("data-src") ?? img.GetAttribute("data-lazy-src") ?? img.GetAttribute("data-src-fg") ?? img.GetAttribute("src");
         if (src is not null && Uri.TryCreate(src, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && !src.Contains("logo", StringComparison.OrdinalIgnoreCase))
         {
             images.Add(OriginalImageUrl(src));
@@ -233,6 +237,9 @@ public static partial class HtmlToMarkdown
 
     [GeneratedRegex(@"\n{3,}")]
     private static partial Regex MultipleBlankLines();
+
+    [GeneratedRegex(@"\.(jpe?g|png|webp|gif)$", RegexOptions.IgnoreCase)]
+    private static partial Regex ImageFile();
 
     [GeneratedRegex(@"-\d{2,5}x\d{2,5}(\.[A-Za-z]{3,4})$")]
     private static partial Regex SizeSuffix();

@@ -2,7 +2,7 @@
 appId: nl.vrolijkedrammers.app
 ---
 - launchApp
-- assertVisible: 'Eerstvolgende activiteit'
+- assertVisible: 'Agenda'
 - assertVisible: 'Nog tot carnaval.*'
 - tapOn:
     id: 'next-event'
@@ -13,4 +13,4 @@ appId: nl.vrolijkedrammers.app
     text: 'Cancel|Annuleer|Annuleren'
     optional: true
 - back
-- assertVisible: 'Eerstvolgende activiteit'
+- assertVisible: 'Agenda'

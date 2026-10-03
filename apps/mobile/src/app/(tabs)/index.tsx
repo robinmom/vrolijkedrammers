@@ -38,8 +38,9 @@ export default function HomeScreen() {
   // Moment van openen: voor de groet.
   const [openedAt] = useState(() => new Date());
 
-  const next = events.data?.[0];
-  const latest = news.data?.[0];
+  // De 3 eerstvolgende activiteiten (de API levert ze oplopend op datum) en de 3 nieuwste berichten.
+  const upcoming = events.data?.slice(0, 3) ?? [];
+  const latest = news.data?.slice(0, 3) ?? [];
 
   return (
     <Screen hero {...refresh}>
@@ -95,18 +96,23 @@ export default function HomeScreen() {
           <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
         </View>
 
-        <SectionHeader title="Eerstvolgende activiteit" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
-        {next ? (
-          <EventCard
-            title={next.title}
-            date={dateBlockParts(next.startAt)}
-            dateVariant="solid"
-            meta="inline"
-            time={next.allDay ? 'Hele dag' : startTime(next.startAt)}
-            location={next.locationName ?? undefined}
-            onPress={() => router.push(`/activiteit/${next.id}`)}
-            testID="next-event"
-          />
+        <SectionHeader title="Agenda" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
+        {upcoming.length > 0 ? (
+          <View style={styles.list}>
+            {upcoming.map((event, index) => (
+              <EventCard
+                key={event.id}
+                title={event.title}
+                date={dateBlockParts(event.startAt)}
+                dateVariant={index === 0 ? 'solid' : undefined}
+                meta="inline"
+                time={event.allDay ? 'Hele dag' : startTime(event.startAt)}
+                location={event.locationName ?? undefined}
+                onPress={() => router.push(`/activiteit/${event.id}`)}
+                testID={index === 0 ? 'next-event' : undefined}
+              />
+            ))}
+          </View>
         ) : events.data ? (
           <EmptyState title="Nog geen activiteiten" message="Nieuwe activiteiten verschijnen hier vanzelf." />
         ) : (
@@ -114,15 +120,20 @@ export default function HomeScreen() {
         )}
 
         <SectionHeader title="Laatste nieuws" linkLabel="Meer" onLinkPress={() => router.push('/nieuws')} />
-        {latest ? (
-          <NewsRow
-            variant="home"
-            id={latest.id}
-            title={latest.title}
-            imageUrl={latest.imageUrl}
-            overline={newsDateLong(latest.publishedAt)}
-            onPress={() => router.push(`/nieuws/${latest.id}`)}
-          />
+        {latest.length > 0 ? (
+          <View style={styles.list}>
+            {latest.map((item) => (
+              <NewsRow
+                key={item.id}
+                variant="home"
+                id={item.id}
+                title={item.title}
+                imageUrl={item.imageUrl}
+                overline={newsDateLong(item.publishedAt)}
+                onPress={() => router.push(`/nieuws/${item.id}`)}
+              />
+            ))}
+          </View>
         ) : news.data ? (
           <AppText variant="body" color={colors.textSecondary}>
             Nog geen nieuws.
@@ -151,4 +162,5 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14 },
   content: { padding: 20, gap: 14 },
   shortcuts: { flexDirection: 'row', gap: 10 },
+  list: { gap: 10 },
 });

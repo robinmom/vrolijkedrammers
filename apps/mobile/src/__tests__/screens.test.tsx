@@ -51,7 +51,7 @@ afterEach(() => {
 });
 
 describe('01 Home', () => {
-  it('toont de hero (zonder aftelkaart), eerstvolgende activiteit en laatste nieuws', async () => {
+  it('toont de hero (zonder aftelkaart), de agenda en het laatste nieuws', async () => {
     mockApi(api);
     await renderApp(routes, '/');
     expect(await screen.findByText('Elfde van de Elfde')).toBeTruthy();
@@ -61,6 +61,24 @@ describe('01 Home', () => {
     expect(await screen.findByText('De optocht-inschrijving is geopend!')).toBeTruthy();
     // Fase 21f: geen aftelkaart meer in de hero (ontwerp Figma 3:2).
     expect(screen.queryByLabelText(/tot carnaval 2027/)).toBeNull();
+  });
+
+  it('toont de 3 eerstvolgende activiteiten en de 3 nieuwste berichten', async () => {
+    const extraEvent = { ...data.events[2]!, id: '44444444-4444-4444-8444-444444444444', title: 'Afsluiting', startAt: '2027-02-10T19:00:00Z' };
+    const extraNews = { ...data.news[1]!, id: '66666666-6666-4666-8666-666666666666', title: 'Ouder bericht' };
+    const thirdNews = { ...data.news[1]!, id: '77777777-7777-4777-8777-777777777777', title: 'Derde bericht' };
+    mockApi({
+      ...api,
+      '/api/v1/events': paged([...data.events, extraEvent]),
+      '/api/v1/news': paged([...data.news, thirdNews, extraNews]),
+    });
+    await renderApp(routes, '/');
+    expect(await screen.findByText('Elfde van de Elfde')).toBeTruthy();
+    expect(screen.getByText('Kindermiddag')).toBeTruthy();
+    expect(screen.getByText('Optocht Loil')).toBeTruthy();
+    expect(screen.queryByText('Afsluiting')).toBeNull();
+    expect(await screen.findByText('Derde bericht')).toBeTruthy();
+    expect(screen.queryByText('Ouder bericht')).toBeNull();
   });
 
   it('gasten zien geen tegels die alleen voor leden zijn; leden wel', async () => {

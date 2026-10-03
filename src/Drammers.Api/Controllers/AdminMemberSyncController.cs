@@ -34,6 +34,7 @@ public sealed class AdminMemberSyncController(
     public async Task<PagedResult<SyncJobResponse>> Jobs([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
     {
         var (p, size) = PagedResult<SyncJobResponse>.Normalize(page, pageSize);
+        await sync.ExpireStaleAsync(cancellationToken);
         var total = await db.SyncJobs.CountAsync(cancellationToken);
         var items = await db.SyncJobs.AsNoTracking().OrderByDescending(j => j.RequestedAt).Skip((p - 1) * size).Take(size)
             .Select(ToResponse).ToListAsync(cancellationToken);

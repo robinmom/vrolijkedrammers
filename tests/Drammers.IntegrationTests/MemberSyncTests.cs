@@ -445,4 +445,23 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Forbidden, (await redactie.PostAsJsonAsync("/api/v1/admin/members/purge", new { confirmation = MemberAdministration.PurgeConfirmation })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await redactie.PostAsync("/api/v1/admin/members/import", null)).StatusCode);
     }
+
+    [Fact]
+    public async Task Hangende_run_blokkeert_het_portal_niet()
+    {
+        // Een run die door een herstart op "bezig" is blijven staan; het portal zet dan de startknoppen uit.
+        var stuck = new SyncJob { Id = IdGenerator.NewId(), Status = SyncJobStatus.Running, RequestedAt = DateTime.UtcNow.AddHours(-2), StartedAt = DateTime.UtcNow.AddHours(-2) };
+        var fresh = new SyncJob { Id = IdGenerator.NewId(), Status = SyncJobStatus.Queued, RequestedAt = DateTime.UtcNow.AddMinutes(-1) };
+        await WithDbAsync(async db =>
+        {
+            db.SyncJobs.AddRange(stuck, fresh);
+            return await db.SaveChangesAsync();
+        });
+
+        var jobs = await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/sync-jobs");
+        var statuses = jobs.GetProperty("items").EnumerateArray().ToDictionary(j => j.GetProperty("id").GetGuid(), j => j.GetProperty("status").GetString());
+        Assert.Equal("Failed", statuses[stuck.Id]);
+        Assert.Equal("Queued", statuses[fresh.Id]);
+        Assert.Contains("herstart", (await WithDbAsync(db => db.SyncJobs.SingleAsync(j => j.Id == stuck.Id))).ErrorMessage);
+    }
 }

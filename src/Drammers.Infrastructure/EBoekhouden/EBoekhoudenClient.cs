@@ -32,8 +32,9 @@ public sealed class EBoekhoudenOptions
 }
 
 /// <summary>
-/// Leden zoals de sync ze nodig heeft. Alleen deze velden worden gedeserialiseerd: IBAN, BIC, mandaat, notitie en
-/// factuuradressen uit het antwoord komen dus nooit in het geheugen van de applicatie (ADR-010, dataminimalisatie).
+/// Leden zoals de sync ze nodig heeft. Alleen deze velden worden gedeserialiseerd: BIC, notitie en factuuradressen uit
+/// het antwoord komen dus nooit in het geheugen van de applicatie (ADR-010, dataminimalisatie). Sinds fase 23b ook IBAN
+/// en machtiging, voor de incasso vanuit de app (versleuteld opgeslagen).
 /// </summary>
 public sealed record EbMember(
     int Id,
@@ -57,7 +58,12 @@ public sealed record EbMember(
     string? FreeText7,
     string? FreeText8,
     string? FreeText9,
-    string? FreeText10)
+    string? FreeText10,
+    string? Iban = null,
+    bool Mandate = false,
+    string? MandateType = null,
+    string? MandateId = null,
+    string? MandateSignedDate = null)
 {
     public string? FreeText(string field) => field switch
     {

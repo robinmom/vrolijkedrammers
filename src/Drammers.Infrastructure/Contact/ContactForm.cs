@@ -27,7 +27,9 @@ public sealed class ContactOptions
 }
 
 /// <summary>
-/// Cloudflare Turnstile (<c>Turnstile:SiteKey</c>, <c>Turnstile:SecretKey</c>). Zonder sleutels staat het uit en
+/// Cloudflare Turnstile. De openbare site key is een app-instelling (<c>Turnstile__SiteKey</c>, via Bicep en de
+/// GitHub-variabele <c>DVD_TURNSTILE_SITE_KEY</c>); de geheime sleutel staat in Key Vault (secret
+/// <c>turnstile-secret-key</c>) of, lokaal, in <c>Turnstile:SecretKey</c>. Zonder site key staat Turnstile uit en
 /// beschermen alleen het verborgen veld, de invultijd en de rate limit het formulier (OQ-45).
 /// </summary>
 public sealed class TurnstileOptions
@@ -38,7 +40,9 @@ public sealed class TurnstileOptions
 
     public string? SecretKey { get; set; }
 
-    public bool Enabled => !string.IsNullOrWhiteSpace(SiteKey) && !string.IsNullOrWhiteSpace(SecretKey);
+    public string SecretName { get; set; } = "turnstile-secret-key";
+
+    public bool Enabled => !string.IsNullOrWhiteSpace(SiteKey);
 }
 
 public interface ITurnstileVerifier
@@ -46,9 +50,40 @@ public interface ITurnstileVerifier
     Task<bool> VerifyAsync(string? token, string? remoteIp, CancellationToken cancellationToken);
 }
 
-internal sealed partial class TurnstileVerifier(HttpClient http, IOptions<TurnstileOptions> options, ILogger<TurnstileVerifier> logger) : ITurnstileVerifier
+internal sealed partial class TurnstileVerifier(
+    HttpClient http, IOptions<TurnstileOptions> options, IServiceProvider services, ILogger<TurnstileVerifier> logger) : ITurnstileVerifier
 {
     private static readonly Uri Endpoint = new("https://challenges.cloudflare.com/turnstile/v0/siteverify");
+    private static string? _secretFromVault;
+
+    private async Task<string?> SecretAsync(CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(options.Value.SecretKey))
+        {
+            return options.Value.SecretKey;
+        }
+
+        if (_secretFromVault is not null)
+        {
+            return _secretFromVault;
+        }
+
+        if (services.GetService(typeof(Azure.Security.KeyVault.Secrets.SecretClient)) is not Azure.Security.KeyVault.Secrets.SecretClient secrets)
+        {
+            return null;
+        }
+
+        try
+        {
+            _secretFromVault = (await secrets.GetSecretAsync(options.Value.SecretName, cancellationToken: cancellationToken)).Value.Value;
+            return _secretFromVault;
+        }
+        catch (Azure.RequestFailedException exception)
+        {
+            LogSecretMissing(logger, exception, options.Value.SecretName);
+            return null;
+        }
+    }
 
     public async Task<bool> VerifyAsync(string? token, string? remoteIp, CancellationToken cancellationToken)
     {
@@ -57,7 +92,12 @@ internal sealed partial class TurnstileVerifier(HttpClient http, IOptions<Turnst
             return false;
         }
 
-        var form = new Dictionary<string, string> { ["secret"] = options.Value.SecretKey!, ["response"] = token };
+        if (await SecretAsync(cancellationToken) is not { } secret)
+        {
+            return false;
+        }
+
+        var form = new Dictionary<string, string> { ["secret"] = secret, ["response"] = token };
         if (remoteIp is not null)
         {
             form["remoteip"] = remoteIp;
@@ -80,6 +120,9 @@ internal sealed partial class TurnstileVerifier(HttpClient http, IOptions<Turnst
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Turnstile niet bereikbaar")]
     private static partial void LogUnavailable(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Turnstile staat aan, maar het secret {SecretName} staat niet in Key Vault")]
+    private static partial void LogSecretMissing(ILogger logger, Exception exception, string secretName);
 }
 
 public sealed record ContactMessageInput(

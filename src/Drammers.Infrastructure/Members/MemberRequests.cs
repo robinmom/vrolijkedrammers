@@ -432,6 +432,9 @@ public sealed class MemberRequests(
         member.AccountHolder = holder;
         member.MandateReference = $"DVD-{member.MemberNumber}-{consentAt:yyyyMMdd}";
         member.MandateSignedOn = DateOnly.FromDateTime(consentAt);
+        // Via de app opgegeven: de sync met e-Boekhouden overschrijft dit niet (fase 23b).
+        var local = new HashSet<string>((member.LocalFields ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal) { MemberFields.Iban };
+        member.LocalFields = string.Join(',', local.Order(StringComparer.Ordinal));
     }
 
     private static List<string> ChangedFields(MemberChangeRequest r)

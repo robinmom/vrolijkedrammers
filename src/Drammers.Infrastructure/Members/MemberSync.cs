@@ -24,7 +24,7 @@ namespace Drammers.Infrastructure.Members;
 /// </summary>
 public sealed class MemberSync(
     DrammersDbContext db, IEBoekhoudenClient eBoekhouden, MemberSyncSettings settings, IOutbox outbox, IAuditLogger audit,
-    IClock clock, ILogger<MemberSync> logger, Identity.AccountLifecycle lifecycle)
+    IClock clock, ILogger<MemberSync> logger, Identity.AccountLifecycle lifecycle, MemberIbanProtector ibans)
 {
     public const string MessageType = "members.sync";
 
@@ -90,7 +90,7 @@ public sealed class MemberSync(
             await using var session = await eBoekhouden.OpenSessionAsync(cancellationToken);
             var references = await session.ListMembersAsync(cancellationToken);
             job.TotalInSource = references.Count;
-            await new Run(db, clock.UtcNow.UtcDateTime, logger, job, mapping, session).ExecuteAsync(references, cancellationToken);
+            await new Run(db, clock.UtcNow.UtcDateTime, logger, job, mapping, session, ibans).ExecuteAsync(references, cancellationToken);
         }
         catch (EBoekhoudenException ex)
         {
@@ -139,7 +139,8 @@ public sealed class MemberSync(
     public sealed record SyncMessage(Guid SyncJobId);
 
     /// <summary>De verwerking van één run; houdt de lokale leden en tellingen bij.</summary>
-    private sealed class Run(DrammersDbContext db, DateTime now, ILogger logger, SyncJob job, MemberFieldMapping mapping, IEBoekhoudenSession session)
+    private sealed class Run(
+        DrammersDbContext db, DateTime now, ILogger logger, SyncJob job, MemberFieldMapping mapping, IEBoekhoudenSession session, MemberIbanProtector ibans)
     {
         private const int MaxConsecutiveErrors = 5;
 
@@ -412,6 +413,8 @@ public sealed class MemberSync(
                 Set(MemberFields.ParadeGroupName, Clip(source.FreeText(groupField)?.Trim(), 100), member.ParadeGroupName, v => member.ParadeGroupName = v);
             }
 
+            ApplyBank(member, source, warnings);
+
             if ((isNew || oldFullName != member.FullName) && !member.NameCorrectedManually)
             {
                 var name = DutchNameParser.Parse(member.FullName);
@@ -422,6 +425,46 @@ public sealed class MemberSync(
 
             member.EbHash = Hash(source);
             return warnings;
+        }
+
+        /// <summary>
+        /// IBAN en machtiging uit e-Boekhouden (fase 23b), versleuteld. Alleen met een machtiging; zonder machtiging of IBAN
+        /// worden de bankgegevens gewist. Via de app gewijzigd (veld "iban" handmatig) = de sync laat ze staan.
+        /// </summary>
+        private void ApplyBank(Member member, EbMember source, List<string> warnings)
+        {
+            if (member.IsLocal(MemberFields.Iban))
+            {
+                return;
+            }
+
+            string? iban = null;
+            if (!string.IsNullOrWhiteSpace(source.Iban))
+            {
+                try
+                {
+                    iban = MembershipApplications.NormalizeIban(source.Iban);
+                }
+                catch (Drammers.SharedKernel.Errors.DomainException)
+                {
+                    warnings.Add("IBAN in e-Boekhouden is ongeldig; niet overgenomen.");
+                }
+            }
+
+            if (iban is null || !source.Mandate)
+            {
+                (member.IbanProtected, member.IbanLast4, member.AccountHolder, member.MandateReference, member.MandateSignedOn) = (null, null, null, null, null);
+                return;
+            }
+
+            member.IbanProtected = ibans.Protect(iban);
+            member.IbanLast4 = iban[^4..];
+            member.AccountHolder = Clip(member.FullName, 70);
+            member.MandateReference = Clip(source.MandateId?.Trim(), 35) ?? $"DVD-{member.MemberNumber}";
+            member.MandateSignedOn = source.MandateSignedDate is { Length: >= 10 } signed
+                && DateOnly.TryParseExact(signed[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                ? date
+                : null;
         }
 
         private MembershipStatus DeriveStatus(Member member) =>
@@ -442,6 +485,7 @@ public sealed class MemberSync(
                 mapping.Category is null ? null : source.FreeText(mapping.Category),
                 mapping.ParadeGroupName is null ? null : source.FreeText(mapping.ParadeGroupName),
                 mapping.SecondMemberName is null ? null : source.FreeText(mapping.SecondMemberName),
+                source.Iban, source.Mandate ? "1" : "0", source.MandateId, source.MandateSignedDate,
                 string.Join('|', mapping.BirthDate, mapping.JoinYear, mapping.Status, mapping.Category, mapping.ParadeGroupName, mapping.SecondMemberName),
             ];
             return SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(values)));

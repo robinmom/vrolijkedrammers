@@ -1267,6 +1267,296 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/collections/creditor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SepaCreditor"];
+                        "application/json": components["schemas"]["SepaCreditor"];
+                        "text/json": components["schemas"]["SepaCreditor"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SepaCreditorRequest"];
+                    "text/json": components["schemas"]["SepaCreditorRequest"];
+                    "application/*+json": components["schemas"]["SepaCreditorRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wie er op deze incassodatum meedoet en wie niet (met reden); er wordt niets vastgelegd. */
+        get: {
+            parameters: {
+                query: {
+                    date: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectionPreview"];
+                        "application/json": components["schemas"]["CollectionPreview"];
+                        "text/json": components["schemas"]["CollectionPreview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectionRunSummary"][];
+                        "application/json": components["schemas"]["CollectionRunSummary"][];
+                        "text/json": components["schemas"]["CollectionRunSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CollectionRunRequest"];
+                    "text/json": components["schemas"]["CollectionRunRequest"];
+                    "application/*+json": components["schemas"]["CollectionRunRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Het pain.008.001.08-bestand om aan te leveren bij de bank; geaudit. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/xml": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/xml": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/collections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/config/app-config": {
         parameters: {
             query?: never;
@@ -16976,6 +17266,63 @@ export interface components {
             startNumber: null | number;
             status: string;
         };
+        CollectionPreview: {
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            count: number;
+            /** Format: double */
+            total: number;
+            lines: components["schemas"]["CollectionPreviewLine"][];
+            skipped: components["schemas"]["CollectionSkip"][];
+            warnings: string[];
+            creditorComplete: boolean;
+        };
+        CollectionPreviewLine: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            kind: string;
+            /** Format: double */
+            amount: number;
+            ibanMasked: null | string;
+            mandateReference: null | string;
+            /** Format: date */
+            mandateSignedOn: null | string;
+            sequenceType: components["schemas"]["SequenceType"];
+            warning: null | string;
+        };
+        CollectionRunRequest: {
+            /** Format: date */
+            date: string;
+            description: null | string;
+        };
+        CollectionRunSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            collectionDate: string;
+            description: string;
+            messageId: string;
+            /** Format: int32 */
+            lineCount: number;
+            /** Format: double */
+            total: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            exportedAt: null | string;
+        };
+        CollectionSkip: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            /** Format: double */
+            amount: number;
+            reason: string;
+        };
         /** @enum {unknown} */
         CombinationBreakStatus: "AwaitingAgreement" | "AwaitingApproval" | "Approved" | "Rejected" | "Cancelled";
         CommitteeMemberRequest: {
@@ -19533,6 +19880,20 @@ export interface components {
             current: components["schemas"]["SeasonResponse"];
             archive: components["schemas"]["SeasonResponse"][];
         };
+        /** @description Gegevens van de vereniging als incassant (niet geheim; de IBAN van de vereniging en het incassant-ID). */
+        SepaCreditor: {
+            name: null | string;
+            iban: null | string;
+            creditorId: null | string;
+            isComplete?: boolean;
+        };
+        SepaCreditorRequest: {
+            name: string;
+            iban: string;
+            creditorId: string;
+        };
+        /** @enum {unknown} */
+        SequenceType: "Frst" | "Rcur";
         ServerCode: {
             code: string;
             /** Format: int64 */

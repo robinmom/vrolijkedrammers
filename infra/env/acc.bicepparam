@@ -16,6 +16,7 @@ param externalIdTenantId = '260db5a1-e5b6-4388-9f6c-d9b02cb5578b'
 param graphClientId = readEnvironmentVariable('DVD_GRAPH_CLIENT_ID', '')
 param testersGroupId = readEnvironmentVariable('DVD_TESTERS_GROUP_ID', '')
 param pushProvider = readEnvironmentVariable('DVD_PUSH_PROVIDER', 'Simulated')
+param turnstileSiteKey = readEnvironmentVariable('DVD_TURNSTILE_SITE_KEY', '')
 param environmentAccessAttribute = readEnvironmentVariable('DVD_ENVIRONMENT_ACCESS_ATTRIBUTE', '')
 param externalIdIssuerDomain = 'vrolijkedrammersapp.onmicrosoft.com'
 param graphCertificateName = readEnvironmentVariable('DVD_GRAPH_CERTIFICATE_NAME', '')

@@ -102,6 +102,39 @@ internal sealed class CombinationBreakRequestConfiguration : IEntityTypeConfigur
     }
 }
 
+internal sealed class CollectionRunConfiguration : IEntityTypeConfiguration<CollectionRun>
+{
+    public void Configure(EntityTypeBuilder<CollectionRun> builder)
+    {
+        builder.ToTable("CollectionRun", Schemas.Membership);
+        builder.Property(r => r.Id).ValueGeneratedNever();
+        builder.Property(r => r.Description).HasMaxLength(140);
+        builder.Property(r => r.MessageId).HasMaxLength(35);
+        builder.HasIndex(r => r.MessageId).IsUnique();
+        builder.Property(r => r.Total).HasPrecision(11, 2);
+    }
+}
+
+internal sealed class CollectionRunLineConfiguration : IEntityTypeConfiguration<CollectionRunLine>
+{
+    public void Configure(EntityTypeBuilder<CollectionRunLine> builder)
+    {
+        builder.ToTable("CollectionRunLine", Schemas.Membership);
+        builder.Property(l => l.MemberNumber).HasMaxLength(15);
+        builder.Property(l => l.DebtorName).HasMaxLength(70);
+        builder.Property(l => l.Amount).HasPrecision(9, 2);
+        builder.Property(l => l.MandateReference).HasMaxLength(35);
+        builder.Property(l => l.SequenceType).HasConversion<string>().HasMaxLength(4);
+        builder.Property(l => l.IbanLast4).HasMaxLength(4);
+        builder.Property(l => l.IbanProtected).HasMaxLength(1000);
+        builder.Property(l => l.EndToEndId).HasMaxLength(35);
+        builder.Property(l => l.Description).HasMaxLength(140);
+        builder.HasIndex(l => l.RunId);
+        builder.HasIndex(l => l.MandateReference);
+        builder.HasOne<CollectionRun>().WithMany().HasForeignKey(l => l.RunId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 internal sealed class ContributionRateConfiguration : IEntityTypeConfiguration<ContributionRate>
 {
     public void Configure(EntityTypeBuilder<ContributionRate> builder)

@@ -93,4 +93,7 @@ public static class AppConfigurationKeys
     public const string JubileeInvitationSubject = "jubilee_invitation_subject";
     public const string JubileeInvitationBody = "jubilee_invitation_body";
     public const string JubileeInvitationReplyTo = "jubilee_invitation_reply_to";
+    public const string SepaCreditorName = "sepa_creditor_name";
+    public const string SepaCreditorIban = "sepa_creditor_iban";
+    public const string SepaCreditorId = "sepa_creditor_id";
 }

@@ -162,6 +162,9 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
   jubileeMilestones = [11, 22, 33, 44, 55, 66, 77];
+  // Fase 23c: SEPA-incasso.
+  sepaCreditor = { name: null as string | null, iban: null as string | null, creditorId: null as string | null };
+  collectionRuns: Record<string, unknown>[] = [];
   // Fase 26: wijzigingsverzoeken en verbreken.
   memberRequests = {
     changes: [
@@ -2798,6 +2801,76 @@ export class MockApi {
         return noContent();
       }
       return json(group);
+    }
+    if (path === '/admin/collections/creditor') {
+      if (method === 'PUT') {
+        this.sepaCreditor = body as typeof this.sepaCreditor;
+        return noContent();
+      }
+      return json(this.sepaCreditor);
+    }
+    if (path === '/admin/collections/preview') {
+      const complete = !!(this.sepaCreditor.name && this.sepaCreditor.iban && this.sepaCreditor.creditorId);
+      return json({
+        date: url.searchParams.get('date'),
+        count: 1,
+        total: 57.5,
+        lines: [
+          {
+            memberId: 'm-1',
+            memberNumber: '001',
+            fullName: 'Piet van der Berg',
+            kind: 'Combinatie',
+            amount: 57.5,
+            ibanMasked: '**** 4300',
+            mandateReference: 'M-001',
+            mandateSignedOn: null,
+            sequenceType: 'Rcur',
+            warning: 'Datum machtiging onbekend: 01-11-2009 (gemigreerde machtiging)',
+          },
+        ],
+        skipped: [
+          {
+            memberId: 'm-2',
+            memberNumber: '002',
+            fullName: 'Anna Jansen',
+            amount: 32.5,
+            reason: 'Geen IBAN of machtiging',
+          },
+        ],
+        warnings: complete ? [] : ['Vul eerst de gegevens van de vereniging in (naam, IBAN en incassant-ID).'],
+        creditorComplete: complete,
+      });
+    }
+    if (path === '/admin/collections') {
+      if (method === 'POST') {
+        this.collectionRuns.unshift({
+          id: 'run-1',
+          collectionDate: body.date,
+          description: 'Contributie 2027 CV De Vrolijke Drammers',
+          messageId: 'DVD-20270301-ABCD1234',
+          lineCount: 1,
+          total: 57.5,
+          createdAt: '2026-10-03T12:00:00Z',
+          exportedAt: null,
+        });
+        this.record('contribution.collection-created', 'CollectionRun', 'run-1', body);
+        return json({ id: 'run-1' }, 201);
+      }
+      return json(this.collectionRuns);
+    }
+    if ((m = path.match(/^\/admin\/collections\/([^/]+)\/file$/))) {
+      this.collectionRuns.find((r) => r.id === m![1])!.exportedAt = '2026-10-03T12:05:00Z';
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/xml',
+        headers: { 'content-disposition': 'attachment; filename=incasso-20270301.xml' },
+        body: '<Document/>',
+      });
+    }
+    if ((m = path.match(/^\/admin\/collections\/([^/]+)$/)) && method === 'DELETE') {
+      this.collectionRuns = this.collectionRuns.filter((r) => r.id !== m![1]);
+      return noContent();
     }
     if (path === '/admin/member-requests') return json(this.memberRequests);
     if (

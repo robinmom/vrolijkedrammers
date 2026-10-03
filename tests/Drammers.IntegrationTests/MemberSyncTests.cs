@@ -514,4 +514,32 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("Queued", statuses[fresh.Id]);
         Assert.Contains("herstart", (await WithDbAsync(db => db.SyncJobs.SingleAsync(j => j.Id == stuck.Id))).ErrorMessage);
     }
+
+    [Fact]
+    public async Task IBAN_en_machtiging_uit_e_Boekhouden_versleuteld_maar_app_wint()
+    {
+        AddMembers(3);
+        _eb.Update("001", m => m with { Iban = "NL91 ABNA 0417 1643 00", Mandate = true, MandateId = "M-001", MandateSignedDate = "2015-03-01T00:00:00" });
+        _eb.Update("002", m => m with { Iban = "NL91ABNA0417164300", Mandate = false });
+        _eb.Update("003", m => m with { Iban = "ONZIN", Mandate = true });
+        var job = await SyncAsync();
+
+        var (one, two, three) = (await MemberAsync("001"), await MemberAsync("002"), await MemberAsync("003"));
+        Assert.Equal(("4300", "M-001", new DateOnly(2015, 3, 1)), (one.IbanLast4, one.MandateReference, one.MandateSignedOn!.Value));
+        Assert.DoesNotContain("NL91", one.IbanProtected!, StringComparison.Ordinal);
+        using (var scope = _api.Services.CreateScope())
+        {
+            Assert.Equal("NL91ABNA0417164300", scope.ServiceProvider.GetRequiredService<MemberIbanProtector>().Unprotect(one.IbanProtected!));
+        }
+
+        Assert.Null(two.IbanProtected);
+        Assert.Null(three.IbanProtected);
+        Assert.True(job.Warnings > 0);
+
+        // Via de app gewijzigd: de sync laat de bankgegevens staan.
+        await WithDbAsync(db => db.Members.Where(m => m.MemberNumber == "001").ExecuteUpdateAsync(x => x
+            .SetProperty(m => m.LocalFields, "iban").SetProperty(m => m.IbanLast4, "9999").SetProperty(m => m.EbHash, Array.Empty<byte>())));
+        await SyncAsync();
+        Assert.Equal("9999", (await MemberAsync("001")).IbanLast4);
+    }
 }

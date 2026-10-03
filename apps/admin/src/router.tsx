@@ -38,6 +38,7 @@ import { NotificationComposerPage, NotificationDetailPage, NotificationsPage } f
 import { AlbumEditorPage, PhotosPage } from './pages/PhotosPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { JubileesPage } from './pages/JubileesPage';
+import { ContributionsPage } from './pages/ContributionsPage';
 import { RolesPage } from './pages/RolesPage';
 import { UserDetailPage } from './pages/UserDetailPage';
 import { UsersPage } from './pages/UsersPage';
@@ -104,6 +105,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/groepen/$id', component: guarded('member.read', GroupDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/rapportage', component: guarded('report.view', ReportsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/jubilarissen', component: guarded('member.read', JubileesPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/contributie', component: guarded('contribution.manage', ContributionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/gebruikers', component: guarded('role.manage', UsersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/gebruikers/$id', component: guarded('role.manage', UserDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/rollen', component: guarded('role.manage', RolesPage) }),

@@ -14,6 +14,7 @@ import { AccessCard } from '../components/AccessCard';
 import { GuardiansCard } from '../components/GuardiansCard';
 import { JubileeCard } from '../components/JubileeCard';
 import { MemberDataCard } from '../components/MemberDataCard';
+import { MembershipCard } from '../components/MembershipCard';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Icon } from '../components/Icon';
@@ -69,6 +70,7 @@ export function MemberDetailPage() {
   const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
   const canWebsite = (me.data?.permissions ?? []).includes('website.manage');
   const canCheckIn = (me.data?.permissions ?? []).includes('ticket.scan');
+  const canContribution = (me.data?.permissions ?? []).includes('contribution.manage');
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
   const [removeConfirmation, setRemoveConfirmation] = useState('');
@@ -363,6 +365,8 @@ export function MemberDetailPage() {
               )}
             </section>
           ) : null}
+
+          {canContribution ? <MembershipCard member={m} /> : null}
 
           <JubileeCard member={m} canEdit={canEdit} />
 

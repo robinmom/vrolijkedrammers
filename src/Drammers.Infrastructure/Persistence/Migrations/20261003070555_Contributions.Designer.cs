@@ -4,6 +4,7 @@ using Drammers.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Drammers.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DrammersDbContext))]
-    partial class DrammersDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261003070555_Contributions")]
+    partial class Contributions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1690,6 +1693,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnName("member_id");
 
                     b.Property<string>("MemberNumber")
+                        .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)")
                         .HasColumnName("member_number");
@@ -4340,11 +4344,6 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("last_name");
-
-                    b.Property<string>("LocalFields")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
-                        .HasColumnName("local_fields");
 
                     b.Property<string>("LocalStatusOverride")
                         .HasMaxLength(40)

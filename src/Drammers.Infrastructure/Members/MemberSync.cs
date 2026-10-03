@@ -39,13 +39,7 @@ public sealed class MemberSync(
         var now = clock.UtcNow.UtcDateTime;
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        // Een run die door een herstart is blijven hangen, blokkeert niet voor altijd.
-        await db.SyncJobs
-            .Where(j => (j.Status == SyncJobStatus.Queued || j.Status == SyncJobStatus.Running) && j.RequestedAt < now - StaleAfter)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(j => j.Status, SyncJobStatus.Failed)
-                .SetProperty(j => j.CompletedAt, now)
-                .SetProperty(j => j.ErrorMessage, "Afgebroken: de run is niet binnen 30 minuten afgerond."), cancellationToken);
+        await ExpireStaleAsync(cancellationToken);
 
         if (await db.SyncJobs.AnyAsync(j => j.Status == SyncJobStatus.Queued || j.Status == SyncJobStatus.Running, cancellationToken))
         {
@@ -60,6 +54,22 @@ public sealed class MemberSync(
             JsonSerializer.Serialize(new { dryRun, trigger = trigger.ToString() })), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return job.Id;
+    }
+
+    /// <summary>
+    /// Een run die door een herstart (bijvoorbeeld een deploy) is blijven hangen, op mislukt zetten. Gebeurt bij een nieuwe
+    /// aanvraag én bij het ophalen van de lijst: anders blijft het portal "bezig" tonen en zijn de knoppen om een nieuwe
+    /// run te starten uitgeschakeld, zodat de opruiming nooit aan de beurt komt.
+    /// </summary>
+    public async Task<int> ExpireStaleAsync(CancellationToken cancellationToken)
+    {
+        var now = clock.UtcNow.UtcDateTime;
+        return await db.SyncJobs
+            .Where(j => (j.Status == SyncJobStatus.Queued || j.Status == SyncJobStatus.Running) && j.RequestedAt < now - StaleAfter)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(j => j.Status, SyncJobStatus.Failed)
+                .SetProperty(j => j.CompletedAt, now)
+                .SetProperty(j => j.ErrorMessage, "Afgebroken: de run is niet binnen 30 minuten afgerond (bijvoorbeeld door een herstart)."), cancellationToken);
     }
 
     /// <summary>Voert een run uit die in de wachtrij staat. Idempotent: een run die al gestart is, wordt overgeslagen.</summary>

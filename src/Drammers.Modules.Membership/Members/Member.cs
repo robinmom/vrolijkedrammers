@@ -101,6 +101,17 @@ public sealed class Member : IAuditable
     /// <summary>Waarom het jubileumjaar is aangepast.</summary>
     public string? JubileeNote { get; set; }
 
+    /// <summary>Soort lidmaatschap (fase 23); leeg = afgeleid uit e-Boekhouden (<see cref="EbStatusRaw"/>).</summary>
+    public MembershipKind? MembershipKind { get; set; }
+
+    /// <summary>Bij een partner in een tweepersoonslidmaatschap: het lid dat betaalt.</summary>
+    public Guid? PayerMemberId { get; set; }
+
+    /// <summary>Betaalt geen contributie, bijvoorbeeld Convent (bewezen dienstjaren); handmatig toegekend.</summary>
+    public bool ContributionExempt { get; set; }
+
+    public string? ContributionExemptReason { get; set; }
+
     // --- Sync ---
     public byte[] EbHash { get; set; } = [];
 

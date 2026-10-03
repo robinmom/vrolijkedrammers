@@ -1773,6 +1773,365 @@
         }
       }
     },
+    "/api/v1/admin/contributions": {
+      "get": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "summary": "Contributie per actief lid op de peildatum (standaard vandaag; bij een incasso de incassodatum).",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOverview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOverview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionOverview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/contributions/export": {
+      "get": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/contributions/rates": {
+      "get": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContributionRate"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContributionRate"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContributionRate"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "summary": "Tarief toevoegen; met een bestaande ingangsdatum wordt dat tarief aangepast.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionRateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionRateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionRateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/contributions/rates/{id}": {
+      "delete": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/contributions/members/{memberId}": {
+      "get": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipSettings"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipSettings"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipSettings"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminContributions"
+        ],
+        "summary": "Soort lidmaatschap, betaler (partner) en vrijstelling (bijv. Convent) van een lid.",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipSettingsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipSettingsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/dansgarde": {
       "get": {
         "tags": [
@@ -21753,6 +22112,211 @@
         ],
         "description": "Wie content mag zien (docs/07 §4). Beheren gaat via permissions, niet via zichtbaarheid."
       },
+      "ContributionLine": {
+        "required": [
+          "memberId",
+          "memberNumber",
+          "fullName",
+          "kind",
+          "kindFromEBoekhouden",
+          "senior",
+          "amount",
+          "status",
+          "note",
+          "partnerMemberId",
+          "partnerName"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MembershipKind"
+              }
+            ]
+          },
+          "kindFromEBoekhouden": {
+            "type": "boolean"
+          },
+          "senior": {
+            "type": "boolean"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContributionStatus"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "partnerMemberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "partnerName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ContributionOverview": {
+        "required": [
+          "date",
+          "rate",
+          "lines",
+          "totals",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "rate": {
+            "$ref": "#/components/schemas/ContributionRate"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContributionLine"
+            }
+          },
+          "totals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContributionTotal"
+            }
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ContributionRate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "onePerson": {
+            "type": "number",
+            "format": "double"
+          },
+          "twoPersons": {
+            "type": "number",
+            "format": "double"
+          },
+          "onePersonSenior": {
+            "type": "number",
+            "format": "double"
+          },
+          "twoPersonsSenior": {
+            "type": "number",
+            "format": "double"
+          },
+          "dansgarde": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Contributie per jaar, geldig vanaf een datum (`membership.ContributionRate`); de nieuwste die al geldt telt."
+      },
+      "ContributionRateRequest": {
+        "required": [
+          "validFrom",
+          "onePerson",
+          "twoPersons",
+          "onePersonSenior",
+          "twoPersonsSenior",
+          "dansgarde"
+        ],
+        "type": "object",
+        "properties": {
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "onePerson": {
+            "type": "number",
+            "format": "double"
+          },
+          "twoPersons": {
+            "type": "number",
+            "format": "double"
+          },
+          "onePersonSenior": {
+            "type": "number",
+            "format": "double"
+          },
+          "twoPersonsSenior": {
+            "type": "number",
+            "format": "double"
+          },
+          "dansgarde": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ContributionStatus": {
+        "enum": [
+          "Due",
+          "Exempt",
+          "PaidByPartner",
+          "Unknown"
+        ]
+      },
+      "ContributionTotal": {
+        "required": [
+          "label",
+          "count",
+          "amount"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "CreatedIntResponse": {
         "required": [
           "id"
@@ -25590,6 +26154,89 @@
           }
         },
         "description": "Rollen, leeftijd, inschrijfjaar en groepen tellen alleen actieve leden; status telt alle leden."
+      },
+      "MembershipKind": {
+        "enum": [
+          "OnePerson",
+          "TwoPersons",
+          "Partner",
+          "Dansgarde",
+          null
+        ]
+      },
+      "MembershipSettings": {
+        "required": [
+          "kind",
+          "payerMemberId",
+          "exempt",
+          "exemptReason"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MembershipKind"
+              }
+            ]
+          },
+          "payerMemberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "exempt": {
+            "type": "boolean"
+          },
+          "exemptReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MembershipSettingsRequest": {
+        "required": [
+          "kind",
+          "payerMemberId",
+          "exempt",
+          "exemptReason"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MembershipKind"
+              }
+            ]
+          },
+          "payerMemberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "exempt": {
+            "type": "boolean"
+          },
+          "exemptReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
       },
       "MembershipStatus": {
         "enum": [
@@ -32061,6 +32708,9 @@
     },
     {
       "name": "AdminConfig"
+    },
+    {
+      "name": "AdminContributions"
     },
     {
       "name": "AdminDansgarde"

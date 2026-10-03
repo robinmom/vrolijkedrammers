@@ -165,6 +165,22 @@ export class MockApi {
   // Fase 24: handmatig aangepaste velden per lid.
   memberLocalFields: Record<string, string[]> = {};
   jubileeInvitations: Record<string, string> = {};
+  // Fase 23a: lidmaatschappen en contributie.
+  contributionRates = [
+    {
+      id: 1,
+      validFrom: '2026-01-01',
+      onePerson: 32.5,
+      twoPersons: 57.5,
+      onePersonSenior: 22,
+      twoPersonsSenior: 44,
+      dansgarde: 85,
+    },
+  ];
+  membershipSettings: Record<
+    string,
+    { kind: string | null; payerMemberId: string | null; exempt: boolean; exemptReason: string | null }
+  > = {};
   jubileeTemplate = {
     subject: 'Uitnodiging: huldiging jubilarissen {carnavalsjaar}',
     body: 'Beste {voornaam},\n\nDit jaar ben je {jaren} jaar lid. Dit willen we niet zomaar voorbij laten gaan.\n\nMet vriendelijke groet,\n\nHet bestuur',
@@ -2715,6 +2731,81 @@ export class MockApi {
         return noContent();
       }
       return json(group);
+    }
+    if (path === '/admin/contributions' && method === 'GET') {
+      const rate = this.contributionRates[0]!;
+      const lines = this.members.map((x) => {
+        const s = this.membershipSettings[x.id];
+        if (s?.kind === 'Partner') {
+          return {
+            memberId: x.id,
+            memberNumber: x.memberNumber,
+            fullName: x.fullName,
+            kind: 'Partner',
+            kindFromEBoekhouden: false,
+            senior: false,
+            amount: 0,
+            status: 'PaidByPartner',
+            note: 'Betaald door ' + this.members.find((p) => p.id === s.payerMemberId)?.fullName,
+            partnerMemberId: s.payerMemberId,
+            partnerName: null,
+          };
+        }
+        const kind = s?.kind ?? (x.id === 'm-1' ? 'TwoPersons' : null);
+        return {
+          memberId: x.id,
+          memberNumber: x.memberNumber,
+          fullName: x.fullName,
+          kind,
+          kindFromEBoekhouden: !s?.kind,
+          senior: false,
+          amount: kind === 'TwoPersons' ? rate.twoPersons : kind === 'OnePerson' ? rate.onePerson : 0,
+          status: kind ? 'Due' : 'Unknown',
+          note: kind ? null : 'Soort lidmaatschap onbekend',
+          partnerMemberId: null,
+          partnerName: null,
+        };
+      });
+      const due = lines.filter((l) => l.status === 'Due');
+      return json({
+        date: url.searchParams.get('date'),
+        rate,
+        lines,
+        totals: due.length
+          ? [{ label: 'Twee personen', count: due.length, amount: due.reduce((a, l) => a + l.amount, 0) }]
+          : [],
+        total: due.reduce((a, l) => a + l.amount, 0),
+      });
+    }
+    if (path === '/admin/contributions/export') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers: { 'content-disposition': 'attachment; filename=contributie.xlsx' },
+        body: 'xlsx',
+      });
+    }
+    if (path === '/admin/contributions/rates') {
+      if (method === 'PUT') {
+        const rate = body as unknown as (typeof this.contributionRates)[number];
+        this.contributionRates = [
+          { ...rate, id: this.contributionRates.length + 1 },
+          ...this.contributionRates.filter((r) => r.validFrom !== rate.validFrom),
+        ].sort((a, b) => b.validFrom.localeCompare(a.validFrom));
+        this.record('contribution.rate-saved', 'ContributionRate', rate.validFrom, body);
+        return noContent();
+      }
+      return json(this.contributionRates);
+    }
+    if ((m = path.match(/^\/admin\/contributions\/members\/([^/]+)$/))) {
+      if (method === 'PUT') {
+        this.membershipSettings[m[1]!] = body as (typeof this.membershipSettings)[string];
+        this.record('member.membership-changed', 'Member', m[1]!, body);
+        return noContent();
+      }
+      return json(
+        this.membershipSettings[m[1]!] ?? { kind: null, payerMemberId: null, exempt: false, exemptReason: null },
+      );
     }
     // Fase 20: jubilarissen; het actieve carnavalsjaar 2026/2027 heeft carnaval in 2027.
     if (path === '/admin/jubilees' && method === 'GET') {

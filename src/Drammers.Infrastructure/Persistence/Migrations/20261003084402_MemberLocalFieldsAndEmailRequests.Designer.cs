@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Drammers.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DrammersDbContext))]
-    [Migration("20261003072342_MemberLocalFieldsAndEmailRequests")]
+    [Migration("20261003084402_MemberLocalFieldsAndEmailRequests")]
     partial class MemberLocalFieldsAndEmailRequests
     {
         /// <inheritdoc />
@@ -2297,6 +2297,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Optocht",
                             Code = "parade.result",
                             Description = "Uitslag van de optocht inzien, exporteren en publiceren"
+                        },
+                        new
+                        {
+                            Id = 48,
+                            Category = "Financieel",
+                            Code = "contribution.manage",
+                            Description = "Lidmaatschappen, tarieven, contributie en incasso beheren"
                         });
                 });
 
@@ -3084,6 +3091,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 11,
                             PermissionId = 45
+                        },
+                        new
+                        {
+                            RoleId = 11,
+                            PermissionId = 48
                         },
                         new
                         {
@@ -4098,6 +4110,66 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.ToTable("GuardianSuggestionDismissal", "membership");
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Members.ContributionRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Dansgarde")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("dansgarde");
+
+                    b.Property<decimal>("OnePerson")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("one_person");
+
+                    b.Property<decimal>("OnePersonSenior")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("one_person_senior");
+
+                    b.Property<decimal>("TwoPersons")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("two_persons");
+
+                    b.Property<decimal>("TwoPersonsSenior")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("two_persons_senior");
+
+                    b.Property<DateOnly>("ValidFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("valid_from");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ContributionRate");
+
+                    b.HasIndex("ValidFrom")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ContributionRate_valid_from");
+
+                    b.ToTable("ContributionRate", "membership");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Dansgarde = 85.00m,
+                            OnePerson = 32.50m,
+                            OnePersonSenior = 22.00m,
+                            TwoPersons = 57.50m,
+                            TwoPersonsSenior = 44.00m,
+                            ValidFrom = new DateOnly(2026, 1, 1)
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Members.ExcludedMember", b =>
                 {
                     b.Property<string>("MemberNumber")
@@ -4184,6 +4256,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("city");
+
+                    b.Property<bool>("ContributionExempt")
+                        .HasColumnType("bit")
+                        .HasColumnName("contribution_exempt");
+
+                    b.Property<string>("ContributionExemptReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("contribution_exempt_reason");
 
                     b.Property<string>("Country")
                         .HasMaxLength(50)
@@ -4285,6 +4366,12 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(15)")
                         .HasColumnName("member_number");
 
+                    b.Property<string>("MembershipKind")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("membership_kind");
+
                     b.Property<string>("MembershipStatus")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -4318,6 +4405,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("parade_group_name");
+
+                    b.Property<Guid?>("PayerMemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("payer_member_id");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
@@ -4364,12 +4455,19 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Member_member_number");
 
+                    b.HasIndex("PayerMemberId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Member_payer_member_id")
+                        .HasFilter("[payer_member_id] IS NOT NULL");
+
                     b.HasIndex("MembershipStatus", "LastName")
                         .HasDatabaseName("IX_Member_membership_status_last_name");
 
                     b.ToTable("Member", "membership", t =>
                         {
                             t.HasCheckConstraint("CK_Member_local_status_override", "[local_status_override] IN ('Active', 'Inactive', 'Suspended', 'Deceased')");
+
+                            t.HasCheckConstraint("CK_Member_membership_kind", "[membership_kind] IN ('OnePerson', 'TwoPersons', 'Partner', 'Dansgarde')");
 
                             t.HasCheckConstraint("CK_Member_membership_status", "[membership_status] IN ('Active', 'Inactive', 'Suspended', 'Deceased')");
 
@@ -7215,6 +7313,14 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Members.Member", b =>
+                {
+                    b.HasOne("Drammers.Modules.Membership.Members.Member", null)
+                        .WithMany()
+                        .HasForeignKey("PayerMemberId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Drammers.Modules.Notification.Notifications.NotificationDelivery", b =>

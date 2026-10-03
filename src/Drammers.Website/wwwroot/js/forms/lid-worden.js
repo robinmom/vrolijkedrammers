@@ -7,6 +7,59 @@
   const emailLabel = document.getElementById('label-email');
   let applicationId = null;
 
+  // Lid splitsen (fase 25): met de persoonlijke link uit de mail aan het hoofdlid (?splitsen=…) staat alles klaar.
+  const splitToken = new URLSearchParams(location.search).get('splitsen');
+  const splitInfo = document.getElementById('splitsen-info');
+  const title = document.getElementById('titel-formulier');
+  let splitReady = false;
+  const isSplit = () => form.elements.kind.value === 'splitsen';
+
+  function applyMode() {
+    const split = isSplit();
+    document.getElementById('soort').hidden = split;
+    document.getElementById('contributie').hidden = split;
+    for (const name of ['iban', 'accountHolder', 'mandateConsent']) form.elements[name].required = !split;
+    title.textContent = split ? 'Tweede lid registreren' : 'Aanmelden als lid';
+    splitInfo.hidden = !split;
+    if (split && !splitReady) {
+      splitInfo.textContent =
+        'Gebruik de persoonlijke link uit de e-mail van het secretariaat aan het hoofdlid. Geen e-mail ontvangen? Stuur ons een bericht via de contactpagina.';
+    }
+    form.querySelector('button[type=submit]').disabled = split && !splitReady;
+  }
+
+  for (const radio of form.querySelectorAll('input[name=kind]')) radio.addEventListener('change', applyMode);
+
+  if (splitToken) {
+    form.elements.kind.value = 'splitsen';
+    applyMode();
+    fetch(`${api}/split/${encodeURIComponent(splitToken)}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          splitInfo.textContent = 'Deze link is niet (meer) geldig. Vraag het secretariaat om een nieuwe via de contactpagina.';
+          return;
+        }
+        const p = await response.json();
+        const f = form.elements;
+        const set = (name, value) => {
+          if (value && !f[name].value) f[name].value = value;
+        };
+        set('firstName', p.secondFirstName);
+        set('namePrefix', p.secondNamePrefix);
+        set('lastName', p.secondLastName);
+        set('addressLine', p.addressLine);
+        set('postalCode', p.postalCode);
+        set('city', p.city);
+        set('email', p.email);
+        splitReady = true;
+        splitInfo.textContent = `Je registreert het tweede lid van het lidmaatschap van ${p.mainMemberName}. De contributie blijft via ${p.mainMemberName} lopen; een IBAN is niet nodig. Heeft het tweede lid een eigen e-mailadres, vul dat dan in.`;
+        applyMode();
+      })
+      .catch(() => {
+        splitInfo.textContent = 'Geen verbinding. Laad de pagina opnieuw.';
+      });
+  }
+
   const show = (id) => {
     for (const section of ['formulier', 'code', 'klaar']) {
       document.getElementById(section).hidden = section !== id;
@@ -64,9 +117,10 @@
       gender: f.gender.value || null, birthDate: f.birthDate.value, addressLine: f.addressLine.value,
       postalCode: f.postalCode.value, city: f.city.value, email: f.email.value, phone: f.phone.value || null,
       guardianName: isMinor() ? f.guardianName.value : null, guardianPhone: isMinor() ? f.guardianPhone.value : null,
-      iban: f.iban.value, accountHolder: f.accountHolder.value, mandateConsent: f.mandateConsent.checked,
+      iban: isSplit() ? null : f.iban.value, accountHolder: isSplit() ? null : f.accountHolder.value,
+      mandateConsent: isSplit() ? false : f.mandateConsent.checked,
       privacyConsent: f.privacyConsent.checked, photoConsent: f.photoConsent.checked, source: 'Website',
-      membershipType: f.membershipType.value,
+      membershipType: isSplit() ? 'Individual' : f.membershipType.value, splitToken: isSplit() ? splitToken : null,
     };
     const button = form.querySelector('button[type=submit]');
     button.disabled = true;

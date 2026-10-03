@@ -479,3 +479,6 @@ ul.grid-3, ul.grid-4, ul.grid-5 { list-style: none; padding: 0; margin: 0; }
 /* Optocht: knoppen onderaan de kaarten, op gelijke hoogte (2026-10-01). */
 .optocht-cards .cta-card { display: flex; flex-direction: column; }
 .optocht-cards .card-actions { margin-top: auto; padding-top: 4px; }
+
+/* Fase 25: toelichting in een formulier (lid splitsen). */
+.form-note { background: #fff4d6; color: #4a3200; border-left: 4px solid #f4b942; border-radius: 8px; padding: 12px 16px; margin: 0 0 14px; }

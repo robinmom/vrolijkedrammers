@@ -34,6 +34,7 @@ const columns = [
       <>
         {info.getValue()} jaar {info.row.original.minor ? <span className="badge info">via ouder</span> : null}{' '}
         {info.row.original.membershipType === 'Dansgarde' ? <span className="badge">Dansgarde</span> : null}
+        {info.row.original.split ? <span className="badge">Lid splitsen</span> : null}
       </>
     ),
   }),
@@ -140,7 +141,14 @@ export function ApplicationDetailPage() {
   const a = application.data;
   const open = a.status === 'Submitted' || a.status === 'InReview';
   const rows: [string, string | null | undefined][] = [
-    ['Soort lidmaatschap', a.membershipType === 'Dansgarde' ? 'Dansgarde (groep "Dansgarde" in e-Boekhouden)' : 'Lidmaatschap 1 persoon'],
+    [
+      'Soort lidmaatschap',
+      a.splitFrom
+        ? `Lid splitsen: tweede lid van ${a.splitFrom.fullName} (lidnummer ${a.splitFrom.memberNumber}); combinatie, het hoofdlid betaalt`
+        : a.membershipType === 'Dansgarde'
+          ? 'Dansgarde (groep "Dansgarde" in e-Boekhouden)'
+          : 'Lid',
+    ],
     ['Geboortedatum', `${formatDate(a.birthDate)} (${a.age} jaar)`],
     ['Geslacht', a.gender === 'm' ? 'Man' : a.gender === 'v' ? 'Vrouw' : '—'],
     ['Adres', `${a.addressLine}, ${a.postalCode} ${a.city}`],
@@ -215,7 +223,13 @@ export function ApplicationDetailPage() {
             <h2 id="contributie">Contributie en toestemming</h2>
             <dl className="details">
                 <dt>IBAN</dt>
-                <dd>{a.ibanMasked ?? <span className="muted">Gewist (doorgegeven aan e-Boekhouden of afgewezen)</span>}</dd>
+                <dd>
+                  {a.splitFrom ? (
+                    <span className="muted">Niet nodig: het hoofdlid betaalt de combinatie</span>
+                  ) : (
+                    (a.ibanMasked ?? <span className="muted">Gewist (doorgegeven aan e-Boekhouden of afgewezen)</span>)
+                  )}
+                </dd>
                 <dt>Rekeninghouder</dt>
                 <dd>{a.accountHolder ?? '—'}</dd>
                 <dt>Machtiging</dt>

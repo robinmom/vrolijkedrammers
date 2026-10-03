@@ -80,3 +80,73 @@ test('volwassene ziet geen ouder-sectie; een verkeerde code geeft een melding', 
   await page.getByLabel('Geboortedatum').fill(`${new Date().getFullYear() - 16}-01-01`);
   await expect(page.getByRole('group', { name: 'Ouder of verzorger' })).toBeHidden();
 });
+
+test('lid splitsen via de link uit de mail: alles ingevuld, geen IBAN', async ({ page }) => {
+  const api = { bodies: [] as unknown[] };
+  // Na serve(): de laatst geregistreerde route gaat voor.
+  await serve(page, api);
+  await page.route('**/api/v1/membership-applications/split/**', (route) =>
+    route.request().url().endsWith('/split/goed')
+      ? route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            mainMemberName: 'Jan',
+            email: 'jan@example.com',
+            secondFirstName: 'Marie',
+            secondNamePrefix: 'de',
+            secondLastName: 'Vries',
+            addressLine: 'Kerkstraat 2',
+            postalCode: '6999 AB',
+            city: 'Loil',
+          }),
+        })
+      : route.fulfill({ status: 404, contentType: 'application/json', body: '{}' }),
+  );
+  await page.goto('/lid-worden/?splitsen=goed');
+
+  await expect(page.getByRole('heading', { name: 'Tweede lid registreren' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: /lid splitsen/ })).toBeChecked();
+  await expect(page.getByText(/tweede lid van het lidmaatschap van Jan/)).toBeVisible();
+  await expect(page.getByLabel('Voornaam')).toHaveValue('Marie');
+  await expect(page.getByLabel('Achternaam')).toHaveValue('Vries');
+  await expect(page.getByLabel('E-mailadres', { exact: true })).toHaveValue('jan@example.com');
+  await expect(page.getByLabel('IBAN')).toBeHidden();
+  await expect(page.getByRole('group', { name: 'Soort lidmaatschap' })).toBeHidden();
+
+  await page.getByLabel('Geboortedatum').fill('1966-05-01');
+  await page.getByLabel(/privacyverklaring/).check();
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual(
+    [],
+  );
+  await page.getByRole('button', { name: 'Aanmelding versturen' }).click();
+  await expect(page.getByRole('heading', { name: 'Bevestig je e-mailadres' })).toBeVisible();
+  expect(api.bodies[0]).toMatchObject({
+    firstName: 'Marie',
+    email: 'jan@example.com',
+    iban: null,
+    accountHolder: null,
+    mandateConsent: false,
+    membershipType: 'Individual',
+    splitToken: 'goed',
+  });
+});
+
+test('lid splitsen zonder (geldige) link: uitleg en niet versturen', async ({ page }) => {
+  await serve(page, { bodies: [] });
+  await page.route('**/api/v1/membership-applications/split/**', (route) =>
+    route.fulfill({ status: 404, contentType: 'application/json', body: '{}' }),
+  );
+  await page.goto('/lid-worden/?splitsen=verlopen');
+  await expect(page.getByText(/Deze link is niet \(meer\) geldig/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aanmelding versturen' })).toBeDisabled();
+
+  await page.goto('/lid-worden/');
+  await page.getByRole('radio', { name: /lid splitsen/ }).check();
+  await expect(page.getByText(/Gebruik de persoonlijke link/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aanmelding versturen' })).toBeDisabled();
+  await page.getByRole('radio', { name: 'Nieuw lid' }).check();
+  await expect(page.getByLabel('IBAN')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Aanmelding versturen' })).toBeEnabled();
+});

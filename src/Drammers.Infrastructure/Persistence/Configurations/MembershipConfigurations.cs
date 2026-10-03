@@ -28,6 +28,7 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.EbStatusRaw).HasMaxLength(100);
         builder.Property(m => m.MemberCategory).HasMaxLength(50);
         builder.Property(m => m.ParadeGroupName).HasMaxLength(100);
+        builder.Property(m => m.SecondMemberName).HasMaxLength(150);
         builder.Property(m => m.JubileeNote).HasMaxLength(200);
         builder.Property(m => m.LocalFields).HasMaxLength(400);
         builder.Property(m => m.MembershipKind).HasConversion<string>().HasMaxLength(20);
@@ -41,6 +42,20 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.EbHash).HasMaxLength(32).IsFixedLength();
         builder.Ignore(m => m.EffectiveStatus);
         builder.HasIndex(m => new { m.MembershipStatus, m.LastName });
+    }
+}
+
+internal sealed class MembershipSplitInvitationConfiguration : IEntityTypeConfiguration<MembershipSplitInvitation>
+{
+    public void Configure(EntityTypeBuilder<MembershipSplitInvitation> builder)
+    {
+        builder.ToTable("MembershipSplitInvitation", Schemas.Membership);
+        builder.Property(i => i.Id).ValueGeneratedNever();
+        builder.Property(i => i.TokenHash).HasMaxLength(64);
+        builder.Property(i => i.SentTo).HasMaxLength(254);
+        builder.HasIndex(i => i.MemberId).IsUnique();
+        builder.HasIndex(i => i.TokenHash).IsUnique();
+        builder.HasOne<Member>().WithMany().HasForeignKey(i => i.MemberId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 

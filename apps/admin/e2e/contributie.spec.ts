@@ -11,7 +11,7 @@ test('fase 23a: contributie, tarief toevoegen en een partner koppelen', async ({
 
   await expect(page.getByRole('heading', { name: 'Contributie', level: 1 })).toBeVisible();
   await expect(
-    page.getByRole('row', { name: /001 Piet van der Berg Twee personen \(e-Boekhouden\) € 57,50 Betaalt/ }),
+    page.getByRole('row', { name: /001 Piet van der Berg Combinatie \(e-Boekhouden\) € 57,50 Betaalt/ }),
   ).toBeVisible();
   await expect(
     page.getByRole('row', { name: /002 Anna Jansen Onbekend € 0,00 Onbekend Soort lidmaatschap onbekend/ }),
@@ -26,13 +26,14 @@ test('fase 23a: contributie, tarief toevoegen en een partner koppelen', async ({
       .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
   ).toEqual([]);
 
-  // Nieuw tarief per 2027.
+  // Nieuw tarief per 2027 (fase 25: op de pagina Lidmaatschappen).
+  await page.goto('/beheer/lidmaatschappen');
   const rates = page.getByRole('region', { name: 'Tarieven per jaar' });
   await rates.getByLabel('Geldig vanaf').fill('2027-01-01');
-  await rates.getByLabel('Eén persoon (€)').fill('35');
-  await rates.getByLabel('Twee personen (€)').fill('60');
-  await rates.getByLabel('Eén persoon 65+ (€)').fill('24');
-  await rates.getByLabel('Twee personen 65+ (€)').fill('46');
+  await rates.getByLabel('Lid (€)').fill('35');
+  await rates.getByLabel('Combinatie (€)').fill('60');
+  await rates.getByLabel('Lid 65+ (€)').fill('24');
+  await rates.getByLabel('Combinatie 65+ (€)').fill('46');
   await rates.getByLabel('Dansgarde (€)').fill('90,00');
   await rates.getByRole('button', { name: 'Tarief opslaan' }).click();
   await expect(rates.getByText('Tarief opgeslagen.')).toBeVisible();

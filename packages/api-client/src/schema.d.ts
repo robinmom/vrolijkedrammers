@@ -4868,6 +4868,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/memberships/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aantal actieve leden per soort lidmaatschap, op vandaag. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MembershipOverviewResponse"];
+                        "application/json": components["schemas"]["MembershipOverviewResponse"];
+                        "text/json": components["schemas"]["MembershipOverviewResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/memberships/splits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Actieve tweepersoonsleden zonder gekoppeld tweede lid, met de stand van de uitnodiging. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SplitCandidate"][];
+                        "application/json": components["schemas"]["SplitCandidate"][];
+                        "text/json": components["schemas"]["SplitCandidate"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/memberships/splits/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hoofdleden mailen met een link om het tweede lid te registreren; zonder `MemberIds` iedereen die nog niet gemaild is. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SplitInviteRequest"];
+                    "text/json": components["schemas"]["SplitInviteRequest"];
+                    "application/*+json": components["schemas"]["SplitInviteRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SplitInviteResult"];
+                        "application/json": components["schemas"]["SplitInviteResult"];
+                        "text/json": components["schemas"]["SplitInviteResult"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members/import": {
         parameters: {
             query?: never;
@@ -12493,6 +12624,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/membership-applications/split/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lid splitsen (fase 25): wat het formulier vooraf invult bij een persoonlijke link uit de mail aan het hoofdlid. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SplitPrefill"];
+                        "application/json": components["schemas"]["SplitPrefill"];
+                        "text/json": components["schemas"]["SplitPrefill"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/membership-applications": {
         parameters: {
             query?: never;
@@ -15894,6 +16076,7 @@ export interface components {
             provisioning: null | components["schemas"]["ApplicationProvisioningResponse"];
             emailInUseBy: null | string;
             membershipType: components["schemas"]["MembershipType"];
+            splitFrom?: null | components["schemas"]["ApplicationSplitResponse"];
         };
         ApplicationNotesRequest: {
             notes: null | string;
@@ -15921,16 +16104,24 @@ export interface components {
             phone: null | string;
             guardianName: null | string;
             guardianPhone: null | string;
-            iban: string;
-            accountHolder: string;
+            iban: null | string;
+            accountHolder: null | string;
             mandateConsent: boolean;
             privacyConsent: boolean;
             photoConsent: boolean;
             source: components["schemas"]["ApplicationSource"];
             membershipType?: components["schemas"]["MembershipType"];
+            splitToken?: null | string;
         };
         /** @enum {unknown} */
         ApplicationSource: "App" | "Website" | "Portal";
+        /** @description Lid splitsen (fase 25): het hoofdlid van wie dit het tweede lid is. */
+        ApplicationSplitResponse: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+        };
         ApplicationStartedResponse: {
             /** Format: uuid */
             id: string;
@@ -15953,6 +16144,8 @@ export interface components {
             /** Format: date-time */
             submittedAt: null | string;
             membershipType: components["schemas"]["MembershipType"];
+            /** @default false */
+            split: boolean;
         };
         ApplyStartNumbersRequest: {
             /** Format: int32 */
@@ -17303,6 +17496,7 @@ export interface components {
             category: null | string;
             inactiveStatusValues: string[];
             paradeGroupName?: null | string;
+            secondMemberName?: null | string;
         };
         MemberFieldSourcesResponse: {
             birthDateFromEBoekhouden: boolean;
@@ -17394,8 +17588,20 @@ export interface components {
             byJoinYear: components["schemas"]["ReportRow"][];
             byGroup: components["schemas"]["ReportRow"][];
         };
+        MembershipCountResponse: {
+            label: string;
+            /** Format: int32 */
+            count: number;
+        };
         /** @enum {unknown} */
         MembershipKind: "OnePerson" | "TwoPersons" | "Partner" | "Dansgarde" | null;
+        MembershipOverviewResponse: {
+            /** Format: int32 */
+            active: number;
+            /** Format: int32 */
+            exempt: number;
+            byKind: components["schemas"]["MembershipCountResponse"][];
+        };
         MembershipSettings: {
             kind: null | components["schemas"]["MembershipKind"];
             /** Format: uuid */
@@ -18742,6 +18948,45 @@ export interface components {
             /** Format: int32 */
             quantity: number;
         };
+        SplitCandidate: {
+            /** Format: uuid */
+            memberId: string;
+            memberNumber: string;
+            fullName: string;
+            email: null | string;
+            secondMemberName: null | string;
+            state: components["schemas"]["SplitState"];
+            /** Format: date-time */
+            invitedAt: null | string;
+            /** Format: int32 */
+            timesInvited: number;
+            /** Format: uuid */
+            applicationId: null | string;
+        };
+        SplitInviteRequest: {
+            memberIds: null | string[];
+        };
+        SplitInviteResult: {
+            /** Format: int32 */
+            invited: number;
+            /** Format: int32 */
+            withoutEmail: number;
+            /** Format: int32 */
+            skipped: number;
+        };
+        /** @description Wat het splitsformulier vooraf invult (alleen met een geldige link). */
+        SplitPrefill: {
+            mainMemberName: string;
+            email: string;
+            secondFirstName: null | string;
+            secondNamePrefix: null | string;
+            secondLastName: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+        };
+        /** @enum {unknown} */
+        SplitState: "NotInvited" | "Invited" | "Applied";
         StartNumberChange: {
             /** Format: uuid */
             id: string;

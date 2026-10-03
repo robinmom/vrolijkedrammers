@@ -1080,6 +1080,26 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 
 ---
 
+### Fase 25 — Tweepersoonsleden splitsen en de pagina Lidmaatschappen (gebouwd, 2026-10-03)
+
+Besluit van het bestuur: een tweepersoonslidmaatschap wordt gesplitst in twee eigen leden. Die zijn samen een combinatie (€ 57,50, of € 44,00 als beiden 65+ zijn), en het hoofdlid betaalt.
+- **Pagina Leden → Lidmaatschappen (`contribution.manage`):**
+  - aantallen actieve leden per soort (lid, combinatie, nog niet gesplitst, tweede lid, dansgarde, vrijgesteld);
+  - de tarieven (verhuisd van Contributie);
+  - de lijst "Tweepersoonsleden splitsen": actieve tweepersoonsleden zonder gekoppeld tweede lid, met de naam uit het vrije veld "Tweede lid" (nieuwe mapping `SecondMemberName`, bijvoorbeeld vrij veld 2) en de stand: nog niet gemaild, gemaild of aanmelding ingediend.
+  - Mailen kan per hoofdlid of voor iedereen die nog niet gemaild is, na een bevestiging. Leden zonder e-mailadres worden overgeslagen en geteld.
+- **De mail aan het hoofdlid:** met een persoonlijke link `/lid-worden/?splitsen=<token>`, 90 dagen geldig. Er wordt alleen een SHA-256-hash van de link bewaard (`membership.MembershipSplitInvitation`, één per hoofdlid); opnieuw mailen geeft een nieuwe link. De afzender is het systeemadres, met Reply-To naar het secretariaat.
+- **Het formulier Lid worden:**
+  - Nieuwe keuze "Ik ben al lid: lid splitsen". Met de link staan het e-mailadres van het hoofdlid, de naam uit vrij veld 2 en het adres al ingevuld (`GET /membership-applications/split/{token}`).
+  - Geen IBAN en geen machtiging: het hoofdlid betaalt.
+  - Zonder geldige link legt het formulier uit hoe je die krijgt; versturen kan dan niet.
+- **Goedkeuring:** de aanmelding (`SplitFromMemberId`) komt bij Aanmeldingen met het label "Lid splitsen" en het hoofdlid erbij. Na goedkeuring:
+  - wordt het tweede lid aangemaakt, ook in e-Boekhouden zolang de sync aanstaat, anders ziet de sync het als verdwenen;
+  - wordt het lid `Partner` van het hoofdlid, en het hoofdlid `TwoPersons` (combinatie).
+  - Gebruikt het tweede lid het e-mailadres van het hoofdlid, dan krijgt het (nog) geen eigen app-account en geen welkomstmail. Met een eigen adres kan het later een account aanvragen.
+- **Jaren lid:** het tweede lid neemt het inschrijfjaar (en een eventuele jubileumcorrectie) van het hoofdlid over. Dat blijft zo, ook als de combinatie later wordt verbroken.
+- **Benamingen:** "Lid" en "Combinatie" in plaats van "Eén persoon" en "Twee personen", met (65+) waar dat geldt.
+
 ### Fase 24 — Ledengegevens bewerken en account aanvragen met e-mail (gebouwd, 2026-10-03)
 
 Voorbereiding op het afscheid van e-Boekhouden (fase 23). De sync blijft voorlopig aanstaan, tot de livegang.

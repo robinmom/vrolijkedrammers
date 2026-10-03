@@ -62,6 +62,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<ContributionRate> ContributionRates => Set<ContributionRate>();
 
+    public DbSet<MembershipSplitInvitation> MembershipSplitInvitations => Set<MembershipSplitInvitation>();
+
     public DbSet<ExcludedMember> ExcludedMembers => Set<ExcludedMember>();
 
     public DbSet<Group> Groups => Set<Group>();

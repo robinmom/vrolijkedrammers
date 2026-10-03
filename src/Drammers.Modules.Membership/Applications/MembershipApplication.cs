@@ -118,6 +118,12 @@ public sealed class MembershipApplication
 
     public string? InternalNotes { get; set; }
 
+    /// <summary>
+    /// Lid splitsen (fase 25): dit is het tweede lid van het tweepersoonslidmaatschap van dit hoofdlid. Na goedkeuring
+    /// wordt het nieuwe lid de partner van het hoofdlid (combinatie, het hoofdlid betaalt); geen IBAN of machtiging nodig.
+    /// </summary>
+    public Guid? SplitFromMemberId { get; set; }
+
     public Guid? ResultingMemberId { get; set; }
 
     public Guid? ProvisioningId { get; set; }

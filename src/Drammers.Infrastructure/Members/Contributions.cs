@@ -77,9 +77,9 @@ public sealed class Contributions(DrammersDbContext db, IAuditLogger audit)
 
     public static string KindLabel(MembershipKind? kind, bool senior) => kind switch
     {
-        MembershipKind.OnePerson => senior ? "Eén persoon (65+)" : "Eén persoon",
-        MembershipKind.TwoPersons => senior ? "Twee personen (65+)" : "Twee personen",
-        MembershipKind.Partner => "Partner",
+        MembershipKind.OnePerson => senior ? "Lid (65+)" : "Lid",
+        MembershipKind.TwoPersons => senior ? "Combinatie (65+)" : "Combinatie",
+        MembershipKind.Partner => "Combinatie (tweede lid)",
         MembershipKind.Dansgarde => "Dansgarde",
         _ => "Onbekend",
     };

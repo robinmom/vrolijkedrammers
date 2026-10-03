@@ -5796,6 +5796,145 @@
         }
       }
     },
+    "/api/v1/admin/memberships/overview": {
+      "get": {
+        "tags": [
+          "AdminMemberships"
+        ],
+        "summary": "Aantal actieve leden per soort lidmaatschap, op vandaag.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipOverviewResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipOverviewResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipOverviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/memberships/splits": {
+      "get": {
+        "tags": [
+          "AdminMemberships"
+        ],
+        "summary": "Actieve tweepersoonsleden zonder gekoppeld tweede lid, met de stand van de uitnodiging.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SplitCandidate"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SplitCandidate"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SplitCandidate"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/memberships/splits/invite": {
+      "post": {
+        "tags": [
+          "AdminMemberships"
+        ],
+        "summary": "Hoofdleden mailen met een link om het tweede lid te registreren; zonder `MemberIds` iedereen die nog niet gemaild is.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitInviteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitInviteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitInviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitInviteResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitInviteResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitInviteResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/members/import": {
       "post": {
         "tags": [
@@ -15138,6 +15277,66 @@
         }
       }
     },
+    "/api/v1/membership-applications/split/{token}": {
+      "get": {
+        "tags": [
+          "MembershipApplications"
+        ],
+        "summary": "Lid splitsen (fase 25): wat het formulier vooraf invult bij een persoonlijke link uit de mail aan het hoofdlid.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitPrefill"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitPrefill"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitPrefill"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/membership-applications": {
       "post": {
         "tags": [
@@ -20598,6 +20797,16 @@
           },
           "membershipType": {
             "$ref": "#/components/schemas/MembershipType"
+          },
+          "splitFrom": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationSplitResponse"
+              }
+            ]
           }
         }
       },
@@ -20726,10 +20935,16 @@
             ]
           },
           "iban": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "accountHolder": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "mandateConsent": {
             "type": "boolean"
@@ -20745,6 +20960,12 @@
           },
           "membershipType": {
             "$ref": "#/components/schemas/MembershipType"
+          },
+          "splitToken": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -20754,6 +20975,27 @@
           "Website",
           "Portal"
         ]
+      },
+      "ApplicationSplitResponse": {
+        "required": [
+          "memberId",
+          "memberNumber",
+          "fullName"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          }
+        },
+        "description": "Lid splitsen (fase 25): het hoofdlid van wie dit het tweede lid is."
       },
       "ApplicationStartedResponse": {
         "required": [
@@ -20827,6 +21069,10 @@
           },
           "membershipType": {
             "$ref": "#/components/schemas/MembershipType"
+          },
+          "split": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -25807,6 +26053,12 @@
               "null",
               "string"
             ]
+          },
+          "secondMemberName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "Welk vrij veld van e-Boekhouden (`freeText1`..`freeText10`) welk ledengegeven bevat (B-06). Een leeg veld\nbetekent \"niet gemapt\": het gegeven wordt dan lokaal beheerd. Opgeslagen in `config.AppConfiguration`."
@@ -26155,6 +26407,22 @@
         },
         "description": "Rollen, leeftijd, inschrijfjaar en groepen tellen alleen actieve leden; status telt alle leden."
       },
+      "MembershipCountResponse": {
+        "required": [
+          "label",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "MembershipKind": {
         "enum": [
           "OnePerson",
@@ -26163,6 +26431,30 @@
           "Dansgarde",
           null
         ]
+      },
+      "MembershipOverviewResponse": {
+        "required": [
+          "active",
+          "exempt",
+          "byKind"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "exempt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "byKind": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MembershipCountResponse"
+            }
+          }
+        }
       },
       "MembershipSettings": {
         "required": [
@@ -31134,6 +31426,170 @@
           }
         }
       },
+      "SplitCandidate": {
+        "required": [
+          "memberId",
+          "memberNumber",
+          "fullName",
+          "email",
+          "secondMemberName",
+          "state",
+          "invitedAt",
+          "timesInvited",
+          "applicationId"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "memberNumber": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secondMemberName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/SplitState"
+          },
+          "invitedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "timesInvited": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "applicationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "SplitInviteRequest": {
+        "required": [
+          "memberIds"
+        ],
+        "type": "object",
+        "properties": {
+          "memberIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "SplitInviteResult": {
+        "required": [
+          "invited",
+          "withoutEmail",
+          "skipped"
+        ],
+        "type": "object",
+        "properties": {
+          "invited": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutEmail": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SplitPrefill": {
+        "required": [
+          "mainMemberName",
+          "email",
+          "secondFirstName",
+          "secondNamePrefix",
+          "secondLastName",
+          "addressLine",
+          "postalCode",
+          "city"
+        ],
+        "type": "object",
+        "properties": {
+          "mainMemberName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "secondFirstName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secondNamePrefix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secondLastName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "addressLine": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Wat het splitsformulier vooraf invult (alleen met een geldige link)."
+      },
+      "SplitState": {
+        "enum": [
+          "NotInvited",
+          "Invited",
+          "Applied"
+        ]
+      },
       "StartNumberChange": {
         "required": [
           "id",
@@ -32738,6 +33194,9 @@
     },
     {
       "name": "AdminMembershipApplications"
+    },
+    {
+      "name": "AdminMemberships"
     },
     {
       "name": "AdminMemberSync"

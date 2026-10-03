@@ -62,6 +62,9 @@ public sealed class Member : IAuditable
 
     public string? MemberCategory { get; set; }
 
+    /// <summary>Naam van het tweede lid bij een tweepersoonslidmaatschap (vrij veld uit e-Boekhouden, fase 25); vult het splitsformulier vooraf in.</summary>
+    public string? SecondMemberName { get; set; }
+
     /// <summary>Naam van de optochtgroep van dit lid (vrij veld uit e-Boekhouden, fase 11); vult de inschrijving vooraf in.</summary>
     public string? ParadeGroupName { get; set; }
 

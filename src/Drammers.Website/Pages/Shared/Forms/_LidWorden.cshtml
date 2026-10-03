@@ -4,6 +4,13 @@
 
   <form id="aanmelden" novalidate>
     <fieldset>
+      <legend>Ik meld me aan als</legend>
+      <label class="check choice"><input type="radio" name="kind" value="nieuw" checked /> <span><strong>Nieuw lid</strong></span></label>
+      <label class="check choice"><input type="radio" name="kind" value="splitsen" /> <span><strong>Ik ben al lid: lid splitsen</strong><br /><span class="muted">Jullie zijn samen lid (tweepersoonslidmaatschap) en registreren nu het tweede lid apart. De contributie blijft via het hoofdlid lopen.</span></span></label>
+    </fieldset>
+    <p id="splitsen-info" class="form-note" role="status" hidden></p>
+
+    <fieldset id="soort">
       <legend>Soort lidmaatschap</legend>
       <label class="check choice"><input type="radio" name="membershipType" value="Individual" checked /> <span><strong>Lid</strong><br /><span class="muted">Lid van de vereniging: activiteiten, optocht en carnaval.</span></span></label>
       <label class="check choice"><input type="radio" name="membershipType" value="Dansgarde" /> <span><strong>Dansgarde</strong><br /><span class="muted">Dansen bij de dansgarde (vanaf 5 jaar). Het bestuur deelt het nieuwe lid daarna in bij een dansgroep.</span></span></label>
@@ -50,7 +57,7 @@
       </div>
     </fieldset>
 
-    <fieldset>
+    <fieldset id="contributie">
       <legend>Contributie</legend>
       <div class="row two">
         <label>IBAN<input name="iban" required maxlength="40" autocomplete="off" placeholder="NL00 BANK 0123 4567 89" /></label>

@@ -37,6 +37,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden' },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
+  // Fase 25: lidmaatschappen (soorten, tarieven, splitsen); contributie is het overzicht per lid.
+  { label: 'Lidmaatschappen', to: '/lidmaatschappen', permission: 'contribution.manage', icon: 'groepen', section: 'Leden' },
   // Fase 23a: contributie zonder e-Boekhouden.
   { label: 'Contributie', to: '/contributie', permission: 'contribution.manage', icon: 'rollen', section: 'Leden' },
   // Fase 20: jubilarissen per carnavalsjaar.

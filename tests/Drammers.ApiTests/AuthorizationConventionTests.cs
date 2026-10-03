@@ -39,6 +39,7 @@ public class AuthorizationConventionTests
         $"{nameof(ContactController)}.{nameof(ContactController.Get)}",
         $"{nameof(ContactController)}.{nameof(ContactController.Send)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Start)}",
+        $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.SplitPrefill)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.Verify)}",
         $"{nameof(MembershipApplicationsController)}.{nameof(MembershipApplicationsController.ResendCode)}",
         // Fase 10: push voor gasten (alleen meldingen aan iedereen; rate limit, token versleuteld).

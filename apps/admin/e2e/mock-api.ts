@@ -162,6 +162,31 @@ export class MockApi {
   ];
   syncJobs: Record<string, unknown>[] = [];
   jubileeMilestones = [11, 22, 33, 44, 55, 66, 77];
+  // Fase 25: tweepersoonsleden splitsen.
+  splitCandidates = [
+    {
+      memberId: 'm-1',
+      memberNumber: '001',
+      fullName: 'Piet van der Berg',
+      email: 'piet@example.com' as string | null,
+      secondMemberName: 'Marie van der Berg' as string | null,
+      state: 'NotInvited',
+      invitedAt: null as string | null,
+      timesInvited: 0,
+      applicationId: null as string | null,
+    },
+    {
+      memberId: 'm-2',
+      memberNumber: '002',
+      fullName: 'Anna Jansen',
+      email: null as string | null,
+      secondMemberName: null as string | null,
+      state: 'NotInvited',
+      invitedAt: null as string | null,
+      timesInvited: 0,
+      applicationId: null as string | null,
+    },
+  ];
   // Fase 24: handmatig aangepaste velden per lid.
   memberLocalFields: Record<string, string[]> = {};
   jubileeInvitations: Record<string, string> = {};
@@ -2731,6 +2756,36 @@ export class MockApi {
         return noContent();
       }
       return json(group);
+    }
+    if (path === '/admin/memberships/overview') {
+      return json({
+        active: 2,
+        exempt: 0,
+        byKind: [
+          { label: 'Lid', count: 1 },
+          { label: 'Tweepersoonslid, nog niet gesplitst', count: 1 },
+        ],
+      });
+    }
+    if (path === '/admin/memberships/splits') return json(this.splitCandidates);
+    if (path === '/admin/memberships/splits/invite' && method === 'POST') {
+      const ids =
+        (body.memberIds as string[] | null) ??
+        this.splitCandidates.filter((c) => c.state === 'NotInvited').map((c) => c.memberId);
+      let invited = 0;
+      let withoutEmail = 0;
+      for (const c of this.splitCandidates.filter((x) => ids.includes(x.memberId))) {
+        if (!c.email) {
+          withoutEmail++;
+          continue;
+        }
+        c.state = 'Invited';
+        c.invitedAt = '2026-10-03T10:00:00Z';
+        c.timesInvited++;
+        invited++;
+      }
+      this.record('member.split-invited', 'Member', 'split', { invited });
+      return json({ invited, withoutEmail, skipped: 0 });
     }
     if (path === '/admin/contributions' && method === 'GET') {
       const rate = this.contributionRates[0]!;

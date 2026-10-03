@@ -37,13 +37,14 @@ public sealed record ApplicationInput(
     string? Phone,
     string? GuardianName,
     string? GuardianPhone,
-    string Iban,
-    string AccountHolder,
+    string? Iban,
+    string? AccountHolder,
     bool MandateConsent,
     bool PrivacyConsent,
     bool PhotoConsent,
     ApplicationSource Source,
-    MembershipType MembershipType = MembershipType.Individual);
+    MembershipType MembershipType = MembershipType.Individual,
+    Guid? SplitFromMemberId = null);
 
 /// <summary>
 /// Lid worden (fase 9b, ADR-014 §1): formulier → e-mailcode (= indienen) → beoordeling door het bestuur → na goedkeuring
@@ -83,7 +84,7 @@ public sealed class MembershipApplications(
         application.MandateReference = $"DVD-{application.Id:N}"[..24].ToUpperInvariant();
         application.CreatedAt = clock.UtcNow.UtcDateTime;
         application.ConsentPrivacyAt = application.CreatedAt;
-        application.MandateConsentAt = application.CreatedAt;
+        application.MandateConsentAt = application.SplitFromMemberId is null ? application.CreatedAt : null;
         application.IpHash = ipAddress is null ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ipAddress)));
         var code = NewCode(application);
         db.MembershipApplications.Add(application);
@@ -157,7 +158,15 @@ public sealed class MembershipApplications(
 
         // Eén account hoort bij hooguit één lid: vóór het aanmaken in e-Boekhouden controleren, niet halverwege de saga.
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
-        if (!application.IsMinorOn(today) && await EmailInUseAsync(application.Email, cancellationToken) is { } other)
+        if (application.SplitFromMemberId is { } mainId)
+        {
+            // Lid splitsen: het e-mailadres is vaak dat van het hoofdlid; dan krijgt het tweede lid (nog) geen eigen account.
+            if (await db.Members.AnyAsync(m => m.PayerMemberId == mainId, cancellationToken))
+            {
+                throw new DomainException(ErrorCodes.Validation, "Bij dit hoofdlid is al een tweede lid gekoppeld.", DomainErrorKind.Conflict);
+            }
+        }
+        else if (!application.IsMinorOn(today) && await EmailInUseAsync(application.Email, cancellationToken) is { } other)
         {
             throw new DomainException(ErrorCodes.MemberHasAccount,
                 $"Het e-mailadres {application.Email} hoort al bij het app-account van {other}. Vraag de aanvrager om een eigen e-mailadres (of wijs de aanmelding af).",
@@ -286,7 +295,10 @@ public sealed class MembershipApplications(
                 await db.SaveChangesAsync(cancellationToken);
             }
 
-            if (saga.UserId is null)
+            // Lid splitsen met het e-mailadres van het hoofdlid: geen eigen account; het tweede lid kan later met een eigen
+            // adres een account aanvragen.
+            var skipAccount = application.SplitFromMemberId is not null && await EmailInUseAsync(application.Email, cancellationToken) is not null;
+            if (saga.UserId is null && !skipAccount)
             {
                 saga.UserId = minor
                     ? await accounts.EnsureAccountAsync(application.Email, application.GuardianName!, null, DefaultRoles.Ouder, cancellationToken)
@@ -300,7 +312,7 @@ public sealed class MembershipApplications(
                 await db.SaveChangesAsync(cancellationToken);
             }
 
-            if (saga.Step is not (ProvisioningStep.WelcomeSent or ProvisioningStep.Completed))
+            if (saga.Step is not (ProvisioningStep.WelcomeSent or ProvisioningStep.Completed) && !skipAccount)
             {
                 await email.SendAsync(
                     minor
@@ -344,7 +356,11 @@ public sealed class MembershipApplications(
 
         if (mapping.JoinYear is { } joinField)
         {
-            freeTexts[joinField] = clock.UtcNow.Year.ToString(CultureInfo.InvariantCulture);
+            // Lid splitsen (fase 25): het tweede lid neemt de jaren van het hoofdlid over.
+            var joinYear = application.SplitFromMemberId is { } splitMainId
+                ? await db.Members.AsNoTracking().Where(m => m.Id == splitMainId).Select(m => m.JoinYear).SingleOrDefaultAsync(cancellationToken)
+                : null;
+            freeTexts[joinField] = (joinYear ?? clock.UtcNow.Year).ToString(CultureInfo.InvariantCulture);
         }
 
         if (application.MembershipType == MembershipType.Dansgarde && mapping.ParadeGroupName is { } groupField)
@@ -353,7 +369,15 @@ public sealed class MembershipApplications(
         }
 
         var note = new StringBuilder($"Aangemeld via {SourceLabel(application.Source)} op {application.SubmittedAt:dd-MM-yyyy}.");
-        note.Append(CultureInfo.InvariantCulture, $" Rekeninghouder: {application.AccountHolder}.");
+        if (application.SplitFromMemberId is { } mainId)
+        {
+            var main = await db.Members.AsNoTracking().SingleAsync(m => m.Id == mainId, cancellationToken);
+            note.Append(CultureInfo.InvariantCulture, $" Tweede lid van {main.FullName} (lidnummer {main.MemberNumber}); combinatielidmaatschap, het hoofdlid betaalt.");
+        }
+        else
+        {
+            note.Append(CultureInfo.InvariantCulture, $" Rekeninghouder: {application.AccountHolder}.");
+        }
         if (application.GuardianName is not null)
         {
             note.Append(CultureInfo.InvariantCulture, $" Ouder/verzorger: {application.GuardianName}, {application.GuardianPhone}.");
@@ -374,6 +398,15 @@ public sealed class MembershipApplications(
         if (existing is not null)
         {
             // De ledensync was ons voor: dat lid gebruiken.
+            if (application.SplitFromMemberId is { } splitMain && existing.PayerMemberId is null)
+            {
+                var main = await db.Members.SingleAsync(m => m.Id == splitMain, cancellationToken);
+                main.MembershipKind ??= MembershipKind.TwoPersons;
+                existing.MembershipKind = MembershipKind.Partner;
+                existing.PayerMemberId = main.Id;
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
             return existing.Id;
         }
 
@@ -400,6 +433,19 @@ public sealed class MembershipApplications(
             SyncState = MemberSyncState.InSync,
             EbLastSeenAt = clock.UtcNow.UtcDateTime,
         };
+        if (application.SplitFromMemberId is { } mainId)
+        {
+            // Combinatie (fase 25): het nieuwe lid is de partner; het hoofdlid betaalt. De jaren lid (inschrijfjaar en een
+            // eventuele jubileumcorrectie) neemt het tweede lid over van het hoofdlid; dat blijft zo na het verbreken.
+            var main = await db.Members.SingleAsync(m => m.Id == mainId, cancellationToken);
+            main.MembershipKind ??= MembershipKind.TwoPersons;
+            member.MembershipKind = MembershipKind.Partner;
+            member.PayerMemberId = main.Id;
+            member.JoinYear = main.JoinYear ?? member.JoinYear;
+            member.JubileeJoinYearOverride = main.JubileeJoinYearOverride;
+            member.JubileeNote = main.JubileeJoinYearOverride is null ? null : main.JubileeNote;
+        }
+
         db.Members.Add(member);
         await db.SaveChangesAsync(cancellationToken);
         return member.Id;
@@ -447,8 +493,10 @@ public sealed class MembershipApplications(
             City = Required(input.City, "de woonplaats", 50),
             Email = Required(input.Email, "het e-mailadres", 150).ToLowerInvariant(),
             Phone = string.IsNullOrWhiteSpace(input.Phone) ? null : input.Phone.Trim(),
-            Iban = NormalizeIban(input.Iban),
-            AccountHolder = Required(input.AccountHolder, "de naam van de rekeninghouder", 100),
+            // Lid splitsen (fase 25): het hoofdlid betaalt; geen eigen IBAN of machtiging.
+            Iban = input.SplitFromMemberId is null ? NormalizeIban(input.Iban) : null,
+            AccountHolder = input.SplitFromMemberId is null ? Required(input.AccountHolder, "de naam van de rekeninghouder", 100) : null,
+            SplitFromMemberId = input.SplitFromMemberId,
             ConsentPhoto = input.PhotoConsent,
             Source = input.Source,
             MembershipType = input.MembershipType,
@@ -484,7 +532,7 @@ public sealed class MembershipApplications(
             throw Invalid("Ga akkoord met de privacyverklaring.");
         }
 
-        if (!input.MandateConsent)
+        if (!input.MandateConsent && input.SplitFromMemberId is null)
         {
             throw Invalid("Geef toestemming voor de automatische incasso van de contributie.");
         }

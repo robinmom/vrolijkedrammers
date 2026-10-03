@@ -24,15 +24,15 @@ export function formatAmount(value: number | undefined): string {
 }
 
 export const kindLabels: Record<MembershipKind, string> = {
-  OnePerson: 'Eén persoon',
-  TwoPersons: 'Twee personen',
-  Partner: 'Partner (tweede persoon)',
+  OnePerson: 'Lid',
+  TwoPersons: 'Combinatie: hoofdlid (betaalt)',
+  Partner: 'Combinatie: tweede lid',
   Dansgarde: 'Dansgarde',
 };
 
 export function kindLabel(kind: MembershipKind | null | undefined, senior: boolean): string {
   if (!kind) return 'Onbekend';
-  const label = kind === 'Partner' ? 'Partner' : kindLabels[kind];
+  const label = kind === 'OnePerson' ? 'Lid' : kind === 'TwoPersons' ? 'Combinatie' : kind === 'Partner' ? 'Combinatie (tweede lid)' : kindLabels[kind];
   return senior && (kind === 'OnePerson' || kind === 'TwoPersons') ? `${label} (65+)` : label;
 }
 

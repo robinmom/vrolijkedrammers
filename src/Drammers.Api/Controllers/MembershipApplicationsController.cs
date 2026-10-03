@@ -16,15 +16,23 @@ namespace Drammers.Api.Controllers;
 [AllowAnonymous]
 [Route("api/v1/membership-applications")]
 [EnableRateLimiting(AuthorizationSetup.AnonymousFormsPolicy)]
-public sealed class MembershipApplicationsController(MembershipApplications applications) : ControllerBase
+public sealed class MembershipApplicationsController(MembershipApplications applications, MemberSplits splits) : ControllerBase
 {
+    /// <summary>Lid splitsen (fase 25): wat het formulier vooraf invult bij een persoonlijke link uit de mail aan het hoofdlid.</summary>
+    [HttpGet("split/{token}")]
+    [EnableRateLimiting(AuthorizationSetup.AnonymousStatusPolicy)]
+    [ProducesResponseType<SplitPrefill>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public Task<SplitPrefill> SplitPrefill(string token, CancellationToken cancellationToken) => splits.PrefillAsync(token, cancellationToken);
+
     [HttpPost]
     [ProducesResponseType<ApplicationStartedResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<ApplicationStartedResponse>> Start(ApplicationRequest request, CancellationToken cancellationToken)
     {
-        var id = await applications.StartAsync(request.ToInput(), HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        Guid? splitFrom = request.SplitToken is { Length: > 0 } token ? (await splits.ResolveAsync(token, cancellationToken)).Id : null;
+        var id = await applications.StartAsync(request.ToInput(splitFrom), HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
         return Created((string?)null, new ApplicationStartedResponse(id));
     }
 
@@ -63,18 +71,19 @@ public sealed record ApplicationRequest(
     [param: StringLength(30)] string? Phone,
     [param: StringLength(100)] string? GuardianName,
     [param: StringLength(30)] string? GuardianPhone,
-    [param: Required, StringLength(40)] string Iban,
-    [param: Required, StringLength(100)] string AccountHolder,
+    [param: StringLength(40)] string? Iban,
+    [param: StringLength(100)] string? AccountHolder,
     bool MandateConsent,
     bool PrivacyConsent,
     bool PhotoConsent,
     ApplicationSource Source,
-    MembershipType MembershipType = MembershipType.Individual)
+    MembershipType MembershipType = MembershipType.Individual,
+    [param: StringLength(100)] string? SplitToken = null)
 {
-    public ApplicationInput ToInput() => new(
+    public ApplicationInput ToInput(Guid? splitFromMemberId = null) => new(
         FirstName, NamePrefix, LastName, Gender, BirthDate, AddressLine, PostalCode, City, Email, Phone, GuardianName, GuardianPhone,
         Iban, AccountHolder, MandateConsent, PrivacyConsent, PhotoConsent, Source == ApplicationSource.Portal ? ApplicationSource.App : Source,
-        MembershipType);
+        splitFromMemberId is null ? MembershipType : MembershipType.Individual, splitFromMemberId);
 }
 
 public sealed record ApplicationStartedResponse(Guid Id);

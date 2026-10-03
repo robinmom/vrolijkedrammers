@@ -216,6 +216,7 @@ public static class DependencyInjection
         services.AddScoped<Jubilees>();
         services.AddScoped<JubileeInvitations>();
         services.AddScoped<Contributions>();
+        services.AddScoped<MemberSplits>();
         services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();

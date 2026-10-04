@@ -93,6 +93,17 @@ public class MailingRendererTests
     }
 
     [Fact]
+    public void Koppen_in_drammers_rood_en_poppins_van_de_eigen_website()
+    {
+        var html = MailingRenderer.Render("Onderwerp", null, [new("heading", "Kop"), new("text", "## Tussenkop")], new("Piet", null), null, _ => null, null,
+            "https://dvd.test/").Html;
+        Assert.Contains("font-size:26px;line-height:33px;color:#ED0012", html);
+        Assert.Contains("font-size:20px;line-height:27px;color:#ED0012", html);
+        Assert.Contains("@font-face{font-family:Poppins;font-weight:700;src:url('https://dvd.test/_content/Drammers.Website/fonts/poppins-latin-700-normal.woff2')", html);
+        Assert.DoesNotContain("fonts.googleapis.com", html);
+    }
+
+    [Fact]
     public void Lege_mailing_mag_niet() =>
         Assert.Throws<DomainException>(() => MailingRenderer.Validate([]));
 }

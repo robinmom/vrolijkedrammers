@@ -84,8 +84,16 @@ public static class PortalHosting
     }
 
     // Bestanden in assets/ hebben een hash in de naam en veranderen nooit; index.html altijd opnieuw ophalen.
-    private static void SetCacheHeaders(HttpContext context) =>
+    private static void SetCacheHeaders(HttpContext context)
+    {
         context.Response.Headers.CacheControl = context.Request.Path.StartsWithSegments($"{BasePath}/assets")
             ? "public, max-age=31536000, immutable"
             : "no-cache";
+
+        // De lettertypen van de website (Poppins, Inter; OFL) worden ook door mailprogramma's geladen (mailings, fase 27a).
+        if (context.Request.Path.Value?.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            context.Response.Headers.AccessControlAllowOrigin = "*";
+        }
+    }
 }

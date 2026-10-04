@@ -26,6 +26,7 @@ export default function NieuweAdverteerderScreen() {
   const [payment, setPayment] = useState<Payment>('Mandate');
   const [iban, setIban] = useState('');
   const [consent, setConsent] = useState(false);
+  const [received, setReceived] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -58,6 +59,7 @@ export default function NieuweAdverteerderScreen() {
           iban: payment === 'Mandate' ? iban.trim() : null,
           mandateConsent: payment === 'Mandate' && consent,
           note: null,
+          cashReceived: payment === 'Cash' && received,
         },
       });
       if (response.ok) {
@@ -138,7 +140,9 @@ export default function NieuweAdverteerderScreen() {
             <TextField label="IBAN" value={iban} onChangeText={setIban} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
             <CheckboxRow label={MANDATE} checked={consent} onChange={setConsent} />
           </>
-        ) : null}
+        ) : (
+          <CheckboxRow label="Geld contant ontvangen" checked={received} onChange={setReceived} />
+        )}
         {error ? (
           <AppText variant="body" color={colors.accentText} accessibilityRole="alert">
             {error}

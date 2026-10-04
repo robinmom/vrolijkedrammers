@@ -37,6 +37,7 @@ const advertiser = (id: string, companyName: string, status: string, previousAmo
   amount,
   previousAmount,
   note: null,
+  cashReceived: false,
 });
 
 const mine = {
@@ -80,7 +81,23 @@ describe('Adverteerders ophalen (fase 27b-2)', () => {
     expect(screen.getByDisplayValue('35')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Afvinken als opgehaald' }));
     const [put] = requests('/api/v1/me/advertisers/a-1/status', 'PUT');
-    expect(await put!.json()).toEqual({ status: 'Collected', amount: 35, note: null });
+    expect(await put!.json()).toEqual({ status: 'Collected', amount: 35, note: null, cashReceived: null });
+  });
+
+  it('bij contant vinkt de collectant aan dat het geld is ontvangen', async () => {
+    const cash = { ...advertiser('a-3', 'Kapsalon Contant', 'Open', 50), payment: 'Cash' };
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/me/advertisers': { ...mine, items: [cash] },
+      '/api/v1/me/advertisers/a-3/status': { status: 204 },
+    });
+    await renderApp(routes, '/adverteerders');
+    await fireEvent.press(await screen.findByRole('button', { name: 'Kapsalon Contant, Nog langs' }));
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Geld contant ontvangen' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Afvinken als opgehaald' }));
+    const [put] = requests('/api/v1/me/advertisers/a-3/status', 'PUT');
+    expect(await put!.json()).toEqual({ status: 'Collected', amount: 50, note: null, cashReceived: true });
   });
 
   it('nieuwe adverteerder met machtiging vraagt IBAN en toestemming', async () => {

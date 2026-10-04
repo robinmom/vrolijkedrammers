@@ -52,6 +52,17 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
   await expect(page.getByRole('heading', { name: 'Voortgang: 50%' })).toBeVisible();
   expect(api.advertisers[0]!.status2027).toBe('Collected');
 
+  // Contant: de garage wordt opgehaald en het geld is ontvangen (fase 27d).
+  await page.getByLabel('Stand van Garage Proef').selectOption({ label: 'Opgehaald' });
+  await expect(page.getByText('nog te ontvangen: € 70,00')).toBeVisible();
+  await page.getByLabel('Contant ontvangen van Garage Proef').click();
+  await expect(page.getByLabel('Contant ontvangen van Garage Proef')).toBeChecked();
+  await expect(page.getByText('nog te ontvangen: € 0,00')).toBeVisible();
+  expect(api.advertisers[1]!.paid2027).not.toBeNull();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporteren (Excel)' }).click();
+  expect((await download).suggestedFilename()).toBe('adverteerders-2027.xlsx');
+
   // Filteren op collectant via de tabel per collectant.
   await page.getByRole('button', { name: 'Piet van der Berg' }).click();
   await expect(page.getByLabel('Collectant')).toHaveValue('m-1');

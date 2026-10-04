@@ -1644,6 +1644,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/{id}/years/{year}/cash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Contant ontvangen (fase 27d) aan- of uitzetten, zonder de stand te wijzigen. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CashReceivedRequest"];
+                    "text/json": components["schemas"]["CashReceivedRequest"];
+                    "application/*+json": components["schemas"]["CashReceivedRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Het overzicht als Excel (fase 27d), in de kolommen van "Advertentie overzicht", zodat het ook weer in te lezen is.
+         *     De IBAN staat er bewust niet in (bij opnieuw inlezen blijft de bekende IBAN staan); wel de stand van het jaar.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/import/preview": {
         parameters: {
             query?: never;
@@ -18514,6 +18609,7 @@ export interface components {
             /** Format: double */
             amount: null | number;
             note: null | string;
+            cashReceived?: null | boolean;
         };
         AdvertiserStatusRow: {
             /** Format: uuid */
@@ -18536,7 +18632,10 @@ export interface components {
             /** Format: date-time */
             statusChangedAt: null | string;
             note: null | string;
+            /** Format: date-time */
+            paidAt?: null | string;
         };
+        /** @description Tellers; `CashReceived`/`CashOutstanding`: van de opgehaalde contante bijdragen wat binnen is en wat nog niet (fase 27d). */
         AdvertiserStatusTotals: {
             /** Format: int32 */
             total: number;
@@ -18550,6 +18649,16 @@ export interface components {
             collectedAmount: number;
             /** Format: double */
             expectedAmount: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            cashReceived: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            cashOutstanding: number;
         };
         AdvertiserSummaryResponse: {
             /** Format: uuid */
@@ -18959,6 +19068,9 @@ export interface components {
             carnivalStartDate: string;
             /** Format: date */
             carnivalEndDate: string;
+        };
+        CashReceivedRequest: {
+            received: boolean;
         };
         CategoryPreference: {
             category: components["schemas"]["NotificationCategory"];
@@ -20584,6 +20696,8 @@ export interface components {
             /** Format: double */
             previousAmount: null | number;
             note: null | string;
+            /** @default false */
+            cashReceived: boolean;
         };
         MyAdvertisers: {
             isCollector: boolean;
@@ -20727,6 +20841,8 @@ export interface components {
             iban: null | string;
             mandateConsent: boolean;
             note: null | string;
+            /** @default false */
+            cashReceived: boolean;
         };
         NewsDetailResponse: {
             /** Format: uuid */

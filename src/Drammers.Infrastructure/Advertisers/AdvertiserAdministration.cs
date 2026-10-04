@@ -35,9 +35,11 @@ public sealed record AdvertiserCollector(Guid MemberId, string Name);
 
 public sealed record AdvertiserStatusRow(
     Guid Id, int Number, string CompanyName, string? City, AdvertiserKind Kind, AdvertiserPayment Payment, Guid? CollectorMemberId, string? CollectorName,
-    AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note);
+    AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note, DateTime? PaidAt = null);
 
-public sealed record AdvertiserStatusTotals(int Total, int Collected, int Stopped, int Open, decimal CollectedAmount, decimal ExpectedAmount);
+/// <summary>Tellers; <c>CashReceived</c>/<c>CashOutstanding</c>: van de opgehaalde contante bijdragen wat binnen is en wat nog niet (fase 27d).</summary>
+public sealed record AdvertiserStatusTotals(
+    int Total, int Collected, int Stopped, int Open, decimal CollectedAmount, decimal ExpectedAmount, decimal CashReceived = 0, decimal CashOutstanding = 0);
 
 public sealed record AdvertiserCollectorTotals(Guid? CollectorMemberId, string Name, AdvertiserStatusTotals Totals);
 
@@ -47,14 +49,15 @@ public sealed record AdvertiserStatusReport(
 /// <summary>Een adverteerder zoals de collectant hem in de app ziet.</summary>
 public sealed record MyAdvertiser(
     Guid Id, int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
-    string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note);
+    string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note,
+    bool CashReceived = false);
 
 public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items);
 
 /// <summary>Een nieuwe adverteerder vanuit de app; bij een machtiging zijn IBAN en toestemming nodig.</summary>
 public sealed record NewAdvertiserInput(
     string CompanyName, string? ContactName, string? Phone, string? Email, string? AddressLine, string? PostalCode, string? City, AdvertiserKind Kind,
-    AdvertiserPayment Payment, decimal Amount, string? Iban, bool MandateConsent, string? Note);
+    AdvertiserPayment Payment, decimal Amount, string? Iban, bool MandateConsent, string? Note, bool CashReceived = false);
 
 /// <summary>IBAN's van adverteerders, versleuteld met een eigen sleutel (los van die van de leden).</summary>
 public sealed class AdvertiserIbanProtector(IDataProtectionProvider provider)
@@ -413,7 +416,8 @@ public sealed class AdvertiserAdministration(
             var previous = a.Years.Where(y => y.Year < year && (y.Amount is > 0 || y.IsFree)).OrderByDescending(y => y.Year).FirstOrDefault();
             return new AdvertiserStatusRow(a.Id, a.Number, a.CompanyName, a.City, a.Kind, a.Payment, a.CollectorMemberId,
                 a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : a.ImportedCollectorName,
-                current?.Status ?? AdvertiserYearStatus.Open, current?.Amount, current?.IsFree ?? false, previous?.Amount, current?.StatusChangedAt, current?.Note);
+                current?.Status ?? AdvertiserYearStatus.Open, current?.Amount, current?.IsFree ?? false, previous?.Amount, current?.StatusChangedAt, current?.Note,
+                current?.PaidAt);
         }).OrderBy(r => r.CollectorName ?? "~").ThenBy(r => r.CompanyName).ToList();
 
         var perCollector = rows.GroupBy(r => (r.CollectorMemberId, Name: r.CollectorName ?? "Zonder collectant"))
@@ -425,14 +429,17 @@ public sealed class AdvertiserAdministration(
     private static AdvertiserStatusTotals Totals(IEnumerable<AdvertiserStatusRow> rows)
     {
         var list = rows.ToList();
+        var cash = list.Where(r => r.Status == AdvertiserYearStatus.Collected && r.Payment == AdvertiserPayment.Cash && !r.IsFree).ToList();
         return new AdvertiserStatusTotals(list.Count, list.Count(r => r.Status == AdvertiserYearStatus.Collected), list.Count(r => r.Status == AdvertiserYearStatus.Stopped),
             list.Count(r => r.Status == AdvertiserYearStatus.Open),
             list.Where(r => r.Status == AdvertiserYearStatus.Collected).Sum(r => r.Amount ?? 0),
-            list.Where(r => r.Status != AdvertiserYearStatus.Stopped).Sum(r => r.Amount ?? r.PreviousAmount ?? 0));
+            list.Where(r => r.Status != AdvertiserYearStatus.Stopped).Sum(r => r.Amount ?? r.PreviousAmount ?? 0),
+            cash.Where(r => r.PaidAt is not null).Sum(r => r.Amount ?? 0), cash.Where(r => r.PaidAt is null).Sum(r => r.Amount ?? 0));
     }
 
     /// <summary>Zet de stand van een adverteerder voor een jaar (portal of app); opgehaald zonder bedrag neemt dat van vorig jaar.</summary>
-    public async Task SetStatusAsync(Guid advertiserId, int year, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken)
+    public async Task SetStatusAsync(
+        Guid advertiserId, int year, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken, bool? cashReceived = null)
     {
         var advertiser = await db.Advertisers.Include(a => a.Years).SingleOrDefaultAsync(a => a.Id == advertiserId, cancellationToken) ?? throw NotFound();
         if (amount is < 0 or > 100_000)
@@ -459,6 +466,7 @@ public sealed class AdvertiserAdministration(
         }
 
         (row.StatusChangedAt, row.StatusChangedBy, row.Note) = (clock.UtcNow.UtcDateTime, actor.UserId, Clean(note, 500));
+        ApplyCash(advertiser, row, cashReceived);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("advertiser.status-changed", "Advertiser", advertiserId.ToString(), before,
             $"{year}: {status} {row.Amount}"), cancellationToken);
@@ -488,19 +496,20 @@ public sealed class AdvertiserAdministration(
             {
                 var a = details[r.Id];
                 return new MyAdvertiser(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City, a.Kind,
-                    a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note);
+                    a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note, r.PaidAt is not null);
             })]);
     }
 
     /// <summary>De collectant zet de stand van een van zijn eigen adverteerders, in het lopende campagnejaar.</summary>
-    public async Task SetMyStatusAsync(Guid memberId, Guid advertiserId, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken)
+    public async Task SetMyStatusAsync(
+        Guid memberId, Guid advertiserId, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken, bool? cashReceived = null)
     {
         if (!await db.Advertisers.AnyAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken))
         {
             throw NotFound();
         }
 
-        await SetStatusAsync(advertiserId, await CampaignYearAsync(cancellationToken), status, amount, note, cancellationToken);
+        await SetStatusAsync(advertiserId, await CampaignYearAsync(cancellationToken), status, amount, note, cancellationToken, cashReceived);
     }
 
     /// <summary>
@@ -571,11 +580,45 @@ public sealed class AdvertiserAdministration(
             StatusChangedAt = now,
             StatusChangedBy = actor.UserId,
             Note = Clean(input.Note, 500),
+            PaidAt = input.Payment == AdvertiserPayment.Cash && input.CashReceived ? now : null,
+            PaidBy = input.Payment == AdvertiserPayment.Cash && input.CashReceived ? actor.UserId : null,
         });
         db.Advertisers.Add(advertiser);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("advertiser.added-via-app", "Advertiser", advertiser.Id.ToString(), null, $"{number} {company}"), cancellationToken);
         return advertiser.Id;
+    }
+
+    /// <summary>Contant ontvangen (fase 27d): alleen bij contante betaling en een opgehaalde bijdrage; anders gewist.</summary>
+    private void ApplyCash(Advertiser advertiser, AdvertiserYear row, bool? received)
+    {
+        if (advertiser.Payment != AdvertiserPayment.Cash || row.Status != AdvertiserYearStatus.Collected)
+        {
+            (row.PaidAt, row.PaidBy) = (null, null);
+        }
+        else if (received is true && row.PaidAt is null)
+        {
+            (row.PaidAt, row.PaidBy) = (clock.UtcNow.UtcDateTime, actor.UserId);
+        }
+        else if (received is false)
+        {
+            (row.PaidAt, row.PaidBy) = (null, null);
+        }
+    }
+
+    /// <summary>Zet alleen "contant ontvangen" (portal), zonder de stand te wijzigen.</summary>
+    public async Task SetCashReceivedAsync(Guid advertiserId, int year, bool received, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.Include(a => a.Years).SingleOrDefaultAsync(a => a.Id == advertiserId, cancellationToken) ?? throw NotFound();
+        var row = advertiser.Years.SingleOrDefault(y => y.Year == year);
+        if (advertiser.Payment != AdvertiserPayment.Cash || row?.Status != AdvertiserYearStatus.Collected)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Alleen een opgehaalde, contante bijdrage kan als ontvangen worden gemarkeerd.");
+        }
+
+        ApplyCash(advertiser, row, received);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.cash-received", "Advertiser", advertiserId.ToString(), null, $"{year}: {received}"), cancellationToken);
     }
 
     /// <summary>De volledige IBAN (alleen voor het portal, met het recht adverteerders beheren).</summary>

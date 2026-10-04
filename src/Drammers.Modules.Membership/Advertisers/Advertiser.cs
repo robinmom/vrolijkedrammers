@@ -129,4 +129,9 @@ public sealed class AdvertiserYear
     public Guid? StatusChangedBy { get; set; }
 
     public string? Note { get; set; }
+
+    /// <summary>Bij contante betaling: wanneer en door wie het geld is ontvangen (fase 27d).</summary>
+    public DateTime? PaidAt { get; set; }
+
+    public Guid? PaidBy { get; set; }
 }

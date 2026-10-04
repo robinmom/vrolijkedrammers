@@ -138,6 +138,17 @@ public partial class MailingTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Contains("Bestel kaarten", preview.GetProperty("html").GetString());
         Assert.Contains("de website (https://www.vrolijkedrammers.nl)", preview.GetProperty("plainText").GetString());
         Assert.Equal(3, preview.GetProperty("audience").GetProperty("recipients").GetInt32());
+
+        // Het voorbeeld op een eigen adres, met een CSP die de opmaak van de mail toestaat (het portal zelf niet).
+        var previewUrl = preview.GetProperty("previewUrl").GetString()!;
+        var document = await _api.CreateClient().GetAsync(previewUrl);
+        Assert.Equal(HttpStatusCode.OK, document.StatusCode);
+        Assert.Contains("Beste Piet,", await document.Content.ReadAsStringAsync());
+        var csp = document.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("style-src 'self' 'unsafe-inline'", csp);
+        Assert.Contains("frame-ancestors 'self'", csp);
+        Assert.DoesNotContain("script-src", csp);
+        Assert.Equal(HttpStatusCode.NotFound, (await _api.CreateClient().GetAsync("/mailing-voorbeeld/00000000000000000000000000000000")).StatusCode);
         var broken = await _bestuur.PostAsJsonAsync("/api/v1/admin/mailing/preview", new
         {
             kind = "Newsletter",

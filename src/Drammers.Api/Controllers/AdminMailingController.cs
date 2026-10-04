@@ -21,7 +21,7 @@ namespace Drammers.Api.Controllers;
 [Route("api/v1/admin/mailing")]
 [RequirePermission(Permissions.MailingManage)]
 public sealed class AdminMailingController(
-    DrammersDbContext db, MailingService mailings, WebsiteAdministration website, ContentUrls urls) : ControllerBase
+    DrammersDbContext db, MailingService mailings, WebsiteAdministration website, ContentUrls urls, MailingPreviewDocuments previews) : ControllerBase
 {
     // ----- Mailinggroepen ------------------------------------------------------------------------------------------
 
@@ -158,7 +158,7 @@ public sealed class AdminMailingController(
         var rendered = mailings.Render(draft, new MailingPerson("Piet", "Piet van der Drammer"), null, path => images.GetValueOrDefault(path));
         var audience = await mailings.ResolveAsync([.. input.ListIds.Distinct()], cancellationToken);
         return new MailingPreviewResponse(rendered.Subject, rendered.Html, rendered.PlainText,
-            new MailingAudienceResponse(audience.Recipients.Count, audience.Unsubscribed, audience.WithoutEmail));
+            new MailingAudienceResponse(audience.Recipients.Count, audience.Unsubscribed, audience.WithoutEmail), previews.Store(rendered.Html));
     }
 
     [HttpPost("mailings/{id:guid}/test")]
@@ -279,7 +279,8 @@ public sealed record MailingResponse(
     Guid Id, MailingKind Kind, string Subject, string? Preheader, IReadOnlyList<MailingBlockDto> Blocks, IReadOnlyList<Guid> ListIds, MailingStatus Status,
     DateTime? SentAt, int RecipientCount, MailingProgressResponse Progress);
 
-public sealed record MailingPreviewResponse(string Subject, string Html, string PlainText, MailingAudienceResponse Audience);
+/// <summary><c>PreviewUrl</c>: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen.</summary>
+public sealed record MailingPreviewResponse(string Subject, string Html, string PlainText, MailingAudienceResponse Audience, string PreviewUrl);
 
 public sealed record MailingTestResponse(string SentTo);
 

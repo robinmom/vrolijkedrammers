@@ -19938,11 +19938,13 @@ export interface components {
             /** Format: int32 */
             addressCount: number;
         };
+        /** @description `PreviewUrl`: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen. */
         MailingPreviewResponse: {
             subject: string;
             html: string;
             plainText: string;
             audience: components["schemas"]["MailingAudienceResponse"];
+            previewUrl: string;
         };
         MailingProgressResponse: {
             /** Format: int32 */

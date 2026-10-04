@@ -29548,7 +29548,8 @@
           "subject",
           "html",
           "plainText",
-          "audience"
+          "audience",
+          "previewUrl"
         ],
         "type": "object",
         "properties": {
@@ -29563,8 +29564,12 @@
           },
           "audience": {
             "$ref": "#/components/schemas/MailingAudienceResponse"
+          },
+          "previewUrl": {
+            "type": "string"
           }
-        }
+        },
+        "description": "`PreviewUrl`: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen."
       },
       "MailingProgressResponse": {
         "required": [

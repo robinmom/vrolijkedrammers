@@ -29956,7 +29956,8 @@
           "html",
           "plainText",
           "audience",
-          "previewUrl"
+          "previewUrl",
+          "perHour"
         ],
         "type": "object",
         "properties": {
@@ -29974,6 +29975,10 @@
           },
           "previewUrl": {
             "type": "string"
+          },
+          "perHour": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "description": "`PreviewUrl`: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen."
@@ -30045,6 +30050,7 @@
       },
       "MailingResponse": {
         "required": [
+          "perHour",
           "id",
           "kind",
           "sender",
@@ -30059,6 +30065,10 @@
         ],
         "type": "object",
         "properties": {
+          "perHour": {
+            "type": "integer",
+            "format": "int32"
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -30108,7 +30118,8 @@
           "progress": {
             "$ref": "#/components/schemas/MailingProgressResponse"
           }
-        }
+        },
+        "description": "`PerHour`: het verzendtempo (mails per uur), zodat het portal de duur van een grote mailing kan noemen."
       },
       "MailingSender": {
         "enum": [

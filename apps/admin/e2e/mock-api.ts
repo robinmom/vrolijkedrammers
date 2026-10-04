@@ -1635,6 +1635,7 @@ export class MockApi {
         subject: body.subject,
         html: this.mailingPreviewHtml,
         previewUrl: `/mailing-voorbeeld/${'0'.repeat(31)}${(this.mailingTests % 10).toString()}`,
+        perHour: 90,
         plainText: blocks.map((b) => b.text ?? b.label ?? '').join('\n\n'),
         audience: audience((body.listIds as string[]) ?? []),
       });
@@ -1669,7 +1670,7 @@ export class MockApi {
         return noContent();
       }
       const sent = mailing.status === 'Sent' ? mailing.recipientCount : 0;
-      return json({ ...mailing, progress: { pending: mailing.recipientCount - sent, sent, failed: 0 } });
+      return json({ ...mailing, perHour: 90, progress: { pending: mailing.recipientCount - sent, sent, failed: 0 } });
     }
     if (path === '/admin/mailing/unsubscribes') {
       if (method === 'DELETE') {

@@ -1026,6 +1026,524 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    collector?: string;
+                    kind?: components["schemas"]["AdvertiserKind"];
+                    payment?: components["schemas"]["AdvertiserPayment"];
+                    active?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserSummaryResponse"][];
+                        "application/json": components["schemas"]["AdvertiserSummaryResponse"][];
+                        "text/json": components["schemas"]["AdvertiserSummaryResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserRequest"];
+                    "text/json": components["schemas"]["AdvertiserRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserResponse"];
+                        "application/json": components["schemas"]["AdvertiserResponse"];
+                        "text/json": components["schemas"]["AdvertiserResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserRequest"];
+                    "text/json": components["schemas"]["AdvertiserRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/{id}/iban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De volledige IBAN, bijvoorbeeld om hem na te kijken; wordt gelogd. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserIbanResponse"];
+                        "application/json": components["schemas"]["AdvertiserIbanResponse"];
+                        "text/json": components["schemas"]["AdvertiserIbanResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/collectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserCollector"][];
+                        "application/json": components["schemas"]["AdvertiserCollector"][];
+                        "text/json": components["schemas"]["AdvertiserCollector"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/campaign-year": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CampaignYearResponse"];
+                        "application/json": components["schemas"]["CampaignYearResponse"];
+                        "text/json": components["schemas"]["CampaignYearResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CampaignYearResponse"];
+                    "text/json": components["schemas"]["CampaignYearResponse"];
+                    "application/*+json": components["schemas"]["CampaignYearResponse"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De stand van de campagne; zonder jaar het lopende campagnejaar. */
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                    collector?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserStatusReport"];
+                        "application/json": components["schemas"]["AdvertiserStatusReport"];
+                        "text/json": components["schemas"]["AdvertiserStatusReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/{id}/years/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserStatusRequest"];
+                    "text/json": components["schemas"]["AdvertiserStatusRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Controleert het Excel-overzicht zonder iets op te slaan: nieuw, bijgewerkt, fouten en waarschuwingen per regel. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserImportPreview"];
+                        "application/json": components["schemas"]["AdvertiserImportPreview"];
+                        "text/json": components["schemas"]["AdvertiserImportPreview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserImportPreview"];
+                        "application/json": components["schemas"]["AdvertiserImportPreview"];
+                        "text/json": components["schemas"]["AdvertiserImportPreview"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/audit-log": {
         parameters: {
             query?: never;
@@ -17527,6 +18045,188 @@ export interface components {
             /** Format: int32 */
             waiting: number;
         };
+        AdvertiserCollector: {
+            /** Format: uuid */
+            memberId: string;
+            name: string;
+        };
+        AdvertiserCollectorTotals: {
+            /** Format: uuid */
+            collectorMemberId: null | string;
+            name: string;
+            totals: components["schemas"]["AdvertiserStatusTotals"];
+        };
+        AdvertiserIbanResponse: {
+            iban: null | string;
+        };
+        AdvertiserImportIssue: {
+            /** Format: int32 */
+            row: number;
+            message: string;
+        };
+        AdvertiserImportPreview: {
+            /** Format: int32 */
+            rows: number;
+            /** Format: int32 */
+            new: number;
+            /** Format: int32 */
+            updated: number;
+            errors: components["schemas"]["AdvertiserImportIssue"][];
+            warnings: components["schemas"]["AdvertiserImportIssue"][];
+            unknownCollectors: string[];
+            years: number[];
+        };
+        /**
+         * @description Soort bijdrage (kolom A/V/G in het Excel-overzicht).
+         * @enum {unknown}
+         */
+        AdvertiserKind: "Advertisement" | "FreeGift" | "Gift";
+        /**
+         * @description Hoe de adverteerder betaalt (kolom M/C/R/B; voortaan alleen Machtiging of Contant).
+         * @enum {unknown}
+         */
+        AdvertiserPayment: "Mandate" | "Cash";
+        AdvertiserRequest: {
+            /** Format: int32 */
+            number: number;
+            companyName: string;
+            contactName: null | string;
+            phone: null | string;
+            mobile: null | string;
+            email: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            website: null | string;
+            page: null | string;
+            kind: components["schemas"]["AdvertiserKind"];
+            payment: components["schemas"]["AdvertiserPayment"];
+            iban: null | string;
+            mandateReference: null | string;
+            /** Format: uuid */
+            collectorMemberId: null | string;
+            notes: null | string;
+            /** @default true */
+            active: boolean;
+        };
+        AdvertiserResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            companyName: string;
+            contactName: null | string;
+            phone: null | string;
+            mobile: null | string;
+            email: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            website: null | string;
+            page: null | string;
+            kind: components["schemas"]["AdvertiserKind"];
+            payment: components["schemas"]["AdvertiserPayment"];
+            maskedIban: null | string;
+            mandateReference: null | string;
+            /** Format: uuid */
+            collectorMemberId: null | string;
+            collectorName: null | string;
+            importedCollectorName: null | string;
+            notes: null | string;
+            active: boolean;
+            addedViaApp: boolean;
+            years: components["schemas"]["AdvertiserYearResponse"][];
+        };
+        AdvertiserStatusReport: {
+            /** Format: int32 */
+            year: number;
+            totals: components["schemas"]["AdvertiserStatusTotals"];
+            perCollector: components["schemas"]["AdvertiserCollectorTotals"][];
+            rows: components["schemas"]["AdvertiserStatusRow"][];
+        };
+        AdvertiserStatusRequest: {
+            status: components["schemas"]["AdvertiserYearStatus"];
+            /** Format: double */
+            amount: null | number;
+            note: null | string;
+        };
+        AdvertiserStatusRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            companyName: string;
+            city: null | string;
+            kind: components["schemas"]["AdvertiserKind"];
+            payment: components["schemas"]["AdvertiserPayment"];
+            /** Format: uuid */
+            collectorMemberId: null | string;
+            collectorName: null | string;
+            status: components["schemas"]["AdvertiserYearStatus"];
+            /** Format: double */
+            amount: null | number;
+            isFree: boolean;
+            /** Format: double */
+            previousAmount: null | number;
+            /** Format: date-time */
+            statusChangedAt: null | string;
+            note: null | string;
+        };
+        AdvertiserStatusTotals: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            collected: number;
+            /** Format: int32 */
+            stopped: number;
+            /** Format: int32 */
+            open: number;
+            /** Format: double */
+            collectedAmount: number;
+            /** Format: double */
+            expectedAmount: number;
+        };
+        AdvertiserSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            companyName: string;
+            contactName: null | string;
+            city: null | string;
+            email: null | string;
+            kind: components["schemas"]["AdvertiserKind"];
+            payment: components["schemas"]["AdvertiserPayment"];
+            /** Format: uuid */
+            collectorMemberId: null | string;
+            collectorName: null | string;
+            importedCollectorName: null | string;
+            hasIban: boolean;
+            hasMandate: boolean;
+            /** Format: int32 */
+            lastYear: null | number;
+            /** Format: double */
+            lastAmount: null | number;
+            lastFree: boolean;
+            active: boolean;
+            addedViaApp: boolean;
+        };
+        AdvertiserYearResponse: {
+            /** Format: int32 */
+            year: number;
+            /** Format: double */
+            amount: null | number;
+            isFree: boolean;
+            status: components["schemas"]["AdvertiserYearStatus"];
+            /** Format: date-time */
+            statusChangedAt: null | string;
+            note: null | string;
+        };
+        /**
+         * @description Stand van een adverteerder in de campagne van een jaar.
+         * @enum {unknown}
+         */
+        AdvertiserYearStatus: "Open" | "Collected" | "Stopped";
         /** @enum {unknown} */
         AgeGroup: "Adult" | "Youth";
         AlbumRequest: {
@@ -17863,6 +18563,10 @@ export interface components {
             address: components["schemas"]["AddressDto"];
             /** Format: date-time */
             lastUsedAt: string;
+        };
+        CampaignYearResponse: {
+            /** Format: int32 */
+            year: number;
         };
         CancelOrderRequest: {
             reason: null | string;

@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Website' | 'Mailing' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
+  section?: 'Content' | 'Website' | 'Mailing' | 'Adverteerders' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -33,6 +33,9 @@ export const navItems: readonly NavItem[] = [
   // Fase 27a: nieuwsbrieven en uitnodigingen.
   { label: 'Mailings', to: '/mailing', permission: 'mailing.manage', icon: 'meldingen', section: 'Mailing' },
   { label: 'Mailinggroepen', to: '/mailing/groepen', permission: 'mailing.manage', icon: 'groepen', section: 'Mailing' },
+  // Fase 27b: adverteerders en de campagne voor de Drammerskrant.
+  { label: 'Overzicht', to: '/adverteerders', permission: 'advertiser.manage', icon: 'rapport', section: 'Adverteerders' },
+  { label: 'Campagne', to: '/adverteerders/campagne', permission: 'advertiser.manage', icon: 'jaar', section: 'Adverteerders' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.

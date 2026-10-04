@@ -58,6 +58,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Member> Members => Set<Member>();
 
+    public DbSet<Modules.Membership.Advertisers.Advertiser> Advertisers => Set<Modules.Membership.Advertisers.Advertiser>();
+
+    public DbSet<Modules.Membership.Advertisers.AdvertiserYear> AdvertiserYears => Set<Modules.Membership.Advertisers.AdvertiserYear>();
+
     public DbSet<JubileeInvitation> JubileeInvitations => Set<JubileeInvitation>();
 
     public DbSet<ContributionRate> ContributionRates => Set<ContributionRate>();

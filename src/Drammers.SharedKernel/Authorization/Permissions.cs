@@ -55,6 +55,7 @@ public static class Permissions
     public const string ParadeResult = "parade.result";
     public const string ContributionManage = "contribution.manage";
     public const string MailingManage = "mailing.manage";
+    public const string AdvertiserManage = "advertiser.manage";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -112,6 +113,8 @@ public static class Permissions
         new(ContributionManage, "Lidmaatschappen, tarieven, contributie en incasso beheren", "Financieel"),
         // Fase 27a: nieuwsbrieven en uitnodigingen.
         new(MailingManage, "Mailings opstellen en versturen (nieuwsbrief, uitnodigingen) en mailinggroepen beheren", "Content"),
+        // Fase 27b: adverteerders en de campagne voor de Drammerskrant.
+        new(AdvertiserManage, "Adverteerders beheren, het overzicht inlezen en de campagne volgen (incl. IBAN)", "Financieel"),
     ];
 }
 

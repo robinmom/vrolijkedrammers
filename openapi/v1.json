@@ -1966,6 +1966,105 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/{id}/years/{year}/cash": {
+      "put": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Contant ontvangen (fase 27d) aan- of uitzetten, zonder de stand te wijzigen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CashReceivedRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CashReceivedRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CashReceivedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/export": {
+      "get": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Het overzicht als Excel (fase 27d), in de kolommen van \"Advertentie overzicht\", zodat het ook weer in te lezen is.\nDe IBAN staat er bewust niet in (bij opnieuw inlezen blijft de bekende IBAN staan); wel de stand van het jaar.",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/import/preview": {
       "post": {
         "tags": [
@@ -23772,6 +23871,12 @@
               "null",
               "string"
             ]
+          },
+          "cashReceived": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -23862,6 +23967,13 @@
               "null",
               "string"
             ]
+          },
+          "paidAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -23899,8 +24011,19 @@
           "expectedAmount": {
             "type": "number",
             "format": "double"
+          },
+          "cashReceived": {
+            "type": "number",
+            "format": "double",
+            "default": 0
+          },
+          "cashOutstanding": {
+            "type": "number",
+            "format": "double",
+            "default": 0
           }
-        }
+        },
+        "description": "Tellers; `CashReceived`/`CashOutstanding`: van de opgehaalde contante bijdragen wat binnen is en wat nog niet (fase 27d)."
       },
       "AdvertiserSummaryResponse": {
         "required": [
@@ -25467,6 +25590,17 @@
           "carnivalEndDate": {
             "type": "string",
             "format": "date"
+          }
+        }
+      },
+      "CashReceivedRequest": {
+        "required": [
+          "received"
+        ],
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean"
           }
         }
       },
@@ -31524,6 +31658,10 @@
               "null",
               "string"
             ]
+          },
+          "cashReceived": {
+            "type": "boolean",
+            "default": false
           }
         },
         "description": "Een adverteerder zoals de collectant hem in de app ziet."
@@ -32186,6 +32324,10 @@
               "null",
               "string"
             ]
+          },
+          "cashReceived": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

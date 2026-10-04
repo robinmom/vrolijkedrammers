@@ -6,7 +6,19 @@ import { api } from '../../api/client';
 import { queryKeys, useMyAdvertisers } from '../../api/queries';
 import { brand } from '@drammers/design-tokens';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, BackLink, Button, Card, FilterChips, LargeTitleHeader, QueryState, Screen, SearchField, TextField } from '../../ui';
+import {
+  AppText,
+  BackLink,
+  Button,
+  Card,
+  CheckboxRow,
+  FilterChips,
+  LargeTitleHeader,
+  QueryState,
+  Screen,
+  SearchField,
+  TextField,
+} from '../../ui';
 
 type Advertiser = NonNullable<ReturnType<typeof useMyAdvertisers>['data']>['items'][number];
 type Filter = 'Open' | 'Collected' | 'Stopped' | 'All';
@@ -92,6 +104,8 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
   const [amount, setAmount] = useState(a.amount !== null ? String(a.amount) : a.previousAmount !== null ? String(a.previousAmount) : '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cash = a.payment === 'Cash';
+  const [received, setReceived] = useState(a.cashReceived);
 
   async function save(status: Advertiser['status']) {
     const value = amount.trim() ? Number(amount.replace(',', '.')) : null;
@@ -104,7 +118,7 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
     try {
       const { response, error: problem } = await api.PUT('/api/v1/me/advertisers/{id}/status', {
         params: { path: { id: a.id } },
-        body: { status, amount: status === 'Collected' ? value : null, note: null },
+        body: { status, amount: status === 'Collected' ? value : null, note: null, cashReceived: cash ? received : null },
       });
       if (response.ok) {
         setOpen(false);
@@ -142,6 +156,7 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
           </AppText>
           <AppText variant="caption" color={colors.textSecondary}>
             {money(a.status === 'Collected' ? a.amount : a.previousAmount) ?? ''}
+            {cash && a.status === 'Collected' ? (a.cashReceived ? ' · ontvangen' : ' · nog te ontvangen') : ''}
           </AppText>
         </View>
       </Pressable>
@@ -159,6 +174,7 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
             {a.previousAmount !== null ? ` Vorig jaar ${money(a.previousAmount)}.` : ''}
           </AppText>
           <TextField label="Bedrag dit jaar (€)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" maxLength={10} />
+          {cash ? <CheckboxRow label="Geld contant ontvangen" checked={received} onChange={setReceived} /> : null}
           {error ? (
             <AppText variant="body" color={colors.accentText} accessibilityRole="alert">
               {error}

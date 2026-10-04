@@ -32,7 +32,7 @@ public sealed class MyAdvertisersController(AdvertiserAdministration advertisers
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> SetStatus(Guid id, AdvertiserStatusRequest request, CancellationToken cancellationToken)
     {
-        await advertisers.SetMyStatusAsync(RequireMember(), id, request.Status, request.Amount, request.Note, cancellationToken);
+        await advertisers.SetMyStatusAsync(RequireMember(), id, request.Status, request.Amount, request.Note, cancellationToken, request.CashReceived);
         return NoContent();
     }
 
@@ -63,8 +63,9 @@ public sealed record NewAdvertiserRequest(
     [Range(0, 100000)] decimal Amount,
     [StringLength(40)] string? Iban,
     bool MandateConsent,
-    [StringLength(500)] string? Note)
+    [StringLength(500)] string? Note,
+    bool CashReceived = false)
 {
     public NewAdvertiserInput ToInput() =>
-        new(CompanyName, ContactName, Phone, Email, AddressLine, PostalCode, City, Kind, Payment, Amount, Iban, MandateConsent, Note);
+        new(CompanyName, ContactName, Phone, Email, AddressLine, PostalCode, City, Kind, Payment, Amount, Iban, MandateConsent, Note, CashReceived);
 }

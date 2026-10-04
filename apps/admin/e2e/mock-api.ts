@@ -26,6 +26,7 @@ interface MockAdvertiser {
   addedViaApp: boolean;
   status2027: string;
   amount2026: number;
+  paid2027?: string | null;
 }
 
 const PIXEL =
@@ -1429,6 +1430,7 @@ export class MockApi {
           previousAmount: a.amount2026,
           statusChangedAt: null,
           note: null,
+          paidAt: a.paid2027 ?? null,
         }));
       const totals = (list: typeof rows) => ({
         total: list.length,
@@ -1437,6 +1439,10 @@ export class MockApi {
         open: list.filter((r) => r.status === 'Open').length,
         collectedAmount: list.reduce((sum, r) => sum + (r.amount ?? 0), 0),
         expectedAmount: list.filter((r) => r.status !== 'Stopped').reduce((sum, r) => sum + (r.previousAmount ?? 0), 0),
+        cashReceived: list.filter((r) => r.payment === 'Cash' && r.paidAt).reduce((sum, r) => sum + (r.amount ?? 0), 0),
+        cashOutstanding: list
+          .filter((r) => r.payment === 'Cash' && r.status === 'Collected' && !r.paidAt)
+          .reduce((sum, r) => sum + (r.amount ?? 0), 0),
       });
       return json({
         year: Number(url.searchParams.get('year') ?? this.advertiserCampaignYear),
@@ -1455,6 +1461,14 @@ export class MockApi {
         ],
         rows,
       });
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)\/cash$/))) {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      a.paid2027 = body.received ? '2026-10-04T18:00:00Z' : null;
+      return noContent();
+    }
+    if (path === '/admin/advertisers/export') {
+      return json({ excel: true });
     }
     if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)$/))) {
       const a = this.advertisers.find((x) => x.id === m![1])!;

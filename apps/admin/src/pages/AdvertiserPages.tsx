@@ -489,6 +489,34 @@ export function AdvertiserStatusPage() {
       }),
     ADVERTISER_KEYS,
   );
+  const setCash = useApiMutation(
+    (v: { id: string; received: boolean }) =>
+      api.PUT('/api/v1/admin/advertisers/{id}/years/{year}/cash', {
+        params: { path: { id: v.id, year: shownYear! } },
+        body: { received: v.received },
+      }),
+    ADVERTISER_KEYS,
+  );
+  const [exportError, setExportError] = useState<unknown>(null);
+  async function exportExcel() {
+    setExportError(null);
+    try {
+      const { data } = await api.GET('/api/v1/admin/advertisers/export', {
+        params: { query: { year: shownYear ?? undefined } },
+        parseAs: 'blob',
+      });
+      if (data) {
+        const url = URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `adverteerders-${shownYear ?? ''}.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      setExportError(error);
+    }
+  }
   const makeCampaignYear = useApiMutation(
     () => api.PUT('/api/v1/admin/advertisers/campaign-year', { body: { year: shownYear! } }),
     ADVERTISER_KEYS,
@@ -506,6 +534,9 @@ export function AdvertiserStatusPage() {
           <h1>Campagne {shownYear ?? ''}</h1>
           <p className="muted">Wie is opgehaald, wie stopt en bij wie de collectant nog langs moet.</p>
         </div>
+        <button type="button" className="button secondary" onClick={() => void exportExcel()}>
+          Exporteren (Excel)
+        </button>
       </div>
       <div className="toolbar">
         <Field
@@ -523,7 +554,7 @@ export function AdvertiserStatusPage() {
           </button>
         ) : null}
       </div>
-      <ProblemAlert error={status.error ?? setStatus.error ?? makeCampaignYear.error} />
+      <ProblemAlert error={status.error ?? setStatus.error ?? setCash.error ?? makeCampaignYear.error ?? exportError} />
 
       {totals ? (
         <section className="card" aria-labelledby="voortgang-kop">
@@ -556,6 +587,11 @@ export function AdvertiserStatusPage() {
               <span className="kpi-label">Verwacht</span>
               <span className="kpi-value">{euro(totals.expectedAmount)}</span>
               <span className="kpi-hint">van {totals.total} adverteerders</span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">Contant ontvangen</span>
+              <span className="kpi-value">{euro(totals.cashReceived)}</span>
+              <span className="kpi-hint">nog te ontvangen: {euro(totals.cashOutstanding)}</span>
             </div>
           </section>
         </section>
@@ -621,6 +657,7 @@ export function AdvertiserStatusPage() {
                 <th scope="col">Vorig jaar</th>
                 <th scope="col">Bedrag</th>
                 <th scope="col">Stand</th>
+                <th scope="col">Contant ontvangen</th>
               </tr>
             </thead>
             <tbody>
@@ -654,11 +691,27 @@ export function AdvertiserStatusPage() {
                       ))}
                     </select>
                   </td>
+                  <td>
+                    {r.payment === 'Cash' && r.status === 'Collected' && !r.isFree ? (
+                      <label className="checkbox">
+                        <input
+                          type="checkbox"
+                          checked={r.paidAt !== null}
+                          disabled={setCash.isPending}
+                          onChange={(e) => setCash.mutate({ id: r.id, received: e.target.checked })}
+                        />
+                        <span className="visually-hidden">Contant ontvangen van {r.companyName}</span>
+                        {r.paidAt ? formatDate(r.paidAt.slice(0, 10)) : 'nog niet'}
+                      </label>
+                    ) : (
+                      <span className="muted">{r.payment === 'Mandate' ? 'machtiging' : '—'}</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {report.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="muted">
+                  <td colSpan={6} className="muted">
                     Geen adverteerders.
                   </td>
                 </tr>

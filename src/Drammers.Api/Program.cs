@@ -3,6 +3,7 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Drammers.Api;
 using Drammers.Api.Authentication;
 using Drammers.Api.Authorization;
+using Drammers.Api.Content;
 using Drammers.Api.ErrorHandling;
 using Drammers.Api.Portal;
 using Drammers.Infrastructure;
@@ -45,6 +46,7 @@ try
     builder.Services.AddDrammersAuthorization();
     builder.Services.AddScoped<Drammers.Api.Content.ContentViewerResolver>();
     builder.Services.AddScoped<Drammers.Api.Content.ContentUrls>();
+    builder.Services.AddSingleton<MailingPreviewDocuments>();
     builder.Services.AddSingleton<IClock, SystemClock>();
     builder.Services.AddWebsite(builder.Configuration);
 
@@ -88,6 +90,7 @@ try
     app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains(DependencyInjection.ReadyTag) })
         .AllowAnonymous();
     app.MapControllers();
+    app.MapMailingPreviews();
     app.MapWebsite();
     app.MapPortalFallback();
 

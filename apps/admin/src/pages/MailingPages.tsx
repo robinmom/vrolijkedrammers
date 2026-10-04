@@ -491,7 +491,13 @@ export function MailingEditorPage() {
               {showText ? (
                 <pre className="mailing-text">{preview.plainText}</pre>
               ) : (
-                <iframe title="Voorbeeld van de mailing" className="mailing-frame" sandbox="" srcDoc={preview.html} />
+                // Eigen adres met een eigen CSP: met srcDoc zou de CSP van het portal de opmaak van de mail tegenhouden.
+                <iframe
+                  title="Voorbeeld van de mailing"
+                  className="mailing-frame"
+                  sandbox=""
+                  src={preview.previewUrl}
+                />
               )}
             </>
           ) : (

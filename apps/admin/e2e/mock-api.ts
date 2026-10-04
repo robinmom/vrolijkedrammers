@@ -1001,8 +1001,14 @@ export class MockApi {
     });
   }
 
+  /** Laatste voorbeeld van een mailing (fase 27a), zoals de API het op een eigen adres zet. */
+  mailingPreviewHtml = '';
+
   async install(page: Page) {
     await page.route('**/api/v1/**', (route) => this.handle(route));
+    await page.route('**/mailing-voorbeeld/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: this.mailingPreviewHtml }),
+    );
   }
 
   // Fase 22a: jury van de huidige optocht.
@@ -1307,9 +1313,11 @@ export class MockApi {
           b.type === 'button' ? `<a>${b.label}</a>` : `<p>${(b.text ?? '').replace('{voornaam}', 'Piet')}</p>`,
         )
         .join('');
+      this.mailingPreviewHtml = `<!DOCTYPE html><html><body>${html}</body></html>`;
       return json({
         subject: body.subject,
-        html: `<!DOCTYPE html><html><body>${html}</body></html>`,
+        html: this.mailingPreviewHtml,
+        previewUrl: `/mailing-voorbeeld/${'0'.repeat(31)}${(this.mailingTests % 10).toString()}`,
         plainText: blocks.map((b) => b.text ?? b.label ?? '').join('\n\n'),
         audience: audience((body.listIds as string[]) ?? []),
       });

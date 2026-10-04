@@ -19,8 +19,8 @@ public sealed record MailingPerson(string? FirstName, string? Name);
 public sealed record RenderedMailing(string Subject, string Html, string PlainText);
 
 /// <summary>
-/// Zet de blokken van een mailing om naar e-mail in de huisstijl van de website en de app (fase 27a): een blauwe kop met
-/// het ronde logo, titels in Poppins, tekst in Inter, ronde blokken (16 px), een pilvormige rode knop en onderaan de
+/// Zet de blokken van een mailing om naar e-mail in de huisstijl van de website en de app (fase 27a, branding onepager
+/// v2): een blauwe kop met het ronde logo, titels in Poppins in Drammers Rood, tekst in Inter, ronde blokken (16 px), een pilvormige rode knop en onderaan de
 /// afsluiting met groet, contactgegevens en afmeldlink. Alles met inline stijlen en tabellen, zodat het ook in Outlook
 /// en Gmail goed staat.
 /// </summary>
@@ -37,6 +37,7 @@ public static partial class MailingRenderer
 
     // Kleuren en vormen uit de huisstijl (branding basis; website site.css).
     private const string Navy = "#123047";
+    private const string HeadingRed = "#ED0012";
     private const string Blue = "#087BC1";
     private const string BlueText = "#066AA6";
     private const string Red = "#D4000F";
@@ -107,7 +108,7 @@ public static partial class MailingRenderer
     /// <summary>Opent de mail; <paramref name="imageUrl"/> geeft het adres van een geüploade foto, <paramref name="unsubscribeUrl"/> de afmeldlink.</summary>
     public static RenderedMailing Render(
         string subject, string? preheader, IReadOnlyList<MailingBlock> blocks, MailingPerson person, string? logoUrl, Func<string, string?> imageUrl,
-        string? unsubscribeUrl)
+        string? unsubscribeUrl, string? fontBaseUrl = null)
     {
         var html = new StringBuilder();
         var text = new StringBuilder();
@@ -121,7 +122,7 @@ public static partial class MailingRenderer
         AppendClosing(closing, unsubscribeUrl, html, text);
 
         var filledSubject = Fill(subject, person);
-        return new RenderedMailing(filledSubject, Wrap(filledSubject, preheader is null ? null : Fill(preheader, person), html.ToString(), logoUrl), text.ToString());
+        return new RenderedMailing(filledSubject, Wrap(filledSubject, preheader is null ? null : Fill(preheader, person), html.ToString(), logoUrl, fontBaseUrl), text.ToString());
     }
 
     /// <summary>Vult {voornaam} en {naam}; zonder voornaam "Drammer".</summary>
@@ -135,7 +136,7 @@ public static partial class MailingRenderer
         {
             case "heading":
                 var heading = Fill(block.Text!, person);
-                html.Append($"<h1 style=\"margin:0 0 16px;{Display}font-weight:700;font-size:26px;line-height:33px;color:{Navy}\">")
+                html.Append($"<h1 style=\"margin:0 0 16px;{Display}font-weight:700;font-size:26px;line-height:33px;color:{HeadingRed}\">")
                     .Append(Encode(heading)).Append("</h1>\n");
                 text.Append(heading.ToUpperInvariant()).Append("\n\n");
                 break;
@@ -216,21 +217,33 @@ public static partial class MailingRenderer
         .Replace("<p>", $"<p style=\"margin:0 0 16px;{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
         .Replace("<ul>", $"<ul style=\"margin:0 0 16px;padding-left:22px;{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
         .Replace("<ol>", $"<ol style=\"margin:0 0 16px;padding-left:22px;{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
-        .Replace("<h2>", $"<h2 style=\"margin:8px 0 12px;{Display}font-weight:700;font-size:20px;line-height:27px;color:{Navy}\">", StringComparison.Ordinal)
-        .Replace("<h3>", $"<h3 style=\"margin:8px 0 8px;{Display}font-weight:700;font-size:17px;line-height:24px;color:{Navy}\">", StringComparison.Ordinal)
+        .Replace("<h2>", $"<h2 style=\"margin:8px 0 12px;{Display}font-weight:700;font-size:20px;line-height:27px;color:{HeadingRed}\">", StringComparison.Ordinal)
+        .Replace("<h3>", $"<h3 style=\"margin:8px 0 8px;{Display}font-weight:700;font-size:17px;line-height:24px;color:{HeadingRed}\">", StringComparison.Ordinal)
         .Replace("<a ", $"<a style=\"color:{BlueText};text-decoration:underline\" ", StringComparison.Ordinal);
 
     /// <summary>
     /// De omlijsting: warm-witte achtergrond, een wit vlak met ronde hoeken en bovenaan de blauwe kop met het ronde logo,
     /// zoals de paginakop van de website en de hero van de app.
     /// </summary>
-    private static string Wrap(string subject, string? preheader, string content, string? logoUrl)
+    private static string Wrap(string subject, string? preheader, string content, string? logoUrl, string? fontBaseUrl)
     {
         var html = new StringBuilder();
         html.Append("<!DOCTYPE html><html lang=\"nl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
-            .Append("<meta name=\"color-scheme\" content=\"light\"><title>").Append(Encode(subject)).Append("</title>")
-            .Append("<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Poppins:wght@600;700&display=swap\" rel=\"stylesheet\">")
-            .Append($"</head><body style=\"margin:0;padding:0;background:{WarmWhite}\">");
+            .Append("<meta name=\"color-scheme\" content=\"light\"><title>").Append(Encode(subject)).Append("</title>");
+        if (fontBaseUrl is { Length: > 0 })
+        {
+            // Poppins en Inter van onze eigen website (niet via Google). Apple Mail en iOS laden ze; Gmail en Outlook
+            // tonen de terugvallers (Segoe UI/Arial) in dezelfde dikte en kleur.
+            var fonts = $"{fontBaseUrl.TrimEnd('/')}/_content/Drammers.Website/fonts";
+            html.Append("<style>")
+                .Append($"@font-face{{font-family:Poppins;font-weight:600;src:url('{fonts}/poppins-latin-600-normal.woff2') format('woff2')}}")
+                .Append($"@font-face{{font-family:Poppins;font-weight:700;src:url('{fonts}/poppins-latin-700-normal.woff2') format('woff2')}}")
+                .Append($"@font-face{{font-family:Inter;font-weight:400;src:url('{fonts}/inter-latin-400-normal.woff2') format('woff2')}}")
+                .Append($"@font-face{{font-family:Inter;font-weight:700;src:url('{fonts}/inter-latin-700-normal.woff2') format('woff2')}}")
+                .Append("</style>");
+        }
+
+        html.Append($"</head><body style=\"margin:0;padding:0;background:{WarmWhite}\">");
         if (preheader is { Length: > 0 })
         {
             html.Append("<div style=\"display:none;max-height:0;overflow:hidden;opacity:0\">").Append(Encode(preheader)).Append("</div>");

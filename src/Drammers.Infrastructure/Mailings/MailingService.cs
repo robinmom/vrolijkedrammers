@@ -377,7 +377,7 @@ public sealed class MailingService(
         var baseUrl = options.Value.PublicBaseUrl?.TrimEnd('/');
         var unsubscribe = baseUrl is null ? null : emailAddress is null ? $"{baseUrl}/afmelden" : $"{baseUrl}/afmelden?t={Uri.EscapeDataString(tokens.Create(emailAddress))}";
         return MailingRenderer.Render(mailing.Subject, mailing.Preheader, ReadBlocks(mailing.Blocks), person, emailOptions.Value.LogoUrl,
-            imageUrl ?? (path => baseUrl is null ? null : $"{baseUrl}{MediaPath(path)}"), unsubscribe);
+            imageUrl ?? (path => baseUrl is null ? null : $"{baseUrl}{MediaPath(path)}"), unsubscribe, baseUrl);
     }
 
     /// <summary>Openbaar adres van een foto in een mailing (<c>/media/mailing/{id}</c>, zie MediaEndpoints).</summary>

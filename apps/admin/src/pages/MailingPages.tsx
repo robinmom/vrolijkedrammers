@@ -88,6 +88,7 @@ const BLOCK_LABELS: Record<string, string> = {
   button: 'Knop',
   highlight: 'Uitgelicht',
   divider: 'Lijn',
+  closing: 'Afsluiting',
 };
 
 const block = (type: string, fields: Partial<MailingBlock> = {}): MailingBlock => ({
@@ -105,6 +106,8 @@ const newBlock = (type: string): MailingBlock => {
     case 'heading':
     case 'text':
       return block(type, { text: '' });
+    case 'closing':
+      return block(type, { text: 'Groeten,\nDe Vrolijke Drammers' });
     case 'button':
       return block(type, { label: '', url: 'https://' });
     case 'highlight':
@@ -121,7 +124,8 @@ const starter: MailingRequest = {
   listIds: [],
   blocks: [
     block('heading', { text: 'Nieuws van De Vrolijke Drammers' }),
-    block('text', { text: 'Beste {voornaam},\n\n…\n\nGroeten,\nDe Vrolijke Drammers' }),
+    block('text', { text: 'Beste {voornaam},\n\n…' }),
+    block('closing', { text: 'Groeten,\nDe Vrolijke Drammers' }),
   ],
 };
 
@@ -406,16 +410,19 @@ export function MailingEditorPage() {
               ))}
             </ol>
             <div className="add-blocks" role="group" aria-label="Blok toevoegen">
-              {Object.entries(BLOCK_LABELS).map(([type, label]) => (
-                <button
-                  key={type}
-                  type="button"
-                  className="button secondary small"
-                  onClick={() => set({ blocks: [...form.blocks, newBlock(type)] })}
-                >
-                  + {label}
-                </button>
-              ))}
+              {/* De afsluiting staat altijd onderaan en komt hooguit één keer voor. */}
+              {Object.entries(BLOCK_LABELS)
+                .filter(([type]) => type !== 'closing' || !form.blocks.some((b) => b.type === 'closing'))
+                .map(([type, label]) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className="button secondary small"
+                    onClick={() => set({ blocks: [...form.blocks, newBlock(type)] })}
+                  >
+                    + {label}
+                  </button>
+                ))}
             </div>
           </fieldset>
           <ProblemAlert error={save.error ?? test.error ?? send.error ?? remove.error ?? duplicate.error} />
@@ -621,6 +628,23 @@ function BlockFields({
             onChange={(e) => onChange({ note: e.target.value || null })}
           />
         </>
+      );
+    case 'closing':
+      return (
+        <div className="field">
+          <label htmlFor={`${id}-afsluiting`}>Groet</label>
+          <textarea
+            id={`${id}-afsluiting`}
+            rows={4}
+            maxLength={2000}
+            aria-describedby={`${id}-afsluiting-hint`}
+            value={block.text ?? ''}
+            onChange={(e) => onChange({ text: e.target.value })}
+          />
+          <small id={`${id}-afsluiting-hint`} className="muted">
+            Staat altijd onderaan de mail, in één blok met de gegevens van de vereniging en de afmeldlink.
+          </small>
+        </div>
       );
     default:
       return <p className="muted">Een dunne lijn tussen twee onderdelen.</p>;

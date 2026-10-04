@@ -43,3 +43,27 @@ internal sealed class AdvertiserYearConfiguration : IEntityTypeConfiguration<Adv
         builder.HasIndex(y => new { y.Year, y.Status });
     }
 }
+
+internal sealed class AdvertiserInvoiceConfiguration : IEntityTypeConfiguration<AdvertiserInvoice>
+{
+    public void Configure(EntityTypeBuilder<AdvertiserInvoice> builder)
+    {
+        builder.ToTable("AdvertiserInvoice", Schemas.Membership);
+        builder.Property(i => i.Id).ValueGeneratedNever();
+        builder.Property(i => i.Number).HasMaxLength(20);
+        builder.HasIndex(i => i.Number).IsUnique();
+        builder.HasIndex(i => new { i.AdvertiserId, i.Year }).IsUnique();
+        builder.HasIndex(i => new { i.Year, i.Sequence }).IsUnique();
+        builder.Property(i => i.Amount).HasPrecision(9, 2);
+        builder.Property(i => i.Description).HasMaxLength(140);
+        builder.Property(i => i.CompanyName).HasMaxLength(200);
+        builder.Property(i => i.ContactName).HasMaxLength(150);
+        builder.Property(i => i.AddressLine).HasMaxLength(200);
+        builder.Property(i => i.PostalCode).HasMaxLength(10);
+        builder.Property(i => i.City).HasMaxLength(100);
+        builder.Property(i => i.Email).HasMaxLength(254);
+        builder.Property(i => i.MandateReference).HasMaxLength(35);
+        builder.Property(i => i.IbanLast4).HasMaxLength(4);
+        builder.HasOne<Advertiser>().WithMany().HasForeignKey(i => i.AdvertiserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}

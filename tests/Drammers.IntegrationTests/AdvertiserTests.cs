@@ -317,6 +317,89 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("**** 4300", (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/{Id("Bakkerij De Test")}")).GetProperty("maskedIban").GetString());
     }
 
+    [Fact]
+    public async Task Facturen_maken_versturen_als_pdf_en_printen_zonder_e_mail()
+    {
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/collections/creditor",
+            new { name = "CV De Vrolijke Drammers", iban = "NL39 RABO 0300 0652 64", creditorId = "nl12zzz123456780000" });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/invoices/settings", new { address = "Postbus 123", kvk = "123" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/invoices/settings", new { address = "Postbus 123\n6940 AC Loil", kvk = "40122564" })).StatusCode);
+
+        var sheet = Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 35, 35),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "V", "C", null, null, 70, 70),
+            Row("Alfred Voorbeeld", 3, "Kapsalon Stop", "A", "C", null, null, 50, 50));
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", sheet);
+        var list = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(1)}/years/2027", new { status = "Collected", amount = (decimal?)null, note = (string?)null });
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(2)}/years/2027", new { status = "Collected", amount = 75m, note = (string?)null });
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(3)}/years/2027", new { status = "Stopped", amount = (decimal?)null, note = (string?)null });
+        // Garage zonder e-mailadres: die krijgt een PDF om te printen.
+        var garage = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/{Id(2)}");
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(2)}", new
+        {
+            number = 2,
+            companyName = "Garage Proef",
+            contactName = (string?)null,
+            phone = (string?)null,
+            mobile = (string?)null,
+            email = (string?)null,
+            addressLine = garage.GetProperty("addressLine").GetString(),
+            postalCode = (string?)null,
+            city = "Loil",
+            website = (string?)null,
+            page = (string?)null,
+            kind = "FreeGift",
+            payment = "Cash",
+            iban = (string?)null,
+            mandateReference = (string?)null,
+            collectorMemberId = (Guid?)null,
+            notes = (string?)null,
+            active = true,
+        });
+
+        var overview = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices");
+        Assert.Equal((2, 0, 1), (overview.GetProperty("toCreate").GetInt32(), overview.GetProperty("toSend").GetInt32(), overview.GetProperty("withoutEmail").GetInt32()));
+
+        var created = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = "2026-11-02", year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, created.GetProperty("count").GetInt32());
+        Assert.Equal(0, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = "2026-11-02", year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        var rows = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray().ToList();
+        Assert.Equal(["ADV-2027-0001", "ADV-2027-0002"], rows.Select(r => r.GetProperty("invoiceNumber").GetString()));
+        Assert.Equal(75m, rows.Single(r => r.GetProperty("companyName").GetString() == "Garage Proef").GetProperty("amount").GetDecimal());
+
+        // Versturen: alleen wie een e-mailadres heeft, als PDF-bijlage namens de penningmeester.
+        Assert.Equal(1, (await (await _bestuur.PostAsync("/api/v1/admin/advertisers/invoices/send", null)).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            foreach (var message in await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == Drammers.Infrastructure.Advertisers.Invoices.AdvertiserInvoices.MailMessageType).ToListAsync())
+            {
+                using var handlerScope = _api.Services.CreateScope();
+                var handler = handlerScope.ServiceProvider.GetServices<Drammers.Worker.Outbox.IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+                await handler.HandleAsync(new Drammers.Worker.Outbox.OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            }
+        }
+
+        var mail = _api.Emails.Sent.Single(m => m.To == "info1@example.com");
+        Assert.Equal(("Factuur ADV-2027-0001 – Advertentie Drammerskrant 2027", "penningmeester@vrolijkedrammers.nl", "penningmeester"), (mail.Subject, mail.ReplyTo, mail.From));
+        Assert.Contains("automatische incasso", mail.PlainText);
+        var pdf = Assert.Single(mail.Attachments!);
+        Assert.Equal(("Factuur ADV-2027-0001.pdf", "application/pdf"), (pdf.Name, pdf.ContentType));
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf.Content, 0, 4));
+        Assert.NotNull((await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray()
+            .Single(r => r.GetProperty("invoiceNumber").GetString() == "ADV-2027-0001").GetProperty("sentAt").GetString());
+
+        // PDF's: per factuur en alles zonder e-mailadres in één bestand.
+        var single = await _bestuur.GetAsync($"/api/v1/admin/advertisers/invoices/{rows[0].GetProperty("invoiceId").GetGuid()}/pdf");
+        Assert.Equal("application/pdf", single.Content.Headers.ContentType?.MediaType);
+        var print = await _bestuur.GetAsync("/api/v1/admin/advertisers/invoices/pdf?withoutEmail=true");
+        Assert.Equal(HttpStatusCode.OK, print.StatusCode);
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString((await print.Content.ReadAsByteArrayAsync())[..4]));
+    }
+
     private static object NewAdvertiser(string payment, string? iban, bool consent) => new
     {
         companyName = "Nieuwe Zaak",

@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.0" />
     <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
     <PackageReference Include="Markdig" Version="1.4.0" />
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <!-- Six Labors Split License: gratis voor non-profitorganisaties (de vereniging). Versie 3.1: v4 eist een licentiesleutel bij de build. -->
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
@@ -42,6 +43,12 @@
   <ItemGroup>
     <!-- Contracttest van de e-Boekhouden-client (HTTP-verkeer) zonder de client publiek te maken. -->
     <InternalsVisibleTo Include="Drammers.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fase 27e: lettertypen (OFL) en logo voor de facturen als PDF. -->
+    <EmbeddedResource Include="Advertisers/Invoices/Assets/*.ttf" />
+    <EmbeddedResource Include="Advertisers/Invoices/Assets/logo.png" />
   </ItemGroup>
 
 </Project>

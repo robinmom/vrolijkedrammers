@@ -11,7 +11,12 @@ namespace Drammers.Infrastructure.Email;
 /// gaan naar dit adres. <paramref name="From"/>: afzendernaam vóór de @ (bijv. <c>secretaris</c>), alleen gebruikt als er
 /// een eigen domein is ingesteld (<see cref="EmailOptions.CustomSenderDomain"/>); anders blijft het DoNotReply.
 /// </summary>
-public sealed record EmailMessage(string To, string Subject, string PlainText, string Html, string? ReplyTo = null, string? From = null);
+public sealed record EmailMessage(
+    string To, string Subject, string PlainText, string Html, string? ReplyTo = null, string? From = null,
+    IReadOnlyList<EmailFile>? Attachments = null);
+
+/// <summary>Een bijlage, bijvoorbeeld de factuur als PDF (fase 27e).</summary>
+public sealed record EmailFile(string Name, string ContentType, byte[] Content);
 
 public interface IEmailSender
 {
@@ -55,6 +60,11 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
         if (message.ReplyTo is { Length: > 0 } replyTo)
         {
             email.ReplyTo.Add(new EmailAddress(replyTo));
+        }
+
+        foreach (var file in message.Attachments ?? [])
+        {
+            email.Attachments.Add(new EmailAttachment(file.Name, file.ContentType, BinaryData.FromBytes(file.Content)));
         }
 
         // WaitUntil.Started: ACS neemt het bericht aan en bezorgt het zelf; een fout bij aannemen gooit hier.

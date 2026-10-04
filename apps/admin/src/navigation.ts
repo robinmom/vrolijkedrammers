@@ -38,6 +38,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Campagne', to: '/adverteerders/campagne', permission: 'advertiser.manage', icon: 'jaar', section: 'Adverteerders' },
   // Fase 27c: incasso van de opgehaalde bijdragen.
   { label: 'Incasso', to: '/adverteerders/incasso', permission: 'advertiser.manage', icon: 'sync', section: 'Adverteerders' },
+  // Fase 27e: facturen als PDF.
+  { label: 'Facturen', to: '/adverteerders/facturen', permission: 'advertiser.manage', icon: 'download', section: 'Adverteerders' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.

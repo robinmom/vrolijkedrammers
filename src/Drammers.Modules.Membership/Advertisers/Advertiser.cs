@@ -135,3 +135,54 @@ public sealed class AdvertiserYear
 
     public Guid? PaidBy { get; set; }
 }
+
+/// <summary>
+/// Factuur aan een adverteerder voor een campagnejaar (fase 27e): één per adverteerder per jaar, met een vast nummer
+/// (ADV-jaar-volgnummer). De gegevens van de adverteerder worden vastgelegd, zodat de PDF later precies hetzelfde is.
+/// </summary>
+public sealed class AdvertiserInvoice
+{
+    public Guid Id { get; set; }
+
+    public Guid AdvertiserId { get; set; }
+
+    public int Year { get; set; }
+
+    /// <summary>Bijvoorbeeld ADV-2027-0001.</summary>
+    public required string Number { get; set; }
+
+    public int Sequence { get; set; }
+
+    public DateOnly InvoiceDate { get; set; }
+
+    public decimal Amount { get; set; }
+
+    public required string Description { get; set; }
+
+    public AdvertiserPayment Payment { get; set; }
+
+    public required string CompanyName { get; set; }
+
+    public string? ContactName { get; set; }
+
+    public string? AddressLine { get; set; }
+
+    public string? PostalCode { get; set; }
+
+    public string? City { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? MandateReference { get; set; }
+
+    public string? IbanLast4 { get; set; }
+
+    /// <summary>Bij contant: wanneer het geld al was ontvangen (op de factuur als "voldaan").</summary>
+    public DateTime? PaidAt { get; set; }
+
+    public DateTime? SentAt { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public Guid? CreatedBy { get; set; }
+}

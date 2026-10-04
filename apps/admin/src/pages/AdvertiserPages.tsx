@@ -1012,3 +1012,249 @@ export function AdvertiserCollectionsPage() {
     </>
   );
 }
+
+/** Een bestand van de API downloaden (PDF), met het access token. */
+async function downloadBlob(promise: Promise<{ data?: Blob }>, fileName: string) {
+  const { data } = await promise;
+  if (data) {
+    const url = URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Adverteerders → Facturen (fase 27e): per campagnejaar een factuur voor elke opgehaalde bijdrage, als PDF per e-mail
+ * namens de penningmeester; wie geen e-mailadres heeft, krijgt een PDF om te printen.
+ */
+export function AdvertiserInvoicesPage() {
+  const api = useApi();
+  const campaign = useCampaignYear();
+  const year = campaign.data?.year;
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [message, setMessage] = useState<string | null>(null);
+  const [confirmSend, setConfirmSend] = useState(false);
+  const [downloadError, setDownloadError] = useState<unknown>(null);
+  const [settingsForm, setSettingsForm] = useState<{ address: string; kvk: string } | null>(null);
+
+  const overview = useQuery({
+    queryKey: ['advertisers', 'invoices', year],
+    enabled: year !== undefined,
+    queryFn: async () => (await api.GET('/api/v1/admin/advertisers/invoices', { params: { query: { year } } })).data!,
+  });
+  const settings = useQuery({
+    queryKey: ['advertisers', 'invoices', 'settings'],
+    queryFn: async () => (await api.GET('/api/v1/admin/advertisers/invoices/settings')).data!,
+  });
+  useEffect(() => {
+    if (settings.data) setSettingsForm({ address: settings.data.address ?? '', kvk: settings.data.kvk ?? '' });
+  }, [settings.data]);
+
+  const saveSettings = useApiMutation(
+    () =>
+      api.PUT('/api/v1/admin/advertisers/invoices/settings', {
+        body: { address: settingsForm?.address || null, kvk: settingsForm?.kvk || null },
+      }),
+    ADVERTISER_KEYS,
+  );
+  const create = useApiMutation(
+    async () =>
+      (await api.POST('/api/v1/admin/advertisers/invoices', { body: { date, year: year ?? null } })).data?.count,
+    ADVERTISER_KEYS,
+  );
+  const send = useApiMutation(
+    async () =>
+      (await api.POST('/api/v1/admin/advertisers/invoices/send', { params: { query: { year } } })).data?.count,
+    ADVERTISER_KEYS,
+  );
+
+  async function download(path: 'all' | 'print' | string, fileName: string) {
+    setDownloadError(null);
+    try {
+      await downloadBlob(
+        path === 'all' || path === 'print'
+          ? api.GET('/api/v1/admin/advertisers/invoices/pdf', {
+              params: { query: { year, withoutEmail: path === 'print' } },
+              parseAs: 'blob',
+            })
+          : api.GET('/api/v1/admin/advertisers/invoices/{id}/pdf', { params: { path: { id: path } }, parseAs: 'blob' }),
+        fileName,
+      );
+    } catch (error) {
+      setDownloadError(error);
+    }
+  }
+
+  const o = overview.data;
+  return (
+    <>
+      <div className="page-header">
+        <div>
+          <h1>Facturen {year ?? ''}</h1>
+          <p className="muted">
+            Een factuur voor elke opgehaalde bijdrage (niet gratis) van het campagnejaar, verstuurd namens de
+            penningmeester.
+          </p>
+        </div>
+      </div>
+      <ProblemAlert error={overview.error ?? create.error ?? send.error ?? saveSettings.error ?? downloadError} />
+      <SuccessMessage message={message} />
+
+      {o ? (
+        <section className="card" aria-labelledby="facturen-kop">
+          <h2 id="facturen-kop">Facturen</h2>
+          <section className="kpis" aria-label="Tellers">
+            <div className="kpi">
+              <span className="kpi-label">Nog te maken</span>
+              <span className="kpi-value">{o.toCreate}</span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">Nog te versturen</span>
+              <span className="kpi-value">{o.toSend}</span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">Zonder e-mailadres</span>
+              <span className="kpi-value">{o.withoutEmail}</span>
+              <span className="kpi-hint">PDF om te printen</span>
+            </div>
+          </section>
+          <div className="toolbar">
+            <Field label="Factuurdatum" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+            <button
+              type="button"
+              className="button"
+              disabled={o.toCreate === 0 || create.isPending || date.length !== 10}
+              onClick={() =>
+                create.mutate(undefined, { onSuccess: (count) => setMessage(`${count ?? 0} facturen gemaakt.`) })
+              }
+            >
+              Facturen maken ({o.toCreate})
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={o.toSend === 0 || send.isPending}
+              onClick={() => setConfirmSend(true)}
+            >
+              Versturen per e-mail ({o.toSend})
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={o.withoutEmail === 0}
+              onClick={() => void download('print', `Facturen ${year} zonder e-mail.pdf`)}
+            >
+              PDF zonder e-mailadres
+            </button>
+          </div>
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="Facturen">
+            <table className="table compact">
+              <thead>
+                <tr>
+                  <th scope="col">Factuur</th>
+                  <th scope="col">Bedrijf</th>
+                  <th scope="col">Bedrag</th>
+                  <th scope="col">Betaling</th>
+                  <th scope="col">E-mail</th>
+                  <th scope="col">Verstuurd</th>
+                </tr>
+              </thead>
+              <tbody>
+                {o.rows.map((r) => (
+                  <tr key={r.advertiserId}>
+                    <td>
+                      {r.invoiceId && r.invoiceNumber ? (
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => void download(r.invoiceId!, `Factuur ${r.invoiceNumber}.pdf`)}
+                        >
+                          {r.invoiceNumber}
+                        </button>
+                      ) : (
+                        <span className="muted">nog niet gemaakt</span>
+                      )}
+                    </td>
+                    <td>
+                      <Link to="/adverteerders/$id" params={{ id: r.advertiserId }}>
+                        {r.companyName}
+                      </Link>
+                    </td>
+                    <td>{euro(r.amount)}</td>
+                    <td>{PAYMENT_LABELS[r.payment]}</td>
+                    <td>{r.email ?? <span className="badge warn">geen e-mail</span>}</td>
+                    <td>{r.sentAt ? formatDateTime(r.sentAt) : r.invoiceId ? 'nog niet' : '—'}</td>
+                  </tr>
+                ))}
+                {o.rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="muted">
+                      Nog geen opgehaalde bijdragen in {o.year}.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {settingsForm ? (
+        <form
+          className="card"
+          aria-labelledby="factuurgegevens-kop"
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveSettings.mutate(undefined, { onSuccess: () => setMessage('Gegevens op de factuur opgeslagen.') });
+          }}
+        >
+          <h2 id="factuurgegevens-kop">Gegevens van de vereniging op de factuur</h2>
+          <p className="card-hint">Naam en IBAN komen van de incasso (Leden → Incasso).</p>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="factuur-adres">Adres (één regel per regel)</label>
+              <textarea
+                id="factuur-adres"
+                rows={3}
+                maxLength={300}
+                value={settingsForm.address}
+                onChange={(e) => setSettingsForm({ ...settingsForm, address: e.target.value })}
+              />
+            </div>
+            <Field
+              label="KvK-nummer"
+              maxLength={12}
+              value={settingsForm.kvk}
+              onChange={(e) => setSettingsForm({ ...settingsForm, kvk: e.target.value })}
+            />
+          </div>
+          <div className="actions">
+            <button type="submit" className="button secondary" disabled={saveSettings.isPending}>
+              Opslaan
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      <ConfirmDialog
+        open={confirmSend}
+        title="Facturen versturen?"
+        message={`${o?.toSend ?? 0} facturen gaan als PDF per e-mail naar de adverteerders, namens penningmeester@vrolijkedrammers.nl.`}
+        confirmLabel="Versturen"
+        busy={send.isPending}
+        onConfirm={() =>
+          send.mutate(undefined, {
+            onSuccess: (count) => {
+              setConfirmSend(false);
+              setMessage(`${count ?? 0} facturen worden verstuurd.`);
+            },
+          })
+        }
+        onCancel={() => setConfirmSend(false)}
+      />
+    </>
+  );
+}

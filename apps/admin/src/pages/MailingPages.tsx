@@ -131,6 +131,14 @@ const starter: MailingRequest = {
   ],
 };
 
+/** Hoe lang het versturen ongeveer duurt bij dit tempo. */
+const duration = (recipients: number, perHour: number) => {
+  const minutes = Math.ceil((60 * Math.max(0, recipients - 1)) / perHour);
+  if (minutes < 60) return minutes <= 1 ? 'een minuut' : `${minutes} minuten`;
+  const hours = Math.round(minutes / 6) / 10;
+  return `${hours.toLocaleString('nl-NL')} uur`;
+};
+
 /** De API stuurt ook imageUrl mee (om de foto te tonen); die hoort niet in het verzoek. */
 const toRequestBlock = (b: MailingBlock): MailingBlock =>
   block(b.type, { text: b.text, label: b.label, url: b.url, image: b.image, note: b.note });
@@ -256,6 +264,7 @@ export function MailingEditorPage() {
   }
 
   const recipients = preview?.audience.recipients ?? 0;
+  const perHour = preview?.perHour ?? existing.data?.perHour ?? 90;
   const progress = existing.data?.progress;
 
   return (
@@ -310,8 +319,8 @@ export function MailingEditorPage() {
           </div>
           <p>
             {progress.sent} verstuurd, {progress.pending} in de wachtrij
-            {progress.failed > 0 ? `, ${progress.failed} mislukt` : ''}. Grote mailings gaan in delen weg (ongeveer 90
-            per uur).
+            {progress.failed > 0 ? `, ${progress.failed} mislukt` : ''}. Grote mailings gaan in delen weg (
+            {existing.data!.perHour} per uur).
           </p>
         </section>
       ) : null}
@@ -524,7 +533,7 @@ export function MailingEditorPage() {
       <ConfirmDialog
         open={confirm === 'send'}
         title="Mailing versturen?"
-        message={`De mailing gaat naar ${recipients} ontvangers. Dit kan niet ongedaan worden gemaakt. Grote mailings gaan in delen weg (ongeveer 90 per uur).`}
+        message={`De mailing gaat naar ${recipients} ontvangers. Dit kan niet ongedaan worden gemaakt. Er gaan ${perHour} mails per uur weg, dus dit duurt ongeveer ${duration(recipients, perHour)}.`}
         confirmLabel="Versturen"
         busy={send.isPending}
         onCancel={() => setConfirm(null)}

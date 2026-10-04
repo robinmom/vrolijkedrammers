@@ -21,7 +21,8 @@ namespace Drammers.Api.Controllers;
 [Route("api/v1/admin/mailing")]
 [RequirePermission(Permissions.MailingManage)]
 public sealed class AdminMailingController(
-    DrammersDbContext db, MailingService mailings, WebsiteAdministration website, ContentUrls urls, MailingPreviewDocuments previews) : ControllerBase
+    DrammersDbContext db, MailingService mailings, WebsiteAdministration website, ContentUrls urls, MailingPreviewDocuments previews,
+    Microsoft.Extensions.Options.IOptions<MailingOptions> options) : ControllerBase
 {
     // ----- Mailinggroepen ------------------------------------------------------------------------------------------
 
@@ -98,7 +99,7 @@ public sealed class AdminMailingController(
         var counts = await db.MailingRecipients.AsNoTracking().Where(r => r.MailingId == id).GroupBy(r => r.Status)
             .Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
         var images = await ImagesAsync(MailingService.ReadBlocks(m.Blocks), cancellationToken);
-        return new MailingResponse(m.Id, m.Kind, m.Sender, m.Subject, m.Preheader,
+        return new MailingResponse(options.Value.EffectiveMaxPerHour, m.Id, m.Kind, m.Sender, m.Subject, m.Preheader,
             [.. MailingService.ReadBlocks(m.Blocks).Select(b => MailingBlockDto.From(b, b.Image is null ? null : images.GetValueOrDefault(b.Image)))],
             [.. m.Lists.Select(l => l.ListId)], m.Status, m.SentAt, m.RecipientCount,
             new MailingProgressResponse(counts.GetValueOrDefault(MailingRecipientStatus.Pending), counts.GetValueOrDefault(MailingRecipientStatus.Sent),
@@ -159,7 +160,8 @@ public sealed class AdminMailingController(
         var rendered = mailings.Render(draft, new MailingPerson("Piet", "Piet van der Drammer"), null, path => images.GetValueOrDefault(path));
         var audience = await mailings.ResolveAsync([.. input.ListIds.Distinct()], cancellationToken);
         return new MailingPreviewResponse(rendered.Subject, rendered.Html, rendered.PlainText,
-            new MailingAudienceResponse(audience.Recipients.Count, audience.Unsubscribed, audience.WithoutEmail), previews.Store(rendered.Html));
+            new MailingAudienceResponse(audience.Recipients.Count, audience.Unsubscribed, audience.WithoutEmail), previews.Store(rendered.Html),
+            options.Value.EffectiveMaxPerHour);
     }
 
     [HttpPost("mailings/{id:guid}/test")]
@@ -280,12 +282,14 @@ public sealed record MailingSummaryResponse(
 
 public sealed record MailingProgressResponse(int Pending, int Sent, int Failed);
 
+/// <summary><c>PerHour</c>: het verzendtempo (mails per uur), zodat het portal de duur van een grote mailing kan noemen.</summary>
 public sealed record MailingResponse(
+    int PerHour,
     Guid Id, MailingKind Kind, MailingSender Sender, string Subject, string? Preheader, IReadOnlyList<MailingBlockDto> Blocks, IReadOnlyList<Guid> ListIds, MailingStatus Status,
     DateTime? SentAt, int RecipientCount, MailingProgressResponse Progress);
 
 /// <summary><c>PreviewUrl</c>: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen.</summary>
-public sealed record MailingPreviewResponse(string Subject, string Html, string PlainText, MailingAudienceResponse Audience, string PreviewUrl);
+public sealed record MailingPreviewResponse(string Subject, string Html, string PlainText, MailingAudienceResponse Audience, string PreviewUrl, int PerHour);
 
 public sealed record MailingTestResponse(string SentTo);
 

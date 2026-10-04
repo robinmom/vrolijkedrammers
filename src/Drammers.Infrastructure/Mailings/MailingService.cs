@@ -21,10 +21,16 @@ public sealed class MailingOptions
     public const string SectionName = "Mailing";
 
     /// <summary>
-    /// Zoveel mails per uur, zodat we binnen de limiet van Azure Communication Services blijven (standaard 100 per uur
-    /// voor een eigen domein; die limiet kan bij Azure omhoog). Een grote mailing wordt over de tijd verdeeld.
+    /// Zoveel mails per uur, zodat we binnen de limiet van Azure Communication Services blijven. Met een eigen domein
+    /// standaard 100 per uur (kan bij Azure omhoog); met het domein van Azure zelf 10 per uur, niet te verhogen. Leeg =
+    /// 90 met een eigen domein, anders 9. Een grote mailing wordt over de tijd verdeeld.
     /// </summary>
-    public int MaxPerHour { get; set; } = 90;
+    public int? MaxPerHour { get; set; }
+
+    /// <summary>Of er een eigen afzenderdomein is (<c>Email:CustomSenderDomain</c>); bepaalt het standaardtempo.</summary>
+    public bool HasCustomDomain { get; set; }
+
+    public int EffectiveMaxPerHour => Math.Max(1, MaxPerHour ?? (HasCustomDomain ? 90 : 9));
 
     /// <summary>Openbaar adres van de website (afmeldlink en foto's); standaard <c>Sales:PublicBaseUrl</c>.</summary>
     public string? PublicBaseUrl { get; set; }
@@ -373,7 +379,7 @@ public sealed class MailingService(
         (mailing.Status, mailing.SentAt, mailing.SentBy, mailing.RecipientCount) = (MailingStatus.Sending, now, actor.UserId, recipients.Count);
         await db.SaveChangesAsync(cancellationToken);
 
-        var interval = TimeSpan.FromHours(1) / Math.Max(1, options.Value.MaxPerHour);
+        var interval = TimeSpan.FromHours(1) / options.Value.EffectiveMaxPerHour;
         var last = now;
         for (var i = 0; i < recipients.Count; i++)
         {

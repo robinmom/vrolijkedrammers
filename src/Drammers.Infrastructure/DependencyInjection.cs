@@ -136,7 +136,11 @@ public static class DependencyInjection
         services.Configure<Sales.SalesOptions>(configuration.GetSection(Sales.SalesOptions.SectionName));
         // Fase 27a: mailings; foto's en afmeldlink op hetzelfde openbare adres als de links in de andere mails.
         services.Configure<Mailings.MailingOptions>(configuration.GetSection(Mailings.MailingOptions.SectionName));
-        services.PostConfigure<Mailings.MailingOptions>(o => o.PublicBaseUrl ??= configuration["Sales:PublicBaseUrl"] is { Length: > 0 } baseUrl ? baseUrl : null);
+        services.PostConfigure<Mailings.MailingOptions>(o =>
+        {
+            o.PublicBaseUrl ??= configuration["Sales:PublicBaseUrl"] is { Length: > 0 } baseUrl ? baseUrl : null;
+            o.HasCustomDomain = !string.IsNullOrWhiteSpace(configuration["Email:CustomSenderDomain"]);
+        });
         services.AddMemoryCache();
         services.AddHttpClient<Payments.IMollieClient, Payments.MollieClient>(http => http.Timeout = TimeSpan.FromSeconds(30));
 

@@ -103,6 +103,14 @@ public class MailingRendererTests
         Assert.DoesNotContain("fonts.googleapis.com", html);
     }
 
+    [Theory]
+    [InlineData(null, false, 9)]
+    [InlineData(null, true, 90)]
+    [InlineData(500, true, 500)]
+    [InlineData(0, false, 1)]
+    public void Tempo_volgt_het_afzenderdomein(int? configured, bool customDomain, int expected) =>
+        Assert.Equal(expected, new MailingOptions { MaxPerHour = configured, HasCustomDomain = customDomain }.EffectiveMaxPerHour);
+
     [Fact]
     public void Lege_mailing_mag_niet() =>
         Assert.Throws<DomainException>(() => MailingRenderer.Validate([]));

@@ -85,6 +85,7 @@ test('fase 27a: mailing opstellen met blokken, voorbeeld, testmail en versturen'
 
   await page.getByRole('button', { name: 'Versturen…' }).click();
   await expect(page.getByRole('dialog')).toContainText('De mailing gaat naar 120 ontvangers');
+  await expect(page.getByRole('dialog')).toContainText('Er gaan 90 mails per uur weg, dus dit duurt ongeveer 1,3 uur.');
   await page.getByRole('dialog').getByRole('button', { name: 'Versturen' }).click();
   await expect(page.getByRole('heading', { name: 'Versturen' })).toBeVisible();
   await expect(page.getByText('0 verstuurd, 120 in de wachtrij')).toBeVisible();

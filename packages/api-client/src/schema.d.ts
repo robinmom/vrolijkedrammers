@@ -20165,6 +20165,8 @@ export interface components {
             plainText: string;
             audience: components["schemas"]["MailingAudienceResponse"];
             previewUrl: string;
+            /** Format: int32 */
+            perHour: number;
         };
         MailingProgressResponse: {
             /** Format: int32 */
@@ -20182,7 +20184,10 @@ export interface components {
             listIds: null | string[];
             sender?: components["schemas"]["MailingSender"];
         };
+        /** @description `PerHour`: het verzendtempo (mails per uur), zodat het portal de duur van een grote mailing kan noemen. */
         MailingResponse: {
+            /** Format: int32 */
+            perHour: number;
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["MailingKind"];

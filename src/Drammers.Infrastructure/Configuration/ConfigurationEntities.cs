@@ -96,4 +96,5 @@ public static class AppConfigurationKeys
     public const string SepaCreditorName = "sepa_creditor_name";
     public const string SepaCreditorIban = "sepa_creditor_iban";
     public const string SepaCreditorId = "sepa_creditor_id";
+    public const string AdvertiserCampaignYear = "advertiser_campaign_year";
 }

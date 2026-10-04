@@ -1,0 +1,483 @@
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using Drammers.Infrastructure.Configuration;
+using Drammers.Infrastructure.Members;
+using Drammers.Infrastructure.Persistence;
+using Drammers.Modules.Membership.Advertisers;
+using Drammers.SharedKernel.Auditing;
+using Drammers.SharedKernel.Errors;
+using Drammers.SharedKernel.Identifiers;
+using Drammers.SharedKernel.Time;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
+
+namespace Drammers.Infrastructure.Advertisers;
+
+/// <summary>Een regel uit het Excel-overzicht, zoals de API hem inleest (alle cellen als tekst).</summary>
+public sealed record AdvertiserImportRow(
+    int RowNumber, string? Collector, string? Number, string? Page, string? CompanyName, string? ContactName, string? Phone, string? Mobile,
+    string? Email, string? AddressLine, string? PostalCode, string? City, string? Kind, string? Iban, string? Payment, string? Particulars,
+    string? Website, string? MandateReference, IReadOnlyDictionary<int, string?> Contributions, string? Remark);
+
+public sealed record AdvertiserImportIssue(int Row, string Message);
+
+public sealed record AdvertiserImportPreview(
+    int Rows, int New, int Updated, IReadOnlyList<AdvertiserImportIssue> Errors, IReadOnlyList<AdvertiserImportIssue> Warnings,
+    IReadOnlyList<string> UnknownCollectors, IReadOnlyList<int> Years);
+
+public sealed record AdvertiserInput(
+    int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
+    string? City, string? Website, string? Page, AdvertiserKind Kind, AdvertiserPayment Payment, string? Iban, string? MandateReference,
+    Guid? CollectorMemberId, string? Notes, bool Active);
+
+public sealed record AdvertiserCollector(Guid MemberId, string Name);
+
+public sealed record AdvertiserStatusRow(
+    Guid Id, int Number, string CompanyName, string? City, AdvertiserKind Kind, AdvertiserPayment Payment, Guid? CollectorMemberId, string? CollectorName,
+    AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note);
+
+public sealed record AdvertiserStatusTotals(int Total, int Collected, int Stopped, int Open, decimal CollectedAmount, decimal ExpectedAmount);
+
+public sealed record AdvertiserCollectorTotals(Guid? CollectorMemberId, string Name, AdvertiserStatusTotals Totals);
+
+public sealed record AdvertiserStatusReport(
+    int Year, AdvertiserStatusTotals Totals, IReadOnlyList<AdvertiserCollectorTotals> PerCollector, IReadOnlyList<AdvertiserStatusRow> Rows);
+
+/// <summary>IBAN's van adverteerders, versleuteld met een eigen sleutel (los van die van de leden).</summary>
+public sealed class AdvertiserIbanProtector(IDataProtectionProvider provider)
+{
+    private readonly IDataProtector _protector = provider.CreateProtector("Drammers.AdvertiserIban.v1");
+
+    public string Protect(string iban) => _protector.Protect(iban);
+
+    public string Unprotect(string protectedIban) => _protector.Unprotect(protectedIban);
+}
+
+/// <summary>
+/// Adverteerders (fase 27b): het Excel-overzicht inlezen (opnieuw inlezen werkt bij), beheren, collectanten uit het kader
+/// koppelen en per jaar bijhouden wie is opgehaald. Voortaan alleen Machtiging (M) of Contant (C); andere waarden meldt
+/// de import per regel, zodat het Excel-bestand eerst wordt aangepast.
+/// </summary>
+public sealed class AdvertiserAdministration(
+    DrammersDbContext db, AdvertiserIbanProtector ibans, IAuditLogger audit, IClock clock, ICurrentActor actor)
+{
+    // ----- Collectanten en campagnejaar ----------------------------------------------------------------------------
+
+    /// <summary>Kaderleden die aan een lid zijn gekoppeld (alleen zij kunnen collectant zijn), op naam.</summary>
+    public async Task<IReadOnlyList<AdvertiserCollector>> CollectorsAsync(CancellationToken cancellationToken)
+    {
+        var ids = await db.CommitteeMembers.AsNoTracking().Where(c => c.MemberId != null).Select(c => c.MemberId!.Value).Distinct().ToListAsync(cancellationToken);
+        return await db.Members.AsNoTracking().Where(m => ids.Contains(m.Id)).OrderBy(m => m.FullName)
+            .Select(m => new AdvertiserCollector(m.Id, m.FullName)).ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Het jaar van de lopende campagne: ingesteld in het portal, anders het komende carnavalsjaar.</summary>
+    public async Task<int> CampaignYearAsync(CancellationToken cancellationToken)
+    {
+        var value = await db.AppConfiguration.AsNoTracking().Where(s => s.Key == AppConfigurationKeys.AdvertiserCampaignYear)
+            .Select(s => s.Value).SingleOrDefaultAsync(cancellationToken);
+        if (int.TryParse(value, CultureInfo.InvariantCulture, out var year))
+        {
+            return year;
+        }
+
+        // Na carnaval (vanaf maart) begint de campagne voor de krant van het volgende carnaval.
+        var now = clock.UtcNow.UtcDateTime;
+        return now.Month >= 3 ? now.Year + 1 : now.Year;
+    }
+
+    public async Task SetCampaignYearAsync(int year, CancellationToken cancellationToken)
+    {
+        if (year is < 2000 or > 2100)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Kies een jaar tussen 2000 en 2100.");
+        }
+
+        var setting = await db.AppConfiguration.SingleOrDefaultAsync(s => s.Key == AppConfigurationKeys.AdvertiserCampaignYear, cancellationToken);
+        var before = setting?.Value;
+        if (setting is null)
+        {
+            db.AppConfiguration.Add(new AppConfigurationSetting { Key = AppConfigurationKeys.AdvertiserCampaignYear, Value = year.ToString(CultureInfo.InvariantCulture) });
+        }
+        else
+        {
+            setting.Value = year.ToString(CultureInfo.InvariantCulture);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.campaign-year-changed", "AppConfiguration", AppConfigurationKeys.AdvertiserCampaignYear, before,
+            year.ToString(CultureInfo.InvariantCulture)), cancellationToken);
+    }
+
+    // ----- Import --------------------------------------------------------------------------------------------------
+
+    public async Task<AdvertiserImportPreview> PreviewAsync(IReadOnlyList<AdvertiserImportRow> rows, CancellationToken cancellationToken) =>
+        (await PlanAsync(rows, cancellationToken)).Preview;
+
+    /// <summary>Leest het overzicht in; alleen als er geen fouten zijn. Bestaande adverteerders (op nummer) worden bijgewerkt.</summary>
+    public async Task<AdvertiserImportPreview> ApplyAsync(IReadOnlyList<AdvertiserImportRow> rows, CancellationToken cancellationToken)
+    {
+        var plan = await PlanAsync(rows, cancellationToken);
+        if (plan.Preview.Errors.Count > 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Het bestand heeft {plan.Preview.Errors.Count} fouten; pas het Excel-bestand aan en lees het opnieuw in.");
+        }
+
+        var numbers = plan.Items.Select(i => i.Number).ToList();
+        var existing = await db.Advertisers.Include(a => a.Years).Where(a => numbers.Contains(a.Number)).ToDictionaryAsync(a => a.Number, cancellationToken);
+        foreach (var item in plan.Items)
+        {
+            if (!existing.TryGetValue(item.Number, out var advertiser))
+            {
+                advertiser = new Advertiser { Id = IdGenerator.NewId(), Number = item.Number, CompanyName = item.CompanyName };
+                db.Advertisers.Add(advertiser);
+            }
+
+            (advertiser.CompanyName, advertiser.ContactName, advertiser.Phone, advertiser.Mobile, advertiser.Email, advertiser.AddressLine,
+                advertiser.PostalCode, advertiser.City, advertiser.Website, advertiser.Page, advertiser.Kind, advertiser.Payment, advertiser.Notes) =
+                (item.CompanyName, item.ContactName, item.Phone, item.Mobile, item.Email, item.AddressLine, item.PostalCode, item.City, item.Website,
+                    item.Page, item.Kind, item.Payment, item.Notes);
+            advertiser.MandateReference = item.MandateReference ?? advertiser.MandateReference;
+            if (item.Iban is { } iban)
+            {
+                (advertiser.IbanProtected, advertiser.IbanLast4) = (ibans.Protect(iban), iban[^4..]);
+            }
+
+            advertiser.ImportedCollectorName = item.CollectorId is null ? item.CollectorName : null;
+            advertiser.CollectorMemberId = item.CollectorId ?? (item.CollectorName is null ? null : advertiser.CollectorMemberId);
+
+            foreach (var (year, amount, free) in item.Years)
+            {
+                var row = advertiser.Years.SingleOrDefault(y => y.Year == year);
+                if (row is null)
+                {
+                    row = new AdvertiserYear { AdvertiserId = advertiser.Id, Year = year };
+                    advertiser.Years.Add(row);
+                }
+
+                (row.Amount, row.IsFree) = (amount, free);
+                // De stand uit het portal of de app gaat voor; anders volgt hij uit het bedrag.
+                if (row.StatusChangedBy is null)
+                {
+                    row.Status = free || amount > 0 ? AdvertiserYearStatus.Collected : AdvertiserYearStatus.Stopped;
+                }
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.imported", "Advertiser", "excel", null,
+            JsonSerializer.Serialize(new { plan.Preview.Rows, plan.Preview.New, plan.Preview.Updated }, JsonSerializerOptions.Web)), cancellationToken);
+        return plan.Preview;
+    }
+
+    private sealed record PlannedAdvertiser(
+        int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
+        string? City, string? Website, string? Page, AdvertiserKind Kind, AdvertiserPayment Payment, string? Iban, string? MandateReference,
+        Guid? CollectorId, string? CollectorName, string? Notes, IReadOnlyList<(int Year, decimal? Amount, bool Free)> Years);
+
+    private sealed record Plan(AdvertiserImportPreview Preview, IReadOnlyList<PlannedAdvertiser> Items);
+
+    private async Task<Plan> PlanAsync(IReadOnlyList<AdvertiserImportRow> rows, CancellationToken cancellationToken)
+    {
+        var errors = new List<AdvertiserImportIssue>();
+        var warnings = new List<AdvertiserImportIssue>();
+        var unknown = new SortedSet<string>(StringComparer.CurrentCultureIgnoreCase);
+        var collectors = (await CollectorsAsync(cancellationToken)).GroupBy(c => NameKey(c.Name)).ToDictionary(g => g.Key, g => g.ToList());
+        var items = new List<PlannedAdvertiser>();
+        var seen = new Dictionary<int, int>();
+        var years = new SortedSet<int>();
+
+        foreach (var row in rows)
+        {
+            void Error(string message) => errors.Add(new AdvertiserImportIssue(row.RowNumber, message));
+            var company = Clean(row.CompanyName, 200);
+            if (company is null)
+            {
+                Error("Naam bedrijf ontbreekt.");
+                continue;
+            }
+
+            if (!int.TryParse(row.Number?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) || number <= 0)
+            {
+                Error($"{company}: het nummer (NR.) ontbreekt of is geen getal.");
+                continue;
+            }
+
+            if (seen.TryGetValue(number, out var firstRow))
+            {
+                Error($"{company}: nummer {number} staat ook op regel {firstRow}.");
+                continue;
+            }
+
+            seen[number] = row.RowNumber;
+            var kind = row.Kind?.Trim().ToUpperInvariant() switch
+            {
+                "A" => AdvertiserKind.Advertisement,
+                "V" => AdvertiserKind.FreeGift,
+                "G" => AdvertiserKind.Gift,
+                _ => (AdvertiserKind?)null,
+            };
+            if (kind is null)
+            {
+                Error($"{company}: kolom A/V/G moet A, V of G zijn (nu \"{row.Kind}\").");
+            }
+
+            var payment = row.Payment?.Trim().ToUpperInvariant() switch
+            {
+                "M" => AdvertiserPayment.Mandate,
+                "C" => AdvertiserPayment.Cash,
+                _ => (AdvertiserPayment?)null,
+            };
+            if (payment is null)
+            {
+                Error($"{company}: kolom M/C/R/B moet M (machtiging) of C (contant) zijn (nu \"{row.Payment}\").");
+            }
+
+            string? iban = null;
+            if (!string.IsNullOrWhiteSpace(row.Iban))
+            {
+                try
+                {
+                    iban = MembershipApplications.NormalizeIban(row.Iban);
+                }
+                catch (DomainException)
+                {
+                    Error($"{company}: de IBAN klopt niet.");
+                }
+            }
+
+            var email = Clean(row.Email, 254);
+            if (email is not null && !System.Net.Mail.MailAddress.TryCreate(email, out _))
+            {
+                Error($"{company}: het e-mailadres \"{email}\" klopt niet.");
+            }
+
+            var mandate = Clean(row.MandateReference, 35);
+            if (payment == AdvertiserPayment.Mandate && (iban is null || mandate is null))
+            {
+                warnings.Add(new AdvertiserImportIssue(row.RowNumber, $"{company}: machtiging zonder {(iban is null ? "IBAN" : "machtigingsnummer")}; incasso is pas mogelijk als die is ingevuld."));
+            }
+
+            var amounts = new List<(int, decimal?, bool)>();
+            foreach (var (year, value) in row.Contributions)
+            {
+                var text = value?.Trim();
+                if (string.IsNullOrEmpty(text))
+                {
+                    continue;
+                }
+
+                years.Add(year);
+                if (text.Equals("GRATIS", StringComparison.OrdinalIgnoreCase))
+                {
+                    amounts.Add((year, 0m, true));
+                }
+                else if (decimal.TryParse(text.Replace("€", "", StringComparison.Ordinal).Replace(',', '.').Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) && amount >= 0)
+                {
+                    amounts.Add((year, Math.Round(amount, 2), false));
+                }
+                else
+                {
+                    // Oude kolommen bevatten soms een opmerking in plaats van een bedrag: overslaan, niet tegenhouden.
+                    warnings.Add(new AdvertiserImportIssue(row.RowNumber, $"{company}: bijdrage {year} \"{text}\" is geen bedrag en wordt overgeslagen."));
+                }
+            }
+
+            Guid? collectorId = null;
+            var collectorName = Clean(row.Collector, 150);
+            if (collectorName is not null)
+            {
+                if (collectors.TryGetValue(NameKey(collectorName), out var matches) && matches.Count == 1)
+                {
+                    collectorId = matches[0].MemberId;
+                }
+                else
+                {
+                    unknown.Add(collectorName);
+                }
+            }
+
+            var notes = string.Join("\n", new[] { Clean(row.Particulars, 1000), Clean(row.Remark, 1000) }.OfType<string>());
+            items.Add(new PlannedAdvertiser(number, company, Clean(row.ContactName, 150), Clean(row.Phone, 30), Clean(row.Mobile, 30), email,
+                Clean(row.AddressLine, 200), Clean(row.PostalCode, 10), Clean(row.City, 100), Clean(row.Website, 200), Clean(row.Page, 50),
+                kind ?? default, payment ?? default, iban, mandate, collectorId, collectorName, notes.Length == 0 ? null : notes, amounts));
+        }
+
+        foreach (var name in unknown)
+        {
+            warnings.Add(new AdvertiserImportIssue(0, $"Collectant \"{name}\" is geen (gekoppeld) kaderlid; koppel de adverteerders daarna in het portal."));
+        }
+
+        var known = await db.Advertisers.AsNoTracking().Where(a => seen.Keys.Contains(a.Number)).Select(a => a.Number).ToListAsync(cancellationToken);
+        var preview = new AdvertiserImportPreview(rows.Count, items.Count(i => !known.Contains(i.Number)), items.Count(i => known.Contains(i.Number)),
+            errors, warnings, [.. unknown], [.. years]);
+        return new Plan(preview, items);
+    }
+
+    // ----- Beheer --------------------------------------------------------------------------------------------------
+
+    public async Task<Guid> CreateAsync(AdvertiserInput input, CancellationToken cancellationToken)
+    {
+        var advertiser = new Advertiser { Id = IdGenerator.NewId(), CompanyName = "" };
+        await ApplyAsync(advertiser, input, cancellationToken);
+        db.Advertisers.Add(advertiser);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.created", "Advertiser", advertiser.Id.ToString(), null, advertiser.CompanyName), cancellationToken);
+        return advertiser.Id;
+    }
+
+    public async Task UpdateAsync(Guid id, AdvertiserInput input, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.SingleOrDefaultAsync(a => a.Id == id, cancellationToken) ?? throw NotFound();
+        await ApplyAsync(advertiser, input, cancellationToken);
+        advertiser.AddedViaApp = false;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.updated", "Advertiser", id.ToString(), null, advertiser.CompanyName), cancellationToken);
+    }
+
+    private async Task ApplyAsync(Advertiser advertiser, AdvertiserInput input, CancellationToken cancellationToken)
+    {
+        if (Clean(input.CompanyName, 200) is not { } company)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul de naam van het bedrijf in.");
+        }
+
+        if (input.Number <= 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het nummer moet groter dan 0 zijn.");
+        }
+
+        if (await db.Advertisers.AnyAsync(a => a.Number == input.Number && a.Id != advertiser.Id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Nummer {input.Number} is al in gebruik.");
+        }
+
+        var email = Clean(input.Email, 254);
+        if (email is not null && !System.Net.Mail.MailAddress.TryCreate(email, out _))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het e-mailadres klopt niet.");
+        }
+
+        if (input.CollectorMemberId is { } collector && !(await CollectorsAsync(cancellationToken)).Any(c => c.MemberId == collector))
+        {
+            throw new DomainException(ErrorCodes.Validation, "De collectant moet een kaderlid zijn.");
+        }
+
+        (advertiser.Number, advertiser.CompanyName, advertiser.ContactName, advertiser.Phone, advertiser.Mobile, advertiser.Email, advertiser.AddressLine,
+            advertiser.PostalCode, advertiser.City, advertiser.Website, advertiser.Page, advertiser.Kind, advertiser.Payment, advertiser.MandateReference,
+            advertiser.Notes, advertiser.Active) =
+            (input.Number, company, Clean(input.ContactName, 150), Clean(input.Phone, 30), Clean(input.Mobile, 30), email, Clean(input.AddressLine, 200),
+                Clean(input.PostalCode, 10), Clean(input.City, 100), Clean(input.Website, 200), Clean(input.Page, 50), input.Kind, input.Payment,
+                Clean(input.MandateReference, 35), Clean(input.Notes, 2000), input.Active);
+        if (input.CollectorMemberId != advertiser.CollectorMemberId)
+        {
+            (advertiser.CollectorMemberId, advertiser.ImportedCollectorName) = (input.CollectorMemberId, null);
+        }
+
+        // Lege IBAN = ongewijzigd; "-" = weghalen.
+        if (input.Iban?.Trim() == "-")
+        {
+            (advertiser.IbanProtected, advertiser.IbanLast4) = (null, null);
+        }
+        else if (!string.IsNullOrWhiteSpace(input.Iban))
+        {
+            var iban = MembershipApplications.NormalizeIban(input.Iban);
+            (advertiser.IbanProtected, advertiser.IbanLast4) = (ibans.Protect(iban), iban[^4..]);
+        }
+    }
+
+    // ----- Campagne ------------------------------------------------------------------------------------------------
+
+    /// <summary>De stand van de campagne van een jaar: per adverteerder, per collectant en in totaal.</summary>
+    public async Task<AdvertiserStatusReport> StatusAsync(int year, Guid? collectorMemberId, CancellationToken cancellationToken)
+    {
+        var query = db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year <= year)).Where(a => a.Active);
+        var advertisers = await query.ToListAsync(cancellationToken);
+        var names = await CollectorNamesAsync(advertisers.Select(a => a.CollectorMemberId), cancellationToken);
+        var rows = advertisers.Select(a =>
+        {
+            var current = a.Years.SingleOrDefault(y => y.Year == year);
+            var previous = a.Years.Where(y => y.Year < year && (y.Amount is > 0 || y.IsFree)).OrderByDescending(y => y.Year).FirstOrDefault();
+            return new AdvertiserStatusRow(a.Id, a.Number, a.CompanyName, a.City, a.Kind, a.Payment, a.CollectorMemberId,
+                a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : a.ImportedCollectorName,
+                current?.Status ?? AdvertiserYearStatus.Open, current?.Amount, current?.IsFree ?? false, previous?.Amount, current?.StatusChangedAt, current?.Note);
+        }).OrderBy(r => r.CollectorName ?? "~").ThenBy(r => r.CompanyName).ToList();
+
+        var perCollector = rows.GroupBy(r => (r.CollectorMemberId, Name: r.CollectorName ?? "Zonder collectant"))
+            .Select(g => new AdvertiserCollectorTotals(g.Key.CollectorMemberId, g.Key.Name, Totals(g))).OrderBy(c => c.Name).ToList();
+        var shown = collectorMemberId is null ? rows : rows.Where(r => r.CollectorMemberId == collectorMemberId).ToList();
+        return new AdvertiserStatusReport(year, Totals(shown), perCollector, shown);
+    }
+
+    private static AdvertiserStatusTotals Totals(IEnumerable<AdvertiserStatusRow> rows)
+    {
+        var list = rows.ToList();
+        return new AdvertiserStatusTotals(list.Count, list.Count(r => r.Status == AdvertiserYearStatus.Collected), list.Count(r => r.Status == AdvertiserYearStatus.Stopped),
+            list.Count(r => r.Status == AdvertiserYearStatus.Open),
+            list.Where(r => r.Status == AdvertiserYearStatus.Collected).Sum(r => r.Amount ?? 0),
+            list.Where(r => r.Status != AdvertiserYearStatus.Stopped).Sum(r => r.Amount ?? r.PreviousAmount ?? 0));
+    }
+
+    /// <summary>Zet de stand van een adverteerder voor een jaar (portal of app); opgehaald zonder bedrag neemt dat van vorig jaar.</summary>
+    public async Task SetStatusAsync(Guid advertiserId, int year, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.Include(a => a.Years).SingleOrDefaultAsync(a => a.Id == advertiserId, cancellationToken) ?? throw NotFound();
+        if (amount is < 0 or > 100_000)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul een bedrag in tussen 0 en 100.000 euro.");
+        }
+
+        var row = advertiser.Years.SingleOrDefault(y => y.Year == year);
+        if (row is null)
+        {
+            row = new AdvertiserYear { AdvertiserId = advertiserId, Year = year };
+            advertiser.Years.Add(row);
+        }
+
+        var before = $"{row.Status} {row.Amount}";
+        row.Status = status;
+        if (status == AdvertiserYearStatus.Collected)
+        {
+            row.Amount = amount ?? row.Amount ?? advertiser.Years.Where(y => y.Year < year && y.Amount > 0).OrderByDescending(y => y.Year).Select(y => y.Amount).FirstOrDefault();
+        }
+        else if (amount is not null)
+        {
+            row.Amount = amount;
+        }
+
+        (row.StatusChangedAt, row.StatusChangedBy, row.Note) = (clock.UtcNow.UtcDateTime, actor.UserId, Clean(note, 500));
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.status-changed", "Advertiser", advertiserId.ToString(), before,
+            $"{year}: {status} {row.Amount}"), cancellationToken);
+    }
+
+    /// <summary>De volledige IBAN (alleen voor het portal, met het recht adverteerders beheren).</summary>
+    public async Task<string?> IbanAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var value = await db.Advertisers.AsNoTracking().Where(a => a.Id == id).Select(a => a.IbanProtected).SingleOrDefaultAsync(cancellationToken);
+        return value is null ? null : ibans.Unprotect(value);
+    }
+
+    public async Task<Dictionary<Guid, string>> CollectorNamesAsync(IEnumerable<Guid?> ids, CancellationToken cancellationToken)
+    {
+        var list = ids.OfType<Guid>().Distinct().ToList();
+        return await db.Members.AsNoTracking().Where(m => list.Contains(m.Id)).ToDictionaryAsync(m => m.Id, m => m.FullName, cancellationToken);
+    }
+
+    /// <summary>Naam om op te vergelijken: hoofdletters, zonder accenten en dubbele spaties ("ALFRED RASING" = "Alfred  Rasing").</summary>
+    public static string NameKey(string name)
+    {
+        var normalized = name.Normalize(NormalizationForm.FormD);
+        var letters = normalized.Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark).ToArray();
+        return string.Join(' ', new string(letters).ToUpperInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string? Clean(string? value, int max)
+    {
+        var text = value?.Trim();
+        return string.IsNullOrEmpty(text) ? null : text.Length <= max ? text : text[..max];
+    }
+
+    private static DomainException NotFound() => new(ErrorCodes.NotFound, "Adverteerder niet gevonden.");
+}

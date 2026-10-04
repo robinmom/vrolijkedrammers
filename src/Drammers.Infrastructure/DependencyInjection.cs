@@ -230,6 +230,9 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
         // Fase 27a: mailings (nieuwsbrief, uitnodigingen).
         services.AddScoped<Mailings.MailingService>();
+        // Fase 27b: adverteerders.
+        services.AddScoped<Advertisers.AdvertiserAdministration>();
+        services.AddSingleton<Advertisers.AdvertiserIbanProtector>();
         services.AddSingleton<Mailings.MailingUnsubscribeTokens>();
         services.AddScoped<IOutboxMessageHandler, Mailings.MailingRecipientMailHandler>();
         services.AddScoped<GroupAdministration>();

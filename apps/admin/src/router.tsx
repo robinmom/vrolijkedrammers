@@ -27,6 +27,7 @@ import { PrincesPage } from './pages/PrincesPage';
 import { WebsiteContentPagesPage, WebsitePageEditorPage } from './pages/WebsiteContentPages';
 import { MailingEditorPage, MailingsPage } from './pages/MailingPages';
 import { MailingListEditorPage, MailingListsPage } from './pages/MailingListPages';
+import { AdvertiserEditorPage, AdvertiserImportPage, AdvertisersPage, AdvertiserStatusPage } from './pages/AdvertiserPages';
 import { WebsiteHomePage, WebsiteSettingsPage } from './pages/WebsiteHomePage';
 import { DayTicketsPage, EventTicketsPage, TokensPage } from './pages/SalesKindPage';
 import { AccessLogPage } from './pages/AccessLogPage';
@@ -77,6 +78,10 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/mailing/groepen', component: guarded('mailing.manage', MailingListsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/mailing/groepen/$id', component: guarded('mailing.manage', MailingListEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/mailing/$id', component: guarded('mailing.manage', MailingEditorPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders', component: guarded('advertiser.manage', AdvertisersPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/campagne', component: guarded('advertiser.manage', AdvertiserStatusPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/import', component: guarded('advertiser.manage', AdvertiserImportPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/$id', component: guarded('advertiser.manage', AdvertiserEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/kader', component: guarded('website.manage', KaderPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/prinsen', component: guarded('website.manage', PrincesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/onderscheidingen', component: guarded('website.manage', AwardsPage) }),

@@ -1912,3 +1912,23 @@ fieldset {
   font-weight: 600;
   margin-bottom: 6px;
 }
+
+/* Fase 27b: een naam in een tabel die als filter werkt, en een kaart met fouten. */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--dvd-action-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:focus-visible {
+  outline: 2px solid var(--dvd-action-secondary);
+  outline-offset: 2px;
+}
+
+.card-error {
+  border-left: 4px solid var(--dvd-action-danger);
+}

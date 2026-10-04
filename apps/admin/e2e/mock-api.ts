@@ -1,6 +1,33 @@
 import type { Page, Route } from '@playwright/test';
 
 /** 1×1 PNG als voorbeeldafbeelding. */
+/** Adverteerder in de mock (fase 27b), met de stand van campagne 2027 en het bedrag van 2026. */
+interface MockAdvertiser {
+  id: string;
+  number: number;
+  companyName: string;
+  contactName: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  addressLine: string | null;
+  postalCode: string | null;
+  city: string | null;
+  website: string | null;
+  page: string | null;
+  kind: string;
+  payment: string;
+  maskedIban: string | null;
+  mandateReference: string | null;
+  collectorMemberId: string | null;
+  importedCollectorName: string | null;
+  notes: string | null;
+  active: boolean;
+  addedViaApp: boolean;
+  status2027: string;
+  amount2026: number;
+}
+
 const PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
@@ -860,6 +887,62 @@ export class MockApi {
     recipientCount: number;
   }[] = [];
   mailingTests = 0;
+  // Fase 27b: adverteerders.
+  advertiserCollectors = [{ memberId: 'm-1', name: 'Piet van der Berg' }];
+  advertisers: MockAdvertiser[] = [
+    {
+      id: 'adv-1',
+      number: 1,
+      companyName: 'Bakkerij De Test',
+      contactName: 'Jan Test',
+      phone: null as string | null,
+      mobile: null as string | null,
+      email: 'bakker@example.com',
+      addressLine: 'Dorpsstraat 1',
+      postalCode: '6941 XX',
+      city: 'Loil',
+      website: null as string | null,
+      page: '4',
+      kind: 'Advertisement',
+      payment: 'Mandate',
+      maskedIban: '**** 4300' as string | null,
+      mandateReference: 'DVD000000001' as string | null,
+      collectorMemberId: 'm-1' as string | null,
+      importedCollectorName: null as string | null,
+      notes: null as string | null,
+      active: true,
+      addedViaApp: false,
+      status2027: 'Open',
+      amount2026: 35,
+    },
+    {
+      id: 'adv-2',
+      number: 2,
+      companyName: 'Garage Proef',
+      contactName: null,
+      phone: null,
+      mobile: null,
+      email: null,
+      addressLine: null,
+      postalCode: null,
+      city: 'Didam',
+      website: null,
+      page: null,
+      kind: 'Gift',
+      payment: 'Cash',
+      maskedIban: null,
+      mandateReference: null,
+      collectorMemberId: null,
+      importedCollectorName: 'ALFRED ONBEKEND',
+      notes: null,
+      active: true,
+      addedViaApp: false,
+      status2027: 'Open',
+      amount2026: 70,
+    },
+  ];
+  advertiserCampaignYear = 2027;
+  advertiserImports = 0;
   mailingUnsubscribes = [{ email: 'weg@example.com', unsubscribedAt: '2026-10-01T10:00:00Z' }];
 
   websitePages: {
@@ -1226,6 +1309,158 @@ export class MockApi {
     running: boolean;
     lastActivity: string | null;
   } = { counts: [], failures: [], running: false, lastActivity: null };
+
+  private handleAdvertisers(
+    path: string,
+    method: string,
+    body: Record<string, unknown>,
+    url: URL,
+    json: (data: unknown, status?: number) => Promise<void>,
+    noContent: () => Promise<void>,
+  ) {
+    let m: RegExpMatchArray | null;
+    const collectorName = (id: string | null) => this.advertiserCollectors.find((c) => c.memberId === id)?.name ?? null;
+    if (path === '/admin/advertisers/collectors') return json(this.advertiserCollectors);
+    if (path === '/admin/advertisers/campaign-year') {
+      if (method === 'PUT') {
+        this.advertiserCampaignYear = body.year as number;
+        return noContent();
+      }
+      return json({ year: this.advertiserCampaignYear });
+    }
+    if (path === '/admin/advertisers/import/preview' || path === '/admin/advertisers/import') {
+      if (path === '/admin/advertisers/import') this.advertiserImports++;
+      return json({
+        rows: 187,
+        new: 185,
+        updated: 2,
+        errors: [],
+        warnings: [
+          { row: 12, message: 'Kapsalon: machtiging zonder IBAN; incasso is pas mogelijk als die is ingevuld.' },
+        ],
+        unknownCollectors: [],
+        years: [2025, 2026],
+      });
+    }
+    if (path === '/admin/advertisers/status') {
+      const collector = url.searchParams.get('collector');
+      const rows = this.advertisers
+        .filter((a) => !collector || a.collectorMemberId === collector)
+        .map((a) => ({
+          id: a.id,
+          number: a.number,
+          companyName: a.companyName,
+          city: a.city,
+          kind: a.kind,
+          payment: a.payment,
+          collectorMemberId: a.collectorMemberId,
+          collectorName: collectorName(a.collectorMemberId) ?? a.importedCollectorName,
+          status: a.status2027,
+          amount: a.status2027 === 'Collected' ? a.amount2026 : null,
+          isFree: false,
+          previousAmount: a.amount2026,
+          statusChangedAt: null,
+          note: null,
+        }));
+      const totals = (list: typeof rows) => ({
+        total: list.length,
+        collected: list.filter((r) => r.status === 'Collected').length,
+        stopped: list.filter((r) => r.status === 'Stopped').length,
+        open: list.filter((r) => r.status === 'Open').length,
+        collectedAmount: list.reduce((sum, r) => sum + (r.amount ?? 0), 0),
+        expectedAmount: list.filter((r) => r.status !== 'Stopped').reduce((sum, r) => sum + (r.previousAmount ?? 0), 0),
+      });
+      return json({
+        year: Number(url.searchParams.get('year') ?? this.advertiserCampaignYear),
+        totals: totals(rows),
+        perCollector: [
+          {
+            collectorMemberId: 'm-1',
+            name: 'Piet van der Berg',
+            totals: totals(rows.filter((r) => r.collectorMemberId === 'm-1')),
+          },
+          {
+            collectorMemberId: null,
+            name: 'ALFRED ONBEKEND',
+            totals: totals(rows.filter((r) => r.collectorMemberId === null)),
+          },
+        ],
+        rows,
+      });
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)$/))) {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      a.status2027 = body.status as string;
+      this.record('advertiser.status-changed', 'Advertiser', a.id, body);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/iban$/))) {
+      return json({ iban: 'NL91ABNA0417164300' });
+    }
+    if (path === '/admin/advertisers' && method === 'POST') {
+      const id = `adv-${this.advertisers.length + 1}`;
+      this.advertisers.push({
+        ...(body as unknown as (typeof this.advertisers)[number]),
+        id,
+        maskedIban: body.iban ? '**** 0000' : null,
+        importedCollectorName: null,
+        addedViaApp: false,
+        status2027: 'Open',
+        amount2026: 0,
+      });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/advertisers') {
+      const collector = url.searchParams.get('collector');
+      const search = (url.searchParams.get('search') ?? '').toLowerCase();
+      return json(
+        this.advertisers
+          .filter(
+            (a) =>
+              (!collector || a.collectorMemberId === collector) &&
+              (!search || a.companyName.toLowerCase().includes(search)),
+          )
+          .map((a) => ({
+            id: a.id,
+            number: a.number,
+            companyName: a.companyName,
+            contactName: a.contactName,
+            city: a.city,
+            email: a.email,
+            kind: a.kind,
+            payment: a.payment,
+            collectorMemberId: a.collectorMemberId,
+            collectorName: collectorName(a.collectorMemberId),
+            importedCollectorName: a.importedCollectorName,
+            hasIban: a.maskedIban !== null,
+            hasMandate: a.mandateReference !== null,
+            lastYear: 2026,
+            lastAmount: a.amount2026,
+            lastFree: false,
+            active: a.active,
+            addedViaApp: a.addedViaApp,
+          })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)$/))) {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      if (method === 'PUT') {
+        const { iban, ...rest } = body;
+        Object.assign(a, rest, iban ? { maskedIban: '**** 9999' } : {});
+        if (a.collectorMemberId) a.importedCollectorName = null;
+        this.record('advertiser.updated', 'Advertiser', a.id, rest);
+        return noContent();
+      }
+      return json({
+        ...a,
+        collectorName: collectorName(a.collectorMemberId),
+        years: [
+          { year: 2026, amount: a.amount2026, isFree: false, status: 'Collected', statusChangedAt: null, note: null },
+        ],
+      });
+    }
+    return json({ title: 'Niet gevonden (mock)' }, 404);
+  }
 
   private handleMailing(
     path: string,
@@ -2393,6 +2628,9 @@ export class MockApi {
     }
     if (path.startsWith('/admin/website/')) {
       return this.handleWebsite(path, method, body, url, json, noContent);
+    }
+    if (path.startsWith('/admin/advertisers')) {
+      return this.handleAdvertisers(path, method, body, url, json, noContent);
     }
     if (path.startsWith('/admin/mailing/')) {
       return this.handleMailing(path, method, body, url, json, noContent);

@@ -63,7 +63,7 @@ public static class DefaultRoles
              P.ParadeRead, P.ParadeManage, P.ParadeManageFinal, P.ParadeAssignStartNumber, P.ParadeImportArrivalTimes,
              P.ParadeExport, P.ParadeConfig, P.TicketScan, P.TicketScanDetails, P.TicketRead, P.TicketManage,
              P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge, P.SaleManage,
-             P.WebsiteManage, P.JuryManage, P.JuryAssign, P.ContributionManage, P.MailingManage]),
+             P.WebsiteManage, P.JuryManage, P.JuryAssign, P.ContributionManage, P.MailingManage, P.AdvertiserManage]),
         new(12, BeheerderIt, "Beheerder (IT)", "Technisch beheer, zonder inhoudelijke rechten op betalingen en goedkeuringen (systeemrol)",
             IsSystem: true, IsAssignableBySync: false,
             [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),

@@ -828,6 +828,40 @@ export class MockApi {
     instagramUrl: null as string | null,
     showYouthPrinces: false,
   };
+  // Fase 27a: mailings.
+  mailingLists: {
+    id: string;
+    name: string;
+    description: string | null;
+    allMembers: boolean;
+    memberIds: string[];
+    groupIds: string[];
+    addresses: { email: string; name: string | null }[];
+  }[] = [
+    {
+      id: 'ml-1',
+      name: 'Alle leden',
+      description: 'Alle actieve leden met een e-mailadres (nieuwsbrief).',
+      allMembers: true,
+      memberIds: [],
+      groupIds: [],
+      addresses: [],
+    },
+  ];
+  mailings: {
+    id: string;
+    kind: 'Newsletter' | 'Invitation';
+    subject: string;
+    preheader: string | null;
+    blocks: Record<string, unknown>[];
+    listIds: string[];
+    status: 'Draft' | 'Sending' | 'Sent';
+    sentAt: string | null;
+    recipientCount: number;
+  }[] = [];
+  mailingTests = 0;
+  mailingUnsubscribes = [{ email: 'weg@example.com', unsubscribedAt: '2026-10-01T10:00:00Z' }];
+
   websitePages: {
     id: string;
     slug: string;
@@ -1186,6 +1220,145 @@ export class MockApi {
     running: boolean;
     lastActivity: string | null;
   } = { counts: [], failures: [], running: false, lastActivity: null };
+
+  private handleMailing(
+    path: string,
+    method: string,
+    body: Record<string, unknown>,
+    url: URL,
+    json: (data: unknown, status?: number) => Promise<void>,
+    noContent: () => Promise<void>,
+  ) {
+    let m: RegExpMatchArray | null;
+    const audience = (listIds: string[]) => ({
+      recipients: listIds.some((id) => this.mailingLists.find((l) => l.id === id)?.allMembers)
+        ? 120
+        : listIds.length * 10,
+      unsubscribed: listIds.length > 0 ? 1 : 0,
+      withoutEmail: 0,
+    });
+    if (path === '/admin/mailing/lists' && method === 'GET') {
+      return json(
+        this.mailingLists.map((l) => ({
+          id: l.id,
+          name: l.name,
+          description: l.description,
+          allMembers: l.allMembers,
+          memberCount: l.memberIds.length,
+          groupCount: l.groupIds.length,
+          addressCount: l.addresses.length,
+        })),
+      );
+    }
+    if (path === '/admin/mailing/lists' && method === 'POST') {
+      const id = `ml-${this.mailingLists.length + 1}`;
+      this.mailingLists.push({ ...(body as unknown as (typeof this.mailingLists)[number]), id });
+      this.record('mailing.list-created', 'MailingList', id, body);
+      return json({ id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/mailing\/lists\/([^/]+)$/))) {
+      const list = this.mailingLists.find((l) => l.id === m![1])!;
+      if (method === 'PUT') {
+        Object.assign(list, body);
+        return noContent();
+      }
+      return json({
+        id: list.id,
+        name: list.name,
+        description: list.description,
+        allMembers: list.allMembers,
+        members: this.members
+          .filter((x) => list.memberIds.includes(x.id))
+          .map((x) => ({ id: x.id, fullName: x.fullName, memberNumber: x.memberNumber, email: x.email })),
+        groups: this.groups.filter((g) => list.groupIds.includes(g.id)).map((g) => ({ id: g.id, name: g.name })),
+        addresses: list.addresses,
+        audience: audience([list.id]),
+      });
+    }
+    if (path === '/admin/mailing/mailings' && method === 'GET') {
+      return json(
+        this.mailings.map((x) => ({
+          id: x.id,
+          kind: x.kind,
+          subject: x.subject,
+          status: x.status,
+          recipientCount: x.recipientCount,
+          sentCount: x.status === 'Draft' ? 0 : x.recipientCount,
+          sentAt: x.sentAt,
+          updatedAt: '2026-10-04T10:00:00Z',
+        })),
+      );
+    }
+    if (path === '/admin/mailing/mailings' && method === 'POST') {
+      const id = `mail-${this.mailings.length + 1}`;
+      this.mailings.push({
+        ...(body as unknown as (typeof this.mailings)[number]),
+        id,
+        status: 'Draft',
+        sentAt: null,
+        recipientCount: 0,
+      });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/mailing/preview') {
+      const blocks = body.blocks as { type: string; text?: string | null; label?: string | null }[];
+      const html = blocks
+        .map((b) =>
+          b.type === 'button' ? `<a>${b.label}</a>` : `<p>${(b.text ?? '').replace('{voornaam}', 'Piet')}</p>`,
+        )
+        .join('');
+      return json({
+        subject: body.subject,
+        html: `<!DOCTYPE html><html><body>${html}</body></html>`,
+        plainText: blocks.map((b) => b.text ?? b.label ?? '').join('\n\n'),
+        audience: audience((body.listIds as string[]) ?? []),
+      });
+    }
+    if ((m = path.match(/^\/admin\/mailing\/mailings\/([^/]+)\/(test|send|duplicate)$/))) {
+      const mailing = this.mailings.find((x) => x.id === m![1])!;
+      if (m[2] === 'test') {
+        this.mailingTests++;
+        return json({ sentTo: 'bestuur@example.com' });
+      }
+      if (m[2] === 'send') {
+        Object.assign(mailing, {
+          status: 'Sending',
+          sentAt: '2026-10-04T12:00:00Z',
+          recipientCount: audience(mailing.listIds).recipients,
+        });
+        this.record('mailing.sent', 'Mailing', mailing.id, {});
+        return json({ recipients: mailing.recipientCount, lastAt: '2026-10-04T13:20:00Z' });
+      }
+      const id = `mail-${this.mailings.length + 1}`;
+      this.mailings.push({ ...mailing, id, status: 'Draft', sentAt: null, recipientCount: 0 });
+      return json({ id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/mailing\/mailings\/([^/]+)$/))) {
+      const mailing = this.mailings.find((x) => x.id === m![1])!;
+      if (method === 'PUT') {
+        Object.assign(mailing, body);
+        return noContent();
+      }
+      if (method === 'DELETE') {
+        this.mailings = this.mailings.filter((x) => x !== mailing);
+        return noContent();
+      }
+      const sent = mailing.status === 'Sent' ? mailing.recipientCount : 0;
+      return json({ ...mailing, progress: { pending: mailing.recipientCount - sent, sent, failed: 0 } });
+    }
+    if (path === '/admin/mailing/unsubscribes') {
+      if (method === 'DELETE') {
+        const email = url.searchParams.get('email');
+        this.mailingUnsubscribes = this.mailingUnsubscribes.filter((u) => u.email !== email);
+        return noContent();
+      }
+      return json(this.mailingUnsubscribes);
+    }
+    if (path === '/admin/mailing/images') {
+      return json({ path: 'uploads/0123456789abcdef0123456789abcdef.jpg', url: PIXEL });
+    }
+    return json({ title: 'Niet gevonden (mock)' }, 404);
+  }
 
   private handleWebsite(
     path: string,
@@ -2212,6 +2385,9 @@ export class MockApi {
     }
     if (path.startsWith('/admin/website/')) {
       return this.handleWebsite(path, method, body, url, json, noContent);
+    }
+    if (path.startsWith('/admin/mailing/')) {
+      return this.handleMailing(path, method, body, url, json, noContent);
     }
     if (path === '/admin/news') {
       return json(

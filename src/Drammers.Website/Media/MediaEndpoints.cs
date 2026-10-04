@@ -89,6 +89,10 @@ public static class MediaEndpoints
             case "award":
                 path = await db.Awards.AsNoTracking().Where(a => a.Id == guid && a.IsPublished).Select(a => a.PhotoBlobPath).SingleOrDefaultAsync(cancellationToken);
                 return Content(path);
+            case "mailing":
+                // Foto in een mailing (fase 27a): alleen als een mailing hem gebruikt.
+                var upload = $"{UploadedImages.Folder}/{guid:N}.jpg";
+                return await db.Mailings.AsNoTracking().AnyAsync(m => m.Blocks.Contains(upload), cancellationToken) ? Content(upload) : null;
             case "photo" or "photo-thumb":
                 var albums = db.PhotoAlbums.AsNoTracking().VisibleTo(ContentViewer.Guest, now).Select(a => a.Id);
                 var photo = await db.Photos.AsNoTracking()

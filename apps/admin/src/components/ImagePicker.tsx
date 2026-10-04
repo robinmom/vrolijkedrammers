@@ -18,7 +18,7 @@ export function ImagePicker({
   round = false,
 }: {
   label: string;
-  uploadPath: '/api/v1/admin/website/images' | '/api/v1/admin/news/images';
+  uploadPath: '/api/v1/admin/website/images' | '/api/v1/admin/news/images' | '/api/v1/admin/mailing/images';
   /** De opgeslagen afbeelding (voorbeeld zolang er niets nieuws is gekozen). */
   currentUrl: string | null | undefined;
   onChange: (path: string) => void;

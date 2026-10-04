@@ -176,6 +176,16 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Notification.Notifications.NotificationPreference> NotificationPreferences => Set<Modules.Notification.Notifications.NotificationPreference>();
 
+    public DbSet<Modules.Notification.Mailing.MailingList> MailingLists => Set<Modules.Notification.Mailing.MailingList>();
+
+    public DbSet<Modules.Notification.Mailing.MailingListAddress> MailingListAddresses => Set<Modules.Notification.Mailing.MailingListAddress>();
+
+    public DbSet<Modules.Notification.Mailing.Mailing> Mailings => Set<Modules.Notification.Mailing.Mailing>();
+
+    public DbSet<Modules.Notification.Mailing.MailingRecipient> MailingRecipients => Set<Modules.Notification.Mailing.MailingRecipient>();
+
+    public DbSet<Modules.Notification.Mailing.MailingUnsubscribe> MailingUnsubscribes => Set<Modules.Notification.Mailing.MailingUnsubscribe>();
+
     public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
 
     public DbSet<AppConfigurationSetting> AppConfiguration => Set<AppConfigurationSetting>();

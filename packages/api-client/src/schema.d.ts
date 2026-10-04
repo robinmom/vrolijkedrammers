@@ -4270,6 +4270,682 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/mailing/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingListSummaryResponse"][];
+                        "application/json": components["schemas"]["MailingListSummaryResponse"][];
+                        "text/json": components["schemas"]["MailingListSummaryResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MailingListRequest"];
+                    "text/json": components["schemas"]["MailingListRequest"];
+                    "application/*+json": components["schemas"]["MailingListRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingListResponse"];
+                        "application/json": components["schemas"]["MailingListResponse"];
+                        "text/json": components["schemas"]["MailingListResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MailingListRequest"];
+                    "text/json": components["schemas"]["MailingListRequest"];
+                    "application/*+json": components["schemas"]["MailingListRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/mailings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingSummaryResponse"][];
+                        "application/json": components["schemas"]["MailingSummaryResponse"][];
+                        "text/json": components["schemas"]["MailingSummaryResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MailingRequest"];
+                    "text/json": components["schemas"]["MailingRequest"];
+                    "application/*+json": components["schemas"]["MailingRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/mailings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingResponse"];
+                        "application/json": components["schemas"]["MailingResponse"];
+                        "text/json": components["schemas"]["MailingResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MailingRequest"];
+                    "text/json": components["schemas"]["MailingRequest"];
+                    "application/*+json": components["schemas"]["MailingRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/mailings/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Voorbeeld van de mail zoals een lid hem krijgt (niet opgeslagen), met het aantal ontvangers van de gekozen groepen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MailingRequest"];
+                    "text/json": components["schemas"]["MailingRequest"];
+                    "application/*+json": components["schemas"]["MailingRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingPreviewResponse"];
+                        "application/json": components["schemas"]["MailingPreviewResponse"];
+                        "text/json": components["schemas"]["MailingPreviewResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/mailings/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingTestResponse"];
+                        "application/json": components["schemas"]["MailingTestResponse"];
+                        "text/json": components["schemas"]["MailingTestResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/mailings/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingSendResponse"];
+                        "application/json": components["schemas"]["MailingSendResponse"];
+                        "text/json": components["schemas"]["MailingSendResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UploadedImageResponse"];
+                        "application/json": components["schemas"]["UploadedImageResponse"];
+                        "text/json": components["schemas"]["UploadedImageResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mailing/unsubscribes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingUnsubscribeResponse"][];
+                        "application/json": components["schemas"]["MailingUnsubscribeResponse"][];
+                        "text/json": components["schemas"]["MailingUnsubscribeResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Weer aanmelden, alleen op verzoek van de persoon zelf. */
+        delete: {
+            parameters: {
+                query: {
+                    email: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/member-requests": {
         parameters: {
             query?: never;
@@ -18333,6 +19009,148 @@ export interface components {
             /** Format: uuid */
             userId: string;
             relationship: components["schemas"]["GuardianRelationship"];
+        };
+        MailingAddressRequest: {
+            email: string;
+            name: null | string;
+        };
+        MailingAddressResponse: {
+            email: string;
+            name: null | string;
+        };
+        MailingAudienceResponse: {
+            /** Format: int32 */
+            recipients: number;
+            /** Format: int32 */
+            unsubscribed: number;
+            /** Format: int32 */
+            withoutEmail: number;
+        };
+        /** @description Een blok; `imageUrl` alleen in antwoorden (om de foto in het portal te tonen). */
+        MailingBlockDto: {
+            type: string;
+            text: null | string;
+            label: null | string;
+            url: null | string;
+            image: null | string;
+            note: null | string;
+            imageUrl?: null | string;
+        };
+        /**
+         * @description Soort mailing; beide houden rekening met afmeldingen.
+         * @enum {unknown}
+         */
+        MailingKind: "Newsletter" | "Invitation";
+        MailingListGroupResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        MailingListMemberResponse: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            memberNumber: null | string;
+            email: null | string;
+        };
+        MailingListRequest: {
+            name: string;
+            description: null | string;
+            allMembers: boolean;
+            memberIds: null | string[];
+            groupIds: null | string[];
+            addresses: null | components["schemas"]["MailingAddressRequest"][];
+        };
+        MailingListResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            allMembers: boolean;
+            members: components["schemas"]["MailingListMemberResponse"][];
+            groups: components["schemas"]["MailingListGroupResponse"][];
+            addresses: components["schemas"]["MailingAddressResponse"][];
+            audience: components["schemas"]["MailingAudienceResponse"];
+        };
+        MailingListSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            allMembers: boolean;
+            /** Format: int32 */
+            memberCount: number;
+            /** Format: int32 */
+            groupCount: number;
+            /** Format: int32 */
+            addressCount: number;
+        };
+        MailingPreviewResponse: {
+            subject: string;
+            html: string;
+            plainText: string;
+            audience: components["schemas"]["MailingAudienceResponse"];
+        };
+        MailingProgressResponse: {
+            /** Format: int32 */
+            pending: number;
+            /** Format: int32 */
+            sent: number;
+            /** Format: int32 */
+            failed: number;
+        };
+        MailingRequest: {
+            kind: components["schemas"]["MailingKind"];
+            subject: string;
+            preheader: null | string;
+            blocks: components["schemas"]["MailingBlockDto"][];
+            listIds: null | string[];
+        };
+        MailingResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["MailingKind"];
+            subject: string;
+            preheader: null | string;
+            blocks: components["schemas"]["MailingBlockDto"][];
+            listIds: string[];
+            status: components["schemas"]["MailingStatus"];
+            /** Format: date-time */
+            sentAt: null | string;
+            /** Format: int32 */
+            recipientCount: number;
+            progress: components["schemas"]["MailingProgressResponse"];
+        };
+        MailingSendResponse: {
+            /** Format: int32 */
+            recipients: number;
+            /** Format: date-time */
+            lastAt: string;
+        };
+        /** @enum {unknown} */
+        MailingStatus: "Draft" | "Sending" | "Sent";
+        MailingSummaryResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["MailingKind"];
+            subject: string;
+            status: components["schemas"]["MailingStatus"];
+            /** Format: int32 */
+            recipientCount: number;
+            /** Format: int32 */
+            sentCount: number;
+            /** Format: date-time */
+            sentAt: null | string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MailingTestResponse: {
+            sentTo: string;
+        };
+        MailingUnsubscribeResponse: {
+            email: string;
+            /** Format: date-time */
+            unsubscribedAt: string;
         };
         Maintenance: {
             enabled: boolean;

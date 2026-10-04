@@ -1841,3 +1841,74 @@ fieldset {
   outline: 3px solid var(--dvd-focus, #087bc1);
   outline-offset: 2px;
 }
+
+/* Fase 27a: mailing opstellen met het voorbeeld ernaast. */
+.mailing-layout {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .mailing-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .mailing-preview {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+.mailing-frame {
+  width: 100%;
+  height: 720px;
+  border: 1px solid var(--dvd-border);
+  border-radius: var(--dvd-radius-control);
+  background: #fafaf7;
+}
+
+.mailing-text {
+  white-space: pre-wrap;
+  font-size: 13px;
+  max-height: 720px;
+  overflow: auto;
+}
+
+.block-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.block-actions,
+.add-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.checkbox-group {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkbox-group legend {
+  font-weight: 600;
+  margin-bottom: 6px;
+}

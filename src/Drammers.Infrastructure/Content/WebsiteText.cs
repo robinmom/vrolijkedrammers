@@ -95,6 +95,9 @@ public static partial class UploadedImages
         return (requested, current);
     }
 
+    /// <summary>Of het pad een afbeelding uit de upload-map is (zoals <c>POST …/images</c> die teruggeeft).</summary>
+    public static bool IsUploadPath(string path) => UploadPath().IsMatch(path);
+
     [GeneratedRegex("^uploads/[0-9a-f]{32}\\.jpg$")]
     private static partial Regex UploadPath();
 }

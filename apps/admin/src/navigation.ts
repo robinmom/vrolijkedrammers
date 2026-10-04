@@ -8,7 +8,7 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Website' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
+  section?: 'Content' | 'Website' | 'Mailing' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -30,6 +30,9 @@ export const navItems: readonly NavItem[] = [
   { label: 'Prinsen', to: '/website/prinsen', permission: 'website.manage', icon: 'gebruiker', section: 'Website' },
   { label: 'Onderscheidingen', to: '/website/onderscheidingen', permission: 'website.manage', icon: 'jaar', section: 'Website' },
   { label: 'Instellingen website', to: '/website/instellingen', permission: 'website.manage', icon: 'instellingen', section: 'Website' },
+  // Fase 27a: nieuwsbrieven en uitnodigingen.
+  { label: 'Mailings', to: '/mailing', permission: 'mailing.manage', icon: 'meldingen', section: 'Mailing' },
+  { label: 'Mailinggroepen', to: '/mailing/groepen', permission: 'mailing.manage', icon: 'groepen', section: 'Mailing' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.

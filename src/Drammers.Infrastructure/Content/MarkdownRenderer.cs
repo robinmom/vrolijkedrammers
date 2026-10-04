@@ -8,10 +8,18 @@ public static class MarkdownRenderer
 {
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder().DisableHtml().UseAutoLinks().UseEmphasisExtras().UsePipeTables().Build();
 
+    /// <summary>Voor e-mail: elke Enter is een nieuwe regel (zoals in een brief), niet alleen een lege regel.</summary>
+    private static readonly MarkdownPipeline LetterPipeline =
+        new MarkdownPipelineBuilder().DisableHtml().UseAutoLinks().UseEmphasisExtras().UseSoftlineBreakAsHardlineBreak().Build();
+
     private static readonly HtmlSanitizer Sanitizer = CreateSanitizer();
 
     public static string? ToSafeHtml(string? markdown) =>
         string.IsNullOrWhiteSpace(markdown) ? null : Sanitizer.Sanitize(Markdown.ToHtml(markdown, Pipeline));
+
+    /// <summary>Als <see cref="ToSafeHtml"/>, maar met regeleinden zoals in een brief (mailings).</summary>
+    public static string? ToSafeLetterHtml(string? markdown) =>
+        string.IsNullOrWhiteSpace(markdown) ? null : Sanitizer.Sanitize(Markdown.ToHtml(markdown, LetterPipeline));
 
     private static HtmlSanitizer CreateSanitizer()
     {

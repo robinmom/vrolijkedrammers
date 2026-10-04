@@ -25,6 +25,8 @@ import { AwardsPage } from './pages/AwardsPage';
 import { KaderPage } from './pages/KaderPage';
 import { PrincesPage } from './pages/PrincesPage';
 import { WebsiteContentPagesPage, WebsitePageEditorPage } from './pages/WebsiteContentPages';
+import { MailingEditorPage, MailingsPage } from './pages/MailingPages';
+import { MailingListEditorPage, MailingListsPage } from './pages/MailingListPages';
 import { WebsiteHomePage, WebsiteSettingsPage } from './pages/WebsiteHomePage';
 import { DayTicketsPage, EventTicketsPage, TokensPage } from './pages/SalesKindPage';
 import { AccessLogPage } from './pages/AccessLogPage';
@@ -71,6 +73,10 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/website/homepage', component: guarded('website.manage', WebsiteHomePage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/paginas', component: guarded('website.manage', WebsiteContentPagesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/paginas/$id', component: guarded('website.manage', WebsitePageEditorPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/mailing', component: guarded('mailing.manage', MailingsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/mailing/groepen', component: guarded('mailing.manage', MailingListsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/mailing/groepen/$id', component: guarded('mailing.manage', MailingListEditorPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/mailing/$id', component: guarded('mailing.manage', MailingEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/kader', component: guarded('website.manage', KaderPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/prinsen', component: guarded('website.manage', PrincesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/onderscheidingen', component: guarded('website.manage', AwardsPage) }),

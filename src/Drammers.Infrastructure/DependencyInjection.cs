@@ -134,6 +134,9 @@ public static class DependencyInjection
         // Mollie (fase 19): API-sleutel uit Key Vault (secret mollie-api-key), test-sleutel buiten productie.
         services.Configure<Payments.MollieOptions>(configuration.GetSection(Payments.MollieOptions.SectionName));
         services.Configure<Sales.SalesOptions>(configuration.GetSection(Sales.SalesOptions.SectionName));
+        // Fase 27a: mailings; foto's en afmeldlink op hetzelfde openbare adres als de links in de andere mails.
+        services.Configure<Mailings.MailingOptions>(configuration.GetSection(Mailings.MailingOptions.SectionName));
+        services.PostConfigure<Mailings.MailingOptions>(o => o.PublicBaseUrl ??= configuration["Sales:PublicBaseUrl"] is { Length: > 0 } baseUrl ? baseUrl : null);
         services.AddMemoryCache();
         services.AddHttpClient<Payments.IMollieClient, Payments.MollieClient>(http => http.Timeout = TimeSpan.FromSeconds(30));
 
@@ -225,6 +228,10 @@ public static class DependencyInjection
         services.AddScoped<SepaCollections>();
         services.AddSingleton<MemberIbanProtector>();
         services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
+        // Fase 27a: mailings (nieuwsbrief, uitnodigingen).
+        services.AddScoped<Mailings.MailingService>();
+        services.AddSingleton<Mailings.MailingUnsubscribeTokens>();
+        services.AddScoped<IOutboxMessageHandler, Mailings.MailingRecipientMailHandler>();
         services.AddScoped<GroupAdministration>();
         services.AddScoped<Guardians>();
         services.AddScoped<ParadeManagement.ParadeExchange>();

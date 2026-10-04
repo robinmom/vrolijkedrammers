@@ -1,0 +1,27 @@
+@page "/afmelden"
+@model AfmeldenModel
+<partial name="_PageBand" model='new PageBand("Afmelden", "Nieuwsbrieven en uitnodigingen van De Vrolijke Drammers.", (null, "Afmelden"))' />
+<div class="wrap content form-page">
+    <section class="card" aria-live="polite">
+        @if (Model.Done)
+        {
+            <h2 class="h3">Je bent afgemeld</h2>
+            <p>We sturen <strong>@Model.MaskedEmail</strong> geen nieuwsbrieven en uitnodigingen meer. Berichten over je lidmaatschap, zoals de contributie, krijg je wel.</p>
+            <p>Toch weer aanmelden? Mail naar <a href="mailto:secretaris@vrolijkedrammers.nl">secretaris@vrolijkedrammers.nl</a>.</p>
+        }
+        else if (Model.MaskedEmail is null)
+        {
+            <h2 class="h3">Deze link werkt niet</h2>
+            <p>Gebruik de afmeldlink onderaan de laatste nieuwsbrief, of mail naar <a href="mailto:secretaris@vrolijkedrammers.nl">secretaris@vrolijkedrammers.nl</a>.</p>
+        }
+        else
+        {
+            <h2 class="h3">Wil je je afmelden?</h2>
+            <p>Dan sturen we <strong>@Model.MaskedEmail</strong> geen nieuwsbrieven en uitnodigingen meer. Berichten over je lidmaatschap, zoals de contributie, krijg je wel.</p>
+            <form method="post">
+                <input type="hidden" name="t" value="@Model.Token">
+                <button type="submit" class="button">Afmelden</button>
+            </form>
+        }
+    </section>
+</div>

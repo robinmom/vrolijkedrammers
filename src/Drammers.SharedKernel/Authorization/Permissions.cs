@@ -54,6 +54,7 @@ public static class Permissions
     public const string JuryManage = "jury.manage";
     public const string ParadeResult = "parade.result";
     public const string ContributionManage = "contribution.manage";
+    public const string MailingManage = "mailing.manage";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -109,6 +110,8 @@ public static class Permissions
         new(ParadeResult, "Uitslag van de optocht inzien, exporteren en publiceren", "Optocht"),
         // Fase 23: contributie zonder e-Boekhouden.
         new(ContributionManage, "Lidmaatschappen, tarieven, contributie en incasso beheren", "Financieel"),
+        // Fase 27a: nieuwsbrieven en uitnodigingen.
+        new(MailingManage, "Mailings opstellen en versturen (nieuwsbrief, uitnodigingen) en mailinggroepen beheren", "Content"),
     ];
 }
 

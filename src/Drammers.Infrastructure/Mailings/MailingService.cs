@@ -32,14 +32,16 @@ public sealed class MailingOptions
 
 public sealed record MailingListInput(
     string Name, string? Description, bool AllMembers, IReadOnlyList<Guid> MemberIds, IReadOnlyList<Guid> GroupIds,
-    IReadOnlyList<MailingAddressInput> Addresses);
+    IReadOnlyList<MailingAddressInput> Addresses, bool AllAdvertisers = false);
 
 public sealed record MailingAddressInput(string Email, string? Name);
 
-public sealed record MailingInput(MailingKind Kind, string Subject, string? Preheader, IReadOnlyList<MailingBlock> Blocks, IReadOnlyList<Guid> ListIds);
+public sealed record MailingInput(
+    MailingKind Kind, string Subject, string? Preheader, IReadOnlyList<MailingBlock> Blocks, IReadOnlyList<Guid> ListIds,
+    MailingSender Sender = MailingSender.Secretary);
 
 /// <summary>Een ontvanger zoals hij uit de groepen komt (na het ontdubbelen op e-mailadres).</summary>
-public sealed record MailingAddressee(string Email, string? Name, string? FirstName, Guid? MemberId);
+public sealed record MailingAddressee(string Email, string? Name, string? FirstName, Guid? MemberId, string? Company = null);
 
 public sealed record MailingAudience(IReadOnlyList<MailingAddressee> Recipients, int Unsubscribed, int WithoutEmail);
 
@@ -79,10 +81,8 @@ public sealed class MailingService(
 {
     public const string MailMessageType = "mailing.recipient-mail";
 
-    public const string ReplyTo = "secretaris@vrolijkedrammers.nl";
-
-    /// <summary>De afzender (vóór de @) zodra het eigen domein in ACS is gekoppeld.</summary>
-    public const string SenderLocalPart = "secretaris";
+    /// <summary>Afzender en antwoordadres: het secretariaat, of de voorzitter (fase 27c). De rol is het deel vóór de @ zodra het eigen domein in ACS is gekoppeld.</summary>
+    public static MailingContact ContactFor(MailingSender sender) => sender == MailingSender.Chairman ? MailingContact.Chairman : MailingContact.Secretary;
 
     public sealed record RecipientMail(long RecipientId);
 
@@ -150,7 +150,8 @@ public sealed class MailingService(
             throw new DomainException(ErrorCodes.Validation, $"Geen geldig e-mailadres: {string.Join(", ", invalid.Take(5))}.");
         }
 
-        (list.Name, list.Description, list.AllMembers) = (input.Name.Trim(), string.IsNullOrWhiteSpace(input.Description) ? null : input.Description.Trim(), input.AllMembers);
+        (list.Name, list.Description, list.AllMembers, list.AllAdvertisers) =
+            (input.Name.Trim(), string.IsNullOrWhiteSpace(input.Description) ? null : input.Description.Trim(), input.AllMembers, input.AllAdvertisers);
         list.Members.Clear();
         list.Members.AddRange(memberIds.Select(m => new MailingListMember { ListId = list.Id, MemberId = m }));
         list.Groups.Clear();
@@ -188,7 +189,7 @@ public sealed class MailingService(
         var unsubscribed = (await db.MailingUnsubscribes.AsNoTracking().Select(u => u.Email).ToListAsync(cancellationToken)).ToHashSet();
         var result = new Dictionary<string, MailingAddressee>();
         int skipped = 0, withoutEmail = 0;
-        void Add(string? address, string? name, string? firstName, Guid? memberId)
+        void Add(string? address, string? name, string? firstName, Guid? memberId, string? company = null)
         {
             if (!IsValidEmail(address))
             {
@@ -208,7 +209,7 @@ public sealed class MailingService(
                 return;
             }
 
-            result[key] = new MailingAddressee(key, name, firstName, memberId);
+            result[key] = new MailingAddressee(key, name, firstName, memberId, company);
         }
 
         foreach (var p in people.OrderBy(p => p.FullName))
@@ -219,6 +220,17 @@ public sealed class MailingService(
         foreach (var a in lists.SelectMany(l => l.Addresses).OrderBy(a => a.Email))
         {
             Add(a.Email, a.Name, null, null);
+        }
+
+        // Adverteerders (fase 27c): aanhef op de contactpersoon, anders op de volledige naam van het bedrijf.
+        if (lists.Any(l => l.AllAdvertisers))
+        {
+            var advertisers = await db.Advertisers.AsNoTracking().Where(a => a.Active && a.Email != null).OrderBy(a => a.CompanyName)
+                .Select(a => new { a.Email, a.ContactName, a.CompanyName }).ToListAsync(cancellationToken);
+            foreach (var a in advertisers)
+            {
+                Add(a.Email, a.ContactName ?? a.CompanyName, a.ContactName is null ? a.CompanyName : null, null, a.CompanyName);
+            }
         }
 
         return new MailingAudience([.. result.Values], skipped, withoutEmail);
@@ -259,6 +271,7 @@ public sealed class MailingService(
         {
             Id = IdGenerator.NewId(),
             Kind = source.Kind,
+            Sender = source.Sender,
             Subject = source.Subject,
             Preheader = source.Preheader,
             Blocks = source.Blocks,
@@ -293,6 +306,7 @@ public sealed class MailingService(
             throw new DomainException(ErrorCodes.Validation, "Een of meer mailinggroepen bestaan niet (meer).");
         }
 
+        mailing.Sender = input.Sender;
         (mailing.Kind, mailing.Subject, mailing.Preheader) =
             (input.Kind, input.Subject.Trim(), string.IsNullOrWhiteSpace(input.Preheader) ? null : input.Preheader.Trim()[..Math.Min(input.Preheader.Trim().Length, 200)]);
         mailing.Blocks = JsonSerializer.Serialize(input.Blocks, JsonSerializerOptions.Web);
@@ -315,7 +329,8 @@ public sealed class MailingService(
             ? await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => m.FirstName).SingleOrDefaultAsync(cancellationToken)
             : null;
         var rendered = Render(mailing, new MailingPerson(firstName, user.DisplayName), user.Email);
-        await email.SendAsync(new EmailMessage(user.Email, $"[TEST] {rendered.Subject}", rendered.PlainText, rendered.Html, ReplyTo, SenderLocalPart), cancellationToken);
+        var contact = ContactFor(mailing.Sender);
+        await email.SendAsync(new EmailMessage(user.Email, $"[TEST] {rendered.Subject}", rendered.PlainText, rendered.Html, contact.Email, contact.Role), cancellationToken);
         await audit.WriteAsync(new AuditEntry("mailing.test-sent", "Mailing", id.ToString(), null, null), cancellationToken);
         return user.Email;
     }
@@ -351,6 +366,7 @@ public sealed class MailingService(
             Email = r.Email,
             Name = r.Name?[..Math.Min(r.Name.Length, 150)],
             FirstName = r.FirstName?[..Math.Min(r.FirstName.Length, 100)],
+            Company = r.Company?[..Math.Min(r.Company.Length, 200)],
             MemberId = r.MemberId,
         }).ToList();
         db.MailingRecipients.AddRange(recipients);
@@ -377,7 +393,7 @@ public sealed class MailingService(
         var baseUrl = options.Value.PublicBaseUrl?.TrimEnd('/');
         var unsubscribe = baseUrl is null ? null : emailAddress is null ? $"{baseUrl}/afmelden" : $"{baseUrl}/afmelden?t={Uri.EscapeDataString(tokens.Create(emailAddress))}";
         return MailingRenderer.Render(mailing.Subject, mailing.Preheader, ReadBlocks(mailing.Blocks), person, emailOptions.Value.LogoUrl,
-            imageUrl ?? (path => baseUrl is null ? null : $"{baseUrl}{MediaPath(path)}"), unsubscribe, baseUrl);
+            imageUrl ?? (path => baseUrl is null ? null : $"{baseUrl}{MediaPath(path)}"), unsubscribe, baseUrl, ContactFor(mailing.Sender));
     }
 
     /// <summary>Openbaar adres van een foto in een mailing (<c>/media/mailing/{id}</c>, zie MediaEndpoints).</summary>
@@ -416,7 +432,7 @@ public sealed class MailingService(
     }
 
     private static string Describe(MailingListInput input) =>
-        JsonSerializer.Serialize(new { input.Name, input.AllMembers, Members = input.MemberIds.Count, Groups = input.GroupIds.Count, Addresses = input.Addresses.Count },
+        JsonSerializer.Serialize(new { input.Name, input.AllMembers, input.AllAdvertisers, Members = input.MemberIds.Count, Groups = input.GroupIds.Count, Addresses = input.Addresses.Count },
             JsonSerializerOptions.Web);
 
     private static DomainException ListNotFound() => new(ErrorCodes.NotFound, "Mailinggroep niet gevonden.", DomainErrorKind.NotFound);
@@ -447,10 +463,10 @@ public sealed class MailingRecipientMailHandler(DrammersDbContext db, MailingSer
         {
             try
             {
-                var rendered = mailings.Render(mailing, new MailingPerson(recipient.FirstName, recipient.Name), recipient.Email);
+                var rendered = mailings.Render(mailing, new MailingPerson(recipient.FirstName, recipient.Name, recipient.Company), recipient.Email);
+                var contact = MailingService.ContactFor(mailing.Sender);
                 await email.SendAsync(
-                    new EmailMessage(recipient.Email, rendered.Subject, rendered.PlainText, rendered.Html, MailingService.ReplyTo, MailingService.SenderLocalPart),
-                    cancellationToken);
+                    new EmailMessage(recipient.Email, rendered.Subject, rendered.PlainText, rendered.Html, contact.Email, contact.Role), cancellationToken);
                 (recipient.Status, recipient.SentAt, recipient.Error) = (MailingRecipientStatus.Sent, clock.UtcNow.UtcDateTime, null);
             }
             catch (Exception ex) when (ex is not OperationCanceledException && message.Attempts + 1 >= OutboxProcessor.MaxAttempts)

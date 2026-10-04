@@ -13,6 +13,7 @@ import {
   type MailingKind,
   type MailingPreview,
   type MailingRequest,
+  type MailingSender,
 } from '../api/mailing';
 import { ConfirmDialog } from '../components/Dialog';
 import { Field } from '../components/Field';
@@ -119,6 +120,7 @@ const newBlock = (type: string): MailingBlock => {
 
 const starter: MailingRequest = {
   kind: 'Newsletter',
+  sender: 'Secretary',
   subject: '',
   preheader: null,
   listIds: [],
@@ -158,6 +160,7 @@ export function MailingEditorPage() {
     if (m) {
       setForm({
         kind: m.kind,
+        sender: m.sender,
         subject: m.subject,
         preheader: m.preheader,
         listIds: m.listIds,
@@ -328,6 +331,17 @@ export function MailingEditorPage() {
                   <option value="Invitation">Uitnodiging</option>
                 </select>
               </div>
+              <div className="field">
+                <label htmlFor="mailing-afzender">Afzender</label>
+                <select
+                  id="mailing-afzender"
+                  value={form.sender ?? 'Secretary'}
+                  onChange={(e) => set({ sender: e.target.value as MailingSender })}
+                >
+                  <option value="Secretary">Secretaris (secretaris@)</option>
+                  <option value="Chairman">Voorzitter (voorzitter@)</option>
+                </select>
+              </div>
               <Field
                 label="Onderwerp"
                 required
@@ -363,8 +377,8 @@ export function MailingEditorPage() {
 
             <h2>Inhoud</h2>
             <p className="muted">
-              Gebruik {'{voornaam}'} en {'{naam}'} voor een persoonlijke aanhef. Tekst mag **vet**, *cursief*, lijstjes
-              en [links](https://…) bevatten.
+              Gebruik {'{voornaam}'}, {'{naam}'} en (bij adverteerders) {'{bedrijf}'} voor een persoonlijke aanhef.
+              Tekst mag **vet**, *cursief*, lijstjes en [links](https://…) bevatten.
             </p>
             <ol className="block-list">
               {form.blocks.map((block, index) => (

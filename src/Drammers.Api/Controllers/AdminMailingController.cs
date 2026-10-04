@@ -29,7 +29,7 @@ public sealed class AdminMailingController(
     [ProducesResponseType<IReadOnlyList<MailingListSummaryResponse>>(StatusCodes.Status200OK)]
     public async Task<IReadOnlyList<MailingListSummaryResponse>> GetLists(CancellationToken cancellationToken) =>
         await db.MailingLists.AsNoTracking().OrderBy(l => l.Name)
-            .Select(l => new MailingListSummaryResponse(l.Id, l.Name, l.Description, l.AllMembers, l.Members.Count, l.Groups.Count, l.Addresses.Count))
+            .Select(l => new MailingListSummaryResponse(l.Id, l.Name, l.Description, l.AllMembers, l.Members.Count, l.Groups.Count, l.Addresses.Count, l.AllAdvertisers))
             .ToListAsync(cancellationToken);
 
     [HttpGet("lists/{id:guid}")]
@@ -46,7 +46,7 @@ public sealed class AdminMailingController(
         var groups = await db.Groups.AsNoTracking().Where(g => groupIds.Contains(g.Id)).OrderBy(g => g.Name)
             .Select(g => new MailingListGroupResponse(g.Id, g.Name)).ToListAsync(cancellationToken);
         var audience = await mailings.ResolveAsync([id], cancellationToken);
-        return new MailingListResponse(list.Id, list.Name, list.Description, list.AllMembers, members, groups,
+        return new MailingListResponse(list.Id, list.Name, list.Description, list.AllMembers, list.AllAdvertisers, members, groups,
             [.. list.Addresses.OrderBy(a => a.Email).Select(a => new MailingAddressResponse(a.Email, a.Name))],
             new MailingAudienceResponse(audience.Recipients.Count, audience.Unsubscribed, audience.WithoutEmail));
     }
@@ -98,7 +98,7 @@ public sealed class AdminMailingController(
         var counts = await db.MailingRecipients.AsNoTracking().Where(r => r.MailingId == id).GroupBy(r => r.Status)
             .Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
         var images = await ImagesAsync(MailingService.ReadBlocks(m.Blocks), cancellationToken);
-        return new MailingResponse(m.Id, m.Kind, m.Subject, m.Preheader,
+        return new MailingResponse(m.Id, m.Kind, m.Sender, m.Subject, m.Preheader,
             [.. MailingService.ReadBlocks(m.Blocks).Select(b => MailingBlockDto.From(b, b.Image is null ? null : images.GetValueOrDefault(b.Image)))],
             [.. m.Lists.Select(l => l.ListId)], m.Status, m.SentAt, m.RecipientCount,
             new MailingProgressResponse(counts.GetValueOrDefault(MailingRecipientStatus.Pending), counts.GetValueOrDefault(MailingRecipientStatus.Sent),
@@ -151,6 +151,7 @@ public sealed class AdminMailingController(
         var images = await ImagesAsync(input.Blocks, cancellationToken);
         var draft = new Mailing
         {
+            Sender = input.Sender,
             Subject = input.Subject,
             Preheader = input.Preheader,
             Blocks = System.Text.Json.JsonSerializer.Serialize(input.Blocks, System.Text.Json.JsonSerializerOptions.Web),
@@ -223,15 +224,18 @@ public sealed record MailingListRequest(
     bool AllMembers,
     [MaxLength(5000)] IReadOnlyList<Guid>? MemberIds,
     [MaxLength(200)] IReadOnlyList<Guid>? GroupIds,
-    [MaxLength(5000)] IReadOnlyList<MailingAddressRequest>? Addresses)
+    [MaxLength(5000)] IReadOnlyList<MailingAddressRequest>? Addresses,
+    bool AllAdvertisers = false)
 {
     public MailingListInput ToInput() =>
-        new(Name, Description, AllMembers, MemberIds ?? [], GroupIds ?? [], [.. (Addresses ?? []).Select(a => new MailingAddressInput(a.Email, a.Name))]);
+        new(Name, Description, AllMembers, MemberIds ?? [], GroupIds ?? [], [.. (Addresses ?? []).Select(a => new MailingAddressInput(a.Email, a.Name))],
+            AllAdvertisers);
 }
 
 public sealed record MailingAddressRequest([Required, StringLength(254)] string Email, [StringLength(150)] string? Name);
 
-public sealed record MailingListSummaryResponse(Guid Id, string Name, string? Description, bool AllMembers, int MemberCount, int GroupCount, int AddressCount);
+public sealed record MailingListSummaryResponse(
+    Guid Id, string Name, string? Description, bool AllMembers, int MemberCount, int GroupCount, int AddressCount, bool AllAdvertisers);
 
 public sealed record MailingListMemberResponse(Guid Id, string FullName, string? MemberNumber, string? Email);
 
@@ -242,7 +246,7 @@ public sealed record MailingAddressResponse(string Email, string? Name);
 public sealed record MailingAudienceResponse(int Recipients, int Unsubscribed, int WithoutEmail);
 
 public sealed record MailingListResponse(
-    Guid Id, string Name, string? Description, bool AllMembers, IReadOnlyList<MailingListMemberResponse> Members,
+    Guid Id, string Name, string? Description, bool AllMembers, bool AllAdvertisers, IReadOnlyList<MailingListMemberResponse> Members,
     IReadOnlyList<MailingListGroupResponse> Groups, IReadOnlyList<MailingAddressResponse> Addresses, MailingAudienceResponse Audience);
 
 /// <summary>Een blok; <c>imageUrl</c> alleen in antwoorden (om de foto in het portal te tonen).</summary>
@@ -265,9 +269,10 @@ public sealed record MailingRequest(
     [Required, StringLength(200, MinimumLength = 2)] string Subject,
     [StringLength(200)] string? Preheader,
     [Required, MaxLength(MailingRenderer.MaxBlocks)] IReadOnlyList<MailingBlockDto> Blocks,
-    [MaxLength(50)] IReadOnlyList<Guid>? ListIds)
+    [MaxLength(50)] IReadOnlyList<Guid>? ListIds,
+    MailingSender Sender = MailingSender.Secretary)
 {
-    public MailingInput ToInput() => new(Kind, Subject, Preheader, [.. Blocks.Select(b => b.ToBlock())], ListIds ?? []);
+    public MailingInput ToInput() => new(Kind, Subject, Preheader, [.. Blocks.Select(b => b.ToBlock())], ListIds ?? [], Sender);
 }
 
 public sealed record MailingSummaryResponse(
@@ -276,7 +281,7 @@ public sealed record MailingSummaryResponse(
 public sealed record MailingProgressResponse(int Pending, int Sent, int Failed);
 
 public sealed record MailingResponse(
-    Guid Id, MailingKind Kind, string Subject, string? Preheader, IReadOnlyList<MailingBlockDto> Blocks, IReadOnlyList<Guid> ListIds, MailingStatus Status,
+    Guid Id, MailingKind Kind, MailingSender Sender, string Subject, string? Preheader, IReadOnlyList<MailingBlockDto> Blocks, IReadOnlyList<Guid> ListIds, MailingStatus Status,
     DateTime? SentAt, int RecipientCount, MailingProgressResponse Progress);
 
 /// <summary><c>PreviewUrl</c>: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen.</summary>

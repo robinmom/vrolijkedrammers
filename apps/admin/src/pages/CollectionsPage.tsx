@@ -79,7 +79,19 @@ function CreditorCard() {
   );
 }
 
-function PreviewTable({ preview }: { preview: Preview }) {
+/** Het voorbeeld van een incasso; ook voor de adverteerders (fase 27c), dan met nummer, bedrijf en soort. */
+export function PreviewTable({ preview, advertisers = false }: { preview: Preview; advertisers?: boolean }) {
+  const who = advertisers ? 'Adverteerders' : 'Leden';
+  const link = (id: string, name: string) =>
+    advertisers ? (
+      <Link to="/adverteerders/$id" params={{ id }}>
+        {name}
+      </Link>
+    ) : (
+      <Link to="/leden/$id" params={{ id }}>
+        {name}
+      </Link>
+    );
   return (
     <>
       <section className="kpis" aria-label="Voorbeeld van de incasso">
@@ -101,14 +113,14 @@ function PreviewTable({ preview }: { preview: Preview }) {
           {w}
         </p>
       ))}
-      <div className="table-scroll" tabIndex={0} role="region" aria-label="Leden in de incasso">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label={`${who} in de incasso`}>
         <table className="table compact">
-          <caption className="visually-hidden">Leden in de incasso</caption>
+          <caption className="visually-hidden">{who} in de incasso</caption>
           <thead>
             <tr>
-              <th scope="col">Lidnummer</th>
-              <th scope="col">Naam</th>
-              <th scope="col">Lidmaatschap</th>
+              <th scope="col">{advertisers ? 'Nr.' : 'Lidnummer'}</th>
+              <th scope="col">{advertisers ? 'Bedrijf' : 'Naam'}</th>
+              <th scope="col">{advertisers ? 'Soort' : 'Lidmaatschap'}</th>
               <th scope="col">Bedrag</th>
               <th scope="col">IBAN</th>
               <th scope="col">Machtiging</th>
@@ -119,11 +131,7 @@ function PreviewTable({ preview }: { preview: Preview }) {
             {preview.lines.map((l) => (
               <tr key={l.memberId}>
                 <td>{l.memberNumber}</td>
-                <td>
-                  <Link to="/leden/$id" params={{ id: l.memberId }}>
-                    {l.fullName}
-                  </Link>
-                </td>
+                <td>{link(l.memberId, l.fullName)}</td>
                 <td>{l.kind}</td>
                 <td>{formatAmount(l.amount)}</td>
                 <td>{l.ibanMasked}</td>
@@ -140,13 +148,13 @@ function PreviewTable({ preview }: { preview: Preview }) {
       {preview.skipped.length > 0 ? (
         <>
           <h3>Overgeslagen</h3>
-          <div className="table-scroll" tabIndex={0} role="region" aria-label="Overgeslagen leden">
+          <div className="table-scroll" tabIndex={0} role="region" aria-label={`Overgeslagen ${who.toLowerCase()}`}>
             <table className="table compact">
-              <caption className="visually-hidden">Overgeslagen leden</caption>
+              <caption className="visually-hidden">Overgeslagen {who.toLowerCase()}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Lidnummer</th>
-                  <th scope="col">Naam</th>
+                  <th scope="col">{advertisers ? 'Nr.' : 'Lidnummer'}</th>
+                  <th scope="col">{advertisers ? 'Bedrijf' : 'Naam'}</th>
                   <th scope="col">Bedrag</th>
                   <th scope="col">Reden</th>
                 </tr>
@@ -155,11 +163,7 @@ function PreviewTable({ preview }: { preview: Preview }) {
                 {preview.skipped.map((s) => (
                   <tr key={s.memberId}>
                     <td>{s.memberNumber}</td>
-                    <td>
-                      <Link to="/leden/$id" params={{ id: s.memberId }}>
-                        {s.fullName}
-                      </Link>
-                    </td>
+                    <td>{link(s.memberId, s.fullName)}</td>
                     <td>{formatAmount(s.amount)}</td>
                     <td>{s.reason}</td>
                   </tr>

@@ -3,6 +3,7 @@ import { useApi } from './ApiContext';
 import type { Schemas } from './hooks';
 
 export type MailingKind = Schemas['MailingKind'];
+export type MailingSender = Schemas['MailingSender'];
 export type MailingStatus = Schemas['MailingStatus'];
 export type MailingBlock = Schemas['MailingBlockDto'];
 export type MailingRequest = Schemas['MailingRequest'];

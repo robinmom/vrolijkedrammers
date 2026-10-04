@@ -13,8 +13,16 @@ namespace Drammers.Infrastructure.Mailings;
 /// </summary>
 public sealed record MailingBlock(string Type, string? Text = null, string? Label = null, string? Url = null, string? Image = null, string? Note = null);
 
-/// <summary>Voor wie de mail is: vult {voornaam} en {naam}.</summary>
-public sealed record MailingPerson(string? FirstName, string? Name);
+/// <summary>Voor wie de mail is: vult {voornaam}, {naam} en {bedrijf}.</summary>
+public sealed record MailingPerson(string? FirstName, string? Name, string? Company = null);
+
+/// <summary>Het adres van de afzender in de voettekst en bij een antwoord (fase 27c).</summary>
+public sealed record MailingContact(string Email, string Role)
+{
+    public static readonly MailingContact Secretary = new("secretaris@vrolijkedrammers.nl", "secretaris");
+
+    public static readonly MailingContact Chairman = new("voorzitter@vrolijkedrammers.nl", "voorzitter");
+}
 
 public sealed record RenderedMailing(string Subject, string Html, string PlainText);
 
@@ -30,7 +38,7 @@ public static partial class MailingRenderer
 
     public static readonly IReadOnlyList<string> BlockTypes = ["heading", "text", "image", "button", "highlight", "divider", "closing"];
 
-    public static readonly IReadOnlyList<string> Placeholders = ["{voornaam}", "{naam}"];
+    public static readonly IReadOnlyList<string> Placeholders = ["{voornaam}", "{naam}", "{bedrijf}"];
 
     /// <summary>De groet als er geen blok Afsluiting is.</summary>
     public const string DefaultClosing = "Groeten,\nDe Vrolijke Drammers";
@@ -108,8 +116,9 @@ public static partial class MailingRenderer
     /// <summary>Opent de mail; <paramref name="imageUrl"/> geeft het adres van een geüploade foto, <paramref name="unsubscribeUrl"/> de afmeldlink.</summary>
     public static RenderedMailing Render(
         string subject, string? preheader, IReadOnlyList<MailingBlock> blocks, MailingPerson person, string? logoUrl, Func<string, string?> imageUrl,
-        string? unsubscribeUrl, string? fontBaseUrl = null)
+        string? unsubscribeUrl, string? fontBaseUrl = null, MailingContact? contact = null)
     {
+        contact ??= MailingContact.Secretary;
         var html = new StringBuilder();
         var text = new StringBuilder();
         foreach (var block in blocks.Where(b => b.Type != "closing"))
@@ -119,16 +128,17 @@ public static partial class MailingRenderer
 
         // De afsluiting staat altijd onderaan, samen met de voettekst; zonder blok de standaardgroet.
         var closing = Fill(blocks.FirstOrDefault(b => b.Type == "closing")?.Text ?? DefaultClosing, person);
-        AppendClosing(closing, unsubscribeUrl, html, text);
+        AppendClosing(closing, unsubscribeUrl, contact, html, text);
 
         var filledSubject = Fill(subject, person);
         return new RenderedMailing(filledSubject, Wrap(filledSubject, preheader is null ? null : Fill(preheader, person), html.ToString(), logoUrl, fontBaseUrl), text.ToString());
     }
 
-    /// <summary>Vult {voornaam} en {naam}; zonder voornaam "Drammer".</summary>
+    /// <summary>Vult {voornaam}, {naam} en {bedrijf}; zonder voornaam "Drammer".</summary>
     public static string Fill(string template, MailingPerson person) =>
         template.Replace("{voornaam}", person.FirstName?.Trim() is { Length: > 0 } first ? first : FirstWord(person.Name) ?? "Drammer", StringComparison.OrdinalIgnoreCase)
-            .Replace("{naam}", person.Name ?? person.FirstName ?? "", StringComparison.OrdinalIgnoreCase);
+            .Replace("{naam}", person.Name ?? person.FirstName ?? "", StringComparison.OrdinalIgnoreCase)
+            .Replace("{bedrijf}", person.Company ?? person.Name ?? "", StringComparison.OrdinalIgnoreCase);
 
     private static void AppendBlock(MailingBlock block, MailingPerson person, Func<string, string?> imageUrl, StringBuilder html, StringBuilder text)
     {
@@ -188,7 +198,7 @@ public static partial class MailingRenderer
     }
 
     /// <summary>Het blok Afsluiting: groet, vereniging, contact en afmeldlink in één rond vlak.</summary>
-    private static void AppendClosing(string greeting, string? unsubscribeUrl, StringBuilder html, StringBuilder text)
+    private static void AppendClosing(string greeting, string? unsubscribeUrl, MailingContact contact, StringBuilder html, StringBuilder text)
     {
         html.Append($"<div style=\"margin:8px 0 0;padding:20px 22px;background:{Grey};border-radius:{Radius}\">");
         if (!string.IsNullOrWhiteSpace(greeting))
@@ -199,9 +209,9 @@ public static partial class MailingRenderer
 
         html.Append($"<div style=\"padding-top:14px;border-top:1px solid {Line};{Body}font-size:13px;line-height:20px\">")
             .Append($"<div style=\"{Display}font-weight:700;font-size:14px;color:{Navy}\">Carnavalsvereniging De Vrolijke Drammers Loil</div>")
-            .Append($"<div><a href=\"mailto:secretaris@vrolijkedrammers.nl\" style=\"color:{BlueText};text-decoration:none\">secretaris@vrolijkedrammers.nl</a>")
+            .Append($"<div><a href=\"mailto:{contact.Email}\" style=\"color:{BlueText};text-decoration:none\">{contact.Email}</a>")
             .Append($"&nbsp;&nbsp;|&nbsp;&nbsp;<a href=\"https://www.vrolijkedrammers.nl\" style=\"color:{BlueText};text-decoration:none\">www.vrolijkedrammers.nl</a></div>");
-        text.Append("——————————\nCarnavalsvereniging De Vrolijke Drammers Loil\nsecretaris@vrolijkedrammers.nl | www.vrolijkedrammers.nl\n");
+        text.Append($"——————————\nCarnavalsvereniging De Vrolijke Drammers Loil\n{contact.Email} | www.vrolijkedrammers.nl\n");
         if (unsubscribeUrl is not null)
         {
             html.Append($"<div style=\"color:{Muted}\">Wil je geen nieuwsbrieven en uitnodigingen meer ontvangen? ")

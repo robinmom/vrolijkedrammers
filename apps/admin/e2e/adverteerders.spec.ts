@@ -78,3 +78,27 @@ test('fase 27b: Excel eerst controleren en dan inlezen', async ({ page }) => {
   expect(api.advertiserImports).toBe(1);
   await expectNoSeriousA11yIssues(page);
 });
+
+test('fase 27c: incasso van de opgehaalde adverteerders', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/incasso');
+
+  await expect(page.getByRole('heading', { name: 'Incasso adverteerders 2027', level: 1 })).toBeVisible();
+  await page.getByLabel('Incassodatum').fill('2026-11-02');
+  await expect(
+    page.getByRole('region', { name: 'Adverteerders in de incasso' }).getByRole('link', { name: 'Bakkerij De Test' }),
+  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Overgeslagen adverteerders' })).toContainText('Geen IBAN');
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByRole('button', { name: 'Incassorun maken (1)' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Run maken' }).click();
+  await expect(page.getByText('De incassorun is gemaakt. Download het bestand hieronder.')).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Bestand downloaden/ }).click();
+  expect((await download).suggestedFilename()).toBe('incasso-adverteerders-20261102.xml');
+
+  // Daarna komt dezelfde adverteerder niet nog een keer in de incasso.
+  await expect(page.getByRole('button', { name: 'Incassorun maken (0)' })).toBeDisabled();
+});

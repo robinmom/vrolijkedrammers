@@ -68,12 +68,14 @@ test('fase 27a: mailing opstellen met blokken, voorbeeld, testmail en versturen'
   await expect(page.getByText('120 ontvangers, 1 afgemeld')).toBeVisible();
   await expect(page.frameLocator('iframe[title="Voorbeeld van de mailing"]').getByText('Beste Piet,')).toBeVisible();
 
-  // Blok omhoog: de knop komt boven de tekst.
-  await page.getByRole('button', { name: 'Blok 3 omhoog' }).click();
+  // De afsluiting staat er al en kan niet nog eens; de knop schuift boven de afsluiting.
+  await expect(page.getByRole('button', { name: '+ Afsluiting' })).toHaveCount(0);
+  await expect(page.getByLabel('Groet')).toHaveValue('Groeten,\nDe Vrolijke Drammers');
+  await page.getByRole('button', { name: 'Blok 4 omhoog' }).click();
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Mailing opgeslagen.')).toBeVisible();
   expect(api.mailings[0]).toMatchObject({ kind: 'Invitation', listIds: ['ml-1'] });
-  expect(api.mailings[0]!.blocks.map((b) => b.type)).toEqual(['heading', 'button', 'text']);
+  expect(api.mailings[0]!.blocks.map((b) => b.type)).toEqual(['heading', 'text', 'button', 'closing']);
   await expectNoSeriousA11yIssues(page);
 
   await page.getByRole('button', { name: 'Testmail naar mij' }).click();

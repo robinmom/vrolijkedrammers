@@ -33,7 +33,13 @@ public static class PortalHosting
             var headers = context.Response.Headers;
             headers.XContentTypeOptions = "nosniff";
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            if (context.Request.Path.StartsWithSegments(BasePath))
+            if (context.Request.Path.StartsWithSegments(Content.MailingPreviewDocuments.BasePath))
+            {
+                // Voorbeeld van een mailing in het portal: alleen in een iframe op de eigen origin (fase 27a).
+                headers.ContentSecurityPolicy = Content.MailingPreviewDocuments.ContentSecurityPolicy;
+                headers.XFrameOptions = "SAMEORIGIN";
+            }
+            else if (context.Request.Path.StartsWithSegments(BasePath))
             {
                 headers.ContentSecurityPolicy = ContentSecurityPolicy;
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";

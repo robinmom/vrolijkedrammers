@@ -5,7 +5,11 @@ import { MockApi } from './mock-api';
 /** Fase 27a: mailinggroepen, een mailing opstellen met voorbeeld, testmail en versturen. */
 
 async function expectNoSeriousA11yIssues(page: Page) {
-  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  // Het voorbeeld-iframe is de e-mail zelf (afgeschermd, sandbox), geen onderdeel van het portal: niet meescannen.
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .exclude('.mailing-frame')
+    .analyze();
   expect(
     results.violations
       .filter((v) => v.impact === 'serious' || v.impact === 'critical')

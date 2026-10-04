@@ -83,6 +83,7 @@ internal sealed class MailingRecipientConfiguration : IEntityTypeConfiguration<M
         builder.Property(r => r.Email).HasMaxLength(254);
         builder.Property(r => r.Name).HasMaxLength(150);
         builder.Property(r => r.FirstName).HasMaxLength(100);
+        builder.Property(r => r.Company).HasMaxLength(200);
         builder.Property(r => r.Error).HasMaxLength(1000);
         builder.HasOne<Mailing>().WithMany().HasForeignKey(r => r.MailingId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(r => new { r.MailingId, r.Email }).IsUnique();

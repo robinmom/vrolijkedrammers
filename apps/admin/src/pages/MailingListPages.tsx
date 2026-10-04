@@ -53,6 +53,7 @@ export function MailingListsPage() {
                 <td>
                   {[
                     l.allMembers ? 'alle leden' : null,
+                    l.allAdvertisers ? 'alle adverteerders' : null,
                     l.memberCount ? `${l.memberCount} leden` : null,
                     l.groupCount ? `${l.groupCount} ledengroepen` : null,
                     l.addressCount ? `${l.addressCount} losse adressen` : null,
@@ -134,6 +135,7 @@ export function MailingListEditorPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [allMembers, setAllMembers] = useState(false);
+  const [allAdvertisers, setAllAdvertisers] = useState(false);
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const [members, setMembers] = useState<ChosenMember[]>([]);
   const [addresses, setAddresses] = useState('');
@@ -148,6 +150,7 @@ export function MailingListEditorPage() {
       setName(l.name);
       setDescription(l.description ?? '');
       setAllMembers(l.allMembers);
+      setAllAdvertisers(l.allAdvertisers);
       setGroupIds(l.groups.map((g) => g.id));
       setMembers(l.members.map((m) => ({ id: m.id, fullName: m.fullName, memberNumber: m.memberNumber })));
       setAddresses(formatAddresses(l.addresses));
@@ -159,6 +162,7 @@ export function MailingListEditorPage() {
       name,
       description: description || null,
       allMembers,
+      allAdvertisers,
       groupIds,
       memberIds: members.map((m) => m.id),
       addresses: parseAddresses(addresses),
@@ -214,6 +218,11 @@ export function MailingListEditorPage() {
           label="Alle actieve leden met een e-mailadres"
           checked={allMembers}
           onChange={(e) => setAllMembers(e.target.checked)}
+        />
+        <Checkbox
+          label="Alle actieve adverteerders met een e-mailadres"
+          checked={allAdvertisers}
+          onChange={(e) => setAllAdvertisers(e.target.checked)}
         />
 
         <fieldset className="checkbox-group" disabled={allMembers}>

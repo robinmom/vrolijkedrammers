@@ -1190,6 +1190,240 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/collections/preview": {
+      "get": {
+        "tags": [
+          "AdminAdvertiserCollections"
+        ],
+        "summary": "Wie er in de incasso komt en wie niet (met reden); zonder jaar het lopende campagnejaar. Er wordt niets vastgelegd.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPreview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPreview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPreview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/collections": {
+      "get": {
+        "tags": [
+          "AdminAdvertiserCollections"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionRunSummary"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionRunSummary"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionRunSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminAdvertiserCollections"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserCollectionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserCollectionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserCollectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/collections/{id}/file": {
+      "get": {
+        "tags": [
+          "AdminAdvertiserCollections"
+        ],
+        "summary": "Het pain.008.001.08-bestand om aan te leveren bij de bank; geaudit.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/xml": { }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/collections/{id}": {
+      "delete": {
+        "tags": [
+          "AdminAdvertiserCollections"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers": {
       "get": {
         "tags": [
@@ -23053,6 +23287,33 @@
           }
         }
       },
+      "AdvertiserCollectionRequest": {
+        "required": [
+          "date",
+          "year",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AdvertiserCollector": {
         "required": [
           "memberId",
@@ -29446,6 +29707,10 @@
             "items": {
               "$ref": "#/components/schemas/MailingAddressRequest"
             }
+          },
+          "allAdvertisers": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -29455,6 +29720,7 @@
           "name",
           "description",
           "allMembers",
+          "allAdvertisers",
           "members",
           "groups",
           "addresses",
@@ -29476,6 +29742,9 @@
             ]
           },
           "allMembers": {
+            "type": "boolean"
+          },
+          "allAdvertisers": {
             "type": "boolean"
           },
           "members": {
@@ -29509,7 +29778,8 @@
           "allMembers",
           "memberCount",
           "groupCount",
-          "addressCount"
+          "addressCount",
+          "allAdvertisers"
         ],
         "type": "object",
         "properties": {
@@ -29540,6 +29810,9 @@
           "addressCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "allAdvertisers": {
+            "type": "boolean"
           }
         }
       },
@@ -29630,6 +29903,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "sender": {
+            "$ref": "#/components/schemas/MailingSender"
           }
         }
       },
@@ -29637,6 +29913,7 @@
         "required": [
           "id",
           "kind",
+          "sender",
           "subject",
           "preheader",
           "blocks",
@@ -29654,6 +29931,9 @@
           },
           "kind": {
             "$ref": "#/components/schemas/MailingKind"
+          },
+          "sender": {
+            "$ref": "#/components/schemas/MailingSender"
           },
           "subject": {
             "type": "string"
@@ -29695,6 +29975,14 @@
             "$ref": "#/components/schemas/MailingProgressResponse"
           }
         }
+      },
+      "MailingSender": {
+        "enum": [
+          "Secretary",
+          "Chairman"
+        ],
+        "description": "Namens wie de mailing gaat (fase 27c): het secretariaat, of de voorzitter (bijv. de brief aan de adverteerders).",
+        "default": "Secretary"
       },
       "MailingSendResponse": {
         "required": [
@@ -38073,6 +38361,9 @@
     },
     {
       "name": "AdminAccounts"
+    },
+    {
+      "name": "AdminAdvertiserCollections"
     },
     {
       "name": "AdminAdvertisers"

@@ -942,6 +942,16 @@ export class MockApi {
     },
   ];
   advertiserCampaignYear = 2027;
+  advertiserRuns: {
+    id: string;
+    collectionDate: string;
+    description: string;
+    messageId: string;
+    lineCount: number;
+    total: number;
+    createdAt: string;
+    exportedAt: string | null;
+  }[] = [];
   advertiserImports = 0;
   mailingUnsubscribes = [{ email: 'weg@example.com', unsubscribedAt: '2026-10-01T10:00:00Z' }];
 
@@ -1320,6 +1330,64 @@ export class MockApi {
   ) {
     let m: RegExpMatchArray | null;
     const collectorName = (id: string | null) => this.advertiserCollectors.find((c) => c.memberId === id)?.name ?? null;
+    if (path === '/admin/advertisers/collections/preview') {
+      const done = this.advertiserRuns.length > 0;
+      return json({
+        date: url.searchParams.get('date'),
+        count: done ? 0 : 1,
+        total: done ? 0 : 35,
+        lines: done
+          ? []
+          : [
+              {
+                memberId: 'adv-1',
+                memberNumber: '1',
+                fullName: 'Bakkerij De Test',
+                kind: 'Advertentie',
+                amount: 35,
+                ibanMasked: '**** 4300',
+                mandateReference: 'DVD000000001',
+                mandateSignedOn: null,
+                sequenceType: 'Rcur',
+                warning: 'Datum machtiging onbekend: 01-11-2009 (gemigreerde machtiging)',
+              },
+            ],
+        skipped: [
+          { memberId: 'adv-3', memberNumber: '3', fullName: 'Kapsalon Zonder', amount: 50, reason: 'Geen IBAN' },
+          ...(done
+            ? [
+                {
+                  memberId: 'adv-1',
+                  memberNumber: '1',
+                  fullName: 'Bakkerij De Test',
+                  amount: 35,
+                  reason: 'Al in een incasso van 2027',
+                },
+              ]
+            : []),
+        ],
+        warnings: [],
+        creditorComplete: true,
+      });
+    }
+    if (path === '/admin/advertisers/collections' && method === 'POST') {
+      this.advertiserRuns.push({
+        id: 'arun-1',
+        collectionDate: body.date as string,
+        description: 'Drammerskrant 2027 CV De Vrolijke Drammers',
+        messageId: 'DVDADV-1',
+        lineCount: 1,
+        total: 35,
+        createdAt: '2026-10-04T12:00:00Z',
+        exportedAt: null,
+      });
+      return json({ id: 'arun-1' }, 201);
+    }
+    if (path === '/admin/advertisers/collections') return json(this.advertiserRuns);
+    if ((m = path.match(/^\/admin\/advertisers\/collections\/([^/]+)\/file$/))) {
+      this.advertiserRuns[0]!.exportedAt = '2026-10-04T12:05:00Z';
+      return json({ document: 'pain.008' });
+    }
     if (path === '/admin/advertisers/collectors') return json(this.advertiserCollectors);
     if (path === '/admin/advertisers/campaign-year') {
       if (method === 'PUT') {

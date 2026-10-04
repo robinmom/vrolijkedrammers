@@ -213,6 +213,61 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
             added.GetProperty("hasIban").GetBoolean(), added.GetProperty("collectorName").GetString()));
     }
 
+    private static readonly System.Xml.Linq.XNamespace Ns = "urn:iso:std:iso:20022:tech:xsd:pain.008.001.08";
+
+    [Fact]
+    public async Task Incasso_van_de_opgehaalde_adverteerders_met_machtiging_en_niet_dubbel()
+    {
+        var (_, alfred) = await LidMetAccountAsync("Alfred Voorbeeld", "alfred@example.com", kader: true);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/collections/creditor",
+            new { name = "CV De Vrolijke Drammers", iban = "NL39 RABO 0300 0652 64", creditorId = "nl12zzz123456780000" });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 35, 35),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "G", "C", null, null, 70, 70),
+            Row("Alfred Voorbeeld", 3, "Kapsalon Zonder", "A", "M", null, "DVD000000003", 50, 50),
+            Row("Alfred Voorbeeld", 4, "Café Nog Open", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000004", 25, 25)));
+
+        var list = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
+        foreach (var number in new[] { 1, 2, 3 })
+        {
+            await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(number)}/years/2027", new { status = "Collected", amount = (decimal?)null, note = (string?)null });
+        }
+
+        // Nieuw via de app met machtiging: eerste incasso (FRST).
+        await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Mandate", "NL91ABNA0417164300", true));
+
+        var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(10)).ToString("yyyy-MM-dd");
+        var preview = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/collections/preview?date={date}");
+        Assert.Equal((2, 85m), (preview.GetProperty("count").GetInt32(), preview.GetProperty("total").GetDecimal()));
+        var skipped = preview.GetProperty("skipped").EnumerateArray().Select(x => (x.GetProperty("fullName").GetString(), x.GetProperty("reason").GetString())).ToList();
+        Assert.Contains(("Kapsalon Zonder", "Geen IBAN"), skipped);
+        Assert.DoesNotContain(skipped, x => x.Item1 is "Garage Proef" or "Café Nog Open");
+
+        var created = await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/collections", new { date, year = (int?)null, description = (string?)null });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var runId = (await created.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+        var file = await _bestuur.GetAsync($"/api/v1/admin/advertisers/collections/{runId}/file");
+        Assert.Equal(HttpStatusCode.OK, file.StatusCode);
+        Assert.StartsWith("incasso-adverteerders-", file.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        var xml = System.Xml.Linq.XDocument.Parse(await file.Content.ReadAsStringAsync());
+        var sequences = xml.Descendants(Ns + "PmtInf").ToDictionary(p => p.Descendants(Ns + "SeqTp").Single().Value, p => p.Descendants(Ns + "MndtId").Select(m => m.Value).ToList());
+        Assert.Equal(["DVD000000001"], sequences["RCUR"]);
+        Assert.StartsWith("DVD-ADV-5-", Assert.Single(sequences["FRST"]));
+        Assert.All(xml.Descendants(Ns + "DbtrAcct"), a => Assert.Equal("NL91ABNA0417164300", a.Descendants(Ns + "IBAN").Single().Value));
+        Assert.Contains(xml.Descendants(Ns + "Ustrd"), u => u.Value == "Advertentie Drammerskrant 2027 CV De Vrolijke Drammers nr 1");
+
+        // Niet dubbel: een tweede voorbeeld slaat ze over; de contributie-incasso ziet deze run niet.
+        var again = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/collections/preview?date={date}");
+        Assert.Equal(0, again.GetProperty("count").GetInt32());
+        Assert.Contains(again.GetProperty("skipped").EnumerateArray(), x => x.GetProperty("reason").GetString() == "Al in een incasso van 2027");
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/collections"))!);
+        Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/collections"))!);
+        Assert.Equal(HttpStatusCode.NotFound, (await _bestuur.GetAsync($"/api/v1/admin/collections/{runId}/file")).StatusCode);
+    }
+
     private static object NewAdvertiser(string payment, string? iban, bool consent) => new
     {
         companyName = "Nieuwe Zaak",

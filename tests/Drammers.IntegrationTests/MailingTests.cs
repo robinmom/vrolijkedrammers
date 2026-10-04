@@ -232,6 +232,48 @@ public partial class MailingTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Informatiebrief_aan_alle_adverteerders_vanaf_de_voorzitter()
+    {
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            db.Advertisers.AddRange(
+                new Modules.Membership.Advertisers.Advertiser { Id = IdGenerator.NewId(), Number = 1, CompanyName = "Bakkerij De Test", ContactName = "Jan Bakker", Email = "bakker@example.com" },
+                new Modules.Membership.Advertisers.Advertiser { Id = IdGenerator.NewId(), Number = 2, CompanyName = "Garage Proef", Email = "garage@example.com" },
+                new Modules.Membership.Advertisers.Advertiser { Id = IdGenerator.NewId(), Number = 3, CompanyName = "Zonder Mail" },
+                new Modules.Membership.Advertisers.Advertiser { Id = IdGenerator.NewId(), Number = 4, CompanyName = "Gestopt", Email = "weg@example.com", Active = false });
+            await db.SaveChangesAsync();
+        }
+
+        var lists = await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/mailing/lists");
+        var advertisers = Assert.Single(lists!, l => l.GetProperty("allAdvertisers").GetBoolean());
+        Assert.Equal("Adverteerders", advertisers.GetProperty("name").GetString());
+        var listId = advertisers.GetProperty("id").GetGuid();
+
+        var response = await _bestuur.PostAsJsonAsync("/api/v1/admin/mailing/mailings", new
+        {
+            kind = "Newsletter",
+            sender = "Chairman",
+            subject = "Informatie voor {bedrijf}",
+            preheader = (string?)null,
+            listIds = new[] { listId },
+            blocks = new object[] { new { type = "text", text = "Beste {voornaam},\n\nDank voor de steun van {bedrijf}." } },
+        });
+        var id = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        Assert.Equal("Chairman", (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/mailing/mailings/{id}")).GetProperty("sender").GetString());
+
+        var send = await (await _bestuur.PostAsync($"/api/v1/admin/mailing/mailings/{id}/send", null)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, send.GetProperty("recipients").GetInt32());
+        await RunOutboxAsync();
+        var toBakker = _api.Emails.Sent.Single(m => m.To == "bakker@example.com");
+        Assert.Equal(("Informatie voor Bakkerij De Test", "voorzitter@vrolijkedrammers.nl", "voorzitter"), (toBakker.Subject, toBakker.ReplyTo, toBakker.From));
+        Assert.Contains("Beste Jan,", toBakker.Html);
+        Assert.Contains("Dank voor de steun van Bakkerij De Test.", toBakker.PlainText);
+        Assert.Contains("voorzitter@vrolijkedrammers.nl | www.vrolijkedrammers.nl", toBakker.PlainText);
+        Assert.Contains("Beste Garage Proef,", _api.Emails.Sent.Single(m => m.To == "garage@example.com").Html);
+    }
+
+    [Fact]
     public async Task Foto_in_een_mailing_is_openbaar_een_losse_upload_niet()
     {
         var upload = await _bestuur.PostAsync("/api/v1/admin/mailing/images", ContentTests.Multipart("file", "zaal.jpg", TestImages.JpegWithGps()));

@@ -27,7 +27,13 @@ import { PrincesPage } from './pages/PrincesPage';
 import { WebsiteContentPagesPage, WebsitePageEditorPage } from './pages/WebsiteContentPages';
 import { MailingEditorPage, MailingsPage } from './pages/MailingPages';
 import { MailingListEditorPage, MailingListsPage } from './pages/MailingListPages';
-import { AdvertiserEditorPage, AdvertiserImportPage, AdvertisersPage, AdvertiserStatusPage } from './pages/AdvertiserPages';
+import {
+  AdvertiserCollectionsPage,
+  AdvertiserEditorPage,
+  AdvertiserImportPage,
+  AdvertisersPage,
+  AdvertiserStatusPage,
+} from './pages/AdvertiserPages';
 import { WebsiteHomePage, WebsiteSettingsPage } from './pages/WebsiteHomePage';
 import { DayTicketsPage, EventTicketsPage, TokensPage } from './pages/SalesKindPage';
 import { AccessLogPage } from './pages/AccessLogPage';
@@ -81,6 +87,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders', component: guarded('advertiser.manage', AdvertisersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/campagne', component: guarded('advertiser.manage', AdvertiserStatusPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/import', component: guarded('advertiser.manage', AdvertiserImportPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/incasso', component: guarded('advertiser.manage', AdvertiserCollectionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/$id', component: guarded('advertiser.manage', AdvertiserEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/kader', component: guarded('website.manage', KaderPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/prinsen', component: guarded('website.manage', PrincesPage) }),

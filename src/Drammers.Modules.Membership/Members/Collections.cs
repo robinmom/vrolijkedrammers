@@ -5,9 +5,21 @@ namespace Drammers.Modules.Membership.Members;
 /// bank. Bedragen, kenmerken en de laatste 4 tekens van de IBAN worden vastgelegd; de volledige IBAN alleen bij het
 /// maken van het bestand (ontsleuteld in het geheugen).
 /// </summary>
+/// <summary>Waarvoor de run is: contributie van leden, of de bijdragen van adverteerders (fase 27c).</summary>
+public enum CollectionKind
+{
+    Contribution,
+    Advertisers,
+}
+
 public sealed class CollectionRun
 {
     public Guid Id { get; set; }
+
+    public CollectionKind Kind { get; set; }
+
+    /// <summary>Bij adverteerders: het campagnejaar waarvan de bijdragen worden geïncasseerd.</summary>
+    public int? CampaignYear { get; set; }
 
     public DateOnly CollectionDate { get; set; }
 
@@ -43,7 +55,10 @@ public sealed class CollectionRunLine
 
     public Guid RunId { get; set; }
 
-    public Guid MemberId { get; set; }
+    /// <summary>Het lid (contributie) of de adverteerder (fase 27c); precies één van beide.</summary>
+    public Guid? MemberId { get; set; }
+
+    public Guid? AdvertiserId { get; set; }
 
     public required string MemberNumber { get; set; }
 

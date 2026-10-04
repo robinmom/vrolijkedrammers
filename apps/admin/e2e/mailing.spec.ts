@@ -57,6 +57,7 @@ test('fase 27a: mailing opstellen met blokken, voorbeeld, testmail en versturen'
   await page.getByRole('link', { name: 'Nieuwe mailing' }).click();
 
   await page.getByLabel('Soort').selectOption({ label: 'Uitnodiging' });
+  await page.getByLabel('Afzender').selectOption({ label: 'Voorzitter (voorzitter@)' });
   await page.getByLabel('Onderwerp').fill('Uitnodiging pronkzitting 2027');
   await page.getByLabel('Alle leden').check();
   await page.getByLabel('Tekst', { exact: true }).fill('Beste {voornaam},\n\nKom je ook?');
@@ -74,7 +75,7 @@ test('fase 27a: mailing opstellen met blokken, voorbeeld, testmail en versturen'
   await page.getByRole('button', { name: 'Blok 4 omhoog' }).click();
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Mailing opgeslagen.')).toBeVisible();
-  expect(api.mailings[0]).toMatchObject({ kind: 'Invitation', listIds: ['ml-1'] });
+  expect(api.mailings[0]).toMatchObject({ kind: 'Invitation', sender: 'Chairman', listIds: ['ml-1'] });
   expect(api.mailings[0]!.blocks.map((b) => b.type)).toEqual(['heading', 'text', 'button', 'closing']);
   await expectNoSeriousA11yIssues(page);
 

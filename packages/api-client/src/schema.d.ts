@@ -1026,6 +1026,215 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/collections/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wie er in de incasso komt en wie niet (met reden); zonder jaar het lopende campagnejaar. Er wordt niets vastgelegd. */
+        get: {
+            parameters: {
+                query: {
+                    date: string;
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectionPreview"];
+                        "application/json": components["schemas"]["CollectionPreview"];
+                        "text/json": components["schemas"]["CollectionPreview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectionRunSummary"][];
+                        "application/json": components["schemas"]["CollectionRunSummary"][];
+                        "text/json": components["schemas"]["CollectionRunSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserCollectionRequest"];
+                    "text/json": components["schemas"]["AdvertiserCollectionRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserCollectionRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/collections/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Het pain.008.001.08-bestand om aan te leveren bij de bank; geaudit. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/xml": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/xml": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/collections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers": {
         parameters: {
             query?: never;
@@ -18194,6 +18403,13 @@ export interface components {
             /** Format: int32 */
             waiting: number;
         };
+        AdvertiserCollectionRequest: {
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            year: null | number;
+            description: null | string;
+        };
         AdvertiserCollector: {
             /** Format: uuid */
             memberId: string;
@@ -19913,6 +20129,8 @@ export interface components {
             memberIds: null | string[];
             groupIds: null | string[];
             addresses: null | components["schemas"]["MailingAddressRequest"][];
+            /** @default false */
+            allAdvertisers: boolean;
         };
         MailingListResponse: {
             /** Format: uuid */
@@ -19920,6 +20138,7 @@ export interface components {
             name: string;
             description: null | string;
             allMembers: boolean;
+            allAdvertisers: boolean;
             members: components["schemas"]["MailingListMemberResponse"][];
             groups: components["schemas"]["MailingListGroupResponse"][];
             addresses: components["schemas"]["MailingAddressResponse"][];
@@ -19937,6 +20156,7 @@ export interface components {
             groupCount: number;
             /** Format: int32 */
             addressCount: number;
+            allAdvertisers: boolean;
         };
         /** @description `PreviewUrl`: het voorbeeld als eigen pagina (tien minuten geldig), om in een iframe te tonen. */
         MailingPreviewResponse: {
@@ -19960,11 +20180,13 @@ export interface components {
             preheader: null | string;
             blocks: components["schemas"]["MailingBlockDto"][];
             listIds: null | string[];
+            sender?: components["schemas"]["MailingSender"];
         };
         MailingResponse: {
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["MailingKind"];
+            sender: components["schemas"]["MailingSender"];
             subject: string;
             preheader: null | string;
             blocks: components["schemas"]["MailingBlockDto"][];
@@ -19976,6 +20198,12 @@ export interface components {
             recipientCount: number;
             progress: components["schemas"]["MailingProgressResponse"];
         };
+        /**
+         * @description Namens wie de mailing gaat (fase 27c): het secretariaat, of de voorzitter (bijv. de brief aan de adverteerders).
+         * @default Secretary
+         * @enum {unknown}
+         */
+        MailingSender: "Secretary" | "Chairman";
         MailingSendResponse: {
             /** Format: int32 */
             recipients: number;

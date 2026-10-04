@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Persistence;
+using Drammers.Modules.Membership.Advertisers;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
@@ -41,7 +42,8 @@ public sealed record CollectionRunSummary(
 /// wordt er geïncasseerd.
 /// </summary>
 public sealed partial class SepaCollections(
-    DrammersDbContext db, Contributions contributions, MemberIbanProtector ibans, IAuditLogger audit, IClock clock, ICurrentActor actor)
+    DrammersDbContext db, Contributions contributions, MemberIbanProtector ibans, Advertisers.AdvertiserIbanProtector advertiserIbans, IAuditLogger audit,
+    IClock clock, ICurrentActor actor)
 {
     /// <summary>Datum voor gemigreerde machtigingen zonder bekende ondertekeningsdatum (gebruikelijk in NL bij de overgang naar SEPA).</summary>
     public static readonly DateOnly MigratedMandateDate = new(2009, 11, 1);
@@ -207,14 +209,14 @@ public sealed partial class SepaCollections(
         return runId;
     }
 
-    public async Task<IReadOnlyList<CollectionRunSummary>> RunsAsync(CancellationToken cancellationToken) =>
-        await db.CollectionRuns.AsNoTracking().OrderByDescending(r => r.CreatedAt)
+    public async Task<IReadOnlyList<CollectionRunSummary>> RunsAsync(CancellationToken cancellationToken, CollectionKind kind = CollectionKind.Contribution) =>
+        await db.CollectionRuns.AsNoTracking().Where(r => r.Kind == kind).OrderByDescending(r => r.CreatedAt)
             .Select(r => new CollectionRunSummary(r.Id, r.CollectionDate, r.Description, r.MessageId, r.LineCount, r.Total, r.CreatedAt, r.ExportedAt))
             .ToListAsync(cancellationToken);
 
-    public async Task DeleteAsync(Guid runId, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid runId, CancellationToken cancellationToken, CollectionKind kind = CollectionKind.Contribution)
     {
-        var run = await db.CollectionRuns.SingleOrDefaultAsync(r => r.Id == runId, cancellationToken)
+        var run = await db.CollectionRuns.SingleOrDefaultAsync(r => r.Id == runId && r.Kind == kind, cancellationToken)
             ?? throw new DomainException(ErrorCodes.NotFound, "Incassorun niet gevonden.", DomainErrorKind.NotFound);
         db.CollectionRuns.Remove(run);
         await db.SaveChangesAsync(cancellationToken);
@@ -222,9 +224,9 @@ public sealed partial class SepaCollections(
     }
 
     /// <summary>Het pain.008.001.08-bestand; per volgordetype (FRST/RCUR) één betaalopdracht.</summary>
-    public async Task<(string FileName, byte[] Content)> FileAsync(Guid runId, CancellationToken cancellationToken)
+    public async Task<(string FileName, byte[] Content)> FileAsync(Guid runId, CancellationToken cancellationToken, CollectionKind kind = CollectionKind.Contribution)
     {
-        var run = await db.CollectionRuns.SingleOrDefaultAsync(r => r.Id == runId, cancellationToken)
+        var run = await db.CollectionRuns.SingleOrDefaultAsync(r => r.Id == runId && r.Kind == kind, cancellationToken)
             ?? throw new DomainException(ErrorCodes.NotFound, "Incassorun niet gevonden.", DomainErrorKind.NotFound);
         var creditor = await GetCreditorAsync(cancellationToken);
         if (!creditor.IsComplete)
@@ -272,7 +274,7 @@ public sealed partial class SepaCollections(
                                 new XElement(Ns + "DtOfSgntr", (l.MandateSignedOn ?? MigratedMandateDate).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))),
                             new XElement(Ns + "DbtrAgt", Agent()),
                             new XElement(Ns + "Dbtr", new XElement(Ns + "Nm", l.DebtorName)),
-                            new XElement(Ns + "DbtrAcct", new XElement(Ns + "Id", new XElement(Ns + "IBAN", ibans.Unprotect(l.IbanProtected)))),
+                            new XElement(Ns + "DbtrAcct", new XElement(Ns + "Id", new XElement(Ns + "IBAN", Unprotect(run.Kind, l.IbanProtected)))),
                             new XElement(Ns + "RmtInf", new XElement(Ns + "Ustrd", l.Description)))))))));
 
         run.ExportedAt = clock.UtcNow.UtcDateTime;
@@ -293,6 +295,143 @@ public sealed partial class SepaCollections(
 
         return ($"incasso-{run.CollectionDate:yyyyMMdd}-{run.MessageId[^8..]}.xml", stream.ToArray());
     }
+
+    // ----- Adverteerders (fase 27c) --------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Wie van de adverteerders in de incasso komt: in het campagnejaar opgehaald, betaling per machtiging, met een
+    /// bedrag. Wie al in een incasso van dat jaar zat, wordt overgeslagen (niet dubbel incasseren).
+    /// </summary>
+    public async Task<CollectionPreview> PreviewAdvertisersAsync(DateOnly date, int year, CancellationToken cancellationToken)
+    {
+        var rows = await db.AdvertiserYears.AsNoTracking()
+            .Where(y => y.Year == year && y.Status == AdvertiserYearStatus.Collected && !y.IsFree && y.Amount > 0)
+            .Join(db.Advertisers.Where(a => a.Active && a.Payment == AdvertiserPayment.Mandate), y => y.AdvertiserId, a => a.Id, (y, a) => new { a, y.Amount })
+            .OrderBy(x => x.a.Number).ToListAsync(cancellationToken);
+        var done = (await db.CollectionRunLines.AsNoTracking()
+            .Join(db.CollectionRuns.Where(r => r.Kind == CollectionKind.Advertisers && r.CampaignYear == year), l => l.RunId, r => r.Id, (l, _) => l.AdvertiserId)
+            .ToListAsync(cancellationToken)).OfType<Guid>().ToHashSet();
+        var collected = await CollectedMandatesAsync(cancellationToken);
+
+        var lines = new List<CollectionPreviewLine>();
+        var skipped = new List<CollectionSkip>();
+        foreach (var (a, amount) in rows.Select(r => (r.a, r.Amount!.Value)))
+        {
+            var number = a.Number.ToString(CultureInfo.InvariantCulture);
+            if (done.Contains(a.Id))
+            {
+                skipped.Add(new CollectionSkip(a.Id, number, a.CompanyName, amount, $"Al in een incasso van {year}"));
+            }
+            else if (a.IbanProtected is null || a.MandateReference is null)
+            {
+                skipped.Add(new CollectionSkip(a.Id, number, a.CompanyName, amount, a.IbanProtected is null ? "Geen IBAN" : "Geen machtigingsnummer"));
+            }
+            else
+            {
+                var signed = AdvertiserMandateDate(a.MandateReference);
+                lines.Add(new CollectionPreviewLine(a.Id, number, a.CompanyName, AdvertiserKindLabel(a.Kind), amount, $"**** {a.IbanLast4}",
+                    a.MandateReference, signed, Sequence(a.MandateReference, collected),
+                    signed is null ? $"Datum machtiging onbekend: {MigratedMandateDate:dd-MM-yyyy} (gemigreerde machtiging)" : null));
+            }
+        }
+
+        var warnings = new List<string>();
+        if (date <= DateOnly.FromDateTime(clock.UtcNow.UtcDateTime))
+        {
+            warnings.Add("De incassodatum ligt niet in de toekomst. Kies een werkdag die minstens één werkdag na het aanleveren ligt.");
+        }
+
+        if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+        {
+            warnings.Add("De incassodatum valt in het weekend; de bank schuift hem op naar de eerstvolgende werkdag.");
+        }
+
+        var creditor = await GetCreditorAsync(cancellationToken);
+        if (!creditor.IsComplete)
+        {
+            warnings.Add("Vul eerst de gegevens van de vereniging in (naam, IBAN en incassant-ID) onder Leden → Incasso.");
+        }
+
+        return new CollectionPreview(date, lines.Count, lines.Sum(l => l.Amount), lines, skipped, warnings, creditor.IsComplete);
+    }
+
+    /// <summary>Legt de incasso van de adverteerders vast (zoals bij de contributie) en geeft de run terug.</summary>
+    public async Task<Guid> CreateAdvertisersAsync(DateOnly date, int year, string? description, CancellationToken cancellationToken)
+    {
+        if (!(await GetCreditorAsync(cancellationToken)).IsComplete)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul eerst de gegevens van de vereniging in (naam, IBAN en incassant-ID) onder Leden → Incasso.");
+        }
+
+        if (date <= DateOnly.FromDateTime(clock.UtcNow.UtcDateTime))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Kies een incassodatum in de toekomst.");
+        }
+
+        var preview = await PreviewAdvertisersAsync(date, year, cancellationToken);
+        if (preview.Count == 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Er is geen adverteerder om te incasseren.");
+        }
+
+        var text = Sanitize(string.IsNullOrWhiteSpace(description) ? $"Drammerskrant {year} CV De Vrolijke Drammers" : description, 100);
+        var runId = IdGenerator.NewId();
+        db.CollectionRuns.Add(new CollectionRun
+        {
+            Id = runId,
+            Kind = CollectionKind.Advertisers,
+            CampaignYear = year,
+            CollectionDate = date,
+            Description = text,
+            MessageId = $"DVDADV-{date:yyyyMMdd}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(4))}",
+            LineCount = preview.Count,
+            Total = preview.Total,
+            CreatedAt = clock.UtcNow.UtcDateTime,
+            CreatedBy = actor.UserId,
+        });
+        var ids = preview.Lines.Select(l => l.MemberId).ToList();
+        var protectedIbans = await db.Advertisers.AsNoTracking().Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, a => a.IbanProtected!, cancellationToken);
+        foreach (var l in preview.Lines)
+        {
+            var endToEnd = $"ADV{l.MemberNumber}-{date:yyyyMMdd}";
+            db.CollectionRunLines.Add(new CollectionRunLine
+            {
+                RunId = runId,
+                AdvertiserId = l.MemberId,
+                MemberNumber = $"ADV{l.MemberNumber}"[..Math.Min(15, $"ADV{l.MemberNumber}".Length)],
+                DebtorName = Sanitize(l.FullName, 70),
+                Amount = l.Amount,
+                MandateReference = l.MandateReference!,
+                MandateSignedOn = l.MandateSignedOn,
+                SequenceType = l.SequenceType,
+                IbanLast4 = l.IbanMasked![^4..],
+                IbanProtected = protectedIbans[l.MemberId],
+                EndToEndId = endToEnd[..Math.Min(35, endToEnd.Length)],
+                Description = Sanitize($"{l.Kind} {text} nr {l.MemberNumber}", 140),
+            });
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.collection-created", "CollectionRun", runId.ToString(), null,
+            JsonSerializer.Serialize(new { date, year, count = preview.Count, total = preview.Total }, JsonSerializerOptions.Web)), cancellationToken);
+        return runId;
+    }
+
+    private string Unprotect(CollectionKind kind, string value) =>
+        kind == CollectionKind.Advertisers ? advertiserIbans.Unprotect(value) : ibans.Unprotect(value);
+
+    private static string AdvertiserKindLabel(AdvertiserKind kind) => kind switch
+    {
+        AdvertiserKind.Advertisement => "Advertentie",
+        AdvertiserKind.FreeGift => "Vrije gift",
+        _ => "Gift",
+    };
+
+    /// <summary>Datum uit een machtiging die via de app is gegeven (DVD-ADV-nummer-jjjjmmdd); anders onbekend.</summary>
+    private static DateOnly? AdvertiserMandateDate(string mandate) =>
+        AppMandatePattern().Match(mandate) is { Success: true } m && DateOnly.TryParseExact(m.Groups[1].Value, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
+            ? d
+            : null;
 
     /// <summary>
     /// FRST voor een machtiging die via de app is gegeven (kenmerk DVD-lidnummer-datum) en nog nooit in een run zat; anders
@@ -327,7 +466,8 @@ public sealed partial class SepaCollections(
     [GeneratedRegex("^[A-Z]{2}[0-9]{2}[A-Z0-9]{3}[A-Z0-9]{1,28}$")]
     private static partial Regex CreditorIdPattern();
 
-    [GeneratedRegex(@"^DVD-\d+-\d{8}$")]
+    // Machtigingen via de app: leden DVD-lidnummer-datum, adverteerders DVD-ADV-nummer-datum (fase 27c).
+    [GeneratedRegex(@"^DVD-(?:ADV-)?\d+-(\d{8})$")]
     private static partial Regex AppMandatePattern();
 
     [GeneratedRegex(@"\s{2,}")]

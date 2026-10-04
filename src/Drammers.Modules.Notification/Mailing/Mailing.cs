@@ -9,6 +9,13 @@ public enum MailingKind
     Invitation,
 }
 
+/// <summary>Namens wie de mailing gaat (fase 27c): het secretariaat, of de voorzitter (bijv. de brief aan de adverteerders).</summary>
+public enum MailingSender
+{
+    Secretary,
+    Chairman,
+}
+
 public enum MailingStatus
 {
     Draft,
@@ -37,6 +44,9 @@ public sealed class MailingList : IAuditable
 
     /// <summary>Alle actieve leden met een e-mailadres (de nieuwsbrief).</summary>
     public bool AllMembers { get; set; }
+
+    /// <summary>Alle actieve adverteerders met een e-mailadres (fase 27c).</summary>
+    public bool AllAdvertisers { get; set; }
 
     public List<MailingListMember> Members { get; set; } = [];
 
@@ -87,6 +97,8 @@ public sealed class Mailing : IAuditable
 
     public MailingKind Kind { get; set; }
 
+    public MailingSender Sender { get; set; }
+
     public required string Subject { get; set; }
 
     /// <summary>Korte tekst die mailprogramma's naast het onderwerp tonen.</summary>
@@ -133,6 +145,9 @@ public sealed class MailingRecipient
     public string? Name { get; set; }
 
     public string? FirstName { get; set; }
+
+    /// <summary>Bij een adverteerder: de naam van het bedrijf ({bedrijf}).</summary>
+    public string? Company { get; set; }
 
     public Guid? MemberId { get; set; }
 

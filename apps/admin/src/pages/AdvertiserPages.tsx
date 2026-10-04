@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
@@ -22,9 +23,11 @@ import {
 import { useApiMutation } from '../api/hooks';
 import { uploadJson } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
+import { ConfirmDialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
-import { formatDateTime } from '../format';
+import { formatDate, formatDateTime } from '../format';
+import { PreviewTable } from './CollectionsPage';
 
 function CollectorSelect({
   id,
@@ -765,6 +768,194 @@ export function AdvertiserImportPage() {
           {issues('Waarschuwingen', preview.warnings, '')}
         </>
       ) : null}
+    </>
+  );
+}
+
+/**
+ * Adverteerders → Incasso (fase 27c): alle opgehaalde bijdragen met een machtiging van het campagnejaar in één
+ * pain.008-bestand. Wie al in een incasso van dat jaar zat, gaat er niet nog een keer in.
+ */
+export function AdvertiserCollectionsPage() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const campaign = useCampaignYear();
+  const [date, setDate] = useState('');
+  const [description, setDescription] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<unknown>(null);
+  const year = campaign.data?.year;
+
+  const preview = useQuery({
+    queryKey: ['advertisers', 'collections', 'preview', date, year],
+    enabled: date.length === 10 && year !== undefined,
+    queryFn: async () =>
+      (await api.GET('/api/v1/admin/advertisers/collections/preview', { params: { query: { date, year } } })).data!,
+  });
+  const runs = useQuery({
+    queryKey: ['advertisers', 'collections', 'runs'],
+    queryFn: async () => (await api.GET('/api/v1/admin/advertisers/collections')).data!,
+  });
+  const create = useApiMutation(
+    () =>
+      api.POST('/api/v1/admin/advertisers/collections', {
+        body: { date, year: year ?? null, description: description.trim() || null },
+      }),
+    ADVERTISER_KEYS,
+  );
+  const remove = useApiMutation(
+    (id: string) => api.DELETE('/api/v1/admin/advertisers/collections/{id}', { params: { path: { id } } }),
+    ADVERTISER_KEYS,
+  );
+
+  async function download(id: string, collectionDate: string) {
+    setDownloadError(null);
+    try {
+      const { data } = await api.GET('/api/v1/admin/advertisers/collections/{id}/file', {
+        params: { path: { id } },
+        parseAs: 'blob',
+      });
+      if (data) {
+        const url = URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `incasso-adverteerders-${collectionDate.replaceAll('-', '')}.xml`;
+        link.click();
+        URL.revokeObjectURL(url);
+        await queryClient.invalidateQueries({ queryKey: ['advertisers', 'collections', 'runs'] });
+      }
+    } catch (error) {
+      setDownloadError(error);
+    }
+  }
+
+  return (
+    <>
+      <div className="page-header">
+        <div>
+          <h1>Incasso adverteerders {year ?? ''}</h1>
+          <p className="muted">
+            Alle adverteerders met een machtiging die in {year ?? 'het campagnejaar'} op opgehaald staan. De gegevens
+            van de vereniging (IBAN en incassant-ID) zijn dezelfde als bij de contributie.
+          </p>
+        </div>
+      </div>
+      <ProblemAlert error={runs.error ?? create.error ?? remove.error ?? downloadError} />
+      <SuccessMessage message={message} />
+
+      <section className="card" aria-labelledby="nieuwe-incasso">
+        <h2 id="nieuwe-incasso">Nieuwe incasso</h2>
+        <div className="form-grid">
+          <Field label="Incassodatum" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+          <Field
+            label="Omschrijving (op het afschrift)"
+            hint={`Leeg = Drammerskrant ${year ?? '[jaar]'} CV De Vrolijke Drammers`}
+            maxLength={100}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        <ProblemAlert error={preview.error} />
+        {preview.data ? <PreviewTable preview={preview.data} advertisers /> : null}
+        {preview.data ? (
+          <div className="actions">
+            <button
+              type="button"
+              className="button"
+              disabled={!preview.data.creditorComplete || preview.data.count === 0 || create.isPending}
+              onClick={() => setConfirm(true)}
+            >
+              Incassorun maken ({preview.data.count})
+            </button>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="card" aria-labelledby="incassoruns">
+        <h2 id="incassoruns">Incassoruns</h2>
+        <p className="card-hint">
+          Lever het bestand aan in Rabo Internetbankieren (Betalen → Incasso&apos;s → bestand aanleveren). Er wordt pas
+          geïncasseerd nadat je het ondertekent.
+        </p>
+        {runs.data && runs.data.length === 0 ? <p className="muted">Nog geen incassoruns.</p> : null}
+        {runs.data && runs.data.length > 0 ? (
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="Incassoruns adverteerders">
+            <table className="table compact">
+              <thead>
+                <tr>
+                  <th scope="col">Incassodatum</th>
+                  <th scope="col">Omschrijving</th>
+                  <th scope="col">Aantal</th>
+                  <th scope="col">Totaal</th>
+                  <th scope="col">Gedownload</th>
+                  <th scope="col">
+                    <span className="visually-hidden">Acties</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {runs.data.map((r) => (
+                  <tr key={r.id}>
+                    <td>{formatDate(r.collectionDate)}</td>
+                    <td>{r.description}</td>
+                    <td>{r.lineCount}</td>
+                    <td>{euro(r.total)}</td>
+                    <td>{r.exportedAt ? formatDateTime(r.exportedAt) : 'Nog niet'}</td>
+                    <td>
+                      <div className="actions">
+                        <button
+                          type="button"
+                          className="button secondary small"
+                          aria-label={`Bestand downloaden: incasso ${formatDate(r.collectionDate)}`}
+                          onClick={() => void download(r.id, r.collectionDate)}
+                        >
+                          Bestand downloaden
+                        </button>
+                        <button
+                          type="button"
+                          className="button ghost small"
+                          aria-label={`Incasso ${formatDate(r.collectionDate)} verwijderen`}
+                          onClick={() => setRemoving(r.id)}
+                        >
+                          Verwijderen
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+
+      <ConfirmDialog
+        open={confirm}
+        title="Incassorun maken?"
+        message={`Er wordt een run gemaakt met ${preview.data?.count ?? 0} incasso's (${euro(preview.data?.total ?? 0)}) op ${formatDate(date)}. Daarna download je het bestand voor de bank.`}
+        confirmLabel="Run maken"
+        busy={create.isPending}
+        onConfirm={() =>
+          create.mutate(undefined, {
+            onSuccess: () => {
+              setConfirm(false);
+              setMessage('De incassorun is gemaakt. Download het bestand hieronder.');
+            },
+          })
+        }
+        onCancel={() => setConfirm(false)}
+      />
+      <ConfirmDialog
+        open={removing !== null}
+        title="Incassorun verwijderen?"
+        message="Verwijder alleen een run die niet bij de bank is aangeleverd, of die je daar hebt geannuleerd. De adverteerders komen dan weer in het voorbeeld."
+        confirmLabel="Verwijderen"
+        busy={remove.isPending}
+        onConfirm={() => remove.mutate(removing!, { onSuccess: () => setRemoving(null) })}
+        onCancel={() => setRemoving(null)}
+      />
     </>
   );
 }

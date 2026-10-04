@@ -112,6 +112,7 @@ internal sealed class CollectionRunConfiguration : IEntityTypeConfiguration<Coll
         builder.Property(r => r.MessageId).HasMaxLength(35);
         builder.HasIndex(r => r.MessageId).IsUnique();
         builder.Property(r => r.Total).HasPrecision(11, 2);
+        builder.HasIndex(r => new { r.Kind, r.CampaignYear });
     }
 }
 
@@ -131,6 +132,7 @@ internal sealed class CollectionRunLineConfiguration : IEntityTypeConfiguration<
         builder.Property(l => l.Description).HasMaxLength(140);
         builder.HasIndex(l => l.RunId);
         builder.HasIndex(l => l.MandateReference);
+        builder.HasIndex(l => l.AdvertiserId);
         builder.HasOne<CollectionRun>().WithMany().HasForeignKey(l => l.RunId).OnDelete(DeleteBehavior.Cascade);
     }
 }

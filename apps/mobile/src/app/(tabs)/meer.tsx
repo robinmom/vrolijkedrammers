@@ -1,7 +1,7 @@
 import { brand, radius } from '@drammers/design-tokens';
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
-import { useMe } from '../../api/queries';
+import { useMe, useMyAdvertisers } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
 import { themeLabels } from '../../theme/labels';
@@ -19,6 +19,8 @@ export default function MeerScreen() {
   const { colors, preference } = useTheme();
   const status = useSessionStatus();
   const me = useMe();
+  // Fase 27b-2: kaderleden halen adverteerders op.
+  const advertisers = useMyAdvertisers(me.data?.memberId != null);
   const unread = useUnreadCount();
   const settings: SettingsItem[] = [
     {
@@ -50,6 +52,9 @@ export default function MeerScreen() {
           <Button label="Mijn kinderen" icon="vereniging" variant="secondary" onPress={() => router.push('/kinderen')} />
         ) : null}
         <Button label="Kaarten" icon="ticket" variant="secondary" onPress={() => router.push('/kaarten')} />
+        {advertisers.data?.isCollector ? (
+          <Button label="Adverteerders ophalen" icon="megafoon" variant="secondary" onPress={() => router.push('/adverteerders')} />
+        ) : null}
         {me.data?.permissions.includes('sale.collect') ? (
           <Button label="Kassa: munten uitgeven" icon="munten" onPress={() => router.push('/kassa')} />
         ) : null}

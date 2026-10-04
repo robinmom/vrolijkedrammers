@@ -38,7 +38,7 @@ public sealed class AdminMailingController(
     public async Task<MailingListResponse> GetList(Guid id, CancellationToken cancellationToken)
     {
         var list = await db.MailingLists.AsNoTracking().Include(l => l.Members).Include(l => l.Groups).Include(l => l.Addresses)
-            .SingleOrDefaultAsync(l => l.Id == id, cancellationToken) ?? throw new DomainException(ErrorCodes.NotFound, "Mailinggroep niet gevonden.");
+            .SingleOrDefaultAsync(l => l.Id == id, cancellationToken) ?? throw new DomainException(ErrorCodes.NotFound, "Mailinggroep niet gevonden.", DomainErrorKind.NotFound);
         var memberIds = list.Members.Select(m => m.MemberId).ToList();
         var members = await db.Members.AsNoTracking().Where(m => memberIds.Contains(m.Id)).OrderBy(m => m.FullName)
             .Select(m => new MailingListMemberResponse(m.Id, m.FullName, m.MemberNumber, m.Email)).ToListAsync(cancellationToken);
@@ -94,7 +94,7 @@ public sealed class AdminMailingController(
     public async Task<MailingResponse> GetMailing(Guid id, CancellationToken cancellationToken)
     {
         var m = await db.Mailings.AsNoTracking().Include(x => x.Lists).SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Mailing niet gevonden.");
+            ?? throw new DomainException(ErrorCodes.NotFound, "Mailing niet gevonden.", DomainErrorKind.NotFound);
         var counts = await db.MailingRecipients.AsNoTracking().Where(r => r.MailingId == id).GroupBy(r => r.Status)
             .Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
         var images = await ImagesAsync(MailingService.ReadBlocks(m.Blocks), cancellationToken);

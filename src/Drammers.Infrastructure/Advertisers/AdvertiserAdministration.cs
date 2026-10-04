@@ -44,6 +44,18 @@ public sealed record AdvertiserCollectorTotals(Guid? CollectorMemberId, string N
 public sealed record AdvertiserStatusReport(
     int Year, AdvertiserStatusTotals Totals, IReadOnlyList<AdvertiserCollectorTotals> PerCollector, IReadOnlyList<AdvertiserStatusRow> Rows);
 
+/// <summary>Een adverteerder zoals de collectant hem in de app ziet.</summary>
+public sealed record MyAdvertiser(
+    Guid Id, int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
+    string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note);
+
+public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items);
+
+/// <summary>Een nieuwe adverteerder vanuit de app; bij een machtiging zijn IBAN en toestemming nodig.</summary>
+public sealed record NewAdvertiserInput(
+    string CompanyName, string? ContactName, string? Phone, string? Email, string? AddressLine, string? PostalCode, string? City, AdvertiserKind Kind,
+    AdvertiserPayment Payment, decimal Amount, string? Iban, bool MandateConsent, string? Note);
+
 /// <summary>IBAN's van adverteerders, versleuteld met een eigen sleutel (los van die van de leden).</summary>
 public sealed class AdvertiserIbanProtector(IDataProtectionProvider provider)
 {
@@ -452,6 +464,120 @@ public sealed class AdvertiserAdministration(
             $"{year}: {status} {row.Amount}"), cancellationToken);
     }
 
+    // ----- De collectant in de app (fase 27b-2) -------------------------------------------------------------------
+
+    /// <summary>Of het lid in het kader zit (alleen dan kan het collectant zijn).</summary>
+    public Task<bool> IsCollectorAsync(Guid memberId, CancellationToken cancellationToken) =>
+        db.CommitteeMembers.AnyAsync(c => c.MemberId == memberId, cancellationToken);
+
+    /// <summary>De adverteerders van deze collectant in het lopende campagnejaar: eerst open, dan op naam.</summary>
+    public async Task<MyAdvertisers> MineAsync(Guid memberId, CancellationToken cancellationToken)
+    {
+        var year = await CampaignYearAsync(cancellationToken);
+        if (!await IsCollectorAsync(memberId, cancellationToken))
+        {
+            return new MyAdvertisers(false, year, []);
+        }
+
+        var report = await StatusAsync(year, memberId, cancellationToken);
+        var ids = report.Rows.Select(r => r.Id).ToList();
+        var details = await db.Advertisers.AsNoTracking().Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, cancellationToken);
+        return new MyAdvertisers(true, year, [.. report.Rows
+            .OrderBy(r => r.Status == AdvertiserYearStatus.Open ? 0 : 1).ThenBy(r => r.CompanyName)
+            .Select(r =>
+            {
+                var a = details[r.Id];
+                return new MyAdvertiser(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City, a.Kind,
+                    a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note);
+            })]);
+    }
+
+    /// <summary>De collectant zet de stand van een van zijn eigen adverteerders, in het lopende campagnejaar.</summary>
+    public async Task SetMyStatusAsync(Guid memberId, Guid advertiserId, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken)
+    {
+        if (!await db.Advertisers.AnyAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken))
+        {
+            throw NotFound();
+        }
+
+        await SetStatusAsync(advertiserId, await CampaignYearAsync(cancellationToken), status, amount, note, cancellationToken);
+    }
+
+    /// <summary>
+    /// Een nieuwe adverteerder die de collectant zelf heeft gevonden: meteen opgehaald voor dit jaar, met het volgende
+    /// vrije nummer. Het bestuur ziet hem in het portal als "nieuw via app" en kijkt de gegevens na.
+    /// </summary>
+    public async Task<Guid> AddFromAppAsync(Guid memberId, NewAdvertiserInput input, CancellationToken cancellationToken)
+    {
+        if (!await IsCollectorAsync(memberId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Forbidden, "Alleen kaderleden kunnen adverteerders toevoegen.", DomainErrorKind.Forbidden);
+        }
+
+        if (Clean(input.CompanyName, 200) is not { } company)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul de naam van het bedrijf in.");
+        }
+
+        if (input.Amount is < 0 or > 100_000)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul een bedrag in tussen 0 en 100.000 euro.");
+        }
+
+        var email = Clean(input.Email, 254);
+        if (email is not null && !System.Net.Mail.MailAddress.TryCreate(email, out _))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het e-mailadres klopt niet.");
+        }
+
+        string? iban = null;
+        if (input.Payment == AdvertiserPayment.Mandate)
+        {
+            iban = MembershipApplications.NormalizeIban(input.Iban);
+            if (!input.MandateConsent)
+            {
+                throw new DomainException(ErrorCodes.Validation, "Vraag toestemming voor de automatische incasso (machtiging).");
+            }
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        var number = (await db.Advertisers.MaxAsync(a => (int?)a.Number, cancellationToken) ?? 0) + 1;
+        var year = await CampaignYearAsync(cancellationToken);
+        var advertiser = new Advertiser
+        {
+            Id = IdGenerator.NewId(),
+            Number = number,
+            CompanyName = company,
+            ContactName = Clean(input.ContactName, 150),
+            Phone = Clean(input.Phone, 30),
+            Email = email,
+            AddressLine = Clean(input.AddressLine, 200),
+            PostalCode = Clean(input.PostalCode, 10),
+            City = Clean(input.City, 100),
+            Kind = input.Kind,
+            Payment = input.Payment,
+            IbanProtected = iban is null ? null : ibans.Protect(iban),
+            IbanLast4 = iban?[^4..],
+            MandateReference = iban is null ? null : $"DVD-ADV-{number}-{now:yyyyMMdd}",
+            CollectorMemberId = memberId,
+            AddedViaApp = true,
+        };
+        advertiser.Years.Add(new AdvertiserYear
+        {
+            AdvertiserId = advertiser.Id,
+            Year = year,
+            Amount = Math.Round(input.Amount, 2),
+            Status = AdvertiserYearStatus.Collected,
+            StatusChangedAt = now,
+            StatusChangedBy = actor.UserId,
+            Note = Clean(input.Note, 500),
+        });
+        db.Advertisers.Add(advertiser);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.added-via-app", "Advertiser", advertiser.Id.ToString(), null, $"{number} {company}"), cancellationToken);
+        return advertiser.Id;
+    }
+
     /// <summary>De volledige IBAN (alleen voor het portal, met het recht adverteerders beheren).</summary>
     public async Task<string?> IbanAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -479,5 +605,5 @@ public sealed class AdvertiserAdministration(
         return string.IsNullOrEmpty(text) ? null : text.Length <= max ? text : text[..max];
     }
 
-    private static DomainException NotFound() => new(ErrorCodes.NotFound, "Adverteerder niet gevonden.");
+    private static DomainException NotFound() => new(ErrorCodes.NotFound, "Adverteerder niet gevonden.", DomainErrorKind.NotFound);
 }

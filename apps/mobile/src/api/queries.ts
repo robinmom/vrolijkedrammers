@@ -27,6 +27,7 @@ export const queryKeys = {
   me: ['me'] as const,
   myMember: ['me', 'member'] as const,
   myMemberRequests: ['me', 'membership-requests'] as const,
+  myAdvertisers: ['me', 'advertisers'] as const,
   myDevices: ['me', 'devices'] as const,
   myChildren: ['me', 'children'] as const,
   child: (id: string) => ['me', 'children', id] as const,
@@ -147,6 +148,16 @@ export const useMyMemberRequests = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.myMemberRequests,
     queryFn: () => unwrap(api.GET('/api/v1/me/membership-requests')),
+    enabled: status === 'signedIn' && enabled,
+  });
+};
+
+/** Adverteerders van de collectant (fase 27b-2); voor wie geen kaderlid is: isCollector false. */
+export const useMyAdvertisers = (enabled = true) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myAdvertisers,
+    queryFn: () => unwrap(api.GET('/api/v1/me/advertisers')),
     enabled: status === 'signedIn' && enabled,
   });
 };

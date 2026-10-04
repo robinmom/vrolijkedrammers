@@ -15127,6 +15127,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/advertisers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyAdvertisers"];
+                        "application/json": components["schemas"]["MyAdvertisers"];
+                        "text/json": components["schemas"]["MyAdvertisers"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewAdvertiserRequest"];
+                    "text/json": components["schemas"]["NewAdvertiserRequest"];
+                    "application/*+json": components["schemas"]["NewAdvertiserRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/advertisers/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserStatusRequest"];
+                    "text/json": components["schemas"]["AdvertiserStatusRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/membership-requests": {
         parameters: {
             query?: never;
@@ -20178,6 +20327,35 @@ export interface components {
             ios: string;
             android: string;
         };
+        /** @description Een adverteerder zoals de collectant hem in de app ziet. */
+        MyAdvertiser: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            companyName: string;
+            contactName: null | string;
+            phone: null | string;
+            mobile: null | string;
+            email: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            kind: components["schemas"]["AdvertiserKind"];
+            payment: components["schemas"]["AdvertiserPayment"];
+            status: components["schemas"]["AdvertiserYearStatus"];
+            /** Format: double */
+            amount: null | number;
+            /** Format: double */
+            previousAmount: null | number;
+            note: null | string;
+        };
+        MyAdvertisers: {
+            isCollector: boolean;
+            /** Format: int32 */
+            year: number;
+            items: components["schemas"]["MyAdvertiser"][];
+        };
         MyBankInput: {
             iban: null | string;
             accountHolder: null | string;
@@ -20298,6 +20476,22 @@ export interface components {
             deviceShortId: null | string;
             deviceHasHardwareKey: boolean;
             accessTitle?: null | string;
+        };
+        NewAdvertiserRequest: {
+            companyName: string;
+            contactName: null | string;
+            phone: null | string;
+            email: null | string;
+            addressLine: null | string;
+            postalCode: null | string;
+            city: null | string;
+            kind: components["schemas"]["AdvertiserKind"];
+            payment: components["schemas"]["AdvertiserPayment"];
+            /** Format: double */
+            amount: number;
+            iban: null | string;
+            mandateConsent: boolean;
+            note: null | string;
         };
         NewsDetailResponse: {
             /** Format: uuid */

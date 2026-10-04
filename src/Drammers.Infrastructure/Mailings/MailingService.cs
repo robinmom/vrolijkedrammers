@@ -419,9 +419,9 @@ public sealed class MailingService(
         JsonSerializer.Serialize(new { input.Name, input.AllMembers, Members = input.MemberIds.Count, Groups = input.GroupIds.Count, Addresses = input.Addresses.Count },
             JsonSerializerOptions.Web);
 
-    private static DomainException ListNotFound() => new(ErrorCodes.NotFound, "Mailinggroep niet gevonden.");
+    private static DomainException ListNotFound() => new(ErrorCodes.NotFound, "Mailinggroep niet gevonden.", DomainErrorKind.NotFound);
 
-    private static DomainException MailingNotFound() => new(ErrorCodes.NotFound, "Mailing niet gevonden.");
+    private static DomainException MailingNotFound() => new(ErrorCodes.NotFound, "Mailing niet gevonden.", DomainErrorKind.NotFound);
 }
 
 /// <summary>Verstuurt de mailing naar één ontvanger (outbox); slaat over wie zich intussen heeft afgemeld.</summary>

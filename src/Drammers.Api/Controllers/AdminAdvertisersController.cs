@@ -74,7 +74,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     public async Task<AdvertiserResponse> Get(Guid id, CancellationToken cancellationToken)
     {
         var a = await db.Advertisers.AsNoTracking().Include(x => x.Years).SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new DomainException(ErrorCodes.NotFound, "Adverteerder niet gevonden.");
+            ?? throw new DomainException(ErrorCodes.NotFound, "Adverteerder niet gevonden.", DomainErrorKind.NotFound);
         var names = await advertisers.CollectorNamesAsync([a.CollectorMemberId], cancellationToken);
         return new AdvertiserResponse(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City,
             a.Website, a.Page, a.Kind, a.Payment, a.IbanLast4 is null ? null : $"**** {a.IbanLast4}", a.MandateReference, a.CollectorMemberId,

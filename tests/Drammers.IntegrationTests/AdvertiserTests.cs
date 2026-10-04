@@ -147,6 +147,89 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("Stopped", after.GetProperty("years").EnumerateArray().Single(y => y.GetProperty("year").GetInt32() == 2026).GetProperty("status").GetString());
     }
 
+    /// <summary>Een lid met een account, en optioneel in het kader.</summary>
+    private async Task<(Guid MemberId, HttpClient Client)> LidMetAccountAsync(string fullName, string email, bool kader)
+    {
+        var memberId = kader ? await KaderlidAsync(fullName) : Guid.Empty;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            if (!kader)
+            {
+                memberId = IdGenerator.NewId();
+                db.Members.Add(new Member { Id = memberId, MemberNumber = "7001", FullName = fullName, MembershipStatus = MembershipStatus.Active });
+                await db.SaveChangesAsync();
+            }
+        }
+
+        var (userId, oid) = await _api.CreateUserAsync(email, DefaultRoles.Lid);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(u => u.SetProperty(x => x.MemberId, memberId));
+        }
+
+        return (memberId, _api.ClientFor(oid));
+    }
+
+    [Fact]
+    public async Task Collectant_vinkt_eigen_adverteerders_af_en_meldt_een_nieuwe_aan()
+    {
+        var (alfredId, alfred) = await LidMetAccountAsync("Alfred Voorbeeld", "alfred@example.com", kader: true);
+        var (_, gewoon) = await LidMetAccountAsync("Gewoon Lid", "gewoon@example.com", kader: false);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "C", null, null, 35, 35),
+            Row("Iemand Anders", 2, "Garage Proef", "A", "C", null, null, 70, 70)));
+
+        // Een gewoon lid is geen collectant en mag niets toevoegen.
+        Assert.False((await gewoon.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers")).GetProperty("isCollector").GetBoolean());
+        Assert.Equal(HttpStatusCode.Forbidden, (await gewoon.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Cash", null, false))).StatusCode);
+
+        // De collectant ziet alleen zijn eigen adverteerder, met het bedrag van vorig jaar.
+        var mine = await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers");
+        Assert.True(mine.GetProperty("isCollector").GetBoolean());
+        Assert.Equal(2027, mine.GetProperty("year").GetInt32());
+        var item = Assert.Single(mine.GetProperty("items").EnumerateArray());
+        Assert.Equal(("Bakkerij De Test", "Open", 35m), (item.GetProperty("companyName").GetString(), item.GetProperty("status").GetString(),
+            item.GetProperty("previousAmount").GetDecimal()));
+        var bakkerij = item.GetProperty("id").GetGuid();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{bakkerij}/status",
+            new { status = "Collected", amount = 40m, note = (string?)null })).StatusCode);
+        var garage = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Single(a => a.GetProperty("number").GetInt32() == 2).GetProperty("id").GetGuid();
+        Assert.Equal(HttpStatusCode.NotFound, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{garage}/status",
+            new { status = "Stopped", amount = (decimal?)null, note = (string?)null })).StatusCode);
+
+        // Nieuw via de app: met machtiging zijn IBAN en toestemming nodig; daarna opgehaald voor 2027.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Mandate", "NL91ABNA0417164300", false))).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Mandate", "NL91ABNA0417164300", true))).StatusCode);
+
+        var status = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/status?year=2027&collector={alfredId}");
+        Assert.Equal((2, 2, 90m), (status.GetProperty("totals").GetProperty("total").GetInt32(), status.GetProperty("totals").GetProperty("collected").GetInt32(),
+            status.GetProperty("totals").GetProperty("collectedAmount").GetDecimal()));
+        var added = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Single(a => a.GetProperty("companyName").GetString() == "Nieuwe Zaak");
+        Assert.Equal((3, true, true, "Alfred Voorbeeld"), (added.GetProperty("number").GetInt32(), added.GetProperty("addedViaApp").GetBoolean(),
+            added.GetProperty("hasIban").GetBoolean(), added.GetProperty("collectorName").GetString()));
+    }
+
+    private static object NewAdvertiser(string payment, string? iban, bool consent) => new
+    {
+        companyName = "Nieuwe Zaak",
+        contactName = "Nina Nieuw",
+        phone = (string?)null,
+        email = "zaak@example.com",
+        addressLine = (string?)null,
+        postalCode = (string?)null,
+        city = "Loil",
+        kind = "Advertisement",
+        payment,
+        amount = 50m,
+        iban,
+        mandateConsent = consent,
+        note = (string?)null,
+    };
+
     [Fact]
     public async Task Adverteerder_toevoegen_met_collectant_uit_het_kader_en_alleen_met_het_recht()
     {

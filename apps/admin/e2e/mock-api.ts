@@ -943,6 +943,8 @@ export class MockApi {
     },
   ];
   advertiserCampaignYear = 2027;
+  invoiceSettings = { address: null as string | null, kvk: '40122564' as string | null };
+  invoices: { advertiserId: string; invoiceId: string; invoiceNumber: string; sentAt: string | null }[] = [];
   advertiserRuns: {
     id: string;
     collectionDate: string;
@@ -1331,6 +1333,63 @@ export class MockApi {
   ) {
     let m: RegExpMatchArray | null;
     const collectorName = (id: string | null) => this.advertiserCollectors.find((c) => c.memberId === id)?.name ?? null;
+    if (path === '/admin/advertisers/invoices/settings') {
+      if (method === 'PUT') {
+        this.invoiceSettings = body as typeof this.invoiceSettings;
+        return noContent();
+      }
+      return json(this.invoiceSettings);
+    }
+    if (path === '/admin/advertisers/invoices' && method === 'POST') {
+      const due = this.advertisers.filter(
+        (a) => a.status2027 === 'Collected' && !this.invoices.some((i) => i.advertiserId === a.id),
+      );
+      for (const a of due) {
+        const seq = this.invoices.length + 1;
+        this.invoices.push({
+          advertiserId: a.id,
+          invoiceId: `inv-${seq}`,
+          invoiceNumber: `ADV-2027-000${seq}`,
+          sentAt: null,
+        });
+      }
+      return json({ count: due.length });
+    }
+    if (path === '/admin/advertisers/invoices/send') {
+      const toSend = this.invoices.filter(
+        (i) => !i.sentAt && this.advertisers.find((a) => a.id === i.advertiserId)?.email,
+      );
+      toSend.forEach((i) => (i.sentAt = '2026-11-02T10:00:00Z'));
+      return json({ count: toSend.length });
+    }
+    if (path === '/admin/advertisers/invoices/pdf' || /^\/admin\/advertisers\/invoices\/[^/]+\/pdf$/.test(path)) {
+      return json({ pdf: true });
+    }
+    if (path === '/admin/advertisers/invoices') {
+      const collected = this.advertisers.filter((a) => a.status2027 === 'Collected');
+      const rows = collected.map((a) => {
+        const inv = this.invoices.find((i) => i.advertiserId === a.id);
+        return {
+          advertiserId: a.id,
+          advertiserNumber: a.number,
+          companyName: a.companyName,
+          amount: a.amount2026,
+          payment: a.payment,
+          email: a.email,
+          invoiceId: inv?.invoiceId ?? null,
+          invoiceNumber: inv?.invoiceNumber ?? null,
+          invoiceDate: inv ? '2026-11-02' : null,
+          sentAt: inv?.sentAt ?? null,
+        };
+      });
+      return json({
+        year: 2027,
+        toCreate: rows.filter((r) => !r.invoiceId).length,
+        toSend: rows.filter((r) => r.invoiceId && !r.sentAt && r.email).length,
+        withoutEmail: rows.filter((r) => !r.email).length,
+        rows,
+      });
+    }
     if (path === '/admin/advertisers/collections/preview') {
       const done = this.advertiserRuns.length > 0;
       return json({

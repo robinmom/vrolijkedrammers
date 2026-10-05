@@ -113,3 +113,33 @@ test('fase 27c: incasso van de opgehaalde adverteerders', async ({ page }) => {
   // Daarna komt dezelfde adverteerder niet nog een keer in de incasso.
   await expect(page.getByRole('button', { name: 'Incassorun maken (0)' })).toBeDisabled();
 });
+
+test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  api.advertisers.forEach((a) => (a.status2027 = 'Collected'));
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/facturen');
+
+  await expect(page.getByRole('heading', { name: 'Facturen 2027', level: 1 })).toBeVisible();
+  await expect(page.getByLabel('KvK-nummer')).toHaveValue('40122564');
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByRole('button', { name: 'Facturen maken (2)' }).click();
+  await expect(page.getByText('2 facturen gemaakt.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ADV-2027-0001' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Versturen per e-mail (1)' }).click();
+  await expect(page.getByRole('dialog')).toContainText('namens penningmeester@vrolijkedrammers.nl');
+  await page.getByRole('dialog').getByRole('button', { name: 'Versturen' }).click();
+  await expect(page.getByText('1 facturen worden verstuurd.')).toBeVisible();
+
+  // De garage heeft geen e-mailadres: die factuur gaat mee in de PDF om te printen.
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'PDF zonder e-mailadres' }).click();
+  expect((await download).suggestedFilename()).toBe('Facturen 2027 zonder e-mail.pdf');
+
+  await page.getByLabel('Adres (één regel per regel)').fill('Postbus 123\n6940 AC Loil');
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Gegevens op de factuur opgeslagen.')).toBeVisible();
+  expect(api.invoiceSettings.address).toBe('Postbus 123\n6940 AC Loil');
+});

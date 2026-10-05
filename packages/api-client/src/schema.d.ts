@@ -1235,6 +1235,288 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/invoices/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvoiceSettings"];
+                        "application/json": components["schemas"]["InvoiceSettings"];
+                        "text/json": components["schemas"]["InvoiceSettings"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["InvoiceSettingsRequest"];
+                    "text/json": components["schemas"]["InvoiceSettingsRequest"];
+                    "application/*+json": components["schemas"]["InvoiceSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wie in het jaar een factuur krijgt; zonder jaar het lopende campagnejaar. */
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvoiceOverview"];
+                        "application/json": components["schemas"]["InvoiceOverview"];
+                        "text/json": components["schemas"]["InvoiceOverview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateInvoicesRequest"];
+                    "text/json": components["schemas"]["CreateInvoicesRequest"];
+                    "application/*+json": components["schemas"]["CreateInvoicesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvoiceCountResponse"];
+                        "application/json": components["schemas"]["InvoiceCountResponse"];
+                        "text/json": components["schemas"]["InvoiceCountResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/invoices/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: {
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvoiceCountResponse"];
+                        "application/json": components["schemas"]["InvoiceCountResponse"];
+                        "text/json": components["schemas"]["InvoiceCountResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/invoices/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alle facturen van het jaar in één PDF; `withoutEmail=true`: alleen wie geen e-mailadres heeft. */
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                    withoutEmail?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": unknown;
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers": {
         parameters: {
             query?: never;
@@ -19402,6 +19684,12 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        CreateInvoicesRequest: {
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            year: null | number;
+        };
         CreateNotificationRequest: {
             title: string;
             body: string;
@@ -19931,6 +20219,48 @@ export interface components {
         InviteJurorRequest: {
             name: string;
             email: string;
+        };
+        InvoiceCountResponse: {
+            /** Format: int32 */
+            count: number;
+        };
+        InvoiceOverview: {
+            /** Format: int32 */
+            year: number;
+            /** Format: int32 */
+            toCreate: number;
+            /** Format: int32 */
+            toSend: number;
+            /** Format: int32 */
+            withoutEmail: number;
+            rows: components["schemas"]["InvoiceOverviewRow"][];
+        };
+        /** @description Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur. */
+        InvoiceOverviewRow: {
+            /** Format: uuid */
+            advertiserId: string;
+            /** Format: int32 */
+            advertiserNumber: number;
+            companyName: string;
+            /** Format: double */
+            amount: number;
+            payment: components["schemas"]["AdvertiserPayment"];
+            email: null | string;
+            /** Format: uuid */
+            invoiceId: null | string;
+            invoiceNumber: null | string;
+            /** Format: date */
+            invoiceDate: null | string;
+            /** Format: date-time */
+            sentAt: null | string;
+        };
+        InvoiceSettings: {
+            address: null | string;
+            kvk: null | string;
+        };
+        InvoiceSettingsRequest: {
+            address: null | string;
+            kvk: null | string;
         };
         IssueTicketsResponse: {
             /** Format: int32 */

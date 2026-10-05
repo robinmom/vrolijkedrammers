@@ -15,7 +15,17 @@ export const KIND_LABELS: Record<AdvertiserKind, string> = {
   FreeGift: 'Vrije gift',
   Gift: 'Gift',
 };
-export const PAYMENT_LABELS: Record<AdvertiserPayment, string> = { Mandate: 'Machtiging', Cash: 'Contant' };
+export const PAYMENT_LABELS: Record<AdvertiserPayment, string> = {
+  Mandate: 'Machtiging',
+  Cash: 'Contant',
+  Invoice: 'Rekening',
+};
+
+/** Jaar Y is het carnavalsjaar (Y-1)/Y, zoals de kolom BIJDRAGE Y in het Excel-overzicht. */
+export const season = (year: number) => `${year - 1}/${year}`;
+
+/** Kort, voor kolomkoppen: 2026 → 25/26. */
+export const seasonShort = (year: number) => `${String(year - 1).slice(2)}/${String(year).slice(2)}`;
 export const STATUS_LABELS: Record<AdvertiserYearStatus, string> = {
   Open: 'Open',
   Collected: 'Opgehaald',

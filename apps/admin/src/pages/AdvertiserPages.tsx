@@ -8,6 +8,8 @@ import {
   PAYMENT_LABELS,
   STATUS_LABELS,
   euro,
+  season,
+  seasonShort,
   useAdvertiser,
   useAdvertiserCollectors,
   useAdvertisers,
@@ -60,6 +62,8 @@ function CollectorSelect({
 export function AdvertisersPage() {
   const [filters, setFilters] = useState<AdvertiserFilters>({ search: '', collector: '', kind: '', payment: '' });
   const advertisers = useAdvertisers(filters);
+  const campaign = useCampaignYear();
+  const historyYears = campaign.data ? [0, 1, 2, 3, 4].map((i) => campaign.data!.year - 4 + i) : [];
   const set = (change: Partial<AdvertiserFilters>) => setFilters({ ...filters, ...change });
   const rows = advertisers.data ?? [];
   return (
@@ -135,7 +139,11 @@ export function AdvertisersPage() {
               <th scope="col">Soort</th>
               <th scope="col">Betaling</th>
               <th scope="col">Collectant</th>
-              <th scope="col">Laatste bijdrage</th>
+              {historyYears.map((y) => (
+                <th key={y} scope="col" className="numeric">
+                  <abbr title={`Carnavalsjaar ${season(y)}`}>{seasonShort(y)}</abbr>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -165,12 +173,29 @@ export function AdvertisersPage() {
                       '—'
                     ))}
                 </td>
-                <td>{a.lastYear ? `${a.lastYear}: ${a.lastFree ? 'gratis' : euro(a.lastAmount)}` : '—'}</td>
+                {historyYears.map((y) => {
+                  const h = a.history.find((x) => x.year === y);
+                  return (
+                    <td key={y} className="numeric">
+                      {!h ? (
+                        '—'
+                      ) : h.isFree ? (
+                        'gratis'
+                      ) : h.status === 'Stopped' ? (
+                        'stopt'
+                      ) : h.status === 'Open' ? (
+                        <span className="muted">open</span>
+                      ) : (
+                        euro(h.amount)
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
             {advertisers.data?.length === 0 ? (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={5 + historyYears.length} className="muted">
                   Geen adverteerders gevonden. Lees eerst het Excel-overzicht in.
                 </td>
               </tr>
@@ -441,12 +466,20 @@ export function AdvertiserEditorPage() {
 
       {a && a.years.length > 0 ? (
         <section className="card" aria-labelledby="bijdragen-kop">
-          <h2 id="bijdragen-kop">Bijdragen</h2>
+          <h2 id="bijdragen-kop">Bijdragen per carnavalsjaar</h2>
+          <ContributionChart years={a.years} />
+          <p>
+            In totaal{' '}
+            <strong>
+              {euro(a.years.reduce((sum, y) => sum + (y.status === 'Collected' && !y.isFree ? (y.amount ?? 0) : 0), 0))}
+            </strong>{' '}
+            in {a.years.filter((y) => y.status === 'Collected').length} jaar.
+          </p>
           <div className="table-scroll" tabIndex={0} role="region" aria-label="Bijdragen per jaar">
             <table className="table">
               <thead>
                 <tr>
-                  <th scope="col">Jaar</th>
+                  <th scope="col">Carnavalsjaar</th>
                   <th scope="col">Bedrag</th>
                   <th scope="col">Stand</th>
                   <th scope="col">Gewijzigd</th>
@@ -455,7 +488,7 @@ export function AdvertiserEditorPage() {
               <tbody>
                 {a.years.map((y) => (
                   <tr key={y.year}>
-                    <td>{y.year}</td>
+                    <td>{season(y.year)}</td>
                     <td>{y.isFree ? 'gratis' : euro(y.amount)}</td>
                     <td>
                       {STATUS_LABELS[y.status]}
@@ -531,7 +564,7 @@ export function AdvertiserStatusPage() {
     <>
       <div className="page-header">
         <div>
-          <h1>Campagne {shownYear ?? ''}</h1>
+          <h1>Campagne {shownYear ? season(shownYear) : ''}</h1>
           <p className="muted">Wie is opgehaald, wie stopt en bij wie de collectant nog langs moet.</p>
         </div>
         <button type="button" className="button secondary" onClick={() => void exportExcel()}>
@@ -773,8 +806,8 @@ export function AdvertiserImportPage() {
       <h1>Excel inlezen</h1>
       <p className="muted">
         Lees het advertentie-overzicht (.xlsx of .xlsm) in. Bestaande adverteerders worden bijgewerkt op nummer; de
-        stand die in het portal of de app is gezet, blijft staan. Bij betaling mag alleen M (machtiging) of C (contant)
-        staan.
+        stand die in het portal of de app is gezet, blijft staan. Bij betaling mag M (machtiging), C (contant) of R
+        (rekening) staan. De kolom BIJDRAGE 2026 hoort bij carnavalsjaar 2025/2026.
       </p>
       <div className="card">
         <div className="field">
@@ -888,7 +921,7 @@ export function AdvertiserCollectionsPage() {
     <>
       <div className="page-header">
         <div>
-          <h1>Incasso adverteerders {year ?? ''}</h1>
+          <h1>Incasso adverteerders {year ? season(year) : ''}</h1>
           <p className="muted">
             Alle adverteerders met een machtiging die in {year ?? 'het campagnejaar'} op opgehaald staan. De gegevens
             van de vereniging (IBAN en incassant-ID) zijn dezelfde als bij de contributie.
@@ -1093,7 +1126,7 @@ export function AdvertiserInvoicesPage() {
     <>
       <div className="page-header">
         <div>
-          <h1>Facturen {year ?? ''}</h1>
+          <h1>Facturen {year ? season(year) : ''}</h1>
           <p className="muted">
             Een factuur voor elke opgehaalde bijdrage (niet gratis) van het campagnejaar, verstuurd namens de
             penningmeester.
@@ -1256,5 +1289,44 @@ export function AdvertiserInvoicesPage() {
         onCancel={() => setConfirmSend(false)}
       />
     </>
+  );
+}
+
+/** Staafjes per carnavalsjaar (opgehaald = blauw, gratis = goud, stopt/open = leeg), van oud naar nieuw. */
+function ContributionChart({
+  years,
+}: {
+  years: { year: number; amount: number | null; isFree: boolean; status: AdvertiserYearStatus }[];
+}) {
+  const sorted = [...years].sort((a, b) => a.year - b.year);
+  const max = Math.max(1, ...sorted.map((y) => (y.status === 'Collected' ? (y.amount ?? 0) : 0)));
+  const width = Math.max(1, sorted.length) * 22;
+  return (
+    <svg
+      className="contribution-chart"
+      viewBox={`0 0 ${width} 90`}
+      role="img"
+      aria-label={`Bijdragen ${sorted.map((y) => `${season(y.year)}: ${y.isFree ? 'gratis' : y.status === 'Collected' ? euro(y.amount) : STATUS_LABELS[y.status]}`).join(', ')}`}
+    >
+      {sorted.map((y, i) => {
+        const value = y.status === 'Collected' ? (y.amount ?? 0) : 0;
+        const height = y.isFree ? 8 : Math.round((70 * value) / max);
+        return (
+          <g key={y.year}>
+            <rect
+              x={i * 22 + 3}
+              y={74 - height}
+              width={16}
+              height={Math.max(height, 1)}
+              rx={3}
+              className={y.isFree ? 'bar-free' : 'bar'}
+            />
+            <text x={i * 22 + 11} y={87} textAnchor="middle" className="bar-label">
+              {String(y.year).slice(2)}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }

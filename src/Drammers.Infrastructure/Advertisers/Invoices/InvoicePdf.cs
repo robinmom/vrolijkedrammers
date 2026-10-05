@@ -69,6 +69,13 @@ public static class InvoicePdf
             return $"Dit bedrag wordt via automatische incasso afgeschreven{account}{mandate}. U hoeft niets te doen.";
         }
 
+        if (invoice.Payment == AdvertiserPayment.Invoice)
+        {
+            return issuer.Iban is null
+                ? $"Graag binnen 14 dagen overmaken onder vermelding van {invoice.Number}."
+                : $"Graag binnen 14 dagen overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}.";
+        }
+
         if (invoice.PaidAt is { } paid)
         {
             return $"Contant voldaan op {paid.ToString("d MMMM yyyy", Dutch)}. Hartelijk dank voor uw steun!";

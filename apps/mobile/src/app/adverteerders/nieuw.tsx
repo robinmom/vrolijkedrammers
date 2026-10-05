@@ -83,7 +83,7 @@ export default function NieuweAdverteerderScreen() {
         <View style={styles.content}>
           <Card style={styles.card}>
             <AppText variant="body" accessibilityRole="alert">
-              {form.companyName.trim()} staat op opgehaald voor {mine.data?.year ?? 'dit jaar'}. Het bestuur kijkt de gegevens na.
+              {form.companyName.trim()} staat op opgehaald voor {mine.data ? `${mine.data.year - 1}/${mine.data.year}` : 'dit jaar'}. Het bestuur kijkt de gegevens na.
             </AppText>
           </Card>
           <Button label="Terug naar mijn adverteerders" variant="secondary" onPress={() => router.back()} />

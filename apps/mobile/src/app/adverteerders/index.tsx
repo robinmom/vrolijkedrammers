@@ -26,6 +26,15 @@ type Filter = 'Open' | 'Collected' | 'Stopped' | 'All';
 const euro = new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' });
 const money = (value: number | null | undefined) => (value === null || value === undefined ? null : euro.format(value));
 
+/** Jaar Y is het carnavalsjaar (Y-1)/Y (zoals BIJDRAGE Y in het Excel-overzicht). */
+export const season = (year: number) => `${year - 1}/${year}`;
+
+const PAYMENT: Record<Advertiser['payment'], string> = {
+  Mandate: 'Betaalt via machtiging (incasso).',
+  Cash: 'Betaalt contant.',
+  Invoice: 'Betaalt op rekening (factuur).',
+};
+
 const STATUS: Record<Advertiser['status'], string> = { Open: 'Nog langs', Collected: 'Opgehaald', Stopped: 'Stopt' };
 
 /**
@@ -47,7 +56,7 @@ export default function AdverteerdersScreen() {
   return (
     <Screen>
       <BackLink label="Meer" />
-      <LargeTitleHeader title={`Adverteerders ${mine.data?.year ?? ''}`} />
+      <LargeTitleHeader title={`Adverteerders ${mine.data ? season(mine.data.year) : ''}`} />
       <View style={styles.content}>
         {!mine.data ? (
           <QueryState query={mine} />
@@ -170,9 +179,26 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
           ) : null}
           {phone ? <Button label={`Bel ${phone}`} variant="secondary" onPress={() => void Linking.openURL(`tel:${phone.replace(/\s/g, '')}`)} /> : null}
           <AppText variant="caption" color={colors.textSecondary}>
-            {a.payment === 'Mandate' ? 'Betaalt via machtiging (incasso).' : 'Betaalt contant.'}
-            {a.previousAmount !== null ? ` Vorig jaar ${money(a.previousAmount)}.` : ''}
+            {PAYMENT[a.payment]}
           </AppText>
+          {a.history && a.history.length > 0 ? (
+            <View style={styles.history} accessibilityLabel="Eerdere jaren">
+              {a.history.map((h) => (
+                <View key={h.year} style={styles.historyRow}>
+                  <AppText variant="caption" color={colors.textSecondary}>
+                    {season(h.year)}
+                  </AppText>
+                  <AppText variant="caption">
+                    {h.isFree ? 'gratis' : h.status === 'Stopped' ? 'stopte' : h.status === 'Open' ? '—' : (money(h.amount) ?? '—')}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <AppText variant="caption" color={colors.textSecondary}>
+              Geen eerdere bijdragen bekend.
+            </AppText>
+          )}
           <TextField label="Bedrag dit jaar (€)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" maxLength={10} />
           {cash ? <CheckboxRow label="Geld contant ontvangen" checked={received} onChange={setReceived} /> : null}
           {error ? (
@@ -198,4 +224,6 @@ const styles = StyleSheet.create({
   grow: { flex: 1, gap: 2 },
   right: { alignItems: 'flex-end', gap: 2 },
   details: { gap: 10 },
+  history: { gap: 2 },
+  historyRow: { flexDirection: 'row', justifyContent: 'space-between' },
 });

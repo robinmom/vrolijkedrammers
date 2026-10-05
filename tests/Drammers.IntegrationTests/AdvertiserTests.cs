@@ -87,22 +87,22 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
     {
         var alfred = await KaderlidAsync("Alfred Voorbeeld");
 
-        // Eerst met een R in M/C/R/B: de import meldt de regel en slaat niets op.
+        // Eerst met een B in M/C/R/B (alleen M, C en R mogen): de import meldt de regel en slaat niets op.
         var wrong = Workbook(
             Row("ALFRED VOORBEELD", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 35, 35),
-            Row("Onbekende Collectant", 2, "Garage Proef", "A", "R", null, null, 70, "GRATIS"));
+            Row("Onbekende Collectant", 2, "Garage Proef", "A", "B", null, null, 70, "GRATIS"));
         var preview = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/import/preview", wrong)).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(2, preview.GetProperty("rows").GetInt32());
         var error = Assert.Single(preview.GetProperty("errors").EnumerateArray());
         Assert.Equal(3, error.GetProperty("row").GetInt32());
-        Assert.Contains("M (machtiging) of C (contant)", error.GetProperty("message").GetString());
+        Assert.Contains("M (machtiging), C (contant) of R (rekening)", error.GetProperty("message").GetString());
         Assert.Equal(["Onbekende Collectant"], preview.GetProperty("unknownCollectors").EnumerateArray().Select(e => e.GetString()));
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PostAsync("/api/v1/admin/advertisers/import", wrong)).StatusCode);
 
         // Aangepast: nu wordt alles ingelezen; de collectant is herkend op naam (hoofdletters maken niet uit).
         var fixedFile = Workbook(
             Row("ALFRED VOORBEELD", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 35, 35),
-            Row("Onbekende Collectant", 2, "Garage Proef", "G", "C", null, null, 70, "GRATIS"),
+            Row("Onbekende Collectant", 2, "Garage Proef", "G", "R", null, null, 70, "GRATIS"),
             Row("Alfred Voorbeeld", 3, "Kapsalon Stop", "A", "M", null, "DVD000000003", 50, 0));
         var imported = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/import", fixedFile)).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal((3, 0), (imported.GetProperty("new").GetInt32(), imported.GetProperty("updated").GetInt32()));
@@ -112,8 +112,10 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var bakkerij = list!.Single(a => a.GetProperty("number").GetInt32() == 1);
         Assert.Equal(("Alfred Voorbeeld", true, 2026, 35m), (bakkerij.GetProperty("collectorName").GetString(), bakkerij.GetProperty("hasIban").GetBoolean(),
             bakkerij.GetProperty("lastYear").GetInt32(), bakkerij.GetProperty("lastAmount").GetDecimal()));
+        // Historie: de laatste vijf jaar tot en met het campagnejaar (2023–2027); hier 2025 en 2026 uit het Excel-bestand.
+        Assert.Equal([(2025, 35m), (2026, 35m)], bakkerij.GetProperty("history").EnumerateArray().Select(h => (h.GetProperty("year").GetInt32(), h.GetProperty("amount").GetDecimal())));
         var garage = list!.Single(a => a.GetProperty("number").GetInt32() == 2);
-        Assert.Equal(("Gift", "Cash", "Onbekende Collectant"), (garage.GetProperty("kind").GetString(), garage.GetProperty("payment").GetString(),
+        Assert.Equal(("Gift", "Invoice", "Onbekende Collectant"), (garage.GetProperty("kind").GetString(), garage.GetProperty("payment").GetString(),
             garage.GetProperty("importedCollectorName").GetString()));
 
         // IBAN alleen gemaskeerd, voluit via een apart verzoek (gelogd).
@@ -193,6 +195,7 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var item = Assert.Single(mine.GetProperty("items").EnumerateArray());
         Assert.Equal(("Bakkerij De Test", "Open", 35m), (item.GetProperty("companyName").GetString(), item.GetProperty("status").GetString(),
             item.GetProperty("previousAmount").GetDecimal()));
+        Assert.Equal([2026, 2025], item.GetProperty("history").EnumerateArray().Select(h => h.GetProperty("year").GetInt32()));
         var bakkerij = item.GetProperty("id").GetGuid();
 
         Assert.Equal(HttpStatusCode.NoContent, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{bakkerij}/status",

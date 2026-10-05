@@ -1578,6 +1578,11 @@ export class MockApi {
             lastYear: 2026,
             lastAmount: a.amount2026,
             lastFree: false,
+            history: [
+              { year: 2025, amount: a.amount2026, isFree: false, status: 'Collected' },
+              { year: 2026, amount: a.amount2026, isFree: false, status: 'Collected' },
+              { year: 2027, amount: null, isFree: false, status: a.status2027 },
+            ],
             active: a.active,
             addedViaApp: a.addedViaApp,
           })),

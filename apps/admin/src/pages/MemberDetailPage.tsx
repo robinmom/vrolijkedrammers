@@ -202,12 +202,14 @@ export function MemberDetailPage() {
                       onChange={(e) => set({ localStatusOverride: e.target.value as MembershipStatus | '' })}
                     >
                       <option value="">Volgt e-Boekhouden ({membershipStatusLabels[m.syncedStatus] ?? m.syncedStatus})</option>
+                      <option value="Active">Actief</option>
                       <option value="Suspended">Geschorst</option>
                       <option value="Inactive">Inactief</option>
                       <option value="Deceased">Overleden</option>
                     </select>
                     <small id="override-hint" className="muted">
-                      Een override wint altijd van de status uit e-Boekhouden.
+                      Een override wint altijd van de status uit e-Boekhouden. Kies Actief voor een lid dat niet in e-Boekhouden staat
+                      (bijvoorbeeld via lid worden in de app).
                     </small>
                   </div>
                   <Field label="Geldig vanaf" type="date" value={form.membershipValidFrom} onChange={(e) => set({ membershipValidFrom: e.target.value })} />

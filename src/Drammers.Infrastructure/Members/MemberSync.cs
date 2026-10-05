@@ -290,11 +290,14 @@ public sealed class MemberSync(
 
         /// <summary>
         /// Leden die niet meer in e-Boekhouden staan: eerst <c>Missing</c>; bij de volgende run nog steeds weg →
-        /// <c>Inactive</c>. Ontbreekt meer dan 10 % van de actieve leden, dan wordt niemand aangeraakt.
+        /// <c>Inactive</c>. Ontbreekt meer dan 10 % van de actieve leden, dan wordt niemand aangeraakt. Leden die nooit in
+        /// e-Boekhouden hebben gestaan (bijv. via lid worden in de app) of een status uit het portal hebben, blijven buiten
+        /// schot: de app is daar de ledenadministratie.
         /// </summary>
         private async Task HandleMissingAsync(List<Member> missing, List<Member> all, CancellationToken cancellationToken)
         {
-            var candidates = missing.Where(m => m.MembershipStatus == MembershipStatus.Active).ToList();
+            var candidates = missing
+                .Where(m => m.MembershipStatus == MembershipStatus.Active && m.EbMemberId is not null && m.LocalStatusOverride is null).ToList();
             var active = all.Count(m => m.MembershipStatus == MembershipStatus.Active);
             if (candidates.Count >= 2 && candidates.Count > active * MassDeletionThreshold)
             {

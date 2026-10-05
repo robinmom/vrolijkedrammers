@@ -7,6 +7,7 @@ using Drammers.Infrastructure.Email;
 using Drammers.Infrastructure.Payments;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Ticketing;
+using Drammers.Modules.Identity.Devices;
 using Drammers.Modules.Membership.Members;
 using Drammers.Modules.Notification.Notifications;
 using Drammers.Modules.Ticketing.Qr;
@@ -51,9 +52,11 @@ public sealed record OrderView(
 /// <summary>
 /// Een QR bij de bestelling; <see cref="Code"/> alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
 /// <see cref="CanShare"/>: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b). <see cref="Ref"/>
-/// (base64) alleen bij munten van het lid zelf: daarmee maakt het toestel de munten-QR van deze bestelling.
+/// (base64) alleen bij munten van het lid zelf, op het toestel waaraan ze gekoppeld zijn: daarmee maakt het toestel de
+/// munten-QR van deze bestelling. Op een ander toestel staat in <see cref="BoundDeviceName"/> waar ze wel af te halen zijn.
 /// </summary>
-public sealed record OrderTicketView(Guid Id, int Quantity, OrderTicketStatus Status, string? Code, bool CanShare, string? Ref = null);
+public sealed record OrderTicketView(
+    Guid Id, int Quantity, OrderTicketStatus Status, string? Code, bool CanShare, string? Ref = null, string? BoundDeviceName = null);
 
 /// <summary>Kaarten die de besteller met een groepslid heeft gedeeld; die hebben een eigen QR bij de ontvanger.</summary>
 public sealed record SharedTicket(string Name, int Quantity);
@@ -179,9 +182,11 @@ public sealed partial class TicketSales(
 
     /// <summary>
     /// Bestellen in de app of op de webpagina. Gratis groepskaarten alleen voor een ingelogd lid van de groep; munten
-    /// alleen voor leden. Betaalde kaarten gaan altijd via Mollie (iDEAL): het antwoord bevat de link naar de betaalpagina.
+    /// alleen voor leden, in de app: ze worden gekoppeld aan dat toestel (<paramref name="installationId"/>). Betaalde
+    /// kaarten gaan altijd via Mollie (iDEAL): het antwoord bevat de link naar de betaalpagina.
     /// </summary>
-    public async Task<OrderCreated> OrderAsync(OrderInput input, SaleBuyer buyer, SaleChannel channel, string baseUrl, CancellationToken cancellationToken)
+    public async Task<OrderCreated> OrderAsync(
+        OrderInput input, SaleBuyer buyer, SaleChannel channel, string baseUrl, CancellationToken cancellationToken, string? installationId = null)
     {
         var member = buyer.MemberId is { } memberId
             ? await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == memberId && (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active, cancellationToken)
@@ -189,9 +194,11 @@ public sealed partial class TicketSales(
         var user = buyer.UserId is { } userId ? await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId, cancellationToken) : null;
         var name = Clean(input.BuyerName) ?? member?.FullName ?? user?.DisplayName;
         var mail = Clean(input.BuyerEmail) ?? member?.Email ?? user?.Email;
+        var device = await ActiveDeviceAsync(user?.Id, installationId, cancellationToken);
         var draft = new OrderDraft(
             input.ProductId, input.MemberQuantity > 0 ? member?.ParadeGroupName?.Trim() : null, input.MemberQuantity, input.PaidQuantity,
-            name, mail, Clean(input.BuyerPhone) ?? member?.MobilePhone ?? member?.Phone, Clean(input.Remark), user?.Id, member?.Id, channel);
+            name, mail, Clean(input.BuyerPhone) ?? member?.MobilePhone ?? member?.Phone, Clean(input.Remark), user?.Id, member?.Id, channel,
+            DeviceId: channel == SaleChannel.App ? device : null);
 
         if (input.MemberQuantity > 0 && member is null)
         {
@@ -237,7 +244,7 @@ public sealed partial class TicketSales(
 
     private sealed record OrderDraft(
         Guid ProductId, string? GroupName, int MemberQuantity, int PaidQuantity, string? BuyerName, string? BuyerEmail, string? BuyerPhone,
-        string? Remark, Guid? UserId, Guid? MemberId, SaleChannel Channel, Guid? WaitlistEntryId = null);
+        string? Remark, Guid? UserId, Guid? MemberId, SaleChannel Channel, Guid? WaitlistEntryId = null, Guid? DeviceId = null);
 
     /// <summary>Controleert en boekt de bestelling in één transactie met de productregel vergrendeld.</summary>
     private async Task<(SaleOrder Order, SaleProduct Product)> PlaceAsync(
@@ -281,6 +288,12 @@ public sealed partial class TicketSales(
         if (product.MembersOnly && draft.MemberId is null && !portal)
         {
             throw new DomainException(ErrorCodes.MembersOnly, "Munten zijn alleen voor leden: log in om munten te kopen. De aankoop is persoonsgebonden.", DomainErrorKind.Forbidden);
+        }
+
+        // Munten zijn gekoppeld aan het toestel van de aankoop en nooit over te zetten: dus alleen in de app.
+        if (product.Kind == SaleProductKind.Tokens && !portal && draft.DeviceId is null)
+        {
+            throw Invalid("Munten koop je in de app, op het toestel waarmee je ze ophaalt. Ze zijn daarna niet over te zetten naar een ander toestel.");
         }
 
         if (draft.PaidQuantity > product.MaxPerOrder && !portal)
@@ -337,6 +350,7 @@ public sealed partial class TicketSales(
             WaitlistEntryId = draft.WaitlistEntryId,
             CreatedAt = Now,
             CreatedByUserId = createdBy,
+            PurchaseDeviceId = product.Kind == SaleProductKind.Tokens ? draft.DeviceId : null,
         };
         if (amount == 0 || paidMethod == SalePaymentMethod.Cash)
         {
@@ -553,8 +567,14 @@ public sealed partial class TicketSales(
     /// Mijn kaarten: bestellingen van de gebruiker (zonder de kaarten die gedeeld zijn) en kaarten die een groepslid
     /// met dit lid heeft gedeeld (alleen die QR).
     /// </summary>
-    public async Task<IReadOnlyList<OrderView>> MineAsync(Guid userId, Guid? memberId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<OrderView>> MineAsync(Guid userId, Guid? memberId, CancellationToken cancellationToken, string? installationId = null)
     {
+        var device = await ActiveDeviceAsync(userId, installationId, cancellationToken);
+        if (memberId is { } holder && device is { } deviceId)
+        {
+            await BindUnboundTokensAsync(holder, deviceId, cancellationToken);
+        }
+
         var orders = await db.SaleOrders.AsNoTracking()
             .Where(o => (o.BuyerUserId == userId || (memberId != null && o.BuyerMemberId == memberId))
                 && (o.Status == SaleOrderStatus.Confirmed || o.Status == SaleOrderStatus.AwaitingPayment))
@@ -562,7 +582,7 @@ public sealed partial class TicketSales(
         var result = new List<OrderView>();
         foreach (var o in orders)
         {
-            result.Add(await ViewAsync(o, cancellationToken, memberId));
+            result.Add(await ViewAsync(o, cancellationToken, memberId, device: device));
         }
 
         if (memberId is { } me)
@@ -575,7 +595,7 @@ public sealed partial class TicketSales(
                 select o).Distinct().ToListAsync(cancellationToken);
             foreach (var o in received.Where(r => result.All(x => x.Id != r.Id)))
             {
-                result.Add(await ViewAsync(o, cancellationToken, me, received: true));
+                result.Add(await ViewAsync(o, cancellationToken, me, received: true, device: device));
             }
         }
 
@@ -584,9 +604,11 @@ public sealed partial class TicketSales(
 
     /// <summary>
     /// De bestelling voor de koper. <paramref name="viewer"/> is het lid dat kijkt (voor delen); met
-    /// <paramref name="received"/> heeft dat lid kaarten uit deze bestelling gekregen en ziet het alleen die QR.
+    /// <paramref name="received"/> heeft dat lid kaarten uit deze bestelling gekregen en ziet het alleen die QR. Munten:
+    /// de referentie alleen op het gekoppelde toestel (<paramref name="device"/>), anders de naam van dat toestel.
     /// </summary>
-    private async Task<OrderView> ViewAsync(SaleOrder order, CancellationToken cancellationToken, Guid? viewer = null, bool received = false)
+    private async Task<OrderView> ViewAsync(
+        SaleOrder order, CancellationToken cancellationToken, Guid? viewer = null, bool received = false, Guid? device = null)
     {
         var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
         var all = await db.OrderTickets.AsNoTracking().Where(t => t.OrderId == order.Id).OrderBy(t => t.CreatedAt).ToListAsync(cancellationToken);
@@ -599,10 +621,16 @@ public sealed partial class TicketSales(
         foreach (var t in tickets)
         {
             var code = t.Status == OrderTicketStatus.Active && product.Kind != SaleProductKind.Tokens ? await CodeAsync(t, cancellationToken) : null;
-            var tokensRef = product.Kind == SaleProductKind.Tokens && t.Status == OrderTicketStatus.Active && viewer is not null && t.HolderMemberId == viewer
-                ? Convert.ToBase64String(t.PublicRef)
+            var ownTokens = product.Kind == SaleProductKind.Tokens && t.Status == OrderTicketStatus.Active && viewer is not null && t.HolderMemberId == viewer;
+            var onThisDevice = ownTokens && device is not null && t.BoundDeviceId == device;
+            var tokensRef = onThisDevice ? Convert.ToBase64String(t.PublicRef) : null;
+            var elsewhere = ownTokens && !onThisDevice
+                ? (t.BoundDeviceId is { } boundId
+                    ? await db.Devices.AsNoTracking().Where(d => d.Id == boundId && d.Status == DeviceStatus.Active).Select(d => d.Name).SingleOrDefaultAsync(cancellationToken)
+                    : null) ?? "een ander toestel"
                 : null;
-            views.Add(new OrderTicketView(t.Id, t.Quantity, t.Status, code, canShareOrder && t.Status == OrderTicketStatus.Active && t.Quantity > 1, tokensRef));
+            views.Add(new OrderTicketView(
+                t.Id, t.Quantity, t.Status, code, canShareOrder && t.Status == OrderTicketStatus.Active && t.Quantity > 1, tokensRef, elsewhere));
         }
 
         var shared = new List<SharedTicket>();
@@ -964,7 +992,41 @@ public sealed partial class TicketSales(
             HolderMemberId = order.BuyerMemberId,
             Status = OrderTicketStatus.Active,
             CreatedAt = Now,
+            BoundDeviceId = order.PurchaseDeviceId,
+            BoundAt = order.PurchaseDeviceId is null ? null : Now,
         });
+    }
+
+    /// <summary>Het aangemelde toestel van de gebruiker (uit <c>X-Device-Id</c>), of null.</summary>
+    private async Task<Guid?> ActiveDeviceAsync(Guid? userId, string? installationId, CancellationToken cancellationToken) =>
+        userId is null || string.IsNullOrWhiteSpace(installationId)
+            ? null
+            : await db.Devices.AsNoTracking()
+                .Where(d => d.UserId == userId && d.InstallationId == installationId && d.Status == DeviceStatus.Active)
+                .Select(d => (Guid?)d.Id).SingleOrDefaultAsync(cancellationToken);
+
+    /// <summary>
+    /// Munten van vóór de toestelkoppeling (of zonder bekend toestel) worden eenmalig gekoppeld aan het eerste toestel
+    /// waarop het lid ze bekijkt. Is er ooit gekoppeld (<see cref="OrderTicket.BoundAt"/>), dan nooit opnieuw.
+    /// </summary>
+    private async Task BindUnboundTokensAsync(Guid memberId, Guid deviceId, CancellationToken cancellationToken)
+    {
+        var unbound = await (
+            from t in db.OrderTickets
+            where t.HolderMemberId == memberId && t.BoundAt == null && t.Status == OrderTicketStatus.Active
+            join o in db.SaleOrders on t.OrderId equals o.Id
+            join p in db.SaleProducts on o.ProductId equals p.Id
+            where p.Kind == SaleProductKind.Tokens && o.Status == SaleOrderStatus.Confirmed
+            select t).ToListAsync(cancellationToken);
+        foreach (var t in unbound)
+        {
+            t.BoundDeviceId = deviceId;
+            t.BoundAt = Now;
+            await audit.WriteAsync(new AuditEntry("order-ticket.bound", "OrderTicket", t.Id.ToString(), null,
+                JsonSerializer.Serialize(new { deviceId })), cancellationToken);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task LockProductAsync(Guid productId, CancellationToken cancellationToken) =>

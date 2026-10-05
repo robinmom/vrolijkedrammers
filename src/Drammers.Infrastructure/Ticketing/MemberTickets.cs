@@ -295,10 +295,15 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
         var ticket = await GetAsync(userId, installationId, cancellationToken, childMemberId);
         // De munten-QR (fase 19b) werkt ook vóór carnaval, bijvoorbeeld op de pronkzitting.
         var usable = ticket.State == TicketState.Valid || (purpose == QrPurpose.Tokens && ticket.State == TicketState.NotYetValid);
-        if (!usable || !ticket.BoundToThisDevice)
+        if (!usable)
         {
-            throw new DomainException(ErrorCodes.TicketUnavailable,
-                usable ? "Je ticket staat op een ander toestel." : ticket.Message, DomainErrorKind.Conflict);
+            throw new DomainException(ErrorCodes.TicketUnavailable, ticket.Message, DomainErrorKind.Conflict);
+        }
+
+        // De munten-QR hangt aan het toestel van de muntenbestelling (hieronder), niet aan dat van het ledenticket.
+        if (purpose == QrPurpose.Access && !ticket.BoundToThisDevice)
+        {
+            throw new DomainException(ErrorCodes.TicketUnavailable, "Je ticket staat op een ander toestel.", DomainErrorKind.Conflict);
         }
 
         if (ticket.DeviceHasHardwareKey)
@@ -313,11 +318,14 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
             reference = await (
                 from ot in db.OrderTickets.AsNoTracking()
                 where ot.Id == orderTicketId && ot.HolderMemberId == memberId && ot.Status == Modules.Ticketing.Sales.OrderTicketStatus.Active
+                    && ot.BoundDeviceId == device.Id
                 join o in db.SaleOrders.AsNoTracking() on ot.OrderId equals o.Id
                 join p in db.SaleProducts.AsNoTracking() on o.ProductId equals p.Id
                 where p.Kind == Modules.Ticketing.Sales.SaleProductKind.Tokens && o.Status == Modules.Ticketing.Sales.SaleOrderStatus.Confirmed
                 select ot.PublicRef).SingleOrDefaultAsync(cancellationToken)
-                ?? throw new DomainException(ErrorCodes.TicketUnavailable, "Deze munten zijn niet (meer) af te halen.", DomainErrorKind.Conflict);
+                ?? throw new DomainException(ErrorCodes.TicketUnavailable,
+                    "Deze munten zijn niet (meer) af te halen op dit toestel. Munten werken alleen op het toestel waarop ze gekocht zijn.",
+                    DomainErrorKind.Conflict);
         }
 
         var issuedAt = clock.UtcNow.ToUnixTimeSeconds();

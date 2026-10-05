@@ -10,20 +10,16 @@ export const statusLabels: Record<string, string> = {
 
 export const groupFunctionLabels: Record<string, string> = { Member: 'Lid', Lead: 'Leiding' };
 
-/** Uitloggen: dit apparaat afmelden bij de API (als dat lukt) en daarna de tokens op het toestel wissen. */
+/**
+ * Uitloggen: de API stopt de pushberichten naar dit toestel (als dat lukt) en daarna worden de tokens gewist. Het
+ * toestel blijft aangemeld, zodat opnieuw inloggen hetzelfde toestel is en gekochte munten blijven werken. Echt
+ * afmelden gaat via Mijn apparaten.
+ */
 export async function signOut(): Promise<void> {
   try {
-    const current = await getInstallationId();
-    const { data } = await api.GET('/api/v1/me/devices');
-    const device = data?.find((d) => d.current);
-    if (device) {
-      await api.DELETE('/api/v1/me/devices/{id}', {
-        params: { path: { id: device.id } },
-        headers: { 'x-device-id': current },
-      });
-    }
+    await api.POST('/api/v1/me/devices/current/sign-out', { headers: { 'x-device-id': await getInstallationId() } });
   } catch {
-    // Offline uitloggen kan altijd; het apparaat blijft dan in de lijst tot het lid het afmeldt.
+    // Offline uitloggen kan altijd; de pushberichten stoppen dan pas bij afmelden in Mijn apparaten.
   }
   await clearLocalSession();
 }

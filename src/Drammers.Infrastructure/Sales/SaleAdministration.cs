@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Drammers.Infrastructure.Persistence;
+using Drammers.Modules.Identity.Devices;
 using Drammers.Modules.Ticketing.Sales;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
@@ -14,6 +15,16 @@ public sealed record SaleProductInput(
     DateTime? SaleOpensAt, DateTime? SaleClosesAt, bool OnSale, int SortOrder);
 
 public sealed record SaleProductRow(SaleProduct Product, ProductStock Stock, int RevenueCents, int Waiting);
+
+/// <summary>Een toestel van het lid waar het bestuur munten naartoe kan verplaatsen.</summary>
+public sealed record TokenDeviceOption(Guid Id, string Name, DateTime LastSeenAt);
+
+/// <summary>
+/// Aan welk toestel de munten van een bestelling gekoppeld zijn, of ze al eens verplaatst zijn (dan nooit meer) en naar
+/// welke toestellen van het lid ze verplaatst kunnen worden.
+/// </summary>
+public sealed record TokenDevice(
+    string? DeviceName, bool DeviceActive, DateTime? MovedAt, string? MovedBy, bool CanMove, IReadOnlyList<TokenDeviceOption> Options);
 
 public sealed record SalesSummary(int RevenueCents, int Sold, int OpenPaymentLinks, int OpenAmountCents, int TokensToCollect, int TokensSold);
 
@@ -282,6 +293,78 @@ public sealed class SaleAdministration(DrammersDbContext db, TicketSales sales, 
         return new EveningRow(
             name, isGroup, free + paid, Join(orders.Select(o => o.BuyerName))!, Join(orders.Select(o => o.BuyerPhone)), Join(orders.Select(o => o.BuyerEmail)),
             membership, paidText, Join(orders.Select(o => o.Remark)), [.. orders.Select(o => o.Number)]);
+    }
+
+    /// <summary>De munten-QR van een betaalde muntenbestelling die nog niet is afgehaald.</summary>
+    private async Task<OrderTicket> TokenTicketAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var ticket = await (
+            from t in db.OrderTickets
+            where t.OrderId == orderId && t.SharedFromTicketId == null
+            join o in db.SaleOrders on t.OrderId equals o.Id
+            join p in db.SaleProducts on o.ProductId equals p.Id
+            where p.Kind == SaleProductKind.Tokens && o.Status == SaleOrderStatus.Confirmed
+            select t).SingleOrDefaultAsync(cancellationToken);
+        return ticket ?? throw new DomainException(ErrorCodes.OrderNotFound, "Geen betaalde muntenbestelling gevonden.", DomainErrorKind.NotFound);
+    }
+
+    private IQueryable<Device> HolderDevices(Guid? holderMemberId) =>
+        from d in db.Devices
+        join u in db.Users on d.UserId equals u.Id
+        where holderMemberId != null && u.MemberId == holderMemberId && d.Status == DeviceStatus.Active
+        select d;
+
+    public async Task<TokenDevice> TokenDeviceAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var ticket = await TokenTicketAsync(orderId, cancellationToken);
+        var current = ticket.BoundDeviceId is { } boundId
+            ? await db.Devices.AsNoTracking().Where(d => d.Id == boundId).Select(d => new { d.Name, Active = d.Status == DeviceStatus.Active }).SingleOrDefaultAsync(cancellationToken)
+            : null;
+        var movedBy = ticket.MovedByUserId is { } by
+            ? await db.Users.AsNoTracking().Where(u => u.Id == by).Select(u => u.DisplayName).SingleOrDefaultAsync(cancellationToken)
+            : null;
+        var options = await HolderDevices(ticket.HolderMemberId).AsNoTracking().Where(d => d.Id != ticket.BoundDeviceId)
+            .OrderByDescending(d => d.LastSeenAt).Select(d => new TokenDeviceOption(d.Id, d.Name, d.LastSeenAt)).ToListAsync(cancellationToken);
+        var canMove = ticket.Status == OrderTicketStatus.Active && ticket.MovedAt is null;
+        return new TokenDevice(current?.Name, current?.Active == true, ticket.MovedAt, movedBy, canMove, canMove ? options : []);
+    }
+
+    /// <summary>
+    /// Munten één keer naar een ander (actief) toestel van hetzelfde lid verplaatsen, bijv. bij een kapotte of verloren
+    /// telefoon. Alleen het bestuur, met een reden; daarna nooit meer. Codes van het oude toestel zijn direct ongeldig.
+    /// </summary>
+    public async Task MoveTokensAsync(Guid orderId, Guid deviceId, string reason, Guid movedBy, CancellationToken cancellationToken)
+    {
+        var why = reason.Trim();
+        if (why.Length is < 5 or > 500)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Geef een reden van 5 tot 500 tekens.");
+        }
+
+        var ticket = await TokenTicketAsync(orderId, cancellationToken);
+        if (ticket.Status != OrderTicketStatus.Active)
+        {
+            throw new DomainException(ErrorCodes.OrderInvalid, "Deze munten zijn al afgehaald of geannuleerd.", DomainErrorKind.Conflict);
+        }
+
+        if (ticket.MovedAt is not null)
+        {
+            throw new DomainException(ErrorCodes.OrderInvalid, "Deze munten zijn al een keer verplaatst; dat kan maar één keer.", DomainErrorKind.Conflict);
+        }
+
+        if (deviceId == ticket.BoundDeviceId || !await HolderDevices(ticket.HolderMemberId).AnyAsync(d => d.Id == deviceId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Kies een ander aangemeld toestel van het lid zelf.");
+        }
+
+        var previous = ticket.BoundDeviceId;
+        ticket.BoundDeviceId = deviceId;
+        ticket.BoundAt = Now;
+        ticket.MovedAt = Now;
+        ticket.MovedByUserId = movedBy;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("order-ticket.moved", "OrderTicket", ticket.Id.ToString(),
+            JsonSerializer.Serialize(new { deviceId = previous }), JsonSerializer.Serialize(new { deviceId, reason = why })), cancellationToken);
     }
 
     /// <summary>Munten: per bestelling wie, hoeveel, betaald en of ze al zijn afgehaald.</summary>

@@ -22,6 +22,7 @@ import { Dialog } from './Dialog';
 import { Pagination } from './Pagination';
 import { ProblemAlert } from './ProblemAlert';
 import { NewOrderDialog, SaleProductDialog } from './SaleDialogs';
+import { TokenDeviceDialog } from './TokenDeviceDialog';
 
 /** Knoppen in de paginakop: een bestelling invoeren of een losse betaallink maken, voor deze soort producten. */
 export function OrderButtons({ kind, onMessage }: { kind: SaleProductKind; onMessage: (message: string) => void }) {
@@ -218,6 +219,7 @@ export function OrdersCard({ kind, onMessage }: { kind: SaleProductKind; onMessa
   const [page, setPage] = useState(1);
   const orders = useSaleOrders(kind, productId, status, search, page);
   const [cancelling, setCancelling] = useState<SaleOrderRow | null>(null);
+  const [tokenDevice, setTokenDevice] = useState<SaleOrderRow | null>(null);
   const [reason, setReason] = useState('');
   const paidCash = useApiMutation(
     (id: string) => api.POST('/api/v1/admin/sales/orders/{id}/paid-cash', { params: { path: { id } } }),
@@ -326,6 +328,11 @@ export function OrdersCard({ kind, onMessage }: { kind: SaleProductKind; onMessa
                 onClick={() => resend.mutate(o.id, { onSuccess: () => onMessage(`Betaallink opnieuw gemaild naar ${o.buyerEmail}.`) })}
               >
                 Link opnieuw <span className="visually-hidden">{o.number}</span>
+              </button>
+            ) : null}
+            {kind === 'Tokens' && o.status === 'Confirmed' && !o.collected ? (
+              <button type="button" className="button ghost small" onClick={() => setTokenDevice(o)}>
+                Toestel <span className="visually-hidden">{o.number}</span>
               </button>
             ) : null}
             {(o.status === 'AwaitingPayment' || o.status === 'Confirmed') && !o.collected ? (
@@ -456,6 +463,12 @@ export function OrdersCard({ kind, onMessage }: { kind: SaleProductKind; onMessa
           </div>
         </form>
       </Dialog>
+      <TokenDeviceDialog
+        key={tokenDevice?.id ?? 'geen'}
+        order={tokenDevice}
+        onClose={() => setTokenDevice(null)}
+        onMessage={onMessage}
+      />
     </section>
   );
 }

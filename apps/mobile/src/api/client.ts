@@ -54,7 +54,12 @@ api.use({
   },
   async onResponse({ response }) {
     if (response.status === 401 && getStatus() === 'signedIn') {
-      await clearLocalSession();
+      // Afgemeld toestel: een volgende aanmelding krijgt een nieuwe installatie-id.
+      const problem = (await response
+        .clone()
+        .json()
+        .catch(() => null)) as { code?: string } | null;
+      await clearLocalSession({ newInstallation: problem?.code === 'DEVICE_REVOKED' });
     }
     return undefined;
   },

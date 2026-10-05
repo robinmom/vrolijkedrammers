@@ -117,6 +117,15 @@ public sealed class MeController(AppConfigReader appConfig, DrammersDbContext db
         return NoContent();
     }
 
+    /// <summary>Uitloggen op dit toestel (<c>X-Device-Id</c>): geen push meer, het toestel blijft aangemeld.</summary>
+    [HttpPost("devices/current/sign-out")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> SignOutDevice(CancellationToken cancellationToken)
+    {
+        await account.SignOutDeviceAsync(CurrentUser.Get(HttpContext)!.UserId, Request.Headers[DeviceCheck.HeaderName].ToString(), cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>Apparaat afmelden; dat apparaat is daarna uitgelogd (401 <c>DEVICE_REVOKED</c>).</summary>
     [HttpDelete("devices/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

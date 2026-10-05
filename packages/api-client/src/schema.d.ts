@@ -11437,6 +11437,116 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/sales/orders/{id}/token-device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Munten: aan welk toestel ze gekoppeld zijn en naar welke toestellen van het lid ze kunnen. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TokenDevice"];
+                        "application/json": components["schemas"]["TokenDevice"];
+                        "text/json": components["schemas"]["TokenDevice"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Munten één keer naar een ander toestel van het lid verplaatsen (met reden, in de auditlog). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MoveTokensRequest"];
+                    "text/json": components["schemas"]["MoveTokensRequest"];
+                    "application/*+json": components["schemas"]["MoveTokensRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sales/orders/{id}/resend-link": {
         parameters: {
             query?: never;
@@ -14875,6 +14985,40 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/v1/me/devices/current/sign-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uitloggen op dit toestel (`X-Device-Id`): geen push meer, het toestel blijft aangemeld. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/me/privacy/export": {
@@ -21014,6 +21158,11 @@ export interface components {
             ios: string;
             android: string;
         };
+        MoveTokensRequest: {
+            /** Format: uuid */
+            deviceId: string;
+            reason: string;
+        };
         /** @description Een adverteerder zoals de collectant hem in de app ziet. */
         MyAdvertiser: {
             /** Format: uuid */
@@ -21366,7 +21515,8 @@ export interface components {
         /**
          * @description Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
          *     bool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b). string? OrderTicketView.Ref
-         *     (base64) alleen bij munten van het lid zelf: daarmee maakt het toestel de munten-QR van deze bestelling.
+         *     (base64) alleen bij munten van het lid zelf, op het toestel waaraan ze gekoppeld zijn: daarmee maakt het toestel de
+         *     munten-QR van deze bestelling. Op een ander toestel staat in string? OrderTicketView.BoundDeviceName waar ze wel af te halen zijn.
          */
         OrderTicketView: {
             /** Format: uuid */
@@ -21377,6 +21527,7 @@ export interface components {
             code: null | string;
             canShare: boolean;
             ref?: null | string;
+            boundDeviceName?: null | string;
         };
         /** @description De bestelling zoals de koper hem ziet (na betalen of via de link in de e-mail). */
         OrderView: {
@@ -22583,6 +22734,27 @@ export interface components {
             rebindCount: number;
             /** Format: date-time */
             createdAt: string;
+        };
+        /**
+         * @description Aan welk toestel de munten van een bestelling gekoppeld zijn, of ze al eens verplaatst zijn (dan nooit meer) en naar
+         *     welke toestellen van het lid ze verplaatst kunnen worden.
+         */
+        TokenDevice: {
+            deviceName: null | string;
+            deviceActive: boolean;
+            /** Format: date-time */
+            movedAt: null | string;
+            movedBy: null | string;
+            canMove: boolean;
+            options: components["schemas"]["TokenDeviceOption"][];
+        };
+        /** @description Een toestel van het lid waar het bestuur munten naartoe kan verplaatsen. */
+        TokenDeviceOption: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            lastSeenAt: string;
         };
         /** @enum {unknown} */
         TokenScanOutcome: "Ready" | "Issued" | "Refused";

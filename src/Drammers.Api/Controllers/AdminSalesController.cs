@@ -99,6 +99,24 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
         return NoContent();
     }
 
+    /// <summary>Munten: aan welk toestel ze gekoppeld zijn en naar welke toestellen van het lid ze kunnen.</summary>
+    [HttpGet("orders/{id:guid}/token-device")]
+    [ProducesResponseType<TokenDevice>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public Task<TokenDevice> TokenDevice(Guid id, CancellationToken cancellationToken) => administration.TokenDeviceAsync(id, cancellationToken);
+
+    /// <summary>Munten één keer naar een ander toestel van het lid verplaatsen (met reden, in de auditlog).</summary>
+    [HttpPost("orders/{id:guid}/token-device")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> MoveTokens(Guid id, MoveTokensRequest request, CancellationToken cancellationToken)
+    {
+        await administration.MoveTokensAsync(id, request.DeviceId, request.Reason, CurrentUser.Get(HttpContext)!.UserId, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("orders/{id:guid}/resend-link")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -276,5 +294,7 @@ public sealed record PortalOrderRequest(
 public sealed record PortalOrderResponse(Guid Id, string Number, SaleOrderStatus Status);
 
 public sealed record CancelOrderRequest([StringLength(500)] string? Reason);
+
+public sealed record MoveTokensRequest(Guid DeviceId, [Required, StringLength(500, MinimumLength = 5)] string Reason);
 
 public sealed record GrantWaitlistRequest(PortalPayment Payment);

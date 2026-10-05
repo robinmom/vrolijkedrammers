@@ -99,6 +99,12 @@ public sealed class SaleOrder
     /// <summary>Wie de bestelling in het portal invoerde.</summary>
     public Guid? CreatedByUserId { get; set; }
 
+    /// <summary>
+    /// Munten: het toestel waarop ze in de app gekocht zijn. De munten-QR werkt alleen op dat toestel en is nooit over te
+    /// zetten (er zit een betaling achter).
+    /// </summary>
+    public Guid? PurchaseDeviceId { get; set; }
+
     public DateTime? CancelledAt { get; set; }
 
     public string? CancelReason { get; set; }
@@ -141,6 +147,22 @@ public sealed class OrderTicket
     public OrderTicketStatus Status { get; set; }
 
     public DateTime? UsedAt { get; set; }
+
+    /// <summary>
+    /// Munten: het enige toestel waarop de munten-QR werkt (het toestel van de aankoop). Wordt eenmalig gezet en nooit
+    /// gewijzigd; <see cref="BoundAt"/> blijft staan, ook als het toestel verdwijnt, zodat er nooit opnieuw gekoppeld wordt.
+    /// </summary>
+    public Guid? BoundDeviceId { get; set; }
+
+    public DateTime? BoundAt { get; set; }
+
+    /// <summary>
+    /// Munten: het bestuur heeft ze (bijv. bij een kapotte telefoon) één keer naar een ander toestel van het lid verplaatst.
+    /// Daarna kan dat nooit meer.
+    /// </summary>
+    public DateTime? MovedAt { get; set; }
+
+    public Guid? MovedByUserId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

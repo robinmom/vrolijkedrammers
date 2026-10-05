@@ -122,6 +122,25 @@ public sealed class MyAccount(
         await transaction.CommitAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Uitloggen op dit toestel: geen pushberichten meer, maar het toestel blijft aangemeld. Logt hetzelfde account hier
+    /// later weer in, dan is het hetzelfde toestel (bijv. voor munten, die aan het toestel van de aankoop vastzitten).
+    /// Afmelden (<see cref="RevokeDeviceAsync"/>) is definitief.
+    /// </summary>
+    public async Task SignOutDeviceAsync(Guid userId, string? installationId, CancellationToken cancellationToken)
+    {
+        var device = string.IsNullOrWhiteSpace(installationId)
+            ? null
+            : await db.Devices.AsNoTracking().SingleOrDefaultAsync(d => d.UserId == userId && d.InstallationId == installationId, cancellationToken);
+        if (device is null)
+        {
+            return;
+        }
+
+        await db.PushDevices.Where(p => p.DeviceId == device.Id).ExecuteDeleteAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("device.signed-out", "Device", device.Id.ToString(), null, null), cancellationToken);
+    }
+
     /// <summary>Status van een installatie voor de apparaatcheck bij elke aanroep; werkt "laatst gezien" bij.</summary>
     public async Task<DeviceStatus?> TouchDeviceAsync(Guid userId, string installationId, CancellationToken cancellationToken)
     {

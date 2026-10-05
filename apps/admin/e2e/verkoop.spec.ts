@@ -131,6 +131,25 @@ test('fase 19: activiteiten en munten hebben een eigen pagina', async ({ page })
   await expectNoSeriousA11yIssues(page);
 });
 
+test('munten: het bestuur verplaatst ze één keer naar een ander toestel van het lid', async ({ page }) => {
+  const api = new MockApi(['sale.manage']);
+  await open(page, api, 'verkoop/munten');
+  const toestel = page.getByRole('button', { name: /^Toestel/ }).first();
+  await toestel.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('iPhone 15')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Verplaatsen' })).toBeDisabled();
+  await dialog.getByLabel('Nieuw toestel').selectOption('dev-2');
+  await dialog.getByLabel('Reden').fill('Telefoon kapot');
+  await expectNoSeriousA11yIssues(page);
+  await dialog.getByRole('button', { name: 'Verplaatsen' }).click();
+  await expect(page.getByText(/verplaatst\. Dit kan niet nog een keer\./)).toBeVisible();
+
+  await toestel.click();
+  await expect(page.getByRole('dialog').getByText(/Nog een keer verplaatsen kan niet/)).toBeVisible();
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Verplaatsen' })).toHaveCount(0);
+});
+
 test('leden: bij een lid staat de groep uit e-Boekhouden', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'leden/m-1');

@@ -4,6 +4,7 @@ using Drammers.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Drammers.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(DrammersDbContext))]
-    partial class DrammersDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005164951_MuntenToestelKoppeling")]
+    partial class MuntenToestelKoppeling
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -7384,14 +7387,6 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("HolderMemberId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("holder_member_id");
-
-                    b.Property<DateTime?>("MovedAt")
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("moved_at");
-
-                    b.Property<Guid?>("MovedByUserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("moved_by_user_id");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier")

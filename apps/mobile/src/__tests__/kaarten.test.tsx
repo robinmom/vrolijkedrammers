@@ -235,6 +235,42 @@ describe('Kaarten (fase 19b)', () => {
     await waitFor(() => expect(codeCalls().some((u) => u.includes('orderTicketId=ot-2'))).toBe(true));
   });
 
+  it('munten: nooit de ledenkaart en nooit overzetten; munten van een ander toestel alleen genoemd', async () => {
+    setSessionForTest('signedIn');
+    const tokens = order({ id: 't-1', number: '2027-0101', kind: 'Tokens', productName: 'Consumptiemunten', groupName: null, paidQuantity: 20, memberQuantity: 0, sharedWith: [], createdAt: '2026-10-10T18:00:00Z', tickets: [{ id: 'ot-1', quantity: 20, status: 'Active', code: null, canShare: false, ref: 'AAECAwQFBgcICQoLDA0ODw==' }] });
+    const other = order({ id: 't-2', number: '2027-0188', kind: 'Tokens', productName: 'Consumptiemunten', groupName: null, paidQuantity: 10, memberQuantity: 0, sharedWith: [], createdAt: '2026-10-12T18:00:00Z', tickets: [{ id: 'ot-2', quantity: 10, status: 'Active', code: null, canShare: false, ref: null, boundDeviceName: 'iPad' }] });
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/me/orders': [other, tokens],
+      // Het ledenticket staat op een ander toestel: dat maakt voor de munten niets uit.
+      '/api/v1/me/ticket': {
+        state: 'NotYetValid',
+        message: '',
+        holderName: 'Mendy Mom',
+        carnivalYearName: '2026/2027',
+        validFrom: '2027-02-12T23:00:00Z',
+        validTo: '2027-02-17T05:00:00Z',
+        publicRef: 'AAECAwQFBgcICQoLDA0ODw==',
+        credentialVersion: 1,
+        boundToThisDevice: false,
+        boundDeviceName: 'iPad',
+        rebindsLeft: 3,
+        deviceShortId: 'AQIDBAUGBwg=',
+        deviceHasHardwareKey: false,
+      },
+      '/api/v1/me/ticket/code': { code: 'DVD-MUNTEN', issuedAt: Math.floor(Date.now() / 1000), validFor: 45 },
+    });
+    await renderApp(routes, '/munten');
+    expect((await screen.findByTestId('qr-code')).props.children).toBe('DVD-MUNTEN');
+    expect(screen.getByText('20 munten · bestelling 2027-0101')).toBeTruthy();
+    expect(screen.getByText(/10 munten \(bestelling 2027-0188\) zijn gekoppeld aan iPad en alleen daar af te halen/)).toBeTruthy();
+    expect(screen.queryByText('Je QR verschijnt bij carnaval')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Op dit toestel gebruiken' })).toBeNull();
+    // Munten koppelen nooit het ledenticket aan dit toestel.
+    expect(requests().some((r) => r.url.includes('bind-device') || r.url.includes('/challenge'))).toBe(false);
+  });
+
   it('munten-QR op het toestel is versie 4; meldingen openen Mijn kaarten en Munten', () => {
     const bytes = unsignedPayload({
       ref: new Uint8Array(16),

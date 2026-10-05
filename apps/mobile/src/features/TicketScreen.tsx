@@ -117,13 +117,14 @@ export function TicketScreen({
     const data = ticket.data;
     if (!data || !(data.state === 'Valid' || data.state === 'NotYetValid')) return;
     void saveTicket(data, childId).then(() => loadTicket(childId).then(setCached));
-    if (!data.boundDeviceName && !autoBound.current) {
+    // Op Munten wordt het ledenticket niet gekoppeld: munten hangen aan het toestel van de aankoop.
+    if (!data.boundDeviceName && !autoBound.current && !forTokens) {
       autoBound.current = true;
       void bind();
     } else if (data.boundToThisDevice && !data.deviceHasHardwareKey && hasHardwareKey()) {
       void syncDeviceKey(false).then((known) => (known ? refresh() : undefined));
     }
-  }, [ticket.data, bind, refresh, childId]);
+  }, [ticket.data, bind, refresh, childId, forTokens]);
 
   const header = (
     <>
@@ -187,6 +188,36 @@ export function TicketScreen({
     );
   }
 
+  // Munten: alleen de munten-QR's, nooit de ledenkaart. Elke muntenbestelling hangt aan het toestel van de aankoop (de
+  // server geeft alleen die van dit toestel); het ledenticket bepaalt hier alleen of het lidmaatschap in orde is.
+  if (forTokens) {
+    return (
+      <Screen>
+        {header}
+        <View style={styles.content}>
+          {data.state === 'None' || data.state === 'Blocked' || data.state === 'Ended' ? (
+            <Card style={styles.tokensCard}>
+              <Notice
+                icon="!"
+                tint={brand.red}
+                title="Munten-QR niet beschikbaar"
+                body={data.message}
+                action={{ label: 'Contact opnemen', onPress: () => router.push('/meer/contact'), secondary: true }}
+              />
+            </Card>
+          ) : (
+            <TokensCarousel
+              holder={data}
+              source={data.deviceHasHardwareKey ? 'device' : 'server'}
+              cached={cached}
+              tickets={tokenTickets ?? []}
+            />
+          )}
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       {header}
@@ -205,7 +236,7 @@ export function TicketScreen({
           <TicketCard ticket={data} muted>
             <Notice icon="🎉" tint={brand.yellow} title="Carnaval is voorbij" body={data.message} />
           </TicketCard>
-        ) : data.state === 'NotYetValid' && !(forTokens && data.boundToThisDevice) ? (
+        ) : data.state === 'NotYetValid' ? (
           <>
             <TicketCard ticket={data}>
               <Notice
@@ -241,21 +272,12 @@ export function TicketScreen({
             </AppText>
           </>
         ) : data.boundToThisDevice ? (
-          forTokens ? (
-            <TokensCarousel
-              holder={data}
-              source={data.deviceHasHardwareKey ? 'device' : 'server'}
-              cached={cached}
-              tickets={tokenTickets ?? []}
-            />
-          ) : (
-            <LiveTicket
-              holder={data}
-              source={data.deviceHasHardwareKey ? 'device' : 'server'}
-              cached={cached}
-              childId={childId}
-            />
-          )
+          <LiveTicket
+            holder={data}
+            source={data.deviceHasHardwareKey ? 'device' : 'server'}
+            cached={cached}
+            childId={childId}
+          />
         ) : data.boundDeviceName ? (
           <>
             <TicketCard ticket={data}>
@@ -626,6 +648,7 @@ const styles = StyleSheet.create({
   pageDot: { width: 8, height: 8, borderRadius: 4 },
   content: { paddingHorizontal: 20, gap: 16, paddingBottom: 24 },
   loading: { marginTop: 48 },
+  tokensCard: { padding: 20 },
   center: { alignItems: 'center', gap: 12, paddingVertical: 32 },
   ticket: { padding: 0, overflow: 'hidden', borderRadius: 20 },
   head: { paddingHorizontal: 20, paddingVertical: 16, gap: 4 },

@@ -27,7 +27,8 @@ export default function MuntenKopenScreen() {
       <View style={styles.content}>
         <AppText variant="body" color={colors.textSecondary}>
           Alleen voor leden. Aankoop is persoonsgebonden: je haalt de munten zelf op bij de kassa met de munten-QR op het
-          beginscherm. Die QR kun je niet delen.
+          beginscherm. Die QR kun je niet delen en werkt alleen op dit toestel: hij is nooit over te zetten naar een
+          ander toestel.
         </AppText>
         {status !== 'signedIn' ? (
           <Card style={styles.card}>

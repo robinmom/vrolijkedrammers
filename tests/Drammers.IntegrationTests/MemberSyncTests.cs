@@ -121,6 +121,46 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Lid_dat_nooit_in_e_Boekhouden_stond_blijft_actief_en_een_inactief_lid_kan_lokaal_weer_actief()
+    {
+        AddMembers(20);
+        await SyncAsync();
+        // Via lid worden in de app, zonder relatie in e-Boekhouden.
+        var local = await WithDbAsync(async db =>
+        {
+            var m = new Member { Id = IdGenerator.NewId(), MemberNumber = "9001", FullName = "Robin Lokaal", MembershipStatus = MembershipStatus.Active };
+            db.Members.Add(m);
+            await db.SaveChangesAsync();
+            return m.Id;
+        });
+        await SyncAsync();
+        await SyncAsync();
+        var member = await MemberAsync("9001");
+        Assert.Equal((MembershipStatus.Active, MemberSyncState.InSync), (member.MembershipStatus, member.SyncState));
+
+        // Een lid dat al inactief was (zoals vóór deze wijziging): in het portal weer op actief.
+        await WithDbAsync(async db =>
+        {
+            await db.Members.Where(m => m.Id == local).ExecuteUpdateAsync(x => x.SetProperty(m => m.MembershipStatus, MembershipStatus.Inactive));
+            return 0;
+        });
+        var patch = await _admin.PatchAsJsonAsync($"/api/v1/admin/members/{local}", new
+        {
+            localStatusOverride = "Active",
+            membershipValidFrom = (DateOnly?)null,
+            membershipValidTo = (DateOnly?)null,
+            firstName = (string?)null,
+            namePrefix = (string?)null,
+            lastName = (string?)null,
+            birthDate = (DateOnly?)null,
+            joinYear = (short?)null,
+        });
+        Assert.Equal(HttpStatusCode.NoContent, patch.StatusCode);
+        var detail = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{local}");
+        Assert.Equal("Active", detail.GetProperty("effectiveStatus").GetString());
+    }
+
+    [Fact]
     public async Task Verdwenen_lid_wordt_eerst_missing_en_daarna_inactief_en_komt_terug_als_het_weer_verschijnt()
     {
         AddMembers(20);

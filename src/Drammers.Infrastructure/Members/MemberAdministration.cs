@@ -70,11 +70,6 @@ public sealed class MemberAdministration(
             throw new DomainException(ErrorCodes.Validation, "De einddatum ligt vóór de begindatum.");
         }
 
-        if (update.LocalStatusOverride == MembershipStatus.Active)
-        {
-            throw new DomainException(ErrorCodes.Validation, "Een override is alleen voor Geschorst, Overleden of Inactief; laat hem leeg om de status uit e-Boekhouden te volgen.");
-        }
-
         var mapping = await settings.GetMappingAsync(cancellationToken);
         if (update.BirthDate != member.BirthDate && mapping.BirthDate is not null)
         {

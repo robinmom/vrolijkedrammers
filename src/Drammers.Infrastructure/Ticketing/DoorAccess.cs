@@ -271,7 +271,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
                 join m in db.Members.AsNoTracking() on t.MemberId equals m.Id
                 join d in db.Devices.AsNoTracking() on t.BoundDeviceId equals d.Id into ds
                 from d in ds.DefaultIfEmpty()
-                select new { t.PublicRef, t.CredentialVersion, t.Status, m.MembershipStatus, t.BoundDeviceId, DeviceActive = d != null && d.Status == DeviceStatus.Active, DeviceKey = d == null ? null : d.PublicKey, m.FullName })
+                select new { t.PublicRef, t.CredentialVersion, t.Status, MembershipStatus = m.LocalStatusOverride ?? m.MembershipStatus, t.BoundDeviceId, DeviceActive = d != null && d.Status == DeviceStatus.Active, DeviceKey = d == null ? null : d.PublicKey, m.FullName })
                 .ToListAsync(cancellationToken);
         var window = current is null ? ((DateTime From, DateTime To)?)null : AccessWindows.Window(current);
         // De serversleutel bestaat pas na de eerste servercode; voor offline controle moet hij er altijd zijn.
@@ -425,7 +425,7 @@ public sealed class DoorAccess(DrammersDbContext db, TicketValidation validation
     {
         var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == memberId, cancellationToken)
             ?? throw new DomainException(ErrorCodes.NotFound, "Lid niet gevonden.", DomainErrorKind.NotFound);
-        if (member.MembershipStatus != MembershipStatus.Active)
+        if (member.EffectiveStatus != MembershipStatus.Active)
         {
             return "Geen actief lidmaatschap.";
         }

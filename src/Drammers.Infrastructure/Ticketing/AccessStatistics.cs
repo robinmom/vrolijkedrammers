@@ -59,7 +59,7 @@ public sealed class AccessStatistics(DrammersDbContext db, AccessWindows windows
         var refused = scans.Where(s => s.Outcome == AccessOutcome.Refused || s.Decision == AccessDecision.Refused).ToList();
         return new AccessStats(
             moment,
-            await db.Members.CountAsync(m => m.MembershipStatus == MembershipStatus.Active, cancellationToken),
+            await db.Members.CountAsync(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active, cancellationToken),
             first.Count,
             scans.Count,
             scans.Count(s => s.Outcome == AccessOutcome.AdmittedAgain),
@@ -112,7 +112,7 @@ public sealed class AccessStatistics(DrammersDbContext db, AccessWindows windows
     private async Task<DoorReadiness> ReadinessAsync(CancellationToken cancellationToken)
     {
         var year = await windows.ActiveYearAsync(cancellationToken);
-        var active = await db.Members.CountAsync(m => m.MembershipStatus == MembershipStatus.Active, cancellationToken);
+        var active = await db.Members.CountAsync(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active, cancellationToken);
         if (year is null)
         {
             return new DoorReadiness(active, 0, 0, active);
@@ -122,7 +122,7 @@ public sealed class AccessStatistics(DrammersDbContext db, AccessWindows windows
             from t in db.Tickets.AsNoTracking()
             where t.CarnivalYearId == year.Id && t.BoundDeviceId != null
             join m in db.Members.AsNoTracking() on t.MemberId equals m.Id
-            where m.MembershipStatus == MembershipStatus.Active
+            where (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active
             join d in db.Devices.AsNoTracking() on t.BoundDeviceId equals d.Id
             where d.Status == DeviceStatus.Active
             select d.PublicKey != null && MemberTickets.HardwareLevels.Contains(d.AttestationStatus!)).ToListAsync(cancellationToken);

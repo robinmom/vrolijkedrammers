@@ -54,7 +54,7 @@ public sealed class TicketValidation(DrammersDbContext db, TicketSigningKeys key
                 join m in db.Members.AsNoTracking() on t.MemberId equals m.Id
                 join d in db.Devices.AsNoTracking() on t.BoundDeviceId equals d.Id into ds
                 from d in ds.DefaultIfEmpty()
-                select new { t, y, m.FullName, m.MembershipStatus, DeviceActive = d != null && d.Status == DeviceStatus.Active, DeviceKey = d == null ? null : d.PublicKey }).SingleOrDefaultAsync(cancellationToken);
+                select new { t, y, m.FullName, MembershipStatus = m.LocalStatusOverride ?? m.MembershipStatus, DeviceActive = d != null && d.Status == DeviceStatus.Active, DeviceKey = d == null ? null : d.PublicKey }).SingleOrDefaultAsync(cancellationToken);
             if (row is not null)
             {
                 var (from, to) = MemberTickets.Validity(row.y);

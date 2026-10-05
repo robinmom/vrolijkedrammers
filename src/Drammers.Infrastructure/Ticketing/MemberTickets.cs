@@ -103,7 +103,7 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
         }
 
         var ticket = await db.Tickets.SingleOrDefaultAsync(t => t.CarnivalYearId == year.Id && t.MemberId == member.Id, cancellationToken);
-        if (ticket is null && create && member.MembershipStatus == MembershipStatus.Active)
+        if (ticket is null && create && member.EffectiveStatus == MembershipStatus.Active)
         {
             ticket = NewTicket(year.Id, member.Id);
             db.Tickets.Add(ticket);
@@ -154,7 +154,7 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
         var now = clock.UtcNow;
         // QR en scannen volgen dezelfde regels: geldig tijdens carnaval én tijdens een activiteit met toegangscontrole.
         var access = now < from || now > to ? await windows.CurrentAsync(cancellationToken) : null;
-        var (state, text) = member.MembershipStatus != MembershipStatus.Active
+        var (state, text) = member.EffectiveStatus != MembershipStatus.Active
             ? (TicketState.None, "Je lidmaatschap is niet actief. Klopt dit niet? Neem contact op met het bestuur.")
             : ticket.Status == TicketStatus.Blocked
                 ? (TicketState.Blocked, "Je ticket is geblokkeerd. Neem contact op met het bestuur.")
@@ -236,7 +236,7 @@ public sealed class MemberTickets(DrammersDbContext db, TicketSigningKeys keys, 
     {
         var device = await CurrentDeviceAsync(userId, installationId, cancellationToken);
         var (ticket, member, _) = await TicketAsync(userId, create: true, cancellationToken, childMemberId);
-        if (ticket is null || member?.MembershipStatus != MembershipStatus.Active || ticket.Status == TicketStatus.Blocked)
+        if (ticket is null || member?.EffectiveStatus != MembershipStatus.Active || ticket.Status == TicketStatus.Blocked)
         {
             throw new DomainException(ErrorCodes.TicketUnavailable, "Je hebt geen geldig ledenticket.", DomainErrorKind.Conflict);
         }

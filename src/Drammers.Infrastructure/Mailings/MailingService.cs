@@ -181,7 +181,7 @@ public sealed class MailingService(
             .Where(l => listIds.Contains(l.Id)).ToListAsync(cancellationToken);
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
 
-        var members = db.Members.AsNoTracking().Where(m => m.MembershipStatus == MembershipStatus.Active);
+        var members = db.Members.AsNoTracking().Where(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active);
         var memberIds = lists.SelectMany(l => l.Members).Select(m => m.MemberId).Distinct().ToList();
         var groupIds = lists.SelectMany(l => l.Groups).Select(g => g.GroupId).Distinct().ToList();
         var groupMembers = db.GroupMemberships.AsNoTracking()

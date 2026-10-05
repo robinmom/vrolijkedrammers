@@ -57,7 +57,7 @@ public sealed class TicketAdministration(DrammersDbContext db, MemberTickets tic
         var total = await query.CountAsync(cancellationToken);
         var items = await query.OrderBy(x => x.m.FullName).Skip((page - 1) * pageSize).Take(pageSize)
             .Select(x => new TicketSummary(
-                x.t.Id, x.m.Id, x.m.FullName, x.m.MemberNumber, x.m.MembershipStatus == MembershipStatus.Active, x.t.Status, x.t.BlockedReason,
+                x.t.Id, x.m.Id, x.m.FullName, x.m.MemberNumber, (x.m.LocalStatusOverride ?? x.m.MembershipStatus) == MembershipStatus.Active, x.t.Status, x.t.BlockedReason,
                 x.t.CredentialVersion, x.d == null ? null : x.d.Name, x.d == null ? null : x.d.AttestationStatus, x.t.BoundAt, x.t.RebindCount, x.t.CreatedAt))
             .ToListAsync(cancellationToken);
         return (items, total);
@@ -68,7 +68,7 @@ public sealed class TicketAdministration(DrammersDbContext db, MemberTickets tic
     {
         var year = await ActiveYearAsync(cancellationToken);
         var missing = await db.Members.AsNoTracking()
-            .Where(m => m.MembershipStatus == MembershipStatus.Active && !db.Tickets.Any(t => t.CarnivalYearId == year && t.MemberId == m.Id))
+            .Where(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active && !db.Tickets.Any(t => t.CarnivalYearId == year && t.MemberId == m.Id))
             .Select(m => m.Id).ToListAsync(cancellationToken);
         db.Tickets.AddRange(missing.Select(id => tickets.NewTicket(year, id)));
         await db.SaveChangesAsync(cancellationToken);

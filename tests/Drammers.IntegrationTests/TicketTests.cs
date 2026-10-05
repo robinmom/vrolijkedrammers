@@ -121,10 +121,20 @@ public sealed class TicketTests(SqlServerFixture sql) : IAsyncLifetime, IDisposa
         Assert.Equal(1, await WithDbAsync(db => db.Tickets.CountAsync(t => t.MemberId == memberId)));
 
         var (inactiveId, inactiveOid) = await MemberAsync("ina@example.com", MembershipStatus.Inactive);
-        var none = await TicketAsync(await DeviceAsync(inactiveOid, "installatie-telefoon-0002"));
+        var inactivePhone = await DeviceAsync(inactiveOid, "installatie-telefoon-0002");
+        var none = await TicketAsync(inactivePhone);
         Assert.Equal("None", none.GetProperty("state").GetString());
         Assert.Equal(JsonValueKind.Null, none.GetProperty("publicRef").ValueKind);
         Assert.False(await WithDbAsync(db => db.Tickets.AnyAsync(t => t.MemberId == inactiveId)));
+
+        // Lokaal op actief gezet (bijv. aangemeld via "lid worden", niet in e-Boekhouden): dan wel een ticket.
+        await WithDbAsync(async db =>
+        {
+            (await db.Members.SingleAsync(m => m.Id == inactiveId)).LocalStatusOverride = MembershipStatus.Active;
+            return await db.SaveChangesAsync();
+        });
+        Assert.Equal("NotYetValid", (await TicketAsync(inactivePhone)).GetProperty("state").GetString());
+        Assert.True(await WithDbAsync(db => db.Tickets.AnyAsync(t => t.MemberId == inactiveId)));
     }
 
     [Fact]

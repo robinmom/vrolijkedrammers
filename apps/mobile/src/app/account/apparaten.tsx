@@ -25,17 +25,21 @@ export default function ApparatenScreen() {
   }
 
   function confirmRevoke(id: string, name: string) {
-    Alert.alert(`${name} afmelden?`, 'Je wordt op dat apparaat uitgelogd.', [
-      { text: 'Annuleren', style: 'cancel' },
-      {
-        text: 'Afmelden',
-        style: 'destructive',
-        onPress: async () => {
-          await api.DELETE('/api/v1/me/devices/{id}', { params: { path: { id } } });
-          await client.invalidateQueries({ queryKey: queryKeys.myDevices });
+    Alert.alert(
+      `${name} afmelden?`,
+      'Je wordt op dat apparaat uitgelogd. Munten die op dat apparaat zijn gekocht, zijn daarna niet meer af te halen.',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Afmelden',
+          style: 'destructive',
+          onPress: async () => {
+            await api.DELETE('/api/v1/me/devices/{id}', { params: { path: { id } } });
+            await client.invalidateQueries({ queryKey: queryKeys.myDevices });
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   return (

@@ -14,6 +14,7 @@ import LidWordenScreen from '../app/meer/lid-worden';
 import { shouldPersistQuery } from '../api/QueryProvider';
 import { api as client } from '../api/client';
 import { getStatus, NoAccountError, restoreSession, setSessionForTest, signIn } from '../auth/session';
+import { signOut } from '../features/account';
 import { api } from '../test/api-fixture';
 import { mockApi, renderApp } from '../test/render';
 
@@ -368,5 +369,25 @@ describe('Sessie', () => {
     const query = (key: string[]) => ({ queryKey: key, state: { status: 'success' } }) as never;
     expect(shouldPersistQuery(query(['news']))).toBe(true);
     expect(shouldPersistQuery(query(['me', 'member']))).toBe(false);
+  });
+});
+
+describe('Uitloggen (munten zitten vast aan dit toestel)', () => {
+  it('uitloggen houdt de installatie-id en meldt het toestel niet af; een afgemeld toestel krijgt een nieuwe', async () => {
+    setSessionForTest('signedIn');
+    store.set('dvd.installationId', 'installatie-vast-0001');
+    const calls = mockApi({ '/api/v1/me/devices/current/sign-out': { status: 204 } });
+    await signOut();
+    expect(calls).toEqual(['/api/v1/me/devices/current/sign-out']);
+    expect(requests()[0]?.method).toBe('POST');
+    expect(getStatus()).toBe('signedOut');
+    expect(store.get('dvd.installationId')).toBe('installatie-vast-0001');
+
+    // Elders afgemeld (401 DEVICE_REVOKED): dit toestel kan niet opnieuw aanmelden, dus een nieuwe installatie-id.
+    setSessionForTest('signedIn');
+    mockApi({ '/api/v1/me': { status: 401, body: { code: 'DEVICE_REVOKED' } } });
+    await client.GET('/api/v1/me');
+    expect(getStatus()).toBe('signedOut');
+    expect(store.has('dvd.installationId')).toBe(false);
   });
 });

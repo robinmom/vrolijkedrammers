@@ -26,7 +26,7 @@ export default function AccountVerwijderenScreen() {
       .catch(() => ({ response: null }));
     setBusy(false);
     if (response?.ok) {
-      await clearLocalSession();
+      await clearLocalSession({ newInstallation: true });
       router.replace('/meer');
     } else {
       setError('Verwijderen lukt nu niet. Probeer het later opnieuw of neem contact op met het secretariaat.');

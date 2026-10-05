@@ -209,11 +209,19 @@ async function refresh(): Promise<string | null> {
   }
 }
 
-/** Wist de tokens op dit toestel en maakt een nieuwe installatie-id voor een volgende aanmelding. */
-export async function clearLocalSession(): Promise<void> {
+/**
+ * Wist de tokens op dit toestel. De installatie-id blijft staan, zodat opnieuw inloggen hetzelfde toestel is (munten
+ * zitten vast aan het toestel van de aankoop). Alleen na afmelden van dit toestel of verwijderen van het account
+ * (`newInstallation`) komt er een nieuwe id: een afgemeld toestel kan niet opnieuw aanmelden.
+ */
+export async function clearLocalSession({
+  newInstallation = false,
+}: { newInstallation?: boolean } = {}): Promise<void> {
   accessToken = null;
   await SecureStore.deleteItemAsync(KEYS.refreshToken, STORE_OPTIONS).catch(() => undefined);
-  await SecureStore.deleteItemAsync(KEYS.installationId, STORE_OPTIONS).catch(() => undefined);
+  if (newInstallation) {
+    await SecureStore.deleteItemAsync(KEYS.installationId, STORE_OPTIONS).catch(() => undefined);
+  }
   setStatus('signedOut');
 }
 

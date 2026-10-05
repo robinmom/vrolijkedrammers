@@ -156,6 +156,14 @@ public sealed class OrderTicket
 
     public DateTime? BoundAt { get; set; }
 
+    /// <summary>
+    /// Munten: het bestuur heeft ze (bijv. bij een kapotte telefoon) één keer naar een ander toestel van het lid verplaatst.
+    /// Daarna kan dat nooit meer.
+    /// </summary>
+    public DateTime? MovedAt { get; set; }
+
+    public Guid? MovedByUserId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public byte[] RowVersion { get; set; } = [];

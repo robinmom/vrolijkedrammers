@@ -456,6 +456,64 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Uitloggen_houdt_de_munten_en_het_bestuur_verplaatst_ze_een_keer()
+    {
+        var munten = await ProductAsync("Tokens", "Consumptiemunten", 250, capacity: null, maxPerOrder: 100);
+        var phone = await OnDeviceAsync(await MemberAsync("anna@example.com", "Snotapen"), "installatie-anna-0001");
+        var created = await JsonAsync(
+            await phone.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 8, name: null, email: null, channel: "App")), HttpStatusCode.Created);
+        _mollie.SetStatus(_mollie.Payments.Keys.Single(), "paid");
+        await WebhookAsync(_mollie.Payments.Keys.Single());
+        var orderId = created.GetProperty("orderId").GetGuid();
+        async Task<JsonElement> TicketOn(HttpClient client) => (await JsonAsync(await client.GetAsync("/api/v1/me/orders")))[0].GetProperty("tickets")[0];
+
+        // Uitloggen meldt het toestel niet af: na opnieuw inloggen (zelfde installatie) zijn de munten er nog.
+        await JsonAsync(await phone.PostAsync("/api/v1/me/devices/current/sign-out", null), HttpStatusCode.NoContent);
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/devices", new { installationId = "installatie-anna-0001", platform = "Ios", model = "iPhone 15", appVersion = "1.0.0" }));
+        var ticket = await TicketOn(phone);
+        Assert.NotEqual(JsonValueKind.Null, ticket.GetProperty("ref").ValueKind);
+        var ticketId = ticket.GetProperty("id").GetGuid();
+
+        var oid = await WithDbAsync(db => db.Users.Where(u => u.Email == "anna@example.com").Select(u => u.ExternalObjectId).SingleAsync());
+        var tablet = await OnDeviceAsync(_api.ClientFor(oid), "installatie-anna-0002", "Pixel 8");
+        await OnDeviceAsync(await MemberAsync("bram@example.com", "Snotapen"), "installatie-bram-0001");
+        var info = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/orders/{orderId}/token-device"));
+        Assert.Equal(("iPhone 15", true), (info.GetProperty("deviceName").GetString(), info.GetProperty("canMove").GetBoolean()));
+        var option = Assert.Single(info.GetProperty("options").EnumerateArray());
+        Assert.Equal("Pixel 8", option.GetProperty("name").GetString());
+
+        // Alleen het bestuur, alleen naar een toestel van het lid zelf, en met een reden.
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await phone.PostAsJsonAsync($"/api/v1/admin/sales/orders/{orderId}/token-device", new { deviceId = option.GetProperty("id").GetGuid(), reason = "Telefoon kapot" })).StatusCode);
+        var strangerDevice = await WithDbAsync(db => db.Devices.Where(d => d.InstallationId == "installatie-bram-0001").Select(d => d.Id).SingleAsync());
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/orders/{orderId}/token-device", new { deviceId = strangerDevice, reason = "Telefoon kapot" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/orders/{orderId}/token-device", new { deviceId = option.GetProperty("id").GetGuid(), reason = "" })).StatusCode);
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/orders/{orderId}/token-device",
+            new { deviceId = option.GetProperty("id").GetGuid(), reason = "Telefoon kapot" }), HttpStatusCode.NoContent);
+
+        // Daarna werkt het alleen op het nieuwe toestel, en nog een keer verplaatsen kan niet.
+        Assert.Equal(HttpStatusCode.Conflict, (await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={ticketId}")).StatusCode);
+        Assert.NotEqual(JsonValueKind.Null, (await TicketOn(tablet)).GetProperty("ref").ValueKind);
+        await JsonAsync(await tablet.GetAsync("/api/v1/me/ticket"));
+        var code = (await JsonAsync(await tablet.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={ticketId}"))).GetProperty("code").GetString()!;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var validation = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Ticketing.TicketValidation>();
+            Assert.Equal(QrCheck.Valid, (await validation.ValidateAsync(code, default, purpose: QrPurpose.Tokens)).Result);
+        }
+
+        var phoneDevice = await WithDbAsync(db => db.Devices.Where(d => d.InstallationId == "installatie-anna-0001").Select(d => d.Id).SingleAsync());
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/orders/{orderId}/token-device", new { deviceId = phoneDevice, reason = "Toch terug" })).StatusCode);
+        var after = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/orders/{orderId}/token-device"));
+        Assert.Equal(("Pixel 8", false), (after.GetProperty("deviceName").GetString(), after.GetProperty("canMove").GetBoolean()));
+        Assert.NotEqual(JsonValueKind.Null, after.GetProperty("movedAt").ValueKind);
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "order-ticket.moved")));
+    }
+
+    [Fact]
     public async Task Munten_zonder_toestel_worden_eenmalig_gekoppeld_aan_het_eerste_toestel()
     {
         var munten = await ProductAsync("Tokens", "Consumptiemunten", 250, capacity: null, maxPerOrder: 100);

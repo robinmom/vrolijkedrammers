@@ -13825,6 +13825,169 @@
         }
       }
     },
+    "/api/v1/admin/sales/orders/{id}/token-device": {
+      "get": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Munten: aan welk toestel ze gekoppeld zijn en naar welke toestellen van het lid ze kunnen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenDevice"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenDevice"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenDevice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Munten één keer naar een ander toestel van het lid verplaatsen (met reden, in de auditlog).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveTokensRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveTokensRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveTokensRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/sales/orders/{id}/resend-link": {
       "post": {
         "tags": [
@@ -17963,6 +18126,19 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/me/devices/current/sign-out": {
+      "post": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Uitloggen op dit toestel (`X-Device-Id`): geen push meer, het toestel blijft aangemeld.",
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -32085,6 +32261,22 @@
           }
         }
       },
+      "MoveTokensRequest": {
+        "required": [
+          "deviceId",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
       "MyAdvertiser": {
         "required": [
           "id",
@@ -38024,6 +38216,73 @@
             "format": "date-time"
           }
         }
+      },
+      "TokenDevice": {
+        "required": [
+          "deviceName",
+          "deviceActive",
+          "movedAt",
+          "movedBy",
+          "canMove",
+          "options"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deviceActive": {
+            "type": "boolean"
+          },
+          "movedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "movedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "canMove": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenDeviceOption"
+            }
+          }
+        },
+        "description": "Aan welk toestel de munten van een bestelling gekoppeld zijn, of ze al eens verplaatst zijn (dan nooit meer) en naar\nwelke toestellen van het lid ze verplaatst kunnen worden."
+      },
+      "TokenDeviceOption": {
+        "required": [
+          "id",
+          "name",
+          "lastSeenAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Een toestel van het lid waar het bestuur munten naartoe kan verplaatsen."
       },
       "TokenScanOutcome": {
         "enum": [

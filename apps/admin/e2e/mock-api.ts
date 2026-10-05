@@ -456,6 +456,8 @@ export class MockApi {
       waiting: 0,
     },
   ];
+  /** Munten van een bestelling zijn door het bestuur naar een ander toestel verplaatst (kan maar één keer). */
+  tokensMoved = false;
   saleOrders: Record<string, unknown>[] = [
     {
       id: 'so-1',
@@ -2100,6 +2102,20 @@ export class MockApi {
         );
       }
       if (path.match(/^\/admin\/sales\/orders\/[^/]+\/(paid-cash|cancel|resend-link)$/)) return noContent();
+      if (path.match(/^\/admin\/sales\/orders\/[^/]+\/token-device$/)) {
+        if (method === 'POST') {
+          this.tokensMoved = true;
+          return noContent();
+        }
+        return json({
+          deviceName: 'iPhone 15',
+          deviceActive: !this.tokensMoved,
+          movedAt: this.tokensMoved ? '2026-10-05T17:00:00Z' : null,
+          movedBy: this.tokensMoved ? 'Bestuur' : null,
+          canMove: !this.tokensMoved,
+          options: this.tokensMoved ? [] : [{ id: 'dev-2', name: 'Pixel 8', lastSeenAt: '2026-10-05T16:00:00Z' }],
+        });
+      }
       if (path === '/admin/sales/groups') {
         return json([
           { groupName: 'De Kruumels', activeMembers: 11, persons: 13, ordered: 8, remaining: 5 },

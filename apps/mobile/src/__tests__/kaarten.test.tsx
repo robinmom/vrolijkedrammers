@@ -235,6 +235,35 @@ describe('Kaarten (fase 19b)', () => {
     await waitFor(() => expect(codeCalls().some((u) => u.includes('orderTicketId=ot-2'))).toBe(true));
   });
 
+  it('munten: nooit de ledenkaart, ook niet als het ticket op een ander toestel staat', async () => {
+    setSessionForTest('signedIn');
+    const tokens = order({ id: 't-1', number: '2027-0101', kind: 'Tokens', productName: 'Consumptiemunten', groupName: null, paidQuantity: 20, memberQuantity: 0, sharedWith: [], createdAt: '2026-10-10T18:00:00Z', tickets: [{ id: 'ot-1', quantity: 20, status: 'Active', code: null, canShare: false, ref: 'AAECAwQFBgcICQoLDA0ODw==' }] });
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/me/orders': [tokens],
+      '/api/v1/me/ticket': {
+        state: 'NotYetValid',
+        message: '',
+        holderName: 'Mendy Mom',
+        carnivalYearName: '2026/2027',
+        validFrom: '2027-02-12T23:00:00Z',
+        validTo: '2027-02-17T05:00:00Z',
+        publicRef: 'AAECAwQFBgcICQoLDA0ODw==',
+        credentialVersion: 1,
+        boundToThisDevice: false,
+        boundDeviceName: 'iPad',
+        rebindsLeft: 3,
+        deviceShortId: 'AQIDBAUGBwg=',
+        deviceHasHardwareKey: false,
+      },
+    });
+    await renderApp(routes, '/munten');
+    expect(await screen.findByText('Je munten staan op een ander toestel')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Op dit toestel gebruiken' })).toBeTruthy();
+    expect(screen.queryByText('Je QR verschijnt bij carnaval')).toBeNull();
+  });
+
   it('munten-QR op het toestel is versie 4; meldingen openen Mijn kaarten en Munten', () => {
     const bytes = unsignedPayload({
       ref: new Uint8Array(16),

@@ -187,6 +187,71 @@ export function TicketScreen({
     );
   }
 
+  // Munten: alleen de munten-QR's, nooit de ledenkaart. Het ledenticket is alleen nodig voor de koppeling aan dit toestel.
+  if (forTokens) {
+    const bindErrorText = bindError ? (
+      <AppText variant="body" color={colors.accentText} accessibilityRole="alert">
+        {bindError}
+      </AppText>
+    ) : null;
+    return (
+      <Screen>
+        {header}
+        <View style={styles.content}>
+          {data.state === 'None' || data.state === 'Blocked' || data.state === 'Ended' ? (
+            <Card style={styles.tokensCard}>
+              <Notice
+                icon="!"
+                tint={brand.red}
+                title="Munten-QR niet beschikbaar"
+                body={data.message}
+                action={{ label: 'Contact opnemen', onPress: () => router.push('/meer/contact'), secondary: true }}
+              />
+            </Card>
+          ) : data.boundToThisDevice ? (
+            <TokensCarousel
+              holder={data}
+              source={data.deviceHasHardwareKey ? 'device' : 'server'}
+              cached={cached}
+              tickets={tokenTickets ?? []}
+            />
+          ) : data.boundDeviceName ? (
+            <>
+              <Card style={styles.tokensCard}>
+                <Notice
+                  icon="⇄"
+                  tint={brand.blue}
+                  title="Je munten staan op een ander toestel"
+                  body={`Je munten-QR is gekoppeld aan ${data.boundDeviceName}. Wil je hem op dit toestel gebruiken? Dan werkt de code op het andere toestel niet meer.`}
+                  action={
+                    data.rebindsLeft > 0
+                      ? {
+                          label: binding ? 'Even geduld…' : 'Op dit toestel gebruiken',
+                          onPress: () => void bind(),
+                          disabled: binding,
+                        }
+                      : undefined
+                  }
+                />
+              </Card>
+              {bindErrorText}
+            </>
+          ) : (
+            <View style={styles.center}>
+              <ActivityIndicator accessibilityLabel="Koppelen aan dit toestel" />
+              {bindError ? (
+                <>
+                  {bindErrorText}
+                  <Button label="Opnieuw proberen" onPress={() => void bind()} />
+                </>
+              ) : null}
+            </View>
+          )}
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       {header}
@@ -205,7 +270,7 @@ export function TicketScreen({
           <TicketCard ticket={data} muted>
             <Notice icon="🎉" tint={brand.yellow} title="Carnaval is voorbij" body={data.message} />
           </TicketCard>
-        ) : data.state === 'NotYetValid' && !(forTokens && data.boundToThisDevice) ? (
+        ) : data.state === 'NotYetValid' ? (
           <>
             <TicketCard ticket={data}>
               <Notice
@@ -626,6 +691,7 @@ const styles = StyleSheet.create({
   pageDot: { width: 8, height: 8, borderRadius: 4 },
   content: { paddingHorizontal: 20, gap: 16, paddingBottom: 24 },
   loading: { marginTop: 48 },
+  tokensCard: { padding: 20 },
   center: { alignItems: 'center', gap: 12, paddingVertical: 32 },
   ticket: { padding: 0, overflow: 'hidden', borderRadius: 20 },
   head: { paddingHorizontal: 20, paddingVertical: 16, gap: 4 },

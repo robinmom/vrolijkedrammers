@@ -38,6 +38,7 @@ const advertiser = (id: string, companyName: string, status: string, previousAmo
   previousAmount,
   note: null,
   cashReceived: false,
+  history: previousAmount === null ? [] : [{ year: 2026, amount: previousAmount, isFree: false, status: 'Collected' }],
 });
 
 const mine = {
@@ -79,6 +80,9 @@ describe('Adverteerders ophalen (fase 27b-2)', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Bakkerij De Test, Nog langs' }));
     expect(screen.getByDisplayValue('35')).toBeTruthy();
+    // Wat ze eerder gaven, per carnavalsjaar.
+    expect(screen.getByText('2025/2026')).toBeTruthy();
+    expect(screen.getByLabelText('Eerdere jaren')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Afvinken als opgehaald' }));
     const [put] = requests('/api/v1/me/advertisers/a-1/status', 'PUT');
     expect(await put!.json()).toEqual({ status: 'Collected', amount: 35, note: null, cashReceived: null });
@@ -109,7 +113,7 @@ describe('Adverteerders ophalen (fase 27b-2)', () => {
     await fireEvent.changeText(screen.getByLabelText('IBAN'), 'NL91ABNA0417164300');
     await fireEvent.press(screen.getByRole('checkbox'));
     await fireEvent.press(screen.getByRole('button', { name: 'Adverteerder toevoegen' }));
-    expect(await screen.findByText(/Nieuwe Zaak staat op opgehaald voor 2027/)).toBeTruthy();
+    expect(await screen.findByText(/Nieuwe Zaak staat op opgehaald voor 2026\/2027/)).toBeTruthy();
     const [post] = requests('/api/v1/me/advertisers', 'POST');
     expect(await post!.json()).toMatchObject({ companyName: 'Nieuwe Zaak', amount: 50, payment: 'Mandate', iban: 'NL91ABNA0417164300', mandateConsent: true });
   });

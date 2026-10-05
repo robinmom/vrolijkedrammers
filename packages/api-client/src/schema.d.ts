@@ -18798,6 +18798,15 @@ export interface components {
             name: string;
             totals: components["schemas"]["AdvertiserStatusTotals"];
         };
+        /** @description De bijdrage van één jaar in de historie (fase 27f); jaar Y = carnavalsjaar (Y-1)/Y. */
+        AdvertiserHistoryItem: {
+            /** Format: int32 */
+            year: number;
+            /** Format: double */
+            amount: null | number;
+            isFree: boolean;
+            status: components["schemas"]["AdvertiserYearStatus"];
+        };
         AdvertiserIbanResponse: {
             iban: null | string;
         };
@@ -18824,10 +18833,10 @@ export interface components {
          */
         AdvertiserKind: "Advertisement" | "FreeGift" | "Gift";
         /**
-         * @description Hoe de adverteerder betaalt (kolom M/C/R/B; voortaan alleen Machtiging of Contant).
+         * @description Hoe de adverteerder betaalt (kolom M/C/R/B).
          * @enum {unknown}
          */
-        AdvertiserPayment: "Mandate" | "Cash";
+        AdvertiserPayment: "Mandate" | "Cash" | "Invoice";
         AdvertiserRequest: {
             /** Format: int32 */
             number: number;
@@ -18966,6 +18975,7 @@ export interface components {
             lastFree: boolean;
             active: boolean;
             addedViaApp: boolean;
+            history: components["schemas"]["AdvertiserHistoryItem"][];
         };
         AdvertiserYearResponse: {
             /** Format: int32 */
@@ -21028,6 +21038,7 @@ export interface components {
             note: null | string;
             /** @default false */
             cashReceived: boolean;
+            history?: null | components["schemas"]["AdvertiserHistoryItem"][];
         };
         MyAdvertisers: {
             isCollector: boolean;

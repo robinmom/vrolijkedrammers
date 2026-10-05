@@ -40,6 +40,9 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
                 : query.Where(a => a.CompanyName.Contains(term) || (a.ContactName != null && a.ContactName.Contains(term)) || (a.City != null && a.City.Contains(term)));
         }
 
+        // Historie (fase 27f): de laatste vijf jaar tot en met het campagnejaar.
+        var campaign = await advertisers.CampaignYearAsync(cancellationToken);
+        var firstYear = campaign - 4;
         query = query.Where(a => (collector == null || a.CollectorMemberId == collector) && (kind == null || a.Kind == kind)
             && (payment == null || a.Payment == payment) && (active == null || a.Active == active));
         var rows = await query.OrderBy(a => a.Number)
@@ -60,12 +63,14 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
                 a.Active,
                 a.AddedViaApp,
                 Last = a.Years.Where(y => y.Amount > 0 || y.IsFree).OrderByDescending(y => y.Year).Select(y => new { y.Year, y.Amount, y.IsFree }).FirstOrDefault(),
+                History = a.Years.Where(y => y.Year >= firstYear && y.Year <= campaign).OrderBy(y => y.Year)
+                    .Select(y => new AdvertiserHistoryItem(y.Year, y.Amount, y.IsFree, y.Status)).ToList(),
             })
             .ToListAsync(cancellationToken);
         var names = await advertisers.CollectorNamesAsync(rows.Select(r => r.CollectorMemberId), cancellationToken);
         return [.. rows.Select(r => new AdvertiserSummaryResponse(r.Id, r.Number, r.CompanyName, r.ContactName, r.City, r.Email, r.Kind, r.Payment,
             r.CollectorMemberId, r.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : null, r.ImportedCollectorName, r.IbanLast4 is not null,
-            r.MandateReference is not null, r.Last?.Year, r.Last?.Amount, r.Last?.IsFree ?? false, r.Active, r.AddedViaApp))];
+            r.MandateReference is not null, r.Last?.Year, r.Last?.Amount, r.Last?.IsFree ?? false, r.Active, r.AddedViaApp, r.History))];
     }
 
     [HttpGet("{id:guid}")]
@@ -190,7 +195,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
                 a.CollectorMemberId is { } collector ? names.GetValueOrDefault(collector) ?? "" : a.ImportedCollectorName ?? "", a.Number, a.Page ?? "", a.CompanyName,
                 a.ContactName ?? "", a.Phone ?? "", a.Mobile ?? "", a.Email ?? "", a.AddressLine ?? "", a.PostalCode ?? "", a.City ?? "",
                 a.Kind switch { AdvertiserKind.Advertisement => "A", AdvertiserKind.FreeGift => "V", _ => "G" }, "",
-                a.Payment == AdvertiserPayment.Mandate ? "M" : "C", a.Website ?? "", a.MandateReference ?? "",
+                a.Payment switch { AdvertiserPayment.Mandate => "M", AdvertiserPayment.Invoice => "R", _ => "C" }, a.Website ?? "", a.MandateReference ?? "",
                 .. years.Select(y => a.Years.SingleOrDefault(x => x.Year == y) is { } v
                     ? v.IsFree ? (XLCellValue)"GRATIS" : v.Amount is { } amount ? (XLCellValue)amount : Blank.Value
                     : Blank.Value),
@@ -341,7 +346,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
 public sealed record AdvertiserSummaryResponse(
     Guid Id, int Number, string CompanyName, string? ContactName, string? City, string? Email, AdvertiserKind Kind, AdvertiserPayment Payment,
     Guid? CollectorMemberId, string? CollectorName, string? ImportedCollectorName, bool HasIban, bool HasMandate, int? LastYear, decimal? LastAmount,
-    bool LastFree, bool Active, bool AddedViaApp);
+    bool LastFree, bool Active, bool AddedViaApp, IReadOnlyList<AdvertiserHistoryItem> History);
 
 public sealed record AdvertiserYearResponse(int Year, decimal? Amount, bool IsFree, AdvertiserYearStatus Status, DateTime? StatusChangedAt, string? Note);
 

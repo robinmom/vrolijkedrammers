@@ -1932,3 +1932,31 @@ fieldset {
 .card-error {
   border-left: 4px solid var(--dvd-action-danger);
 }
+
+/* Fase 27f: historie van een adverteerder. */
+.contribution-chart {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: 120px;
+  margin: 8px 0 12px;
+}
+
+.contribution-chart .bar {
+  fill: var(--dvd-action-secondary);
+}
+
+.contribution-chart .bar-free {
+  fill: var(--dvd-feestgoud);
+}
+
+.contribution-chart .bar-label {
+  font-size: 7px;
+  fill: var(--dvd-text-secondary, currentColor);
+}
+
+.table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

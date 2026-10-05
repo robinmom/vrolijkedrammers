@@ -20,7 +20,9 @@ test('fase 27b: overzicht, collectant koppelen en IBAN voluit', async ({ page })
 
   await expect(page.getByRole('heading', { name: 'Adverteerders', level: 1 })).toBeVisible();
   await expect(
-    page.getByRole('row', { name: /Bakkerij De Test · Loil Advertentie Machtiging Piet van der Berg 2026: € 35,00/ }),
+    page.getByRole('row', {
+      name: /Bakkerij De Test · Loil Advertentie Machtiging Piet van der Berg — — € 35,00 € 35,00 open/,
+    }),
   ).toBeVisible();
   await expect(page.getByText('ALFRED ONBEKEND (niet gekoppeld)')).toBeVisible();
   await expectNoSeriousA11yIssues(page);
@@ -33,6 +35,8 @@ test('fase 27b: overzicht, collectant koppelen en IBAN voluit', async ({ page })
   expect(api.advertisers[1]).toMatchObject({ collectorMemberId: 'm-1', importedCollectorName: null });
 
   await page.goto('/beheer/adverteerders/adv-1');
+  await expect(page.getByRole('heading', { name: 'Bijdragen per carnavalsjaar' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /Bijdragen 2025\/2026: € 35,00/ })).toBeVisible();
   await expect(page.getByText(/Nu: \*\*\*\* 4300/)).toBeVisible();
   await page.getByRole('button', { name: 'IBAN voluit tonen' }).click();
   await expect(page.getByText(/Nu: NL91ABNA0417164300/)).toBeVisible();
@@ -44,7 +48,7 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
   await api.install(page);
   await page.goto('/beheer/adverteerders/campagne');
 
-  await expect(page.getByRole('heading', { name: 'Campagne 2027', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Campagne 2026/2027', level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Voortgang: 0%' })).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 
@@ -95,7 +99,7 @@ test('fase 27c: incasso van de opgehaalde adverteerders', async ({ page }) => {
   await api.install(page);
   await page.goto('/beheer/adverteerders/incasso');
 
-  await expect(page.getByRole('heading', { name: 'Incasso adverteerders 2027', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Incasso adverteerders 2026/2027', level: 1 })).toBeVisible();
   await page.getByLabel('Incassodatum').fill('2026-11-02');
   await expect(
     page.getByRole('region', { name: 'Adverteerders in de incasso' }).getByRole('link', { name: 'Bakkerij De Test' }),
@@ -120,7 +124,7 @@ test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
   await api.install(page);
   await page.goto('/beheer/adverteerders/facturen');
 
-  await expect(page.getByRole('heading', { name: 'Facturen 2027', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Facturen 2026/2027', level: 1 })).toBeVisible();
   await expect(page.getByLabel('KvK-nummer')).toHaveValue('40122564');
   await expectNoSeriousA11yIssues(page);
 

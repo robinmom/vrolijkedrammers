@@ -23756,6 +23756,35 @@
           }
         }
       },
+      "AdvertiserHistoryItem": {
+        "required": [
+          "year",
+          "amount",
+          "isFree",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amount": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "isFree": {
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AdvertiserYearStatus"
+          }
+        },
+        "description": "De bijdrage van één jaar in de historie (fase 27f); jaar Y = carnavalsjaar (Y-1)/Y."
+      },
       "AdvertiserIbanResponse": {
         "required": [
           "iban"
@@ -23848,9 +23877,10 @@
       "AdvertiserPayment": {
         "enum": [
           "Mandate",
-          "Cash"
+          "Cash",
+          "Invoice"
         ],
-        "description": "Hoe de adverteerder betaalt (kolom M/C/R/B; voortaan alleen Machtiging of Contant)."
+        "description": "Hoe de adverteerder betaalt (kolom M/C/R/B)."
       },
       "AdvertiserRequest": {
         "required": [
@@ -24348,7 +24378,8 @@
           "lastAmount",
           "lastFree",
           "active",
-          "addedViaApp"
+          "addedViaApp",
+          "history"
         ],
         "type": "object",
         "properties": {
@@ -24434,6 +24465,12 @@
           },
           "addedViaApp": {
             "type": "boolean"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdvertiserHistoryItem"
+            }
           }
         }
       },
@@ -32154,6 +32191,15 @@
           "cashReceived": {
             "type": "boolean",
             "default": false
+          },
+          "history": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AdvertiserHistoryItem"
+            }
           }
         },
         "description": "Een adverteerder zoals de collectant hem in de app ziet."

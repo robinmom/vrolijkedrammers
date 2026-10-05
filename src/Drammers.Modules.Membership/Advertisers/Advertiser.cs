@@ -15,7 +15,7 @@ public enum AdvertiserKind
     Gift,
 }
 
-/// <summary>Hoe de adverteerder betaalt (kolom M/C/R/B; voortaan alleen Machtiging of Contant).</summary>
+/// <summary>Hoe de adverteerder betaalt (kolom M/C/R/B).</summary>
 public enum AdvertiserPayment
 {
     /// <summary>M: SEPA-machtiging (incasso).</summary>
@@ -23,6 +23,9 @@ public enum AdvertiserPayment
 
     /// <summary>C: contant, bij de collectant.</summary>
     Cash,
+
+    /// <summary>R: rekening; de adverteerder krijgt een factuur en maakt zelf over (alleen als aanduiding).</summary>
+    Invoice,
 }
 
 /// <summary>Stand van een adverteerder in de campagne van een jaar.</summary>

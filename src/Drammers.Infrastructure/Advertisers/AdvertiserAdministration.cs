@@ -46,11 +46,14 @@ public sealed record AdvertiserCollectorTotals(Guid? CollectorMemberId, string N
 public sealed record AdvertiserStatusReport(
     int Year, AdvertiserStatusTotals Totals, IReadOnlyList<AdvertiserCollectorTotals> PerCollector, IReadOnlyList<AdvertiserStatusRow> Rows);
 
+/// <summary>De bijdrage van één jaar in de historie (fase 27f); jaar Y = carnavalsjaar (Y-1)/Y.</summary>
+public sealed record AdvertiserHistoryItem(int Year, decimal? Amount, bool IsFree, AdvertiserYearStatus Status);
+
 /// <summary>Een adverteerder zoals de collectant hem in de app ziet.</summary>
 public sealed record MyAdvertiser(
     Guid Id, int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
     string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note,
-    bool CashReceived = false);
+    bool CashReceived = false, IReadOnlyList<AdvertiserHistoryItem>? History = null);
 
 public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items);
 
@@ -71,7 +74,7 @@ public sealed class AdvertiserIbanProtector(IDataProtectionProvider provider)
 
 /// <summary>
 /// Adverteerders (fase 27b): het Excel-overzicht inlezen (opnieuw inlezen werkt bij), beheren, collectanten uit het kader
-/// koppelen en per jaar bijhouden wie is opgehaald. Voortaan alleen Machtiging (M) of Contant (C); andere waarden meldt
+/// koppelen en per jaar bijhouden wie is opgehaald. Betaling M (machtiging), C (contant) of R (rekening); andere waarden meldt
 /// de import per regel, zodat het Excel-bestand eerst wordt aangepast.
 /// </summary>
 public sealed class AdvertiserAdministration(
@@ -242,11 +245,12 @@ public sealed class AdvertiserAdministration(
             {
                 "M" => AdvertiserPayment.Mandate,
                 "C" => AdvertiserPayment.Cash,
+                "R" => AdvertiserPayment.Invoice,
                 _ => (AdvertiserPayment?)null,
             };
             if (payment is null)
             {
-                Error($"{company}: kolom M/C/R/B moet M (machtiging) of C (contant) zijn (nu \"{row.Payment}\").");
+                Error($"{company}: kolom M/C/R/B moet M (machtiging), C (contant) of R (rekening) zijn (nu \"{row.Payment}\").");
             }
 
             string? iban = null;
@@ -489,14 +493,16 @@ public sealed class AdvertiserAdministration(
 
         var report = await StatusAsync(year, memberId, cancellationToken);
         var ids = report.Rows.Select(r => r.Id).ToList();
-        var details = await db.Advertisers.AsNoTracking().Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, cancellationToken);
+        var details = await db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year < year && y.Year >= year - 5))
+            .Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, cancellationToken);
         return new MyAdvertisers(true, year, [.. report.Rows
             .OrderBy(r => r.Status == AdvertiserYearStatus.Open ? 0 : 1).ThenBy(r => r.CompanyName)
             .Select(r =>
             {
                 var a = details[r.Id];
                 return new MyAdvertiser(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City, a.Kind,
-                    a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note, r.PaidAt is not null);
+                    a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note, r.PaidAt is not null,
+                    [.. a.Years.OrderByDescending(y => y.Year).Select(y => new AdvertiserHistoryItem(y.Year, y.Amount, y.IsFree, y.Status))]);
             })]);
     }
 

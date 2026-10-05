@@ -128,6 +128,19 @@ export function tokenTickets(orders: OrderView[] | undefined): TokenTicket[] {
     );
 }
 
+/** Betaalde munten die aan een ander toestel gekoppeld zijn: alleen daar af te halen (nooit over te zetten). */
+export function tokensElsewhere(
+  orders: OrderView[] | undefined,
+): { id: string; quantity: number; number: string; deviceName: string }[] {
+  return (orders ?? [])
+    .filter((o) => o.kind === 'Tokens' && o.status === 'Confirmed')
+    .flatMap((o) =>
+      o.tickets
+        .filter((t) => t.status === 'Active' && !t.ref && t.boundDeviceName)
+        .map((t) => ({ id: t.id, quantity: t.quantity, number: o.number, deviceName: t.boundDeviceName! })),
+    );
+}
+
 /** Munten die betaald zijn en nog opgehaald moeten worden. */
 export function tokensToCollect(orders: OrderView[] | undefined): number {
   return (orders ?? [])

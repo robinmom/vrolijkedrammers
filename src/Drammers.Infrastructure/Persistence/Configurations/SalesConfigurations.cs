@@ -92,6 +92,9 @@ internal sealed class OrderTicketConfiguration : IEntityTypeConfiguration<OrderT
         // Geen foreign key naar het lid: lid → bestelling → QR zou een tweede verwijderpad geven. Bij het verwijderen van
         // een lid maakt de ledenadministratie de houder leeg (AVG).
         builder.HasIndex(t => t.HolderMemberId);
+        // Bewust geen foreign key naar het toestel: verdwijnt het toestel, dan blijft de koppeling staan en werkt de
+        // munten-QR nergens meer (nooit overzetten).
+        builder.HasIndex(t => t.BoundDeviceId);
         builder.HasOne<SaleOrder>().WithMany().HasForeignKey(t => t.OrderId).OnDelete(DeleteBehavior.Cascade);
     }
 }

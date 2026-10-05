@@ -21366,7 +21366,8 @@ export interface components {
         /**
          * @description Een QR bij de bestelling; string? OrderTicketView.Code alleen zolang hij geldig is (niet bij munten: die gaan via de munten-QR).
          *     bool OrderTicketView.CanShare: kaarten uit deze QR kunnen naar een lid van dezelfde groep (fase 19b). string? OrderTicketView.Ref
-         *     (base64) alleen bij munten van het lid zelf: daarmee maakt het toestel de munten-QR van deze bestelling.
+         *     (base64) alleen bij munten van het lid zelf, op het toestel waaraan ze gekoppeld zijn: daarmee maakt het toestel de
+         *     munten-QR van deze bestelling. Op een ander toestel staat in string? OrderTicketView.BoundDeviceName waar ze wel af te halen zijn.
          */
         OrderTicketView: {
             /** Format: uuid */
@@ -21377,6 +21378,7 @@ export interface components {
             code: null | string;
             canShare: boolean;
             ref?: null | string;
+            boundDeviceName?: null | string;
         };
         /** @description De bestelling zoals de koper hem ziet (na betalen of via de link in de e-mail). */
         OrderView: {

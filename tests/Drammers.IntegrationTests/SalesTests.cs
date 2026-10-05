@@ -84,17 +84,25 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         return _api.ClientFor(oid);
     }
 
-    private static object Order(Guid productId, int paid, int member = 0, string? name = "Jan Jansen", string? email = "jan@example.com") => new
+    private static object Order(
+        Guid productId, int paid, int member = 0, string? name = "Jan Jansen", string? email = "jan@example.com", string channel = "Web") => new
+        {
+            productId,
+            memberQuantity = member,
+            paidQuantity = paid,
+            buyerName = name,
+            buyerEmail = email,
+            buyerPhone = "0612345678",
+            remark = (string?)null,
+            channel,
+        };
+
+    private static async Task<HttpClient> OnDeviceAsync(HttpClient client, string installationId, string model = "iPhone 15")
     {
-        productId,
-        memberQuantity = member,
-        paidQuantity = paid,
-        buyerName = name,
-        buyerEmail = email,
-        buyerPhone = "0612345678",
-        remark = (string?)null,
-        channel = "Web",
-    };
+        client.DefaultRequestHeaders.Add("X-Device-Id", installationId);
+        await JsonAsync(await client.PostAsJsonAsync("/api/v1/me/devices", new { installationId, platform = "Ios", model, appVersion = "1.0.0" }));
+        return client;
+    }
 
     private async Task WebhookAsync(string paymentId) =>
         Assert.Equal(HttpStatusCode.OK, (await _guest.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new("id", paymentId)]))).StatusCode);
@@ -199,7 +207,15 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         var munten = await ProductAsync("Tokens", "Consumptiemunten", 250, capacity: null, maxPerOrder: 100);
         Assert.Equal(HttpStatusCode.Forbidden, (await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 20))).StatusCode);
         var lid = await MemberAsync("piet@example.com", "Snotapen");
-        var created = await JsonAsync(await lid.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 20, name: null, email: null)), HttpStatusCode.Created);
+        // Munten zijn gekoppeld aan het toestel van de aankoop: niet via de website of zonder aangemeld toestel.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await lid.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 20, name: null, email: null))).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,
+            (await lid.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 20, name: null, email: null, channel: "App"))).StatusCode);
+        await OnDeviceAsync(lid, "installatie-piet-0001");
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await lid.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 20, name: null, email: null))).StatusCode);
+        Assert.Empty(_mollie.Created);
+        var created = await JsonAsync(
+            await lid.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 20, name: null, email: null, channel: "App")), HttpStatusCode.Created);
         Assert.Equal(5000, _mollie.Created.Single().AmountCents);
         _mollie.SetStatus(_mollie.Payments.Keys.Single(), "paid");
         await WebhookAsync(_mollie.Payments.Keys.Single());
@@ -346,7 +362,7 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Munten_QR_per_bestelling_alleen_bij_de_kassa()
+    public async Task Munten_QR_per_bestelling_alleen_bij_de_kassa_en_alleen_op_het_toestel_van_de_aankoop()
     {
         var munten = await ProductAsync("Tokens", "Consumptiemunten", 250, capacity: null, maxPerOrder: 100);
         var (userId, oid) = await _api.CreateUserAsync("mendy@example.com", DefaultRoles.Lid);
@@ -357,15 +373,13 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
             await db.SaveChangesAsync();
             return await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(x => x.SetProperty(u => u.MemberId, memberId));
         });
-        var phone = _api.ClientFor(oid);
-        phone.DefaultRequestHeaders.Add("X-Device-Id", "installatie-munten-0001");
-        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/devices", new { installationId = "installatie-munten-0001", platform = "Ios", model = "iPhone 15", appVersion = "1.0.0" }));
+        var phone = await OnDeviceAsync(_api.ClientFor(oid), "installatie-munten-0001");
         await JsonAsync(await phone.GetAsync("/api/v1/me/ticket"));
         await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/ticket/bind-device", new { challenge = (string?)null, signature = (string?)null }), HttpStatusCode.NoContent);
 
         foreach (var quantity in new[] { 20, 10 })
         {
-            await JsonAsync(await phone.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: quantity, name: null, email: null)), HttpStatusCode.Created);
+            await JsonAsync(await phone.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: quantity, name: null, email: null, channel: "App")), HttpStatusCode.Created);
         }
 
         foreach (var paymentId in _mollie.Payments.Keys)
@@ -401,6 +415,65 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
 
         // Geen code voor munten van een ander of een onbekende bestelling.
         Assert.Equal(HttpStatusCode.Conflict, (await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={Guid.NewGuid()}")).StatusCode);
+
+        // Nooit over te zetten: ook niet als het ledenticket naar een ander toestel van hetzelfde lid gaat.
+        var second = tickets[1].GetProperty("id").GetGuid();
+        var tablet = await OnDeviceAsync(_api.ClientFor(oid), "installatie-munten-0002", "iPad");
+        await JsonAsync(await tablet.PostAsJsonAsync("/api/v1/me/ticket/bind-device", new { challenge = (string?)null, signature = (string?)null }), HttpStatusCode.NoContent);
+        var onTablet = (await JsonAsync(await tablet.GetAsync("/api/v1/me/orders"))).EnumerateArray()
+            .Select(o => o.GetProperty("tickets")[0]).Single(t => t.GetProperty("id").GetGuid() == second);
+        Assert.Equal(JsonValueKind.Null, onTablet.GetProperty("ref").ValueKind);
+        Assert.Equal("iPhone 15", onTablet.GetProperty("boundDeviceName").GetString());
+        Assert.Equal(HttpStatusCode.Conflict, (await tablet.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={second}")).StatusCode);
+
+        // Op de telefoon van de aankoop werken de munten nog, ook nu het ledenticket op de tablet staat.
+        var phoneCode = (await JsonAsync(await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={second}"))).GetProperty("code").GetString()!;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var validation = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Ticketing.TicketValidation>();
+            Assert.Equal(QrCheck.Valid, (await validation.ValidateAsync(phoneCode, default, purpose: QrPurpose.Tokens)).Result);
+
+            // Een code die zich voordoet als de tablet (servercode, maar de bestelling hoort bij de telefoon) is ongeldig.
+            var tabletDevice = await WithDbAsync(db => db.Devices.Where(d => d.InstallationId == "installatie-munten-0002").Select(d => d.Id).SingleAsync());
+            var signingKeys = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Ticketing.TicketSigningKeys>();
+            var reference = Convert.FromBase64String(tickets[1].GetProperty("ref").GetString()!);
+            var issuedAt = _api.Clock.UtcNow.ToUnixTimeSeconds();
+            var unsigned = QrPayload.Unsigned(QrPayload.ServerSignedTokens, reference, QrPayload.TryDecode(phoneCode)!.CredentialVersion,
+                QrPayload.ShortDeviceId(tabletDevice), issuedAt, QrPayload.DefaultValidFor);
+            using var key = await signingKeys.ActivePrivateKeyAsync(default);
+            var forged = Base45.Encode([.. unsigned, .. key.SignData(unsigned, System.Security.Cryptography.HashAlgorithmName.SHA256,
+                System.Security.Cryptography.DSASignatureFormat.IeeeP1363FixedFieldConcatenation)]);
+            Assert.Equal(QrCheck.WrongDevice, (await validation.ValidateAsync(forged, default, purpose: QrPurpose.Tokens)).Result);
+        }
+
+        // Verdwijnt het toestel van de aankoop, dan worden de munten nooit aan een ander toestel gekoppeld.
+        await WithDbAsync(db => db.Devices.Where(d => d.InstallationId == "installatie-munten-0001")
+            .ExecuteUpdateAsync(x => x.SetProperty(d => d.Status, Drammers.Modules.Identity.Devices.DeviceStatus.Revoked)));
+        var afterRevoke = (await JsonAsync(await tablet.GetAsync("/api/v1/me/orders"))).EnumerateArray()
+            .Select(o => o.GetProperty("tickets")[0]).Single(t => t.GetProperty("id").GetGuid() == second);
+        Assert.Equal(JsonValueKind.Null, afterRevoke.GetProperty("ref").ValueKind);
+        Assert.Equal(HttpStatusCode.Conflict, (await tablet.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={second}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Munten_zonder_toestel_worden_eenmalig_gekoppeld_aan_het_eerste_toestel()
+    {
+        var munten = await ProductAsync("Tokens", "Consumptiemunten", 250, capacity: null, maxPerOrder: 100);
+        var lid = await MemberAsync("kees@example.com", "Snotapen");
+        await OnDeviceAsync(lid, "installatie-kees-0001");
+        await JsonAsync(await lid.PostAsJsonAsync("/api/v1/sales/orders", Order(munten, paid: 5, name: null, email: null, channel: "App")), HttpStatusCode.Created);
+        _mollie.SetStatus(_mollie.Payments.Keys.Single(), "paid");
+        await WebhookAsync(_mollie.Payments.Keys.Single());
+        // Zoals een bestelling van vóór de toestelkoppeling.
+        await WithDbAsync(db => db.OrderTickets.ExecuteUpdateAsync(x => x.SetProperty(t => t.BoundDeviceId, (Guid?)null).SetProperty(t => t.BoundAt, (DateTime?)null)));
+
+        var oid = await WithDbAsync(db => db.Users.Where(u => u.Email == "kees@example.com").Select(u => u.ExternalObjectId).SingleAsync());
+        var first = await OnDeviceAsync(_api.ClientFor(oid), "installatie-kees-0002", "Pixel 8");
+        var second = await OnDeviceAsync(_api.ClientFor(oid), "installatie-kees-0003", "iPad");
+        Assert.NotEqual(JsonValueKind.Null, (await JsonAsync(await first.GetAsync("/api/v1/me/orders")))[0].GetProperty("tickets")[0].GetProperty("ref").ValueKind);
+        var onSecond = (await JsonAsync(await second.GetAsync("/api/v1/me/orders")))[0].GetProperty("tickets")[0];
+        Assert.Equal(JsonValueKind.Null, onSecond.GetProperty("ref").ValueKind);
+        Assert.Equal("Pixel 8", onSecond.GetProperty("boundDeviceName").GetString());
     }
 
     [Fact]

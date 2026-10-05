@@ -117,13 +117,14 @@ export function TicketScreen({
     const data = ticket.data;
     if (!data || !(data.state === 'Valid' || data.state === 'NotYetValid')) return;
     void saveTicket(data, childId).then(() => loadTicket(childId).then(setCached));
-    if (!data.boundDeviceName && !autoBound.current) {
+    // Op Munten wordt het ledenticket niet gekoppeld: munten hangen aan het toestel van de aankoop.
+    if (!data.boundDeviceName && !autoBound.current && !forTokens) {
       autoBound.current = true;
       void bind();
     } else if (data.boundToThisDevice && !data.deviceHasHardwareKey && hasHardwareKey()) {
       void syncDeviceKey(false).then((known) => (known ? refresh() : undefined));
     }
-  }, [ticket.data, bind, refresh, childId]);
+  }, [ticket.data, bind, refresh, childId, forTokens]);
 
   const header = (
     <>
@@ -187,13 +188,9 @@ export function TicketScreen({
     );
   }
 
-  // Munten: alleen de munten-QR's, nooit de ledenkaart. Het ledenticket is alleen nodig voor de koppeling aan dit toestel.
+  // Munten: alleen de munten-QR's, nooit de ledenkaart. Elke muntenbestelling hangt aan het toestel van de aankoop (de
+  // server geeft alleen die van dit toestel); het ledenticket bepaalt hier alleen of het lidmaatschap in orde is.
   if (forTokens) {
-    const bindErrorText = bindError ? (
-      <AppText variant="body" color={colors.accentText} accessibilityRole="alert">
-        {bindError}
-      </AppText>
-    ) : null;
     return (
       <Screen>
         {header}
@@ -208,44 +205,13 @@ export function TicketScreen({
                 action={{ label: 'Contact opnemen', onPress: () => router.push('/meer/contact'), secondary: true }}
               />
             </Card>
-          ) : data.boundToThisDevice ? (
+          ) : (
             <TokensCarousel
               holder={data}
               source={data.deviceHasHardwareKey ? 'device' : 'server'}
               cached={cached}
               tickets={tokenTickets ?? []}
             />
-          ) : data.boundDeviceName ? (
-            <>
-              <Card style={styles.tokensCard}>
-                <Notice
-                  icon="⇄"
-                  tint={brand.blue}
-                  title="Je munten staan op een ander toestel"
-                  body={`Je munten-QR is gekoppeld aan ${data.boundDeviceName}. Wil je hem op dit toestel gebruiken? Dan werkt de code op het andere toestel niet meer.`}
-                  action={
-                    data.rebindsLeft > 0
-                      ? {
-                          label: binding ? 'Even geduld…' : 'Op dit toestel gebruiken',
-                          onPress: () => void bind(),
-                          disabled: binding,
-                        }
-                      : undefined
-                  }
-                />
-              </Card>
-              {bindErrorText}
-            </>
-          ) : (
-            <View style={styles.center}>
-              <ActivityIndicator accessibilityLabel="Koppelen aan dit toestel" />
-              {bindError ? (
-                <>
-                  {bindErrorText}
-                  <Button label="Opnieuw proberen" onPress={() => void bind()} />
-                </>
-              ) : null}
-            </View>
           )}
         </View>
       </Screen>
@@ -306,21 +272,12 @@ export function TicketScreen({
             </AppText>
           </>
         ) : data.boundToThisDevice ? (
-          forTokens ? (
-            <TokensCarousel
-              holder={data}
-              source={data.deviceHasHardwareKey ? 'device' : 'server'}
-              cached={cached}
-              tickets={tokenTickets ?? []}
-            />
-          ) : (
-            <LiveTicket
-              holder={data}
-              source={data.deviceHasHardwareKey ? 'device' : 'server'}
-              cached={cached}
-              childId={childId}
-            />
-          )
+          <LiveTicket
+            holder={data}
+            source={data.deviceHasHardwareKey ? 'device' : 'server'}
+            cached={cached}
+            childId={childId}
+          />
         ) : data.boundDeviceName ? (
           <>
             <TicketCard ticket={data}>

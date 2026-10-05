@@ -61,7 +61,7 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
     public async Task<ActionResult<OrderCreated>> Order(OrderRequest request, CancellationToken cancellationToken)
     {
         var created = await sales.OrderAsync(request.ToInput(), await BuyerAsync(), request.Channel == SaleChannel.App ? SaleChannel.App : SaleChannel.Web,
-            BaseUrl, cancellationToken);
+            BaseUrl, cancellationToken, Request.Headers[DeviceCheck.HeaderName].ToString());
         return Created((string?)null, created);
     }
 
@@ -170,7 +170,7 @@ public sealed class MeOrdersController(TicketSales sales) : ControllerBase
     public Task<IReadOnlyList<OrderView>> Mine(CancellationToken cancellationToken)
     {
         var user = CurrentUser.Get(HttpContext)!;
-        return sales.MineAsync(user.UserId, user.MemberId, cancellationToken);
+        return sales.MineAsync(user.UserId, user.MemberId, cancellationToken, Request.Headers[DeviceCheck.HeaderName].ToString());
     }
 
     [HttpGet("tickets/{ticketId:guid}/share-candidates")]

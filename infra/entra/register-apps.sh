@@ -2,6 +2,8 @@
 # App-registraties per omgeving in de Entra External ID-tenant (B-02, docs/runbooks/entra-external-id.md §4).
 #   az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
 #   DVD_PORTAL_URL=https://app-dvd-api-dev.azurewebsites.net/beheer/ infra/entra/register-apps.sh dev
+# Meerdere adressen met komma's, bijv. Prod vóór en na het koppelen van het domein:
+#   DVD_PORTAL_URL=https://www.vrolijkedrammers.nl/beheer/,https://app-dvd-api-prod.azurewebsites.net/beheer/
 # Idempotent. Maakt per omgeving: API, beheerportal (SPA) en app (public client).
 # Dev/Acc: "Require user assignment" + groep Testers; de API krijgt de claim environmentAccess.
 set -euo pipefail
@@ -170,7 +172,8 @@ echo "==> Beheerportal ($ENV)"
 PORTAL_NAME="DVD Beheerportal ($ENV)"
 # Ook de website (fase 21d): inloggen bij optocht inschrijven, op dezelfde host als het portal.
 PORTAL_REDIRECTS="$(jq -cn --arg url "$PORTAL_URL" --arg env "$ENV" \
-  '[($url | select(length > 0)), ($url | select(length > 0) | sub("/beheer/?$"; "") + "/optocht-inschrijven/"),
+  '($url | split(",") | map(select(length > 0))) as $urls
+  | [$urls[], ($urls[] | sub("/beheer/?$"; "") + "/optocht-inschrijven/"),
     (if $env == "dev" then "http://localhost:5173", "http://localhost:5173/beheer/", "http://localhost:5162/optocht-inschrijven/" else empty end)]')"
 PORTAL_APP_ID="$(ensure_app "$PORTAL_NAME" "{
   \"displayName\": \"$PORTAL_NAME\", \"signInAudience\": \"AzureADMyOrg\",
@@ -186,8 +189,9 @@ echo "==> Mobiele app ($ENV)"
 MOBILE_NAME="DVD App ($ENV)"
 # Dev/Acc: ook de doorstuurpagina van de API voor Expo Go (fase 9, /app/auth-redirect), afgeleid van DVD_PORTAL_URL.
 MOBILE_REDIRECTS="$(jq -cn --arg url "$PORTAL_URL" --arg env "$ENV" \
-  '["drammers://auth", "msauth.nl.vrolijkedrammers.app://auth",
-    (if $env != "prod" and ($url | length > 0) then ($url | sub("/beheer/?$"; "") + "/app/auth-redirect") else empty end)]')"
+  '($url | split(",") | map(select(length > 0))) as $urls
+  | ["drammers://auth", "msauth.nl.vrolijkedrammers.app://auth",
+    (if $env != "prod" then ($urls[] | sub("/beheer/?$"; "") + "/app/auth-redirect") else empty end)]')"
 MOBILE_APP_ID="$(ensure_app "$MOBILE_NAME" "{
   \"displayName\": \"$MOBILE_NAME\", \"signInAudience\": \"AzureADMyOrg\",
   \"isFallbackPublicClient\": true,

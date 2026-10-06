@@ -9,6 +9,10 @@ param githubRepository string
 
 param environments array = ['dev', 'acc']
 
+@description('SKU van het gedeelde plan (B1, of F1 om na de livegang kosten te besparen).')
+@allowed(['B1', 'F1'])
+param planSku string = 'B1'
+
 @description('Maandbudget voor de gedeelde resources (plan).')
 param sharedBudgetAmount int = 20
 param budgetStartDate string = '2026-09-01'
@@ -62,6 +66,7 @@ module shared 'shared.bicep' = {
     githubRepository: githubRepository
     environments: environments
     tags: tags
+    planSku: planSku
   }
 }
 

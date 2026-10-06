@@ -1,32 +1,32 @@
-// Parameters voor Acceptance. Niet-gevoelige ID's komen uit omgevingsvariabelen
-// (GitHub environment variables of lokaal geëxporteerd) en staan niet in de publieke repo.
+// Parameters voor Productie (fase 7). Niet-gevoelige ID's komen uit omgevingsvariabelen
+// (GitHub environment "prod") en staan niet in de publieke repo.
 using '../main.bicep'
 
-param environmentName = 'acc'
+param environmentName = 'prod'
+// Eigen B1-plan in rg-dvd-prod (infra/bootstrap/bootstrap-prod.sh); niet gedeeld met Dev/Acc.
 param appServicePlanId = readEnvironmentVariable('DVD_APP_SERVICE_PLAN_ID')
-param sqlAdminGroupName = 'sg-dvd-sql-admin-acc'
+param sqlAdminGroupName = 'sg-dvd-sql-admin-prod'
 param sqlAdminGroupObjectId = readEnvironmentVariable('DVD_SQL_ADMIN_GROUP_OBJECT_ID')
 param sqlUseFreeOffer = true
+param sqlFreeLimitExhaustionBehavior = 'BillOverUsage'
 param keyVaultPurgeProtection = true
 param logDailyQuotaGb = 1
 param externalIdAuthority = 'https://vrolijkedrammersapp.ciamlogin.com/260db5a1-e5b6-4388-9f6c-d9b02cb5578b/v2.0'
 param apiClientId = readEnvironmentVariable('DVD_API_CLIENT_ID', '')
-param environmentAccessClaim = readEnvironmentVariable('DVD_ENVIRONMENT_ACCESS_CLAIM', '')
+// Productie: geen testomgeving-claim, iedereen met een goedgekeurd account mag erin.
+param environmentAccessClaim = ''
+param requiredEnvironmentAccess = ''
 param externalIdTenantId = '260db5a1-e5b6-4388-9f6c-d9b02cb5578b'
 param graphClientId = readEnvironmentVariable('DVD_GRAPH_CLIENT_ID', '')
-param testersGroupId = readEnvironmentVariable('DVD_TESTERS_GROUP_ID', '')
 param pushProvider = readEnvironmentVariable('DVD_PUSH_PROVIDER', 'Simulated')
 param turnstileSiteKey = readEnvironmentVariable('DVD_TURNSTILE_SITE_KEY', '')
-param environmentAccessAttribute = readEnvironmentVariable('DVD_ENVIRONMENT_ACCESS_ATTRIBUTE', '')
 param externalIdIssuerDomain = 'vrolijkedrammersapp.onmicrosoft.com'
 param graphCertificateName = readEnvironmentVariable('DVD_GRAPH_CERTIFICATE_NAME', '')
 param portalClientId = readEnvironmentVariable('DVD_PORTAL_CLIENT_ID', '')
 param mobileClientId = readEnvironmentVariable('DVD_MOBILE_CLIENT_ID', '')
-param mobileRedirectBridge = true
-param requiredEnvironmentAccess = 'acc'
-param budgetAmount = 35
-param budgetStartDate = '2026-09-01'
-param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))
-// Na de livegang staat Dev op het gratis F1-plan zonder Always On (GitHub-variabele DVD_ALWAYS_ON=false).
-param alwaysOn = readEnvironmentVariable('DVD_ALWAYS_ON', 'true') == 'true'
+param mobileRedirectBridge = false
+// Eerst leeg; na de DNS-records: "www.vrolijkedrammers.nl,vrolijkedrammers.nl" (het eerste is het hoofdadres).
 param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAMES', ''), ','), host => !empty(host))
+param budgetAmount = 40
+param budgetStartDate = '2026-10-01'
+param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))

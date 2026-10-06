@@ -59,6 +59,8 @@ try
     var app = builder.Build();
 
     app.UseForwardedHeaders();
+    app.UseCanonicalHost(app.Configuration);
+    app.UseNoIndexOutsideProduction(app.Environment);
     app.UseSecurityHeaders();
     app.UseExceptionHandler();
     app.UseStatusCodePagesWithWebsite();

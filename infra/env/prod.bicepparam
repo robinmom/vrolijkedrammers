@@ -25,6 +25,8 @@ param graphCertificateName = readEnvironmentVariable('DVD_GRAPH_CERTIFICATE_NAME
 param portalClientId = readEnvironmentVariable('DVD_PORTAL_CLIENT_ID', '')
 param mobileClientId = readEnvironmentVariable('DVD_MOBILE_CLIENT_ID', '')
 param mobileRedirectBridge = false
+// Na de laatste sync in Dev (vóór de kopie) is onze eigen database leidend: geen koppeling met e-Boekhouden meer.
+param eBoekhoudenEnabled = false
 // Eerst leeg; na de DNS-records: "www.vrolijkedrammers.nl,vrolijkedrammers.nl" (het eerste is het hoofdadres).
 param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAMES', ''), ','), host => !empty(host))
 param budgetAmount = 40

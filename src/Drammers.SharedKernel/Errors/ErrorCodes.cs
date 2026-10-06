@@ -34,6 +34,7 @@ public static class ErrorCodes
     public const string MemberNotFound = "MEMBER_NOT_FOUND";
     public const string MemberFieldFromSource = "MEMBER_FIELD_FROM_SOURCE";
     public const string SyncAlreadyRunning = "SYNC_ALREADY_RUNNING";
+    public const string SyncDisabled = "SYNC_DISABLED";
     public const string PurgeNotAllowed = "PURGE_NOT_ALLOWED";
     public const string GroupNotFound = "GROUP_NOT_FOUND";
     public const string GroupNameTaken = "GROUP_NAME_TAKEN";

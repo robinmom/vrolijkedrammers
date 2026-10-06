@@ -8,6 +8,9 @@ Besluiten (product owner, 2026-10-06):
   `vrolijkedrammers.nl` stuurt door naar www (301). Certificaten zijn gratis (App Service Managed Certificates).
 - Voor Apple komt er een **nieuwe productie-build**; de huidige review (op Dev) wordt ingetrokken.
 - Na goedkeuring van die build gaat **Dev naar het gratis F1-plan**.
+- **e-Boekhouden**: vlak vóór de kopie nog één ledensync in Dev; daarna is **onze eigen database leidend**. Productie
+  heeft geen koppeling meer (`EBoekhouden:Enabled=false`, geen token, nachtelijke sync uit). Nieuwe leden via "lid
+  worden" krijgen het volgende eigen lidnummer.
 
 Wie: **Jij** = product owner/beheerder (Owner op de subscription, DNS, Apple, geheimen). **Claude** = voorbereiding,
 controles, EAS-builds en hulp bij elke stap. Geheimen gaan nooit via Claude.
@@ -62,14 +65,18 @@ controles, EAS-builds en hulp bij elke stap. Geheimen gaan nooit via Claude.
 
 ## 3. Livegangdag — gegevens kopiëren (content-freeze begint)
 
+1. **Laatste ledensync in Dev**: portal → Ledensync → eerst een proefrun bekijken, dan de echte run. Conflicten
+   afhandelen. Daarna niets meer in e-Boekhouden wijzigen voor de vereniging: vanaf nu is het portal leidend.
+2. Kopiëren:
+
 ```bash
 az login --tenant <tenant-id-vereniging>
 AZURE_SUBSCRIPTION_ID=<id> infra/prod/migrate-dev-to-prod.sh
 infra/prod/set-secret.sh prod mollie-api-key      # live_… (Mollie-dashboard → Developers → API keys)
 ```
 
-Het script: database (BACPAC Dev → Prod), opruimen (Dev-databasegebruiker en openstaande outbox-berichten), bestanden,
-sleutelring (opnieuw versleuteld voor Prod) en geheimen (behalve Mollie). Het geeft jou tijdelijk de benodigde rollen en
+Het script: database (BACPAC Dev → Prod), opruimen (Dev-databasegebruiker, openstaande outbox-berichten, nachtelijke
+ledensync uit), bestanden, sleutelring (opnieuw versleuteld voor Prod) en geheimen (behalve Mollie en e-Boekhouden). Het geeft jou tijdelijk de benodigde rollen en
 firewalltoegang en ruimt die daarna op. Duur: enkele minuten.
 
 ## 4. Livegangdag — app uitrollen en testen op het azurewebsites-adres

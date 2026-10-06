@@ -25,6 +25,13 @@ public sealed class EBoekhoudenOptions
     public int RequestsPerSecond { get; set; } = 5;
 
     /// <summary>
+    /// Koppeling met e-Boekhouden aan (ledensync en nieuwe leden aanmaken). Uit in Productie na de laatste sync (besluit
+    /// 2026-10-06): onze eigen database is dan leidend, er wordt niets meer gelezen of geschreven en nieuwe leden krijgen een
+    /// eigen lidnummer.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
     /// Nieuwe leden echt in e-Boekhouden aanmaken (fase 9b). Standaard uit: Dev gebruikt de echte administratie
     /// (OQ-04), dus daar simuleert de app deze stap. Aan in Acc/Prod met een token met schrijfrechten (OQ-03).
     /// </summary>

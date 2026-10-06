@@ -230,6 +230,58 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
     }
 
     [Fact]
+    public async Task Zonder_e_Boekhouden_krijgen_nieuwe_leden_het_volgende_eigen_lidnummer_en_staat_de_sync_uit()
+    {
+        await using var api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), configure: services =>
+        {
+            services.AddSingleton<IEBoekhoudenClient>(_eb);
+            services.PostConfigure<EBoekhoudenOptions>(o => (o.Enabled, o.WriteEnabled) = (false, true));
+        });
+        var bestuur = api.ClientFor((await api.CreateUserAsync("bestuur3@example.com", DefaultRoles.Bestuur)).ObjectId);
+        using (var scope = api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            db.Members.Add(new Member { Id = IdGenerator.NewId(), MemberNumber = "0418", FullName = "Bestaand Lid", MembershipStatus = MembershipStatus.Active });
+            db.Members.Add(new Member { Id = IdGenerator.NewId(), MemberNumber = "SIM123456", FullName = "Oud testlid", MembershipStatus = MembershipStatus.Active });
+            await db.SaveChangesAsync();
+        }
+
+        var ids = new List<Guid>();
+        foreach (var (email, name) in new[] { ("een@example.com", "Piet"), ("twee@example.com", "Jan") })
+        {
+            var start = await api.CreateClient().PostAsJsonAsync("/api/v1/membership-applications", Form(email, 40, firstName: name));
+            var id = (await start.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+            var code = CodePattern().Match(api.Emails.Sent.Last(m => m.To == email).PlainText).Value;
+            await api.CreateClient().PostAsJsonAsync($"/api/v1/membership-applications/{id}/verify-email", new { code });
+            Assert.Equal(HttpStatusCode.NoContent, (await bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/approve", null)).StatusCode);
+            ids.Add(id);
+        }
+
+        foreach (var id in ids)
+        {
+            using var scope = api.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<MembershipApplications>().RunProvisioningAsync(id, CancellationToken.None);
+        }
+
+        // Volgnummer na het hoogste bestaande, met dezelfde opmaak; tijdelijke SIM-nummers tellen niet mee.
+        using (var scope = api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var numbers = await db.Members.AsNoTracking().Where(m => m.Email == "een@example.com" || m.Email == "twee@example.com")
+                .OrderBy(m => m.MemberNumber).Select(m => new { m.MemberNumber, m.EbMemberId }).ToListAsync();
+            Assert.Equal(["0419", "0420"], numbers.Select(n => n.MemberNumber));
+            Assert.All(numbers, n => Assert.Null(n.EbMemberId));
+        }
+
+        // Er gaat niets naar e-Boekhouden (ook niet met schrijven aan) en de ledensync kan niet meer.
+        Assert.Empty(_eb.Created);
+        Assert.Equal(0, _eb.OpenSessions);
+        var sync = await bestuur.PostAsync("/api/v1/admin/members/import?dryRun=true", null);
+        Assert.Equal(HttpStatusCode.Conflict, sync.StatusCode);
+        Assert.Equal("SYNC_DISABLED", (await sync.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
+    }
+
+    [Fact]
     public async Task Met_schrijven_aan_gaat_het_lid_met_machtiging_naar_e_Boekhouden_en_herhalen_maakt_geen_tweede_lid()
     {
         await using var api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), configure: services =>

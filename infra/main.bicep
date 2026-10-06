@@ -52,6 +52,9 @@ param pushProvider string = 'Simulated'
 @description('Openbare site key van Cloudflare Turnstile (contactformulier, fase 21i); leeg = uit. Het geheim staat in Key Vault (turnstile-secret-key).')
 param turnstileSiteKey string = ''
 
+@description('Koppeling met e-Boekhouden (ledensync en nieuwe leden aanmaken). Uit in Prod: onze eigen database is leidend.')
+param eBoekhoudenEnabled bool = true
+
 @description('Always On; uit op het gratis F1-plan (Dev na de livegang).')
 param alwaysOn bool = true
 
@@ -169,6 +172,7 @@ module api 'modules/appservice.bicep' = {
       Graph__TestersGroupId: testersGroupId
       Graph__EnvironmentAccessAttribute: environmentAccessAttribute
       Turnstile__SiteKey: turnstileSiteKey
+      EBoekhouden__Enabled: string(eBoekhoudenEnabled)
     }
   }
 }

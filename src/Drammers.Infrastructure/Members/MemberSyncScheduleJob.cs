@@ -12,7 +12,8 @@ namespace Drammers.Infrastructure.Members;
 /// <c>members-sync</c> aan staat. De sync zelf loopt via de outbox. Draait alleen op dat moment, zodat een serverless
 /// database de rest van de dag kan pauzeren.
 /// </summary>
-public sealed class MemberSyncScheduleJob(DrammersDbContext db, MemberSync sync, IClock clock) : IRecurringJob
+public sealed class MemberSyncScheduleJob(
+    DrammersDbContext db, MemberSync sync, IClock clock, Microsoft.Extensions.Options.IOptions<EBoekhouden.EBoekhoudenOptions> eBoekhoudenOptions) : IRecurringJob
 {
     public const string JobName = "member-sync-schedule";
 
@@ -23,7 +24,8 @@ public sealed class MemberSyncScheduleJob(DrammersDbContext db, MemberSync sync,
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var enabled = await db.FeatureFlags.AsNoTracking().AnyAsync(f => f.Key == MemberSyncSettings.ScheduleFlag && f.Enabled, cancellationToken);
+        var enabled = eBoekhoudenOptions.Value.Enabled
+            && await db.FeatureFlags.AsNoTracking().AnyAsync(f => f.Key == MemberSyncSettings.ScheduleFlag && f.Enabled, cancellationToken);
         if (!enabled)
         {
             return;

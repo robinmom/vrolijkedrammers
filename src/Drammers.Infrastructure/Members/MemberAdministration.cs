@@ -5,6 +5,7 @@ using Drammers.Modules.Import.Sync;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
+using Drammers.SharedKernel.Messaging;
 using Drammers.SharedKernel.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -52,7 +53,8 @@ public sealed class MemberDataOptions
 /// <summary>Ledenbeheer in het portal (fase 8): lokale velden, bevestigen van verdwenen leden, conflicten en opruimen.</summary>
 public sealed class MemberAdministration(
     DrammersDbContext db, IAuditLogger audit, IClock clock, MemberSyncSettings settings, ConfigurationAdministration configuration,
-    IOptions<MemberDataOptions> dataOptions, Identity.AccountLifecycle lifecycle, Identity.MyAccount accounts, ICurrentActor actor)
+    IOptions<MemberDataOptions> dataOptions, Identity.AccountLifecycle lifecycle, Identity.MyAccount accounts, ICurrentActor actor,
+    IOutbox outbox)
 {
     /// <summary>Deze tekst moet letterlijk worden meegestuurd om alle leden te verwijderen.</summary>
     public const string PurgeConfirmation = "LEDEN VERWIJDEREN";
@@ -96,6 +98,8 @@ public sealed class MemberAdministration(
             member.NameCorrectedManually = true;
         }
 
+        // Lid alsnog actief gezet: een openstaand accountverzoek kan nu kloppen.
+        await Identity.MemberAccounts.EnqueueRecheckAsync(db, outbox, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("member.updated", "Member", id.ToString(), before, Snapshot(member)), cancellationToken);
         await lifecycle.ReconcileAsync([id], cancellationToken);
@@ -165,6 +169,8 @@ public sealed class MemberAdministration(
         }
 
         member.LocalFields = local.Count == 0 ? null : string.Join(',', local.Order(StringComparer.Ordinal));
+        // Ander e-mailadres of lidnummer: een openstaand accountverzoek kan nu kloppen.
+        await Identity.MemberAccounts.EnqueueRecheckAsync(db, outbox, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("member.data-updated", "Member", id.ToString(), before, Snapshot(member)), cancellationToken);
         await lifecycle.ReconcileAsync([id], cancellationToken);

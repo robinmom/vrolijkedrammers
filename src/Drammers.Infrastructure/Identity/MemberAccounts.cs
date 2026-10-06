@@ -40,6 +40,9 @@ public sealed class MemberAccounts(
 
     public const string ReminderMessageType = "account.reminder";
 
+    /// <summary>Openstaande accountverzoeken opnieuw beoordelen (na een sync of een gewijzigd lid).</summary>
+    public const string RecheckMessageType = "account-requests.recheck";
+
     /// <summary>
     /// Een tweede identiek verzoek dat nog op het bestuur wacht, maakt binnen deze tijd geen nieuw verzoek (herhaald
     /// tikken, bots). Afgehandelde verzoeken tellen niet: na het verwijderen van een account moet opnieuw aanvragen kunnen.
@@ -51,6 +54,9 @@ public sealed class MemberAccounts(
     public sealed record ProvisionMessage(ProvisioningSourceType SourceType, string SourceId);
 
     public sealed record ReminderMessage(Guid MemberId);
+
+    /// <summary>Uitkomst van opnieuw controleren: nu goedgekeurd (account wordt gemaakt), al een account, nog open.</summary>
+    public sealed record RecheckResult(int Approved, int AlreadyHasAccount, int StillPending);
 
     // ----- Accountverzoek ("Ik ben al lid") ------------------------------------------------------------------------
 
@@ -81,19 +87,7 @@ public sealed class MemberAccounts(
             RequestedAt = now,
         };
 
-        var (member, emailOnlyReason) = number is null
-            ? await MatchByEmailAsync(normalizedEmail, cancellationToken)
-            : (await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.MemberNumber == number, cancellationToken), null);
-        var (status, reason) = member switch
-        {
-            null when emailOnlyReason is not null => (AccountRequestStatus.Pending, emailOnlyReason),
-            null => (AccountRequestStatus.Pending, "unknown-member-number"),
-            _ when !string.Equals(member.Email?.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase) => (AccountRequestStatus.Pending, "email-mismatch"),
-            _ when member.EffectiveStatus != MembershipStatus.Active => (AccountRequestStatus.Pending, "member-not-active"),
-            _ when IsYoungerThanOwnAccountAge(member.BirthDate) => (AccountRequestStatus.Pending, "minor"),
-            _ when await HasAccountAsync(member.Id, cancellationToken) => (AccountRequestStatus.Duplicate, "has-account"),
-            _ => (AccountRequestStatus.Approved, (string?)null),
-        };
+        var (member, status, reason) = await EvaluateAsync(number, normalizedEmail, cancellationToken);
         request.Status = status;
         request.MismatchReason = reason;
         request.MemberId = member?.Id;
@@ -120,6 +114,99 @@ public sealed class MemberAccounts(
                 JsonSerializer.Serialize(new { status = status.ToString(), reason, memberId = member?.Id }, Json)),
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Beoordeelt een verzoek tegen alle leden in onze database: uit e-Boekhouden én lokaal aangemaakte leden (bijv. via
+    /// "lid worden"). Een exacte, actieve match wordt direct goedgekeurd.
+    /// </summary>
+    private async Task<(Member? Member, AccountRequestStatus Status, string? Reason)> EvaluateAsync(
+        string? number, string email, CancellationToken cancellationToken)
+    {
+        var (member, emailOnlyReason) = number is null
+            ? await MatchByEmailAsync(email, cancellationToken)
+            : (await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.MemberNumber == number, cancellationToken), null);
+        var (status, reason) = member switch
+        {
+            null when emailOnlyReason is not null => (AccountRequestStatus.Pending, emailOnlyReason),
+            null => (AccountRequestStatus.Pending, "unknown-member-number"),
+            _ when !string.Equals(member.Email?.Trim(), email, StringComparison.OrdinalIgnoreCase) => (AccountRequestStatus.Pending, "email-mismatch"),
+            _ when member.EffectiveStatus != MembershipStatus.Active => (AccountRequestStatus.Pending, "member-not-active"),
+            _ when IsYoungerThanOwnAccountAge(member.BirthDate) => (AccountRequestStatus.Pending, "minor"),
+            _ when await HasAccountAsync(member.Id, cancellationToken) => (AccountRequestStatus.Duplicate, "has-account"),
+            _ => (AccountRequestStatus.Approved, (string?)null),
+        };
+        return (member, status, reason);
+    }
+
+    /// <summary>
+    /// Openstaande verzoeken opnieuw beoordelen, bijvoorbeeld nadat het lid later is aangemaakt, actief is gezet of een
+    /// ander e-mailadres heeft gekregen. Eén verzoek (portal) of alle openstaande (portal, na een sync of ledenwijziging).
+    /// Een exacte match wordt alsnog goedgekeurd en het account aangemaakt; heeft het lid inmiddels een account, dan is
+    /// het verzoek afgehandeld. Er gaat geen mail naar de aanvrager behalve de gewone welkomstmail.
+    /// </summary>
+    public async Task<RecheckResult> RecheckAsync(Guid? requestId, CancellationToken cancellationToken)
+    {
+        if (requestId is { } id && (await FindRequestAsync(id, cancellationToken)).Status != AccountRequestStatus.Pending)
+        {
+            throw new DomainException(ErrorCodes.AccountRequestDecided, "Dit verzoek is al afgehandeld.", DomainErrorKind.Conflict);
+        }
+
+        var pending = await db.AccountRequests
+            .Where(r => r.Status == AccountRequestStatus.Pending && (requestId == null || r.Id == requestId))
+            .OrderBy(r => r.RequestedAt).ToListAsync(cancellationToken);
+        var now = clock.UtcNow.UtcDateTime;
+        var approvedMembers = new HashSet<Guid>();
+        var decided = new List<(AccountRequest Request, string Outcome)>();
+        var stillPending = 0;
+        foreach (var request in pending)
+        {
+            var (member, status, reason) = await EvaluateAsync(request.MemberNumber, request.Email, cancellationToken);
+            // Twee openstaande verzoeken voor hetzelfde lid: alleen het oudste maakt het account.
+            if (status == AccountRequestStatus.Approved && !approvedMembers.Add(member!.Id))
+            {
+                (status, reason) = (AccountRequestStatus.Duplicate, "has-account");
+            }
+
+            request.MemberId = member?.Id;
+            request.MismatchReason = reason;
+            if (status == AccountRequestStatus.Pending)
+            {
+                stillPending++;
+                continue;
+            }
+
+            request.Status = status;
+            request.DecidedAt = now;
+            request.DecidedBy = actor.UserId;
+            if (status == AccountRequestStatus.Approved)
+            {
+                outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(ProvisioningSourceType.AccountRequest, request.Id.ToString()));
+            }
+
+            decided.Add((request, status.ToString()));
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        foreach (var (request, outcome) in decided)
+        {
+            await audit.WriteAsync(new AuditEntry("account-request.rechecked", "AccountRequest", request.Id.ToString(), null,
+                JsonSerializer.Serialize(new { status = outcome, memberId = request.MemberId }, Json)), cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        var approved = decided.Count(d => d.Outcome == nameof(AccountRequestStatus.Approved));
+        return new RecheckResult(approved, decided.Count - approved, stillPending);
+    }
+
+    /// <summary>Zet een hercontrole van de openstaande verzoeken in de outbox (alleen als die er zijn); opslaan doet de aanroeper.</summary>
+    public static async Task EnqueueRecheckAsync(DrammersDbContext db, IOutbox outbox, CancellationToken cancellationToken)
+    {
+        if (await db.AccountRequests.AnyAsync(r => r.Status == AccountRequestStatus.Pending, cancellationToken))
+        {
+            outbox.Enqueue(RecheckMessageType, new { });
+        }
     }
 
     /// <summary>
@@ -498,7 +585,7 @@ public sealed class MemberAccounts(
 
         if (string.IsNullOrWhiteSpace(member.Email))
         {
-            throw new DomainException(ErrorCodes.MemberNotEligible, "Het lid heeft geen e-mailadres in e-Boekhouden. Vul dat daar eerst in en synchroniseer.", DomainErrorKind.Conflict);
+            throw new DomainException(ErrorCodes.MemberNotEligible, "Het lid heeft geen e-mailadres. Vul dat eerst in bij het lid (of in e-Boekhouden en synchroniseer).", DomainErrorKind.Conflict);
         }
 
         if (await HasAccountAsync(memberId, cancellationToken))
@@ -602,6 +689,14 @@ public sealed class MemberAccountReminderHandler(MemberAccounts accounts) : IOut
 
     public Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken) =>
         accounts.SendReminderAsync(JsonSerializer.Deserialize<MemberAccounts.ReminderMessage>(message.Payload, JsonSerializerOptions.Web)!, cancellationToken);
+}
+
+/// <summary>Beoordeelt de openstaande accountverzoeken opnieuw (worker, na een sync of een gewijzigd lid).</summary>
+public sealed class AccountRequestRecheckHandler(MemberAccounts accounts) : IOutboxMessageHandler
+{
+    public string Type => MemberAccounts.RecheckMessageType;
+
+    public Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken) => accounts.RecheckAsync(null, cancellationToken);
 }
 
 /// <summary>Voert de provisioning uit die via de outbox is aangevraagd (worker).</summary>

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useAccountRequests, useApiMutation, useProvisioning, type AccountRequest, type AccountRequestStatus } from '../api/hooks';
+import { useAccountRequests, useApiMutation, useProvisioning, type AccountRequest, type AccountRequestStatus, type Schemas } from '../api/hooks';
 import { DataTable, columnHelper } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
@@ -9,12 +9,15 @@ import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { accountRequestStatusLabels, formatDateTime, mismatchReasonLabels, provisioningStepLabels } from '../format';
 
+type RecheckResult = Schemas['RecheckResult'];
+
 const statusTone: Record<string, string> = { Pending: 'warn', Approved: 'ok', Rejected: 'neutral', Duplicate: 'info' };
 
 /**
- * Accountverzoeken (fase 9, ADR-014): "Ik ben al lid"-aanvragen zonder exacte match met e-Boekhouden. Het bestuur
- * corrigeert zo nodig het e-mailadres in e-Boekhouden, synchroniseert en maakt dan het account aan; of wijst af.
- * Daaronder de provisioning die nog loopt of is mislukt, met "opnieuw proberen".
+ * Accountverzoeken (fase 9, ADR-014): "Ik ben al lid"-aanvragen zonder exacte match met een lid (uit e-Boekhouden of
+ * lokaal aangemaakt). Het bestuur corrigeert zo nodig het lid, controleert opnieuw of maakt het account aan; of wijst af.
+ * Na een sync of een gewijzigd lid controleert de API de open verzoeken zelf opnieuw. Daaronder de provisioning die nog
+ * loopt of is mislukt, met "opnieuw proberen".
  */
 export function AccountRequestsPage() {
   const api = useApi();
@@ -37,6 +40,26 @@ export function AccountRequestsPage() {
     (r: AccountRequest) => api.POST('/api/v1/admin/account-requests/{id}/reject', { params: { path: { id: r.id } }, body: { reason: reason || null } }),
     [['account-requests']],
   );
+  const recheck = useApiMutation(
+    async (id: string | null) =>
+      (id
+        ? await api.POST('/api/v1/admin/account-requests/{id}/recheck', { params: { path: { id } } })
+        : await api.POST('/api/v1/admin/account-requests/recheck')
+      ).data,
+    [['account-requests'], ['account-provisioning']],
+  );
+  const recheckDone = (data: unknown) => {
+    const result = data as RecheckResult | undefined;
+    setMessage(
+      !result
+        ? null
+        : result.approved + result.alreadyHasAccount === 0
+          ? 'Opnieuw gecontroleerd: nog geen passend actief lid gevonden.'
+          : `Opnieuw gecontroleerd: ${result.approved} account(s) worden aangemaakt` +
+            (result.alreadyHasAccount ? `, ${result.alreadyHasAccount} had(den) al een account` : '') +
+            (result.stillPending ? `, ${result.stillPending} nog open.` : '.'),
+    );
+  };
   const retry = useApiMutation(
     (id: string) => api.POST('/api/v1/admin/account-provisioning/{id}/retry', { params: { path: { id } } }),
     [['account-provisioning']],
@@ -60,7 +83,7 @@ export function AccountRequestsPage() {
       },
     }),
     helper.accessor('member', {
-      header: 'Lid in e-Boekhouden',
+      header: 'Lid',
       enableSorting: false,
       cell: (info) => {
         const m = info.getValue();
@@ -109,13 +132,22 @@ export function AccountRequestsPage() {
               type="button"
               className="button small"
               disabled={!canApprove || approve.isPending}
-              title={canApprove ? undefined : 'Alleen voor een actief lid met een e-mailadres in e-Boekhouden'}
+              title={canApprove ? undefined : 'Alleen voor een actief lid met een e-mailadres'}
               aria-label={`Account aanmaken voor ${member?.fullName ?? r.memberNumber ?? r.email}`}
               onClick={() =>
                 approve.mutate(r, { onSuccess: () => setMessage(`Het account voor ${member!.fullName} wordt aangemaakt met ${member!.email}.`) })
               }
             >
               Account aanmaken
+            </button>
+            <button
+              type="button"
+              className="button secondary small"
+              disabled={recheck.isPending}
+              aria-label={`Verzoek ${r.memberNumber ?? r.email} opnieuw controleren`}
+              onClick={() => recheck.mutate(r.id, { onSuccess: recheckDone })}
+            >
+              Opnieuw controleren
             </button>
             <button type="button" className="button secondary small" aria-label={`Verzoek ${r.memberNumber ?? r.email} afwijzen`} onClick={() => setRejecting(r)}>
               Afwijzen
@@ -134,14 +166,25 @@ export function AccountRequestsPage() {
         <div>
           <h1 className="page-title">Accountverzoeken</h1>
           <p className="page-subtitle">
-            Leden die met &quot;Ik ben al lid&quot; een account vroegen, maar niet exact overeenkwamen met e-Boekhouden. Klopt het
-            e-mailadres niet? Laat het secretariaat het in e-Boekhouden aanpassen, synchroniseer, en maak dan het account aan. Het
-            account krijgt altijd het e-mailadres uit e-Boekhouden.
+            Leden die met &quot;Ik ben al lid&quot; een account vroegen, maar niet exact overeenkwamen met een lid: uit e-Boekhouden of
+            hier aangemaakt (bijvoorbeeld via &quot;lid worden&quot;). Is het lid later aangemaakt, actief gezet of heeft het een ander
+            e-mailadres gekregen? Dan wordt het verzoek vanzelf opnieuw gecontroleerd, of klik op Opnieuw controleren. Het account
+            krijgt altijd het e-mailadres van het lid.
           </p>
+        </div>
+        <div className="actions">
+          <button
+            type="button"
+            className="button secondary"
+            disabled={recheck.isPending}
+            onClick={() => recheck.mutate(null, { onSuccess: recheckDone })}
+          >
+            Alles opnieuw controleren
+          </button>
         </div>
       </div>
       <SuccessMessage message={message} />
-      <ProblemAlert error={requests.error ?? approve.error ?? reject.error ?? retry.error} />
+      <ProblemAlert error={requests.error ?? approve.error ?? reject.error ?? recheck.error ?? retry.error} />
 
       {open.length > 0 ? (
         <section className="card" aria-labelledby="provisioning">

@@ -273,7 +273,7 @@ test('fase 9: accountverzoek goedkeuren met het e-mailadres uit e-Boekhouden, en
   const api = new MockApi();
   await open(page, api, 'accountverzoeken');
   await expect(page.getByRole('heading', { name: 'Accountverzoeken' })).toBeVisible();
-  await expect(page.getByText('E-mailadres wijkt af van e-Boekhouden')).toBeVisible();
+  await expect(page.getByText('E-mailadres wijkt af van dat van het lid')).toBeVisible();
   // Zonder gevonden lid kan het bestuur alleen afwijzen.
   await expect(page.getByRole('button', { name: 'Account aanmaken voor 999' })).toBeDisabled();
 
@@ -291,6 +291,17 @@ test('fase 9: accountverzoek goedkeuren met het e-mailadres uit e-Boekhouden, en
   await expect(page.getByText('Graph-aanroep mislukt (503)')).toBeVisible();
   await page.getByRole('button', { name: 'Opnieuw proberen' }).click();
   await expect(page.getByText('Graph-aanroep mislukt (503)')).toHaveCount(0);
+});
+
+test('accountverzoek opnieuw controleren nadat het lid later is aangemaakt', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'accountverzoeken');
+  await page.getByRole('button', { name: 'Alles opnieuw controleren' }).click();
+  await expect(page.getByText('Opnieuw gecontroleerd: nog geen passend actief lid gevonden.')).toBeVisible();
+  await page.getByRole('button', { name: 'Verzoek 999 opnieuw controleren' }).click();
+  await expect(page.getByText('Opnieuw gecontroleerd: 1 account(s) worden aangemaakt.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Verzoek 999 opnieuw controleren' })).toHaveCount(0);
+  await expectNoSeriousA11yIssues(page);
 });
 
 test('fase 9: app-account aanmaken vanuit het lid-detail', async ({ page }) => {

@@ -695,6 +695,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/account-requests/{id}/recheck": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eén openstaand verzoek opnieuw beoordelen (bijv. nadat het lid later is aangemaakt of actief gezet). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RecheckResult"];
+                        "application/json": components["schemas"]["RecheckResult"];
+                        "text/json": components["schemas"]["RecheckResult"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-requests/recheck": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Alle openstaande verzoeken opnieuw beoordelen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RecheckResult"];
+                        "application/json": components["schemas"]["RecheckResult"];
+                        "text/json": components["schemas"]["RecheckResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/account-requests/{id}/reject": {
         parameters: {
             query?: never;
@@ -22134,6 +22234,15 @@ export interface components {
             reason: string;
             /** Format: int32 */
             count: number;
+        };
+        /** @description Uitkomst van opnieuw controleren: nu goedgekeurd (account wordt gemaakt), al een account, nog open. */
+        RecheckResult: {
+            /** Format: int32 */
+            approved: number;
+            /** Format: int32 */
+            alreadyHasAccount: number;
+            /** Format: int32 */
+            stillPending: number;
         };
         RegisterDeviceRequest: {
             installationId: string;

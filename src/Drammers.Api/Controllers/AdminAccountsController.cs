@@ -61,6 +61,20 @@ public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts
         return NoContent();
     }
 
+    /// <summary>Eén openstaand verzoek opnieuw beoordelen (bijv. nadat het lid later is aangemaakt of actief gezet).</summary>
+    [HttpPost("account-requests/{id:guid}/recheck")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<MemberAccounts.RecheckResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public Task<MemberAccounts.RecheckResult> Recheck(Guid id, CancellationToken cancellationToken) => accounts.RecheckAsync(id, cancellationToken);
+
+    /// <summary>Alle openstaande verzoeken opnieuw beoordelen.</summary>
+    [HttpPost("account-requests/recheck")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<MemberAccounts.RecheckResult>(StatusCodes.Status200OK)]
+    public Task<MemberAccounts.RecheckResult> RecheckAll(CancellationToken cancellationToken) => accounts.RecheckAsync(null, cancellationToken);
+
     [HttpPost("account-requests/{id:guid}/reject")]
     [RequirePermission(Permissions.MemberApprove)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

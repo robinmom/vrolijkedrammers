@@ -1,4 +1,5 @@
-# Uitrol naar Dev (automatisch na merge op main) of Acc (handmatig) — docs/08 §7, fase 1.
+# Uitrol naar Dev (automatisch na merge op main), Acc of Prod (handmatig) — docs/08 §7, fase 1 en 7.
+# Prod alleen via de GitHub environment "prod" met Required reviewers (goedkeuring vóór de uitrol).
 # Aanmelden bij Azure via OIDC met de managed identity van de GitHub environment; geen wachtwoorden of sleutels.
 # Subscription-, tenant- en groeps-ID's en e-mailadressen staan als secret (openbare repository: dan worden ze in de
 # logs gemaskeerd); tijdens de overstap valt de workflow terug op de gelijknamige variabele.
@@ -12,8 +13,12 @@ on:
       environment:
         description: Omgeving
         type: choice
-        options: [dev, acc]
+        options: [dev, acc, prod]
         default: dev
+      infraOnly:
+        description: Alleen infrastructuur (geen migraties en geen app), bijv. vóór het kopiëren van de data naar Prod
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -87,6 +92,8 @@ jobs:
       DVD_MOBILE_CLIENT_ID: ${{ vars.DVD_MOBILE_CLIENT_ID }}
       DVD_TURNSTILE_SITE_KEY: ${{ vars.DVD_TURNSTILE_SITE_KEY }}
       DVD_GRAPH_CERTIFICATE_NAME: ${{ vars.DVD_GRAPH_CERTIFICATE_NAME }}
+      DVD_ALWAYS_ON: ${{ vars.DVD_ALWAYS_ON }}
+      DVD_CUSTOM_HOSTNAMES: ${{ vars.DVD_CUSTOM_HOSTNAMES }}
     steps:
       - uses: actions/checkout@v7
       - uses: azure/login@v3
@@ -110,15 +117,24 @@ jobs:
           echo "api-url=$(jq -r .apiUrl.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
           echo "api-client-id=$(jq -r .apiIdentityClientId.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
           echo "sql-server=$(jq -r .sqlServerFqdn.value <<<"$outputs")" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Omgeving $ENVIRONMENT"
+            echo "- Openbaar adres: $(jq -r .publicBaseUrl.value <<<"$outputs")"
+            echo "- App: $(jq -r .apiUrl.value <<<"$outputs")"
+            echo "- TXT-record asuid.<domein> (eigen domein koppelen): \`$(jq -r .customDomainVerificationId.value <<<"$outputs")\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-dotnet@v6
+        if: ${{ !inputs.infraOnly }}
         with:
           dotnet-version: 10.0.x
       - uses: actions/download-artifact@v8
+        if: ${{ !inputs.infraOnly }}
         with:
           name: db
           path: publish/db
       - name: Database – migraties en API-identiteit (vóór de app; een fout stopt de deploy)
+        if: ${{ !inputs.infraOnly }}
         run: |
           # Tijdelijke firewallregel voor deze runner; wordt altijd weer verwijderd.
           rule="github-runner-$GITHUB_RUN_ID"
@@ -137,6 +153,7 @@ jobs:
           fi
 
       - name: Wachten tot de app stabiel is na infra-wijzigingen
+        if: ${{ !inputs.infraOnly }}
         run: |
           # Een gewijzigde app-instelling herstart de site inclusief Kudu; een zip-deploy die dan start, wordt
           # afgebroken ("Deployment has been stopped due to SCM container restart"). Wacht tot Kudu reageert.
@@ -150,16 +167,19 @@ jobs:
           done
           echo "::error::Kudu niet bereikbaar na infra-uitrol"; exit 1
       - uses: actions/download-artifact@v8
+        if: ${{ !inputs.infraOnly }}
         with:
           name: api
           path: publish/api
       - name: API + portal – uitrol
+        if: ${{ !inputs.infraOnly }}
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ steps.infra.outputs.api-app }}
           package: publish/api
 
       - name: Draait de nieuwe versie?
+        if: ${{ !inputs.infraOnly }}
         run: |
           # Een herstart door gewijzigde app-instellingen kan vóór het plaatsen van het pakket vallen; dan draait de
           # oude versie door. Wacht op de nieuwe commit en herstart zo nodig één keer.
@@ -178,6 +198,7 @@ jobs:
           az webapp restart --resource-group "$RESOURCE_GROUP" --name "${{ steps.infra.outputs.api-app }}"
           wait_for_version
       - name: Smoke-test – /health/ready
+        if: ${{ !inputs.infraOnly }}
         run: |
           # De serverless database kan gepauzeerd zijn; hervatten duurt tot ~1 minuut.
           for attempt in $(seq 1 20); do
@@ -188,6 +209,7 @@ jobs:
           done
           exit 1
       - name: Smoke-test – portal
+        if: ${{ !inputs.infraOnly }}
         run: |
           curl -sf "${{ steps.infra.outputs.api-url }}/beheer/" | grep -q '<div id="root">'
       - name: Smoke-test – anonieme blob-toegang geweigerd

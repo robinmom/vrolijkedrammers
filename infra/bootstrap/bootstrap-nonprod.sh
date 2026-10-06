@@ -3,6 +3,8 @@
 # Uitvoeren door een beheerder met Owner op de subscription, ingelogd in de tenant van de subscription:
 #   az login --tenant <tenant-id-vereniging>
 #   AZURE_SUBSCRIPTION_ID=<id> DVD_LOCATION=swedencentral infra/bootstrap/bootstrap-nonprod.sh [--what-if]
+# Na de livegang Dev afschalen naar het gratis plan: DVD_PLAN_SKU=F1 (en GitHub-variabele DVD_ALWAYS_ON=false in
+# environment dev, want F1 kent geen Always On). Terug naar B1: DVD_PLAN_SKU=B1.
 # Idempotent: opnieuw uitvoeren is veilig.
 set -euo pipefail
 
@@ -19,7 +21,8 @@ EMAILS_JSON="$(jq -cn --arg e "$BUDGET_EMAIL" '[$e | select(length > 0)]')"
 
 deploy_args=(--location "$LOCATION" --name dvd-bootstrap-nonprod
   --template-file "$HERE/nonprod.bicep"
-  --parameters location="$LOCATION" githubRepository="$REPOSITORY" budgetContactEmails="$EMAILS_JSON")
+  --parameters location="$LOCATION" githubRepository="$REPOSITORY" budgetContactEmails="$EMAILS_JSON"
+  planSku="${DVD_PLAN_SKU:-B1}")
 
 if [[ "${1:-}" == "--what-if" ]]; then
   az deployment sub what-if "${deploy_args[@]}"

@@ -75,7 +75,7 @@ jobs:
       - name: Lint (waarschuwingen = fouten)
         run: |
           az bicep install
-          for file in infra/main.bicep infra/bootstrap/nonprod.bicep; do
+          for file in infra/main.bicep infra/bootstrap/nonprod.bicep infra/bootstrap/prod.bicep; do
             az bicep lint --file "$file" --diagnostics-format sarif > lint.sarif
             jq -e '[.runs[].results[]] | length == 0' lint.sarif || { jq '.runs[].results[]' lint.sarif; exit 1; }
           done
@@ -84,9 +84,9 @@ jobs:
           DVD_APP_SERVICE_PLAN_ID: /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Web/serverfarms/plan
           DVD_SQL_ADMIN_GROUP_OBJECT_ID: 00000000-0000-0000-0000-000000000000
         run: |
-          for env in dev acc; do az bicep build-params --file "infra/env/$env.bicepparam" --stdout > /dev/null; done
+          for env in dev acc prod; do az bicep build-params --file "infra/env/$env.bicepparam" --stdout > /dev/null; done
       - name: Shellscripts
-        run: shellcheck -x infra/bootstrap/*.sh infra/entra/*.sh
+        run: shellcheck -x infra/bootstrap/*.sh infra/entra/*.sh infra/prod/*.sh
 
   infra-what-if:
     name: Bicep – what-if Dev

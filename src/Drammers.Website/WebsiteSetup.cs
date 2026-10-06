@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Drammers.Website;
 
@@ -46,6 +47,52 @@ public static class WebsiteSetup
 
     public static bool IsWebsitePath(PathString path) => !OtherPaths.Any(p => path.StartsWithSegments(p));
 
+    /// <summary>Buiten Productie: elke response krijgt <c>X-Robots-Tag: noindex</c> (ook als iemand naar Dev linkt).</summary>
+    public static IApplicationBuilder UseNoIndexOutsideProduction(this IApplicationBuilder app, IHostEnvironment environment) =>
+        environment.IsProduction()
+            ? app
+            : app.Use(async (context, next) =>
+            {
+                context.Response.OnStarting(() =>
+                {
+                    context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow";
+                    return Task.CompletedTask;
+                });
+                await next(context);
+            });
+
+    /// <summary>
+    /// Eén hoofdadres (fase 7): staat <c>Website:CanonicalHost</c> (bijv. <c>www.vrolijkedrammers.nl</c>), dan gaat elk
+    /// ander eigen domein (bijv. zonder www) daarheen, met pad en query. GET/HEAD met 301, de rest met 308 (methode en body
+    /// blijven). Het azurewebsites-adres en localhost blijven werken (deploy, health checks en ontwikkelen).
+    /// </summary>
+    public static IApplicationBuilder UseCanonicalHost(this IApplicationBuilder app, IConfiguration configuration)
+    {
+        var canonical = configuration["Website:CanonicalHost"]?.Trim();
+        if (string.IsNullOrEmpty(canonical))
+        {
+            return app;
+        }
+
+        return app.Use(async (context, next) =>
+        {
+            var host = context.Request.Host.Host;
+            if (string.Equals(host, canonical, StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(".azurewebsites.net", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase))
+            {
+                await next(context);
+                return;
+            }
+
+            var method = context.Request.Method;
+            context.Response.StatusCode = HttpMethods.IsGet(method) || HttpMethods.IsHead(method)
+                ? StatusCodes.Status301MovedPermanently
+                : StatusCodes.Status308PermanentRedirect;
+            context.Response.Headers.Location = $"https://{canonical}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+        });
+    }
+
     /// <summary>
     /// Statuspagina's: een onbekend websiteadres toont de 404-pagina in de huisstijl; API, portal en media houden
     /// ProblemDetails. Vervangt <c>UseStatusCodePages</c> in de API.
@@ -80,8 +127,11 @@ public static class WebsiteSetup
     {
         app.MapRazorPages().CacheOutput(CachePolicy);
         app.MapWebsiteMedia();
-        app.MapGet("/robots.txt", () => Results.Text("User-agent: *\nDisallow: /beheer/\nDisallow: /api/\nSitemap: /sitemap.xml\n", "text/plain"))
-            .AllowAnonymous().ExcludeFromDescription();
+        // Alleen Productie mag in zoekmachines; Dev/Acc zijn kopieën en zouden anders dubbel gevonden worden.
+        var robots = app.Environment.IsProduction()
+            ? "User-agent: *\nDisallow: /beheer/\nDisallow: /api/\nSitemap: /sitemap.xml\n"
+            : "User-agent: *\nDisallow: /\n";
+        app.MapGet("/robots.txt", () => Results.Text(robots, "text/plain")).AllowAnonymous().ExcludeFromDescription();
         app.MapGet("/sitemap.xml", SitemapAsync).AllowAnonymous().ExcludeFromDescription().CacheOutput(CachePolicy);
         return app;
     }

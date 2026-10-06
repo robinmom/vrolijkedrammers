@@ -18,10 +18,26 @@
       "ios": {
         "resourceClass": "default"
       }
+    },
+    "production": {
+      "distribution": "store",
+      "environment": "production",
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "default"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
     "testflight": {
+      "ios": {
+        "ascAppId": "6818789905"
+      }
+    },
+    "production": {
       "ios": {
         "ascAppId": "6818789905"
       }

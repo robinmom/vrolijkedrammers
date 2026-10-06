@@ -52,6 +52,12 @@ param pushProvider string = 'Simulated'
 @description('Openbare site key van Cloudflare Turnstile (contactformulier, fase 21i); leeg = uit. Het geheim staat in Key Vault (turnstile-secret-key).')
 param turnstileSiteKey string = ''
 
+@description('Always On; uit op het gratis F1-plan (Dev na de livegang).')
+param alwaysOn bool = true
+
+@description('Eigen domeinen; het eerste is het hoofdadres (website, portal /beheer en API /api). Leeg tot de DNS-records staan.')
+param customHostNames array = []
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -61,6 +67,9 @@ var tags = {
   environment: environmentName
   managedBy: 'bicep'
 }
+
+// Openbaar adres: het eigen domein zodra dat gekoppeld is, anders het azurewebsites-adres.
+var publicBaseUrl = empty(customHostNames) ? 'https://app-dvd-api-${environmentName}.azurewebsites.net' : 'https://${customHostNames[0]}'
 
 var aspnetEnvironment = {
   dev: 'Dev'
@@ -128,6 +137,8 @@ module api 'modules/appservice.bicep' = {
     tags: tags
     workspaceId: monitoring.outputs.workspaceId
     appServicePlanId: appServicePlanId
+    alwaysOn: alwaysOn
+    customHostNames: customHostNames
     appSettings: {
       ASPNETCORE_ENVIRONMENT: aspnetEnvironment[environmentName]
       // App draait uit het zip-pakket, dat bij een deploy in één keer wordt gewisseld (geen half vervangen DLL's).
@@ -141,7 +152,9 @@ module api 'modules/appservice.bicep' = {
       Email__Endpoint: email.outputs.endpoint
       Email__SenderDomain: email.outputs.senderDomain
       // Kaartverkoop (fase 19): links in e-mails van de nachtelijke job; de Mollie-sleutel staat in Key Vault (mollie-api-key).
-      Sales__PublicBaseUrl: 'https://app-dvd-api-${environmentName}.azurewebsites.net'
+      Sales__PublicBaseUrl: publicBaseUrl
+      // Andere eigen domeinen (bijv. zonder www) sturen door naar het hoofdadres.
+      Website__CanonicalHost: empty(customHostNames) ? '' : customHostNames[0]
       Auth__Authority: externalIdAuthority
       Auth__Audience: apiClientId
       Auth__EnvironmentAccessClaim: environmentAccessClaim
@@ -205,3 +218,6 @@ output portalUrl string = 'https://${api.outputs.defaultHostName}/beheer/'
 output sqlServerFqdn string = sql.outputs.serverFqdn
 output keyVaultName string = keyVault.outputs.name
 output storageAccountName string = storage.outputs.name
+output publicBaseUrl string = publicBaseUrl
+@description('Waarde voor het TXT-record asuid.<domein> bij het koppelen van een eigen domein.')
+output customDomainVerificationId string = api.outputs.customDomainVerificationId

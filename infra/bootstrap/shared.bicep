@@ -8,12 +8,16 @@ param tags object
 @description('Omgevingen met een eigen deploy-identiteit (subject: GitHub environment).')
 param environments array
 
+@description('SKU van het gedeelde plan: B1 (standaard) of F1 (gratis, na de livegang; geen Always On).')
+@allowed(['B1', 'F1'])
+param planSku string = 'B1'
+
 resource plan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: 'asp-dvd-nonprod'
   location: location
   tags: tags
   kind: 'linux'
-  sku: { name: 'B1', tier: 'Basic', capacity: 1 }
+  sku: planSku == 'F1' ? { name: 'F1', tier: 'Free', capacity: 1 } : { name: 'B1', tier: 'Basic', capacity: 1 }
   properties: { reserved: true }
 }
 

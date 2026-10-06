@@ -24,7 +24,8 @@ namespace Drammers.Infrastructure.Members;
 /// </summary>
 public sealed class MemberSync(
     DrammersDbContext db, IEBoekhoudenClient eBoekhouden, MemberSyncSettings settings, IOutbox outbox, IAuditLogger audit,
-    IClock clock, ILogger<MemberSync> logger, Identity.AccountLifecycle lifecycle, MemberIbanProtector ibans)
+    IClock clock, ILogger<MemberSync> logger, Identity.AccountLifecycle lifecycle, MemberIbanProtector ibans,
+    Microsoft.Extensions.Options.IOptions<EBoekhouden.EBoekhoudenOptions> eBoekhoudenOptions)
 {
     public const string MessageType = "members.sync";
 
@@ -36,6 +37,12 @@ public sealed class MemberSync(
     /// <summary>Zet een run in de wachtrij (outbox); de worker voert hem uit. Maximaal één run tegelijk.</summary>
     public async Task<Guid> RequestAsync(bool dryRun, SyncTrigger trigger, Guid? requestedBy, CancellationToken cancellationToken)
     {
+        if (!eBoekhoudenOptions.Value.Enabled)
+        {
+            throw new DomainException(ErrorCodes.SyncDisabled,
+                "De koppeling met e-Boekhouden staat uit: de ledenadministratie wordt hier bijgehouden.", DomainErrorKind.Conflict);
+        }
+
         var now = clock.UtcNow.UtcDateTime;
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 

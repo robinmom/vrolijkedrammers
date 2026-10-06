@@ -60,7 +60,8 @@ public sealed class MembershipApplications(
     MemberAccounts accounts,
     MemberSyncSettings syncSettings,
     ICurrentActor actor,
-    IClock clock)
+    IClock clock,
+    Microsoft.Extensions.Options.IOptions<EBoekhoudenOptions> eBoekhoudenOptions)
 {
     public const string ProvisionMessageType = "membership.provision";
 
@@ -280,6 +281,11 @@ public sealed class MembershipApplications(
         var minor = application.IsMinorOn(today);
         try
         {
+            if (saga.MemberNumber is null && !eBoekhoudenOptions.Value.Enabled)
+            {
+                await ReserveLocalMemberNumberAsync(saga, cancellationToken);
+            }
+
             if (saga.MemberNumber is null)
             {
                 var created = await ebWriter.CreateOrFindMemberAsync(await ToEbMemberAsync(application, cancellationToken), cancellationToken);
@@ -449,6 +455,30 @@ public sealed class MembershipApplications(
         db.Members.Add(member);
         await db.SaveChangesAsync(cancellationToken);
         return member.Id;
+    }
+
+    /// <summary>
+    /// Zonder e-Boekhouden (Productie na de livegang): het volgende vrije lidnummer uit onze eigen database, in dezelfde
+    /// opmaak als de bestaande nummers (bijv. met voorloopnullen). Onder een applock en in één transactie met de saga, zodat
+    /// twee aanmeldingen tegelijk nooit hetzelfde nummer krijgen; ook nummers van sagas die nog lopen tellen mee.
+    /// </summary>
+    private async Task ReserveLocalMemberNumberAsync(AccountProvisioning saga, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await db.Database.ExecuteSqlRawAsync(
+            "EXEC sp_getapplock @Resource = 'member-number', @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 30000",
+            cancellationToken);
+        var numbers = await db.Members.AsNoTracking().Select(m => m.MemberNumber)
+            .Concat(db.AccountProvisioning.AsNoTracking().Where(p => p.MemberNumber != null).Select(p => p.MemberNumber!))
+            .ToListAsync(cancellationToken);
+        var numeric = numbers.Where(n => n.Length > 0 && n.All(char.IsAsciiDigit)).ToList();
+        var next = (numeric.Count == 0 ? 0 : numeric.Max(n => long.Parse(n, CultureInfo.InvariantCulture))) + 1;
+        var width = numeric.Count == 0 ? 1 : numeric.Max(n => n.Length);
+        saga.MemberNumber = next.ToString(CultureInfo.InvariantCulture).PadLeft(width, '0');
+        saga.EbMemberId = null;
+        saga.Step = ProvisioningStep.EbCreated;
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 
     private async Task EnsureGuardianRelationAsync(MembershipApplication application, Guid memberId, Guid guardianUserId, CancellationToken cancellationToken)

@@ -5,8 +5,11 @@
 #   3. bestanden: foto's, documenten en content van de Dev-opslag naar de Prod-opslag;
 #   4. sleutelring: dezelfde Data Protection-sleutels, opnieuw versleuteld met de Key Vault-sleutel van Prod, zodat Prod
 #      de versleutelde gegevens (IBAN's, QR-sleutels, pushtokens, afmeldlinks) kan lezen;
-#   5. geheimen: e-Boekhouden-, Facebook-, Expo- en Turnstile-sleutel van Key Vault Dev naar Key Vault Prod. De Mollie-
-#      sleutel niet: Prod krijgt de live-sleutel (infra/prod/set-secret.sh prod mollie-api-key).
+#   5. geheimen: Facebook-, Expo- en Turnstile-sleutel van Key Vault Dev naar Key Vault Prod. De Mollie-sleutel niet:
+#      Prod krijgt de live-sleutel (infra/prod/set-secret.sh prod mollie-api-key). Het e-Boekhouden-token ook niet: in Prod
+#      is onze eigen database leidend en staat de koppeling uit (besluit 2026-10-06); de nachtelijke sync gaat uit.
+#
+# Doe vlak vóór dit script de laatste ledensync in Dev (portal → Ledensync), zodat de kopie de actuele leden bevat.
 #
 # Voorwaarden (runbook docs/runbooks/livegang-productie.md):
 #   - bootstrap-prod.sh is uitgevoerd en de Deploy-workflow is voor "prod" gedraaid met "Alleen infrastructuur" aan
@@ -26,7 +29,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 WORK="$(mktemp -d)"
 DB=sqldb-dvd
 CONTAINERS=(content photos-original photos-derived parade-documents)
-SECRETS=(eboekhouden-api-token facebook-page-token expo-push-access-token turnstile-secret-key)
+SECRETS=(facebook-page-token expo-push-access-token turnstile-secret-key)
 
 az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 ME="$(az ad signed-in-user show --query id -o tsv)"
@@ -70,12 +73,14 @@ token() { az account get-access-token --resource https://database.windows.net/ -
 "$SQLPACKAGE" /Action:Import /TargetServerName:"tcp:sql-dvd-prod.database.windows.net,1433" /TargetDatabaseName:"$DB" \
   /AccessToken:"$(token)" /SourceFile:"$WORK/dvd.bacpac"
 
-echo "==> 2. Opruimen in Prod: databasegebruiker van Dev en openstaande outbox-berichten"
+echo "==> 2. Opruimen in Prod: databasegebruiker van Dev, openstaande outbox-berichten, nachtelijke ledensync uit"
 cat >"$WORK/opruimen.sql" <<'SQL'
 IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'app-dvd-api-dev')
     DROP USER [app-dvd-api-dev];
 GO
 DELETE FROM notification.Outbox WHERE processed_at IS NULL;
+GO
+UPDATE config.FeatureFlag SET enabled = 0 WHERE [key] = 'members-sync';
 GO
 SQL
 dotnet run --project "$ROOT/tools/Drammers.DbSetup" -- "sql-dvd-prod.database.windows.net" "$DB" migrate "$WORK/opruimen.sql"

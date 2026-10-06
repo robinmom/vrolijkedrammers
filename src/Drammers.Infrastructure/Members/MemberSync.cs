@@ -133,6 +133,9 @@ public sealed class MemberSync(
         if (!job.DryRun && job.Status != SyncJobStatus.Failed)
         {
             await lifecycle.ReconcileAsync(null, cancellationToken);
+            // Nieuwe of gewijzigde leden: openstaande accountverzoeken kunnen nu wel kloppen.
+            await Identity.MemberAccounts.EnqueueRecheckAsync(db, outbox, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
         }
     }
 

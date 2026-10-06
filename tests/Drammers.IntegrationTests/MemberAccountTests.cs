@@ -456,6 +456,65 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Lid_dat_later_wordt_aangemaakt_en_actief_gezet_maakt_een_open_verzoek_alsnog_goed()
+    {
+        // Eerst een inlog en een verzoek, nog zonder lid.
+        Assert.Equal(HttpStatusCode.Accepted, (await _anonymous.PostAsJsonAsync("/api/v1/account-requests", new { email = "later@example.com" })).StatusCode);
+        var requestId = await WithDbAsync(db => db.AccountRequests.Where(r => r.Email == "later@example.com").Select(r => r.Id).SingleAsync());
+        var recheck = await _bestuur.PostAsync($"/api/v1/admin/account-requests/{requestId}/recheck", null);
+        Assert.Equal((0, 0, 1), await ResultAsync(recheck));
+
+        // Daarna een lid dat niet in e-Boekhouden staat (lokaal, zoals "lid worden"), nog inactief.
+        var memberId = await AddMemberAsync("0801", "later@example.com", MembershipStatus.Inactive);
+        Assert.Equal((0, 0, 1), await ResultAsync(await _bestuur.PostAsync($"/api/v1/admin/account-requests/{requestId}/recheck", null)));
+        Assert.Equal(("member-not-active", memberId), await WithDbAsync(db => db.AccountRequests.Where(r => r.Id == requestId)
+            .Select(r => new ValueTuple<string?, Guid?>(r.MismatchReason, r.MemberId)).SingleAsync()));
+
+        // Het bestuur zet het lid actief: dat zet zelf een hercontrole in de wachtrij (zoals na een sync).
+        await WithDbAsync(db => db.Outbox.Where(m => m.Type == MemberAccounts.RecheckMessageType).ExecuteDeleteAsync());
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PatchAsJsonAsync($"/api/v1/admin/members/{memberId}", new { localStatusOverride = "Active" })).StatusCode);
+        Assert.True(await WithDbAsync(db => db.Outbox.AnyAsync(m => m.Type == MemberAccounts.RecheckMessageType)));
+        using (var scope = _api.Services.CreateScope())
+        {
+            var result = await scope.ServiceProvider.GetRequiredService<MemberAccounts>().RecheckAsync(null, CancellationToken.None);
+            Assert.Equal(new MemberAccounts.RecheckResult(1, 0, 0), result);
+        }
+
+        Assert.Equal(AccountRequestStatus.Approved, await WithDbAsync(db => db.AccountRequests.Where(r => r.Id == requestId).Select(r => r.Status).SingleAsync()));
+        Assert.Equal(0, await RunProvisioningAsync());
+        var me = await SignUpAndSignIn("later@example.com").GetFromJsonAsync<JsonElement>("/api/v1/me/member");
+        Assert.Equal("0801", me.GetProperty("memberNumber").GetString());
+
+        // Afgehandeld: niet nog eens; alles opnieuw controleren vindt niets meer.
+        Assert.Equal(HttpStatusCode.Conflict, (await _bestuur.PostAsync($"/api/v1/admin/account-requests/{requestId}/recheck", null)).StatusCode);
+        Assert.Equal((0, 0, 0), await ResultAsync(await _bestuur.PostAsync("/api/v1/admin/account-requests/recheck", null)));
+
+        static async Task<(int, int, int)> ResultAsync(HttpResponseMessage response)
+        {
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+            return (json.GetProperty("approved").GetInt32(), json.GetProperty("alreadyHasAccount").GetInt32(), json.GetProperty("stillPending").GetInt32());
+        }
+    }
+
+    [Fact]
+    public async Task Twee_open_verzoeken_voor_hetzelfde_lid_maken_bij_opnieuw_controleren_een_account()
+    {
+        foreach (var email in new[] { "dubbel@example.com", "dubbel@example.com" })
+        {
+            Assert.Equal(HttpStatusCode.Accepted, (await _anonymous.PostAsJsonAsync("/api/v1/account-requests", new { memberNumber = "0901", email })).StatusCode);
+            await WithDbAsync(db => db.AccountRequests.ExecuteUpdateAsync(x => x.SetProperty(r => r.RequestedAt, r => r.RequestedAt.AddDays(-2))));
+        }
+
+        await AddMemberAsync("0901", "dubbel@example.com");
+        var result = await _bestuur.PostAsync("/api/v1/admin/account-requests/recheck", null);
+        var json = await result.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal((1, 1), (json.GetProperty("approved").GetInt32(), json.GetProperty("alreadyHasAccount").GetInt32()));
+        Assert.Equal(0, await RunProvisioningAsync());
+        Assert.Equal(1, await WithDbAsync(db => db.Users.CountAsync(u => u.Email == "dubbel@example.com")));
+    }
+
+    [Fact]
     public async Task Account_aanvragen_met_alleen_een_e_mailadres()
     {
         async Task<AccountRequest> RequestAsync(string email)

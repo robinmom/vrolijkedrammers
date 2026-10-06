@@ -3071,6 +3071,18 @@ export class MockApi {
       const items = this.accountRequests.filter((r) => !status || r.status === status);
       return json({ items, page: 1, pageSize: 25, totalCount: items.length });
     }
+    if (path === '/admin/account-requests/recheck' && method === 'POST') {
+      return json({
+        approved: 0,
+        alreadyHasAccount: 0,
+        stillPending: this.accountRequests.filter((r) => r.status === 'Pending').length,
+      });
+    }
+    if ((m = path.match(/^\/admin\/account-requests\/([^/]+)\/recheck$/))) {
+      // Het lid is inmiddels aangemaakt en actief: het verzoek wordt alsnog goedgekeurd.
+      this.accountRequests.find((r) => r.id === m![1])!.status = 'Approved';
+      return json({ approved: 1, alreadyHasAccount: 0, stillPending: 0 });
+    }
     if ((m = path.match(/^\/admin\/account-requests\/([^/]+)\/(approve|reject)$/))) {
       const request = this.accountRequests.find((r) => r.id === m![1])!;
       request.status = m[2] === 'approve' ? 'Approved' : 'Rejected';

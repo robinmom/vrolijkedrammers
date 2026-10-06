@@ -819,6 +819,117 @@
         }
       }
     },
+    "/api/v1/admin/account-requests/{id}/recheck": {
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Eén openstaand verzoek opnieuw beoordelen (bijv. nadat het lid later is aangemaakt of actief gezet).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/account-requests/recheck": {
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Alle openstaande verzoeken opnieuw beoordelen.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecheckResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/account-requests/{id}/reject": {
       "post": {
         "tags": [
@@ -35935,6 +36046,29 @@
             "format": "int32"
           }
         }
+      },
+      "RecheckResult": {
+        "required": [
+          "approved",
+          "alreadyHasAccount",
+          "stillPending"
+        ],
+        "type": "object",
+        "properties": {
+          "approved": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "alreadyHasAccount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stillPending": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Uitkomst van opnieuw controleren: nu goedgekeurd (account wordt gemaakt), al een account, nog open."
       },
       "RegisterDeviceRequest": {
         "required": [

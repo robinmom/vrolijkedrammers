@@ -123,7 +123,7 @@ export const accountRequestStatusLabels: Record<string, string> = {
 /** Waarom een accountverzoek niet automatisch is goedgekeurd (fase 9). */
 export const mismatchReasonLabels: Record<string, string> = {
   'unknown-member-number': 'Lidnummer onbekend',
-  'email-mismatch': 'E-mailadres wijkt af van e-Boekhouden',
+  'email-mismatch': 'E-mailadres wijkt af van dat van het lid',
   'member-not-active': 'Lid is niet actief',
   'has-account': 'Lid heeft al een account',
   'unknown-email': 'Geen lid met dit e-mailadres',

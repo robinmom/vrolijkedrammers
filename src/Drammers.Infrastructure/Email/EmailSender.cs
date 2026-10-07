@@ -42,6 +42,12 @@ public sealed class EmailOptions
     /// </summary>
     public string? LogoUrl { get; set; }
 
+    /// <summary>
+    /// Alleen Dev (besluit 2026-10-07): elke e-mail gaat naar dit adres in plaats van naar de ontvanger, omdat Dev een
+    /// kopie van de echte ledenadministratie heeft. Leeg (Prod) = gewoon versturen.
+    /// </summary>
+    public string? RedirectAllTo { get; set; }
+
     public bool IsConfigured => Endpoint is not null && !string.IsNullOrWhiteSpace(SenderDomain);
 }
 
@@ -52,6 +58,7 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
+        message = EmailRedirect.Apply(message, options.Value.RedirectAllTo);
         var content = new EmailContent(message.Subject) { PlainText = message.PlainText, Html = EmailBranding.WithLogo(message.Html, options.Value.LogoUrl) };
         var sender = message.From is { Length: > 0 } from && options.Value.CustomSenderDomain is { Length: > 0 } custom
             ? $"{from}@{custom}"
@@ -69,6 +76,27 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
 
         // WaitUntil.Started: ACS neemt het bericht aan en bezorgt het zelf; een fout bij aannemen gooit hier.
         await _client.SendAsync(WaitUntil.Started, email, cancellationToken);
+    }
+}
+
+/// <summary>Omleiden in Dev: naar één testadres, met de oorspronkelijke ontvanger in het onderwerp en bovenaan de tekst.</summary>
+public static class EmailRedirect
+{
+    public static EmailMessage Apply(EmailMessage message, string? redirectTo)
+    {
+        if (string.IsNullOrWhiteSpace(redirectTo))
+        {
+            return message;
+        }
+
+        var notice = $"Omgeleid vanuit Dev: deze e-mail was bedoeld voor {message.To}.";
+        return message with
+        {
+            To = redirectTo.Trim(),
+            Subject = $"[Dev → {message.To}] {message.Subject}",
+            PlainText = $"{notice}\n\n{message.PlainText}",
+            Html = $"<p style=\"margin:0 0 16px;padding:8px 12px;background:#FFF4D6;border-radius:8px;font-family:sans-serif;font-size:13px\">{System.Net.WebUtility.HtmlEncode(notice)}</p>\n{message.Html}",
+        };
     }
 }
 

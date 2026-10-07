@@ -34,3 +34,5 @@ param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMA
 // Na de livegang staat Dev op het gratis F1-plan zonder Always On (GitHub-variabele DVD_ALWAYS_ON=false).
 param alwaysOn = readEnvironmentVariable('DVD_ALWAYS_ON', 'true') == 'true'
 param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAMES', ''), ','), host => !empty(host))
+// Dev heeft na de livegang een kopie van de echte leden: alle e-mail gaat naar het testadres (besluit 2026-10-07).
+param emailRedirectTo = 'app@vrolijkedrammers.nl'

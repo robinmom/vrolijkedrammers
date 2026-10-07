@@ -55,6 +55,9 @@ param turnstileSiteKey string = ''
 @description('Koppeling met e-Boekhouden (ledensync en nieuwe leden aanmaken). Uit in Prod: onze eigen database is leidend.')
 param eBoekhoudenEnabled bool = true
 
+@description('Alleen Dev: alle e-mail naar dit adres (Dev heeft een kopie van de echte leden). Leeg in Prod.')
+param emailRedirectTo string = ''
+
 @description('Always On; uit op het gratis F1-plan (Dev na de livegang).')
 param alwaysOn bool = true
 
@@ -153,6 +156,7 @@ module api 'modules/appservice.bicep' = {
       Push__Provider: pushProvider == 'Expo' ? 'Expo' : 'Simulated'
       Email__Endpoint: email.outputs.endpoint
       Email__SenderDomain: email.outputs.senderDomain
+      Email__RedirectAllTo: emailRedirectTo
       // Kaartverkoop (fase 19): links in e-mails van de nachtelijke job; de Mollie-sleutel staat in Key Vault (mollie-api-key).
       Sales__PublicBaseUrl: publicBaseUrl
       // Andere eigen domeinen (bijv. zonder www) sturen door naar het hoofdadres.

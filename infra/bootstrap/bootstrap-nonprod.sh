@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Eenmalige bootstrap van Dev + Acc (runbook: docs/runbooks/omgeving-opbouwen.md).
+# Eenmalige bootstrap van Dev (Acc is opgeheven, 2026-10-07) (runbook: docs/runbooks/omgeving-opbouwen.md).
 # Uitvoeren door een beheerder met Owner op de subscription, ingelogd in de tenant van de subscription:
 #   az login --tenant <tenant-id-vereniging>
 #   AZURE_SUBSCRIPTION_ID=<id> DVD_LOCATION=swedencentral infra/bootstrap/bootstrap-nonprod.sh [--what-if]
@@ -35,7 +35,8 @@ PLAN_ID="$(jq -r .appServicePlanId.value <<<"$OUTPUTS")"
 WHATIF_CLIENT_ID="$(jq -r .whatIfClientId.value <<<"$OUTPUTS")"
 ME="$(az ad signed-in-user show --query id -o tsv)"
 
-for ENV in dev acc; do
+ENVIRONMENTS=(dev)
+for ENV in "${ENVIRONMENTS[@]}"; do
   CLIENT_ID="$(jq -r --arg e "$ENV" '.deployIdentities.value[] | select(.environment == $e) | .clientId' <<<"$OUTPUTS")"
   PRINCIPAL_ID="$(jq -r --arg e "$ENV" '.deployIdentities.value[] | select(.environment == $e) | .principalId' <<<"$OUTPUTS")"
   GROUP="sg-dvd-sql-admin-$ENV"

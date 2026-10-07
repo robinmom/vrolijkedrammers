@@ -11,7 +11,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=infra/entra/lib.sh
 source "$HERE/lib.sh"
 
-ENV="${1:?Gebruik: provisioning-certificate.sh dev|acc|prod [--renew-only]}"
+ENV="${1:?Gebruik: provisioning-certificate.sh dev|prod [--renew-only]}"
 MODE="${2:-}"
 : "${AZURE_SUBSCRIPTION_ID:?Zet AZURE_SUBSCRIPTION_ID}"
 VAULT="kv-dvd-$ENV"

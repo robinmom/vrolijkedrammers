@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Geeft een bestaand account toegang tot Dev en/of Acc (B-02): lid van Testers + attribuut environmentAccess.
-#   infra/entra/set-tester.sh <user-object-id of e-mailadres> dev,acc     (leeg tweede argument = toegang intrekken)
+#   infra/entra/set-tester.sh <user-object-id of e-mailadres> dev     (leeg tweede argument = toegang intrekken)
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=infra/entra/lib.sh
 source "$HERE/lib.sh"
 
-USER_ID="${1:?Gebruik: set-tester.sh <user-object-id of e-mailadres> [dev,acc]}"
+USER_ID="${1:?Gebruik: set-tester.sh <user-object-id of e-mailadres> [dev]}"
 ACCESS="${2:-}"
-[[ -z "$ACCESS" || "$ACCESS" =~ ^(dev|acc)(,(dev|acc))?$ ]] || { echo "Toegestaan: dev, acc of dev,acc" >&2; exit 1; }
+[[ -z "$ACCESS" || "$ACCESS" == dev ]] || { echo "Toegestaan: dev (Acc is opgeheven)" >&2; exit 1; }
 use_ciam_tenant
 
 # Een UPN (…@vrolijkedrammersapp.onmicrosoft.com) of e-mailadres omzetten naar de object-id. Een eigen inlog met

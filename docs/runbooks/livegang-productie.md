@@ -135,6 +135,18 @@ geverifieerd (aparte stappen).
 Dev blijft bereikbaar (trager, dagelijkse rekenlimiet); de database pauzeert zelf. Terug naar B1: `DVD_PLAN_SKU=B1` en
 `DVD_ALWAYS_ON=true`.
 
+## Acc opheffen (besluit 2026-10-07)
+
+Er zijn alleen nog Dev en Prod. Dev blijft de ontwikkelomgeving op het gratis F1-plan, zonder eigen domein (F1
+ondersteunt geen eigen domeinen), bereikbaar op het azurewebsites-adres. Acc opruimen kan op elk moment:
+
+```bash
+AZURE_SUBSCRIPTION_ID=<id> infra/bootstrap/remove-acc.sh      # Azure: rg-dvd-acc, identiteit, SQL-beheergroep
+infra/bootstrap/remove-acc.sh --entra                           # app-registraties "DVD … (acc)"
+```
+
+Daarna in GitHub de environment `acc` verwijderen.
+
 ## Terugdraaien
 
 - **Website/domein**: DNS terugzetten naar de oude WordPress-records (TTL 300 → binnen minuten).

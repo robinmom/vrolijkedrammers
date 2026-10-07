@@ -11,8 +11,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=infra/entra/lib.sh
 source "$HERE/lib.sh"
 
-ENV="${1:?Gebruik: register-apps.sh dev|acc|prod}"
-[[ "$ENV" =~ ^(dev|acc|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
+ENV="${1:?Gebruik: register-apps.sh dev|prod}"
+[[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 PORTAL_URL="${DVD_PORTAL_URL:-}"
 RESTRICTED=$([[ "$ENV" == prod ]] && echo false || echo true)
 use_ciam_tenant

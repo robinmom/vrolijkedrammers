@@ -6,9 +6,9 @@
 # expo-push-access-token, turnstile-secret-key.
 set -euo pipefail
 
-ENV="${1:?Gebruik: set-secret.sh dev|acc|prod <naam>}"
-NAME="${2:?Gebruik: set-secret.sh dev|acc|prod <naam>}"
-[[ "$ENV" =~ ^(dev|acc|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
+ENV="${1:?Gebruik: set-secret.sh dev|prod <naam>}"
+NAME="${2:?Gebruik: set-secret.sh dev|prod <naam>}"
+[[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 [[ "$NAME" =~ ^[a-z0-9-]+$ ]] || { echo "Ongeldige naam: $NAME" >&2; exit 1; }
 VAULT="kv-dvd-$ENV"
 

@@ -7,8 +7,8 @@
 # Daarna: GitHub-environmentvariabele DVD_PUSH_PROVIDER = Expo en opnieuw deployen.
 set -euo pipefail
 
-ENV="${1:?Gebruik: set-expo-token.sh dev|acc|prod}"
-[[ "$ENV" =~ ^(dev|acc|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
+ENV="${1:?Gebruik: set-expo-token.sh dev|prod}"
+[[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 VAULT="kv-dvd-$ENV"
 
 read -r -s -p "Expo-access-token: " TOKEN

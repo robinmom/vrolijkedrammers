@@ -15,7 +15,7 @@ public sealed class TestAccessOptions
     public string? Environment { get; set; }
 
     /// <summary>Waarde van environmentAccess bij toegang geven (<c>Graph:TestAccessEnvironments</c>).</summary>
-    public string Grant { get; set; } = "dev,acc";
+    public string Grant { get; set; } = "dev";
 }
 
 public sealed record TestAccessStatus(

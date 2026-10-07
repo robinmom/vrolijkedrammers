@@ -11,8 +11,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=infra/entra/lib.sh
 source "$HERE/lib.sh"
 
-ENV="${1:?Gebruik: register-provisioning-app.sh dev|acc|prod}"
-[[ "$ENV" =~ ^(dev|acc|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
+ENV="${1:?Gebruik: register-provisioning-app.sh dev|prod}"
+[[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 use_ciam_tenant
 
 USER_READWRITE_ALL="741f803b-c850-494e-b5df-cde7c675a1ca" # Microsoft Graph application permission

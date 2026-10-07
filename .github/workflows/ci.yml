@@ -84,7 +84,7 @@ jobs:
           DVD_APP_SERVICE_PLAN_ID: /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Web/serverfarms/plan
           DVD_SQL_ADMIN_GROUP_OBJECT_ID: 00000000-0000-0000-0000-000000000000
         run: |
-          for env in dev acc prod; do az bicep build-params --file "infra/env/$env.bicepparam" --stdout > /dev/null; done
+          for env in dev prod; do az bicep build-params --file "infra/env/$env.bicepparam" --stdout > /dev/null; done
       - name: Shellscripts
         run: shellcheck -x infra/bootstrap/*.sh infra/entra/*.sh infra/prod/*.sh
 

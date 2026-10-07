@@ -48,7 +48,7 @@ public class TestAccessTests(SqlServerFixture sql) : IAsyncLifetime
         var objectId = _api.Entra.SignUp("tester@example.com");
         var granted = await (await _bestuur.PutAsJsonAsync($"/api/v1/admin/users/{userId}/test-access", new { granted = true })).Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(granted.GetProperty("hasAccessHere").GetBoolean());
-        Assert.Equal("dev,acc", _api.Entra.TestAccess[objectId]);
+        Assert.Equal("dev", _api.Entra.TestAccess[objectId]);
 
         var revoked = await (await _bestuur.PutAsJsonAsync($"/api/v1/admin/users/{userId}/test-access", new { granted = false })).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal((false, false), (revoked.GetProperty("hasAccessHere").GetBoolean(), revoked.GetProperty("inTestersGroup").GetBoolean()));

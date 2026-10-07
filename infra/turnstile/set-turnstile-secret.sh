@@ -6,8 +6,8 @@
 # Daarna: GitHub-variabele DVD_TURNSTILE_SITE_KEY = de (openbare) Site Key en opnieuw deployen.
 set -euo pipefail
 
-ENV="${1:?Gebruik: set-turnstile-secret.sh dev|acc|prod}"
-[[ "$ENV" =~ ^(dev|acc|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
+ENV="${1:?Gebruik: set-turnstile-secret.sh dev|prod}"
+[[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 VAULT="kv-dvd-$ENV"
 
 read -r -s -p "Turnstile Secret Key: " SECRET

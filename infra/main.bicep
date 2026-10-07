@@ -2,7 +2,7 @@
 // Voorwaarde: de bootstrap (infra/bootstrap) heeft de resource groups, het gedeelde plan en de SQL-beheergroep aangemaakt.
 targetScope = 'resourceGroup'
 
-@allowed(['dev', 'acc', 'prod'])
+@allowed(['dev', 'prod'])
 param environmentName string
 param location string = resourceGroup().location
 
@@ -76,7 +76,6 @@ var publicBaseUrl = empty(customHostNames) ? 'https://app-dvd-api-${environmentN
 
 var aspnetEnvironment = {
   dev: 'Dev'
-  acc: 'Acc'
   prod: 'Production'
 }
 

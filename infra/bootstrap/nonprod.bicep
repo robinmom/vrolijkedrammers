@@ -7,7 +7,8 @@ param location string = 'swedencentral'
 @description('Repository zoals GitHub die in het OIDC-subject zet: eigenaar@eigenaar-id/naam@repo-id (nieuwe, onveranderlijke vorm).')
 param githubRepository string
 
-param environments array = ['dev', 'acc']
+// Acc is opgeheven (2026-10-07); alleen Dev is non-prod.
+param environments array = ['dev']
 
 @description('SKU van het gedeelde plan (B1, of F1 om na de livegang kosten te besparen).')
 @allowed(['B1', 'F1'])

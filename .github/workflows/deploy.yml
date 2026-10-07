@@ -1,4 +1,4 @@
-# Uitrol naar Dev (automatisch na merge op main), Acc of Prod (handmatig) — docs/08 §7, fase 1 en 7.
+# Uitrol naar Dev (automatisch na merge op main) of Prod (handmatig) — docs/08 §7, fase 1 en 7.
 # Prod alleen via de GitHub environment "prod" met Required reviewers (goedkeuring vóór de uitrol).
 # Aanmelden bij Azure via OIDC met de managed identity van de GitHub environment; geen wachtwoorden of sleutels.
 # Subscription-, tenant- en groeps-ID's en e-mailadressen staan als secret (openbare repository: dan worden ze in de
@@ -13,7 +13,7 @@ on:
       environment:
         description: Omgeving
         type: choice
-        options: [dev, acc, prod]
+        options: [dev, prod]
         default: dev
       infraOnly:
         description: Alleen infrastructuur (geen migraties en geen app), bijv. vóór het kopiëren van de data naar Prod

@@ -2552,7 +2552,7 @@
         "tags": [
           "AdminAdvertisers"
         ],
-        "summary": "Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te\nvullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt de kleur van de\nronde: 1 lichtgroen, 2 lichtblauw, 3 lichtgeel. Op paginanummer, dan op naam.",
+        "summary": "Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te\nvullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt een kleur:\nlichtrood als de adverteerder stopt, anders die van de ronde (1 lichtgroen, 2 lichtblauw, 3 lichtgeel). Op\npaginanummer, dan op naam.",
         "parameters": [
           {
             "name": "year",

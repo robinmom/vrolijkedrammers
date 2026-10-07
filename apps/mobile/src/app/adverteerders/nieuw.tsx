@@ -21,7 +21,7 @@ export default function NieuweAdverteerderScreen() {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const mine = useMyAdvertisers();
-  const [form, setForm] = useState({ companyName: '', contactName: '', phone: '', email: '', addressLine: '', postalCode: '', city: 'Loil', amount: '' });
+  const [form, setForm] = useState({ companyName: '', contactName: '', phone: '', email: '', addressLine: '', postalCode: '', city: 'Loil', amount: '', note: '' });
   const [kind, setKind] = useState<Kind>('Advertisement');
   const [payment, setPayment] = useState<Payment>('Mandate');
   const [iban, setIban] = useState('');
@@ -58,7 +58,7 @@ export default function NieuweAdverteerderScreen() {
           amount,
           iban: payment === 'Mandate' ? iban.trim() : null,
           mandateConsent: payment === 'Mandate' && consent,
-          note: null,
+          note: form.note.trim() || null,
           cashReceived: payment === 'Cash' && received,
         },
       });
@@ -126,6 +126,7 @@ export default function NieuweAdverteerderScreen() {
           onChange={setKind}
         />
         <TextField label="Bedrag (€)" value={form.amount} onChangeText={(v) => set({ amount: v })} keyboardType="decimal-pad" maxLength={10} />
+        <TextField label="Opmerking" value={form.note} onChangeText={(v) => set({ note: v })} multiline maxLength={500} />
         <FilterChips<Payment>
           accessibilityLabel="Betaling"
           options={[

@@ -2080,6 +2080,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/{id}/years/{year}/round": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Ronde 1, 2 of 3 (of geen) in het campagnejaar (fase 27g); kleurt de regel in de export. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserRoundRequest"];
+                    "text/json": components["schemas"]["AdvertiserRoundRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserRoundRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/export": {
         parameters: {
             query?: never;
@@ -2088,8 +2153,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Het overzicht als Excel (fase 27d), in de kolommen van "Advertentie overzicht", zodat het ook weer in te lezen is.
-         *     De IBAN staat er bewust niet in (bij opnieuw inlezen blijft de bekende IBAN staan); wel de stand van het jaar.
+         * Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te
+         *     vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt de kleur van de
+         *     ronde: 1 lichtgroen, 2 lichtblauw, 3 lichtgeel. Op paginanummer, dan op naam.
          */
         get: {
             parameters: {
@@ -16106,6 +16172,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/advertisers/{id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Alleen de opmerking van dit jaar (fase 27g); de stand blijft gelijk. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserNoteRequest"];
+                    "text/json": components["schemas"]["AdvertiserNoteRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserNoteRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/membership-requests": {
         parameters: {
             query?: never;
@@ -19076,6 +19195,9 @@ export interface components {
          * @enum {unknown}
          */
         AdvertiserKind: "Advertisement" | "FreeGift" | "Gift";
+        AdvertiserNoteRequest: {
+            note: null | string;
+        };
         /**
          * @description Hoe de adverteerder betaalt (kolom M/C/R/B).
          * @enum {unknown}
@@ -19132,6 +19254,10 @@ export interface components {
             addedViaApp: boolean;
             years: components["schemas"]["AdvertiserYearResponse"][];
         };
+        AdvertiserRoundRequest: {
+            /** Format: int32 */
+            round: null | number;
+        };
         AdvertiserStatusReport: {
             /** Format: int32 */
             year: number;
@@ -19169,6 +19295,8 @@ export interface components {
             note: null | string;
             /** Format: date-time */
             paidAt?: null | string;
+            /** Format: int32 */
+            round?: null | number;
         };
         /** @description Tellers; `CashReceived`/`CashOutstanding`: van de opgehaalde contante bijdragen wat binnen is en wat nog niet (fase 27d). */
         AdvertiserStatusTotals: {
@@ -21288,6 +21416,7 @@ export interface components {
             /** @default false */
             cashReceived: boolean;
             history?: null | components["schemas"]["AdvertiserHistoryItem"][];
+            page?: null | string;
         };
         MyAdvertisers: {
             isCollector: boolean;

@@ -26,6 +26,8 @@ interface MockAdvertiser {
   addedViaApp: boolean;
   status2027: string;
   amount2026: number;
+  round2027?: number | null;
+  note2027?: string | null;
   paid2027?: string | null;
 }
 
@@ -942,6 +944,7 @@ export class MockApi {
       addedViaApp: false,
       status2027: 'Open',
       amount2026: 70,
+      note2027: 'Liever na 18 uur langskomen',
     },
   ];
   advertiserCampaignYear = 2027;
@@ -1490,8 +1493,9 @@ export class MockApi {
           isFree: false,
           previousAmount: a.amount2026,
           statusChangedAt: null,
-          note: null,
+          note: a.note2027 ?? null,
           paidAt: a.paid2027 ?? null,
+          round: a.round2027 ?? null,
         }));
       const totals = (list: typeof rows) => ({
         total: list.length,
@@ -1523,6 +1527,11 @@ export class MockApi {
         rows,
       });
     }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)\/round$/))) {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      a.round2027 = (body.round as number | null) ?? null;
+      return noContent();
+    }
     if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)\/cash$/))) {
       const a = this.advertisers.find((x) => x.id === m![1])!;
       a.paid2027 = body.received ? '2026-10-04T18:00:00Z' : null;
@@ -1534,6 +1543,7 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)$/))) {
       const a = this.advertisers.find((x) => x.id === m![1])!;
       a.status2027 = body.status as string;
+      a.note2027 = (body.note as string | null) ?? null;
       this.record('advertiser.status-changed', 'Advertiser', a.id, body);
       return noContent();
     }

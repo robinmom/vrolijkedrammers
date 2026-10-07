@@ -29,7 +29,7 @@ test('fase 27b: overzicht, collectant koppelen en IBAN voluit', async ({ page })
 
   await page.getByRole('link', { name: 'Garage Proef' }).click();
   await expect(page.getByText('Collectant in het Excel-bestand: ALFRED ONBEKEND.')).toBeVisible();
-  await page.getByLabel('Collectant (kaderlid)').selectOption({ label: 'Piet van der Berg' });
+  await page.getByLabel('Collectant (kaderlid of rol Collectant)').selectOption({ label: 'Piet van der Berg' });
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Adverteerder opgeslagen.')).toBeVisible();
   expect(api.advertisers[1]).toMatchObject({ collectorMemberId: 'm-1', importedCollectorName: null });
@@ -66,6 +66,13 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exporteren (Excel)' }).click();
   expect((await download).suggestedFilename()).toBe('adverteerders-2027.xlsx');
+
+  // Fase 27g: ronde per bedrijf; de opmerking van de collectant blijft staan als de stand verandert.
+  await page.getByLabel('Ronde van Garage Proef').selectOption({ label: 'Ronde 2' });
+  await expect(page.getByLabel('Ronde van Garage Proef')).toHaveValue('2');
+  expect(api.advertisers[1]!.round2027).toBe(2);
+  await expect(page.getByRole('cell', { name: 'Liever na 18 uur langskomen' })).toBeVisible();
+  expect(api.advertisers[1]!.note2027).toBe('Liever na 18 uur langskomen');
 
   // Filteren op collectant via de tabel per collectant.
   await page.getByRole('button', { name: 'Piet van der Berg' }).click();

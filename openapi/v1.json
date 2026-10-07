@@ -2454,12 +2454,105 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/{id}/years/{year}/round": {
+      "put": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Ronde 1, 2 of 3 (of geen) in het campagnejaar (fase 27g); kleurt de regel in de export.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserRoundRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserRoundRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserRoundRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/export": {
       "get": {
         "tags": [
           "AdminAdvertisers"
         ],
-        "summary": "Het overzicht als Excel (fase 27d), in de kolommen van \"Advertentie overzicht\", zodat het ook weer in te lezen is.\nDe IBAN staat er bewust niet in (bij opnieuw inlezen blijft de bekende IBAN staan); wel de stand van het jaar.",
+        "summary": "Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te\nvullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt de kleur van de\nronde: 1 lichtgroen, 2 lichtblauw, 3 lichtgeel. Op paginanummer, dan op naam.",
         "parameters": [
           {
             "name": "year",
@@ -19403,6 +19496,70 @@
         }
       }
     },
+    "/api/v1/me/advertisers/{id}/note": {
+      "put": {
+        "tags": [
+          "MyAdvertisers"
+        ],
+        "summary": "Alleen de opmerking van dit jaar (fase 27g); de stand blijft gelijk.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserNoteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserNoteRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/membership-requests": {
       "get": {
         "tags": [
@@ -24161,6 +24318,20 @@
         ],
         "description": "Soort bijdrage (kolom A/V/G in het Excel-overzicht)."
       },
+      "AdvertiserNoteRequest": {
+        "required": [
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AdvertiserPayment": {
         "enum": [
           "Mandate",
@@ -24439,6 +24610,21 @@
           }
         }
       },
+      "AdvertiserRoundRequest": {
+        "required": [
+          "round"
+        ],
+        "type": "object",
+        "properties": {
+          "round": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "AdvertiserStatusReport": {
         "required": [
           "year",
@@ -24595,6 +24781,13 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "round": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -32503,6 +32696,12 @@
             "items": {
               "$ref": "#/components/schemas/AdvertiserHistoryItem"
             }
+          },
+          "page": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "Een adverteerder zoals de collectant hem in de app ziet."

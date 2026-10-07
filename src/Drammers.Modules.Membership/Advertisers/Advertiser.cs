@@ -131,7 +131,11 @@ public sealed class AdvertiserYear
 
     public Guid? StatusChangedBy { get; set; }
 
+    /// <summary>Opmerking van dit jaar, bijv. van de collectant in de app (fase 27g ook in de export).</summary>
     public string? Note { get; set; }
+
+    /// <summary>Ronde 1, 2 of 3 waarin de adverteerder dit jaar meegaat (fase 27g, in het portal); kleurt de regel in de export.</summary>
+    public byte? Round { get; set; }
 
     /// <summary>Bij contante betaling: wanneer en door wie het geld is ontvangen (fase 27d).</summary>
     public DateTime? PaidAt { get; set; }

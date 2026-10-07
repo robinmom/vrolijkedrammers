@@ -62,7 +62,7 @@ export default function AdverteerdersScreen() {
           <QueryState query={mine} />
         ) : !mine.data.isCollector ? (
           <AppText variant="body" color={colors.textSecondary}>
-            Adverteerders ophalen kan alleen als je in het kader zit.
+            Adverteerders ophalen kan alleen als je in het kader zit of collectant bent.
           </AppText>
         ) : (
           <>
@@ -115,6 +115,8 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
   const [error, setError] = useState<string | null>(null);
   const cash = a.payment === 'Cash';
   const [received, setReceived] = useState(a.cashReceived);
+  const [note, setNote] = useState(a.note ?? '');
+  const [saved, setSaved] = useState(false);
 
   async function save(status: Advertiser['status']) {
     const value = amount.trim() ? Number(amount.replace(',', '.')) : null;
@@ -127,10 +129,33 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
     try {
       const { response, error: problem } = await api.PUT('/api/v1/me/advertisers/{id}/status', {
         params: { path: { id: a.id } },
-        body: { status, amount: status === 'Collected' ? value : null, note: null, cashReceived: cash ? received : null },
+        body: { status, amount: status === 'Collected' ? value : null, note: note.trim() || null, cashReceived: cash ? received : null },
       });
       if (response.ok) {
         setOpen(false);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.myAdvertisers });
+      } else {
+        setError((problem as { detail?: string } | undefined)?.detail ?? 'Opslaan lukt nu niet.');
+      }
+    } catch {
+      setError('Geen verbinding. Probeer het opnieuw.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Alleen de opmerking opslaan (fase 27g); de stand blijft gelijk. */
+  async function saveNote() {
+    setBusy(true);
+    setError(null);
+    setSaved(false);
+    try {
+      const { response, error: problem } = await api.PUT('/api/v1/me/advertisers/{id}/note', {
+        params: { path: { id: a.id } },
+        body: { note: note.trim() || null },
+      });
+      if (response.ok) {
+        setSaved(true);
         await queryClient.invalidateQueries({ queryKey: queryKeys.myAdvertisers });
       } else {
         setError((problem as { detail?: string } | undefined)?.detail ?? 'Opslaan lukt nu niet.');
@@ -156,7 +181,7 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
         <View style={styles.grow}>
           <AppText variant="listTitle">{a.companyName}</AppText>
           <AppText variant="caption" color={colors.textSecondary}>
-            {[a.contactName, a.city].filter(Boolean).join(' · ') || ' '}
+            {[a.page ? `Pagina ${a.page}` : null, a.contactName, a.city].filter(Boolean).join(' · ') || ' '}
           </AppText>
         </View>
         <View style={styles.right}>
@@ -201,6 +226,17 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
           )}
           <TextField label="Bedrag dit jaar (€)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" maxLength={10} />
           {cash ? <CheckboxRow label="Geld contant ontvangen" checked={received} onChange={setReceived} /> : null}
+          <TextField
+            label="Opmerking"
+            value={note}
+            onChangeText={(v) => {
+              setNote(v);
+              setSaved(false);
+            }}
+            multiline
+            maxLength={500}
+          />
+          <Button label={saved ? 'Opmerking opgeslagen' : 'Opmerking opslaan'} variant="secondary" onPress={() => void saveNote()} disabled={busy} />
           {error ? (
             <AppText variant="body" color={colors.accentText} accessibilityRole="alert">
               {error}

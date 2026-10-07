@@ -4,6 +4,8 @@ using System.Text.Json;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Persistence;
+using Drammers.Infrastructure.Persistence.Configurations;
+using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Membership.Advertisers;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
@@ -35,7 +37,8 @@ public sealed record AdvertiserCollector(Guid MemberId, string Name);
 
 public sealed record AdvertiserStatusRow(
     Guid Id, int Number, string CompanyName, string? City, AdvertiserKind Kind, AdvertiserPayment Payment, Guid? CollectorMemberId, string? CollectorName,
-    AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note, DateTime? PaidAt = null);
+    AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note, DateTime? PaidAt = null,
+    int? Round = null);
 
 /// <summary>Tellers; <c>CashReceived</c>/<c>CashOutstanding</c>: van de opgehaalde contante bijdragen wat binnen is en wat nog niet (fase 27d).</summary>
 public sealed record AdvertiserStatusTotals(
@@ -53,7 +56,7 @@ public sealed record AdvertiserHistoryItem(int Year, decimal? Amount, bool IsFre
 public sealed record MyAdvertiser(
     Guid Id, int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
     string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note,
-    bool CashReceived = false, IReadOnlyList<AdvertiserHistoryItem>? History = null);
+    bool CashReceived = false, IReadOnlyList<AdvertiserHistoryItem>? History = null, string? Page = null);
 
 public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items);
 
@@ -82,10 +85,29 @@ public sealed class AdvertiserAdministration(
 {
     // ----- Collectanten en campagnejaar ----------------------------------------------------------------------------
 
-    /// <summary>Kaderleden die aan een lid zijn gekoppeld (alleen zij kunnen collectant zijn), op naam.</summary>
+    /// <summary>
+    /// Wie collectant kan zijn (fase 27g): kaderleden (kaderlijst) en leden met het recht <c>advertiser.collect</c> via een
+    /// rol (Kaderlid of Collectant), met een actief account en een geldige roltoewijzing.
+    /// </summary>
+    private IQueryable<Guid> CollectorMemberIds()
+    {
+        var permission = DefaultRoles.PermissionId(SharedKernel.Authorization.Permissions.AdvertiserCollect);
+        var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        var viaRole =
+            from u in db.Users
+            where u.MemberId != null && u.AccountStatus == AccountStatus.Active
+            join ur in db.UserRoles on u.Id equals ur.UserId
+            where (ur.ValidFrom == null || ur.ValidFrom <= today) && (ur.ValidTo == null || ur.ValidTo >= today)
+            join rp in db.RolePermissions on ur.RoleId equals rp.RoleId
+            where rp.PermissionId == permission
+            select u.MemberId!.Value;
+        return db.CommitteeMembers.Where(c => c.MemberId != null).Select(c => c.MemberId!.Value).Union(viaRole);
+    }
+
+    /// <summary>Kaderleden en collectanten (zie <see cref="CollectorMemberIds"/>), op naam.</summary>
     public async Task<IReadOnlyList<AdvertiserCollector>> CollectorsAsync(CancellationToken cancellationToken)
     {
-        var ids = await db.CommitteeMembers.AsNoTracking().Where(c => c.MemberId != null).Select(c => c.MemberId!.Value).Distinct().ToListAsync(cancellationToken);
+        var ids = await CollectorMemberIds().Distinct().ToListAsync(cancellationToken);
         return await db.Members.AsNoTracking().Where(m => ids.Contains(m.Id)).OrderBy(m => m.FullName)
             .Select(m => new AdvertiserCollector(m.Id, m.FullName)).ToListAsync(cancellationToken);
     }
@@ -325,7 +347,7 @@ public sealed class AdvertiserAdministration(
 
         foreach (var name in unknown)
         {
-            warnings.Add(new AdvertiserImportIssue(0, $"Collectant \"{name}\" is geen (gekoppeld) kaderlid; koppel de adverteerders daarna in het portal."));
+            warnings.Add(new AdvertiserImportIssue(0, $"Collectant \"{name}\" is geen (gekoppeld) kaderlid of collectant; koppel de adverteerders daarna in het portal."));
         }
 
         var known = await db.Advertisers.AsNoTracking().Where(a => seen.Keys.Contains(a.Number)).Select(a => a.Number).ToListAsync(cancellationToken);
@@ -380,7 +402,7 @@ public sealed class AdvertiserAdministration(
 
         if (input.CollectorMemberId is { } collector && !(await CollectorsAsync(cancellationToken)).Any(c => c.MemberId == collector))
         {
-            throw new DomainException(ErrorCodes.Validation, "De collectant moet een kaderlid zijn.");
+            throw new DomainException(ErrorCodes.Validation, "De collectant moet een kaderlid zijn of de rol Collectant hebben.");
         }
 
         (advertiser.Number, advertiser.CompanyName, advertiser.ContactName, advertiser.Phone, advertiser.Mobile, advertiser.Email, advertiser.AddressLine,
@@ -421,7 +443,7 @@ public sealed class AdvertiserAdministration(
             return new AdvertiserStatusRow(a.Id, a.Number, a.CompanyName, a.City, a.Kind, a.Payment, a.CollectorMemberId,
                 a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : a.ImportedCollectorName,
                 current?.Status ?? AdvertiserYearStatus.Open, current?.Amount, current?.IsFree ?? false, previous?.Amount, current?.StatusChangedAt, current?.Note,
-                current?.PaidAt);
+                current?.PaidAt, current?.Round);
         }).OrderBy(r => r.CollectorName ?? "~").ThenBy(r => r.CompanyName).ToList();
 
         var perCollector = rows.GroupBy(r => (r.CollectorMemberId, Name: r.CollectorName ?? "Zonder collectant"))
@@ -478,9 +500,9 @@ public sealed class AdvertiserAdministration(
 
     // ----- De collectant in de app (fase 27b-2) -------------------------------------------------------------------
 
-    /// <summary>Of het lid in het kader zit (alleen dan kan het collectant zijn).</summary>
+    /// <summary>Of het lid collectant kan zijn: kaderlid of het recht <c>advertiser.collect</c> via een rol.</summary>
     public Task<bool> IsCollectorAsync(Guid memberId, CancellationToken cancellationToken) =>
-        db.CommitteeMembers.AnyAsync(c => c.MemberId == memberId, cancellationToken);
+        CollectorMemberIds().AnyAsync(id => id == memberId, cancellationToken);
 
     /// <summary>De adverteerders van deze collectant in het lopende campagnejaar: eerst open, dan op naam.</summary>
     public async Task<MyAdvertisers> MineAsync(Guid memberId, CancellationToken cancellationToken)
@@ -502,7 +524,7 @@ public sealed class AdvertiserAdministration(
                 var a = details[r.Id];
                 return new MyAdvertiser(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City, a.Kind,
                     a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note, r.PaidAt is not null,
-                    [.. a.Years.OrderByDescending(y => y.Year).Select(y => new AdvertiserHistoryItem(y.Year, y.Amount, y.IsFree, y.Status))]);
+                    [.. a.Years.OrderByDescending(y => y.Year).Select(y => new AdvertiserHistoryItem(y.Year, y.Amount, y.IsFree, y.Status))], a.Page);
             })]);
     }
 
@@ -518,6 +540,25 @@ public sealed class AdvertiserAdministration(
         await SetStatusAsync(advertiserId, await CampaignYearAsync(cancellationToken), status, amount, note, cancellationToken, cashReceived);
     }
 
+    /// <summary>De collectant zet alleen de opmerking van dit jaar (fase 27g), zonder de stand te wijzigen.</summary>
+    public async Task SetMyNoteAsync(Guid memberId, Guid advertiserId, string? note, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.Include(a => a.Years)
+            .SingleOrDefaultAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken) ?? throw NotFound();
+        var year = await CampaignYearAsync(cancellationToken);
+        var row = advertiser.Years.SingleOrDefault(y => y.Year == year);
+        if (row is null)
+        {
+            row = new AdvertiserYear { AdvertiserId = advertiserId, Year = year };
+            advertiser.Years.Add(row);
+        }
+
+        var before = row.Note;
+        row.Note = Clean(note, 500);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.note-changed", "Advertiser", advertiserId.ToString(), before, row.Note), cancellationToken);
+    }
+
     /// <summary>
     /// Een nieuwe adverteerder die de collectant zelf heeft gevonden: meteen opgehaald voor dit jaar, met het volgende
     /// vrije nummer. Het bestuur ziet hem in het portal als "nieuw via app" en kijkt de gegevens na.
@@ -526,7 +567,7 @@ public sealed class AdvertiserAdministration(
     {
         if (!await IsCollectorAsync(memberId, cancellationToken))
         {
-            throw new DomainException(ErrorCodes.Forbidden, "Alleen kaderleden kunnen adverteerders toevoegen.", DomainErrorKind.Forbidden);
+            throw new DomainException(ErrorCodes.Forbidden, "Alleen kaderleden en collectanten kunnen adverteerders toevoegen.", DomainErrorKind.Forbidden);
         }
 
         if (Clean(input.CompanyName, 200) is not { } company)
@@ -613,6 +654,29 @@ public sealed class AdvertiserAdministration(
     }
 
     /// <summary>Zet alleen "contant ontvangen" (portal), zonder de stand te wijzigen.</summary>
+    /// <summary>Ronde 1, 2 of 3 (of geen) waarin de adverteerder dit jaar meegaat (fase 27g, portal).</summary>
+    public async Task SetRoundAsync(Guid advertiserId, int year, int? round, CancellationToken cancellationToken)
+    {
+        if (round is not (null or 1 or 2 or 3))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Kies ronde 1, 2 of 3.");
+        }
+
+        var advertiser = await db.Advertisers.Include(a => a.Years).SingleOrDefaultAsync(a => a.Id == advertiserId, cancellationToken) ?? throw NotFound();
+        var row = advertiser.Years.SingleOrDefault(y => y.Year == year);
+        if (row is null)
+        {
+            row = new AdvertiserYear { AdvertiserId = advertiserId, Year = year };
+            advertiser.Years.Add(row);
+        }
+
+        var before = row.Round;
+        row.Round = (byte?)round;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.round-changed", "Advertiser", advertiserId.ToString(), before?.ToString(CultureInfo.InvariantCulture),
+            $"{year}: {round?.ToString(CultureInfo.InvariantCulture) ?? "geen"}"), cancellationToken);
+    }
+
     public async Task SetCashReceivedAsync(Guid advertiserId, int year, bool received, CancellationToken cancellationToken)
     {
         var advertiser = await db.Advertisers.Include(a => a.Years).SingleOrDefaultAsync(a => a.Id == advertiserId, cancellationToken) ?? throw NotFound();

@@ -36,6 +36,16 @@ public sealed class MyAdvertisersController(AdvertiserAdministration advertisers
         return NoContent();
     }
 
+    /// <summary>Alleen de opmerking van dit jaar (fase 27g); de stand blijft gelijk.</summary>
+    [HttpPut("{id:guid}/note")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetNote(Guid id, AdvertiserNoteRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.SetMyNoteAsync(RequireMember(), id, request.Note, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost]
     [ProducesResponseType<CreatedResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
@@ -49,6 +59,8 @@ public sealed class MyAdvertisersController(AdvertiserAdministration advertisers
     private Guid RequireMember() =>
         MemberId ?? throw new DomainException(ErrorCodes.Forbidden, "Je account is niet aan een lid gekoppeld.", DomainErrorKind.Forbidden);
 }
+
+public sealed record AdvertiserNoteRequest([StringLength(500)] string? Note);
 
 public sealed record NewAdvertiserRequest(
     [Required, StringLength(200, MinimumLength = 1)] string CompanyName,

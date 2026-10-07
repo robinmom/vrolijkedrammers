@@ -37,6 +37,7 @@ const advertiser = (id: string, companyName: string, status: string, previousAmo
   amount,
   previousAmount,
   note: null,
+  page: '4',
   cashReceived: false,
   history: previousAmount === null ? [] : [{ year: 2026, amount: previousAmount, isFree: false, status: 'Collected' }],
 });
@@ -102,6 +103,30 @@ describe('Adverteerders ophalen (fase 27b-2)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Afvinken als opgehaald' }));
     const [put] = requests('/api/v1/me/advertisers/a-3/status', 'PUT');
     expect(await put!.json()).toEqual({ status: 'Collected', amount: 50, note: null, cashReceived: true });
+  });
+
+  it('toont het paginanummer en slaat een opmerking op zonder de stand te wijzigen (fase 27g)', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/me/advertisers': mine,
+      '/api/v1/me/advertisers/a-1/note': { status: 204 },
+      '/api/v1/me/advertisers/a-1/status': { status: 204 },
+    });
+    await renderApp(routes, '/adverteerders');
+    expect(await screen.findByText('Pagina 4 · Jan Test · Loil')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Bakkerij De Test, Nog langs' }));
+    await fireEvent.changeText(screen.getByLabelText('Opmerking'), 'Volgend jaar een halve pagina');
+    await fireEvent.press(screen.getByRole('button', { name: 'Opmerking opslaan' }));
+    expect(await screen.findByRole('button', { name: 'Opmerking opgeslagen' })).toBeTruthy();
+    const [note] = requests('/api/v1/me/advertisers/a-1/note', 'PUT');
+    expect(await note!.json()).toEqual({ note: 'Volgend jaar een halve pagina' });
+    expect(requests('/api/v1/me/advertisers/a-1/status', 'PUT')).toHaveLength(0);
+
+    // Afvinken neemt de opmerking mee.
+    await fireEvent.press(screen.getByRole('button', { name: 'Afvinken als opgehaald' }));
+    const [put] = requests('/api/v1/me/advertisers/a-1/status', 'PUT');
+    expect(await put!.json()).toEqual({ status: 'Collected', amount: 35, note: 'Volgend jaar een halve pagina', cashReceived: null });
   });
 
   it('nieuwe adverteerder met machtiging vraagt IBAN en toestemming', async () => {

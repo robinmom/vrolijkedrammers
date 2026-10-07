@@ -11,7 +11,7 @@ using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 
 namespace Drammers.IntegrationTests;
 
@@ -67,10 +67,11 @@ public class FileUploadTests(SqlServerFixture sql) : IAsyncLifetime
 
         using var http = new HttpClient();
         var displayUrl = new Uri(photo.GetProperty("displayUrl").GetString()!);
-        using var display = Image.Load(await http.GetByteArrayAsync(displayUrl));
-        Assert.Null(display.Metadata.ExifProfile);
+        var displayBytes = await http.GetByteArrayAsync(displayUrl);
+        Assert.False(TestImages.HasExif(displayBytes));
+        using var display = SKBitmap.Decode(displayBytes);
         Assert.Equal(1600, Math.Max(display.Width, display.Height));
-        using var thumbnail = Image.Load(await http.GetByteArrayAsync(photo.GetProperty("thumbnailUrl").GetString()));
+        using var thumbnail = SKBitmap.Decode(await http.GetByteArrayAsync(photo.GetProperty("thumbnailUrl").GetString()));
         Assert.Equal(400, Math.Max(thumbnail.Width, thumbnail.Height));
 
         var expiry = DateTimeOffset.Parse(HttpUtility.ParseQueryString(displayUrl.Query)["se"]!, System.Globalization.CultureInfo.InvariantCulture);
@@ -150,8 +151,7 @@ public class FileUploadTests(SqlServerFixture sql) : IAsyncLifetime
 
         var detail = await _api.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/events/{eventId}");
         using var http = new HttpClient();
-        using var image = Image.Load(await http.GetByteArrayAsync(detail.GetProperty("imageUrl").GetString()));
-        Assert.Null(image.Metadata.ExifProfile);
+        Assert.False(TestImages.HasExif(await http.GetByteArrayAsync(detail.GetProperty("imageUrl").GetString())));
     }
 
     private async Task<int> CountBlobsAsync(string container)

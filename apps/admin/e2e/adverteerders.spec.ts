@@ -74,6 +74,21 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
   await expect(page.getByRole('cell', { name: 'Liever na 18 uur langskomen' })).toBeVisible();
   expect(api.advertisers[1]!.note2027).toBe('Liever na 18 uur langskomen');
 
+  // Zoeken en filteren op stand en ronde; stopt wordt lichtrood.
+  await page.getByLabel('Stand van Bakkerij De Test').selectOption({ label: 'Stopt' });
+  await expect(page.getByRole('row', { name: /Bakkerij De Test/ })).toHaveCSS('background-color', 'rgb(244, 204, 204)');
+  await page.getByLabel('Zoeken').fill('garage');
+  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toBeVisible();
+  await page.getByLabel('Zoeken').fill('');
+  await page.getByLabel('Stand', { exact: true }).selectOption({ label: 'Stopt' });
+  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toHaveCount(0);
+  await page.getByLabel('Stand', { exact: true }).selectOption({ label: 'Alle standen' });
+  await page.getByLabel('Ronde', { exact: true }).selectOption({ label: 'Ronde 2' });
+  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toHaveCount(0);
+  await expect(page.getByRole('row', { name: /Garage Proef/ })).toHaveCSS('background-color', 'rgb(221, 235, 247)');
+  await page.getByLabel('Ronde', { exact: true }).selectOption({ label: 'Alle rondes' });
+
   // Filteren op collectant via de tabel per collectant.
   await page.getByRole('button', { name: 'Piet van der Berg' }).click();
   await expect(page.getByLabel('Collectant')).toHaveValue('m-1');

@@ -510,6 +510,13 @@ export function AdvertiserEditorPage() {
 
 /** Ronde 1, 2 en 3: dezelfde kleuren als de regels in de Excel-export (lichtgroen, lichtblauw, lichtgeel). */
 const ROUND_COLORS: Record<number, string> = { 1: '#D9EAD3', 2: '#DDEBF7', 3: '#FFF2CC' };
+/** Stopt: lichtrood, gaat voor de ronde (zoals in de export). */
+const STOPPED_COLOR = '#F4CCCC';
+
+type StatusRow = NonNullable<ReturnType<typeof useAdvertiserStatus>['data']>['rows'][number];
+
+const rowColor = (r: StatusRow) =>
+  r.status === 'Stopped' ? STOPPED_COLOR : r.round ? ROUND_COLORS[r.round] : undefined;
 
 /** Adverteerders → Campagne: wie is opgehaald, met een voortgangsbalk en een filter op collectant. */
 export function AdvertiserStatusPage() {
@@ -517,6 +524,9 @@ export function AdvertiserStatusPage() {
   const campaign = useCampaignYear();
   const [year, setYear] = useState<number | null>(null);
   const [collector, setCollector] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<AdvertiserYearStatus | ''>('');
+  const [roundFilter, setRoundFilter] = useState('');
   const shownYear = year ?? campaign.data?.year ?? null;
   const status = useAdvertiserStatus(shownYear, collector);
   const setStatus = useApiMutation(
@@ -571,6 +581,13 @@ export function AdvertiserStatusPage() {
 
   const report = status.data;
   const totals = report?.totals;
+  const term = search.trim().toLowerCase();
+  const rows = (report?.rows ?? []).filter(
+    (r) =>
+      (!term || `${r.number} ${r.companyName} ${r.city ?? ''}`.toLowerCase().includes(term)) &&
+      (!statusFilter || r.status === statusFilter) &&
+      (!roundFilter || (roundFilter === 'none' ? !r.round : r.round === Number(roundFilter))),
+  );
   const handled = totals ? totals.collected + totals.stopped : 0;
   const percent = totals && totals.total > 0 ? Math.round((100 * handled) / totals.total) : 0;
 
@@ -594,7 +611,39 @@ export function AdvertiserStatusPage() {
           value={shownYear ?? ''}
           onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
         />
+        <Field
+          label="Zoeken"
+          type="search"
+          placeholder="Bedrijf, plaats of nummer"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="field">
+          <label htmlFor="filter-stand">Stand</label>
+          <select
+            id="filter-stand"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as AdvertiserYearStatus | '')}
+          >
+            <option value="">Alle standen</option>
+            {Object.entries(STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
         <CollectorSelect id="status-collectant" label="Collectant" value={collector} onChange={setCollector} />
+        <div className="field">
+          <label htmlFor="filter-ronde">Ronde</label>
+          <select id="filter-ronde" value={roundFilter} onChange={(e) => setRoundFilter(e.target.value)}>
+            <option value="">Alle rondes</option>
+            <option value="1">Ronde 1</option>
+            <option value="2">Ronde 2</option>
+            <option value="3">Ronde 3</option>
+            <option value="none">Zonder ronde</option>
+          </select>
+        </div>
         {campaign.data && shownYear !== campaign.data.year ? (
           <button type="button" className="button secondary" onClick={() => makeCampaignYear.mutate(undefined)}>
             Maak {shownYear} het campagnejaar
@@ -714,8 +763,8 @@ export function AdvertiserStatusPage() {
               </tr>
             </thead>
             <tbody>
-              {report.rows.map((r) => (
-                <tr key={r.id}>
+              {rows.map((r) => (
+                <tr key={r.id} style={rowColor(r) ? { background: rowColor(r) } : undefined}>
                   <td>
                     <Link to="/adverteerders/$id" params={{ id: r.id }}>
                       {r.number}. {r.companyName}
@@ -749,7 +798,7 @@ export function AdvertiserStatusPage() {
                       ))}
                     </select>
                   </td>
-                  <td style={r.round ? { background: ROUND_COLORS[r.round] } : undefined}>
+                  <td>
                     <label className="visually-hidden" htmlFor={`ronde-${r.id}`}>
                       Ronde van {r.companyName}
                     </label>
@@ -786,10 +835,10 @@ export function AdvertiserStatusPage() {
                   <td>{r.note ?? <span className="muted">—</span>}</td>
                 </tr>
               ))}
-              {report.rows.length === 0 ? (
+              {rows.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="muted">
-                    Geen adverteerders.
+                    {report.rows.length === 0 ? 'Geen adverteerders.' : 'Geen adverteerders met deze filters.'}
                   </td>
                 </tr>
               ) : null}

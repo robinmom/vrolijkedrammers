@@ -150,7 +150,7 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     /// <summary>Een lid met een account, en optioneel in het kader.</summary>
-    private async Task<(Guid MemberId, HttpClient Client)> LidMetAccountAsync(string fullName, string email, bool kader)
+    private async Task<(Guid MemberId, HttpClient Client)> LidMetAccountAsync(string fullName, string email, bool kader, string role = DefaultRoles.Lid)
     {
         var memberId = kader ? await KaderlidAsync(fullName) : Guid.Empty;
         using (var scope = _api.Services.CreateScope())
@@ -164,7 +164,7 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
             }
         }
 
-        var (userId, oid) = await _api.CreateUserAsync(email, DefaultRoles.Lid);
+        var (userId, oid) = await _api.CreateUserAsync(email, role);
         using (var scope = _api.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
@@ -297,27 +297,55 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(75m, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status?year=2027")).GetProperty("totals").GetProperty("cashOutstanding").GetDecimal());
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id("Bakkerij De Test")}/years/2027/cash", new { received = true })).StatusCode);
 
-        // Export: dezelfde kolommen, zonder IBAN; opnieuw inlezen werkt en houdt de IBAN.
+        // Fase 27g: opmerking en paginanummer in de app, ronde in het portal.
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{Id("Garage Proef")}/note", new { note = "Volgend jaar een halve pagina" })).StatusCode);
+        var garageInApp = (await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers")).GetProperty("items").EnumerateArray()
+            .Single(i => i.GetProperty("companyName").GetString() == "Garage Proef");
+        Assert.Equal(("4", "Volgend jaar een halve pagina", "Collected"),
+            (garageInApp.GetProperty("page").GetString(), garageInApp.GetProperty("note").GetString(), garageInApp.GetProperty("status").GetString()));
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id("Garage Proef")}/years/2027/round", new { round = 1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id("Bakkerij De Test")}/years/2027/round", new { round = 3 })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id("Bakkerij De Test")}/years/2027/round", new { round = 4 })).StatusCode);
+        var rounds = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status?year=2027")).GetProperty("rows").EnumerateArray()
+            .ToDictionary(r => r.GetProperty("companyName").GetString()!, r => r.GetProperty("round").GetInt32());
+        Assert.Equal((1, 3), (rounds["Garage Proef"], rounds["Bakkerij De Test"]));
+
+        // Export: pagina, bedrijf, bedrag van de campagne, de twee jaren ervoor en de opmerking; de regel in de kleur van de ronde.
         var export = await _bestuur.GetAsync("/api/v1/admin/advertisers/export");
         Assert.Equal(HttpStatusCode.OK, export.StatusCode);
-        var bytes = await export.Content.ReadAsByteArrayAsync();
-        using (var workbook = new XLWorkbook(new MemoryStream(bytes)))
-        {
-            var sheet = workbook.Worksheet(1);
-            var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
-            Assert.Contains("NAAM BEDRIJF", headers);
-            Assert.Contains("BIJDRAGE 2027", headers);
-            Assert.Contains("STAND 2027", headers);
-            var garage = sheet.RowsUsed().Single(r => r.Cell(headers.IndexOf("NAAM BEDRIJF") + 1).GetString() == "Garage Proef");
-            Assert.Equal("GRATIS", garage.Cell(headers.IndexOf("BIJDRAGE 2026") + 1).GetString());
-            Assert.Equal("75", garage.Cell(headers.IndexOf("BIJDRAGE 2027") + 1).GetFormattedString());
-            Assert.Equal("", garage.Cell(headers.IndexOf("IBAN") + 1).GetString());
-        }
+        using var workbook = new XLWorkbook(new MemoryStream(await export.Content.ReadAsByteArrayAsync()));
+        var sheet = workbook.Worksheet(1);
+        Assert.Equal(["Pagina", "Naam bedrijf", "Bedrag 2027", "Bijdrage 2026", "Bijdrage 2025", "Opmerkingen"],
+            sheet.Row(1).CellsUsed().Select(c => c.GetString()));
+        var garage = sheet.RowsUsed().Single(r => r.Cell(2).GetString() == "Garage Proef");
+        Assert.Equal(("4", 75d, "GRATIS", 70d, "Volgend jaar een halve pagina"),
+            (garage.Cell(1).GetString(), garage.Cell(3).GetDouble(), garage.Cell(4).GetString(), garage.Cell(5).GetDouble(), garage.Cell(6).GetString()));
+        Assert.All(Enumerable.Range(1, 6), c => Assert.Equal(XLColor.FromHtml("#D9EAD3"), garage.Cell(c).Style.Fill.BackgroundColor));
+        var bakkerijRow = sheet.RowsUsed().Single(r => r.Cell(2).GetString() == "Bakkerij De Test");
+        Assert.Equal(XLColor.FromHtml("#FFF2CC"), bakkerijRow.Cell(6).Style.Fill.BackgroundColor);
+        Assert.Equal("", bakkerijRow.Cell(6).GetString());
+    }
 
-        var content = new MultipartFormDataContent { { new ByteArrayContent(bytes), "file", "adverteerders-2027.xlsx" } };
-        var again = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/import", content)).Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal((0, 2), (again.GetProperty("new").GetInt32(), again.GetProperty("updated").GetInt32()));
-        Assert.Equal("**** 4300", (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/{Id("Bakkerij De Test")}")).GetProperty("maskedIban").GetString());
+    [Fact]
+    public async Task Een_lid_met_de_rol_Collectant_haalt_op_zonder_kaderlid_te_zijn()
+    {
+        var (collectantId, collectant) = await LidMetAccountAsync("Carla Collectant", "carla@example.com", kader: false, DefaultRoles.Collectant);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+
+        // Zij staat tussen de collectanten in het portal en kan een adverteerder toegewezen krijgen.
+        var collectors = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/collectors");
+        Assert.Contains(collectors.EnumerateArray(), c => c.GetProperty("memberId").GetGuid() == collectantId);
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(Row("Carla Collectant", 1, "Bloemist Test", "A", "C", null, null, 40, 45)));
+
+        var mine = await collectant.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers");
+        Assert.True(mine.GetProperty("isCollector").GetBoolean());
+        var item = Assert.Single(mine.GetProperty("items").EnumerateArray());
+        Assert.Equal("Bloemist Test", item.GetProperty("companyName").GetString());
+        Assert.Equal(HttpStatusCode.Created, (await collectant.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Cash", null, false))).StatusCode);
+
+        // Geen toegang tot het portal.
+        Assert.Equal(HttpStatusCode.Forbidden, (await collectant.GetAsync("/api/v1/admin/advertisers/status")).StatusCode);
     }
 
     [Fact]

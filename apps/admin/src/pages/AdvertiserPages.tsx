@@ -71,7 +71,9 @@ export function AdvertisersPage() {
       <div className="page-header">
         <div>
           <h1>Adverteerders</h1>
-          <p className="muted">Adverteerders en gevers van de Drammerskrant, met hun collectant uit het kader.</p>
+          <p className="muted">
+            Adverteerders en gevers van de Drammerskrant, met hun collectant (kaderlid of collectant).
+          </p>
         </div>
         <div className="actions">
           <Link to="/adverteerders/import" className="button secondary">
@@ -301,7 +303,7 @@ export function AdvertiserEditorPage() {
       {a?.addedViaApp ? <p className="badge warn">Aangemeld via de app; kijk de gegevens na en sla op.</p> : null}
       {a?.importedCollectorName && !a.collectorMemberId ? (
         <p className="muted">
-          Collectant in het Excel-bestand: {a.importedCollectorName}. Kies hieronder het kaderlid.
+          Collectant in het Excel-bestand: {a.importedCollectorName}. Kies hieronder het kaderlid of de collectant.
         </p>
       ) : null}
       <form className="card" onSubmit={submit}>
@@ -378,7 +380,7 @@ export function AdvertiserEditorPage() {
           />
           <CollectorSelect
             id="adverteerder-collectant"
-            label="Collectant (kaderlid)"
+            label="Collectant (kaderlid of rol Collectant)"
             value={form.collectorMemberId ?? ''}
             onChange={(value) => set({ collectorMemberId: value || null })}
           />
@@ -506,6 +508,9 @@ export function AdvertiserEditorPage() {
   );
 }
 
+/** Ronde 1, 2 en 3: dezelfde kleuren als de regels in de Excel-export (lichtgroen, lichtblauw, lichtgeel). */
+const ROUND_COLORS: Record<number, string> = { 1: '#D9EAD3', 2: '#DDEBF7', 3: '#FFF2CC' };
+
 /** Adverteerders → Campagne: wie is opgehaald, met een voortgangsbalk en een filter op collectant. */
 export function AdvertiserStatusPage() {
   const api = useApi();
@@ -515,10 +520,19 @@ export function AdvertiserStatusPage() {
   const shownYear = year ?? campaign.data?.year ?? null;
   const status = useAdvertiserStatus(shownYear, collector);
   const setStatus = useApiMutation(
-    (v: { id: string; status: AdvertiserYearStatus; amount: number | null }) =>
+    (v: { id: string; status: AdvertiserYearStatus; amount: number | null; note: string | null }) =>
       api.PUT('/api/v1/admin/advertisers/{id}/years/{year}', {
         params: { path: { id: v.id, year: shownYear! } },
-        body: { status: v.status, amount: v.amount, note: null },
+        // De opmerking van de collectant (app) blijft staan.
+        body: { status: v.status, amount: v.amount, note: v.note },
+      }),
+    ADVERTISER_KEYS,
+  );
+  const setRound = useApiMutation(
+    (v: { id: string; round: number | null }) =>
+      api.PUT('/api/v1/admin/advertisers/{id}/years/{year}/round', {
+        params: { path: { id: v.id, year: shownYear! } },
+        body: { round: v.round },
       }),
     ADVERTISER_KEYS,
   );
@@ -587,7 +601,11 @@ export function AdvertiserStatusPage() {
           </button>
         ) : null}
       </div>
-      <ProblemAlert error={status.error ?? setStatus.error ?? setCash.error ?? makeCampaignYear.error ?? exportError} />
+      <ProblemAlert
+        error={
+          status.error ?? setStatus.error ?? setRound.error ?? setCash.error ?? makeCampaignYear.error ?? exportError
+        }
+      />
 
       {totals ? (
         <section className="card" aria-labelledby="voortgang-kop">
@@ -690,7 +708,9 @@ export function AdvertiserStatusPage() {
                 <th scope="col">Vorig jaar</th>
                 <th scope="col">Bedrag</th>
                 <th scope="col">Stand</th>
+                <th scope="col">Ronde</th>
                 <th scope="col">Contant ontvangen</th>
+                <th scope="col">Opmerking</th>
               </tr>
             </thead>
             <tbody>
@@ -714,7 +734,12 @@ export function AdvertiserStatusPage() {
                       value={r.status}
                       disabled={setStatus.isPending}
                       onChange={(e) =>
-                        setStatus.mutate({ id: r.id, status: e.target.value as AdvertiserYearStatus, amount: null })
+                        setStatus.mutate({
+                          id: r.id,
+                          status: e.target.value as AdvertiserYearStatus,
+                          amount: null,
+                          note: r.note ?? null,
+                        })
                       }
                     >
                       {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -722,6 +747,24 @@ export function AdvertiserStatusPage() {
                           {label}
                         </option>
                       ))}
+                    </select>
+                  </td>
+                  <td style={r.round ? { background: ROUND_COLORS[r.round] } : undefined}>
+                    <label className="visually-hidden" htmlFor={`ronde-${r.id}`}>
+                      Ronde van {r.companyName}
+                    </label>
+                    <select
+                      id={`ronde-${r.id}`}
+                      value={r.round ?? ''}
+                      disabled={setRound.isPending}
+                      onChange={(e) =>
+                        setRound.mutate({ id: r.id, round: e.target.value ? Number(e.target.value) : null })
+                      }
+                    >
+                      <option value="">—</option>
+                      <option value="1">Ronde 1</option>
+                      <option value="2">Ronde 2</option>
+                      <option value="3">Ronde 3</option>
                     </select>
                   </td>
                   <td>
@@ -740,11 +783,12 @@ export function AdvertiserStatusPage() {
                       <span className="muted">{r.payment === 'Mandate' ? 'machtiging' : '—'}</span>
                     )}
                   </td>
+                  <td>{r.note ?? <span className="muted">—</span>}</td>
                 </tr>
               ))}
               {report.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="muted">
+                  <td colSpan={8} className="muted">
                     Geen adverteerders.
                   </td>
                 </tr>

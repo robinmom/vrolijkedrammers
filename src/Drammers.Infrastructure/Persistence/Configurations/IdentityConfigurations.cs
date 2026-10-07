@@ -33,6 +33,7 @@ public static class DefaultRoles
     public const string Jury = "jury";
     public const string Hoofdjury = "hoofdjury";
     public const string Uitslagcommissie = "uitslagcommissie";
+    public const string Collectant = "collectant";
 
     private static readonly string[] MemberBasics =
         [P.MemberReadOwn, P.EventRead, P.NewsRead, P.PhotoRead, P.NotificationReadOwn, P.TicketReadOwn];
@@ -42,7 +43,7 @@ public static class DefaultRoles
         new(1, Lid, "Carnavalist", "Lid van de vereniging (systeemrol)", IsSystem: true, IsAssignableBySync: true, MemberBasics),
         new(2, Groepsverantwoordelijke, "Groepsverantwoordelijke", "Mag groepen inschrijven voor de optocht (per gebruiker aangevinkt)", false, false,
             [P.NotificationReadOwn, P.ParadeRegister, P.ParadeUpdate]),
-        new(3, Kaderlid, "Kaderlid", "Kader; vooral via doelgroepen", false, true, MemberBasics),
+        new(3, Kaderlid, "Kaderlid", "Kader; vooral via doelgroepen; haalt ook adverteerders op", false, true, [.. MemberBasics, P.AdvertiserCollect]),
         new(4, DansgardeLeiding, "Dansgarde leiding", "Leiding van de dansgarde", false, true,
             [.. MemberBasics, P.NotificationSendGroup]),
         new(5, DansgardeLid, "Dansgarde lid", "Lid van de dansgarde", false, true, MemberBasics),
@@ -78,6 +79,10 @@ public static class DefaultRoles
             [P.JuryAssign]),
         new(16, Uitslagcommissie, "Uitslagcommissie", "Ziet, exporteert en publiceert de uitslag van de optocht", false, false,
             [P.ParadeResult]),
+        // Fase 27g: een lid dat (zonder kaderlid te zijn) adverteerders ophaalt; alleen in de app. Id 101: rollen die in het
+        // portal zijn gemaakt kregen een volgnummer vanaf 17, dus nieuwe vaste rollen krijgen een Id vanaf 101.
+        new(101, Collectant, "Collectant", "Haalt in de app adverteerders op voor de Drammerskrant", false, false,
+            [.. MemberBasics, P.AdvertiserCollect]),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

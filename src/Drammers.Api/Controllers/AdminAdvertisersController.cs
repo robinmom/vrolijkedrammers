@@ -159,9 +159,21 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return NoContent();
     }
 
+    /// <summary>Ronde 1, 2 of 3 (of geen) in het campagnejaar (fase 27g); kleurt de regel in de export.</summary>
+    [HttpPut("{id:guid}/years/{year:int}/round")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetRound(Guid id, int year, AdvertiserRoundRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.SetRoundAsync(id, year, request.Round, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>
-    /// Het overzicht als Excel (fase 27d), in de kolommen van "Advertentie overzicht", zodat het ook weer in te lezen is.
-    /// De IBAN staat er bewust niet in (bij opnieuw inlezen blijft de bekende IBAN staan); wel de stand van het jaar.
+    /// Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te
+    /// vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt de kleur van de
+    /// ronde: 1 lichtgroen, 2 lichtblauw, 3 lichtgeel. Op paginanummer, dan op naam.
     /// </summary>
     [HttpGet("export")]
     [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
@@ -169,22 +181,23 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     public async Task<FileContentResult> Export([FromQuery] int? year, CancellationToken cancellationToken)
     {
         var campaign = year ?? await advertisers.CampaignYearAsync(cancellationToken);
-        var list = await db.Advertisers.AsNoTracking().Include(a => a.Years).OrderBy(a => a.Number).ToListAsync(cancellationToken);
-        var names = await advertisers.CollectorNamesAsync(list.Select(a => a.CollectorMemberId), cancellationToken);
-        var years = list.SelectMany(a => a.Years).Where(y => y.Amount is not null || y.IsFree).Select(y => y.Year).Distinct().Order().ToList();
+        var list = (await db.Advertisers.AsNoTracking().Include(a => a.Years).Where(a => a.Active).ToListAsync(cancellationToken))
+            .OrderBy(a => PageNumber(a.Page) ?? int.MaxValue).ThenBy(a => a.Page).ThenBy(a => a.CompanyName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
 
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Campagne " + campaign.ToString(CultureInfo.InvariantCulture));
         string[] headers =
         [
-            "NAAM COLLECTANT", "NR.", "PAGINA", "NAAM BEDRIJF", "CONTACT-PERSOON", "TELEFOON ALGEMEEN", "MOBIEL NUMMER", "MAILADRES", "ADRES",
-            "POST-CODE", "PLAATS", "A/V/G", "IBAN", "M/C/R/B", "SITE", "SEPA MACHTIGINGS-NUM:",
-            .. years.Select(y => $"BIJDRAGE {y}"), $"STAND {campaign}", "CONTANT ONTVANGEN", "ACTIEF", "OPMERKING",
+            "Pagina", "Naam bedrijf", $"Bedrag {campaign}", $"Bijdrage {campaign - 1}", $"Bijdrage {campaign - 2}", "Opmerkingen",
         ];
         for (var c = 0; c < headers.Length; c++)
         {
             sheet.Cell(1, c + 1).Value = headers[c];
         }
+
+        static XLCellValue Contribution(AdvertiserYear? y) =>
+            y is null ? Blank.Value : y.IsFree ? "GRATIS" : y.Amount is { } amount ? amount : Blank.Value;
 
         var row = 2;
         foreach (var a in list)
@@ -192,33 +205,44 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
             var current = a.Years.SingleOrDefault(y => y.Year == campaign);
             XLCellValue[] values =
             [
-                a.CollectorMemberId is { } collector ? names.GetValueOrDefault(collector) ?? "" : a.ImportedCollectorName ?? "", a.Number, a.Page ?? "", a.CompanyName,
-                a.ContactName ?? "", a.Phone ?? "", a.Mobile ?? "", a.Email ?? "", a.AddressLine ?? "", a.PostalCode ?? "", a.City ?? "",
-                a.Kind switch { AdvertiserKind.Advertisement => "A", AdvertiserKind.FreeGift => "V", _ => "G" }, "",
-                a.Payment switch { AdvertiserPayment.Mandate => "M", AdvertiserPayment.Invoice => "R", _ => "C" }, a.Website ?? "", a.MandateReference ?? "",
-                .. years.Select(y => a.Years.SingleOrDefault(x => x.Year == y) is { } v
-                    ? v.IsFree ? (XLCellValue)"GRATIS" : v.Amount is { } amount ? (XLCellValue)amount : Blank.Value
-                    : Blank.Value),
-                current is null ? "Open" : current.Status switch { AdvertiserYearStatus.Collected => "Opgehaald", AdvertiserYearStatus.Stopped => "Stopt", _ => "Open" },
-                current?.PaidAt is { } paid ? paid.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture) : "",
-                a.Active ? "ja" : "nee", a.Notes ?? "",
+                a.Page ?? "", a.CompanyName, Contribution(current), Contribution(a.Years.SingleOrDefault(y => y.Year == campaign - 1)),
+                Contribution(a.Years.SingleOrDefault(y => y.Year == campaign - 2)), current?.Note ?? "",
             ];
             for (var c = 0; c < values.Length; c++)
             {
                 sheet.Cell(row, c + 1).Value = values[c];
             }
 
+            if (RoundColor(current?.Round) is { } color)
+            {
+                sheet.Range(row, 1, row, headers.Length).Style.Fill.BackgroundColor = color;
+            }
+
             row++;
         }
 
+        sheet.Range(2, 3, Math.Max(row - 1, 2), 5).Style.NumberFormat.Format = "€ #,##0.00";
         sheet.Row(1).Style.Font.Bold = true;
         sheet.SheetView.FreezeRows(1);
-        sheet.Columns().AdjustToContents(1, Math.Min(row, 200), 8, 40);
+        sheet.Columns().AdjustToContents(1, Math.Min(row, 200), 8, 60);
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         await audit.WriteAsync(new AuditEntry("advertiser.exported", "Advertiser", "excel", null, $"{list.Count} adverteerders, campagne {campaign}"), cancellationToken);
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"adverteerders-{campaign}.xlsx");
     }
+
+    /// <summary>Lichtgroen, lichtblauw en lichtgeel voor ronde 1, 2 en 3.</summary>
+    internal static XLColor? RoundColor(byte? round) => round switch
+    {
+        1 => XLColor.FromHtml("#D9EAD3"),
+        2 => XLColor.FromHtml("#DDEBF7"),
+        3 => XLColor.FromHtml("#FFF2CC"),
+        _ => null,
+    };
+
+    /// <summary>Het paginanummer voor het sorteren; de kolom kan ook tekst bevatten (bijv. "2025 niet").</summary>
+    private static int? PageNumber(string? page) =>
+        int.TryParse(page?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) ? number : null;
 
     // ----- Import --------------------------------------------------------------------------------------------------
 
@@ -364,6 +388,8 @@ public sealed record AdvertiserStatusRequest(
     AdvertiserYearStatus Status, [Range(0, 100000)] decimal? Amount, [StringLength(500)] string? Note, bool? CashReceived = null);
 
 public sealed record CashReceivedRequest(bool Received);
+
+public sealed record AdvertiserRoundRequest([Range(1, 3)] int? Round);
 
 public sealed record AdvertiserRequest(
     [Range(1, 100000)] int Number,

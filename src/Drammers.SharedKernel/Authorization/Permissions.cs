@@ -56,6 +56,7 @@ public static class Permissions
     public const string ContributionManage = "contribution.manage";
     public const string MailingManage = "mailing.manage";
     public const string AdvertiserManage = "advertiser.manage";
+    public const string AdvertiserCollect = "advertiser.collect";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -115,6 +116,8 @@ public static class Permissions
         new(MailingManage, "Mailings opstellen en versturen (nieuwsbrief, uitnodigingen) en mailinggroepen beheren", "Content"),
         // Fase 27b: adverteerders en de campagne voor de Drammerskrant.
         new(AdvertiserManage, "Adverteerders beheren, het overzicht inlezen en de campagne volgen (incl. IBAN)", "Financieel"),
+        // Fase 27g: adverteerders ophalen in de app, ook door leden die niet in het kader zitten.
+        new(AdvertiserCollect, "Adverteerders ophalen in de app (collectant)", "Financieel"),
     ];
 }
 

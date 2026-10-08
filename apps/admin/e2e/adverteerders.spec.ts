@@ -132,6 +132,29 @@ test('fase 27h/i: collectieperiode, informatie en herinneringen', async ({ page 
   expect(api.advertiserReminders).toEqual([['m-1'], null]);
 });
 
+test('fase 27j: campagne sorteren op een kolom', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/campagne');
+
+  const table = page.getByRole('region', { name: 'Adverteerders in de campagne' });
+  const companies = table.getByRole('link');
+  await expect(companies).toHaveText(['1. Bakkerij De Test', '2. Garage Proef']);
+
+  // Vorig jaar: eerst oplopend, nog een klik aflopend.
+  await table.getByRole('button', { name: 'Vorig jaar' }).click();
+  await expect(table.getByRole('columnheader', { name: /Vorig jaar/ })).toHaveAttribute('aria-sort', 'ascending');
+  await expect(companies).toHaveText(['1. Bakkerij De Test', '2. Garage Proef']);
+  await table.getByRole('button', { name: /Vorig jaar/ }).click();
+  await expect(table.getByRole('columnheader', { name: /Vorig jaar/ })).toHaveAttribute('aria-sort', 'descending');
+  await expect(companies).toHaveText(['2. Garage Proef', '1. Bakkerij De Test']);
+
+  // Bedrijf aflopend op naam.
+  await table.getByRole('button', { name: 'Bedrijf' }).click();
+  await table.getByRole('button', { name: /Bedrijf/ }).click();
+  await expect(companies).toHaveText(['2. Garage Proef', '1. Bakkerij De Test']);
+});
+
 test('fase 27b: Excel eerst controleren en dan inlezen', async ({ page }) => {
   const api = new MockApi(['advertiser.manage']);
   await api.install(page);

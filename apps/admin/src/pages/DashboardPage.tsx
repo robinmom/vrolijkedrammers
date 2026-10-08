@@ -11,6 +11,7 @@ import {
   useMemberSummary,
   useSyncConflicts,
 } from '../api/hooks';
+import { season, useAdvertiserStatus } from '../api/advertisers';
 import appIcon from '../assets/logo-cirkel.png';
 import { AccessDashboardCard } from '../components/AccessDashboardCard';
 import { ProblemAlert } from '../components/ProblemAlert';
@@ -71,6 +72,7 @@ export function DashboardPage() {
   const news = useAdminNews(can('news.manage'));
   const guardianRequests = useGuardianRequests('Pending', can('member.update'));
   const guardianSuggestions = useGuardianSuggestions(can('member.update'));
+  const advertisers = useAdvertiserStatus(null, '', can('advertiser.manage'));
   const d = dashboard.data;
 
   const firstName = (me.data?.displayName ?? '').split(' ')[0];
@@ -218,6 +220,8 @@ export function DashboardPage() {
             )}
           </section>
 
+          {advertisers.data ? <AdvertiserProgressCard report={advertisers.data} /> : null}
+
           {can('ticket.read') ? <AccessDashboardCard /> : null}
 
           {events.data ? (
@@ -307,5 +311,28 @@ export function DashboardPage() {
         </div>
       </div>
     </>
+  );
+}
+
+/** Voortgang van de adverteerderscampagne (fase 27i): afgehandeld = opgehaald of stopt, zoals op de campagnepagina. */
+function AdvertiserProgressCard({ report }: { report: NonNullable<ReturnType<typeof useAdvertiserStatus>['data']> }) {
+  const { total, collected, stopped } = report.totals;
+  const percent = total > 0 ? Math.round((100 * (collected + stopped)) / total) : 0;
+  return (
+    <section className="card" aria-labelledby="adverteerders-voortgang">
+      <h2 id="adverteerders-voortgang">
+        Adverteerders {season(report.year)}: {percent}%
+      </h2>
+      <div
+        className="progress"
+        role="progressbar"
+        aria-label="Adverteerders afgehandeld"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+      >
+        <span style={{ width: `${percent}%` }} />
+      </div>
+    </section>
   );
 }

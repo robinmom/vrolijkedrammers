@@ -35,6 +35,18 @@ const PAYMENT: Record<Advertiser['payment'], string> = {
   Invoice: 'Betaalt op rekening (factuur).',
 };
 
+const longDate = new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayMonth = new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+
+/** De collectieperiode (fase 27i), bijv. "Ophalen van 12 oktober t/m 1 december 2026". */
+export function period(start?: string | null, end?: string | null) {
+  const date = (d: string) => new Date(`${d}T00:00:00Z`);
+  if (start && end) return `Ophalen van ${dayMonth.format(date(start))} t/m ${longDate.format(date(end))}`;
+  if (end) return `Ophalen tot en met ${longDate.format(date(end))}`;
+  if (start) return `Ophalen vanaf ${longDate.format(date(start))}`;
+  return null;
+}
+
 const STATUS: Record<Advertiser['status'], string> = { Open: 'Nog langs', Collected: 'Opgehaald', Stopped: 'Stopt' };
 
 /**
@@ -46,6 +58,7 @@ export default function AdverteerdersScreen() {
   const mine = useMyAdvertisers();
   const [filter, setFilter] = useState<Filter>('Open');
   const [search, setSearch] = useState('');
+  const [showInfo, setShowInfo] = useState(false);
 
   const items = mine.data?.items ?? [];
   const done = items.filter((a) => a.status !== 'Open').length;
@@ -70,6 +83,11 @@ export default function AdverteerdersScreen() {
               <AppText variant="bodyStrong">
                 {done} van {items.length} afgehandeld
               </AppText>
+              {period(mine.data.startDate, mine.data.endDate) ? (
+                <AppText variant="caption" color={colors.textSecondary}>
+                  {period(mine.data.startDate, mine.data.endDate)}
+                </AppText>
+              ) : null}
               <View
                 style={[styles.track, { backgroundColor: colors.surfaceMuted }]}
                 accessibilityRole="progressbar"
@@ -78,6 +96,19 @@ export default function AdverteerdersScreen() {
                 <View style={[styles.bar, { width: `${items.length ? (100 * done) / items.length : 0}%` }]} />
               </View>
             </Card>
+            <Button
+              label={showInfo ? 'Info verbergen' : 'Info'}
+              variant="secondary"
+              onPress={() => setShowInfo(!showInfo)}
+            />
+            {showInfo ? (
+              <Card style={styles.card}>
+                <AppText variant="bodyStrong">Informatie {season(mine.data.year)}</AppText>
+                <AppText variant="body" color={mine.data.info ? colors.textPrimary : colors.textSecondary}>
+                  {mine.data.info ?? 'Er is nog geen informatie voor deze campagne.'}
+                </AppText>
+              </Card>
+            ) : null}
             <Button label="Nieuwe adverteerder" icon="plus" variant="secondary" onPress={() => router.push('/adverteerders/nieuw')} />
             <FilterChips<Filter>
               accessibilityLabel="Toon"
@@ -90,7 +121,7 @@ export default function AdverteerdersScreen() {
               selected={filter}
               onChange={setFilter}
             />
-            <SearchField value={search} onChangeText={setSearch} placeholder="Zoek op naam of plaats" />
+            <SearchField value={search} onChangeText={setSearch} placeholder="Zoek op naam of plaats" autoFocus={false} />
             {shown.map((a) => (
               <AdvertiserCard key={a.id} advertiser={a} />
             ))}
@@ -167,7 +198,6 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
     }
   }
 
-  const phone = a.mobile ?? a.phone;
   const statusColor = a.status === 'Collected' ? colors.successText : a.status === 'Stopped' ? colors.textSecondary : colors.accentText;
   return (
     <Card style={styles.card}>
@@ -194,6 +224,7 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
           </AppText>
         </View>
       </Pressable>
+      <Contact advertiser={a} />
       {open ? (
         <View style={styles.details}>
           {a.addressLine ? (
@@ -202,7 +233,6 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
               {a.postalCode || a.city ? `, ${[a.postalCode, a.city].filter(Boolean).join(' ')}` : ''}
             </AppText>
           ) : null}
-          {phone ? <Button label={`Bel ${phone}`} variant="secondary" onPress={() => void Linking.openURL(`tel:${phone.replace(/\s/g, '')}`)} /> : null}
           <AppText variant="caption" color={colors.textSecondary}>
             {PAYMENT[a.payment]}
           </AppText>
@@ -251,7 +281,33 @@ function AdvertiserCard({ advertiser: a }: { advertiser: Advertiser }) {
   );
 }
 
+/** Contactgegevens in het overzicht: telefoon en e-mail zijn aan te tikken. */
+function Contact({ advertiser: a }: { advertiser: Advertiser }) {
+  const { colors } = useTheme();
+  const phones = [...new Set([a.mobile, a.phone].filter((p): p is string => !!p))];
+  if (phones.length === 0 && !a.email) return null;
+  return (
+    <View style={styles.contact}>
+      {phones.map((p) => (
+        <Pressable key={p} onPress={() => void Linking.openURL(`tel:${p.replace(/\s/g, '')}`)} accessibilityRole="link" accessibilityLabel={`Bel ${p}`}>
+          <AppText variant="caption" color={colors.linkText}>
+            {p}
+          </AppText>
+        </Pressable>
+      ))}
+      {a.email ? (
+        <Pressable onPress={() => void Linking.openURL(`mailto:${a.email}`)} accessibilityRole="link" accessibilityLabel={`Mail ${a.email}`}>
+          <AppText variant="caption" color={colors.linkText}>
+            {a.email}
+          </AppText>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  contact: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4 },
   content: { paddingHorizontal: 20, gap: 12, paddingBottom: 24 },
   card: { padding: 16, gap: 10 },
   track: { height: 8, borderRadius: 6, overflow: 'hidden' },

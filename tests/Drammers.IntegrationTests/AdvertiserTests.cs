@@ -149,6 +149,12 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("Stopped", after.GetProperty("years").EnumerateArray().Single(y => y.GetProperty("year").GetInt32() == 2026).GetProperty("status").GetString());
     }
 
+    private async Task<T> WithDbAsync<T>(Func<DrammersDbContext, Task<T>> action)
+    {
+        using var scope = _api.Services.CreateScope();
+        return await action(scope.ServiceProvider.GetRequiredService<DrammersDbContext>());
+    }
+
     /// <summary>Een lid met een account, en optioneel in het kader.</summary>
     private async Task<(Guid MemberId, HttpClient Client)> LidMetAccountAsync(string fullName, string email, bool kader, string role = DefaultRoles.Lid)
     {
@@ -331,6 +337,62 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         using var stopped = new XLWorkbook(new MemoryStream(await (await _bestuur.GetAsync("/api/v1/admin/advertisers/export")).Content.ReadAsByteArrayAsync()));
         var stoppedRow = stopped.Worksheet(1).RowsUsed().Single(r => r.Cell(2).GetString() == "Bakkerij De Test");
         Assert.All(Enumerable.Range(1, 6), c => Assert.Equal(XLColor.FromHtml("#F4CCCC"), stoppedRow.Cell(c).Style.Fill.BackgroundColor));
+    }
+
+    [Fact]
+    public async Task Informatie_voor_collectanten_per_campagnejaar()
+    {
+        var (_, alfred) = await LidMetAccountAsync("Alfred Voorbeeld", "alfred@example.com", kader: true);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        Assert.Equal(JsonValueKind.Null, (await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers")).GetProperty("info").ValueKind);
+
+        const string Info = "Mogelijkheden: A Advertenties\nG Giften\n\nInleveren: uiterlijk 1 december 2026";
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = Info })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2026", new { text = "Vorig jaar" })).StatusCode);
+        Assert.Equal(Info, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info")).GetProperty("text").GetString());
+        Assert.Equal("Vorig jaar", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info?year=2026")).GetProperty("text").GetString());
+
+        // De collectant ziet die van het lopende campagnejaar; aanpassen kan alleen het bestuur.
+        Assert.Equal(Info, (await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers")).GetProperty("info").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await alfred.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = "Anders" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = new string('x', 1001) })).StatusCode);
+
+        // Leegmaken haalt de informatie weg.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = "" })).StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info")).GetProperty("text").ValueKind);
+    }
+
+    [Fact]
+    public async Task Collectieperiode_en_herinneringen_aan_collectanten_met_open_adverteerders()
+    {
+        var (alfredId, alfred) = await LidMetAccountAsync("Alfred Voorbeeld", "alfred@example.com", kader: true);
+        var (carlaId, _) = await LidMetAccountAsync("Carla Collectant", "carla@example.com", kader: true);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "C", null, null, 35, 35),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "G", "C", null, null, 70, 70)));
+
+        // Periode: einde voor het begin kan niet.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027",
+            new { text = "Info", startDate = "2026-12-01", endDate = "2026-10-12" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027",
+            new { text = "Info", startDate = "2026-10-12", endDate = "2026-12-01" })).StatusCode);
+        var info = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info");
+        Assert.Equal(("2026-10-12", "2026-12-01"), (info.GetProperty("startDate").GetString(), info.GetProperty("endDate").GetString()));
+        var mine = await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers");
+        Assert.Equal(("2026-10-12", "2026-12-01"), (mine.GetProperty("startDate").GetString(), mine.GetProperty("endDate").GetString()));
+
+        // Aan iedereen: alleen Alfred heeft nog open adverteerders.
+        var all = await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/reminders", new { year = 2027 });
+        Assert.Equal(1, (await all.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("sent").GetInt32());
+        Assert.True(await WithDbAsync(db => db.Notifications.AnyAsync(n =>
+            n.Title == "Adverteerders ophalen" && n.Body == "Je hebt nog 2 adverteerders open staan. Graag uiterlijk 1 december 2026 afronden."
+            && n.AudienceJson.Contains(alfredId.ToString()))));
+
+        // Individueel: Carla heeft niets open, dus geen melding.
+        var carla = await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/reminders", new { year = 2027, collectorMemberIds = new[] { carlaId } });
+        Assert.Equal(0, (await carla.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("sent").GetInt32());
+        Assert.Equal(HttpStatusCode.Forbidden, (await alfred.PostAsJsonAsync("/api/v1/admin/advertisers/reminders", new { year = 2027 })).StatusCode);
     }
 
     [Fact]

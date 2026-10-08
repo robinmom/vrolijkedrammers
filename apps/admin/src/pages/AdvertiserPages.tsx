@@ -13,6 +13,7 @@ import {
   useAdvertiser,
   useAdvertiserCollectors,
   useAdvertisers,
+  useAdvertiserInfo,
   useAdvertiserStatus,
   useCampaignYear,
   type AdvertiserFilters,
@@ -508,6 +509,90 @@ export function AdvertiserEditorPage() {
   );
 }
 
+/**
+ * Collectieperiode (fase 27i) en informatie voor de collectanten (fase 27h) van dit campagnejaar: tarieven, inleverdatum
+ * en contactpersoon. De collectant ziet de periode bovenaan en de informatie onder de knop Info in de app.
+ */
+function CollectorInfoCard({ year }: { year: number }) {
+  const api = useApi();
+  const info = useAdvertiserInfo(year);
+  const [text, setText] = useState<string | null>(null);
+  const [start, setStart] = useState<string | null>(null);
+  const [end, setEnd] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const save = useApiMutation(
+    (body: { text: string; startDate: string | null; endDate: string | null }) =>
+      api.PUT('/api/v1/admin/advertisers/info/{year}', { params: { path: { year } }, body }),
+    ADVERTISER_KEYS,
+  );
+  const value = text ?? info.data?.text ?? '';
+  const startDate = start ?? info.data?.startDate ?? '';
+  const endDate = end ?? info.data?.endDate ?? '';
+  const changed = () => setSaved(false);
+
+  return (
+    <section className="card" aria-labelledby="info-kop">
+      <h2 id="info-kop">Collectieperiode en informatie {season(year)}</h2>
+      <p className="muted">
+        Wanneer de collectanten langsgaan, met tarieven, inleverdatum en contactpersoon. De collectant ziet dit in de
+        app; de informatie onder de knop Info.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSaved(false);
+          save.mutate(
+            { text: value, startDate: startDate || null, endDate: endDate || null },
+            { onSuccess: () => setSaved(true) },
+          );
+        }}
+      >
+        <div className="form-grid">
+          <Field
+            label="Startdatum"
+            type="date"
+            value={startDate}
+            onChange={(e) => {
+              setStart(e.target.value);
+              changed();
+            }}
+          />
+          <Field
+            label="Einddatum"
+            type="date"
+            min={startDate || undefined}
+            value={endDate}
+            onChange={(e) => {
+              setEnd(e.target.value);
+              changed();
+            }}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="collectant-info">Informatie</label>
+          <textarea
+            id="collectant-info"
+            rows={10}
+            maxLength={1000}
+            value={value}
+            onChange={(e) => {
+              setText(e.target.value);
+              setSaved(false);
+            }}
+          />
+        </div>
+        <ProblemAlert error={info.error ?? save.error} />
+        <div className="actions">
+          <button type="submit" className="button" disabled={save.isPending || info.isLoading}>
+            Opslaan
+          </button>
+          {saved ? <span className="muted">Opgeslagen.</span> : null}
+        </div>
+      </form>
+    </section>
+  );
+}
+
 /** Ronde 1, 2 en 3: dezelfde kleuren als de regels in de Excel-export (lichtgroen, lichtblauw, lichtgeel). */
 const ROUND_COLORS: Record<number, string> = { 1: '#D9EAD3', 2: '#DDEBF7', 3: '#FFF2CC' };
 /** Stopt: lichtrood, gaat voor de ronde (zoals in de export). */
@@ -529,6 +614,26 @@ export function AdvertiserStatusPage() {
   const [roundFilter, setRoundFilter] = useState('');
   const shownYear = year ?? campaign.data?.year ?? null;
   const status = useAdvertiserStatus(shownYear, collector);
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [reminded, setReminded] = useState<string | null>(null);
+  const remind = useApiMutation(
+    async (collectorMemberIds: string[] | null) =>
+      (await api.POST('/api/v1/admin/advertisers/reminders', { body: { year: shownYear, collectorMemberIds } })).data,
+    [],
+  );
+  const sendReminder = (ids: string[] | null) => {
+    setReminded(null);
+    remind.mutate(ids, {
+      onSuccess: (data) => {
+        const sent = (data as { sent: number } | undefined)?.sent ?? 0;
+        setReminded(
+          sent === 0
+            ? 'Niemand heeft nog adverteerders open staan.'
+            : `Herinnering verstuurd naar ${sent} collectant${sent === 1 ? '' : 'en'}.`,
+        );
+      },
+    });
+  };
   const setStatus = useApiMutation(
     (v: { id: string; status: AdvertiserYearStatus; amount: number | null; note: string | null }) =>
       api.PUT('/api/v1/admin/advertisers/{id}/years/{year}', {
@@ -697,6 +802,8 @@ export function AdvertiserStatusPage() {
         </section>
       ) : null}
 
+      {shownYear ? <CollectorInfoCard key={shownYear} year={shownYear} /> : null}
+
       {report && !collector ? (
         <section className="card" aria-labelledby="per-collectant-kop">
           <h2 id="per-collectant-kop">Per collectant</h2>
@@ -709,6 +816,9 @@ export function AdvertiserStatusPage() {
                   <th scope="col">Stopt</th>
                   <th scope="col">Open</th>
                   <th scope="col">Bedrag</th>
+                  <th scope="col">
+                    <span className="visually-hidden">Herinnering</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -733,11 +843,50 @@ export function AdvertiserStatusPage() {
                     <td>{c.totals.stopped}</td>
                     <td>{c.totals.open}</td>
                     <td>{euro(c.totals.collectedAmount)}</td>
+                    <td>
+                      {c.collectorMemberId && c.totals.open > 0 ? (
+                        <button
+                          type="button"
+                          className="link-button"
+                          aria-label={`Herinnering naar ${c.name}`}
+                          disabled={remind.isPending}
+                          onClick={() => sendReminder([c.collectorMemberId!])}
+                        >
+                          Herinnering
+                        </button>
+                      ) : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <ProblemAlert error={remind.error} />
+          <SuccessMessage message={reminded} />
+          {report.perCollector.some((c) => c.collectorMemberId && c.totals.open > 0) ? (
+            <div className="actions">
+              <button
+                type="button"
+                className="button secondary"
+                disabled={remind.isPending}
+                onClick={() => setConfirmAll(true)}
+              >
+                Herinnering aan iedereen met open adverteerders
+              </button>
+            </div>
+          ) : null}
+          <ConfirmDialog
+            open={confirmAll}
+            title="Herinnering sturen"
+            message="Alle collectanten die nog adverteerders open hebben staan krijgen een pushmelding met hun aantal en de einddatum."
+            confirmLabel="Versturen"
+            busy={remind.isPending}
+            onConfirm={() => {
+              setConfirmAll(false);
+              sendReminder(null);
+            }}
+            onCancel={() => setConfirmAll(false)}
+          />
         </section>
       ) : null}
 

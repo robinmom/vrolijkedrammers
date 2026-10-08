@@ -134,6 +134,27 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return NoContent();
     }
 
+    /// <summary>Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar.</summary>
+    [HttpGet("info")]
+    [ProducesResponseType<AdvertiserCampaignInfo>(StatusCodes.Status200OK)]
+    public async Task<AdvertiserCampaignInfo> GetInfo([FromQuery] int? year, CancellationToken cancellationToken) =>
+        await advertisers.InfoAsync(year ?? await advertisers.CampaignYearAsync(cancellationToken), cancellationToken);
+
+    [HttpPut("info/{year:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetInfo(int year, AdvertiserInfoRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.SetInfoAsync(year, request.Text, request.StartDate, request.EndDate, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Herinnering aan collectanten met open adverteerders (fase 27i); zonder collectanten aan iedereen met open adverteerders.</summary>
+    [HttpPost("reminders")]
+    [ProducesResponseType<AdvertiserReminderResponse>(StatusCodes.Status200OK)]
+    public async Task<AdvertiserReminderResponse> Remind(AdvertiserReminderRequest request, CancellationToken cancellationToken) =>
+        new(await advertisers.RemindAsync(request.Year ?? await advertisers.CampaignYearAsync(cancellationToken), request.CollectorMemberIds, cancellationToken));
+
     /// <summary>De stand van de campagne; zonder jaar het lopende campagnejaar.</summary>
     [HttpGet("status")]
     [ProducesResponseType<AdvertiserStatusReport>(StatusCodes.Status200OK)]
@@ -395,6 +416,12 @@ public sealed record AdvertiserStatusRequest(
 public sealed record CashReceivedRequest(bool Received);
 
 public sealed record AdvertiserRoundRequest([Range(1, 3)] int? Round);
+
+public sealed record AdvertiserInfoRequest([StringLength(1000)] string? Text, DateOnly? StartDate = null, DateOnly? EndDate = null);
+
+public sealed record AdvertiserReminderRequest(int? Year, IReadOnlyList<Guid>? CollectorMemberIds);
+
+public sealed record AdvertiserReminderResponse(int Sent);
 
 public sealed record AdvertiserRequest(
     [Range(1, 100000)] int Number,

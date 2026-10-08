@@ -1932,6 +1932,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar. */
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserCampaignInfo"];
+                        "application/json": components["schemas"]["AdvertiserCampaignInfo"];
+                        "text/json": components["schemas"]["AdvertiserCampaignInfo"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/info/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserInfoRequest"];
+                    "text/json": components["schemas"]["AdvertiserInfoRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserInfoRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Herinnering aan collectanten met open adverteerders (fase 27i); zonder collectanten aan iedereen met open adverteerders. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserReminderRequest"];
+                    "text/json": components["schemas"]["AdvertiserReminderRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserReminderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserReminderResponse"];
+                        "application/json": components["schemas"]["AdvertiserReminderResponse"];
+                        "text/json": components["schemas"]["AdvertiserReminderResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/status": {
         parameters: {
             query?: never;
@@ -2154,8 +2290,9 @@ export interface paths {
         };
         /**
          * Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te
-         *     vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt de kleur van de
-         *     ronde: 1 lichtgroen, 2 lichtblauw, 3 lichtgeel. Op paginanummer, dan op naam.
+         *     vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt een kleur:
+         *     lichtrood als de adverteerder stopt, anders die van de ronde (1 lichtgroen, 2 lichtblauw, 3 lichtgeel). Op
+         *     paginanummer, dan op naam.
          */
         get: {
             parameters: {
@@ -19143,6 +19280,16 @@ export interface components {
             /** Format: int32 */
             waiting: number;
         };
+        /** @description Informatie voor de collectanten van een campagnejaar (fase 27h) en de collectieperiode (fase 27i). */
+        AdvertiserCampaignInfo: {
+            /** Format: int32 */
+            year: number;
+            text: null | string;
+            /** Format: date */
+            startDate?: null | string;
+            /** Format: date */
+            endDate?: null | string;
+        };
         AdvertiserCollectionRequest: {
             /** Format: date */
             date: string;
@@ -19190,6 +19337,13 @@ export interface components {
             unknownCollectors: string[];
             years: number[];
         };
+        AdvertiserInfoRequest: {
+            text: null | string;
+            /** Format: date */
+            startDate?: null | string;
+            /** Format: date */
+            endDate?: null | string;
+        };
         /**
          * @description Soort bijdrage (kolom A/V/G in het Excel-overzicht).
          * @enum {unknown}
@@ -19203,6 +19357,15 @@ export interface components {
          * @enum {unknown}
          */
         AdvertiserPayment: "Mandate" | "Cash" | "Invoice";
+        AdvertiserReminderRequest: {
+            /** Format: int32 */
+            year: null | number;
+            collectorMemberIds: null | string[];
+        };
+        AdvertiserReminderResponse: {
+            /** Format: int32 */
+            sent: number;
+        };
         AdvertiserRequest: {
             /** Format: int32 */
             number: number;
@@ -21423,6 +21586,11 @@ export interface components {
             /** Format: int32 */
             year: number;
             items: components["schemas"]["MyAdvertiser"][];
+            info?: null | string;
+            /** Format: date */
+            startDate?: null | string;
+            /** Format: date */
+            endDate?: null | string;
         };
         MyBankInput: {
             iban: null | string;

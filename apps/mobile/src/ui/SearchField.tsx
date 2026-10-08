@@ -2,8 +2,21 @@ import { radius } from '@drammers/design-tokens';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Zoekveld dat onder de paginatitel verschijnt na een tik op het zoekicoon (Figma 02/03). */
-export function SearchField({ value, onChangeText, placeholder }: { value: string; onChangeText: (text: string) => void; placeholder: string }) {
+/**
+ * Zoekveld dat onder de paginatitel verschijnt na een tik op het zoekicoon (Figma 02/03). Staat het veld altijd in beeld,
+ * zet dan autoFocus uit, anders springt het toetsenbord direct open.
+ */
+export function SearchField({
+  value,
+  onChangeText,
+  placeholder,
+  autoFocus = true,
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  autoFocus?: boolean;
+}) {
   const { colors } = useTheme();
   return (
     <View style={styles.wrap}>
@@ -12,7 +25,7 @@ export function SearchField({ value, onChangeText, placeholder }: { value: strin
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textTertiary}
-        autoFocus
+        autoFocus={autoFocus}
         accessibilityLabel={placeholder}
         returnKeyType="search"
         clearButtonMode="while-editing"

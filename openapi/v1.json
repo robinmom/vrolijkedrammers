@@ -2261,6 +2261,159 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/info": {
+      "get": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar.",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserCampaignInfo"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserCampaignInfo"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserCampaignInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/info/{year}": {
+      "put": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserInfoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserInfoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserInfoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/reminders": {
+      "post": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Herinnering aan collectanten met open adverteerders (fase 27i); zonder collectanten aan iedereen met open adverteerders.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserReminderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserReminderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserReminderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserReminderResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserReminderResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserReminderResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/status": {
       "get": {
         "tags": [
@@ -24134,6 +24287,40 @@
           }
         }
       },
+      "AdvertiserCampaignInfo": {
+        "required": [
+          "year",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "Informatie voor de collectanten van een campagnejaar (fase 27h) en de collectieperiode (fase 27i)."
+      },
       "AdvertiserCollectionRequest": {
         "required": [
           "date",
@@ -24310,6 +24497,34 @@
           }
         }
       },
+      "AdvertiserInfoRequest": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        }
+      },
       "AdvertiserKind": {
         "enum": [
           "Advertisement",
@@ -24339,6 +24554,44 @@
           "Invoice"
         ],
         "description": "Hoe de adverteerder betaalt (kolom M/C/R/B)."
+      },
+      "AdvertiserReminderRequest": {
+        "required": [
+          "year",
+          "collectorMemberIds"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "collectorMemberIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "AdvertiserReminderResponse": {
+        "required": [
+          "sent"
+        ],
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "AdvertiserRequest": {
         "required": [
@@ -32726,6 +32979,26 @@
             "items": {
               "$ref": "#/components/schemas/MyAdvertiser"
             }
+          },
+          "info": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           }
         }
       },

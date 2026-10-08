@@ -13,6 +13,7 @@ import {
   useAdvertiser,
   useAdvertiserCollectors,
   useAdvertisers,
+  useAdvertiserInfo,
   useAdvertiserStatus,
   useCampaignYear,
   type AdvertiserFilters,
@@ -508,6 +509,60 @@ export function AdvertiserEditorPage() {
   );
 }
 
+/**
+ * Informatie voor de collectanten van dit campagnejaar (fase 27h): tarieven, inleverdatum en contactpersoon. De
+ * collectant ziet dit in de app onder de knop Info.
+ */
+function CollectorInfoCard({ year }: { year: number }) {
+  const api = useApi();
+  const info = useAdvertiserInfo(year);
+  const [text, setText] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const save = useApiMutation(
+    (value: string) =>
+      api.PUT('/api/v1/admin/advertisers/info/{year}', { params: { path: { year } }, body: { text: value } }),
+    ADVERTISER_KEYS,
+  );
+  const value = text ?? info.data?.text ?? '';
+
+  return (
+    <section className="card" aria-labelledby="info-kop">
+      <h2 id="info-kop">Informatie voor collectanten {season(year)}</h2>
+      <p className="muted">
+        Tarieven, inleverdatum en contactpersoon. De collectant ziet dit in de app onder de knop Info.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSaved(false);
+          save.mutate(value, { onSuccess: () => setSaved(true) });
+        }}
+      >
+        <div className="field">
+          <label htmlFor="collectant-info">Informatie</label>
+          <textarea
+            id="collectant-info"
+            rows={10}
+            maxLength={1000}
+            value={value}
+            onChange={(e) => {
+              setText(e.target.value);
+              setSaved(false);
+            }}
+          />
+        </div>
+        <ProblemAlert error={info.error ?? save.error} />
+        <div className="actions">
+          <button type="submit" className="button" disabled={save.isPending || info.isLoading}>
+            Opslaan
+          </button>
+          {saved ? <span className="muted">Opgeslagen.</span> : null}
+        </div>
+      </form>
+    </section>
+  );
+}
+
 /** Ronde 1, 2 en 3: dezelfde kleuren als de regels in de Excel-export (lichtgroen, lichtblauw, lichtgeel). */
 const ROUND_COLORS: Record<number, string> = { 1: '#D9EAD3', 2: '#DDEBF7', 3: '#FFF2CC' };
 /** Stopt: lichtrood, gaat voor de ronde (zoals in de export). */
@@ -696,6 +751,8 @@ export function AdvertiserStatusPage() {
           </section>
         </section>
       ) : null}
+
+      {shownYear ? <CollectorInfoCard key={shownYear} year={shownYear} /> : null}
 
       {report && !collector ? (
         <section className="card" aria-labelledby="per-collectant-kop">

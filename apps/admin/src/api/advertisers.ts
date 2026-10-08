@@ -98,6 +98,17 @@ export function useCampaignYear() {
   });
 }
 
+/** Informatie voor de collectanten van een campagnejaar (fase 27h). */
+export function useAdvertiserInfo(year: number | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['advertisers', 'info', year],
+    enabled: year !== null,
+    queryFn: async () =>
+      required((await api.GET('/api/v1/admin/advertisers/info', { params: { query: { year: year! } } })).data),
+  });
+}
+
 export function useAdvertiserStatus(year: number | null, collector: string) {
   const api = useApi();
   return useQuery({

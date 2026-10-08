@@ -129,6 +129,25 @@ describe('Adverteerders ophalen (fase 27b-2)', () => {
     expect(await put!.json()).toEqual({ status: 'Collected', amount: 35, note: 'Volgend jaar een halve pagina', cashReceived: null });
   });
 
+  it('toont de contactgegevens in het overzicht en de informatie van de campagne (fase 27h)', async () => {
+    const withContact = { ...advertiser('a-1', 'Bakkerij De Test', 'Open', 35), mobile: '06 12345678', email: 'info@bakkerij.test' };
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/me/advertisers': { ...mine, items: [withContact], info: 'Advertenties: 85/50 € 35,00\nInleveren: 1 december' },
+    });
+    await renderApp(routes, '/adverteerders');
+    await screen.findByText('Bakkerij De Test');
+    // Zonder openklappen: telefoon en e-mail aan te tikken.
+    expect(screen.getByRole('link', { name: 'Bel 06 12345678' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Bel 0314-000000' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Mail info@bakkerij.test' })).toBeTruthy();
+
+    expect(screen.queryByText(/Inleveren/)).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Info' }));
+    expect(screen.getByText('Advertenties: 85/50 € 35,00\nInleveren: 1 december')).toBeTruthy();
+  });
+
   it('nieuwe adverteerder met machtiging vraagt IBAN en toestemming', async () => {
     mockApi({ ...api, '/api/v1/me': me, '/api/v1/me/advertisers': (method: string) => (method === 'POST' ? { status: 201, body: { id: 'a-9' } } : mine) });
     await renderApp(routes, '/adverteerders/nieuw');

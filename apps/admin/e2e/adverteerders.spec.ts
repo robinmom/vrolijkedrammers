@@ -91,9 +91,21 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
 
   // Filteren op collectant via de tabel per collectant.
   await page.getByRole('button', { name: 'Piet van der Berg' }).click();
-  await expect(page.getByLabel('Collectant')).toHaveValue('m-1');
+  await expect(page.getByLabel('Collectant', { exact: true })).toHaveValue('m-1');
   await expect(page.getByRole('link', { name: '2. Garage Proef' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Voortgang: 100%' })).toBeVisible();
+});
+
+test('fase 27h: informatie voor collectanten per campagnejaar', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/campagne');
+
+  await expect(page.getByRole('heading', { name: 'Informatie voor collectanten 2026/2027' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Informatie' }).fill('Inleveren: uiterlijk 1 december 2026');
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Opgeslagen.')).toBeVisible();
+  expect(api.advertiserInfo[2027]).toBe('Inleveren: uiterlijk 1 december 2026');
 });
 
 test('fase 27b: Excel eerst controleren en dan inlezen', async ({ page }) => {

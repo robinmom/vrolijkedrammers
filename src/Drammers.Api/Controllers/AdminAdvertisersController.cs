@@ -134,6 +134,21 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return NoContent();
     }
 
+    /// <summary>Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar.</summary>
+    [HttpGet("info")]
+    [ProducesResponseType<AdvertiserCampaignInfo>(StatusCodes.Status200OK)]
+    public async Task<AdvertiserCampaignInfo> GetInfo([FromQuery] int? year, CancellationToken cancellationToken) =>
+        await advertisers.InfoAsync(year ?? await advertisers.CampaignYearAsync(cancellationToken), cancellationToken);
+
+    [HttpPut("info/{year:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetInfo(int year, AdvertiserInfoRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.SetInfoAsync(year, request.Text, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>De stand van de campagne; zonder jaar het lopende campagnejaar.</summary>
     [HttpGet("status")]
     [ProducesResponseType<AdvertiserStatusReport>(StatusCodes.Status200OK)]
@@ -395,6 +410,8 @@ public sealed record AdvertiserStatusRequest(
 public sealed record CashReceivedRequest(bool Received);
 
 public sealed record AdvertiserRoundRequest([Range(1, 3)] int? Round);
+
+public sealed record AdvertiserInfoRequest([StringLength(1000)] string? Text);
 
 public sealed record AdvertiserRequest(
     [Range(1, 100000)] int Number,

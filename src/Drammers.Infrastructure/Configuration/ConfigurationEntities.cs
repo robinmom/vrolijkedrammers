@@ -99,4 +99,7 @@ public static class AppConfigurationKeys
     public const string AdvertiserCampaignYear = "advertiser_campaign_year";
     public const string InvoiceAddress = "invoice_address";
     public const string InvoiceKvk = "invoice_kvk";
+
+    /// <summary>Informatie voor de collectanten van één campagnejaar (fase 27h), bijv. tarieven en de inleverdatum.</summary>
+    public static string AdvertiserInfo(int year) => $"advertiser_info_{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 }

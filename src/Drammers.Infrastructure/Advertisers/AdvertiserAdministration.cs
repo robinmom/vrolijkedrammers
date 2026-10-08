@@ -58,7 +58,10 @@ public sealed record MyAdvertiser(
     string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note,
     bool CashReceived = false, IReadOnlyList<AdvertiserHistoryItem>? History = null, string? Page = null);
 
-public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items);
+public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items, string? Info = null);
+
+/// <summary>Informatie voor de collectanten van een campagnejaar (fase 27h).</summary>
+public sealed record AdvertiserCampaignInfo(int Year, string? Text);
 
 /// <summary>Een nieuwe adverteerder vanuit de app; bij een machtiging zijn IBAN en toestemming nodig.</summary>
 public sealed record NewAdvertiserInput(
@@ -148,6 +151,47 @@ public sealed class AdvertiserAdministration(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("advertiser.campaign-year-changed", "AppConfiguration", AppConfigurationKeys.AdvertiserCampaignYear, before,
             year.ToString(CultureInfo.InvariantCulture)), cancellationToken);
+    }
+
+    /// <summary>De informatie voor de collectanten van dit jaar (tarieven, inleverdatum, contactpersoon).</summary>
+    public async Task<AdvertiserCampaignInfo> InfoAsync(int year, CancellationToken cancellationToken) =>
+        new(year, await db.AppConfiguration.AsNoTracking().Where(s => s.Key == AppConfigurationKeys.AdvertiserInfo(year))
+            .Select(s => s.Value).SingleOrDefaultAsync(cancellationToken));
+
+    public async Task SetInfoAsync(int year, string? text, CancellationToken cancellationToken)
+    {
+        if (year is < 2000 or > 2100)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Kies een jaar tussen 2000 en 2100.");
+        }
+
+        var value = text?.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
+        if (value?.Length > 1000)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De informatie mag hooguit 1000 tekens zijn.");
+        }
+
+        var key = AppConfigurationKeys.AdvertiserInfo(year);
+        var setting = await db.AppConfiguration.SingleOrDefaultAsync(s => s.Key == key, cancellationToken);
+        var before = setting?.Value;
+        if (string.IsNullOrEmpty(value))
+        {
+            if (setting is not null)
+            {
+                db.AppConfiguration.Remove(setting);
+            }
+        }
+        else if (setting is null)
+        {
+            db.AppConfiguration.Add(new AppConfigurationSetting { Key = key, Value = value });
+        }
+        else
+        {
+            setting.Value = value;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.info-changed", "AppConfiguration", key, before, value), cancellationToken);
     }
 
     // ----- Import --------------------------------------------------------------------------------------------------
@@ -513,6 +557,7 @@ public sealed class AdvertiserAdministration(
             return new MyAdvertisers(false, year, []);
         }
 
+        var info = (await InfoAsync(year, cancellationToken)).Text;
         var report = await StatusAsync(year, memberId, cancellationToken);
         var ids = report.Rows.Select(r => r.Id).ToList();
         var details = await db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year < year && y.Year >= year - 5))
@@ -525,7 +570,7 @@ public sealed class AdvertiserAdministration(
                 return new MyAdvertiser(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City, a.Kind,
                     a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note, r.PaidAt is not null,
                     [.. a.Years.OrderByDescending(y => y.Year).Select(y => new AdvertiserHistoryItem(y.Year, y.Amount, y.IsFree, y.Status))], a.Page);
-            })]);
+            })], info);
     }
 
     /// <summary>De collectant zet de stand van een van zijn eigen adverteerders, in het lopende campagnejaar.</summary>

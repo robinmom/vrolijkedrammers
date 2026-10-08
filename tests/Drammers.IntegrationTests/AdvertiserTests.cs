@@ -334,6 +334,29 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Informatie_voor_collectanten_per_campagnejaar()
+    {
+        var (_, alfred) = await LidMetAccountAsync("Alfred Voorbeeld", "alfred@example.com", kader: true);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        Assert.Equal(JsonValueKind.Null, (await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers")).GetProperty("info").ValueKind);
+
+        const string Info = "Mogelijkheden: A Advertenties\nG Giften\n\nInleveren: uiterlijk 1 december 2026";
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = Info })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2026", new { text = "Vorig jaar" })).StatusCode);
+        Assert.Equal(Info, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info")).GetProperty("text").GetString());
+        Assert.Equal("Vorig jaar", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info?year=2026")).GetProperty("text").GetString());
+
+        // De collectant ziet die van het lopende campagnejaar; aanpassen kan alleen het bestuur.
+        Assert.Equal(Info, (await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers")).GetProperty("info").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await alfred.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = "Anders" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = new string('x', 1001) })).StatusCode);
+
+        // Leegmaken haalt de informatie weg.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/info/2027", new { text = "" })).StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/info")).GetProperty("text").ValueKind);
+    }
+
+    [Fact]
     public async Task Een_lid_met_de_rol_Collectant_haalt_op_zonder_kaderlid_te_zijn()
     {
         var (collectantId, collectant) = await LidMetAccountAsync("Carla Collectant", "carla@example.com", kader: false, DefaultRoles.Collectant);

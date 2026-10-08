@@ -2261,6 +2261,109 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/info": {
+      "get": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar.",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserCampaignInfo"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserCampaignInfo"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdvertiserCampaignInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/info/{year}": {
+      "put": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserInfoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserInfoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserInfoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/status": {
       "get": {
         "tags": [
@@ -24134,6 +24237,26 @@
           }
         }
       },
+      "AdvertiserCampaignInfo": {
+        "required": [
+          "year",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Informatie voor de collectanten van een campagnejaar (fase 27h)."
+      },
       "AdvertiserCollectionRequest": {
         "required": [
           "date",
@@ -24307,6 +24430,20 @@
               "type": "integer",
               "format": "int32"
             }
+          }
+        }
+      },
+      "AdvertiserInfoRequest": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -32726,6 +32863,12 @@
             "items": {
               "$ref": "#/components/schemas/MyAdvertiser"
             }
+          },
+          "info": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

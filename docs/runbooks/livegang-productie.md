@@ -79,6 +79,18 @@ Het script: database (BACPAC Dev → Prod), opruimen (Dev-databasegebruiker, ope
 ledensync uit), bestanden, sleutelring (opnieuw versleuteld voor Prod) en geheimen (behalve Mollie en e-Boekhouden). Het geeft jou tijdelijk de benodigde rollen en
 firewalltoegang en ruimt die daarna op. Duur: enkele minuten.
 
+Gaat het halverwege mis nadat de database al is gekopieerd: `migrate-dev-to-prod.sh --from <2-5>` gaat verder bij die
+stap.
+
+3. **Testgegevens weghalen** (besluit 2026-10-09): adverteerders (alles), alle bestellingen (dagkaarten, pronkzitting,
+   activiteiten, munten; de producten blijven), ledentickets en alle optochtinschrijvingen (de optocht en categorieën
+   blijven). Eerst een proefrun met aantallen, dan vastleggen:
+
+   ```bash
+   AZURE_SUBSCRIPTION_ID=<id> infra/prod/reset-testdata.sh            # proefrun: niets gewijzigd
+   AZURE_SUBSCRIPTION_ID=<id> infra/prod/reset-testdata.sh --apply    # vastleggen (vraagt om bevestiging)
+   ```
+
 ## 4. Livegangdag — app uitrollen en testen op het azurewebsites-adres
 
 1. **Deploy → Run workflow**: `prod`, *Alleen infrastructuur* **uit**. Keur goed. Migraties zijn een no-op, de

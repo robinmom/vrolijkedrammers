@@ -39,6 +39,8 @@ switch (command)
     case "migrate":
         {
             await using var connection = await OpenWithRetryAsync(connectionString, accessToken);
+            // PRINT-meldingen uit het script tonen (bijv. de aantallen van infra/prod/reset-testdata.sql).
+            connection.InfoMessage += (_, e) => Console.WriteLine(e.Message);
             var script = await File.ReadAllTextAsync(args[3]);
             var batches = await SqlScriptRunner.RunAsync(connection, script, CancellationToken.None);
             Console.WriteLine($"Migratiescript uitgevoerd ({batches} batches).");

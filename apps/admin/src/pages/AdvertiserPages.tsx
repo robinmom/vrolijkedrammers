@@ -23,7 +23,7 @@ import {
   type AdvertiserRequest,
   type AdvertiserYearStatus,
 } from '../api/advertisers';
-import { useApiMutation } from '../api/hooks';
+import { useApiMutation, type Schemas } from '../api/hooks';
 import { uploadJson } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
 import { ConfirmDialog } from '../components/Dialog';
@@ -593,6 +593,78 @@ function CollectorInfoCard({ year }: { year: number }) {
   );
 }
 
+type CampaignRow = Schemas['AdvertiserStatusRow'];
+type CampaignColumn = 'company' | 'collector' | 'previous' | 'amount' | 'status' | 'round' | 'cash' | 'note';
+interface CampaignSort {
+  column: CampaignColumn;
+  desc: boolean;
+}
+
+const CAMPAIGN_COLUMNS: [CampaignColumn, string][] = [
+  ['company', 'Bedrijf'],
+  ['collector', 'Collectant'],
+  ['previous', 'Vorig jaar'],
+  ['amount', 'Bedrag'],
+  ['status', 'Stand'],
+  ['round', 'Ronde'],
+  ['cash', 'Contant ontvangen'],
+  ['note', 'Opmerking'],
+];
+
+const STATUS_ORDER: Record<AdvertiserYearStatus, number> = { Open: 0, Collected: 1, Stopped: 2 };
+
+const sortValue: Record<CampaignColumn, (r: CampaignRow) => string | number | null> = {
+  company: (r) => r.companyName,
+  collector: (r) => r.collectorName ?? null,
+  previous: (r) => r.previousAmount ?? null,
+  amount: (r) => (r.isFree ? 0 : (r.amount ?? null)),
+  status: (r) => STATUS_ORDER[r.status],
+  round: (r) => r.round ?? null,
+  cash: (r) => r.paidAt ?? null,
+  note: (r) => r.note || null,
+};
+
+/** Sorteren op een kolom (fase 27j); lege waarden staan altijd onderaan, bij gelijke waarden op bedrijfsnaam. */
+function sortCampaignRows(rows: CampaignRow[], sort: CampaignSort | null): CampaignRow[] {
+  if (!sort) return rows;
+  const value = sortValue[sort.column];
+  const text = new Intl.Collator('nl', { sensitivity: 'base', numeric: true });
+  return [...rows].sort((a, b) => {
+    const [x, y] = [value(a), value(b)];
+    if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
+    const order = typeof x === 'number' && typeof y === 'number' ? x - y : text.compare(String(x), String(y));
+    return (sort.desc ? -order : order) || text.compare(a.companyName, b.companyName);
+  });
+}
+
+/** Kolomkop met sorteerknop, zoals in de generieke beheertabel: eerst oplopend, dan aflopend. */
+function SortHeader({
+  column,
+  label,
+  sort,
+  onSort,
+}: {
+  column: CampaignColumn;
+  label: string;
+  sort: CampaignSort | null;
+  onSort: (sort: CampaignSort) => void;
+}) {
+  const active = sort?.column === column ? sort : null;
+  return (
+    <th scope="col" aria-sort={active ? (active.desc ? 'descending' : 'ascending') : undefined}>
+      <button
+        type="button"
+        className="sort-button"
+        onClick={() => onSort({ column, desc: active ? !active.desc : false })}
+      >
+        {label}
+        <span aria-hidden="true">{active ? (active.desc ? ' ▼' : ' ▲') : ''}</span>
+        <span className="visually-hidden">{active ? `, ${active.desc ? 'aflopend' : 'oplopend'} gesorteerd` : ''}</span>
+      </button>
+    </th>
+  );
+}
+
 /** Ronde 1, 2 en 3: dezelfde kleuren als de regels in de Excel-export (lichtgroen, lichtblauw, lichtgeel). */
 const ROUND_COLORS: Record<number, string> = { 1: '#D9EAD3', 2: '#DDEBF7', 3: '#FFF2CC' };
 /** Stopt: lichtrood, gaat voor de ronde (zoals in de export). */
@@ -612,6 +684,7 @@ export function AdvertiserStatusPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<AdvertiserYearStatus | ''>('');
   const [roundFilter, setRoundFilter] = useState('');
+  const [sort, setSort] = useState<CampaignSort | null>(null);
   const shownYear = year ?? campaign.data?.year ?? null;
   const status = useAdvertiserStatus(shownYear, collector);
   const [confirmAll, setConfirmAll] = useState(false);
@@ -693,6 +766,7 @@ export function AdvertiserStatusPage() {
       (!statusFilter || r.status === statusFilter) &&
       (!roundFilter || (roundFilter === 'none' ? !r.round : r.round === Number(roundFilter))),
   );
+  const sortedRows = sortCampaignRows(rows, sort);
   const handled = totals ? totals.collected + totals.stopped : 0;
   const percent = totals && totals.total > 0 ? Math.round((100 * handled) / totals.total) : 0;
 
@@ -901,18 +975,13 @@ export function AdvertiserStatusPage() {
             <caption className="visually-hidden">Adverteerders in de campagne {report.year}</caption>
             <thead>
               <tr>
-                <th scope="col">Bedrijf</th>
-                <th scope="col">Collectant</th>
-                <th scope="col">Vorig jaar</th>
-                <th scope="col">Bedrag</th>
-                <th scope="col">Stand</th>
-                <th scope="col">Ronde</th>
-                <th scope="col">Contant ontvangen</th>
-                <th scope="col">Opmerking</th>
+                {CAMPAIGN_COLUMNS.map(([key, label]) => (
+                  <SortHeader key={key} column={key} label={label} sort={sort} onSort={setSort} />
+                ))}
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {sortedRows.map((r) => (
                 <tr key={r.id} style={rowColor(r) ? { background: rowColor(r) } : undefined}>
                   <td>
                     <Link to="/adverteerders/$id" params={{ id: r.id }}>

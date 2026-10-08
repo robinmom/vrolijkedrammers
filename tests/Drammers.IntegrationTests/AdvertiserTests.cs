@@ -325,6 +325,12 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var bakkerijRow = sheet.RowsUsed().Single(r => r.Cell(2).GetString() == "Bakkerij De Test");
         Assert.Equal(XLColor.FromHtml("#FFF2CC"), bakkerijRow.Cell(6).Style.Fill.BackgroundColor);
         Assert.Equal("", bakkerijRow.Cell(6).GetString());
+
+        // Stopt: de regel wordt lichtrood, ook met een ronde.
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id("Bakkerij De Test")}/years/2027", new { status = "Stopped", amount = (decimal?)null, note = (string?)null });
+        using var stopped = new XLWorkbook(new MemoryStream(await (await _bestuur.GetAsync("/api/v1/admin/advertisers/export")).Content.ReadAsByteArrayAsync()));
+        var stoppedRow = stopped.Worksheet(1).RowsUsed().Single(r => r.Cell(2).GetString() == "Bakkerij De Test");
+        Assert.All(Enumerable.Range(1, 6), c => Assert.Equal(XLColor.FromHtml("#F4CCCC"), stoppedRow.Cell(c).Style.Fill.BackgroundColor));
     }
 
     [Fact]

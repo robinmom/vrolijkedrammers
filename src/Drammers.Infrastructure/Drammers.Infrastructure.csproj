@@ -19,8 +19,9 @@
     <PackageReference Include="Markdig" Version="1.4.0" />
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
-    <!-- Six Labors Split License: gratis voor non-profitorganisaties (de vereniging). Versie 3.1: v4 eist een licentiesleutel bij de build. -->
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <!-- Foto's draaien, verkleinen en als JPEG zonder metadata opslaan (MIT). Vervangt ImageSharp (licentiesleutel vanaf v4). -->
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

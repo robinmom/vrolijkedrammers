@@ -172,8 +172,9 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
 
     /// <summary>
     /// Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te
-    /// vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt de kleur van de
-    /// ronde: 1 lichtgroen, 2 lichtblauw, 3 lichtgeel. Op paginanummer, dan op naam.
+    /// vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt een kleur:
+    /// lichtrood als de adverteerder stopt, anders die van de ronde (1 lichtgroen, 2 lichtblauw, 3 lichtgeel). Op
+    /// paginanummer, dan op naam.
     /// </summary>
     [HttpGet("export")]
     [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
@@ -213,7 +214,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
                 sheet.Cell(row, c + 1).Value = values[c];
             }
 
-            if (RoundColor(current?.Round) is { } color)
+            if (RowColor(current) is { } color)
             {
                 sheet.Range(row, 1, row, headers.Length).Style.Fill.BackgroundColor = color;
             }
@@ -231,12 +232,16 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"adverteerders-{campaign}.xlsx");
     }
 
-    /// <summary>Lichtgroen, lichtblauw en lichtgeel voor ronde 1, 2 en 3.</summary>
-    internal static XLColor? RoundColor(byte? round) => round switch
+    /// <summary>
+    /// Kleur van de regel: lichtrood als de adverteerder dit jaar stopt (gaat voor de ronde), anders lichtgroen, lichtblauw
+    /// of lichtgeel voor ronde 1, 2 en 3.
+    /// </summary>
+    internal static XLColor? RowColor(AdvertiserYear? year) => year switch
     {
-        1 => XLColor.FromHtml("#D9EAD3"),
-        2 => XLColor.FromHtml("#DDEBF7"),
-        3 => XLColor.FromHtml("#FFF2CC"),
+        { Status: AdvertiserYearStatus.Stopped } => XLColor.FromHtml("#F4CCCC"),
+        { Round: 1 } => XLColor.FromHtml("#D9EAD3"),
+        { Round: 2 } => XLColor.FromHtml("#DDEBF7"),
+        { Round: 3 } => XLColor.FromHtml("#FFF2CC"),
         _ => null,
     };
 

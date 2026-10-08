@@ -16,7 +16,10 @@
 #     (de Prod-database bestaat en is nog leeg; de app is nog niet uitgerold);
 #   - je bent lid van sg-dvd-sql-admin-dev en sg-dvd-sql-admin-prod (de bootstrapscripts doen dat);
 #   - ingelogd in de tenant van de subscription: az login --tenant <tenant-id-vereniging>
-#   AZURE_SUBSCRIPTION_ID=<id> infra/prod/migrate-dev-to-prod.sh
+#   AZURE_SUBSCRIPTION_ID=<id> infra/prod/migrate-dev-to-prod.sh [--from <stap>]
+#
+# Met --from 2..5 gaat het script verder bij die stap, bijv. na een fout nadat de database al is gekopieerd (stap 1
+# opnieuw doen kan niet in een gevulde database). Alle stappen zijn vanaf 2 veilig te herhalen.
 #
 # Het script geeft de ingelogde beheerder tijdelijk de benodigde datarollen (opslag en Key Vault) en firewalltoegang,
 # en neemt die aan het eind weer in. Het stopt bij de eerste fout; Prod is dan nog niet in gebruik, dus opnieuw beginnen
@@ -24,6 +27,11 @@
 set -euo pipefail
 
 : "${AZURE_SUBSCRIPTION_ID:?Zet AZURE_SUBSCRIPTION_ID}"
+FROM=1
+if [[ "${1:-}" == "--from" ]]; then
+  FROM="${2:?Gebruik: --from <1-5>}"
+  [[ "$FROM" =~ ^[1-5]$ ]] || { echo "--from moet 1 t/m 5 zijn" >&2; exit 2; }
+fi
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 WORK="$(mktemp -d)"
@@ -64,15 +72,20 @@ done
 echo "    (wachten tot de rollen actief zijn)"
 sleep 90
 
+token() { az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv; }
+step() { (( FROM <= $1 )); }
+
+if step 1; then
 echo "==> 1. Database: export Dev → import Prod"
 dotnet tool update --global microsoft.sqlpackage >/dev/null
 SQLPACKAGE="$HOME/.dotnet/tools/sqlpackage"
-token() { az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv; }
 "$SQLPACKAGE" /Action:Export /SourceServerName:"tcp:sql-dvd-dev.database.windows.net,1433" /SourceDatabaseName:"$DB" \
   /AccessToken:"$(token)" /TargetFile:"$WORK/dvd.bacpac"
 "$SQLPACKAGE" /Action:Import /TargetServerName:"tcp:sql-dvd-prod.database.windows.net,1433" /TargetDatabaseName:"$DB" \
   /AccessToken:"$(token)" /SourceFile:"$WORK/dvd.bacpac"
+fi
 
+if step 2; then
 echo "==> 2. Opruimen in Prod: databasegebruiker van Dev, openstaande outbox-berichten, nachtelijke ledensync uit"
 cat >"$WORK/opruimen.sql" <<'SQL'
 IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'app-dvd-api-dev')
@@ -83,8 +96,12 @@ GO
 UPDATE config.FeatureFlag SET enabled = 0 WHERE [key] = 'members-sync';
 GO
 SQL
-dotnet run --project "$ROOT/tools/Drammers.DbSetup" -- "sql-dvd-prod.database.windows.net" "$DB" migrate "$WORK/opruimen.sql"
+# Hetzelfde token als sqlpackage; DefaultAzureCredential liep op een Mac in een time-out.
+DVD_SQL_ACCESS_TOKEN="$(token)" dotnet run --project "$ROOT/tools/Drammers.DbSetup" -- \
+  "sql-dvd-prod.database.windows.net" "$DB" migrate "$WORK/opruimen.sql"
+fi
 
+if step 3; then
 echo "==> 3. Bestanden: ${CONTAINERS[*]}"
 for container in "${CONTAINERS[@]}"; do
   mkdir -p "$WORK/blobs/$container"
@@ -97,6 +114,9 @@ for container in "${CONTAINERS[@]}"; do
   echo "    $container: $(find "$WORK/blobs/$container" -type f | wc -l | tr -d ' ') bestand(en)"
 done
 
+fi
+
+if step 4; then
 echo "==> 4. Sleutelring opnieuw versleutelen met de Key Vault-sleutel van Prod"
 az storage blob download --account-name stdvddev --container-name dataprotection --name keys.xml \
   --file "$WORK/keys-dev.xml" --auth-mode login -o none
@@ -107,6 +127,9 @@ dotnet run --project "$ROOT/tools/Drammers.KeyRing" -- "$WORK/keys-dev.xml" "${d
 az storage blob upload --account-name stdvdprod --container-name dataprotection --name keys.xml \
   --file "$WORK/keys-prod.xml" --auth-mode login --overwrite -o none
 
+fi
+
+if step 5; then
 echo "==> 5. Geheimen: ${SECRETS[*]}"
 for name in "${SECRETS[@]}"; do
   if value="$(az keyvault secret show --vault-name kv-dvd-dev --name "$name" --query value -o tsv 2>/dev/null)" && [[ -n "$value" ]]; then
@@ -119,6 +142,7 @@ for name in "${SECRETS[@]}"; do
   fi
 done
 unset value
+fi
 
 echo
 echo "Klaar. Zet nu de live Mollie-sleutel: infra/prod/set-secret.sh prod mollie-api-key"

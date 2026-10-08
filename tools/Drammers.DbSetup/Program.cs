@@ -18,6 +18,8 @@ using Microsoft.Extensions.DependencyInjection;
 //   Drammers.DbSetup <server> <database> bootstrap-admin <oid> <e-mail> <naam>
 //       Koppelt een bestaand Entra-account als eerste beheerder (rol beheerder-it; idempotent, geaudit). Nodig omdat
 //       beheerders anders alleen door een andere beheerder kunnen worden aangemaakt (fase 3, ADR-014 bron Manual).
+// Met DVD_SQL_ACCESS_TOKEN (bijv. uit az account get-access-token) gebruikt de tool dat token in plaats van
+// DefaultAzureCredential; op een beheerders-Mac is dat sneller en betrouwbaarder (migrate-dev-to-prod.sh).
 if (args.Length < 4)
 {
     Console.Error.WriteLine("Gebruik: Drammers.DbSetup <server> <database> migrate <script.sql>");
@@ -27,13 +29,16 @@ if (args.Length < 4)
 }
 
 var (server, database, command) = (args[0], args[1], args[2]);
-var connectionString = $"Server=tcp:{server},1433;Database={database};Authentication=Active Directory Default;Encrypt=True;Connect Timeout=90";
+var accessToken = Environment.GetEnvironmentVariable("DVD_SQL_ACCESS_TOKEN");
+var connectionString = string.IsNullOrWhiteSpace(accessToken)
+    ? $"Server=tcp:{server},1433;Database={database};Authentication=Active Directory Default;Encrypt=True;Connect Timeout=90"
+    : $"Server=tcp:{server},1433;Database={database};Encrypt=True;Connect Timeout=90";
 
 switch (command)
 {
     case "migrate":
         {
-            await using var connection = await OpenWithRetryAsync(connectionString);
+            await using var connection = await OpenWithRetryAsync(connectionString, accessToken);
             var script = await File.ReadAllTextAsync(args[3]);
             var batches = await SqlScriptRunner.RunAsync(connection, script, CancellationToken.None);
             Console.WriteLine($"Migratiescript uitgevoerd ({batches} batches).");
@@ -42,7 +47,7 @@ switch (command)
 
     case "ensure-user" when args.Length >= 5 && Guid.TryParse(args[4], out var clientId):
         {
-            await using var connection = await OpenWithRetryAsync(connectionString);
+            await using var connection = await OpenWithRetryAsync(connectionString, accessToken);
             var roles = args.Skip(5).ToArray();
             var created = await DatabaseUserProvisioner.EnsureEntraUserAsync(connection, args[3], clientId, roles, CancellationToken.None);
             Console.WriteLine($"Databasegebruiker '{args[3]}' {(created ? "aangemaakt" : "bestaat al")}; rollen: {string.Join(", ", roles)}.");
@@ -59,12 +64,17 @@ switch (command)
 
 // Een gepauzeerde serverless database geeft bij het eerste contact direct fout 40613 ("not currently available") terwijl
 // hij opstart; dan tot ruim twee minuten opnieuw proberen in plaats van de deploy te laten crashen.
-static async Task<SqlConnection> OpenWithRetryAsync(string connectionString)
+static async Task<SqlConnection> OpenWithRetryAsync(string connectionString, string? accessToken)
 {
     int[] transient = [40613, 40197, 40501, 49918, 49919, 49920, 4060];
     for (var attempt = 1; ; attempt++)
     {
         var connection = new SqlConnection(connectionString);
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            connection.AccessToken = accessToken;
+        }
+
         try
         {
             await connection.OpenAsync();

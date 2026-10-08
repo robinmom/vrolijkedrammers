@@ -7,6 +7,7 @@ using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Membership.Advertisers;
+using Drammers.Modules.Notification.Notifications;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
 using Drammers.SharedKernel.Identifiers;
@@ -58,10 +59,11 @@ public sealed record MyAdvertiser(
     string? City, AdvertiserKind Kind, AdvertiserPayment Payment, AdvertiserYearStatus Status, decimal? Amount, decimal? PreviousAmount, string? Note,
     bool CashReceived = false, IReadOnlyList<AdvertiserHistoryItem>? History = null, string? Page = null);
 
-public sealed record MyAdvertisers(bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items, string? Info = null);
+public sealed record MyAdvertisers(
+    bool IsCollector, int Year, IReadOnlyList<MyAdvertiser> Items, string? Info = null, DateOnly? StartDate = null, DateOnly? EndDate = null);
 
-/// <summary>Informatie voor de collectanten van een campagnejaar (fase 27h).</summary>
-public sealed record AdvertiserCampaignInfo(int Year, string? Text);
+/// <summary>Informatie voor de collectanten van een campagnejaar (fase 27h) en de collectieperiode (fase 27i).</summary>
+public sealed record AdvertiserCampaignInfo(int Year, string? Text, DateOnly? StartDate = null, DateOnly? EndDate = null);
 
 /// <summary>Een nieuwe adverteerder vanuit de app; bij een machtiging zijn IBAN en toestemming nodig.</summary>
 public sealed record NewAdvertiserInput(
@@ -84,7 +86,7 @@ public sealed class AdvertiserIbanProtector(IDataProtectionProvider provider)
 /// de import per regel, zodat het Excel-bestand eerst wordt aangepast.
 /// </summary>
 public sealed class AdvertiserAdministration(
-    DrammersDbContext db, AdvertiserIbanProtector ibans, IAuditLogger audit, IClock clock, ICurrentActor actor)
+    DrammersDbContext db, AdvertiserIbanProtector ibans, IAuditLogger audit, IClock clock, ICurrentActor actor, INotificationService notifications)
 {
     // ----- Collectanten en campagnejaar ----------------------------------------------------------------------------
 
@@ -153,12 +155,17 @@ public sealed class AdvertiserAdministration(
             year.ToString(CultureInfo.InvariantCulture)), cancellationToken);
     }
 
-    /// <summary>De informatie voor de collectanten van dit jaar (tarieven, inleverdatum, contactpersoon).</summary>
-    public async Task<AdvertiserCampaignInfo> InfoAsync(int year, CancellationToken cancellationToken) =>
-        new(year, await db.AppConfiguration.AsNoTracking().Where(s => s.Key == AppConfigurationKeys.AdvertiserInfo(year))
-            .Select(s => s.Value).SingleOrDefaultAsync(cancellationToken));
+    /// <summary>De informatie voor de collectanten van dit jaar (tarieven, inleverdatum, contactpersoon) en de collectieperiode.</summary>
+    public async Task<AdvertiserCampaignInfo> InfoAsync(int year, CancellationToken cancellationToken)
+    {
+        string[] keys = [AppConfigurationKeys.AdvertiserInfo(year), AppConfigurationKeys.AdvertiserStart(year), AppConfigurationKeys.AdvertiserEnd(year)];
+        var values = await db.AppConfiguration.AsNoTracking().Where(s => keys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, s => s.Value, cancellationToken);
+        DateOnly? Date(string key) =>
+            DateOnly.TryParseExact(values.GetValueOrDefault(key), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+        return new AdvertiserCampaignInfo(year, values.GetValueOrDefault(keys[0]), Date(keys[1]), Date(keys[2]));
+    }
 
-    public async Task SetInfoAsync(int year, string? text, CancellationToken cancellationToken)
+    public async Task SetInfoAsync(int year, string? text, DateOnly? startDate, DateOnly? endDate, CancellationToken cancellationToken)
     {
         if (year is < 2000 or > 2100)
         {
@@ -171,9 +178,24 @@ public sealed class AdvertiserAdministration(
             throw new DomainException(ErrorCodes.Validation, "De informatie mag hooguit 1000 tekens zijn.");
         }
 
-        var key = AppConfigurationKeys.AdvertiserInfo(year);
+        if (startDate is not null && endDate is not null && endDate < startDate)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De einddatum ligt voor de startdatum.");
+        }
+
+        var before = await InfoAsync(year, cancellationToken);
+        await StoreAsync(AppConfigurationKeys.AdvertiserInfo(year), value, cancellationToken);
+        await StoreAsync(AppConfigurationKeys.AdvertiserStart(year), startDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), cancellationToken);
+        await StoreAsync(AppConfigurationKeys.AdvertiserEnd(year), endDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.info-changed", "AppConfiguration", AppConfigurationKeys.AdvertiserInfo(year),
+            $"{before.StartDate} - {before.EndDate}: {before.Text}", $"{startDate} - {endDate}: {value}"), cancellationToken);
+    }
+
+    /// <summary>Zet of verwijdert (lege waarde) een instelling; opslaan doet de aanroeper.</summary>
+    private async Task StoreAsync(string key, string? value, CancellationToken cancellationToken)
+    {
         var setting = await db.AppConfiguration.SingleOrDefaultAsync(s => s.Key == key, cancellationToken);
-        var before = setting?.Value;
         if (string.IsNullOrEmpty(value))
         {
             if (setting is not null)
@@ -189,9 +211,35 @@ public sealed class AdvertiserAdministration(
         {
             setting.Value = value;
         }
+    }
+
+    /// <summary>
+    /// Herinnering (fase 27i): een pushmelding aan collectanten die nog adverteerders open hebben staan, met hun eigen
+    /// aantal en de einddatum. Zonder lijst gaat hij naar alle collectanten met open adverteerders. Geeft het aantal
+    /// collectanten terug dat een herinnering kreeg.
+    /// </summary>
+    public async Task<int> RemindAsync(int year, IReadOnlyList<Guid>? collectorMemberIds, CancellationToken cancellationToken)
+    {
+        var report = await StatusAsync(year, null, cancellationToken);
+        var open = report.PerCollector
+            .Where(c => c.CollectorMemberId is not null && c.Totals.Open > 0)
+            .Where(c => collectorMemberIds is not { Count: > 0 } || collectorMemberIds.Contains(c.CollectorMemberId!.Value))
+            .ToList();
+        var end = (await InfoAsync(year, cancellationToken)).EndDate;
+        var deadline = end is { } d ? $" Graag uiterlijk {d.ToString("d MMMM yyyy", CultureInfo.GetCultureInfo("nl-NL"))} afronden." : "";
+        foreach (var c in open)
+        {
+            var n = c.Totals.Open;
+            await notifications.EnqueueAsync(new SystemNotification(
+                "Adverteerders ophalen",
+                $"Je hebt nog {n} adverteerder{(n == 1 ? "" : "s")} open staan.{deadline}",
+                NotificationCategory.Reminder, new NotificationAudience(MemberIds: [c.CollectorMemberId!.Value]), "drammers://adverteerders"), cancellationToken);
+        }
 
         await db.SaveChangesAsync(cancellationToken);
-        await audit.WriteAsync(new AuditEntry("advertiser.info-changed", "AppConfiguration", key, before, value), cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.reminder-sent", "AdvertiserCampaign", year.ToString(CultureInfo.InvariantCulture), null,
+            string.Join(", ", open.Select(c => $"{c.Name} ({c.Totals.Open})"))), cancellationToken);
+        return open.Count;
     }
 
     // ----- Import --------------------------------------------------------------------------------------------------
@@ -557,7 +605,7 @@ public sealed class AdvertiserAdministration(
             return new MyAdvertisers(false, year, []);
         }
 
-        var info = (await InfoAsync(year, cancellationToken)).Text;
+        var info = await InfoAsync(year, cancellationToken);
         var report = await StatusAsync(year, memberId, cancellationToken);
         var ids = report.Rows.Select(r => r.Id).ToList();
         var details = await db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year < year && y.Year >= year - 5))
@@ -570,7 +618,7 @@ public sealed class AdvertiserAdministration(
                 return new MyAdvertiser(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City, a.Kind,
                     a.Payment, r.Status, r.Amount, r.PreviousAmount, r.Note, r.PaidAt is not null,
                     [.. a.Years.OrderByDescending(y => y.Year).Select(y => new AdvertiserHistoryItem(y.Year, y.Amount, y.IsFree, y.Status))], a.Page);
-            })], info);
+            })], info.Text, info.StartDate, info.EndDate);
     }
 
     /// <summary>De collectant zet de stand van een van zijn eigen adverteerders, in het lopende campagnejaar.</summary>

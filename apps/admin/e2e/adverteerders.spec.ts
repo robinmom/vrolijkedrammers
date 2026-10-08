@@ -96,16 +96,40 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
   await expect(page.getByRole('heading', { name: 'Voortgang: 100%' })).toBeVisible();
 });
 
-test('fase 27h: informatie voor collectanten per campagnejaar', async ({ page }) => {
-  const api = new MockApi(['advertiser.manage']);
+test('fase 27h/i: collectieperiode, informatie en herinneringen', async ({ page }) => {
+  const api = new MockApi(['report.view', 'advertiser.manage']);
   await api.install(page);
+
+  // Dashboard: alleen de voortgangsmeter van de campagne.
+  await page.goto('/beheer/');
+  await expect(page.getByRole('heading', { name: 'Adverteerders 2026/2027: 0%' })).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Adverteerders afgehandeld' })).toHaveAttribute(
+    'aria-valuenow',
+    '0',
+  );
+
   await page.goto('/beheer/adverteerders/campagne');
 
-  await expect(page.getByRole('heading', { name: 'Informatie voor collectanten 2026/2027' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Collectieperiode en informatie 2026/2027' })).toBeVisible();
+  await page.getByLabel('Startdatum').fill('2026-10-12');
+  await page.getByLabel('Einddatum').fill('2026-12-01');
   await page.getByRole('textbox', { name: 'Informatie' }).fill('Inleveren: uiterlijk 1 december 2026');
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Opgeslagen.')).toBeVisible();
-  expect(api.advertiserInfo[2027]).toBe('Inleveren: uiterlijk 1 december 2026');
+  expect(api.advertiserInfo[2027]).toEqual({
+    text: 'Inleveren: uiterlijk 1 december 2026',
+    startDate: '2026-10-12',
+    endDate: '2026-12-01',
+  });
+
+  // Fase 27i: herinnering aan één collectant en aan iedereen met open adverteerders.
+  await page.getByRole('button', { name: 'Herinnering naar Piet van der Berg' }).click();
+  await expect(page.getByText('Herinnering verstuurd naar 1 collectant.')).toBeVisible();
+  expect(api.advertiserReminders).toEqual([['m-1']]);
+  await page.getByRole('button', { name: 'Herinnering aan iedereen met open adverteerders' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Versturen' }).click();
+  await expect(page.getByText('Herinnering verstuurd naar 1 collectant.')).toBeVisible();
+  expect(api.advertiserReminders).toEqual([['m-1'], null]);
 });
 
 test('fase 27b: Excel eerst controleren en dan inlezen', async ({ page }) => {

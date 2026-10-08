@@ -2024,6 +2024,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Herinnering aan collectanten met open adverteerders (fase 27i); zonder collectanten aan iedereen met open adverteerders. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserReminderRequest"];
+                    "text/json": components["schemas"]["AdvertiserReminderRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserReminderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdvertiserReminderResponse"];
+                        "application/json": components["schemas"]["AdvertiserReminderResponse"];
+                        "text/json": components["schemas"]["AdvertiserReminderResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/status": {
         parameters: {
             query?: never;
@@ -19236,11 +19280,15 @@ export interface components {
             /** Format: int32 */
             waiting: number;
         };
-        /** @description Informatie voor de collectanten van een campagnejaar (fase 27h). */
+        /** @description Informatie voor de collectanten van een campagnejaar (fase 27h) en de collectieperiode (fase 27i). */
         AdvertiserCampaignInfo: {
             /** Format: int32 */
             year: number;
             text: null | string;
+            /** Format: date */
+            startDate?: null | string;
+            /** Format: date */
+            endDate?: null | string;
         };
         AdvertiserCollectionRequest: {
             /** Format: date */
@@ -19291,6 +19339,10 @@ export interface components {
         };
         AdvertiserInfoRequest: {
             text: null | string;
+            /** Format: date */
+            startDate?: null | string;
+            /** Format: date */
+            endDate?: null | string;
         };
         /**
          * @description Soort bijdrage (kolom A/V/G in het Excel-overzicht).
@@ -19305,6 +19357,15 @@ export interface components {
          * @enum {unknown}
          */
         AdvertiserPayment: "Mandate" | "Cash" | "Invoice";
+        AdvertiserReminderRequest: {
+            /** Format: int32 */
+            year: null | number;
+            collectorMemberIds: null | string[];
+        };
+        AdvertiserReminderResponse: {
+            /** Format: int32 */
+            sent: number;
+        };
         AdvertiserRequest: {
             /** Format: int32 */
             number: number;
@@ -21526,6 +21587,10 @@ export interface components {
             year: number;
             items: components["schemas"]["MyAdvertiser"][];
             info?: null | string;
+            /** Format: date */
+            startDate?: null | string;
+            /** Format: date */
+            endDate?: null | string;
         };
         MyBankInput: {
             iban: null | string;

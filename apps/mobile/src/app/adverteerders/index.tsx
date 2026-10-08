@@ -35,6 +35,18 @@ const PAYMENT: Record<Advertiser['payment'], string> = {
   Invoice: 'Betaalt op rekening (factuur).',
 };
 
+const longDate = new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayMonth = new Intl.DateTimeFormat('nl-NL', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+
+/** De collectieperiode (fase 27i), bijv. "Ophalen van 12 oktober t/m 1 december 2026". */
+export function period(start?: string | null, end?: string | null) {
+  const date = (d: string) => new Date(`${d}T00:00:00Z`);
+  if (start && end) return `Ophalen van ${dayMonth.format(date(start))} t/m ${longDate.format(date(end))}`;
+  if (end) return `Ophalen tot en met ${longDate.format(date(end))}`;
+  if (start) return `Ophalen vanaf ${longDate.format(date(start))}`;
+  return null;
+}
+
 const STATUS: Record<Advertiser['status'], string> = { Open: 'Nog langs', Collected: 'Opgehaald', Stopped: 'Stopt' };
 
 /**
@@ -71,6 +83,11 @@ export default function AdverteerdersScreen() {
               <AppText variant="bodyStrong">
                 {done} van {items.length} afgehandeld
               </AppText>
+              {period(mine.data.startDate, mine.data.endDate) ? (
+                <AppText variant="caption" color={colors.textSecondary}>
+                  {period(mine.data.startDate, mine.data.endDate)}
+                </AppText>
+              ) : null}
               <View
                 style={[styles.track, { backgroundColor: colors.surfaceMuted }]}
                 accessibilityRole="progressbar"

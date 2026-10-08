@@ -109,10 +109,11 @@ export function useAdvertiserInfo(year: number | null) {
   });
 }
 
-export function useAdvertiserStatus(year: number | null, collector: string) {
+export function useAdvertiserStatus(year: number | null, collector: string, enabled = true) {
   const api = useApi();
   return useQuery({
     queryKey: ['advertisers', 'status', year, collector],
+    enabled,
     queryFn: async () =>
       required(
         (

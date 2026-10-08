@@ -894,7 +894,8 @@ export class MockApi {
   mailingTests = 0;
   // Fase 27b: adverteerders.
   advertiserCollectors = [{ memberId: 'm-1', name: 'Piet van der Berg' }];
-  advertiserInfo: Record<number, string> = {};
+  advertiserInfo: Record<number, { text: string | null; startDate: string | null; endDate: string | null }> = {};
+  advertiserReminders: (string[] | null)[] = [];
   advertisers: MockAdvertiser[] = [
     {
       id: 'adv-1',
@@ -1457,11 +1458,23 @@ export class MockApi {
     if (path === '/admin/advertisers/collectors') return json(this.advertiserCollectors);
     if (path === '/admin/advertisers/info') {
       const year = Number(url.searchParams.get('year'));
-      return json({ year, text: this.advertiserInfo[year] ?? null });
+      return json({ year, text: null, startDate: null, endDate: null, ...this.advertiserInfo[year] });
     }
     if ((m = path.match(/^\/admin\/advertisers\/info\/(\d+)$/))) {
-      this.advertiserInfo[Number(m[1])] = body.text as string;
+      this.advertiserInfo[Number(m[1])] = {
+        text: (body.text as string) || null,
+        startDate: (body.startDate as string | null) ?? null,
+        endDate: (body.endDate as string | null) ?? null,
+      };
       return noContent();
+    }
+    if (path === '/admin/advertisers/reminders') {
+      const ids = (body.collectorMemberIds as string[] | null) ?? null;
+      this.advertiserReminders.push(ids);
+      const open = this.advertisers.filter(
+        (a) => a.collectorMemberId && a.status2027 === 'Open' && (!ids?.length || ids.includes(a.collectorMemberId)),
+      );
+      return json({ sent: new Set(open.map((a) => a.collectorMemberId)).size });
     }
     if (path === '/admin/advertisers/campaign-year') {
       if (method === 'PUT') {

@@ -129,15 +129,22 @@ describe('Adverteerders ophalen (fase 27b-2)', () => {
     expect(await put!.json()).toEqual({ status: 'Collected', amount: 35, note: 'Volgend jaar een halve pagina', cashReceived: null });
   });
 
-  it('toont de contactgegevens in het overzicht en de informatie van de campagne (fase 27h)', async () => {
+  it('toont de contactgegevens, de collectieperiode en de informatie van de campagne (fase 27h/i)', async () => {
     const withContact = { ...advertiser('a-1', 'Bakkerij De Test', 'Open', 35), mobile: '06 12345678', email: 'info@bakkerij.test' };
     mockApi({
       ...api,
       '/api/v1/me': me,
-      '/api/v1/me/advertisers': { ...mine, items: [withContact], info: 'Advertenties: 85/50 € 35,00\nInleveren: 1 december' },
+      '/api/v1/me/advertisers': {
+        ...mine,
+        items: [withContact],
+        info: 'Advertenties: 85/50 € 35,00\nInleveren: 1 december',
+        startDate: '2026-10-12',
+        endDate: '2026-12-01',
+      },
     });
     await renderApp(routes, '/adverteerders');
     await screen.findByText('Bakkerij De Test');
+    expect(screen.getByText('Ophalen van 12 oktober t/m 1 december 2026')).toBeTruthy();
     // Zonder openklappen: telefoon en e-mail aan te tikken.
     expect(screen.getByRole('link', { name: 'Bel 06 12345678' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Bel 0314-000000' })).toBeTruthy();

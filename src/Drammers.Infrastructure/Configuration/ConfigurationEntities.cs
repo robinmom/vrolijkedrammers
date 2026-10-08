@@ -102,4 +102,9 @@ public static class AppConfigurationKeys
 
     /// <summary>Informatie voor de collectanten van één campagnejaar (fase 27h), bijv. tarieven en de inleverdatum.</summary>
     public static string AdvertiserInfo(int year) => $"advertiser_info_{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+    /// <summary>De collectieperiode van één campagnejaar (fase 27i): wanneer de collectanten langs gaan (yyyy-MM-dd).</summary>
+    public static string AdvertiserStart(int year) => $"advertiser_start_{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+    public static string AdvertiserEnd(int year) => $"advertiser_end_{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 }

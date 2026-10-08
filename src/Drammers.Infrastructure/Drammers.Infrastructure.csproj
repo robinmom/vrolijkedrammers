@@ -10,8 +10,8 @@
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.4" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="libphonenumber-csharp" Version="9.0.40" />
-    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.1" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.30.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.2" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.30.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
     <!-- Vanaf SqlClient 7 zit Entra-authenticatie (managed identity) in een apart pakket. -->
     <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.1" />

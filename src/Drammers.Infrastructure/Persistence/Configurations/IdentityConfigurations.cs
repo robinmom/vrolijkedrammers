@@ -34,6 +34,8 @@ public static class DefaultRoles
     public const string Hoofdjury = "hoofdjury";
     public const string Uitslagcommissie = "uitslagcommissie";
     public const string Collectant = "collectant";
+    public const string Regie = "regie";
+    public const string Tekstgroepen = "tekstgroepen";
 
     private static readonly string[] MemberBasics =
         [P.MemberReadOwn, P.EventRead, P.NewsRead, P.PhotoRead, P.NotificationReadOwn, P.TicketReadOwn];
@@ -83,6 +85,10 @@ public static class DefaultRoles
         // portal zijn gemaakt kregen een volgnummer vanaf 17, dus nieuwe vaste rollen krijgen een Id vanaf 101.
         new(101, Collectant, "Collectant", "Haalt in de app adverteerders op voor de Drammerskrant", false, false,
             [.. MemberBasics, P.AdvertiserCollect]),
+        // Doelgroeprollen (2026-10-09): te kiezen bij "Zichtbaar voor" van activiteiten, nieuws en meldingen. Id's vanaf 201,
+        // zodat ze niet botsen met rollen die in het portal zijn aangemaakt (die volgen na 101).
+        new(201, Regie, "Regie", "Regie; doelgroep voor activiteiten, nieuws en meldingen", false, false, MemberBasics),
+        new(202, Tekstgroepen, "Tekstgroepen", "Tekstgroepen; doelgroep voor activiteiten, nieuws en meldingen", false, false, MemberBasics),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

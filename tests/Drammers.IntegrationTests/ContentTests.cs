@@ -81,6 +81,25 @@ public class ContentTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Activiteit_voor_Regie_of_Tekstgroepen()
+    {
+        // De rollen staan tussen de te kiezen rollen in het portal.
+        var roles = (await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/roles")).EnumerateArray().Select(r => r.GetProperty("code").GetString()).ToList();
+        Assert.Contains(DefaultRoles.Regie, roles);
+        Assert.Contains(DefaultRoles.Tekstgroepen, roles);
+
+        await CreateEventAsync("Repetitie regie", "Restricted", roles: [DefaultRoles.Regie]);
+        await CreateEventAsync("Tekstavond", "Restricted", roles: [DefaultRoles.Tekstgroepen]);
+        var regie = _api.ClientFor((await _api.CreateUserAsync("regie@example.com", DefaultRoles.Regie)).ObjectId);
+        var tekst = _api.ClientFor((await _api.CreateUserAsync("tekst@example.com", DefaultRoles.Tekstgroepen)).ObjectId);
+        var lid = _api.ClientFor((await _api.CreateUserAsync("lid2@example.com", DefaultRoles.Lid)).ObjectId);
+
+        Assert.Equal(["Repetitie regie"], await VisibleEventTitlesAsync(regie));
+        Assert.Equal(["Tekstavond"], await VisibleEventTitlesAsync(tekst));
+        Assert.Empty(await VisibleEventTitlesAsync(lid));
+    }
+
+    [Fact]
     public async Task Gepubliceerd_event_staat_direct_in_de_publieke_agenda_met_veilige_html()
     {
         var id = await CreateEventAsync("Pronkzitting", "Public");

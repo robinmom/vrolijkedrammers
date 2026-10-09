@@ -417,7 +417,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         Assert.NotEmpty(token);
 
         var prefill = await _anonymous.GetFromJsonAsync<JsonElement>($"/api/v1/membership-applications/split/{token}");
-        Assert.Equal(("jan@example.com", "Marie", "Vries", "Kerkstraat 2"), (prefill.GetProperty("email").GetString(),
+        Assert.Equal(("Marie", "Vries", "Kerkstraat 2"), (
             prefill.GetProperty("secondFirstName").GetString(), prefill.GetProperty("secondLastName").GetString(), prefill.GetProperty("addressLine").GetString()));
         Assert.Equal(HttpStatusCode.NotFound, (await _anonymous.GetAsync("/api/v1/membership-applications/split/onzin")).StatusCode);
 

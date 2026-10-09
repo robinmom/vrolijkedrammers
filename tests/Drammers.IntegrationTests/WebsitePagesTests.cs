@@ -24,6 +24,12 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
         _api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), await sql.CreateBlobStorageAsync());
         _bestuur = _api.ClientFor((await _api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
         _guest = _api.CreateClient();
+
+        // De kaartverkoop staat in deze tests open (feature flag website.kaarten; zonder de flag is /kaarten een 404).
+        using var scope = _api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+        db.FeatureFlags.Add(new Drammers.Infrastructure.Configuration.FeatureFlag { Key = Drammers.Website.SiteShell.TicketsFlag, Enabled = true });
+        await db.SaveChangesAsync();
     }
 
     public async Task DisposeAsync() => await _api.DisposeAsync();

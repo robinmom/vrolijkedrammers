@@ -38154,7 +38154,6 @@
       "SplitPrefill": {
         "required": [
           "mainMemberName",
-          "email",
           "secondFirstName",
           "secondNamePrefix",
           "secondLastName",
@@ -38165,9 +38164,6 @@
         "type": "object",
         "properties": {
           "mainMemberName": {
-            "type": "string"
-          },
-          "email": {
             "type": "string"
           },
           "secondFirstName": {
@@ -38207,7 +38203,7 @@
             ]
           }
         },
-        "description": "Wat het splitsformulier vooraf invult (alleen met een geldige link)."
+        "description": "Wat het splitsformulier vooraf invult (alleen met een geldige link). Niet het e-mailadres: daar hoort het eigen adres\nvan het tweede lid (besluit 2026-10-09)."
       },
       "SplitState": {
         "enum": [

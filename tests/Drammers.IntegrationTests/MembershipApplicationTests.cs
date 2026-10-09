@@ -385,6 +385,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
                 EbStatusRaw = "Tweepersoonslid DVD",
                 JoinYear = 1993,
                 SecondMemberName = "Marie de Vries",
+                ParadeGroupName = "Kruumels",
                 AddressLine = "Kerkstraat 2",
                 PostalCode = "6999 AB",
                 City = "Loil",
@@ -417,11 +418,13 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         Assert.NotEmpty(token);
 
         var prefill = await _anonymous.GetFromJsonAsync<JsonElement>($"/api/v1/membership-applications/split/{token}");
-        Assert.Equal(("jan@example.com", "Marie", "Vries", "Kerkstraat 2"), (prefill.GetProperty("email").GetString(),
+        // Geen e-mailadres vooraf: dat van het hoofdlid hoort niet bij het tweede lid.
+        Assert.False(prefill.TryGetProperty("email", out _));
+        Assert.Equal(("Marie", "Vries", "Kerkstraat 2"), (
             prefill.GetProperty("secondFirstName").GetString(), prefill.GetProperty("secondLastName").GetString(), prefill.GetProperty("addressLine").GetString()));
         Assert.Equal(HttpStatusCode.NotFound, (await _anonymous.GetAsync("/api/v1/membership-applications/split/onzin")).StatusCode);
 
-        // Het tweede lid meldt zich aan met het e-mailadres van het hoofdlid en zonder IBAN.
+        // Het tweede lid meldt zich aan met een eigen e-mailadres en zonder IBAN.
         var form = new
         {
             firstName = "Marie",
@@ -432,7 +435,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             addressLine = "Kerkstraat 2",
             postalCode = "6999 AB",
             city = "Loil",
-            email = "jan@example.com",
+            email = "marie@example.com",
             phone = (string?)null,
             guardianName = (string?)null,
             guardianPhone = (string?)null,
@@ -445,7 +448,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             membershipType = "Individual",
             splitToken = token,
         };
-        var id = await SubmitAsync(form, "jan@example.com");
+        var id = await SubmitAsync(form, "marie@example.com");
         Assert.Equal("Applied", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray()
             .Single(c => c.GetProperty("memberId").GetGuid() == main).GetProperty("state").GetString());
         var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
@@ -460,7 +463,8 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             await db.Members.AsNoTracking().SingleAsync(m => m.PayerMemberId == main),
             await db.Members.AsNoTracking().SingleAsync(m => m.Id == main),
             await db.Users.AsNoTracking().CountAsync(u => u.Email == "jan@example.com")));
-        Assert.Equal((MembershipKind.Partner, "Marie de Vries"), (partner.MembershipKind, partner.FullName));
+        Assert.Equal((MembershipKind.Partner, "Marie de Vries", "marie@example.com"), (partner.MembershipKind, partner.FullName, partner.Email));
+        Assert.Equal("Kruumels", partner.ParadeGroupName);
         Assert.Equal((short?)1993, partner.JoinYear);
         Assert.Equal(MembershipKind.TwoPersons, mainAfter.MembershipKind);
         Assert.Equal(1, users);

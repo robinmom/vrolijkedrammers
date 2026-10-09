@@ -22966,10 +22966,12 @@ export interface components {
             /** Format: int32 */
             skipped: number;
         };
-        /** @description Wat het splitsformulier vooraf invult (alleen met een geldige link). */
+        /**
+         * @description Wat het splitsformulier vooraf invult (alleen met een geldige link). Niet het e-mailadres: daar hoort het eigen adres
+         *     van het tweede lid (besluit 2026-10-09).
+         */
         SplitPrefill: {
             mainMemberName: string;
-            email: string;
             secondFirstName: null | string;
             secondNamePrefix: null | string;
             secondLastName: null | string;

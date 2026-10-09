@@ -373,6 +373,13 @@ public sealed class MembershipApplications(
         {
             freeTexts[groupField] = Dansgarde.GroupValue;
         }
+        else if (application.SplitFromMemberId is { } splitGroupMainId && mapping.ParadeGroupName is { } splitGroupField
+            && await db.Members.AsNoTracking().Where(m => m.Id == splitGroupMainId).Select(m => m.ParadeGroupName).SingleOrDefaultAsync(cancellationToken)
+                is { Length: > 0 } mainGroup)
+        {
+            // Lid splitsen: het tweede lid zit in dezelfde groep als het hoofdlid.
+            freeTexts[splitGroupField] = mainGroup;
+        }
 
         var note = new StringBuilder($"Aangemeld via {SourceLabel(application.Source)} op {application.SubmittedAt:dd-MM-yyyy}.");
         if (application.SplitFromMemberId is { } mainId)
@@ -410,6 +417,7 @@ public sealed class MembershipApplications(
                 main.MembershipKind ??= MembershipKind.TwoPersons;
                 existing.MembershipKind = MembershipKind.Partner;
                 existing.PayerMemberId = main.Id;
+                existing.ParadeGroupName ??= main.ParadeGroupName;
                 await db.SaveChangesAsync(cancellationToken);
             }
 
@@ -442,7 +450,7 @@ public sealed class MembershipApplications(
         if (application.SplitFromMemberId is { } mainId)
         {
             // Combinatie (fase 25): het nieuwe lid is de partner; het hoofdlid betaalt. De jaren lid (inschrijfjaar en een
-            // eventuele jubileumcorrectie) neemt het tweede lid over van het hoofdlid; dat blijft zo na het verbreken.
+            // eventuele jubileumcorrectie) en de groep neemt het tweede lid over van het hoofdlid; dat blijft zo na het verbreken.
             var main = await db.Members.SingleAsync(m => m.Id == mainId, cancellationToken);
             main.MembershipKind ??= MembershipKind.TwoPersons;
             member.MembershipKind = MembershipKind.Partner;
@@ -450,6 +458,7 @@ public sealed class MembershipApplications(
             member.JoinYear = main.JoinYear ?? member.JoinYear;
             member.JubileeJoinYearOverride = main.JubileeJoinYearOverride;
             member.JubileeNote = main.JubileeJoinYearOverride is null ? null : main.JubileeNote;
+            member.ParadeGroupName ??= main.ParadeGroupName;
         }
 
         db.Members.Add(member);

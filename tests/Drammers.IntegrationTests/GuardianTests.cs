@@ -131,6 +131,30 @@ public sealed class GuardianTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Account_van_een_kind_met_hetzelfde_adres_gaat_naar_de_ouder()
+    {
+        // Het account van de dochter (12, dansgarde) heeft het adres van haar vader; de vader krijgt een eigen lid-account.
+        var (dochter, accountId, _) = await MemberWithAccountAsync("1070", "Isa", "Mom", 12, "gedeeld@example.com");
+        var vader = await MemberAsync("1071", "Robin", "Mom", 44, "gedeeld@example.com");
+
+        await JsonAsync(await _bestuur.PostAsync($"/api/v1/admin/members/{vader}/provision-account", null), HttpStatusCode.Accepted);
+        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => m.Type == MemberAccounts.ProvisionMessageType).ToListAsync());
+        foreach (var message in messages)
+        {
+            using var scope = _api.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<MemberAccounts>().RunProvisioningAsync(
+                JsonSerializer.Deserialize<MemberAccounts.ProvisionMessage>(message.Payload, JsonSerializerOptions.Web)!, CancellationToken.None);
+        }
+
+        // Hetzelfde account (één inlog per adres) hoort nu bij de vader; de dochter staat onder zijn kinderen.
+        var account = await WithDbAsync(db => db.Users.AsNoTracking().Include(u => u.Roles).SingleAsync(u => u.Id == accountId));
+        Assert.Equal(vader, account.MemberId);
+        Assert.True(await WithDbAsync(db => db.GuardianRelations.AnyAsync(g => g.MemberId == dochter && g.GuardianUserId == accountId)));
+        var ouderRol = await WithDbAsync(db => db.Roles.Where(r => r.Code == DefaultRoles.Ouder).Select(r => r.Id).SingleAsync());
+        Assert.Contains(account.Roles, r => r.RoleId == ouderRol);
+    }
+
+    [Fact]
     public async Task Zonder_geboortedatum_kan_een_lid_gewoon_een_app_account_krijgen()
     {
         // Besluit 2026-10-09: alleen een bekende leeftijd onder de 15 gaat via de ouders.

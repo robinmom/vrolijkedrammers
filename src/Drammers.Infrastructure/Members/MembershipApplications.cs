@@ -231,11 +231,20 @@ public sealed class MembershipApplications(
     /// Naam en lidnummer van het lid wiens app-account dit e-mailadres al gebruikt, of <c>null</c>. Een ouderaccount zonder
     /// eigen lidmaatschap telt niet: dat account kan de rol Lid er zonder probleem bij krijgen.
     /// </summary>
-    public async Task<string?> EmailInUseAsync(string email, CancellationToken cancellationToken) =>
-        await db.Users.AsNoTracking()
+    /// <summary>
+    /// Het lid van wie het app-account met dit adres is, of <c>null</c>. Een account van een kind onder de 15 telt niet: dat
+    /// gaat bij het aanmaken naar de volwassene met hetzelfde adres (één inlog per e-mailadres, fase 17).
+    /// </summary>
+    public async Task<string?> EmailInUseAsync(string email, CancellationToken cancellationToken)
+    {
+        var childCutoff = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime).AddYears(-MembershipApplication.MinimumAgeOwnAccount);
+        return await db.Users.AsNoTracking()
             .Where(u => u.Email == email && u.AccountStatus != Modules.Identity.Users.AccountStatus.Deleted && u.MemberId != null)
-            .Join(db.Members, u => u.MemberId, m => m.Id, (u, m) => m.FullName + " (lidnummer " + m.MemberNumber + ")")
+            .Join(db.Members, u => u.MemberId, m => m.Id, (u, m) => m)
+            .Where(m => m.BirthDate == null || m.BirthDate <= childCutoff)
+            .Select(m => m.FullName + " (lidnummer " + m.MemberNumber + ")")
             .FirstOrDefaultAsync(cancellationToken);
+    }
 
     // ----- Saga (worker) ------------------------------------------------------------------------------------------
 

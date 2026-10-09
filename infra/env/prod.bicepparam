@@ -32,6 +32,7 @@ param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAM
 // Eigen maildomein (runbook eigen-maildomein): eerst aanmaken en DNS zetten, na de verificatie DVD_EMAIL_DOMAIN_VERIFIED=true.
 param emailCustomDomain = 'vrolijkedrammers.nl'
 param emailCustomDomainVerified = readEnvironmentVariable('DVD_EMAIL_DOMAIN_VERIFIED', 'false') == 'true'
+param boundHostNames = filter(split(readEnvironmentVariable('DVD_BOUND_HOSTNAMES', ''), ','), host => !empty(host))
 param budgetAmount = 40
 param budgetStartDate = '2026-10-01'
 param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))

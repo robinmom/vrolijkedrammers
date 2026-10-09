@@ -103,6 +103,14 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID || secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID || secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Domeinen die al een certificaat hebben
+        run: |
+          # Die krijgen geen nieuwe binding zonder certificaat (anders staat HTTPS tijdens de uitrol even uit).
+          bound=$(az webapp show -g "$RESOURCE_GROUP" -n "app-dvd-api-$ENVIRONMENT" \
+            --query "hostNameSslStates[?sslState=='SniEnabled'].name" -o tsv 2>/dev/null | paste -sd, - || true)
+          echo "DVD_BOUND_HOSTNAMES=$bound" >> "$GITHUB_ENV"
+          echo "Al gekoppeld: ${bound:-geen}"
+
       - name: Infrastructuur – what-if
         run: |
           az deployment group what-if --resource-group "$RESOURCE_GROUP" --name "dvd-$ENVIRONMENT" \

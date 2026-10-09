@@ -10,7 +10,14 @@ public static class DatabaseUserProvisioner
         SqlConnection connection, string userName, Guid clientId, IReadOnlyCollection<string> roles, CancellationToken cancellationToken)
     {
         // WITH SID + TYPE = E: geen Graph-opzoeking door de SQL-server nodig (die heeft geen Directory Readers-rol).
+        // Bestaat de gebruiker al met een andere SID (de app is opnieuw aangemaakt en heeft een nieuwe managed
+        // identity), dan eerst weg: anders houdt de oude, niet meer bestaande identiteit de naam vast.
         const string CreateUser = """
+            IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = @name AND sid <> CONVERT(VARBINARY(16), @clientId))
+            BEGIN
+                DECLARE @drop NVARCHAR(400) = N'DROP USER ' + QUOTENAME(@name);
+                EXEC sys.sp_executesql @drop;
+            END
             IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = @name)
             BEGIN
                 DECLARE @sid NVARCHAR(100) = CONVERT(NVARCHAR(100), CONVERT(VARBINARY(16), @clientId), 1);

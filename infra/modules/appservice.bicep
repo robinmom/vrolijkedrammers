@@ -71,6 +71,8 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
 }
 
 // Eigen domeinen: eerst de binding zonder certificaat, dan een gratis beheerd certificaat, dan SNI met dat certificaat.
+// Eén voor één (batchSize 1): App Service weigert een tweede wijziging aan de site terwijl de eerste nog loopt (409).
+@batchSize(1)
 resource hostNames 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = [
   for host in customHostNames: {
     parent: api
@@ -84,6 +86,7 @@ resource hostNames 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = [
   }
 ]
 
+@batchSize(1)
 resource certificates 'Microsoft.Web/certificates@2024-11-01' = [
   for (host, i) in customHostNames: {
     name: '${host}-${api.name}'
@@ -97,6 +100,7 @@ resource certificates 'Microsoft.Web/certificates@2024-11-01' = [
   }
 ]
 
+@batchSize(1)
 module sni 'hostname-sni.bicep' = [
   for (host, i) in customHostNames: {
     name: 'sni-${replace(host, '.', '-')}'

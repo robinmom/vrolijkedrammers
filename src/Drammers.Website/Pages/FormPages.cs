@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace Drammers.Website.Pages;
 
 /// <summary>
@@ -41,13 +43,20 @@ public sealed class AanrijtijdenModel : FormPage
     }
 }
 
-public sealed class KaartenModel : FormPage
+public sealed class KaartenModel(SiteShell shell) : FormPage
 {
-    public void OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
+        // Tot de kaartverkoop open is (feature flag website.kaarten) bestaat de pagina niet.
+        if (!await shell.ShowTicketsAsync())
+        {
+            return NotFoundPage();
+        }
+
         (ActiveMenu, PageTitle) = ("", "Kaarten");
         MetaDescription = "Koop kaarten voor de pronkzitting, dagkaarten voor carnaval en kaarten voor activiteiten van De Vrolijke Drammers.";
         Scripts = [Script("kaarten")];
+        return Page();
     }
 }
 

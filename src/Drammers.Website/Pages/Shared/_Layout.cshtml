@@ -3,6 +3,7 @@
     var settings = await Shell.SettingsAsync();
     var menuPages = await Shell.MenuPagesAsync();
     var showApp = await Shell.ShowAppAsync();
+    var showTickets = await Shell.ShowTicketsAsync();
     var title = string.IsNullOrEmpty(page.PageTitle) ? "De Vrolijke Drammers · Carnavalsvereniging Loil" : $"{page.PageTitle} · De Vrolijke Drammers";
     // Vereniging: de vaste onderdelen op volgorde 10–40, de pagina's uit het portal daartussen op hun eigen volgorde.
     var fixedAssociation = new List<(int Order, string Href, string Label)> { (10, "/kader", "Kader"), (20, "/prinsengalerie", "Prinsengalerie") };
@@ -15,9 +16,8 @@
     {
         ("/lid-worden/", "Lid worden", "Aanmelden als lid van de vereniging"),
         ("/optocht-inschrijven/", "Optocht inschrijven", "Groep, wagen of loopgroep aanmelden"),
-        ("/aanrijtijden/", "Aanrijtijden optocht", "Wanneer en waar opstellen"),
-        ("/kaarten/", "Kaarten en munten", "Pronkzitting, dagkaarten en munten"),
     };
+    if (showTickets) joinIn.Add(("/kaarten/", "Kaarten en munten", "Pronkzitting, dagkaarten en munten"));
     if (showApp) joinIn.Add(("/doe-mee#app", "Download de app", "iPhone en Android"));
     var main = new (string Key, string Href, string Label)[]
     {
@@ -25,8 +25,10 @@
     };
     var after = new (string Key, string Href, string Label)[]
     {
-        ("optocht", "/optocht", "Optocht"), ("fotos", "/fotos", "Foto's"), ("contact", "/contact", "Contact"),
+        ("fotos", "/fotos", "Foto's"), ("contact", "/contact", "Contact"),
     };
+    // Optocht: een uitklapmenu met de optocht zelf en de aanrijtijden.
+    var parade = new (string Href, string Label)[] { ("/optocht", "Optocht"), ("/aanrijtijden/", "Aanrijtijden") };
     string Current(string key) => page.ActiveMenu == key ? "page" : "false";
 }
 <!doctype html>
@@ -94,6 +96,15 @@
                                 </ul>
                             </li>
                         }
+                        <li>
+                            <span class="mobile-group">Optocht</span>
+                            <ul class="mobile-sub">
+                                @foreach (var o in parade)
+                                {
+                                    <li><a href="@o.Href">@o.Label</a></li>
+                                }
+                            </ul>
+                        </li>
                         @foreach (var item in after)
                         {
                             <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>
@@ -141,6 +152,17 @@
                             </details>
                         </li>
                     }
+                    <li>
+                        <details class="dropdown">
+                            <summary aria-current="@Current("optocht")">Optocht</summary>
+                            <ul class="dropdown-menu">
+                                @foreach (var o in parade)
+                                {
+                                    <li><a href="@o.Href">@o.Label</a></li>
+                                }
+                            </ul>
+                        </details>
+                    </li>
                     @foreach (var item in after)
                     {
                         <li><a href="@item.Href" aria-current="@Current(item.Key)">@item.Label</a></li>

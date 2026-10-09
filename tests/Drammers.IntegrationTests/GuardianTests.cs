@@ -131,6 +131,28 @@ public sealed class GuardianTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Zonder_geboortedatum_kan_een_lid_gewoon_een_app_account_krijgen()
+    {
+        // Besluit 2026-10-09: alleen een bekende leeftijd onder de 15 gaat via de ouders.
+        var onbekend = await MemberAsync("1060", "Piet", "Onbekend", 40, "piet@example.com");
+        var kind = await MemberAsync("1061", "Fleur", "Klein", 12, null, "Dansgarde");
+        await WithDbAsync(async db =>
+        {
+            (await db.Members.SingleAsync(m => m.Id == onbekend)).BirthDate = null;
+            return await db.SaveChangesAsync();
+        });
+
+        var card = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/members/{onbekend}/guardians"));
+        Assert.False(card.GetProperty("applies").GetBoolean());
+        Assert.True(card.GetProperty("ownAccount").GetProperty("canGetOwnAccount").GetBoolean());
+        await JsonAsync(await _bestuur.PostAsync($"/api/v1/admin/members/{onbekend}/provision-account", null), HttpStatusCode.Accepted);
+
+        var child = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/members/{kind}/guardians"));
+        Assert.True(child.GetProperty("applies").GetBoolean());
+        Assert.False(child.GetProperty("ownAccount").GetProperty("canGetOwnAccount").GetBoolean());
+    }
+
+    [Fact]
     public async Task Hooguit_twee_ouders_alleen_onder_18_en_uitnodigen_en_ontkoppelen()
     {
         var lot = await MemberAsync("1042", "Lot", "Mom", 9, null);

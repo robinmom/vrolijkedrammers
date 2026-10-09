@@ -14,9 +14,12 @@
                 <p>@Model.Hero.Subtitle</p>
             }
             @{
-                // Een knop naar de app alleen als de app op de website mag (feature flag website.app).
+                // Een knop naar de app of de kaartverkoop alleen als die op de website mag (feature flags website.app en website.kaarten).
                 var showApp = await Shell.ShowAppAsync();
-                bool Visible(HeroButton? b) => b is not null && (showApp || b.Href != WebsiteLinks.Href(Drammers.Modules.Content.Website.WebsiteLink.App));
+                var showTickets = await Shell.ShowTicketsAsync();
+                bool Visible(HeroButton? b) => b is not null
+                    && (showApp || b.Href != WebsiteLinks.Href(Drammers.Modules.Content.Website.WebsiteLink.App))
+                    && (showTickets || b.Href != WebsiteLinks.Href(Drammers.Modules.Content.Website.WebsiteLink.Tickets));
             }
             <div class="button-row">
                 @if (Visible(Model.Hero.Primary) && Model.Hero.Primary is { } primary)

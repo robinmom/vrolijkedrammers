@@ -103,7 +103,9 @@ public sealed class Guardians(
             .Select(u => u.Email).FirstOrDefaultAsync(cancellationToken);
         var pending = own is null && await db.AccountProvisioning.AnyAsync(
             p => p.SourceId == OwnAccountSource(memberId) && p.CompletedAt == null, cancellationToken);
-        var applies = IsMinor(member.BirthDate, today) || guardians.Count > 0;
+        // Zonder geboortedatum geldt een lid als volwassen: dan kan het gewoon een app-account krijgen (besluit 2026-10-09).
+        // Alleen een bekende leeftijd onder de 15 (in de praktijk de dansgarde) gaat via de ouders.
+        var applies = age is < GuardianRelation.AdultAge || guardians.Count > 0;
         var suggestions = applies ? (await SuggestionsAsync(cancellationToken)).Where(s => s.ChildMemberId == memberId).ToList() : [];
         var requests = applies
             ? (await RequestsAsync(GuardianLinkRequestStatus.Pending, cancellationToken)).Where(r => r.Candidates.Any(c => c.MemberId == memberId)).ToList()
@@ -111,7 +113,7 @@ public sealed class Guardians(
         var availableFrom = member.BirthDate?.AddYears(MembershipApplication.MinimumAgeOwnAccount);
         var ownInfo = new OwnAccountInfo(
             own is not null, own, age,
-            own is null && !pending && age >= MembershipApplication.MinimumAgeOwnAccount && member.EffectiveStatus == MembershipStatus.Active,
+            own is null && !pending && age is not < MembershipApplication.MinimumAgeOwnAccount && member.EffectiveStatus == MembershipStatus.Active,
             availableFrom, member.BirthDate?.AddYears(GuardianRelation.AdultAge), pending);
         return new MemberGuardians(applies, GuardianRelation.MaxPerChild, guardians, suggestions, requests, ownInfo);
     }

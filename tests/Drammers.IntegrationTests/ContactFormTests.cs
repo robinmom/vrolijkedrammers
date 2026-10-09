@@ -24,7 +24,7 @@ public class ContactFormTests(SqlServerFixture sql) : IAsyncLifetime
     public async Task Bericht_versturen_zonder_dat_adressen_op_de_site_staan()
     {
         var config = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/contact");
-        Assert.Equal(["secretariaat", "optocht", "penningmeester"], config.GetProperty("recipients").EnumerateArray().Select(r => r.GetProperty("key").GetString()));
+        Assert.Equal(["secretariaat", "optocht", "penningmeester", "overig"], config.GetProperty("recipients").EnumerateArray().Select(r => r.GetProperty("key").GetString()));
         Assert.DoesNotContain("@", config.GetRawText());
         Assert.Equal(JsonValueKind.Null, config.GetProperty("turnstileSiteKey").ValueKind);
 

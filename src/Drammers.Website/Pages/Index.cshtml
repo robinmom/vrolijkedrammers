@@ -13,12 +13,17 @@
             {
                 <p>@Model.Hero.Subtitle</p>
             }
+            @{
+                // Een knop naar de app alleen als de app op de website mag (feature flag website.app).
+                var showApp = await Shell.ShowAppAsync();
+                bool Visible(HeroButton? b) => b is not null && (showApp || b.Href != WebsiteLinks.Href(Drammers.Modules.Content.Website.WebsiteLink.App));
+            }
             <div class="button-row">
-                @if (Model.Hero.Primary is { } primary)
+                @if (Visible(Model.Hero.Primary) && Model.Hero.Primary is { } primary)
                 {
                     <a class="button white" href="@primary.Href">@primary.Label</a>
                 }
-                @if (Model.Hero.Secondary is { } secondary)
+                @if (Visible(Model.Hero.Secondary) && Model.Hero.Secondary is { } secondary)
                 {
                     <a class="button" href="@secondary.Href">@secondary.Label</a>
                 }

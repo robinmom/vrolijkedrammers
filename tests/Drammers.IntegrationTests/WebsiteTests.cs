@@ -51,6 +51,15 @@ public class WebsiteTests(SqlServerFixture sql) : IAsyncLifetime
     public async Task De_app_staat_pas_op_de_website_als_de_flag_aanstaat()
     {
         var guest = _api.CreateClient();
+
+        // Ook een heroknop die naar de app wijst, blijft weg.
+        var settings = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/website/settings");
+        var body = JsonSerializer.Deserialize<Dictionary<string, object?>>(settings.GetRawText())!;
+        body["heroPrimaryLabel"] = "Download de app";
+        body["heroPrimaryLink"] = "App";
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/website/settings", body)).StatusCode);
+        Assert.DoesNotContain("/doe-mee#app", await guest.GetStringAsync("/"));
+
         var doeMee = await guest.GetStringAsync("/doe-mee");
         Assert.DoesNotContain("Download de app", doeMee);
         Assert.DoesNotContain("App Store", doeMee);
@@ -63,6 +72,7 @@ public class WebsiteTests(SqlServerFixture sql) : IAsyncLifetime
 
         doeMee = await guest.GetStringAsync("/doe-mee");
         Assert.Contains("Download de app", doeMee);
+        Assert.Contains("/doe-mee#app", await guest.GetStringAsync("/"));
         Assert.Contains("App Store", doeMee);
     }
 

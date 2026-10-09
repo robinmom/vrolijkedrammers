@@ -29,6 +29,9 @@ param mobileRedirectBridge = false
 param eBoekhoudenEnabled = false
 // Eerst leeg; na de DNS-records: "www.vrolijkedrammers.nl,vrolijkedrammers.nl" (het eerste is het hoofdadres).
 param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAMES', ''), ','), host => !empty(host))
+// Eigen maildomein (runbook eigen-maildomein): eerst aanmaken en DNS zetten, na de verificatie DVD_EMAIL_DOMAIN_VERIFIED=true.
+param emailCustomDomain = 'vrolijkedrammers.nl'
+param emailCustomDomainVerified = readEnvironmentVariable('DVD_EMAIL_DOMAIN_VERIFIED', 'false') == 'true'
 param budgetAmount = 40
 param budgetStartDate = '2026-10-01'
 param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))

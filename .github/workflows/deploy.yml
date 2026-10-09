@@ -94,6 +94,7 @@ jobs:
       DVD_GRAPH_CERTIFICATE_NAME: ${{ vars.DVD_GRAPH_CERTIFICATE_NAME }}
       DVD_ALWAYS_ON: ${{ vars.DVD_ALWAYS_ON }}
       DVD_CUSTOM_HOSTNAMES: ${{ vars.DVD_CUSTOM_HOSTNAMES }}
+      DVD_EMAIL_DOMAIN_VERIFIED: ${{ vars.DVD_EMAIL_DOMAIN_VERIFIED }}
     steps:
       - uses: actions/checkout@v7
       - uses: azure/login@v3
@@ -122,6 +123,13 @@ jobs:
             echo "- Openbaar adres: $(jq -r .publicBaseUrl.value <<<"$outputs")"
             echo "- App: $(jq -r .apiUrl.value <<<"$outputs")"
             echo "- TXT-record asuid.<domein> (eigen domein koppelen): \`$(jq -r .customDomainVerificationId.value <<<"$outputs")\`"
+            echo "- Eigen maildomein: $(jq -r '.emailCustomSenderDomain.value | if . == "" then "nog niet gekoppeld" else "gekoppeld (" + . + ")" end' <<<"$outputs")"
+            if [[ "$(jq -r '.emailDomainRecords.value | length' <<<"$outputs")" != "0" ]]; then
+              echo ""
+              echo "| Record | Type | Naam | Waarde |"
+              echo "|---|---|---|---|"
+              jq -r '.emailDomainRecords.value | to_entries[] | "| \(.key) | \(.value.type) | \(.value.name) | `\(.value.value)` |"' <<<"$outputs"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Opnieuw inloggen: het OIDC-token van GitHub is maar 5 minuten bruikbaar om nieuwe Azure-tokens te halen, en de

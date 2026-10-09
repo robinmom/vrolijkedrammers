@@ -64,6 +64,20 @@ param alwaysOn bool = true
 @description('Eigen domeinen; het eerste is het hoofdadres (website, portal /beheer en API /api). Leeg tot de DNS-records staan.')
 param customHostNames array = []
 
+@description('Eigen afzenderdomein voor e-mail (Productie: vrolijkedrammers.nl); leeg = alleen het Azure-domein.')
+param emailCustomDomain string = ''
+
+@description('Pas true na de DNS-records en verificatie in ACS (runbook eigen-maildomein); koppelt het domein en zet de eigen afzenders aan.')
+param emailCustomDomainVerified bool = false
+
+// Afzenders op het eigen domein, gelijk aan de contactadressen (besluit 2026-09-30); DoNotReply maakt ACS zelf aan.
+var emailSenders = {
+  secretaris: 'De Vrolijke Drammers – Secretariaat'
+  optocht: 'De Vrolijke Drammers – Optocht'
+  penningmeester: 'De Vrolijke Drammers – Penningmeester'
+  voorzitter: 'De Vrolijke Drammers – Voorzitter'
+}
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -131,6 +145,9 @@ module email 'modules/email.bicep' = {
   params: {
     environmentName: environmentName
     tags: tags
+    customDomain: emailCustomDomain
+    customDomainVerified: emailCustomDomainVerified
+    senders: emailSenders
   }
 }
 
@@ -156,6 +173,8 @@ module api 'modules/appservice.bicep' = {
       Push__Provider: pushProvider == 'Expo' ? 'Expo' : 'Simulated'
       Email__Endpoint: email.outputs.endpoint
       Email__SenderDomain: email.outputs.senderDomain
+      Email__CustomSenderDomain: email.outputs.customSenderDomain
+      Email__CustomSenders: join(objectKeys(emailSenders), ',')
       Email__RedirectAllTo: emailRedirectTo
       // Kaartverkoop (fase 19): links in e-mails van de nachtelijke job; de Mollie-sleutel staat in Key Vault (mollie-api-key).
       Sales__PublicBaseUrl: publicBaseUrl
@@ -228,3 +247,5 @@ output storageAccountName string = storage.outputs.name
 output publicBaseUrl string = publicBaseUrl
 @description('Waarde voor het TXT-record asuid.<domein> bij het koppelen van een eigen domein.')
 output customDomainVerificationId string = api.outputs.customDomainVerificationId
+output emailDomainRecords object = email.outputs.customDomainRecords
+output emailCustomSenderDomain string = email.outputs.customSenderDomain

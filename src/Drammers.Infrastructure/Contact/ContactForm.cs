@@ -20,6 +20,7 @@ public sealed class ContactOptions
         ["secretariaat"] = new("Ledenadministratie", "secretaris@vrolijkedrammers.nl"),
         ["optocht"] = new("Optocht", "optocht@vrolijkedrammers.nl"),
         ["penningmeester"] = new("Kaarten en betalingen", "penningmeester@vrolijkedrammers.nl"),
+        ["overig"] = new("Overige vragen", "secretaris@vrolijkedrammers.nl"),
     };
 
     /// <summary>Sneller ingevuld dan dit is vrijwel zeker een bot.</summary>

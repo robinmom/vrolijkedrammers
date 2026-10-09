@@ -367,6 +367,102 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
     }
 
     [Fact]
+    public async Task Tweede_lid_met_het_adres_van_het_hoofdlid_krijgt_wel_een_welkomstmail()
+    {
+        // Hoofdlid met app-account; het tweede lid staat alleen als naam in vrij veld 2.
+        var (userId, _) = await _api.CreateUserAsync("jan@example.com", DefaultRoles.Lid);
+        var main = await WithDbAsync(async db =>
+        {
+            var member = new Member
+            {
+                Id = IdGenerator.NewId(),
+                MemberNumber = "500",
+                FullName = "Jan de Vries",
+                FirstName = "Jan",
+                NamePrefix = "de",
+                LastName = "Vries",
+                Email = "jan@example.com",
+                EbStatusRaw = "Tweepersoonslid DVD",
+                JoinYear = 1993,
+                SecondMemberName = "Marie de Vries",
+                AddressLine = "Kerkstraat 2",
+                PostalCode = "6999 AB",
+                City = "Loil",
+                MembershipStatus = MembershipStatus.Active,
+            };
+            db.Members.Add(member);
+            db.Members.Add(new Member
+            {
+                Id = IdGenerator.NewId(),
+                MemberNumber = "501",
+                FullName = "Zonder Mail",
+                EbStatusRaw = "Tweepersoonslid DVD",
+                MembershipStatus = MembershipStatus.Active,
+            });
+            await db.SaveChangesAsync();
+            (await db.Users.SingleAsync(u => u.Id == userId)).MemberId = member.Id;
+            await db.SaveChangesAsync();
+            return member.Id;
+        });
+
+        var candidates = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits");
+        Assert.Equal(["NotInvited", "NotInvited"], candidates.EnumerateArray().Select(c => c.GetProperty("state").GetString()));
+
+        var invite = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/memberships/splits/invite", new { })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal((1, 1), (invite.GetProperty("invited").GetInt32(), invite.GetProperty("withoutEmail").GetInt32()));
+        var mail = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject.Contains("tweede lid", StringComparison.Ordinal));
+        Assert.Equal("secretaris@vrolijkedrammers.nl", mail.ReplyTo);
+        Assert.Contains("Marie de Vries", mail.PlainText);
+        var token = Regex.Match(mail.PlainText, @"/lid-worden/\?splitsen=([A-Za-z0-9_-]+)").Groups[1].Value;
+        Assert.NotEmpty(token);
+
+        var prefill = await _anonymous.GetFromJsonAsync<JsonElement>($"/api/v1/membership-applications/split/{token}");
+        Assert.Equal(("jan@example.com", "Marie", "Vries", "Kerkstraat 2"), (prefill.GetProperty("email").GetString(),
+            prefill.GetProperty("secondFirstName").GetString(), prefill.GetProperty("secondLastName").GetString(), prefill.GetProperty("addressLine").GetString()));
+        Assert.Equal(HttpStatusCode.NotFound, (await _anonymous.GetAsync("/api/v1/membership-applications/split/onzin")).StatusCode);
+
+        // Het tweede lid meldt zich aan met het e-mailadres van het hoofdlid en zonder IBAN.
+        var form = new
+        {
+            firstName = "Marie",
+            namePrefix = "de",
+            lastName = "Vries",
+            gender = "v",
+            birthDate = Today.AddYears(-60),
+            addressLine = "Kerkstraat 2",
+            postalCode = "6999 AB",
+            city = "Loil",
+            email = "jan@example.com",
+            phone = (string?)null,
+            guardianName = (string?)null,
+            guardianPhone = (string?)null,
+            iban = (string?)null,
+            accountHolder = (string?)null,
+            mandateConsent = false,
+            privacyConsent = true,
+            photoConsent = true,
+            source = "Website",
+            membershipType = "Individual",
+            splitToken = token,
+        };
+        var id = await SubmitAsync(form, "jan@example.com");
+        Assert.Equal("Applied", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray()
+            .Single(c => c.GetProperty("memberId").GetGuid() == main).GetProperty("state").GetString());
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
+        Assert.Equal("500", detail.GetProperty("splitFrom").GetProperty("memberNumber").GetString());
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("ibanMasked").ValueKind);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/approve", null)).StatusCode);
+        await RunProvisioningAsync();
+        Assert.Equal("Activated", (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}")).GetProperty("status").GetString());
+
+        // Geen eigen account (het adres hoort bij Jan), wel een welkomstmail zonder inloguitleg.
+        var welcome = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject == "Welkom als lid van De Vrolijke Drammers");
+        Assert.Contains("lidmaatschap van Jan de Vries", welcome.PlainText);
+        Assert.Equal(1, await WithDbAsync(db => db.Users.AsNoTracking().CountAsync(u => u.Email == "jan@example.com")));
+    }
+
+    [Fact]
     public async Task Tweepersoonslid_splitsen_via_de_link_in_de_mail()
     {
         // Hoofdlid met app-account; het tweede lid staat alleen als naam in vrij veld 2.

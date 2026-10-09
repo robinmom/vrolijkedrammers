@@ -105,6 +105,7 @@ main:focus { outline: none; }
 .section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 28px; }
 .section-head h2 { margin: 0; }
 .card { background: #fff; border-radius: 16px; box-shadow: var(--schaduw); overflow: hidden; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
 .grid-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; }
@@ -323,7 +324,7 @@ ul.chips { list-style: none; margin: 0; padding: 0; }
   .page-band { border-radius: 0 0 28px 28px; padding: 32px 0 36px; }
   .content { padding: 32px 0 56px; gap: 32px; }
   .home-content { padding: 28px 0 40px; gap: 32px; }
-  .grid-3, .grid-4, .grid-5, .news-grid, .news-index, .fb-posts { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .grid-4, .grid-5, .news-grid, .news-index, .fb-posts { grid-template-columns: 1fr; }
   .grid-4.people, .grid-5.princes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .person img, .person .img-empty { width: 96px; height: 96px; }
   .news-item img, .news-item .img-empty { width: 110px; height: 84px; }

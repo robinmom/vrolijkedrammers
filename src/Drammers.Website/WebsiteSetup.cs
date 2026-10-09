@@ -163,13 +163,28 @@ public sealed class SiteShell(WebsiteReader reader)
     /// </summary>
     public const string AppFlag = "website.app";
 
+    /// <summary>Feature flag: pas als die aanstaat staan "Kaarten en munten" en de kaartverkooppagina op de website.</summary>
+    public const string TicketsFlag = "website.kaarten";
+
     private Modules.Content.Website.WebsiteSettings? _settings;
-    private bool? _showApp;
+    private readonly Dictionary<string, bool> _flags = new(StringComparer.Ordinal);
     private IReadOnlyList<MenuPage>? _menu;
 
     public async Task<Modules.Content.Website.WebsiteSettings> SettingsAsync() => _settings ??= await reader.SettingsAsync(default);
 
     public async Task<IReadOnlyList<MenuPage>> MenuPagesAsync() => _menu ??= await reader.MenuPagesAsync(default);
 
-    public async Task<bool> ShowAppAsync() => _showApp ??= await reader.FeatureEnabledAsync(AppFlag, default);
+    public Task<bool> ShowAppAsync() => FlagAsync(AppFlag);
+
+    public Task<bool> ShowTicketsAsync() => FlagAsync(TicketsFlag);
+
+    private async Task<bool> FlagAsync(string key)
+    {
+        if (!_flags.TryGetValue(key, out var enabled))
+        {
+            _flags[key] = enabled = await reader.FeatureEnabledAsync(key, default);
+        }
+
+        return enabled;
+    }
 }

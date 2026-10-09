@@ -318,12 +318,16 @@ public sealed class MembershipApplications(
                 await db.SaveChangesAsync(cancellationToken);
             }
 
-            if (saga.Step is not (ProvisioningStep.WelcomeSent or ProvisioningStep.Completed) && !skipAccount)
+            if (saga.Step is not (ProvisioningStep.WelcomeSent or ProvisioningStep.Completed))
             {
+                // Lid splitsen zonder eigen account (e-mailadres al in gebruik): wel een welkomstmail, zonder inloguitleg.
+                var mainName = skipAccount
+                    ? await db.Members.AsNoTracking().Where(m => m.Id == application.SplitFromMemberId).Select(m => m.FullName).SingleAsync(cancellationToken)
+                    : null;
                 await email.SendAsync(
-                    minor
-                        ? GuardianWelcomeMail(application.Email, application.GuardianName!, application.FirstName)
-                        : MemberAccounts.WelcomeMail(application.Email, application.FirstName),
+                    skipAccount ? SplitWelcomeMail(application.Email, application.FirstName, mainName!)
+                    : minor ? GuardianWelcomeMail(application.Email, application.GuardianName!, application.FirstName)
+                    : MemberAccounts.WelcomeMail(application.Email, application.FirstName),
                     cancellationToken);
                 saga.Step = ProvisioningStep.WelcomeSent;
                 await db.SaveChangesAsync(cancellationToken);
@@ -655,7 +659,7 @@ public sealed class MembershipApplications(
 
             {code}
 
-            De code is 30 minuten geldig. Daarna beoordeelt het bestuur je aanmelding; je hoort daarna van ons.
+            De code is 30 minuten geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.
 
             Heb je je niet aangemeld? Dan kun je deze e-mail negeren.
 
@@ -666,11 +670,36 @@ public sealed class MembershipApplications(
             <p>Beste {System.Net.WebUtility.HtmlEncode(name)},</p>
             <p>Bedankt voor je aanmelding bij De Vrolijke Drammers! Vul deze code in om je e-mailadres te bevestigen:</p>
             <p style="font-size:24px;font-weight:bold;letter-spacing:4px">{code}</p>
-            <p>De code is 30 minuten geldig. Daarna beoordeelt het bestuur je aanmelding; je hoort daarna van ons.</p>
+            <p>De code is 30 minuten geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.</p>
             <p>Heb je je niet aangemeld? Dan kun je deze e-mail negeren.</p>
             <p>Groeten,<br>De Vrolijke Drammers</p>
             """;
         return new EmailMessage(to, Subject, text, html);
+    }
+
+    /// <summary>Welkom voor het tweede lid na het splitsen, als het e-mailadres al bij een ander app-account hoort.</summary>
+    public static EmailMessage SplitWelcomeMail(string to, string firstName, string mainMemberName)
+    {
+        const string Subject = "Welkom als lid van De Vrolijke Drammers";
+        var text = $"""
+            Beste {firstName},
+
+            Je inschrijving is goedgekeurd: je bent nu zelf lid van De Vrolijke Drammers. De contributie loopt zoals altijd via het
+            lidmaatschap van {mainMemberName}.
+
+            Dit e-mailadres hoort al bij een ander account. Wil je een eigen account met je eigen gegevens en ledenticket? Neem dan
+            contact op met de ledenadministratie via www.vrolijkedrammers.nl/contact en geef een eigen e-mailadres door.
+
+            Met vriendelijke groet,
+            De Vrolijke Drammers
+            """;
+        var html = $"""
+            <p>Beste {System.Net.WebUtility.HtmlEncode(firstName)},</p>
+            <p>Je inschrijving is goedgekeurd: je bent nu zelf lid van De Vrolijke Drammers. De contributie loopt zoals altijd via het lidmaatschap van {System.Net.WebUtility.HtmlEncode(mainMemberName)}.</p>
+            <p>Dit e-mailadres hoort al bij een ander account. Wil je een eigen account met je eigen gegevens en ledenticket? Neem dan contact op met de ledenadministratie via <a href="https://www.vrolijkedrammers.nl/contact">www.vrolijkedrammers.nl/contact</a> en geef een eigen e-mailadres door.</p>
+            <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
+            """;
+        return new EmailMessage(to, Subject, text, html, MemberSplits.ReplyTo);
     }
 
     public static EmailMessage GuardianWelcomeMail(string to, string guardianName, string childFirstName)

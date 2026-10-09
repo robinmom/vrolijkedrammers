@@ -48,6 +48,23 @@ public class WebsiteTests(SqlServerFixture sql) : IAsyncLifetime
     };
 
     [Fact]
+    public async Task Kaarten_staan_pas_op_de_website_als_de_flag_aanstaat_en_aanrijtijden_onder_Optocht()
+    {
+        var guest = _api.CreateClient();
+        var home = await guest.GetStringAsync("/");
+        Assert.DoesNotContain("href=\"/kaarten/\"", home);
+        Assert.Equal(HttpStatusCode.NotFound, (await guest.GetAsync("/kaarten")).StatusCode);
+        // Het uitklapmenu Optocht met de aanrijtijden.
+        Assert.Matches("<summary[^>]*>Optocht</summary>\\s*<ul class=\"dropdown-menu\">\\s*<li><a href=\"/optocht\">Optocht</a></li>\\s*<li><a href=\"/aanrijtijden/\">Aanrijtijden</a></li>", home);
+
+        var beheer = _api.ClientFor((await _api.CreateUserAsync("it-kaarten@example.com", DefaultRoles.BeheerderIt)).ObjectId);
+        var flag = await beheer.PutAsJsonAsync($"/api/v1/admin/config/feature-flags/{Drammers.Website.SiteShell.TicketsFlag}", new { enabled = true, description = "Kaartverkoop op de website" });
+        Assert.Equal(HttpStatusCode.NoContent, flag.StatusCode);
+        Assert.Contains("href=\"/kaarten/\"", await guest.GetStringAsync("/"));
+        Assert.Equal(HttpStatusCode.OK, (await guest.GetAsync("/kaarten")).StatusCode);
+    }
+
+    [Fact]
     public async Task De_app_staat_pas_op_de_website_als_de_flag_aanstaat()
     {
         var guest = _api.CreateClient();

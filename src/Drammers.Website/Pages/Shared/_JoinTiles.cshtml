@@ -1,5 +1,9 @@
-@{ var showApp = await Shell.ShowAppAsync(); }
-<div class="@(showApp ? "grid-4" : "grid-3")">
+@{
+    var showApp = await Shell.ShowAppAsync();
+    var showTickets = await Shell.ShowTicketsAsync();
+    var tiles = 2 + (showApp ? 1 : 0) + (showTickets ? 1 : 0);
+}
+<div class="@(tiles == 4 ? "grid-4" : tiles == 3 ? "grid-3" : "grid-2")">
     <a class="join-tile" href="/lid-worden/">
         <h3>Lid worden</h3>
         <p>Meld je aan; het bestuur keurt je aanmelding goed.</p>
@@ -10,11 +14,14 @@
         <p>Schrijf je groep, wagen of loopgroep in voor de optocht.</p>
         <span class="link-arrow">Start →</span>
     </a>
-    <a class="join-tile" href="/kaarten/">
-        <h3>Kaarten kopen</h3>
-        <p>Pronkzitting, dagkaarten en munten met iDEAL.</p>
-        <span class="link-arrow">Start →</span>
-    </a>
+    @if (showTickets)
+    {
+        <a class="join-tile" href="/kaarten/">
+            <h3>Kaarten kopen</h3>
+            <p>Pronkzitting, dagkaarten en munten met iDEAL.</p>
+            <span class="link-arrow">Start →</span>
+        </a>
+    }
     @if (showApp)
     {
         <a class="join-tile" href="/doe-mee#app">

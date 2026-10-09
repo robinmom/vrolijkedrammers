@@ -1,7 +1,14 @@
 @page "/doe-mee"
 @model DoeMeeModel
-@{ var showApp = await Shell.ShowAppAsync(); }
-<partial name="_PageBand" model='new PageBand("Doe mee", showApp ? "Lid worden, meedoen aan de optocht, kaarten kopen of de app downloaden: alles regel je hier online." : "Lid worden, meedoen aan de optocht of kaarten kopen: alles regel je hier online.", (null, "Doe mee"))' />
+@{
+    var showApp = await Shell.ShowAppAsync();
+    var showTickets = await Shell.ShowTicketsAsync();
+    var parts = new List<string> { "Lid worden", "meedoen aan de optocht" };
+    if (showTickets) parts.Add("kaarten kopen");
+    if (showApp) parts.Add("de app downloaden");
+    var intro = string.Join(", ", parts.Take(parts.Count - 1)) + " of " + parts[^1] + ": alles regel je hier online.";
+}
+<partial name="_PageBand" model='new PageBand("Doe mee", intro, (null, "Doe mee"))' />
 <div class="wrap content">
     <section class="join-band" aria-label="Doe mee">
         <partial name="_JoinTiles" />

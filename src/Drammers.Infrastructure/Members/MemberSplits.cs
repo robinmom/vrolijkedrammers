@@ -183,17 +183,15 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
             Registreren gaat via deze persoonlijke link (90 dagen geldig):
             {link}
 
-            Je e-mailadres is al ingevuld. Heeft {who} een eigen e-mailadres, vul dat dan in.
-
             Met vriendelijke groet,
-            Het bestuur van CV De Vrolijke Drammers
+            De Vrolijke Drammers
             """;
         var html = $"""
             <p>Beste {WebUtility.HtmlEncode(firstName)},</p>
             <p>Je bent samen met {WebUtility.HtmlEncode(who)} lid van CV De Vrolijke Drammers. Voortaan krijgt ieder lid een eigen lidmaatschap, met een eigen plek in de app. Daarvoor vragen we je om {WebUtility.HtmlEncode(who)} te registreren. De contributie blijft gelijk: jullie betalen samen het combinatietarief, en dat wordt zoals altijd van jouw rekening geïncasseerd.</p>
             <p><a href="{WebUtility.HtmlEncode(link)}" style="display:inline-block;background:#ED0012;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:600">Tweede lid registreren</a></p>
-            <p>De link is 90 dagen geldig. Je e-mailadres is al ingevuld. Heeft {WebUtility.HtmlEncode(who)} een eigen e-mailadres, vul dat dan in.</p>
-            <p>Met vriendelijke groet,<br>Het bestuur van CV De Vrolijke Drammers</p>
+            <p>De link is 90 dagen geldig.</p>
+            <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
             """;
         return new EmailMessage(to, Subject, text, html, ReplyTo);
     }

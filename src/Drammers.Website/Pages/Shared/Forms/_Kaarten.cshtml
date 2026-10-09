@@ -2,7 +2,7 @@
   <h2 id="titel-producten" tabindex="-1">Te koop</h2>
   <p id="laden" class="muted">Laden…</p>
   <div id="lijst" class="product-list"></div>
-  <p class="muted">Ben je lid? Groepskaarten voor de pronkzitting en munten bestel je in de app van De Vrolijke Drammers. Kaarten worden niet terugbetaald.</p>
+  <p class="muted">@(await Shell.ShowAppAsync() ? "Ben je lid? Groepskaarten voor de pronkzitting en munten bestel je in de app van De Vrolijke Drammers. " : "")Kaarten worden niet terugbetaald.</p>
 </section>
 
 <section id="bestellen" class="form-card" aria-labelledby="titel-bestellen" hidden>

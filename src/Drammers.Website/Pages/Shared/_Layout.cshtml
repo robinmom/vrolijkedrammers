@@ -1,8 +1,8 @@
-@inject SiteShell Shell
 @{
     var page = (SitePage)ViewContext.ViewData.Model!;
     var settings = await Shell.SettingsAsync();
     var menuPages = await Shell.MenuPagesAsync();
+    var showApp = await Shell.ShowAppAsync();
     var title = string.IsNullOrEmpty(page.PageTitle) ? "De Vrolijke Drammers · Carnavalsvereniging Loil" : $"{page.PageTitle} · De Vrolijke Drammers";
     // Vereniging: de vaste onderdelen op volgorde 10–40, de pagina's uit het portal daartussen op hun eigen volgorde.
     var fixedAssociation = new List<(int Order, string Href, string Label)> { (10, "/kader", "Kader"), (20, "/prinsengalerie", "Prinsengalerie") };
@@ -11,14 +11,14 @@
     var association = menuPages.Where(p => p.Menu == Drammers.Modules.Content.Website.WebsiteMenu.Association).Select(p => (Order: p.SortOrder, Href: $"/{p.Slug}", Label: p.Title))
         .Concat(fixedAssociation).OrderBy(i => i.Order).Select(i => (i.Href, i.Label)).ToList();
     var carnival = menuPages.Where(p => p.Menu == Drammers.Modules.Content.Website.WebsiteMenu.Carnival).Select(p => (Href: $"/{p.Slug}", Label: p.Title)).ToList();
-    var joinIn = new (string Href, string Label, string Hint)[]
+    var joinIn = new List<(string Href, string Label, string Hint)>
     {
         ("/lid-worden/", "Lid worden", "Aanmelden als lid van de vereniging"),
         ("/optocht-inschrijven/", "Optocht inschrijven", "Groep, wagen of loopgroep aanmelden"),
         ("/aanrijtijden/", "Aanrijtijden optocht", "Wanneer en waar opstellen"),
         ("/kaarten/", "Kaarten en munten", "Pronkzitting, dagkaarten en munten"),
-        ("/doe-mee#app", "Download de app", "iPhone en Android"),
     };
+    if (showApp) joinIn.Add(("/doe-mee#app", "Download de app", "iPhone en Android"));
     var main = new (string Key, string Href, string Label)[]
     {
         ("home", "/", "Home"), ("agenda", "/agenda", "Agenda"), ("nieuws", "/nieuws", "Nieuws"),
@@ -54,7 +54,7 @@
         <script src="@script" defer asp-append-version="true"></script>
     }
 </head>
-<body>
+<body data-app="@(showApp ? "1" : "0")">
     <a class="skip-link" href="#inhoud">Naar de inhoud</a>
     <header class="site-header">
         <div class="wrap header-inner">

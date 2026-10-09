@@ -224,7 +224,12 @@
     }
     if (!me || !me.permissions.includes('parade.register')) {
       if (!me) {
-        text('geen-rechten-tekst', 'Je inlog is nog niet gekoppeld aan een account van De Vrolijke Drammers. Maak je account in de app af, of vraag het bestuur om hulp.');
+        text(
+          'geen-rechten-tekst',
+          document.body.dataset.app === '1'
+            ? 'Je inlog is nog niet gekoppeld aan een account van De Vrolijke Drammers. Maak je account in de app af, of vraag het bestuur om hulp.'
+            : 'Je inlog is nog niet gekoppeld aan een account van De Vrolijke Drammers. Vraag het bestuur om hulp.',
+        );
       }
       document.getElementById('als-gast-2').hidden = !parade?.registrationOpen;
       return show('geen-rechten');

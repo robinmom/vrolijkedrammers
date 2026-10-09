@@ -42,7 +42,7 @@
 
     <fieldset id="ouder" hidden>
       <legend>Ouder of verzorger</legend>
-      <p class="muted">Het nieuwe lid is jonger dan 15. De ouder of verzorger krijgt het account voor de app en ontvangt de e-mails.</p>
+      <p class="muted">Het nieuwe lid is jonger dan 15. De ouder of verzorger krijgt het account@(await Shell.ShowAppAsync() ? " voor de app" : "") en ontvangt de e-mails.</p>
       <div class="row two">
         <label>Naam ouder/verzorger<input name="guardianName" maxlength="100" autocomplete="name" /></label>
         <label>Telefoon ouder/verzorger<input name="guardianPhone" type="tel" maxlength="30" autocomplete="tel" /></label>
@@ -72,7 +72,7 @@
       <label class="check"><input name="privacyConsent" type="checkbox" required />
         <span>Ik ga akkoord met de verwerking van deze gegevens voor het lidmaatschap, zoals beschreven in de privacyverklaring van de vereniging.</span></label>
       <label class="check"><input name="photoConsent" type="checkbox" />
-        <span>Foto's waarop het lid te zien is, mogen in de app en op de website van de vereniging worden getoond.</span></label>
+        <span>Foto's waarop het lid te zien is, mogen @(await Shell.ShowAppAsync() ? "in de app en op de website" : "op de website en in andere media") van de vereniging worden getoond.</span></label>
     </fieldset>
 
     <p id="fout" class="error" role="alert" hidden></p>

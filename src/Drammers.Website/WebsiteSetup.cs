@@ -157,10 +157,19 @@ public static class WebsiteSetup
 /// <summary>Gegevens voor de kop en voet van elke pagina (menu, social media), één keer per verzoek geladen.</summary>
 public sealed class SiteShell(WebsiteReader reader)
 {
+    /// <summary>
+    /// Feature flag (portal → Configuratie): pas als die aanstaat noemt de website de app (menu, Doe mee, nieuws,
+    /// formulierteksten). Tot de lancering blijft de app zo uit beeld; aanzetten vraagt geen deploy.
+    /// </summary>
+    public const string AppFlag = "website.app";
+
     private Modules.Content.Website.WebsiteSettings? _settings;
+    private bool? _showApp;
     private IReadOnlyList<MenuPage>? _menu;
 
     public async Task<Modules.Content.Website.WebsiteSettings> SettingsAsync() => _settings ??= await reader.SettingsAsync(default);
 
     public async Task<IReadOnlyList<MenuPage>> MenuPagesAsync() => _menu ??= await reader.MenuPagesAsync(default);
+
+    public async Task<bool> ShowAppAsync() => _showApp ??= await reader.FeatureEnabledAsync(AppFlag, default);
 }

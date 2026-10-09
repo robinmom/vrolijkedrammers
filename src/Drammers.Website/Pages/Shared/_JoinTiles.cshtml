@@ -1,4 +1,5 @@
-<div class="grid-4">
+@{ var showApp = await Shell.ShowAppAsync(); }
+<div class="@(showApp ? "grid-4" : "grid-3")">
     <a class="join-tile" href="/lid-worden/">
         <h3>Lid worden</h3>
         <p>Meld je aan; het bestuur keurt je aanmelding goed.</p>
@@ -14,9 +15,12 @@
         <p>Pronkzitting, dagkaarten en munten met iDEAL.</p>
         <span class="link-arrow">Start →</span>
     </a>
-    <a class="join-tile" href="/doe-mee#app">
-        <h3>Download de app</h3>
-        <p>Programma, nieuws en je QR voor carnaval.</p>
-        <span class="link-arrow">Start →</span>
-    </a>
+    @if (showApp)
+    {
+        <a class="join-tile" href="/doe-mee#app">
+            <h3>Download de app</h3>
+            <p>Programma, nieuws en je QR voor carnaval.</p>
+            <span class="link-arrow">Start →</span>
+        </a>
+    }
 </div>

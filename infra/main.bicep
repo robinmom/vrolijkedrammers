@@ -78,6 +78,9 @@ var emailSenders = {
   voorzitter: 'De Vrolijke Drammers – Voorzitter'
 }
 
+@description('Eigen domeinen die al een certificaat (SNI) hebben; de deploy-workflow bepaalt dit vóór de uitrol.')
+param boundHostNames array = []
+
 param budgetAmount int
 param budgetStartDate string
 param budgetContactEmails array
@@ -161,6 +164,7 @@ module api 'modules/appservice.bicep' = {
     appServicePlanId: appServicePlanId
     alwaysOn: alwaysOn
     customHostNames: customHostNames
+    boundHostNames: boundHostNames
     appSettings: {
       ASPNETCORE_ENVIRONMENT: aspnetEnvironment[environmentName]
       // App draait uit het zip-pakket, dat bij een deploy in één keer wordt gewisseld (geen half vervangen DLL's).

@@ -16,6 +16,11 @@ param alwaysOn bool = true
 @description('Eigen domeinen (bijv. www.vrolijkedrammers.nl en vrolijkedrammers.nl). Pas invullen als de DNS-records staan: CNAME of A plus TXT asuid.<domein> met customDomainVerificationId.')
 param customHostNames array = []
 
+@description('Eigen domeinen die al met SNI (certificaat) aan de app hangen; die krijgen geen nieuwe binding zonder certificaat, anders staat HTTPS tijdens elke uitrol even uit. De deploy-workflow vult dit.')
+param boundHostNames array = []
+
+var newHostNames = filter(customHostNames, host => !contains(boundHostNames, host))
+
 resource api 'Microsoft.Web/sites@2024-11-01' = {
   name: 'app-dvd-api-${environmentName}'
   location: location
@@ -70,11 +75,12 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
   }
 }
 
-// Eigen domeinen: eerst de binding zonder certificaat, dan een gratis beheerd certificaat, dan SNI met dat certificaat.
-// Eén voor één (batchSize 1): App Service weigert een tweede wijziging aan de site terwijl de eerste nog loopt (409).
+// Eigen domeinen: eerst de binding zonder certificaat (alleen voor nieuwe domeinen), dan een gratis beheerd certificaat,
+// dan SNI met dat certificaat. Strikt na elkaar: App Service weigert een wijziging aan de site terwijl een andere nog
+// loopt (409 "another operation is in progress"), ook van de publicatie- en diagnose-instellingen hierboven.
 @batchSize(1)
 resource hostNames 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = [
-  for host in customHostNames: {
+  for host in newHostNames: {
     parent: api
     name: host
     properties: {
@@ -83,12 +89,13 @@ resource hostNames 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = [
       sslState: 'Disabled'
       customHostNameDnsRecordType: length(split(host, '.')) > 2 ? 'CName' : 'A'
     }
+    dependsOn: [ftpPolicy, scmPolicy, diagnostics]
   }
 ]
 
 @batchSize(1)
 resource certificates 'Microsoft.Web/certificates@2024-11-01' = [
-  for (host, i) in customHostNames: {
+  for host in customHostNames: {
     name: '${host}-${api.name}'
     location: location
     tags: tags
@@ -96,7 +103,7 @@ resource certificates 'Microsoft.Web/certificates@2024-11-01' = [
       serverFarmId: appServicePlanId
       canonicalName: host
     }
-    dependsOn: [hostNames[i]]
+    dependsOn: [hostNames]
   }
 ]
 
@@ -109,6 +116,7 @@ module sni 'hostname-sni.bicep' = [
       hostName: host
       thumbprint: certificates[i].properties.thumbprint
     }
+    dependsOn: [hostNames, ftpPolicy, scmPolicy, diagnostics]
   }
 ]
 

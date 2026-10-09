@@ -1,13 +1,17 @@
 @page "/doe-mee"
 @model DoeMeeModel
-<partial name="_PageBand" model='new PageBand("Doe mee", "Lid worden, meedoen aan de optocht, kaarten kopen of de app downloaden: alles regel je hier online.", (null, "Doe mee"))' />
+@{ var showApp = await Shell.ShowAppAsync(); }
+<partial name="_PageBand" model='new PageBand("Doe mee", showApp ? "Lid worden, meedoen aan de optocht, kaarten kopen of de app downloaden: alles regel je hier online." : "Lid worden, meedoen aan de optocht of kaarten kopen: alles regel je hier online.", (null, "Doe mee"))' />
 <div class="wrap content">
     <section class="join-band" aria-label="Doe mee">
         <partial name="_JoinTiles" />
     </section>
-    <section class="card cta-card" id="app" aria-labelledby="app-kop">
-        <h2 id="app-kop">De app van De Vrolijke Drammers</h2>
-        <p>Programma, nieuws, pushmeldingen en je QR voor carnaval. Voor leden, ouders van jeugdleden en iedereen die Loils carnaval wil volgen.</p>
-        <p class="muted">De app staat binnenkort in de App Store en Google Play.</p>
-    </section>
+    @if (showApp)
+    {
+        <section class="card cta-card" id="app" aria-labelledby="app-kop">
+            <h2 id="app-kop">De app van De Vrolijke Drammers</h2>
+            <p>Programma, nieuws, pushmeldingen en je QR voor carnaval. Voor leden, ouders van jeugdleden en iedereen die Loils carnaval wil volgen.</p>
+            <p class="muted">De app staat binnenkort in de App Store en Google Play.</p>
+        </section>
+    }
 </div>

@@ -8,7 +8,14 @@
 <div id="keuze" class="login-choice" hidden>
   <section class="form-card" aria-labelledby="titel-inloggen">
     <h2 id="titel-inloggen" tabindex="-1">Inloggen en inschrijven</h2>
-    <p class="muted">Met het account van de app. Je inschrijving staat daarna ook in de app en hier onder Mijn inschrijving, en je hoeft geen code over te typen.</p>
+    @if (await Shell.ShowAppAsync())
+    {
+        <p class="muted">Met het account van de app. Je inschrijving staat daarna ook in de app en hier onder Mijn inschrijving, en je hoeft geen code over te typen.</p>
+    }
+    else
+    {
+        <p class="muted">Met je account van De Vrolijke Drammers. Je inschrijving staat daarna hier onder Mijn inschrijving, en je hoeft geen code over te typen.</p>
+    }
     <div class="actions"><button type="button" id="inloggen">Inloggen</button></div>
   </section>
   <section class="form-card" aria-labelledby="titel-gast">
@@ -31,7 +38,7 @@
     <button type="button" id="nieuw" hidden>Nieuwe inschrijving</button>
     <button type="button" id="verder" hidden>Verder invullen</button>
   </div>
-  <p class="muted">Wil je iets wijzigen? Dat kan in de app onder Optocht, of neem contact op met de optochtcommissie.</p>
+  <p class="muted">Wil je iets wijzigen? @(await Shell.ShowAppAsync() ? "Dat kan in de app onder Optocht, of neem" : "Neem") contact op met de optochtcommissie.</p>
 </section>
 
 <section id="geen-rechten" class="form-card" aria-labelledby="titel-geen-rechten" hidden>

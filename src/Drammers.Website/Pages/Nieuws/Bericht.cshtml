@@ -32,11 +32,14 @@
             </div>
         </article>
         <aside class="aside" aria-label="Meer">
-            <div class="app-promo">
-                <h2>Nieuws direct op je telefoon?</h2>
-                <p>Met de app krijg je een melding bij belangrijk nieuws.</p>
-                <a class="button" href="/doe-mee#app">Download de app</a>
-            </div>
+            @if (await Shell.ShowAppAsync())
+            {
+                <div class="app-promo">
+                    <h2>Nieuws direct op je telefoon?</h2>
+                    <p>Met de app krijg je een melding bij belangrijk nieuws.</p>
+                    <a class="button" href="/doe-mee#app">Download de app</a>
+                </div>
+            }
             @if (Model.More.Count > 0)
             {
                 <h2>Meer nieuws</h2>

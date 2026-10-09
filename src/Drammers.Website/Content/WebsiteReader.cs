@@ -52,6 +52,9 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
 {
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
+    public Task<bool> FeatureEnabledAsync(string key, CancellationToken cancellationToken) =>
+        db.FeatureFlags.AsNoTracking().AnyAsync(f => f.Key == key && f.Enabled, cancellationToken);
+
     public async Task<WebsiteSettings> SettingsAsync(CancellationToken cancellationToken) =>
         await db.WebsiteSettings.AsNoTracking().SingleAsync(cancellationToken);
 

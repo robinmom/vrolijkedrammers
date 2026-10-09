@@ -48,6 +48,25 @@ public class WebsiteTests(SqlServerFixture sql) : IAsyncLifetime
     };
 
     [Fact]
+    public async Task De_app_staat_pas_op_de_website_als_de_flag_aanstaat()
+    {
+        var guest = _api.CreateClient();
+        var doeMee = await guest.GetStringAsync("/doe-mee");
+        Assert.DoesNotContain("Download de app", doeMee);
+        Assert.DoesNotContain("App Store", doeMee);
+        Assert.DoesNotContain("in de app", await guest.GetStringAsync("/lid-worden/"), StringComparison.OrdinalIgnoreCase);
+
+        // Aanzetten in het portal (Configuratie → feature flags) leegt ook de cache van de website.
+        var beheer = _api.ClientFor((await _api.CreateUserAsync("it@example.com", DefaultRoles.BeheerderIt)).ObjectId);
+        var flag = await beheer.PutAsJsonAsync($"/api/v1/admin/config/feature-flags/{Drammers.Website.SiteShell.AppFlag}", new { enabled = true, description = "App op de website" });
+        Assert.Equal(HttpStatusCode.NoContent, flag.StatusCode);
+
+        doeMee = await guest.GetStringAsync("/doe-mee");
+        Assert.Contains("Download de app", doeMee);
+        Assert.Contains("App Store", doeMee);
+    }
+
+    [Fact]
     public async Task Nieuws_met_afbeelding_van_voor_het_opslaan_en_een_webadres_uit_de_titel()
     {
         var image = await UploadAsync("/api/v1/admin/news/images");

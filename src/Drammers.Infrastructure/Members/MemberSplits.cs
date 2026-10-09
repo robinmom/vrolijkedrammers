@@ -32,8 +32,11 @@ public sealed record SplitCandidate(
 
 public sealed record SplitInviteResult(int Invited, int WithoutEmail, int Skipped);
 
-/// <summary>Wat het splitsformulier vooraf invult (alleen met een geldige link).</summary>
-public sealed record SplitPrefill(string MainMemberName, string Email, string? SecondFirstName, string? SecondNamePrefix, string? SecondLastName,
+/// <summary>
+/// Wat het splitsformulier vooraf invult (alleen met een geldige link). Niet het e-mailadres: daar hoort het eigen adres
+/// van het tweede lid (besluit 2026-10-09).
+/// </summary>
+public sealed record SplitPrefill(string MainMemberName, string? SecondFirstName, string? SecondNamePrefix, string? SecondLastName,
     string? AddressLine, string? PostalCode, string? City);
 
 /// <summary>
@@ -160,7 +163,7 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
     {
         var member = await ResolveAsync(token, cancellationToken);
         var second = member.SecondMemberName is { Length: > 0 } name ? DutchNameParser.Parse(name) : null;
-        return new SplitPrefill(member.FirstName ?? member.FullName, member.Email ?? string.Empty, second?.FirstName, second?.NamePrefix,
+        return new SplitPrefill(member.FirstName ?? member.FullName, second?.FirstName, second?.NamePrefix,
             second?.LastName ?? member.LastName, member.AddressLine, member.PostalCode, member.City);
     }
 

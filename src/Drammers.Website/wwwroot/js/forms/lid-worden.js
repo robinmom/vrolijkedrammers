@@ -50,9 +50,9 @@
         set('addressLine', p.addressLine);
         set('postalCode', p.postalCode);
         set('city', p.city);
-        set('email', p.email);
+        // Geen e-mailadres invullen: hier hoort het eigen adres van het tweede lid.
         splitReady = true;
-        splitInfo.textContent = `Je registreert het tweede lid van het lidmaatschap van ${p.mainMemberName}. De contributie blijft via ${p.mainMemberName} lopen; een IBAN is niet nodig. Heeft het tweede lid een eigen e-mailadres, vul dat dan in.`;
+        splitInfo.textContent = `Je registreert het tweede lid van het lidmaatschap van ${p.mainMemberName}. De contributie blijft via ${p.mainMemberName} lopen; een IBAN is niet nodig. Vul het eigen e-mailadres van het tweede lid in.`;
         applyMode();
       })
       .catch(() => {

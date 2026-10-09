@@ -92,7 +92,6 @@ test('lid splitsen via de link uit de mail: alles ingevuld, geen IBAN', async ({
           contentType: 'application/json',
           body: JSON.stringify({
             mainMemberName: 'Jan',
-            email: 'jan@example.com',
             secondFirstName: 'Marie',
             secondNamePrefix: 'de',
             secondLastName: 'Vries',
@@ -110,7 +109,9 @@ test('lid splitsen via de link uit de mail: alles ingevuld, geen IBAN', async ({
   await expect(page.getByText(/tweede lid van het lidmaatschap van Jan/)).toBeVisible();
   await expect(page.getByLabel('Voornaam')).toHaveValue('Marie');
   await expect(page.getByLabel('Achternaam')).toHaveValue('Vries');
-  await expect(page.getByLabel('E-mailadres', { exact: true })).toHaveValue('jan@example.com');
+  // Het e-mailadres van het hoofdlid wordt niet ingevuld: het tweede lid vult een eigen adres in.
+  await expect(page.getByLabel('E-mailadres', { exact: true })).toHaveValue('');
+  await page.getByLabel('E-mailadres', { exact: true }).fill('marie@example.com');
   await expect(page.getByLabel('IBAN')).toBeHidden();
   await expect(page.getByRole('group', { name: 'Soort lidmaatschap' })).toBeHidden();
 
@@ -124,7 +125,7 @@ test('lid splitsen via de link uit de mail: alles ingevuld, geen IBAN', async ({
   await expect(page.getByRole('heading', { name: 'Bevestig je e-mailadres' })).toBeVisible();
   expect(api.bodies[0]).toMatchObject({
     firstName: 'Marie',
-    email: 'jan@example.com',
+    email: 'marie@example.com',
     iban: null,
     accountHolder: null,
     mandateConsent: false,

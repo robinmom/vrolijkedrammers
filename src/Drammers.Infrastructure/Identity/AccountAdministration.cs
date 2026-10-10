@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Drammers.Infrastructure.Identity.Entra;
 using Drammers.Infrastructure.Persistence;
+using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
@@ -41,6 +42,7 @@ public sealed class AccountAdministration(
 
         var before = await DescribeRolesAsync(user.Roles, cancellationToken);
         var now = clock.UtcNow.UtcDateTime;
+        await EnsureMaxHoldersAsync(user.Id, assignments, roles, DateOnly.FromDateTime(now), cancellationToken);
         user.Roles.RemoveAll(existing => roles.All(r => r.Id != existing.RoleId));
         foreach (var assignment in assignments)
         {
@@ -73,6 +75,31 @@ public sealed class AccountAdministration(
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         userAccess.Invalidate(user.ExternalObjectId);
+    }
+
+    /// <summary>
+    /// Prins(es) maximaal één, adjudanten maximaal twee (<see cref="DefaultRoles.MaxHolders"/>): telt de anderen met de rol
+    /// die vandaag of later nog geldt. Haal de rol eerst weg bij de vorige (of zet een einddatum in het verleden).
+    /// </summary>
+    private async Task EnsureMaxHoldersAsync(
+        Guid userId, IReadOnlyCollection<RoleAssignment> assignments, IReadOnlyList<Role> roles, DateOnly today, CancellationToken cancellationToken)
+    {
+        foreach (var assignment in assignments.Where(a => DefaultRoles.MaxHolders.ContainsKey(a.RoleCode) && (a.ValidTo is null || a.ValidTo >= today)))
+        {
+            var max = DefaultRoles.MaxHolders[assignment.RoleCode];
+            var roleId = roles.Single(r => r.Code == assignment.RoleCode).Id;
+            var others = await db.UserRoles.AsNoTracking()
+                .Where(ur => ur.RoleId == roleId && ur.UserId != userId && (ur.ValidTo == null || ur.ValidTo >= today))
+                .Join(db.Users.Where(u => u.AccountStatus != AccountStatus.Deleted), ur => ur.UserId, u => u.Id, (ur, u) => u.DisplayName)
+                .ToListAsync(cancellationToken);
+            if (others.Count >= max)
+            {
+                var name = roles.Single(r => r.Id == roleId).Name;
+                throw new DomainException(ErrorCodes.Validation,
+                    $"De rol {name} kan maar {max} {(max == 1 ? "persoon" : "personen")} tegelijk hebben (nu: {string.Join(", ", others)}). Haal de rol eerst bij de vorige weg.",
+                    DomainErrorKind.Conflict);
+            }
+        }
     }
 
     // ----- Blokkeren ----------------------------------------------------------------------------------------------

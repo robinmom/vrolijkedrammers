@@ -896,6 +896,7 @@ export class MockApi {
   advertiserCollectors = [{ memberId: 'm-1', name: 'Piet van der Berg' }];
   advertiserInfo: Record<number, { text: string | null; startDate: string | null; endDate: string | null }> = {};
   advertiserReminders: (string[] | null)[] = [];
+  royalInfo: Record<string, string> = { prins: '', adjudant: 'Haal de prinses op' };
   advertisers: MockAdvertiser[] = [
     {
       id: 'adv-1',
@@ -3628,6 +3629,17 @@ export class MockApi {
       );
     }
     // Fase 20: jubilarissen; het actieve carnavalsjaar 2026/2027 heeft carnaval in 2027.
+    if (path === '/admin/royal') {
+      return json({
+        holders: [{ roleCode: 'prins', userId: 'u-1', name: 'Anna Drammer', validTo: '2027-03-01' }],
+        infos: Object.entries(this.royalInfo).map(([roleCode, body]) => ({ roleCode, body })),
+      });
+    }
+    const royal = path.match(/^\/admin\/royal\/info\/([a-z]+)$/);
+    if (royal) {
+      this.royalInfo[royal[1]!] = (body as { body: string }).body;
+      return noContent();
+    }
     if (path === '/admin/jubilees' && method === 'GET') {
       const reference = 2027;
       const active = this.members.filter((x) => (x.localStatusOverride ?? x.status) === 'Active');

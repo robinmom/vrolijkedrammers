@@ -21,6 +21,17 @@ internal sealed class FeatureFlagConfiguration : IEntityTypeConfiguration<Featur
     }
 }
 
+internal sealed class RoleInfoConfiguration : IEntityTypeConfiguration<RoleInfo>
+{
+    public void Configure(EntityTypeBuilder<RoleInfo> builder)
+    {
+        builder.ToTable("RoleInfo", Schemas.Config);
+        builder.HasKey(i => i.RoleCode);
+        builder.Property(i => i.RoleCode).HasMaxLength(40).IsUnicode(false);
+        builder.Property(i => i.Body).HasMaxLength(20000);
+    }
+}
+
 internal sealed class AppConfigurationSettingConfiguration : IEntityTypeConfiguration<AppConfigurationSetting>
 {
     public void Configure(EntityTypeBuilder<AppConfigurationSetting> builder)

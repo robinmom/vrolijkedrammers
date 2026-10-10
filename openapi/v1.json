@@ -22005,6 +22005,130 @@
         }
       }
     },
+    "/api/v1/me/royal": {
+      "get": {
+        "tags": [
+          "MyRoyal"
+        ],
+        "summary": "De begroeting en informatie; `204` zonder geldige rol prins(es) of adjudant.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoyalGreeting"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoyalGreeting"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoyalGreeting"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/royal": {
+      "get": {
+        "tags": [
+          "AdminRoyal"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoyalOverview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoyalOverview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoyalOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/royal/info/{roleCode}": {
+      "put": {
+        "tags": [
+          "AdminRoyal"
+        ],
+        "parameters": [
+          {
+            "name": "roleCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInfoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInfoRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInfoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sales/products": {
       "get": {
         "tags": [
@@ -37288,6 +37412,20 @@
           }
         }
       },
+      "RoleInfoRequest": {
+        "required": [
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RoleResponse": {
         "required": [
           "id",
@@ -37322,6 +37460,94 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "RoyalGreeting": {
+        "required": [
+          "roleCode",
+          "greeting",
+          "infoHtml"
+        ],
+        "type": "object",
+        "properties": {
+          "roleCode": {
+            "type": "string"
+          },
+          "greeting": {
+            "type": "string"
+          },
+          "infoHtml": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Begroeting en informatie in de app voor de prins(es) of een adjudant."
+      },
+      "RoyalHolder": {
+        "required": [
+          "roleCode",
+          "userId",
+          "name",
+          "validTo"
+        ],
+        "type": "object",
+        "properties": {
+          "roleCode": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "validTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "Wie dit jaar de rol heeft (portal)."
+      },
+      "RoyalInfoText": {
+        "required": [
+          "roleCode",
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "roleCode": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      },
+      "RoyalOverview": {
+        "required": [
+          "holders",
+          "infos"
+        ],
+        "type": "object",
+        "properties": {
+          "holders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoyalHolder"
+            }
+          },
+          "infos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoyalInfoText"
             }
           }
         }
@@ -40079,6 +40305,12 @@
     },
     {
       "name": "PushDevices"
+    },
+    {
+      "name": "MyRoyal"
+    },
+    {
+      "name": "AdminRoyal"
     },
     {
       "name": "Sales"

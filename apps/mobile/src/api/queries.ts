@@ -28,6 +28,7 @@ export const queryKeys = {
   myMember: ['me', 'member'] as const,
   myMemberRequests: ['me', 'membership-requests'] as const,
   myAdvertisers: ['me', 'advertisers'] as const,
+  myRoyal: ['me', 'royal'] as const,
   myDevices: ['me', 'devices'] as const,
   myChildren: ['me', 'children'] as const,
   child: (id: string) => ['me', 'children', id] as const,
@@ -153,6 +154,21 @@ export const useMyMemberRequests = (enabled = true) => {
 };
 
 /** Adverteerders van de collectant (fase 27b-2); voor wie geen kaderlid is: isCollector false. */
+/** Prins(es) of adjudant (2026-10-10): begroeting en info; `null` zonder die rol (de API geeft dan 204). */
+export const useMyRoyal = () => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myRoyal,
+    queryFn: async () => {
+      const { data, response } = await api.GET('/api/v1/me/royal');
+      if (response.status === 204) return null;
+      if (!response.ok || data === undefined) throw new ApiError(response.status, '/api/v1/me/royal');
+      return data;
+    },
+    enabled: status === 'signedIn',
+  });
+};
+
 export const useMyAdvertisers = (enabled = true) => {
   const status = useSessionStatus();
   return useQuery({

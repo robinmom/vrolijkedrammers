@@ -8,7 +8,18 @@ export interface NavItem {
   permission: string | readonly string[];
   icon: IconName;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
-  section?: 'Content' | 'Website' | 'Mailing' | 'Adverteerders' | 'Leden' | 'Dansgarde' | 'Optocht' | 'Toegang' | 'Verkoop' | 'Beheer';
+  section?:
+    | 'Content'
+    | 'Website'
+    | 'Mailing'
+    | 'Adverteerders'
+    | 'Leden'
+    | 'Dansgarde'
+    | 'Prins'
+    | 'Optocht'
+    | 'Toegang'
+    | 'Verkoop'
+    | 'Beheer';
 }
 
 export const navItems: readonly NavItem[] = [
@@ -59,6 +70,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Jubilarissen', to: '/jubilarissen', permission: 'member.read', icon: 'jaar', section: 'Leden' },
   { label: 'Overzicht', to: '/dansgarde', permission: 'member.read', icon: 'leden', section: 'Dansgarde' },
   { label: 'Dansgroepen', to: '/dansgarde/groepen', permission: 'member.read', icon: 'groepen', section: 'Dansgarde' },
+  // 2026-10-10: prins(es) en adjudanten, met hun informatie in de app.
+  { label: 'Prins en adjudanten', to: '/prins', permission: 'role.manage', icon: 'rollen', section: 'Prins' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },
   { label: 'Samenstellen', to: '/optocht/samenstellen', permission: 'parade.read', icon: 'audit', section: 'Optocht' },
   { label: 'Aanrijtijden', to: '/optocht/aanrijtijden', permission: 'parade.import-arrival-times', icon: 'agenda', section: 'Optocht' },

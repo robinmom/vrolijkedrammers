@@ -8,7 +8,7 @@ import { themeStylesheet } from './theme';
 describe('navigatie', () => {
   it('toont alleen menu-items waarvoor de gebruiker de permission heeft', () => {
     const items = visibleNavItems(['role.manage', 'audit.read']);
-    expect(items.map((i) => i.label)).toEqual(['Gebruikers', 'Rollen en rechten', 'Auditlog']);
+    expect(items.map((i) => i.label)).toEqual(['Prins en adjudanten', 'Gebruikers', 'Rollen en rechten', 'Auditlog']);
   });
 
   it('toont niets zonder beheerpermissions', () => {

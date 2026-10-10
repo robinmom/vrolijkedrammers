@@ -507,12 +507,19 @@ public sealed class MemberAccounts(
         }
 
         // Een bestaand account (bijv. een beheerder die ook lid is) wordt gekoppeld en krijgt de rol erbij. Eén account
-        // hoort bij hooguit één lid: een adres dat al bij een ander lid hoort, wordt niet stil overgenomen.
+        // hoort bij hooguit één lid: een adres dat al bij een ander lid hoort, wordt niet stil overgenomen. Uitzondering
+        // (fase 17, één inlog per e-mailadres): hoort het account bij een kind onder de 15 met hetzelfde adres, dan gaat het
+        // naar de volwassene en komt het kind onder "Mijn kinderen" (ouderkoppeling).
         if (memberId is { } id)
         {
             if (user.MemberId is { } other && other != id)
             {
-                throw new DomainException(ErrorCodes.MemberHasAccount, "Dit e-mailadres hoort al bij het app-account van een ander lid.", DomainErrorKind.Conflict);
+                if (!await IsChildWithoutOwnAccountAgeAsync(other, cancellationToken))
+                {
+                    throw new DomainException(ErrorCodes.MemberHasAccount, "Dit e-mailadres hoort al bij het app-account van een ander lid.", DomainErrorKind.Conflict);
+                }
+
+                await MoveChildAccountToParentAsync(user, other, cancellationToken);
             }
 
             user.MemberId = id;
@@ -528,6 +535,37 @@ public sealed class MemberAccounts(
         await transaction.CommitAsync(cancellationToken);
         userAccess.Invalidate(objectId);
         return user.Id;
+    }
+
+    private async Task<bool> IsChildWithoutOwnAccountAgeAsync(Guid memberId, CancellationToken cancellationToken) =>
+        IsYoungerThanOwnAccountAge(await db.Members.Where(m => m.Id == memberId).Select(m => m.BirthDate).SingleOrDefaultAsync(cancellationToken));
+
+    /// <summary>Het account van een kind wordt dat van de ouder: het kind blijft gekoppeld als kind van dit account.</summary>
+    private async Task MoveChildAccountToParentAsync(User user, Guid childMemberId, CancellationToken cancellationToken)
+    {
+        var guardians = await db.GuardianRelations.Where(g => g.MemberId == childMemberId).Select(g => g.GuardianUserId).ToListAsync(cancellationToken);
+        if (!guardians.Contains(user.Id) && guardians.Count < Modules.Membership.Guardians.GuardianRelation.MaxPerChild)
+        {
+            var now = clock.UtcNow.UtcDateTime;
+            db.GuardianRelations.Add(new Modules.Membership.Guardians.GuardianRelation
+            {
+                Id = IdGenerator.NewId(),
+                MemberId = childMemberId,
+                GuardianUserId = user.Id,
+                GuardianName = user.DisplayName.Length > 100 ? user.DisplayName[..100] : user.DisplayName,
+                Relationship = Modules.Membership.Guardians.GuardianRelationship.Parent,
+                VerifiedAt = now,
+                CreatedAt = now,
+            });
+        }
+
+        var ouder = await db.Roles.Where(r => r.Code == DefaultRoles.Ouder).Select(r => r.Id).SingleAsync(cancellationToken);
+        if (user.Roles.All(r => r.RoleId != ouder))
+        {
+            user.Roles.Add(new UserRole { UserId = user.Id, RoleId = ouder, AssignedAt = clock.UtcNow.UtcDateTime });
+        }
+
+        await audit.WriteAsync(new AuditEntry("member.account-moved-to-parent", "User", user.Id.ToString(), childMemberId.ToString(), null), cancellationToken);
     }
 
     private async Task<Guid> ResolveMemberIdAsync(ProvisionMessage message, CancellationToken cancellationToken)

@@ -96,6 +96,8 @@ public sealed class Jubilees(DrammersDbContext db, IAuditLogger audit, IClock cl
 
         var active = await db.Members.AsNoTracking()
             .Where(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active)
+            // Gesplitste leden (2026-10-10): alleen het hoofdlid; het tweede lid heeft dezelfde jaren en staat er niet apart in.
+            .Where(m => m.MembershipKind != MembershipKind.Partner)
             .Select(m => new
             {
                 m.Id,

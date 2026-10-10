@@ -835,3 +835,18 @@ test('menukoppen inklappen: onthouden na herladen en open bij de huidige pagina'
   await expect(nav.getByRole('button', { name: 'Beheer' })).toHaveAttribute('aria-expanded', 'true');
   await expect(nav.getByRole('link', { name: 'Auditlog' })).toBeVisible();
 });
+
+test('nieuwe activiteit: vandaag 20:00–23:00, het einde schuift mee met het begin', async ({ page }) => {
+  const api = new MockApi();
+  await api.install(page);
+  await page.goto('/beheer/agenda/nieuw');
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  await expect(page.getByLabel('Begint')).toHaveValue(`${today}T20:00`);
+  await expect(page.getByLabel('Eindigt')).toHaveValue(`${today}T23:00`);
+
+  await page.getByLabel('Begint').fill('2027-01-10T19:30');
+  await expect(page.getByLabel('Eindigt')).toHaveValue('2027-01-10T22:30');
+});

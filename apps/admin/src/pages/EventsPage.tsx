@@ -68,6 +68,22 @@ const emptyEvent: EventRequest = {
   locationAddress: null, latitude: null, longitude: null, isHighlight: false, badgeText: null, publication: defaultPublication, accessControl: false,
 };
 
+/** Nieuwe activiteit: vandaag van 20:00 tot 23:00 (lokale tijd); beide zijn direct aan te passen. */
+function newEvent(): EventRequest {
+  const start = new Date();
+  start.setHours(20, 0, 0, 0);
+  const end = new Date(start);
+  end.setHours(23, 0, 0, 0);
+  return { ...emptyEvent, startAt: start.toISOString(), endAt: end.toISOString() };
+}
+
+/** Bij een ander begin schuift het einde mee, met dezelfde duur (zelfde dag blijft zelfde dag). */
+export function moveEnd(oldStart: string, oldEnd: string | null, newStart: string): string | null {
+  if (!newStart || !oldStart || !oldEnd) return oldEnd;
+  const duration = Math.max(0, new Date(oldEnd).getTime() - new Date(oldStart).getTime());
+  return new Date(new Date(newStart).getTime() + duration).toISOString();
+}
+
 export function EventEditorPage() {
   const { id } = useParams({ from: '/agenda/$id' });
   const isNew = id === 'nieuw';
@@ -76,7 +92,7 @@ export function EventEditorPage() {
   const navigate = useNavigate();
   const categories = useEventCategories();
   const existing = useAdminEvent(isNew ? null : id);
-  const [form, setForm] = useState<EventRequest>(emptyEvent);
+  const [form, setForm] = useState<EventRequest>(() => (isNew ? newEvent() : emptyEvent));
   const [message, setMessage] = useState<string | null>(null);
   const [fileError, setFileError] = useState<unknown>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -147,7 +163,10 @@ export function EventEditorPage() {
               ))}
             </select>
           </div>
-          <Field label="Begint" type="datetime-local" required value={toLocalInput(form.startAt)} onChange={(e) => set({ startAt: fromLocalInput(e.target.value) ?? '' })} />
+          <Field label="Begint" type="datetime-local" required value={toLocalInput(form.startAt)} onChange={(e) => {
+            const startAt = fromLocalInput(e.target.value) ?? '';
+            set({ startAt, endAt: moveEnd(form.startAt, form.endAt, startAt) });
+          }} />
           <Field label="Eindigt" type="datetime-local" value={toLocalInput(form.endAt)} onChange={(e) => set({ endAt: fromLocalInput(e.target.value) })} />
           <Field label="Locatie" value={form.locationName ?? ''} onChange={(e) => set({ locationName: e.target.value || null })} />
           <Field label="Adres" value={form.locationAddress ?? ''} onChange={(e) => set({ locationAddress: e.target.value || null })} />

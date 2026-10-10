@@ -103,6 +103,25 @@ public class JubileeTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Bij_gesplitste_leden_alleen_het_hoofdlid()
+    {
+        var hoofdlid = await MemberAsync("10", 2016);
+        var tweede = await MemberAsync("11", 2016);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var main = await db.Members.SingleAsync(m => m.Id == hoofdlid);
+            var partner = await db.Members.SingleAsync(m => m.Id == tweede);
+            main.MembershipKind = MembershipKind.TwoPersons;
+            (partner.MembershipKind, partner.PayerMemberId) = (MembershipKind.Partner, hoofdlid);
+            await db.SaveChangesAsync();
+        }
+
+        var report = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/jubilees");
+        Assert.Equal([("10", 11)], Jubilarians(report));
+    }
+
+    [Fact]
     public async Task Ander_carnavalsjaar_en_eigen_jubilea()
     {
         int previousYear;

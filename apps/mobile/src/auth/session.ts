@@ -22,7 +22,23 @@ interface AuthConfig {
   redirectBridgeUrl: string | null;
 }
 
-const KEYS = { refreshToken: 'dvd.refreshToken', installationId: 'dvd.installationId' } as const;
+const KEYS = {
+  refreshToken: 'dvd.refreshToken',
+  installationId: 'dvd.installationId',
+  pendingSignIn: 'dvd.pendingSignIn',
+} as const;
+
+/** Een lopende aanmelding (state, PKCE-verifier, terugkeeradres), voor als Android de app opnieuw start. */
+interface PendingSignIn {
+  state: string;
+  codeVerifier: string;
+  redirectUri: string;
+}
+
+/** De inlogpagina van deze app-sessie, zolang die open is (signIn rondt een antwoord dan zelf af). */
+let browserSession: Promise<unknown> | null = null;
+/** Kreeg de inlogpagina van deze app-sessie het antwoord zelf (dan wisselt signIn de code in, niet de route /auth)? */
+let browserGotAnswer = false;
 const STORE_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
 };
@@ -112,10 +128,27 @@ export async function signIn(): Promise<SignInResult> {
     state: `${nonce}.${base64Url(returnUrl)}`,
   });
   const url = await request.makeAuthUrlAsync(endpoints);
-  const result = await WebBrowser.openAuthSessionAsync(url, returnUrl, { preferEphemeralSession: true });
-  if (result.type !== 'success') {
-    return 'cancelled';
+  // Android kan de app tijdens het inloggen afsluiten of het antwoord als gewone link openen (drammers://auth?code=…);
+  // de route /auth rondt de aanmelding dan af met deze gegevens.
+  const pending: PendingSignIn = { state: request.state, codeVerifier: request.codeVerifier ?? '', redirectUri };
+  await SecureStore.setItemAsync(KEYS.pendingSignIn, JSON.stringify(pending), STORE_OPTIONS).catch(() => undefined);
+  browserGotAnswer = false;
+  const opened = WebBrowser.openAuthSessionAsync(url, returnUrl, { preferEphemeralSession: true }).then((r) => {
+    browserGotAnswer = r.type === 'success';
+    return r;
+  });
+  browserSession = opened;
+  let result: WebBrowser.WebBrowserAuthSessionResult;
+  try {
+    result = await opened;
+  } finally {
+    browserSession = null;
   }
+  if (result.type !== 'success') {
+    // Het antwoord kan nog via de route /auth binnenkomen; die ruimt de gegevens daarna op.
+    return status === 'signedIn' ? 'success' : 'cancelled';
+  }
+  await SecureStore.deleteItemAsync(KEYS.pendingSignIn, STORE_OPTIONS).catch(() => undefined);
 
   // Controleert ook de state (CSRF): een antwoord voor een ander verzoek wordt geweigerd.
   const parsed = request.parseReturnUrl(result.url);
@@ -128,6 +161,51 @@ export async function signIn(): Promise<SignInResult> {
       code: parsed.params.code,
       redirectUri,
       extraParams: { code_verifier: request.codeVerifier ?? '' },
+    },
+    endpoints,
+  );
+  await storeTokens(tokens);
+  await registerDevice(tokens.accessToken);
+  setStatus('signedIn');
+  return 'success';
+}
+
+/**
+ * De inlogpagina stuurde terug naar drammers://auth?code=… terwijl signIn er niet (meer) op wachtte, bijv. omdat Android de
+ * app opnieuw startte. Rondt de aanmelding af met de bewaarde PKCE-gegevens; `ignored` als signIn het zelf afhandelt of
+ * als de state niet bij de bewaarde aanmelding hoort.
+ */
+export async function completeSignInFromRedirect(params: {
+  code?: string;
+  state?: string;
+}): Promise<'success' | 'ignored'> {
+  if (!params.code || !params.state) {
+    return 'ignored';
+  }
+  // Loopt signIn nog: eerst afwachten. Kreeg die het antwoord zelf, dan is er al ingelogd; anders (Android gaf de link
+  // alleen aan de app door) rondt deze route het af.
+  if (browserSession) {
+    await browserSession.catch(() => undefined);
+    if (browserGotAnswer) {
+      return 'ignored';
+    }
+  }
+  if (status === 'signedIn') {
+    return 'ignored';
+  }
+  const raw = await SecureStore.getItemAsync(KEYS.pendingSignIn, STORE_OPTIONS).catch(() => null);
+  const pending = raw ? (JSON.parse(raw) as PendingSignIn) : null;
+  if (!pending || pending.state !== params.state) {
+    return 'ignored';
+  }
+  await SecureStore.deleteItemAsync(KEYS.pendingSignIn, STORE_OPTIONS).catch(() => undefined);
+  const { config: auth, discovery: endpoints } = await loadConfig();
+  const tokens = await AuthSession.exchangeCodeAsync(
+    {
+      clientId: auth.clientId,
+      code: params.code,
+      redirectUri: pending.redirectUri,
+      extraParams: { code_verifier: pending.codeVerifier },
     },
     endpoints,
   );

@@ -6,6 +6,7 @@
 #   az login --tenant <tenant-id-vereniging>
 #   AZURE_SUBSCRIPTION_ID=<id> infra/prod/reset-testdata.sh            # proefrun
 #   AZURE_SUBSCRIPTION_ID=<id> infra/prod/reset-testdata.sh --apply    # vastleggen
+#   AZURE_SUBSCRIPTION_ID=<id> infra/prod/reset-testdata.sh meldingen [--apply]   # alleen de meldingen (reset-meldingen.sql)
 #
 # Vereist: lid van sg-dvd-sql-admin-prod (bootstrap-prod.sh). Het script zet tijdelijk een firewallregel voor jouw IP.
 set -euo pipefail
@@ -13,6 +14,11 @@ set -euo pipefail
 : "${AZURE_SUBSCRIPTION_ID:?Zet AZURE_SUBSCRIPTION_ID}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
+SCRIPT=reset-testdata.sql
+if [[ "${1:-}" == "meldingen" ]]; then
+  SCRIPT=reset-meldingen.sql
+  shift
+fi
 APPLY=0
 if [[ "${1:-}" == "--apply" ]]; then
   APPLY=1
@@ -31,6 +37,6 @@ cleanup() {
 trap cleanup EXIT
 
 az sql server firewall-rule create -g rg-dvd-prod -s sql-dvd-prod -n "$RULE" --start-ip-address "$IP" --end-ip-address "$IP" -o none
-sed "s/\$(APPLY)/$APPLY/" "$HERE/reset-testdata.sql" >"$WORK/reset.sql"
+sed "s/\$(APPLY)/$APPLY/" "$HERE/$SCRIPT" >"$WORK/reset.sql"
 DVD_SQL_ACCESS_TOKEN="$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)" \
   dotnet run --project "$ROOT/tools/Drammers.DbSetup" -- "sql-dvd-prod.database.windows.net" sqldb-dvd migrate "$WORK/reset.sql"

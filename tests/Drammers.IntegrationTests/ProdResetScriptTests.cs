@@ -11,7 +11,7 @@ namespace Drammers.IntegrationTests;
 [Collection(SqlServerCollection.Name)]
 public class ProdResetScriptTests(SqlServerFixture sql)
 {
-    private static string Script(int apply)
+    private static string Script(int apply, string name = "reset-testdata.sql")
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Drammers.sln")))
@@ -19,7 +19,7 @@ public class ProdResetScriptTests(SqlServerFixture sql)
             dir = dir.Parent;
         }
 
-        return File.ReadAllText(Path.Combine(dir!.FullName, "infra", "prod", "reset-testdata.sql")).Replace("$(APPLY)", apply.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        return File.ReadAllText(Path.Combine(dir!.FullName, "infra", "prod", name)).Replace("$(APPLY)", apply.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
     [Fact]
@@ -51,6 +51,22 @@ public class ProdResetScriptTests(SqlServerFixture sql)
         // Instellingen en referentiegegevens blijven.
         Assert.Equal("2026/2027", await MigrationTests.ScalarAsync<string>(connection, "SELECT name FROM content.CarnivalYear WHERE active = 1"));
         Assert.True(await MigrationTests.ScalarAsync<int>(connection, "SELECT COUNT(*) FROM [identity].[Role]") > 0);
+    }
+
+    [Fact]
+    public async Task Meldingen_uit_de_testperiode_weghalen()
+    {
+        var connectionString = await sql.CreateMigratedDatabaseAsync();
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        var messages = new List<string>();
+        connection.InfoMessage += (_, e) => messages.AddRange(e.Errors.Cast<SqlError>().Select(err => err.Message));
+
+        await SqlScriptRunner.RunAsync(connection, Script(0, "reset-meldingen.sql"), CancellationToken.None);
+        Assert.Contains(messages, m => m.StartsWith("PROEFRUN", StringComparison.Ordinal));
+        await SqlScriptRunner.RunAsync(connection, Script(1, "reset-meldingen.sql"), CancellationToken.None);
+        Assert.Contains(messages, m => m == "VASTGELEGD.");
+        Assert.Equal(0, await MigrationTests.ScalarAsync<int>(connection, "SELECT COUNT(*) FROM notification.Notification"));
     }
 
     private static async Task ExecAsync(SqlConnection connection, string sqlText)

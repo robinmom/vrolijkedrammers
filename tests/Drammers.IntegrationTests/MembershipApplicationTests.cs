@@ -460,6 +460,11 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         var welcome = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject == "Welkom als lid van De Vrolijke Drammers");
         Assert.Contains("lidmaatschap van Jan de Vries", welcome.PlainText);
         Assert.Equal(1, await WithDbAsync(db => db.Users.AsNoTracking().CountAsync(u => u.Email == "jan@example.com")));
+
+        // De afgeronde poging blokkeert "App-account aanmaken" in het portal niet.
+        var partnerId = await WithDbAsync(db => db.Members.AsNoTracking().Where(m => m.PayerMemberId == main).Select(m => m.Id).SingleAsync());
+        var partnerDetail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{partnerId}");
+        Assert.Equal(JsonValueKind.Null, partnerDetail.GetProperty("provisioning").ValueKind);
     }
 
     [Fact]

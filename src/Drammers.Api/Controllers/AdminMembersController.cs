@@ -82,7 +82,10 @@ public sealed class AdminMembersController(
             .Select(g => new MemberGroupResponse(g.Id, g.Name, g.Function, g.ValidTo))
             .ToListAsync(cancellationToken);
         var provisioning = await db.AccountProvisioning.AsNoTracking()
-            .Where(p => p.MemberId == id && p.Kind == Modules.Identity.Provisioning.ProvisioningKind.Member)
+            // Alleen een lopende of mislukte poging: een afgeronde poging zonder account (bijv. lid splitsen met een adres dat
+            // toen al in gebruik was) mag "App-account aanmaken" niet blokkeren.
+            .Where(p => p.MemberId == id && p.Kind == Modules.Identity.Provisioning.ProvisioningKind.Member
+                && p.Step != Modules.Identity.Provisioning.ProvisioningStep.Completed)
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => new MemberProvisioningResponse(p.Id, p.Step, p.Attempts, p.LastError, p.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);

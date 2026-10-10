@@ -4,14 +4,27 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { queryKeys, useEvents, useMe, useMyMember, useNews, useWebsiteHero } from '../../api/queries';
+import { queryKeys, useEvents, useMe, useMyMember, useMyRoyal, useNews, useWebsiteHero } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
 import { dateBlockParts, greeting, newsDateLong, startTime } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
 import { useHeroStatusBar } from '../../theme/useHeroStatusBar';
-import { AppText, EmptyState, EventCard, HeroButton, NewsRow, QueryState, RemoteImage, Screen, SectionHeader, ShortcutTile } from '../../ui';
+import {
+  AppText,
+  Button,
+  Card,
+  EmptyState,
+  EventCard,
+  HeroButton,
+  NewsRow,
+  QueryState,
+  RemoteImage,
+  Screen,
+  SectionHeader,
+  ShortcutTile,
+} from '../../ui';
 
 /** Het logo van de vereniging in een witte cirkel (zelfde als het app-icoon op Android). */
 const logo = require('../../../assets/images/logo.png');
@@ -28,7 +41,9 @@ export default function HomeScreen() {
   const hero = useWebsiteHero();
   const events = useEvents();
   const news = useNews();
-  const refresh = useRefresh([queryKeys.websiteHero, queryKeys.events, queryKeys.news, queryKeys.myNotifications]);
+  const refresh = useRefresh([queryKeys.websiteHero, queryKeys.events, queryKeys.news, queryKeys.myNotifications, queryKeys.myRoyal]);
+  // Prins(es) of adjudant: eigen begroeting en een knop naar hun informatie.
+  const royal = useMyRoyal();
   const unread = useUnreadCount();
   const signedIn = useSessionStatus() === 'signedIn';
   // Ingelogd: de voornaam van het lid in de groet; anders (of zonder gekoppeld lid) "Drammer".
@@ -68,7 +83,7 @@ export default function HomeScreen() {
 
           <View style={styles.greeting}>
             <AppText variant="heroTitle" color="#FFFFFF">
-              {greeting(openedAt)}, {firstName || 'Drammer'}!
+              {royal.data ? `${royal.data.greeting}!` : `${greeting(openedAt)}, ${firstName || 'Drammer'}!`}
             </AppText>
             <AppText variant="caption" color="rgba(255,255,255,0.85)" style={styles.subtitle}>
               Alaaf! Het feest komt eraan 🎉
@@ -78,6 +93,12 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.content}>
+        {royal.data ? (
+          <Card style={styles.royal}>
+            <AppText variant="bodyStrong">{royal.data.roleCode === 'prins' ? 'Informatie voor de prins(es)' : 'Informatie voor de adjudanten'}</AppText>
+            <Button label="Info" onPress={() => router.push('/prins-info')} />
+          </Card>
+        ) : null}
         <View style={styles.shortcuts}>
           <ShortcutTile icon="fotos" label="Foto's" tint="blue" onPress={() => router.push('/fotos')} />
           {signedIn ? (
@@ -147,6 +168,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  royal: { padding: 16, gap: 10 },
   hero: {
     backgroundColor: brand.blue,
     borderBottomLeftRadius: radius.hero,

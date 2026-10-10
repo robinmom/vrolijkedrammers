@@ -850,3 +850,17 @@ test('nieuwe activiteit: vandaag 20:00–23:00, het einde schuift mee met het be
   await page.getByLabel('Begint').fill('2027-01-10T19:30');
   await expect(page.getByLabel('Eindigt')).toHaveValue('2027-01-10T22:30');
 });
+
+test('prins en adjudanten: wie het dit jaar zijn en hun info in de app', async ({ page }) => {
+  const api = new MockApi();
+  await api.install(page);
+  await page.goto('/beheer/prins');
+
+  await expect(page.getByRole('heading', { name: 'Prins en adjudanten', level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Anna Drammer' })).toBeVisible();
+  await expect(page.getByLabel('Tekst').nth(1)).toHaveValue('Haal de prinses op');
+  await page.getByLabel('Tekst').first().fill('**Proclamatie** op 11-11');
+  await page.getByRole('button', { name: 'Opslaan' }).first().click();
+  await expect(page.getByText('Opgeslagen.')).toBeVisible();
+  expect(api.royalInfo.prins).toBe('**Proclamatie** op 11-11');
+});

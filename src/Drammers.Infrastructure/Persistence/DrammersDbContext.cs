@@ -196,6 +196,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<AppConfigurationSetting> AppConfiguration => Set<AppConfigurationSetting>();
 
+    public DbSet<RoleInfo> RoleInfos => Set<RoleInfo>();
+
     public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
 
     public DbSet<ScheduledJobState> ScheduledJobs => Set<ScheduledJobState>();

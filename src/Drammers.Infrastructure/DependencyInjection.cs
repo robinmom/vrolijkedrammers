@@ -225,6 +225,7 @@ public static class DependencyInjection
         services.AddScoped<MemberSyncSettings>();
         services.AddScoped<MemberAdministration>();
         services.AddScoped<Jubilees>();
+        services.AddScoped<Members.RoyalHousehold>();
         services.AddScoped<JubileeInvitations>();
         services.AddScoped<Contributions>();
         services.AddScoped<MemberSplits>();

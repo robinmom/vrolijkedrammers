@@ -398,10 +398,7 @@ exports[`snapshot dark 01 Home 1`] = `
                   ]
                 }
               >
-                Goedemorgen
-                , 
-                Drammer
-                !
+                Goedemorgen, Drammer!
               </Text>
               <Text
                 maxFontSizeMultiplier={2}
@@ -11970,10 +11967,7 @@ exports[`snapshot light 01 Home 1`] = `
                   ]
                 }
               >
-                Goedemorgen
-                , 
-                Drammer
-                !
+                Goedemorgen, Drammer!
               </Text>
               <Text
                 maxFontSizeMultiplier={2}

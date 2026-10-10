@@ -39,6 +39,22 @@ public sealed class AppConfigurationSetting : IAuditable
     public Guid? UpdatedBy { get; set; }
 }
 
+/// <summary>Informatie voor een rol in de app (<c>config.RoleInfo</c>), bijv. voor de prins of de adjudanten; Markdown.</summary>
+public sealed class RoleInfo : IAuditable
+{
+    public required string RoleCode { get; set; }
+
+    public required string Body { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public Guid? CreatedBy { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public Guid? UpdatedBy { get; set; }
+}
+
 public enum RetentionAction
 {
     Delete,

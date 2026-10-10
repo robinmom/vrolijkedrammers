@@ -18272,6 +18272,140 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/royal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De begroeting en informatie; `204` zonder geldige rol prins(es) of adjudant. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RoyalGreeting"];
+                        "application/json": components["schemas"]["RoyalGreeting"];
+                        "text/json": components["schemas"]["RoyalGreeting"];
+                    };
+                };
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/royal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RoyalOverview"];
+                        "application/json": components["schemas"]["RoyalOverview"];
+                        "text/json": components["schemas"]["RoyalOverview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/royal/info/{roleCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roleCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RoleInfoRequest"];
+                    "text/json": components["schemas"]["RoleInfoRequest"];
+                    "application/*+json": components["schemas"]["RoleInfoRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales/products": {
         parameters: {
             query?: never;
@@ -22728,6 +22862,9 @@ export interface components {
             /** Format: date */
             validTo: null | string;
         };
+        RoleInfoRequest: {
+            body: null | string;
+        };
         RoleResponse: {
             /** Format: int32 */
             id: number;
@@ -22736,6 +22873,29 @@ export interface components {
             description: null | string;
             isSystem: boolean;
             permissions: string[];
+        };
+        /** @description Begroeting en informatie in de app voor de prins(es) of een adjudant. */
+        RoyalGreeting: {
+            roleCode: string;
+            greeting: string;
+            infoHtml: null | string;
+        };
+        /** @description Wie dit jaar de rol heeft (portal). */
+        RoyalHolder: {
+            roleCode: string;
+            /** Format: uuid */
+            userId: string;
+            name: string;
+            /** Format: date */
+            validTo: null | string;
+        };
+        RoyalInfoText: {
+            roleCode: string;
+            body: string;
+        };
+        RoyalOverview: {
+            holders: components["schemas"]["RoyalHolder"][];
+            infos: components["schemas"]["RoyalInfoText"][];
         };
         SaleCatalogResponse: {
             products: components["schemas"]["SaleProductResponse"][];

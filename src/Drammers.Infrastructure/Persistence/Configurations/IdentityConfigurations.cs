@@ -36,6 +36,15 @@ public static class DefaultRoles
     public const string Collectant = "collectant";
     public const string Regie = "regie";
     public const string Tekstgroepen = "tekstgroepen";
+    public const string Prins = "prins";
+    public const string Adjudant = "adjudant";
+
+    /// <summary>Rollen met een maximum aantal personen tegelijk (2026-10-10): één prins(es), twee adjudanten.</summary>
+    public static readonly IReadOnlyDictionary<string, int> MaxHolders = new Dictionary<string, int>(StringComparer.Ordinal)
+    {
+        [Prins] = 1,
+        [Adjudant] = 2,
+    };
 
     private static readonly string[] MemberBasics =
         [P.MemberReadOwn, P.EventRead, P.NewsRead, P.PhotoRead, P.NotificationReadOwn, P.TicketReadOwn];
@@ -89,6 +98,9 @@ public static class DefaultRoles
         // zodat ze niet botsen met rollen die in het portal zijn aangemaakt (die volgen na 101).
         new(201, Regie, "Regie", "Regie; doelgroep voor activiteiten, nieuws en meldingen", false, false, MemberBasics),
         new(202, Tekstgroepen, "Tekstgroepen", "Tekstgroepen; doelgroep voor activiteiten, nieuws en meldingen", false, false, MemberBasics),
+        // Prins(es) en adjudanten (2026-10-10): begroeting en info in de app; per carnavalsjaar toekennen met een einddatum.
+        new(203, Prins, "Prins(es)", "De prins of prinses van het carnavalsjaar (maximaal één)", false, false, MemberBasics),
+        new(204, Adjudant, "Adjudant", "Adjudant van de prins(es) (maximaal twee)", false, false, MemberBasics),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

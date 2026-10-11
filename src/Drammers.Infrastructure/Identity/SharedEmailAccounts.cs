@@ -2,7 +2,6 @@ using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.Modules.Identity.Users;
-using Drammers.Modules.Membership.Applications;
 using Drammers.Modules.Membership.Guardians;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Auditing;
@@ -137,7 +136,7 @@ public sealed class SharedEmailAccounts(DrammersDbContext db, AccountAdministrat
             return new Plan(candidates.SingleOrDefault(), [], [], candidates.Count == 0 ? "Geen accounts met dit adres." : null);
         }
 
-        var children = candidates.Where(c => c.Member is { } m && IsChild(m)).ToList();
+        var children = candidates.Where(c => c.Member is { } m && ChildAccounts.IsChild(m, Today)).ToList();
         var adults = candidates.Where(c => c.Member is not null && !children.Contains(c)).ToList();
         var withoutMember = candidates.Where(c => c.Member is null).ToList();
         if (adults.Count > 1)
@@ -153,11 +152,4 @@ public sealed class SharedEmailAccounts(DrammersDbContext db, AccountAdministrat
 
         return new Plan(keep, children, [.. withoutMember.Where(c => c != keep)], null);
     }
-
-    /// <summary>Kind: jonger dan 15, of zonder geboortedatum maar lid van de dansgarde (soort, groep of status uit e-Boekhouden).</summary>
-    private bool IsChild(Member m) =>
-        Guardians.AgeOn(m.BirthDate, Today) is { } age
-            ? age < MembershipApplication.MinimumAgeOwnAccount
-            : m.MembershipKind == MembershipKind.Dansgarde || Dansgarde.IsDansgarde(m.ParadeGroupName)
-              || (m.EbStatusRaw?.Contains("dansgarde", StringComparison.OrdinalIgnoreCase) ?? false);
 }

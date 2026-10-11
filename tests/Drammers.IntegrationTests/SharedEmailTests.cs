@@ -118,6 +118,50 @@ public class SharedEmailTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(1, await WithDbAsync(db => db.GuardianRelations.CountAsync()));
     }
 
+    [Fact]
+    public async Task Ouder_krijgt_het_account_van_een_dansgardekind_zonder_geboortedatum_bij_splitsen_of_aanmaken()
+    {
+        const string Email = "ouder@example.com";
+        var (lola, lolaUser) = await MemberWithPendingAccountAsync("650", "Lola", Email, null, ebStatus: "Lidmaatschap dansgarde DVD");
+        var anouk = await WithDbAsync(async db =>
+        {
+            var member = new Member
+            {
+                Id = IdGenerator.NewId(),
+                MemberNumber = "651",
+                FullName = "Anouk Berendsen",
+                FirstName = "Anouk",
+                Email = Email,
+                BirthDate = new DateOnly(1982, 6, 18),
+                MembershipStatus = MembershipStatus.Active,
+            };
+            db.Members.Add(member);
+            await db.SaveChangesAsync();
+            return member.Id;
+        });
+
+        // Bij splitsen telt het adres niet als "al in gebruik": het hoort bij een kind.
+        using (var scope = _api.Services.CreateScope())
+        {
+            var applications = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Members.MembershipApplications>();
+            Assert.Null(await applications.EmailInUseAsync(Email, CancellationToken.None));
+        }
+
+        // App-account aanmaken voor de ouder: het account van het kind wordt het hare, het kind komt eronder.
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{anouk}/provision-account", null)).StatusCode);
+        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking().Where(m => m.Type == MemberAccounts.ProvisionMessageType).ToListAsync());
+        foreach (var message in messages)
+        {
+            using var scope = _api.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<MemberAccounts>().RunProvisioningAsync(
+                JsonSerializer.Deserialize<MemberAccounts.ProvisionMessage>(message.Payload, JsonSerializerOptions.Web)!, CancellationToken.None);
+        }
+
+        Assert.Equal(anouk, await WithDbAsync(db => db.Users.Where(u => u.Id == lolaUser).Select(u => u.MemberId).SingleAsync()));
+        Assert.True(await WithDbAsync(db => db.GuardianRelations.AnyAsync(g => g.MemberId == lola && g.GuardianUserId == lolaUser)));
+        Assert.Equal(1, await CountActiveAsync(Email));
+    }
+
     private Task<int> CountActiveAsync(string email) =>
         WithDbAsync(db => db.Users.CountAsync(u => u.Email == email && u.AccountStatus != AccountStatus.Deleted));
 

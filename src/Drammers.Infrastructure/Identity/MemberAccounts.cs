@@ -415,9 +415,13 @@ public sealed class MemberAccounts(
 
             if (saga.EntraObjectId is null)
             {
-                // Bestaat er al een inlog met dit e-mailadres (bijv. een beheerder die ook lid is), dan die; anders maakt
+                // Eén e-mailadres = één account: bestaat er al een account met dit adres (bijv. van een kind met het adres
+                // van de ouder, of een beheerder die ook lid is), dan dat; anders een bestaande inlog bij Entra; anders maakt
                 // het lid zelf een inlog met e-mail + code en koppelt de API die bij de eerste aanmelding (AccountLinker).
-                saga.EntraObjectId = await entra.FindByEmailAsync(loginEmail, cancellationToken) ?? PendingObjectId.New();
+                saga.EntraObjectId = await db.Users.AsNoTracking()
+                        .Where(u => u.Email == loginEmail && u.AccountStatus != AccountStatus.Deleted)
+                        .Select(u => u.ExternalObjectId).FirstOrDefaultAsync(cancellationToken)
+                    ?? await entra.FindByEmailAsync(loginEmail, cancellationToken) ?? PendingObjectId.New();
                 saga.Step = ProvisioningStep.AccountCreated;
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -538,7 +542,8 @@ public sealed class MemberAccounts(
     }
 
     private async Task<bool> IsChildWithoutOwnAccountAgeAsync(Guid memberId, CancellationToken cancellationToken) =>
-        IsYoungerThanOwnAccountAge(await db.Members.Where(m => m.Id == memberId).Select(m => m.BirthDate).SingleOrDefaultAsync(cancellationToken));
+        await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == memberId, cancellationToken) is { } member
+        && Members.ChildAccounts.IsChild(member, DateOnly.FromDateTime(clock.UtcNow.UtcDateTime));
 
     /// <summary>Het account van een kind wordt dat van de ouder: het kind blijft gekoppeld als kind van dit account.</summary>
     private async Task MoveChildAccountToParentAsync(User user, Guid childMemberId, CancellationToken cancellationToken)

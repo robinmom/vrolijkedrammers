@@ -864,3 +864,18 @@ test('prins en adjudanten: wie het dit jaar zijn en hun info in de app', async (
   await expect(page.getByText('Opgeslagen.')).toBeVisible();
   expect(api.royalInfo.prins).toBe('**Proclamatie** op 11-11');
 });
+
+test('hetzelfde e-mailadres bij ouder en kind: samenvoegen tot één account', async ({ page }) => {
+  const api = new MockApi(['member.approve', 'report.view']);
+  await api.install(page);
+  await page.goto('/beheer/');
+  await expect(page.getByText('Meerdere accounts met hetzelfde e-mailadres')).toBeVisible();
+
+  await page.goto('/beheer/accountverzoeken');
+  await expect(
+    page.getByText('Anouk Berendsen houdt het account; Lola Berendsen komt eronder als kind.'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Samenvoegen: gezin@example.com' }).click();
+  await expect(page.getByText('gezin@example.com: samengevoegd tot één account.')).toBeVisible();
+  expect(api.sharedEmail).toEqual([]);
+});

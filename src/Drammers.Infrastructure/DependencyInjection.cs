@@ -254,6 +254,7 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, AccountRequestRecheckHandler>();
         services.AddScoped<MyAccount>();
         services.AddScoped<AccountLinker>();
+        services.AddScoped<SharedEmailAccounts>();
         services.AddScoped<AccountLifecycle>();
         services.TryAddScoped<DataRetentionJob>();
         services.AddScoped<IOutboxMessageHandler, EntraAccountStateHandler>();

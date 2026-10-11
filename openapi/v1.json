@@ -14792,6 +14792,96 @@
         }
       }
     },
+    "/api/v1/admin/shared-email-accounts": {
+      "get": {
+        "tags": [
+          "AdminSharedEmail"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SharedEmailConflict"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SharedEmailConflict"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SharedEmailConflict"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/shared-email-accounts/resolve": {
+      "post": {
+        "tags": [
+          "AdminSharedEmail"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedEmailResolveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedEmailResolveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedEmailResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/tickets": {
       "get": {
         "tags": [
@@ -38244,6 +38334,61 @@
         },
         "description": "Een lid van dezelfde groep met wie gedeeld kan worden; zonder account ziet het lid de kaart niet in de app."
       },
+      "SharedEmailConflict": {
+        "required": [
+          "email",
+          "resolvable",
+          "keepName",
+          "children",
+          "others",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "resolvable": {
+            "type": "boolean"
+          },
+          "keepName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "others": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Meerdere accounts met hetzelfde e-mailadres (portal): wie het account houdt en wie eronder komt."
+      },
+      "SharedEmailResolveRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
       "SharedTicket": {
         "required": [
           "name",
@@ -40236,6 +40381,9 @@
     },
     {
       "name": "AdminSales"
+    },
+    {
+      "name": "AdminSharedEmail"
     },
     {
       "name": "AdminTickets"

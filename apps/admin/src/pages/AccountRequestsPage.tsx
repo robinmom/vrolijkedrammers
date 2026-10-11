@@ -7,6 +7,7 @@ import { Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
+import { SharedEmailCard } from '../components/SharedEmailCard';
 import { accountRequestStatusLabels, formatDateTime, mismatchReasonLabels, provisioningStepLabels } from '../format';
 
 type RecheckResult = Schemas['RecheckResult'];
@@ -183,6 +184,8 @@ export function AccountRequestsPage() {
           </button>
         </div>
       </div>
+
+      <SharedEmailCard />
       <SuccessMessage message={message} />
       <ProblemAlert error={requests.error ?? approve.error ?? reject.error ?? recheck.error ?? retry.error} />
 

@@ -897,6 +897,16 @@ export class MockApi {
   advertiserInfo: Record<number, { text: string | null; startDate: string | null; endDate: string | null }> = {};
   advertiserReminders: (string[] | null)[] = [];
   royalInfo: Record<string, string> = { prins: '', adjudant: 'Haal de prinses op' };
+  sharedEmail = [
+    {
+      email: 'gezin@example.com',
+      resolvable: true,
+      keepName: 'Anouk Berendsen',
+      children: ['Lola Berendsen'],
+      others: [] as string[],
+      reason: null as string | null,
+    },
+  ];
   advertisers: MockAdvertiser[] = [
     {
       id: 'adv-1',
@@ -3638,6 +3648,11 @@ export class MockApi {
     const royal = path.match(/^\/admin\/royal\/info\/([a-z]+)$/);
     if (royal) {
       this.royalInfo[royal[1]!] = (body as { body: string }).body;
+      return noContent();
+    }
+    if (path === '/admin/shared-email-accounts') return json(this.sharedEmail);
+    if (path === '/admin/shared-email-accounts/resolve') {
+      this.sharedEmail = this.sharedEmail.filter((c) => c.email !== (body as { email: string }).email);
       return noContent();
     }
     if (path === '/admin/jubilees' && method === 'GET') {

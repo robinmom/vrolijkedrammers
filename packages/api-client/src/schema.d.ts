@@ -12259,6 +12259,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/shared-email-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SharedEmailConflict"][];
+                        "application/json": components["schemas"]["SharedEmailConflict"][];
+                        "text/json": components["schemas"]["SharedEmailConflict"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/shared-email-accounts/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SharedEmailResolveRequest"];
+                    "text/json": components["schemas"]["SharedEmailResolveRequest"];
+                    "application/*+json": components["schemas"]["SharedEmailResolveRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/tickets": {
         parameters: {
             query?: never;
@@ -23087,6 +23174,18 @@ export interface components {
             name: string;
             hasAccount: boolean;
             hasTicket: boolean;
+        };
+        /** @description Meerdere accounts met hetzelfde e-mailadres (portal): wie het account houdt en wie eronder komt. */
+        SharedEmailConflict: {
+            email: string;
+            resolvable: boolean;
+            keepName: null | string;
+            children: string[];
+            others: string[];
+            reason: null | string;
+        };
+        SharedEmailResolveRequest: {
+            email: string;
         };
         /** @description Kaarten die de besteller met een groepslid heeft gedeeld; die hebben een eigen QR bij de ontvanger. */
         SharedTicket: {

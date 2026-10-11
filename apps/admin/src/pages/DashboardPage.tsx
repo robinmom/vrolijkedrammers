@@ -14,6 +14,7 @@ import {
 import { season, useAdvertiserStatus } from '../api/advertisers';
 import appIcon from '../assets/logo-cirkel.png';
 import { AccessDashboardCard } from '../components/AccessDashboardCard';
+import { useSharedEmailConflicts } from '../components/SharedEmailCard';
 import { ProblemAlert } from '../components/ProblemAlert';
 import { formatDateTime, visibilityLabels } from '../format';
 
@@ -54,7 +55,7 @@ interface Attention {
   tone: string;
   badge: string;
   text: string;
-  link?: 'ledensync' | 'leden' | 'nieuws' | 'koppelverzoeken';
+  link?: 'ledensync' | 'leden' | 'nieuws' | 'koppelverzoeken' | 'accountverzoeken';
   action?: string;
 }
 
@@ -73,6 +74,7 @@ export function DashboardPage() {
   const guardianRequests = useGuardianRequests('Pending', can('member.update'));
   const guardianSuggestions = useGuardianSuggestions(can('member.update'));
   const advertisers = useAdvertiserStatus(null, '', can('advertiser.manage'));
+  const sharedEmail = useSharedEmailConflicts(can('member.approve'));
   const d = dashboard.data;
 
   const firstName = (me.data?.displayName ?? '').split(' ')[0];
@@ -110,6 +112,17 @@ export function DashboardPage() {
         .filter(Boolean)
         .join(' en ') + ' wachten op beoordeling.',
       link: 'koppelverzoeken',
+      action: 'Bekijken',
+    });
+  }
+  if (sharedEmail.data?.length) {
+    const n = sharedEmail.data.length;
+    attention.push({
+      key: 'gedeeld-adres',
+      tone: 'warn',
+      badge: `${n} e-mailadres${n === 1 ? '' : 'sen'}`,
+      text: 'Meerdere accounts met hetzelfde e-mailadres: die kunnen niet allebei inloggen.',
+      link: 'accountverzoeken',
       action: 'Bekijken',
     });
   }
@@ -207,6 +220,10 @@ export function DashboardPage() {
                       </Link>
                     ) : a.link === 'koppelverzoeken' ? (
                       <Link to="/koppelverzoeken" className="button ghost small">
+                        {a.action}
+                      </Link>
+                    ) : a.link === 'accountverzoeken' ? (
+                      <Link to="/accountverzoeken" className="button ghost small">
                         {a.action}
                       </Link>
                     ) : a.link === 'nieuws' ? (

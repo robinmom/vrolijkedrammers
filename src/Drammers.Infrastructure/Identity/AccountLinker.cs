@@ -30,6 +30,7 @@ public static class PendingObjectId
 /// </summary>
 public sealed partial class AccountLinker(
     DrammersDbContext db,
+    SharedEmailAccounts sharedEmail,
     IEntraUserDirectory entra,
     IUserAccessService userAccess,
     IAuditLogger audit,
@@ -79,6 +80,26 @@ public sealed partial class AccountLinker(
         var candidates = await db.Users
             .Where(u => u.Email == email && u.AccountStatus != AccountStatus.Deleted && u.ExternalObjectId != objectId)
             .ToListAsync(cancellationToken);
+        if (candidates.Count > 1)
+        {
+            // Meerdere accounts met dit adres (bijv. ouder en kind): één account maken volgens de vaste regel; kan het
+            // systeem niet kiezen (twee volwassenen), dan blijft het 403 en staat het in het portal.
+            try
+            {
+                var kept = await sharedEmail.ResolveAsync(email, cancellationToken);
+                candidates = kept.ExternalObjectId == objectId ? [] : [kept];
+                if (kept.ExternalObjectId == objectId)
+                {
+                    userAccess.Invalidate(objectId);
+                    return true;
+                }
+            }
+            catch (SharedKernel.Errors.DomainException)
+            {
+                return false;
+            }
+        }
+
         if (candidates.Count != 1)
         {
             return false;

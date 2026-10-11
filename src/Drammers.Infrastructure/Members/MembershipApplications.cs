@@ -237,11 +237,11 @@ public sealed class MembershipApplications(
     /// </summary>
     public async Task<string?> EmailInUseAsync(string email, CancellationToken cancellationToken)
     {
-        var childCutoff = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime).AddYears(-MembershipApplication.MinimumAgeOwnAccount);
-        return await db.Users.AsNoTracking()
+        var accountMembers = db.Users.AsNoTracking()
             .Where(u => u.Email == email && u.AccountStatus != Modules.Identity.Users.AccountStatus.Deleted && u.MemberId != null)
-            .Join(db.Members, u => u.MemberId, m => m.Id, (u, m) => m)
-            .Where(m => m.BirthDate == null || m.BirthDate <= childCutoff)
+            .Select(u => u.MemberId);
+        return await db.Members.AsNoTracking().Where(m => accountMembers.Contains(m.Id))
+            .WhereNotChild(DateOnly.FromDateTime(clock.UtcNow.UtcDateTime))
             .Select(m => m.FullName + " (lidnummer " + m.MemberNumber + ")")
             .FirstOrDefaultAsync(cancellationToken);
     }

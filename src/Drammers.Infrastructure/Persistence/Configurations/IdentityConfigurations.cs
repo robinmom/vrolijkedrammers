@@ -38,6 +38,7 @@ public static class DefaultRoles
     public const string Tekstgroepen = "tekstgroepen";
     public const string Prins = "prins";
     public const string Adjudant = "adjudant";
+    public const string Dansgardefestival = "dansgardefestival";
 
     /// <summary>Rollen met een maximum aantal personen tegelijk (2026-10-10): één prins(es), twee adjudanten.</summary>
     public static readonly IReadOnlyDictionary<string, int> MaxHolders = new Dictionary<string, int>(StringComparer.Ordinal)
@@ -75,7 +76,7 @@ public static class DefaultRoles
              P.ParadeRead, P.ParadeManage, P.ParadeManageFinal, P.ParadeAssignStartNumber, P.ParadeImportArrivalTimes,
              P.ParadeExport, P.ParadeConfig, P.TicketScan, P.TicketScanDetails, P.TicketRead, P.TicketManage,
              P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge, P.SaleManage,
-             P.WebsiteManage, P.JuryManage, P.JuryAssign, P.ContributionManage, P.MailingManage, P.AdvertiserManage]),
+             P.WebsiteManage, P.JuryManage, P.JuryAssign, P.ContributionManage, P.MailingManage, P.AdvertiserManage, P.FestivalManage]),
         new(12, BeheerderIt, "Beheerder (IT)", "Technisch beheer, zonder inhoudelijke rechten op betalingen en goedkeuringen (systeemrol)",
             IsSystem: true, IsAssignableBySync: false,
             [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),
@@ -101,6 +102,9 @@ public static class DefaultRoles
         // Prins(es) en adjudanten (2026-10-10): begroeting en info in de app; per carnavalsjaar toekennen met een einddatum.
         new(203, Prins, "Prins(es)", "De prins of prinses van het carnavalsjaar (maximaal één)", false, false, MemberBasics),
         new(204, Adjudant, "Adjudant", "Adjudant van de prins(es) (maximaal twee)", false, false, MemberBasics),
+        // Dansgardefestival (2026-10-12): de organisatie heeft een eigen inlog en ziet in het portal alleen dit onderdeel.
+        new(205, Dansgardefestival, "Dansgardefestival", "Organisatie van het Dansgardefestival; ziet in het portal alleen het festival", false, false,
+            [P.FestivalManage]),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

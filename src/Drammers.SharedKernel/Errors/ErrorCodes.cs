@@ -45,6 +45,8 @@ public static class ErrorCodes
     public const string MemberHasAccount = "MEMBER_HAS_ACCOUNT";
     public const string PasswordSignInOff = "PASSWORD_SIGN_IN_OFF";
     public const string AccountRequestsClosed = "ACCOUNT_REQUESTS_CLOSED";
+    public const string FestivalClosed = "FESTIVAL_CLOSED";
+    public const string FestivalFull = "FESTIVAL_FULL";
     public const string MemberNotEligible = "MEMBER_NOT_ELIGIBLE";
     public const string ProvisioningNotFound = "PROVISIONING_NOT_FOUND";
     public const string PrivacyExportNotFound = "PRIVACY_EXPORT_NOT_FOUND";

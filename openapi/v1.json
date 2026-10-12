@@ -17383,6 +17383,1114 @@
         }
       }
     },
+    "/api/v1/dance-festival": {
+      "get": {
+        "tags": [
+          "DanceFestival"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceFestivalPublicResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceFestivalPublicResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceFestivalPublicResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dance-festival/documents/{kind}": {
+      "get": {
+        "tags": [
+          "DanceFestival"
+        ],
+        "summary": "Reglement of privacyverklaring (PDF).",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^(reglement|privacyverklaring)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dance-festival/registrations": {
+      "post": {
+        "tags": [
+          "DanceFestival"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalRegistrationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalRegistrationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceFestivalSubmittedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceFestivalSubmittedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DanceFestivalSubmittedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dance-festival/registrations/{id}": {
+      "get": {
+        "tags": [
+          "DanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalOwnRegistrationView"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalOwnRegistrationView"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalOwnRegistrationView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "DanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalRegistrationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalRegistrationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dance-festival/payments/{id}/pay": {
+      "get": {
+        "tags": [
+          "DanceFestival"
+        ],
+        "summary": "De betaallink uit de mail: stuurt door naar een nieuwe iDEAL-betaling bij Mollie.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Found"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/settings": {
+      "get": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalSettingsView"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalSettingsView"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalSettingsView"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalSettingsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalSettingsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalSettingsView"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalSettingsView"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalSettingsView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/documents/{kind}": {
+      "post": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^(reglement|privacyverklaring)$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/registrations": {
+      "get": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalAdminList"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalAdminList"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalAdminList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/registrations/{id}": {
+      "get": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRegistrationDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRegistrationDetail"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRegistrationDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/registrations/{id}/versions/{version}": {
+      "get": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "summary": "Een eerdere versie van de inschrijving (zoals de vereniging die had ingevuld).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/registrations/{id}/decisions": {
+      "post": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalDecisionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalDecisionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/entries/{id}/waitlist-move": {
+      "post": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "summary": "Schuiven op de wachtlijst: -1 = omhoog, +1 = omlaag.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalWaitlistMoveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalWaitlistMoveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalWaitlistMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/registrations/{id}/payments": {
+      "post": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalPaymentRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalPaymentRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanceFestivalPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/payments/{id}/refresh": {
+      "post": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/payments/{id}/cancel": {
+      "post": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/export": {
+      "get": {
+        "tags": [
+          "AdminDanceFestival"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/event-categories": {
       "get": {
         "tags": [
@@ -28339,6 +29447,336 @@
           }
         }
       },
+      "DanceCategory": {
+        "enum": [
+          "Minioren",
+          "Junioren",
+          "Jeugd",
+          "Senioren"
+        ],
+        "description": "Categorie op gemiddelde leeftijd (reglement art. 1)."
+      },
+      "DanceEntryStatus": {
+        "enum": [
+          "New",
+          "InfoRequested",
+          "Approved",
+          "Waitlisted",
+          "Rejected",
+          "Changed"
+        ]
+      },
+      "DanceFestivalDecisionRequest": {
+        "required": [
+          "entryIds",
+          "decision",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "entryIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "decision": {
+            "$ref": "#/components/schemas/FestivalDecision"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DanceFestivalEntryRequest": {
+        "required": [
+          "id",
+          "danceType",
+          "format",
+          "names",
+          "averageAge",
+          "dancerCount",
+          "leaderName",
+          "title",
+          "showStyle"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "danceType": {
+            "$ref": "#/components/schemas/DanceType"
+          },
+          "format": {
+            "$ref": "#/components/schemas/DanceFormat"
+          },
+          "names": {
+            "type": "string"
+          },
+          "averageAge": {
+            "type": "number",
+            "format": "double"
+          },
+          "dancerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "leaderName": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "showStyle": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ShowStyle"
+              }
+            ]
+          }
+        }
+      },
+      "DanceFestivalPaymentRequest": {
+        "required": [
+          "amountCents"
+        ],
+        "type": "object",
+        "properties": {
+          "amountCents": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DanceFestivalPaymentStatus": {
+        "enum": [
+          "Open",
+          "Paid",
+          "Canceled"
+        ]
+      },
+      "DanceFestivalPublicResponse": {
+        "required": [
+          "festival",
+          "turnstileSiteKey"
+        ],
+        "type": "object",
+        "properties": {
+          "festival": {
+            "$ref": "#/components/schemas/FestivalPublicView"
+          },
+          "turnstileSiteKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DanceFestivalRegistrationRequest": {
+        "required": [
+          "clubName",
+          "contactName",
+          "addressLine",
+          "postalCode",
+          "city",
+          "phone",
+          "email",
+          "remarks",
+          "photoConsent",
+          "privacyAccepted",
+          "rulesAccepted",
+          "entries",
+          "website",
+          "elapsedMs",
+          "turnstileToken"
+        ],
+        "type": "object",
+        "properties": {
+          "clubName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "photoConsent": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "privacyAccepted": {
+            "type": "boolean"
+          },
+          "rulesAccepted": {
+            "type": "boolean"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DanceFestivalEntryRequest"
+            }
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "elapsedMs": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "turnstileToken": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "`Website` is het verborgen veld voor bots; `ElapsedMs` de tijd sinds het openen van het formulier."
+      },
+      "DanceFestivalSettingsRequest": {
+        "required": [
+          "name",
+          "festivalDate",
+          "location",
+          "pageEnabled",
+          "registrationOpensAt",
+          "registrationClosesAt",
+          "capacity",
+          "paymentsEnabled",
+          "priceSoloDuoCents",
+          "priceGroupOneDanceCents",
+          "priceGroupTwoDancesCents",
+          "notificationEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "festivalDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "pageEnabled": {
+            "type": "boolean"
+          },
+          "registrationOpensAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "registrationClosesAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paymentsEnabled": {
+            "type": "boolean"
+          },
+          "priceSoloDuoCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceGroupOneDanceCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceGroupTwoDancesCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notificationEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "DanceFestivalSubmittedResponse": {
+        "required": [
+          "number"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DanceFestivalWaitlistMoveRequest": {
+        "required": [
+          "direction"
+        ],
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DanceFormat": {
+        "enum": [
+          "Solo",
+          "Duo",
+          "Group"
+        ]
+      },
       "DanceGroup": {
         "required": [
           "id",
@@ -28440,6 +29878,12 @@
             }
           }
         }
+      },
+      "DanceType": {
+        "enum": [
+          "Garde",
+          "Show"
+        ]
       },
       "DansgardeMember": {
         "required": [
@@ -29304,6 +30748,675 @@
           },
           "hasAudience": {
             "type": "boolean"
+          }
+        }
+      },
+      "FestivalAdminList": {
+        "required": [
+          "festival",
+          "stats",
+          "registrations"
+        ],
+        "type": "object",
+        "properties": {
+          "festival": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FestivalSettingsView"
+              }
+            ]
+          },
+          "stats": {
+            "$ref": "#/components/schemas/FestivalStats"
+          },
+          "registrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalRegistrationSummary"
+            }
+          }
+        }
+      },
+      "FestivalDecision": {
+        "enum": [
+          "Approve",
+          "RequestInfo",
+          "Waitlist",
+          "Reject"
+        ]
+      },
+      "FestivalEntryView": {
+        "required": [
+          "id",
+          "sortOrder",
+          "danceType",
+          "format",
+          "names",
+          "averageAge",
+          "dancerCount",
+          "leaderName",
+          "title",
+          "showStyle",
+          "category",
+          "status",
+          "holdsPlace",
+          "waitlistPosition",
+          "removedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "danceType": {
+            "$ref": "#/components/schemas/DanceType"
+          },
+          "format": {
+            "$ref": "#/components/schemas/DanceFormat"
+          },
+          "names": {
+            "type": "string"
+          },
+          "averageAge": {
+            "type": "number",
+            "format": "double"
+          },
+          "dancerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "leaderName": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "showStyle": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ShowStyle"
+              }
+            ]
+          },
+          "category": {
+            "$ref": "#/components/schemas/DanceCategory"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DanceEntryStatus"
+          },
+          "holdsPlace": {
+            "type": "boolean"
+          },
+          "waitlistPosition": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "removedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "FestivalOwnRegistrationView": {
+        "required": [
+          "id",
+          "number",
+          "clubName",
+          "contactName",
+          "addressLine",
+          "postalCode",
+          "city",
+          "phone",
+          "email",
+          "remarks",
+          "photoConsent",
+          "infoRequest",
+          "editable",
+          "entries",
+          "payments"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clubName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "photoConsent": {
+            "type": "boolean"
+          },
+          "infoRequest": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalEntryView"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalPaymentView"
+            }
+          }
+        },
+        "description": "Wat de vereniging via de link in de mail ziet en kan wijzigen."
+      },
+      "FestivalPaymentView": {
+        "required": [
+          "id",
+          "amountCents",
+          "status",
+          "mollieStatus",
+          "createdAt",
+          "paidAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DanceFestivalPaymentStatus"
+          },
+          "mollieStatus": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "FestivalPublicView": {
+        "required": [
+          "state",
+          "name",
+          "festivalDate",
+          "location",
+          "registrationOpensAt",
+          "registrationClosesAt",
+          "capacity",
+          "placesTaken",
+          "priceSoloDuoCents",
+          "priceGroupOneDanceCents",
+          "priceGroupTwoDancesCents",
+          "paymentsEnabled",
+          "hasRules",
+          "hasPrivacy",
+          "ageReferenceDate"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/FestivalState"
+          },
+          "name": {
+            "type": "string"
+          },
+          "festivalDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "registrationOpensAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "registrationClosesAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "placesTaken": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceSoloDuoCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceGroupOneDanceCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceGroupTwoDancesCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paymentsEnabled": {
+            "type": "boolean"
+          },
+          "hasRules": {
+            "type": "boolean"
+          },
+          "hasPrivacy": {
+            "type": "boolean"
+          },
+          "ageReferenceDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "FestivalRegistrationDetail": {
+        "required": [
+          "id",
+          "number",
+          "clubName",
+          "contactName",
+          "addressLine",
+          "postalCode",
+          "city",
+          "phone",
+          "email",
+          "remarks",
+          "photoConsent",
+          "privacyAcceptedAt",
+          "rulesAcceptedAt",
+          "submittedAt",
+          "changedAt",
+          "version",
+          "infoRequest",
+          "entries",
+          "versions",
+          "payments",
+          "suggestedAmountCents"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clubName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "photoConsent": {
+            "type": "boolean"
+          },
+          "privacyAcceptedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rulesAcceptedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "infoRequest": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalEntryView"
+            }
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalVersionInfo"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalPaymentView"
+            }
+          },
+          "suggestedAmountCents": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "FestivalRegistrationSummary": {
+        "required": [
+          "id",
+          "number",
+          "clubName",
+          "contactName",
+          "dances",
+          "approved",
+          "toReview",
+          "waitlisted",
+          "firstWaitlistPosition",
+          "status",
+          "paymentStatus",
+          "submittedAt",
+          "changedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clubName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "dances": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "approved": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "toReview": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waitlisted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstWaitlistPosition": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "FestivalSettingsView": {
+        "required": [
+          "id",
+          "name",
+          "festivalDate",
+          "location",
+          "pageEnabled",
+          "registrationOpensAt",
+          "registrationClosesAt",
+          "capacity",
+          "paymentsEnabled",
+          "priceSoloDuoCents",
+          "priceGroupOneDanceCents",
+          "priceGroupTwoDancesCents",
+          "notificationEmail",
+          "hasRules",
+          "hasPrivacy",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "festivalDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "pageEnabled": {
+            "type": "boolean"
+          },
+          "registrationOpensAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "registrationClosesAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paymentsEnabled": {
+            "type": "boolean"
+          },
+          "priceSoloDuoCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceGroupOneDanceCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceGroupTwoDancesCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notificationEmail": {
+            "type": "string"
+          },
+          "hasRules": {
+            "type": "boolean"
+          },
+          "hasPrivacy": {
+            "type": "boolean"
+          },
+          "state": {
+            "$ref": "#/components/schemas/FestivalState"
+          }
+        }
+      },
+      "FestivalState": {
+        "enum": [
+          "Hidden",
+          "NotYetOpen",
+          "Open",
+          "Closed"
+        ]
+      },
+      "FestivalStats": {
+        "required": [
+          "capacity",
+          "placesTaken",
+          "toReview",
+          "waitlisted",
+          "paidCents",
+          "requestedCents"
+        ],
+        "type": "object",
+        "properties": {
+          "capacity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "placesTaken": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "toReview": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waitlisted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paidCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requestedCents": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "FestivalVersionInfo": {
+        "required": [
+          "version",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -38693,6 +40806,13 @@
           }
         }
       },
+      "ShowStyle": {
+        "enum": [
+          "Character",
+          "Modern",
+          null
+        ]
+      },
       "SplitCandidate": {
         "required": [
           "memberId",
@@ -40687,6 +42807,12 @@
     },
     {
       "name": "Contact"
+    },
+    {
+      "name": "DanceFestival"
+    },
+    {
+      "name": "AdminDanceFestival"
     },
     {
       "name": "Events"

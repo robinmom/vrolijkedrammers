@@ -1,0 +1,139 @@
+@page "/dansgardefestival"
+@model DansgardefestivalModel
+@if (Model.IsNotFound)
+{
+    return;
+}
+@{
+    var f = Model.Festival;
+    var nl = System.Globalization.CultureInfo.GetCultureInfo("nl-NL");
+    string Euro(int cents) => (cents / 100m).ToString("C", nl);
+    var date = f.FestivalDate.ToString("dddd d MMMM yyyy", nl);
+    var ageDate = new DateOnly(f.FestivalDate.Year, 1, 1).ToString("d MMMM yyyy", nl);
+    var closes = f.RegistrationClosesAt is { } c
+        ? TimeZoneInfo.ConvertTimeFromUtc(c, TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam")).AddMinutes(-1).ToString("dddd d MMMM", nl)
+        : null;
+}
+<partial name="_PageBand" model='new PageBand(f.Name, $"{char.ToUpper(date[0], nl)}{date[1..]} · {f.Location}" + (closes is null ? "" : $" · inschrijven t/m {closes}"), ("/doe-mee", "Doe mee"), (null, "Dansgardefestival"))' />
+<div class="wrap content form-page festival-page"
+     data-price-solo="@f.PriceSoloDuoCents" data-price-group-one="@f.PriceGroupOneDanceCents" data-price-group-two="@f.PriceGroupTwoDancesCents"
+     data-age-date="@ageDate">
+    <p id="melding" class="form-note" role="status" hidden></p>
+    <div class="festival-layout">
+        <div class="festival-main">
+            <section id="status-dicht" class="form-card" hidden>
+                <h2 class="h3">Inschrijving</h2>
+                <p id="status-dicht-tekst"></p>
+            </section>
+
+            <form id="festival" novalidate hidden>
+                <section class="form-card" aria-labelledby="stap-1">
+                    <h2 id="stap-1" class="step-head"><span class="step">1</span> Vereniging en contactpersoon</h2>
+                    <p class="muted">Naar dit e-mailadres sturen we de bevestiging en latere informatie (muziek, programma).</p>
+                    <div class="row two">
+                        <label>Naam vereniging<input name="clubName" required maxlength="150" autocomplete="organization" /></label>
+                        <label>Naam contactpersoon<input name="contactName" required maxlength="100" autocomplete="name" /></label>
+                    </div>
+                    <div class="row three">
+                        <label>Adres<input name="addressLine" required maxlength="200" autocomplete="street-address" /></label>
+                        <label>Postcode<input name="postalCode" required maxlength="10" autocomplete="postal-code" /></label>
+                        <label>Plaats<input name="city" required maxlength="100" autocomplete="address-level2" /></label>
+                    </div>
+                    <div class="row two">
+                        <label>Telefoon<input name="phone" type="tel" required maxlength="30" autocomplete="tel" /></label>
+                        <label>E-mailadres<input name="email" type="email" required maxlength="254" autocomplete="email" /></label>
+                    </div>
+                    <label>Opmerkingen (niet verplicht)<textarea name="remarks" maxlength="2000" rows="3" placeholder="Bijv. wensen voor de volgorde of bijzonderheden"></textarea></label>
+                </section>
+
+                <section class="form-card" aria-labelledby="stap-2">
+                    <h2 id="stap-2" class="step-head"><span class="step">2</span> Dansen</h2>
+                    <p class="muted">Voeg per optreden een dans toe. De categorie volgt uit de gemiddelde leeftijd op @ageDate: tel de leeftijden van alle dansers op en deel door het aantal dansers.</p>
+                    <div id="dansen" class="dances"></div>
+                    <div class="actions">
+                        <button type="button" class="secondary" data-add="Garde">+ Gardedans toevoegen</button>
+                        <button type="button" class="secondary" data-add="Show">+ Showdans toevoegen</button>
+                    </div>
+                </section>
+
+                <section class="form-card" aria-labelledby="stap-3" id="akkoord">
+                    <h2 id="stap-3" class="step-head"><span class="step">3</span> Toestemming en akkoord</h2>
+                    <details class="doc" open>
+                        <summary>Privacyverklaring @if (f.PrivacyBlobPath is not null) {<a href="/api/v1/dance-festival/documents/privacyverklaring" target="_blank" rel="noopener">PDF ↗</a>}</summary>
+                        <p>Tijdens dit evenement worden door onze vereniging, De Vrolijke Drammers, ter promotie foto’s en video’s gemaakt. Ook uw verenigingsleden kunnen op deze foto’s (en soms ook video’s) te zien zijn.</p>
+                        <p>Natuurlijk gaan we zorgvuldig om met foto’s en video’s. Wij plaatsen geen foto’s en video’s waardoor deelnemers schade kunnen ondervinden. We plaatsen bij foto’s en video’s geen namen van deelnemers. Wij vinden het belangrijk om uw toestemming te vragen voor het gebruik van foto’s en video’s van uw verenigingsleden.</p>
+                        <p>Uw toestemming geldt alleen voor foto’s en video’s die door ons, of in onze opdracht, worden gemaakt. Het kan voorkomen dat andere bezoekers foto’s maken tijdens het evenement. Wij hebben daar als vereniging geen invloed op, maar wij gaan ervan uit dat de bezoekers ook terughoudend zijn bij het plaatsen van foto’s en video’s op internet.</p>
+                        <p>Indien u geen toestemming geeft, maken wij als vereniging geen foto’s of video’s van de optredens van de door u opgegeven dansen.</p>
+                    </details>
+                    <fieldset>
+                        <legend class="sub">Foto’s en video’s van uw optredens</legend>
+                        <div class="row two">
+                            <label class="check choice"><input type="radio" name="photoConsent" value="true" required /> Ik geef toestemming</label>
+                            <label class="check choice"><input type="radio" name="photoConsent" value="false" /> Ik geef geen toestemming</label>
+                        </div>
+                    </fieldset>
+                    <details class="doc">
+                        <summary>Reglement @if (f.RulesBlobPath is not null) {<a href="/api/v1/dance-festival/documents/reglement" target="_blank" rel="noopener">PDF ↗</a>}</summary>
+                        <ol class="rules">
+                            <li><strong>Categorieën</strong> op gemiddelde leeftijd van alle gardeleden: minioren t/m 8 jaar, junioren 9 t/m 11, jeugd 12 t/m 15, senioren 16 jaar of ouder. Leeftijd op @ageDate.</li>
+                            <li><strong>Dansen:</strong> één gardedans (instrumentale muziek, gardekleding) en één showdans: modern (zonder thema of verhaal) of karakter (met verhaal of thema), op vrije muziek in vrije kleding. Elke dans duurt minimaal twee en maximaal vijf minuten.</li>
+                            <li><strong>Volgorde</strong> van optreden door loting, voor gardedans en showdans.</li>
+                            <li><strong>Muziek</strong> per mail aanleveren, voorzien van naam, vereniging, categorie en soort dans. Na inschrijving volgt meer informatie.</li>
+                            <li><strong>Jury</strong> van minimaal drie personen, geassisteerd door een secretariaat.</li>
+                            <li><strong>Beoordeling</strong> per jurylid 0 tot 10 voor synchroniteit, choreografie, uitvoering en moeilijkheidsgraad (maximaal 40 punten per dans). De jurybeslissing is bindend; protest is niet mogelijk, een nagesprek wel.</li>
+                            <li><strong>Gelijke stand:</strong> eerst uitvoering, dan moeilijkheidsgraad, dan choreografie; daarna beslist de voorzitter van de jury.</li>
+                            <li><strong>Prijzen</strong> voor de best geklasseerden per categorie (minioren, junioren, jeugd en senioren; solo, duo en groepen).</li>
+                            <li><strong>Aansprakelijkheid:</strong> De Vrolijke Drammers is niet aansprakelijk voor letsel, beschadiging of verloren goederen. De huisregels van ’t Hart van Loil gelden.</li>
+                        </ol>
+                    </details>
+                    <label class="check"><input type="checkbox" name="privacyAccepted" required /> Ik heb de privacyverklaring gelezen.</label>
+                    <label class="check"><input type="checkbox" name="rulesAccepted" required /> Ik ga akkoord met het reglement en heb alle gegevens volledig en naar waarheid ingevuld.</label>
+                    <div class="visually-hidden" aria-hidden="true">
+                        <label>Laat dit veld leeg<input name="website" tabindex="-1" autocomplete="off" /></label>
+                    </div>
+                    <div class="actions submit-row">
+                        <div id="turnstile-widget"></div>
+                        <button type="submit" id="versturen">Inschrijving versturen</button>
+                    </div>
+                    <p id="fout" class="error" role="alert" hidden></p>
+                    <p class="muted small">Na het versturen krijgt u een inschrijfnummer en een bevestiging per e-mail. Tot de goedkeuring kunt u de inschrijving via de link in die mail nog wijzigen. Betalen doet u pas na goedkeuring.</p>
+                </section>
+            </form>
+
+            <section id="klaar" class="form-card" aria-labelledby="titel-klaar" hidden>
+                <h2 id="titel-klaar" tabindex="-1">Bedankt voor uw inschrijving!</h2>
+                <p id="klaar-tekst"></p>
+            </section>
+        </div>
+
+        <aside class="festival-side" aria-label="Plekken en kosten">
+            <section class="form-card side-card places" id="plekken" hidden>
+                <h2 class="h3" id="plekken-titel"></h2>
+                <div class="bar"><span id="plekken-balk"></span></div>
+                <p class="muted small">Vol = vol: plaatsing gaat op volgorde van inschrijfnummer. Daarna komt u op de wachtlijst.</p>
+            </section>
+            <section class="form-card side-card" id="kosten">
+                <h2 class="h3">Uw inschrijving</h2>
+                <ul id="kosten-regels" class="cost-lines"><li class="muted">Nog geen dansen toegevoegd.</li></ul>
+                <p class="cost-total"><span>Totaal</span><strong id="kosten-totaal">€ 0,00</strong></p>
+                <p class="form-note small">U betaalt pas na goedkeuring@(f.PaymentsEnabled ? "; u krijgt dan een betaallink (iDEAL) per e-mail" : "")</p>
+            </section>
+            <section class="form-card side-card">
+                <h2 class="h3">Tarieven per dans</h2>
+                <dl class="prices">
+                    <dt>Solo of duo</dt><dd>@Euro(f.PriceSoloDuoCents)</dd>
+                    <dt>Groep, 1 dans</dt><dd>@Euro(f.PriceGroupOneDanceCents)</dd>
+                    <dt>Groep, 2 dansen</dt><dd>@Euro(f.PriceGroupTwoDancesCents)</dd>
+                </dl>
+                <h3 class="h4">Categorie (gemiddelde leeftijd)</h3>
+                <dl class="prices">
+                    <dt>Minioren</dt><dd>t/m 8 jaar</dd>
+                    <dt>Junioren</dt><dd>9 t/m 11 jaar</dd>
+                    <dt>Jeugd</dt><dd>12 t/m 15 jaar</dd>
+                    <dt>Senioren</dt><dd>16 jaar en ouder</dd>
+                </dl>
+                <p class="muted small">Leeftijd op @ageDate. Dansduur 2 tot 5 minuten. NDO uitgesloten.</p>
+            </section>
+        </aside>
+    </div>
+</div>

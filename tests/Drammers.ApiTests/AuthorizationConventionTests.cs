@@ -63,6 +63,13 @@ public class AuthorizationConventionTests
         $"{nameof(SalesController)}.{nameof(SalesController.Waitlist)}",
         $"{nameof(MollieWebhookController)}.{nameof(MollieWebhookController.Webhook)}",
         $"{nameof(WebsiteController)}.{nameof(WebsiteController.Hero)}",
+        // 2026-10-12: Dansgardefestival (openbaar formulier met Turnstile; eigen inschrijving en betalen alleen met het token).
+        $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Get)}",
+        $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Document)}",
+        $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Submit)}",
+        $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Own)}",
+        $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Update)}",
+        $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Pay)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

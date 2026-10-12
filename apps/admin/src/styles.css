@@ -1960,3 +1960,116 @@ fieldset {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* ---------- Dansgardefestival (2026-10-12) ---------- */
+.festival-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .festival-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.table tr.selected td {
+  background: var(--dvd-tint-blue);
+}
+
+.festival-detail h2 {
+  margin: 0 0 4px;
+}
+
+.festival-detail h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+}
+
+.festival-detail .note {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+
+.festival-detail .note.warn {
+  background: var(--dvd-tint-yellow);
+}
+
+.festival-detail .note.error {
+  background: var(--dvd-tint-red);
+}
+
+.festival-detail .note .link-button {
+  margin-right: 8px;
+}
+
+.dance-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.dance-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--dvd-surface-muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.dance-list li input {
+  margin-top: 4px;
+}
+
+.dance-list .move {
+  display: flex;
+  gap: 4px;
+}
+
+.festival-detail .consents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.payment-box {
+  border: 1px solid var(--dvd-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 16px;
+}
+
+.payment-box h3 {
+  margin-top: 0;
+}
+
+.payment-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.payment-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.version-json {
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--dvd-surface-muted);
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 12px;
+}

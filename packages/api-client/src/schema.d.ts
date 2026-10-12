@@ -14452,6 +14452,937 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dance-festival": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DanceFestivalPublicResponse"];
+                        "application/json": components["schemas"]["DanceFestivalPublicResponse"];
+                        "text/json": components["schemas"]["DanceFestivalPublicResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dance-festival/documents/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reglement of privacyverklaring (PDF). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dance-festival/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DanceFestivalRegistrationRequest"];
+                    "text/json": components["schemas"]["DanceFestivalRegistrationRequest"];
+                    "application/*+json": components["schemas"]["DanceFestivalRegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DanceFestivalSubmittedResponse"];
+                        "application/json": components["schemas"]["DanceFestivalSubmittedResponse"];
+                        "text/json": components["schemas"]["DanceFestivalSubmittedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dance-festival/registrations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    t: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalOwnRegistrationView"];
+                        "application/json": components["schemas"]["FestivalOwnRegistrationView"];
+                        "text/json": components["schemas"]["FestivalOwnRegistrationView"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query: {
+                    t: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DanceFestivalRegistrationRequest"];
+                    "text/json": components["schemas"]["DanceFestivalRegistrationRequest"];
+                    "application/*+json": components["schemas"]["DanceFestivalRegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dance-festival/payments/{id}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De betaallink uit de mail: stuurt door naar een nieuwe iDEAL-betaling bij Mollie. */
+        get: {
+            parameters: {
+                query: {
+                    t: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Found */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalSettingsView"];
+                        "application/json": components["schemas"]["FestivalSettingsView"];
+                        "text/json": components["schemas"]["FestivalSettingsView"];
+                    };
+                };
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DanceFestivalSettingsRequest"];
+                    "text/json": components["schemas"]["DanceFestivalSettingsRequest"];
+                    "application/*+json": components["schemas"]["DanceFestivalSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalSettingsView"];
+                        "application/json": components["schemas"]["FestivalSettingsView"];
+                        "text/json": components["schemas"]["FestivalSettingsView"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/documents/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalAdminList"];
+                        "application/json": components["schemas"]["FestivalAdminList"];
+                        "text/json": components["schemas"]["FestivalAdminList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/registrations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalRegistrationDetail"];
+                        "application/json": components["schemas"]["FestivalRegistrationDetail"];
+                        "text/json": components["schemas"]["FestivalRegistrationDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/registrations/{id}/versions/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Een eerdere versie van de inschrijving (zoals de vereniging die had ingevuld). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    version: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/registrations/{id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DanceFestivalDecisionRequest"];
+                    "text/json": components["schemas"]["DanceFestivalDecisionRequest"];
+                    "application/*+json": components["schemas"]["DanceFestivalDecisionRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/entries/{id}/waitlist-move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schuiven op de wachtlijst: -1 = omhoog, +1 = omlaag. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DanceFestivalWaitlistMoveRequest"];
+                    "text/json": components["schemas"]["DanceFestivalWaitlistMoveRequest"];
+                    "application/*+json": components["schemas"]["DanceFestivalWaitlistMoveRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/registrations/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DanceFestivalPaymentRequest"];
+                    "text/json": components["schemas"]["DanceFestivalPaymentRequest"];
+                    "application/*+json": components["schemas"]["DanceFestivalPaymentRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/payments/{id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/payments/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/event-categories": {
         parameters: {
             query?: never;
@@ -20674,6 +21605,92 @@ export interface components {
             description: null | string;
             permissions: string[];
         };
+        /**
+         * @description Categorie op gemiddelde leeftijd (reglement art. 1).
+         * @enum {unknown}
+         */
+        DanceCategory: "Minioren" | "Junioren" | "Jeugd" | "Senioren";
+        /** @enum {unknown} */
+        DanceEntryStatus: "New" | "InfoRequested" | "Approved" | "Waitlisted" | "Rejected" | "Changed";
+        DanceFestivalDecisionRequest: {
+            entryIds: string[];
+            decision: components["schemas"]["FestivalDecision"];
+            message: null | string;
+        };
+        DanceFestivalEntryRequest: {
+            /** Format: uuid */
+            id: null | string;
+            danceType: components["schemas"]["DanceType"];
+            format: components["schemas"]["DanceFormat"];
+            names: string;
+            /** Format: double */
+            averageAge: number;
+            /** Format: int32 */
+            dancerCount: number;
+            leaderName: string;
+            title: null | string;
+            showStyle: null | components["schemas"]["ShowStyle"];
+        };
+        DanceFestivalPaymentRequest: {
+            /** Format: int32 */
+            amountCents: number;
+        };
+        /** @enum {unknown} */
+        DanceFestivalPaymentStatus: "Open" | "Paid" | "Canceled";
+        DanceFestivalPublicResponse: {
+            festival: components["schemas"]["FestivalPublicView"];
+            turnstileSiteKey: null | string;
+        };
+        /** @description `Website` is het verborgen veld voor bots; `ElapsedMs` de tijd sinds het openen van het formulier. */
+        DanceFestivalRegistrationRequest: {
+            clubName: string;
+            contactName: string;
+            addressLine: string;
+            postalCode: string;
+            city: string;
+            phone: string;
+            email: string;
+            remarks: null | string;
+            photoConsent: null | boolean;
+            privacyAccepted: boolean;
+            rulesAccepted: boolean;
+            entries: components["schemas"]["DanceFestivalEntryRequest"][];
+            website: null | string;
+            /** Format: int32 */
+            elapsedMs: null | number;
+            turnstileToken: null | string;
+        };
+        DanceFestivalSettingsRequest: {
+            name: string;
+            /** Format: date */
+            festivalDate: string;
+            location: string;
+            pageEnabled: boolean;
+            /** Format: date-time */
+            registrationOpensAt: null | string;
+            /** Format: date-time */
+            registrationClosesAt: null | string;
+            /** Format: int32 */
+            capacity: number;
+            paymentsEnabled: boolean;
+            /** Format: int32 */
+            priceSoloDuoCents: number;
+            /** Format: int32 */
+            priceGroupOneDanceCents: number;
+            /** Format: int32 */
+            priceGroupTwoDancesCents: number;
+            notificationEmail: string;
+        };
+        DanceFestivalSubmittedResponse: {
+            /** Format: int32 */
+            number: null | number;
+        };
+        DanceFestivalWaitlistMoveRequest: {
+            /** Format: int32 */
+            direction: number;
+        };
+        /** @enum {unknown} */
+        DanceFormat: "Solo" | "Duo" | "Group";
         DanceGroup: {
             /** Format: uuid */
             id: string;
@@ -20699,6 +21716,8 @@ export interface components {
             groups: components["schemas"]["DanceGroup"][];
             unassigned: components["schemas"]["DanceGroupMember"][];
         };
+        /** @enum {unknown} */
+        DanceType: "Garde" | "Show";
         DansgardeMember: {
             /** Format: uuid */
             memberId: string;
@@ -20929,6 +21948,197 @@ export interface components {
             enabled: boolean;
             description: null | string;
             hasAudience: boolean;
+        };
+        FestivalAdminList: {
+            festival: null | components["schemas"]["FestivalSettingsView"];
+            stats: components["schemas"]["FestivalStats"];
+            registrations: components["schemas"]["FestivalRegistrationSummary"][];
+        };
+        /** @enum {unknown} */
+        FestivalDecision: "Approve" | "RequestInfo" | "Waitlist" | "Reject";
+        FestivalEntryView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            sortOrder: number;
+            danceType: components["schemas"]["DanceType"];
+            format: components["schemas"]["DanceFormat"];
+            names: string;
+            /** Format: double */
+            averageAge: number;
+            /** Format: int32 */
+            dancerCount: number;
+            leaderName: string;
+            title: null | string;
+            showStyle: null | components["schemas"]["ShowStyle"];
+            category: components["schemas"]["DanceCategory"];
+            status: components["schemas"]["DanceEntryStatus"];
+            holdsPlace: boolean;
+            /** Format: int32 */
+            waitlistPosition: null | number;
+            /** Format: date-time */
+            removedAt: null | string;
+        };
+        /** @description Wat de vereniging via de link in de mail ziet en kan wijzigen. */
+        FestivalOwnRegistrationView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            clubName: string;
+            contactName: string;
+            addressLine: string;
+            postalCode: string;
+            city: string;
+            phone: string;
+            email: string;
+            remarks: null | string;
+            photoConsent: boolean;
+            infoRequest: null | string;
+            editable: boolean;
+            entries: components["schemas"]["FestivalEntryView"][];
+            payments: components["schemas"]["FestivalPaymentView"][];
+        };
+        FestivalPaymentView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            amountCents: number;
+            status: components["schemas"]["DanceFestivalPaymentStatus"];
+            mollieStatus: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            paidAt: null | string;
+        };
+        FestivalPublicView: {
+            state: components["schemas"]["FestivalState"];
+            name: string;
+            /** Format: date */
+            festivalDate: string;
+            location: string;
+            /** Format: date-time */
+            registrationOpensAt: null | string;
+            /** Format: date-time */
+            registrationClosesAt: null | string;
+            /** Format: int32 */
+            capacity: number;
+            /** Format: int32 */
+            placesTaken: number;
+            /** Format: int32 */
+            priceSoloDuoCents: number;
+            /** Format: int32 */
+            priceGroupOneDanceCents: number;
+            /** Format: int32 */
+            priceGroupTwoDancesCents: number;
+            paymentsEnabled: boolean;
+            hasRules: boolean;
+            hasPrivacy: boolean;
+            /** Format: date */
+            ageReferenceDate: string;
+        };
+        FestivalRegistrationDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            clubName: string;
+            contactName: string;
+            addressLine: string;
+            postalCode: string;
+            city: string;
+            phone: string;
+            email: string;
+            remarks: null | string;
+            photoConsent: boolean;
+            /** Format: date-time */
+            privacyAcceptedAt: string;
+            /** Format: date-time */
+            rulesAcceptedAt: string;
+            /** Format: date-time */
+            submittedAt: string;
+            /** Format: date-time */
+            changedAt: null | string;
+            /** Format: int32 */
+            version: number;
+            infoRequest: null | string;
+            entries: components["schemas"]["FestivalEntryView"][];
+            versions: components["schemas"]["FestivalVersionInfo"][];
+            payments: components["schemas"]["FestivalPaymentView"][];
+            /** Format: int32 */
+            suggestedAmountCents: number;
+        };
+        FestivalRegistrationSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            clubName: string;
+            contactName: string;
+            /** Format: int32 */
+            dances: number;
+            /** Format: int32 */
+            approved: number;
+            /** Format: int32 */
+            toReview: number;
+            /** Format: int32 */
+            waitlisted: number;
+            /** Format: int32 */
+            firstWaitlistPosition: null | number;
+            status: string;
+            paymentStatus: string;
+            /** Format: date-time */
+            submittedAt: string;
+            /** Format: date-time */
+            changedAt: null | string;
+        };
+        FestivalSettingsView: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            festivalDate: string;
+            location: string;
+            pageEnabled: boolean;
+            /** Format: date-time */
+            registrationOpensAt: null | string;
+            /** Format: date-time */
+            registrationClosesAt: null | string;
+            /** Format: int32 */
+            capacity: number;
+            paymentsEnabled: boolean;
+            /** Format: int32 */
+            priceSoloDuoCents: number;
+            /** Format: int32 */
+            priceGroupOneDanceCents: number;
+            /** Format: int32 */
+            priceGroupTwoDancesCents: number;
+            notificationEmail: string;
+            hasRules: boolean;
+            hasPrivacy: boolean;
+            state: components["schemas"]["FestivalState"];
+        };
+        /** @enum {unknown} */
+        FestivalState: "Hidden" | "NotYetOpen" | "Open" | "Closed";
+        FestivalStats: {
+            /** Format: int32 */
+            capacity: number;
+            /** Format: int32 */
+            placesTaken: number;
+            /** Format: int32 */
+            toReview: number;
+            /** Format: int32 */
+            waitlisted: number;
+            /** Format: int32 */
+            paidCents: number;
+            /** Format: int32 */
+            requestedCents: number;
+        };
+        FestivalVersionInfo: {
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
         };
         FieldChangeResponse: {
             field: string;
@@ -23444,6 +24654,8 @@ export interface components {
             /** Format: int32 */
             quantity: number;
         };
+        /** @enum {unknown} */
+        ShowStyle: "Character" | "Modern" | null;
         SplitCandidate: {
             /** Format: uuid */
             memberId: string;

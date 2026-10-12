@@ -140,6 +140,11 @@ public static class WebsiteSetup
     {
         var root = $"{context.Request.Scheme}://{context.Request.Host}";
         var paths = new List<string> { "/", "/agenda", "/nieuws", "/kader", "/prinsengalerie", "/onderscheidingen", "/fotos", "/optocht", "/contact", "/doe-mee" };
+        if (await db.DanceFestivals.AsNoTracking().AnyAsync(f => f.Active && f.PageEnabled, cancellationToken))
+        {
+            paths.Add("/dansgardefestival");
+        }
+
         paths.AddRange(await db.WebsitePages.AsNoTracking().Where(p => p.IsPublished).Select(p => "/" + p.Slug).ToListAsync(cancellationToken));
         paths.AddRange(await db.News.AsNoTracking().Where(n => n.ShowOnWebsite && n.Slug != null && n.Status == Modules.Content.Shared.PublicationStatus.Published)
             .Select(n => "/nieuws/" + n.Slug).ToListAsync(cancellationToken));
@@ -177,6 +182,21 @@ public sealed class SiteShell(WebsiteReader reader)
     public Task<bool> ShowAppAsync() => FlagAsync(AppFlag);
 
     public Task<bool> ShowTicketsAsync() => FlagAsync(TicketsFlag);
+
+    private Modules.Content.Festival.DanceFestival? _festival;
+    private bool _festivalLoaded;
+
+    /// <summary>Het Dansgardefestival (portal → Dansgarde → Dansgardefestival → pagina aan), anders <c>null</c>.</summary>
+    public async Task<Modules.Content.Festival.DanceFestival?> FestivalAsync()
+    {
+        if (!_festivalLoaded)
+        {
+            _festival = await reader.FestivalAsync(default);
+            _festivalLoaded = true;
+        }
+
+        return _festival;
+    }
 
     private async Task<bool> FlagAsync(string key)
     {

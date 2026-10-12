@@ -461,7 +461,8 @@ public sealed class MembershipApplications(
             Email = application.Email,
             MobilePhone = application.GuardianPhone ?? application.Phone,
             BirthDate = application.BirthDate,
-            JoinYear = (short)today.Year,
+            // Het eerste carnaval dat het lid meeviert, gerekend vanaf de inschrijving (niet de goedkeuring).
+            JoinYear = await JoinYears.ForDateAsync(db, application.SubmittedAt is { } submitted ? DateOnly.FromDateTime(submitted) : today, cancellationToken),
             ParadeGroupName = application.MembershipType == MembershipType.Dansgarde ? Dansgarde.GroupValue : null,
             MembershipKind = application.MembershipType == MembershipType.Dansgarde ? MembershipKind.Dansgarde : MembershipKind.OnePerson,
             MembershipStatus = MembershipStatus.Active,

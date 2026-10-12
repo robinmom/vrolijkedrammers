@@ -134,6 +134,29 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
     }
 
     [Fact]
+    public async Task Inschrijfjaar_is_het_eerste_carnaval_na_de_inschrijving_volgens_de_carnavalsjaren()
+    {
+        async Task<short?> ApproveAsync(string email)
+        {
+            var id = await SubmitAsync(Form(email, 30), email);
+            Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/start-review", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/approve", null)).StatusCode);
+            await RunProvisioningAsync();
+            return await WithDbAsync(db => db.MembershipApplications.Where(a => a.Id == id)
+                .Join(db.Members, a => a.ResultingMemberId, m => m.Id, (a, m) => m.JoinYear).SingleAsync());
+        }
+
+        // Carnaval nog niet voorbij (volgens het carnavalsjaar in het portal): het lid viert dit carnaval mee.
+        var carnivalEnd = Today.AddDays(3);
+        await WithDbAsync(db => db.CarnivalYears.Where(y => y.Id == 1).ExecuteUpdateAsync(s => s.SetProperty(y => y.CarnivalEndDate, carnivalEnd)));
+        Assert.Equal((short)carnivalEnd.Year, await ApproveAsync("voor@example.com"));
+
+        // Carnaval voorbij en geen volgend carnavalsjaar ingevuld: carnavalsdinsdag = Pasen − 47 dagen.
+        await WithDbAsync(db => db.CarnivalYears.Where(y => y.Id == 1).ExecuteUpdateAsync(s => s.SetProperty(y => y.CarnivalEndDate, Today.AddDays(-1))));
+        Assert.Equal(JoinYears.ForDate(Today), await ApproveAsync("na@example.com"));
+    }
+
+    [Fact]
     public async Task Minderjarige_ouder_krijgt_het_account_met_rol_Ouder_en_een_relatie_ook_voor_een_tweede_kind()
     {
         var first = await SubmitAsync(Form("ouder@example.com", 8, "Sanne", guardian: "Anja van der Berg"), "ouder@example.com");

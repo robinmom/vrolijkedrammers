@@ -273,6 +273,23 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             Assert.All(numbers, n => Assert.Null(n.EbMemberId));
         }
 
+        // De app is leidend: IBAN (versleuteld), rekeninghouder en machtiging staan bij het lid, voor de eigen incasso.
+        using (var scope = api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var ibans = scope.ServiceProvider.GetRequiredService<MemberIbanProtector>();
+            var piet = await db.Members.AsNoTracking().SingleAsync(m => m.Email == "een@example.com");
+            Assert.NotNull(piet.IbanProtected);
+            Assert.Equal("NL91ABNA0417164300", ibans.Unprotect(piet.IbanProtected!));
+            Assert.Equal("4300", piet.IbanLast4);
+            Assert.NotNull(piet.AccountHolder);
+            Assert.StartsWith("DVD-", piet.MandateReference);
+            Assert.Equal(DateOnly.FromDateTime(DateTime.UtcNow), piet.MandateSignedOn);
+            Assert.Equal(MembershipKind.OnePerson, piet.MembershipKind);
+            var application = await db.MembershipApplications.AsNoTracking().SingleAsync(a => a.Id == ids[0]);
+            Assert.Null(application.Iban);
+        }
+
         // Er gaat niets naar e-Boekhouden (ook niet met schrijven aan) en de ledensync kan niet meer.
         Assert.Empty(_eb.Created);
         Assert.Equal(0, _eb.OpenSessions);

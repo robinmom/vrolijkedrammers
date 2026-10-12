@@ -50,7 +50,8 @@ const columns = [
 
 /**
  * Aanmeldingen (fase 9b, ADR-014): nieuwe leden via de app of de webpagina, na bevestiging van hun e-mailadres. Het
- * bestuur beoordeelt altijd handmatig; na goedkeuring maakt het systeem het lid aan in e-Boekhouden en het account.
+ * bestuur beoordeelt altijd handmatig; na goedkeuring maakt het systeem het lid aan in de eigen ledenadministratie (met IBAN
+ * en machtiging voor de incasso) en het account.
  */
 export function ApplicationsPage() {
   const [status, setStatus] = useState<ApplicationStatus | ''>('Submitted');
@@ -64,7 +65,8 @@ export function ApplicationsPage() {
           <h1 className="page-title">Aanmeldingen</h1>
           <p className="page-subtitle">
             Nieuwe leden die zich via de app of de webpagina <code>/lid-worden</code> hebben aangemeld en hun e-mailadres hebben bevestigd.
-            Na goedkeuring komt het lid automatisch in e-Boekhouden en krijgt het (of bij een kind onder de 16 de ouder) een account.
+            Na goedkeuring komt het lid in de ledenadministratie, met IBAN en machtiging voor de incasso, en krijgt het (of bij
+            een kind onder de 15 de ouder) een account.
           </p>
         </div>
       </div>
@@ -146,7 +148,7 @@ export function ApplicationDetailPage() {
       a.splitFrom
         ? `Lid splitsen: tweede lid van ${a.splitFrom.fullName} (lidnummer ${a.splitFrom.memberNumber}); combinatie, het hoofdlid betaalt`
         : a.membershipType === 'Dansgarde'
-          ? 'Dansgarde (groep "Dansgarde" in e-Boekhouden)'
+          ? 'Dansgarde'
           : 'Lid',
     ],
     ['Geboortedatum', `${formatDate(a.birthDate)} (${a.age} jaar)`],
@@ -227,7 +229,11 @@ export function ApplicationDetailPage() {
                   {a.splitFrom ? (
                     <span className="muted">Niet nodig: het hoofdlid betaalt de combinatie</span>
                   ) : (
-                    (a.ibanMasked ?? <span className="muted">Gewist (doorgegeven aan e-Boekhouden of afgewezen)</span>)
+                    (a.ibanMasked ?? (
+                      <span className="muted">
+                        {a.status === 'Activated' ? 'Opgeslagen bij het lid (versleuteld)' : 'Gewist (afgewezen)'}
+                      </span>
+                    ))
                   )}
                 </dd>
                 <dt>Rekeninghouder</dt>
@@ -306,7 +312,7 @@ export function ApplicationDetailPage() {
       <ConfirmDialog
         open={confirmApprove}
         title="Aanmelding goedkeuren"
-        message={`${a.fullName} wordt lid: het systeem maakt het lid aan in e-Boekhouden (met de machtiging), zet het klaar in de app en stuurt ${a.minor ? 'de ouder' : 'het lid'} een welkomstmail. Daarna worden de bankgegevens hier gewist.`}
+        message={`${a.fullName} wordt lid: het systeem maakt het lid aan in de ledenadministratie (met IBAN en machtiging voor de incasso), zet het klaar in de app en stuurt ${a.minor ? 'de ouder' : 'het lid'} een welkomstmail.`}
         confirmLabel="Goedkeuren"
         busy={approve.isPending}
         onCancel={() => setConfirmApprove(false)}

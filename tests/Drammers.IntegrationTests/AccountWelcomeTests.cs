@@ -118,7 +118,11 @@ public class AccountWelcomeTests(SqlServerFixture sql) : IAsyncLifetime
         {
             db.Users.Add(new User
             {
-                Id = IdGenerator.NewId(), ExternalObjectId = pendingObjectId, Email = "bert@example.com", DisplayName = "Bert", MemberId = metWachtendAccount,
+                Id = IdGenerator.NewId(),
+                ExternalObjectId = pendingObjectId,
+                Email = "bert@example.com",
+                DisplayName = "Bert",
+                MemberId = metWachtendAccount,
                 AccountStatus = AccountStatus.Active,
             });
             return await db.SaveChangesAsync();

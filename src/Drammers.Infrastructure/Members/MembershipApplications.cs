@@ -61,7 +61,8 @@ public sealed class MembershipApplications(
     MemberSyncSettings syncSettings,
     ICurrentActor actor,
     IClock clock,
-    Microsoft.Extensions.Options.IOptions<EBoekhoudenOptions> eBoekhoudenOptions)
+    Microsoft.Extensions.Options.IOptions<EBoekhoudenOptions> eBoekhoudenOptions,
+    MemberIbanProtector memberIbans)
 {
     public const string ProvisionMessageType = "membership.provision";
 
@@ -434,6 +435,12 @@ public sealed class MembershipApplications(
                 await db.SaveChangesAsync(cancellationToken);
             }
 
+            if (existing.IbanProtected is null && application.Iban is not null)
+            {
+                StoreBankDetails(application, existing);
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
             return existing.Id;
         }
 
@@ -456,6 +463,7 @@ public sealed class MembershipApplications(
             BirthDate = application.BirthDate,
             JoinYear = (short)today.Year,
             ParadeGroupName = application.MembershipType == MembershipType.Dansgarde ? Dansgarde.GroupValue : null,
+            MembershipKind = application.MembershipType == MembershipType.Dansgarde ? MembershipKind.Dansgarde : MembershipKind.OnePerson,
             MembershipStatus = MembershipStatus.Active,
             SyncState = MemberSyncState.InSync,
             EbLastSeenAt = clock.UtcNow.UtcDateTime,
@@ -474,9 +482,28 @@ public sealed class MembershipApplications(
             member.ParadeGroupName ??= main.ParadeGroupName;
         }
 
+        StoreBankDetails(application, member);
         db.Members.Add(member);
         await db.SaveChangesAsync(cancellationToken);
         return member.Id;
+    }
+
+    /// <summary>
+    /// De ledenadministratie van de app is leidend (2026-10-12): IBAN (versleuteld), rekeninghouder en de machtiging uit de
+    /// aanmelding komen bij het lid, voor de eigen incasso. Daarna worden ze uit de aanmelding gewist.
+    /// </summary>
+    private void StoreBankDetails(MembershipApplication application, Member member)
+    {
+        if (application.Iban is not { Length: > 4 } iban)
+        {
+            return;
+        }
+
+        member.IbanProtected = memberIbans.Protect(iban);
+        member.IbanLast4 = iban[^4..];
+        member.AccountHolder = application.AccountHolder;
+        member.MandateReference = application.MandateReference;
+        member.MandateSignedOn = application.MandateConsentAt is { } signed ? DateOnly.FromDateTime(signed) : null;
     }
 
     /// <summary>

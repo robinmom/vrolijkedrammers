@@ -356,7 +356,7 @@ test('fase 9b: aanmelding van een kind beoordelen en goedkeuren', async ({ page 
   await expect(page.getByText('Goedgekeurd; het lid wordt nu aangemaakt.')).toBeVisible();
   await expect(page.getByText(/Lid geworden met lidnummer SIM123456/)).toBeVisible();
   await expect(page.getByText(/Gesimuleerd lidnummer/)).toBeVisible();
-  await expect(page.getByText(/Gewist \(doorgegeven aan e-Boekhouden/)).toBeVisible();
+  await expect(page.getByText('Opgeslagen bij het lid (versleuteld)')).toBeVisible();
 });
 
 test('fase 9b: aanmelding afwijzen met reden', async ({ page }) => {

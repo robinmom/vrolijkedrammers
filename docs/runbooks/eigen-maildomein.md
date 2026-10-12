@@ -23,7 +23,7 @@ Neem de waarden uit de tabel van de run over:
 | Record | Wat te doen |
 |---|---|
 | **Domain** (TXT op `@`, `ms-domain-verification=…`) | **Toevoegen** als extra TXT-record. De bestaande TXT-records (Google, SPF) blijven staan. |
-| **SPF** | **Niet** als tweede SPF-record toevoegen (twee SPF-records = beide ongeldig). Het bestaande record aanvullen tot: `v=spf1 include:spf.protection.outlook.com include:spf.protection.azurecomm.net -all` |
+| **SPF** | Azure vraagt `v=spf1 include:spf.protection.outlook.com -all`; dat record staat er al (ACS verstuurt via dezelfde infrastructuur als Microsoft 365). **Niets aan veranderen** en geen tweede SPF-record toevoegen. |
 | **DKIM** (CNAME `selector1-azurecomm-prod-net._domainkey`) | Toevoegen. |
 | **DKIM2** (CNAME `selector2-azurecomm-prod-net._domainkey`) | Toevoegen. |
 | **DMARC** | Bestaat al (`v=DMARC1; p=quarantine;`); laten staan. |

@@ -40,6 +40,12 @@ public sealed class EmailOptions
     public string? CustomSenders { get; set; }
 
     /// <summary>
+    /// Afzender als een bericht er zelf geen heeft (codes, welkomst- en accountmails): een echt adres in plaats van
+    /// DoNotReply, dat spamfilters wantrouwen (2026-10-12). Standaard het secretariaat.
+    /// </summary>
+    public string DefaultSender { get; set; } = "secretaris";
+
+    /// <summary>
     /// Openbare URL van het logo (in een witte cirkel) bovenaan elke e-mail; standaard het logo van de website op
     /// <c>Sales:PublicBaseUrl</c>. Leeg = geen logo.
     /// </summary>
@@ -83,8 +89,9 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
 /// <summary>
 /// Het afzenderadres (fase 7, eigen maildomein). Met een gekoppeld eigen domein: de gevraagde afzender
 /// (<see cref="EmailMessage.From"/>), anders die van het antwoordadres als dat een eigen afzender is (een bericht met
-/// Reply-To secretaris@vrolijkedrammers.nl komt dan ook van secretaris@), anders DoNotReply@ het eigen domein. Zonder
-/// eigen domein altijd DoNotReply@ het Azure-domein. Alleen afzenders die in ACS bestaan, anders weigert ACS het bericht.
+/// Reply-To secretaris@vrolijkedrammers.nl komt dan ook van secretaris@), anders de standaardafzender (secretariaat). Alleen
+/// een bericht met een antwoordadres buiten de vereniging (het contactformulier) komt van DoNotReply. Zonder eigen domein
+/// altijd DoNotReply@ het Azure-domein. Alleen afzenders die in ACS bestaan, anders weigert ACS het bericht.
 /// </summary>
 public static class EmailSenderAddress
 {
@@ -106,6 +113,11 @@ public static class EmailSenderAddress
             && replyDomain.Equals(domain, StringComparison.OrdinalIgnoreCase) && allowed.Contains(local))
         {
             return $"{local.ToLowerInvariant()}@{domain}";
+        }
+
+        if (message.ReplyTo is not { Length: > 0 } && allowed.Contains(options.DefaultSender))
+        {
+            return $"{options.DefaultSender.ToLowerInvariant()}@{domain}";
         }
 
         return $"DoNotReply@{domain}";

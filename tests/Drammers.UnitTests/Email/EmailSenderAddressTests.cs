@@ -26,8 +26,8 @@ public class EmailSenderAddressTests
     [InlineData("Optocht@VrolijkeDrammers.nl", null, "optocht@vrolijkedrammers.nl")]
     [InlineData("bezoeker@example.com", null, "DoNotReply@vrolijkedrammers.nl")]
     [InlineData("info@vrolijkedrammers.nl", null, "DoNotReply@vrolijkedrammers.nl")]
-    [InlineData(null, "onbekend", "DoNotReply@vrolijkedrammers.nl")]
-    [InlineData(null, null, "DoNotReply@vrolijkedrammers.nl")]
+    [InlineData(null, "onbekend", "secretaris@vrolijkedrammers.nl")]
+    [InlineData(null, null, "secretaris@vrolijkedrammers.nl")]
     public void Met_eigen_domein_de_bekende_afzender_of_DoNotReply(string? replyTo, string? from, string expected) =>
         Assert.Equal(expected, EmailSenderAddress.For(Message(replyTo, from), Own));
 }

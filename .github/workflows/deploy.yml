@@ -208,10 +208,11 @@ jobs:
         if: ${{ !inputs.infraOnly }}
         run: |
           # Een herstart door gewijzigde app-instellingen kan vóór het plaatsen van het pakket vallen; dan draait de
-          # oude versie door. Wacht op de nieuwe commit en herstart zo nodig één keer.
+          # oude versie door. Wacht op de nieuwe commit en herstart zo nodig één keer. Na gewijzigde app-instellingen
+          # duurt het wisselen soms langer dan 5 minuten (2026-10-12: dev kwam pas na ruim 6 minuten op): 2 × 8 minuten.
           url="${{ steps.infra.outputs.api-url }}/health/live"
           wait_for_version() {
-            for attempt in $(seq 1 12); do
+            for attempt in $(seq 1 32); do
               version=$(curl -s -D - -o /dev/null --max-time 30 "$url" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-app-version"{print $2}')
               echo "poging $attempt: ${version:-geen antwoord}"
               [[ "$version" == *"$GITHUB_SHA"* ]] && return 0

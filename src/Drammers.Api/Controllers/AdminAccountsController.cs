@@ -14,8 +14,45 @@ namespace Drammers.Api.Controllers;
 /// <summary>Accountverzoeken beoordelen en de provisioning volgen (fase 9, ADR-014).</summary>
 [ApiController]
 [Route("api/v1/admin")]
-public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts accounts, MyAccount myAccount) : ControllerBase
+public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts accounts, AccountWelcomes welcomes, MyAccount myAccount) : ControllerBase
 {
+    /// <summary>Wat "welkomstmail naar iedereen" zou doen (inloggen met wachtwoord, 2026-10-12).</summary>
+    [HttpGet("account-welcomes/preview")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<AccountWelcomes.Preview>(StatusCodes.Status200OK)]
+    public Task<AccountWelcomes.Preview> WelcomePreview(CancellationToken cancellationToken) => welcomes.PreviewAsync(cancellationToken);
+
+    /// <summary>Welkomstmail naar alle huidige leden en overige accounts die er nog geen kregen (via de wachtrij).</summary>
+    [HttpPost("account-welcomes/send-all")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<WelcomesQueuedResponse>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<AcceptedResult> WelcomeAll(CancellationToken cancellationToken) =>
+        Accepted((string?)null, new WelcomesQueuedResponse(await welcomes.SendToAllAsync(cancellationToken)));
+
+    /// <summary>Welkomstmail (opnieuw) naar één lid; maakt zo nodig eerst het account.</summary>
+    [HttpPost("members/{id:guid}/welcome")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> WelcomeMember(Guid id, CancellationToken cancellationToken)
+    {
+        await welcomes.ResendToMemberAsync(id, cancellationToken);
+        return Accepted();
+    }
+
+    /// <summary>Welkomstmail (opnieuw) naar een account (ook ouders en beheerders zonder lid).</summary>
+    [HttpPost("users/{id:guid}/welcome")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> WelcomeUser(Guid id, CancellationToken cancellationToken)
+    {
+        await welcomes.ResendToUserAsync(id, cancellationToken);
+        return Accepted();
+    }
+
     [HttpGet("account-requests")]
     [RequirePermission(Permissions.MemberApprove)]
     [ProducesResponseType<PagedResult<AccountRequestResponse>>(StatusCodes.Status200OK)]
@@ -160,6 +197,8 @@ public sealed record ApproveAccountRequestRequest([param: Required] Guid MemberI
 public sealed record RejectAccountRequestRequest([param: StringLength(500)] string? Reason);
 
 public sealed record ProvisioningStartedResponse(Guid ProvisioningId);
+
+public sealed record WelcomesQueuedResponse(int Queued);
 
 public sealed record ProvisioningResponse(
     Guid Id, ProvisioningSourceType SourceType, ProvisioningStep Step, Guid? MemberId, string? MemberName, string? MemberNumber,

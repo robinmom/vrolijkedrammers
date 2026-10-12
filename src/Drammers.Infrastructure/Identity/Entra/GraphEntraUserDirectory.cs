@@ -135,6 +135,59 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
         }
     }
 
+    public async Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken)
+    {
+        using var request = await CreateRequestAsync(HttpMethod.Post, "users", cancellationToken);
+        request.Content = JsonContent.Create(new
+        {
+            accountEnabled = true,
+            displayName = displayName.Length > 256 ? displayName[..256] : displayName,
+            mail = email,
+            identities = new[] { new { signInType = "emailAddress", issuer = options.Value.IssuerDomain, issuerAssignedId = email } },
+            passwordProfile = new { password = RandomPassword(), forceChangePasswordNextSignIn = false },
+            passwordPolicies = "DisablePasswordExpiration",
+        });
+        using var response = await http.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        var created = await response.Content.ReadFromJsonAsync<GraphUser>(cancellationToken);
+        return created?.Id ?? throw new InvalidOperationException("Graph gaf geen id voor het nieuwe account.");
+    }
+
+    public async Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken)
+    {
+        using var get = await CreateRequestAsync(HttpMethod.Get, $"users/{Uri.EscapeDataString(objectId)}?$select=identities", cancellationToken);
+        using var getResponse = await http.SendAsync(get, cancellationToken);
+        await EnsureSuccessAsync(getResponse, cancellationToken);
+        var user = await getResponse.Content.ReadFromJsonAsync<GraphIdentities>(cancellationToken);
+        var identities = user?.Identities ?? [];
+        if (identities.Any(i => i.SignInType == "emailAddress" && i.Issuer == options.Value.IssuerDomain))
+        {
+            return;
+        }
+
+        // Graph vervangt de hele lijst: de bestaande identities (o.a. de inlog met e-mail + code) gaan mee.
+        var updated = identities.Select(i => new { signInType = i.SignInType, issuer = i.Issuer, issuerAssignedId = i.IssuerAssignedId })
+            .Append(new { signInType = "emailAddress", issuer = options.Value.IssuerDomain!, issuerAssignedId = email })
+            .ToArray();
+        using var patch = await CreateRequestAsync(HttpMethod.Patch, $"users/{Uri.EscapeDataString(objectId)}", cancellationToken);
+        patch.Content = JsonContent.Create(new
+        {
+            identities = updated,
+            passwordProfile = new { password = RandomPassword(), forceChangePasswordNextSignIn = false },
+            passwordPolicies = "DisablePasswordExpiration",
+        });
+        using var patchResponse = await http.SendAsync(patch, cancellationToken);
+        await EnsureSuccessAsync(patchResponse, cancellationToken);
+    }
+
+    /// <summary>Willekeurig en sterk; niemand kent het: het lid kiest zelf een wachtwoord via "Wachtwoord vergeten?".</summary>
+    internal static string RandomPassword()
+    {
+        const string Chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!#$%&*+-=?@";
+        var random = System.Security.Cryptography.RandomNumberGenerator.GetString(Chars, 28);
+        return $"Aa9!{random}";
+    }
+
     private (string GroupId, string Attribute) TestAccessSettings()
     {
         var graph = options.Value;
@@ -199,6 +252,10 @@ internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
     public Task<EntraTestAccess> GetTestAccessAsync(string objectId, CancellationToken cancellationToken) => throw NotConfigured();
 
     public Task SetTestAccessAsync(string objectId, string? environments, CancellationToken cancellationToken) => throw NotConfigured();
+
+    public Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken) => throw NotConfigured();
+
+    public Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken) => throw NotConfigured();
 }
 
 /// <summary>

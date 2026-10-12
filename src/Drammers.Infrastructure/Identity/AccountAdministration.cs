@@ -26,6 +26,7 @@ public sealed class AccountAdministration(
     IAuditLogger audit,
     IUserAccessService userAccess,
     IEntraUserDirectory entra,
+    EntraLogins logins,
     ICurrentActor actor,
     IClock clock)
 {
@@ -283,13 +284,9 @@ public sealed class AccountAdministration(
         {
             if (saga.EntraObjectId is null)
             {
-                // Geen inlog maken (Graph eist een wachtwoord): de beheerder maakt zelf een inlog met e-mail + code, die
-                // AccountLinker bij de eerste aanmelding koppelt.
-                // Eén e-mailadres = één account: een bestaand account met dit adres krijgt de rollen erbij.
-                saga.EntraObjectId = await db.Users.AsNoTracking()
-                        .Where(u => u.Email == normalizedEmail && u.AccountStatus != AccountStatus.Deleted)
-                        .Select(u => u.ExternalObjectId).FirstOrDefaultAsync(cancellationToken)
-                    ?? await entra.FindByEmailAsync(normalizedEmail, cancellationToken) ?? PendingObjectId.New();
+                // Eén e-mailadres = één account: een bestaand account met dit adres krijgt de rollen erbij. Zonder inloggen
+                // met wachtwoord maakt de beheerder zelf een inlog met e-mail + code, die AccountLinker koppelt.
+                saga.EntraObjectId = await logins.ResolveAsync(normalizedEmail, displayName, cancellationToken);
                 saga.Step = ProvisioningStep.AccountCreated;
                 await db.SaveChangesAsync(cancellationToken);
             }

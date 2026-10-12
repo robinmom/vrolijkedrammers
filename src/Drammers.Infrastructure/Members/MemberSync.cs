@@ -25,7 +25,8 @@ namespace Drammers.Infrastructure.Members;
 public sealed class MemberSync(
     DrammersDbContext db, IEBoekhoudenClient eBoekhouden, MemberSyncSettings settings, IOutbox outbox, IAuditLogger audit,
     IClock clock, ILogger<MemberSync> logger, Identity.AccountLifecycle lifecycle, MemberIbanProtector ibans,
-    Microsoft.Extensions.Options.IOptions<EBoekhouden.EBoekhoudenOptions> eBoekhoudenOptions)
+    Microsoft.Extensions.Options.IOptions<EBoekhouden.EBoekhoudenOptions> eBoekhoudenOptions,
+    Microsoft.Extensions.Options.IOptions<Identity.Entra.AccountOptions> accountOptions)
 {
     public const string MessageType = "members.sync";
 
@@ -142,6 +143,8 @@ public sealed class MemberSync(
             await lifecycle.ReconcileAsync(null, cancellationToken);
             // Nieuwe of gewijzigde leden: openstaande accountverzoeken kunnen nu wel kloppen.
             await Identity.MemberAccounts.EnqueueRecheckAsync(db, outbox, cancellationToken);
+            // Nieuwe leden: meteen een account en welkomstmail (na de lancering, inloggen met wachtwoord).
+            await Identity.AccountWelcomes.EnqueueForSyncedMembersAsync(db, outbox, accountOptions.Value.PasswordSignIn, job.Id, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
     }

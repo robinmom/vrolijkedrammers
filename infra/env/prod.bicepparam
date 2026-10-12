@@ -36,3 +36,5 @@ param boundHostNames = filter(split(readEnvironmentVariable('DVD_BOUND_HOSTNAMES
 param budgetAmount = 40
 param budgetStartDate = '2026-10-01'
 param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))
+// Inloggen met wachtwoord (runbook accounts-wachtwoord): na infra/entra/wachtwoord-inloggen.sh DVD_PASSWORD_SIGN_IN=true.
+param passwordSignIn = readEnvironmentVariable('DVD_PASSWORD_SIGN_IN', 'false') == 'true'

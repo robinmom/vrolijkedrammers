@@ -456,6 +456,17 @@ export interface paths {
                         "text/json": components["schemas"]["ValidationProblemDetails"];
                     };
                 };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
                 /** @description Too Many Requests */
                 429: {
                     headers: {
@@ -596,6 +607,198 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-welcomes/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Wat "welkomstmail naar iedereen" zou doen (inloggen met wachtwoord, 2026-10-12). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["Preview"];
+                        "application/json": components["schemas"]["Preview"];
+                        "text/json": components["schemas"]["Preview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-welcomes/send-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Welkomstmail naar alle huidige leden en overige accounts die er nog geen kregen (via de wachtrij). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WelcomesQueuedResponse"];
+                        "application/json": components["schemas"]["WelcomesQueuedResponse"];
+                        "text/json": components["schemas"]["WelcomesQueuedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{id}/welcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Welkomstmail (opnieuw) naar één lid; maakt zo nodig eerst het account. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/welcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Welkomstmail (opnieuw) naar een account (ook ouders en beheerders zonder lid). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -21481,6 +21684,8 @@ export interface components {
             /** Format: date-time */
             lastLoginAt: null | string;
             awaitingFirstSignIn: boolean;
+            /** Format: date-time */
+            welcomeSentAt?: null | string;
         };
         MemberCandidate: {
             /** Format: uuid */
@@ -22549,6 +22754,46 @@ export interface components {
         PreferenceChange: {
             category: components["schemas"]["NotificationCategory"];
             enabled: boolean;
+        };
+        /** @description Wat "Welkomstmail naar iedereen" zou doen. */
+        Preview: {
+            /**
+             * Format: int32
+             * @description Leden die een mail krijgen.
+             */
+            members: number;
+            /**
+             * Format: int32
+             * @description Accounts zonder lid (ouders, beheerders) die een mail krijgen.
+             */
+            otherAccounts: number;
+            /**
+             * Format: int32
+             * @description Al eerder een welkomstmail gekregen (worden overgeslagen).
+             */
+            alreadySent: number;
+            /**
+             * Format: int32
+             * @description Actieve leden zonder e-mailadres.
+             */
+            withoutEmail: number;
+            /**
+             * Format: int32
+             * @description Kinderen: geen eigen account, de ouder logt in.
+             */
+            children: number;
+            /**
+             * Format: int32
+             * @description Volwassenen met het e-mailadres van een ander lid: geen eigen account.
+             */
+            sharedEmail: number;
+            /** @description Inloggen met wachtwoord staat aan (anders kan versturen nog niet). */
+            passwordSignIn: boolean;
+            /**
+             * Format: int32
+             * @description Hoe lang het versturen ongeveer duurt.
+             */
+            estimatedMinutes: number;
         };
         /** @enum {unknown} */
         PrinceKind: "Prince" | "YouthPrince";
@@ -23655,6 +23900,10 @@ export interface components {
             showYouthPrinces: boolean;
             /** Format: int32 */
             youthPrinceCount: number;
+        };
+        WelcomesQueuedResponse: {
+            /** Format: int32 */
+            queued: number;
         };
         WithdrawRequest: {
             reason: null | string;

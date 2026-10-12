@@ -30,6 +30,7 @@ public sealed class MemberAccounts(
     IAuditLogger audit,
     IOutbox outbox,
     IEntraUserDirectory entra,
+    EntraLogins logins,
     IEmailSender email,
     IUserAccessService userAccess,
     ICurrentActor actor,
@@ -37,6 +38,9 @@ public sealed class MemberAccounts(
     AccountAdministration administration)
 {
     public const string ProvisionMessageType = "account.provision";
+
+    /// <summary>Inloggen met e-mail + wachtwoord staat aan (welkomstmails, accountverzoeken).</summary>
+    public bool PasswordSignIn => logins.PasswordSignIn;
 
     public const string ReminderMessageType = "account.reminder";
 
@@ -66,6 +70,15 @@ public sealed class MemberAccounts(
     /// </summary>
     public async Task SubmitAccountRequestAsync(string? memberNumber, string emailAddress, string? ipAddress, CancellationToken cancellationToken)
     {
+        if (logins.PasswordSignIn)
+        {
+            // Inloggen met wachtwoord: elk lid krijgt zijn account van de vereniging, aanvragen kan niet meer.
+            throw new DomainException(
+                ErrorCodes.AccountRequestsClosed,
+                "Een account aanvragen kan niet meer: elk lid krijgt een account met een welkomstmail. Geen mail gehad? Neem contact op met het secretariaat.",
+                DomainErrorKind.Conflict);
+        }
+
         var number = string.IsNullOrWhiteSpace(memberNumber) ? null : memberNumber.Trim();
         var normalizedEmail = emailAddress.Trim().ToLowerInvariant();
         var now = clock.UtcNow.UtcDateTime;
@@ -418,10 +431,8 @@ public sealed class MemberAccounts(
                 // Eén e-mailadres = één account: bestaat er al een account met dit adres (bijv. van een kind met het adres
                 // van de ouder, of een beheerder die ook lid is), dan dat; anders een bestaande inlog bij Entra; anders maakt
                 // het lid zelf een inlog met e-mail + code en koppelt de API die bij de eerste aanmelding (AccountLinker).
-                saga.EntraObjectId = await db.Users.AsNoTracking()
-                        .Where(u => u.Email == loginEmail && u.AccountStatus != AccountStatus.Deleted)
-                        .Select(u => u.ExternalObjectId).FirstOrDefaultAsync(cancellationToken)
-                    ?? await entra.FindByEmailAsync(loginEmail, cancellationToken) ?? PendingObjectId.New();
+                // Met inloggen met wachtwoord maakt de API de inlog zelf (EntraLogins).
+                saga.EntraObjectId = await logins.ResolveAsync(loginEmail, member.FullName, cancellationToken);
                 saga.Step = ProvisioningStep.AccountCreated;
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -442,7 +453,7 @@ public sealed class MemberAccounts(
 
             if (saga.Step is not (ProvisioningStep.WelcomeSent or ProvisioningStep.Completed))
             {
-                await email.SendAsync(WelcomeMail(loginEmail, member.FirstName ?? member.FullName), cancellationToken);
+                await email.SendAsync(WelcomeMail(loginEmail, member.FirstName ?? member.FullName, logins.PasswordSignIn), cancellationToken);
                 saga.Step = ProvisioningStep.WelcomeSent;
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -485,9 +496,7 @@ public sealed class MemberAccounts(
     public async Task<Guid> EnsureAccountAsync(string loginEmail, string displayName, Guid? memberId, string roleCode, CancellationToken cancellationToken)
     {
         var email = loginEmail.Trim().ToLowerInvariant();
-        var existing = await db.Users.Where(u => u.Email == email && u.AccountStatus != AccountStatus.Deleted)
-            .Select(u => u.ExternalObjectId).FirstOrDefaultAsync(cancellationToken);
-        var objectId = existing ?? await entra.FindByEmailAsync(email, cancellationToken) ?? PendingObjectId.New();
+        var objectId = await logins.ResolveAsync(email, displayName, cancellationToken);
         return await CreateOrLinkUserAsync(objectId, email, displayName, memberId, roleCode, cancellationToken);
     }
 
@@ -690,38 +699,66 @@ public sealed class MemberAccounts(
     }
 
     /// <summary>Concepttekst; de definitieve tekst keurt het bestuur goed (aanvullende DoD fase 9).</summary>
-    public static EmailMessage WelcomeMail(string to, string firstName)
+    public static EmailMessage WelcomeMail(string to, string firstName, bool passwordSignIn = false)
     {
         const string Subject = "Je account voor de app van De Vrolijke Drammers";
+        var (stepsText, stepsHtml, afterText) = LoginSteps(to, passwordSignIn);
         var text = $"""
             Beste {firstName},
 
             Je account voor de app van De Vrolijke Drammers staat klaar.
 
             Zo log je de eerste keer in:
-            1. Open de app en kies Meer → Inloggen.
-            2. Kies op de inlogpagina voor een nieuw account ("Maak er een") en vul dit e-mailadres in: {to}.
-            3. Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.
+            {stepsText}
 
-            Daarna log je steeds in met dit e-mailadres en een nieuwe code.
+            {afterText}
 
             Heb je dit niet aangevraagd? Neem dan contact op met het secretariaat.
 
-            Groeten,
+            Met vriendelijke groet,
             De Vrolijke Drammers
             """;
         var encodedName = System.Net.WebUtility.HtmlEncode(firstName);
-        var encodedTo = System.Net.WebUtility.HtmlEncode(to);
         var html = $"""
             <p>Beste {encodedName},</p>
             <p>Je account voor de app van De Vrolijke Drammers staat klaar.</p>
             <p><strong>Zo log je de eerste keer in:</strong></p>
-            <ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Kies op de inlogpagina voor een nieuw account (&quot;Maak er een&quot;) en vul dit e-mailadres in: {encodedTo}.</li><li>Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.</li></ol>
-            <p>Daarna log je steeds in met dit e-mailadres en een nieuwe code.</p>
+            {stepsHtml}
+            <p>{System.Net.WebUtility.HtmlEncode(afterText)}</p>
             <p>Heb je dit niet aangevraagd? Neem dan contact op met het secretariaat.</p>
-            <p>Groeten,<br>De Vrolijke Drammers</p>
+            <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
             """;
         return new EmailMessage(to, Subject, text, html);
+    }
+
+    /// <summary>
+    /// De inloguitleg voor de welkomstmails. Met inloggen met wachtwoord staat er geen wachtwoord in de mail (Entra External
+    /// ID dwingt geen wijziging bij de eerste aanmelding af): het lid kiest de eerste keer zelf een wachtwoord via
+    /// "Wachtwoord vergeten?".
+    /// </summary>
+    internal static (string Text, string Html, string After) LoginSteps(string to, bool passwordSignIn)
+    {
+        var encodedTo = System.Net.WebUtility.HtmlEncode(to);
+        if (passwordSignIn)
+        {
+            return (
+                $"""
+                1. Open de app en kies Meer → Inloggen.
+                2. Vul dit e-mailadres in: {to}.
+                3. Kies "Wachtwoord vergeten?". Je krijgt een code per e-mail; vul die in en kies zelf een wachtwoord.
+                """,
+                $"""<ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Vul dit e-mailadres in: {encodedTo}.</li><li>Kies <em>&quot;Wachtwoord vergeten?&quot;</em>. Je krijgt een code per e-mail; vul die in en kies zelf een wachtwoord.</li></ol>""",
+                "Daarna log je in met dit e-mailadres en je eigen wachtwoord. Wachtwoord kwijt? Kies dan weer \"Wachtwoord vergeten?\".");
+        }
+
+        return (
+            $"""
+            1. Open de app en kies Meer → Inloggen.
+            2. Kies op de inlogpagina voor een nieuw account ("Maak er een") en vul dit e-mailadres in: {to}.
+            3. Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.
+            """,
+            $"""<ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Kies op de inlogpagina voor een nieuw account (&quot;Maak er een&quot;) en vul dit e-mailadres in: {encodedTo}.</li><li>Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.</li></ol>""",
+            "Daarna log je steeds in met dit e-mailadres en een nieuwe code.");
     }
 }
 

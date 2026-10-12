@@ -107,7 +107,7 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Contains("Beste Piet", mail.PlainText, StringComparison.Ordinal);
         Assert.Contains("code", mail.PlainText, StringComparison.Ordinal);
         Assert.DoesNotContain("wachtwoord vergeten", mail.PlainText, StringComparison.OrdinalIgnoreCase);
-        Assert.EndsWith("Groeten,\nDe Vrolijke Drammers", mail.PlainText.ReplaceLineEndings("\n").TrimEnd(), StringComparison.Ordinal);
+        Assert.EndsWith("Met vriendelijke groet,\nDe Vrolijke Drammers", mail.PlainText.ReplaceLineEndings("\n").TrimEnd(), StringComparison.Ordinal);
 
         var member = SignUpAndSignIn("piet@example.com");
         var me = await member.GetFromJsonAsync<JsonElement>("/api/v1/me/member");

@@ -33,6 +33,32 @@ public interface IEntraUserDirectory
     /// Vervangt <c>infra/entra/set-tester.sh</c>.
     /// </summary>
     Task SetTestAccessAsync(string objectId, string? environments, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Inloggen met wachtwoord (2026-10-12): maakt een lokaal account (e-mail + wachtwoord) met een willekeurig wachtwoord
+    /// dat niemand kent; het lid kiest de eerste keer zelf een wachtwoord via "Wachtwoord vergeten?".
+    /// </summary>
+    /// <returns>De <c>oid</c> van het nieuwe account.</returns>
+    Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Zorgt dat een bestaand account (bijv. een inlog met e-mail + code) ook met e-mail + wachtwoord kan inloggen: voegt de
+    /// identity toe met een willekeurig wachtwoord. Een account dat al een wachtwoordinlog heeft, blijft ongewijzigd.
+    /// </summary>
+    Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken);
+}
+
+/// <summary>Instellingen voor accounts (<c>Accounts__*</c>).</summary>
+public sealed class AccountOptions
+{
+    public const string SectionName = "Accounts";
+
+    /// <summary>
+    /// Inloggen met e-mail + wachtwoord (user flow "DVD inloggen met wachtwoord", infra/entra/wachtwoord-inloggen.sh): de
+    /// API maakt bij elk account direct het inlogaccount; zelf aanmelden en accountverzoeken kunnen niet meer. Uit: de
+    /// oude manier (e-mail + code, het lid maakt zelf een inlog die de API koppelt).
+    /// </summary>
+    public bool PasswordSignIn { get; set; }
 }
 
 public sealed record EntraTestAccess(bool InTestersGroup, string? Environments);

@@ -73,7 +73,7 @@ public sealed class AdminMembersController(
         var m = await db.Members.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new DomainException(ErrorCodes.MemberNotFound, "Lid niet gevonden.", DomainErrorKind.NotFound);
         var account = await db.Users.AsNoTracking().Where(u => u.MemberId == id)
-            .Select(u => new MemberAccountResponse(u.Id, u.Email, u.AccountStatus.ToString(), u.LastLoginAt, u.ExternalObjectId.StartsWith(PendingObjectId.Prefix)))
+            .Select(u => new MemberAccountResponse(u.Id, u.Email, u.AccountStatus.ToString(), u.LastLoginAt, u.ExternalObjectId.StartsWith(PendingObjectId.Prefix), u.WelcomeSentAt))
             .SingleOrDefaultAsync(cancellationToken);
         var mapping = await settings.GetMappingAsync(cancellationToken);
         var groups = await db.GroupMemberships.AsNoTracking().Where(gm => gm.MemberId == id)
@@ -288,7 +288,8 @@ public sealed record MemberSummaryResponse(
 public sealed record MemberFieldSourcesResponse(bool BirthDateFromEBoekhouden, bool JoinYearFromEBoekhouden, bool StatusFromEBoekhouden, bool CategoryFromEBoekhouden);
 
 /// <summary>App-account van een lid; <c>AwaitingFirstSignIn</c>: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27).</summary>
-public sealed record MemberAccountResponse(Guid UserId, string Email, string AccountStatus, DateTime? LastLoginAt, bool AwaitingFirstSignIn);
+public sealed record MemberAccountResponse(
+    Guid UserId, string Email, string AccountStatus, DateTime? LastLoginAt, bool AwaitingFirstSignIn, DateTime? WelcomeSentAt = null);
 
 public sealed record MemberDetailResponse(
     Guid Id, string MemberNumber, int? EbMemberId, string FullName, string? FirstName, string? NamePrefix, string? LastName,

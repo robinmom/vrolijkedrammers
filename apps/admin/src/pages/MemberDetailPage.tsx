@@ -106,6 +106,10 @@ export function MemberDetailPage() {
     () => api.POST('/api/v1/admin/members/{id}/provision-account', { params: { path: { id } } }),
     [['member', id], ['account-provisioning']],
   );
+  const welcome = useApiMutation(
+    () => api.POST('/api/v1/admin/members/{id}/welcome', { params: { path: { id } } }),
+    [['member', id]],
+  );
   const removeMember = useApiMutation(
     () => api.POST('/api/v1/admin/members/{id}/remove', { params: { path: { id } }, body: { confirmation: removeConfirmation } }),
     [['members'], ['users'], ['excluded-members'], ['groups']],
@@ -277,7 +281,27 @@ export function MemberDetailPage() {
                         formatDateTime(m.account.lastLoginAt)
                       )}
                     </dd>
+                    <dt>Welkomstmail</dt>
+                    <dd>{m.account.welcomeSentAt ? formatDateTime(m.account.welcomeSentAt) : 'Nog niet gestuurd'}</dd>
                   </dl>
+                  <ProblemAlert error={welcome.error} />
+                  {canApprove ? (
+                    <p>
+                      <button
+                        type="button"
+                        className="button secondary small"
+                        disabled={welcome.isPending}
+                        title="Wachtwoord kwijt of mail niet ontvangen: het lid krijgt de inloguitleg opnieuw en kiest zelf een nieuw wachtwoord via 'Wachtwoord vergeten?'."
+                        onClick={() =>
+                          welcome.mutate(undefined, {
+                            onSuccess: () => setMessage(`De welkomstmail met de inloguitleg gaat naar ${m.account?.email}.`),
+                          })
+                        }
+                      >
+                        Welkomstmail (opnieuw) sturen
+                      </button>
+                    </p>
+                  ) : null}
                   <Link to="/gebruikers/$id" params={{ id: m.account.userId }} className="button ghost">
                     Naar gebruiker en rollen →
                   </Link>

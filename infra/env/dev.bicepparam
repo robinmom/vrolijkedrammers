@@ -37,3 +37,5 @@ param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAM
 param boundHostNames = filter(split(readEnvironmentVariable('DVD_BOUND_HOSTNAMES', ''), ','), host => !empty(host))
 // Dev heeft na de livegang een kopie van de echte leden: alle e-mail gaat naar het testadres (besluit 2026-10-07).
 param emailRedirectTo = 'app@vrolijkedrammers.nl'
+// Inloggen met wachtwoord (runbook accounts-wachtwoord): na infra/entra/wachtwoord-inloggen.sh DVD_PASSWORD_SIGN_IN=true.
+param passwordSignIn = readEnvironmentVariable('DVD_PASSWORD_SIGN_IN', 'false') == 'true'

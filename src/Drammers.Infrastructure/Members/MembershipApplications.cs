@@ -336,8 +336,8 @@ public sealed class MembershipApplications(
                     : null;
                 await email.SendAsync(
                     skipAccount ? SplitWelcomeMail(application.Email, application.FirstName, mainName!)
-                    : minor ? GuardianWelcomeMail(application.Email, application.GuardianName!, application.FirstName)
-                    : MemberAccounts.WelcomeMail(application.Email, application.FirstName),
+                    : minor ? GuardianWelcomeMail(application.Email, application.GuardianName!, application.FirstName, accounts.PasswordSignIn)
+                    : MemberAccounts.WelcomeMail(application.Email, application.FirstName, accounts.PasswordSignIn),
                     cancellationToken);
                 saga.Step = ProvisioningStep.WelcomeSent;
                 await db.SaveChangesAsync(cancellationToken);
@@ -738,31 +738,33 @@ public sealed class MembershipApplications(
         return new EmailMessage(to, Subject, text, html, MemberSplits.ReplyTo);
     }
 
-    public static EmailMessage GuardianWelcomeMail(string to, string guardianName, string childFirstName)
+    public static EmailMessage GuardianWelcomeMail(string to, string guardianName, string childFirstName, bool passwordSignIn = false)
     {
         const string Subject = "Welkom bij De Vrolijke Drammers";
+        var (stepsText, stepsHtml, afterText) = MemberAccounts.LoginSteps(to, passwordSignIn);
         var text = $"""
             Beste {guardianName},
 
             {childFirstName} is lid van De Vrolijke Drammers. Welkom!
 
             Als ouder/verzorger kun je de app van de vereniging gebruiken. Zo log je de eerste keer in:
-            1. Open de app en kies Meer → Inloggen.
-            2. Kies op de inlogpagina voor een nieuw account ("Maak er een") en vul dit e-mailadres in: {to}.
-            3. Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.
+            {stepsText}
+
+            {afterText}
 
             De contributie wordt automatisch geïncasseerd volgens de machtiging die je hebt gegeven.
 
-            Groeten,
+            Met vriendelijke groet,
             De Vrolijke Drammers
             """;
         var html = $"""
             <p>Beste {System.Net.WebUtility.HtmlEncode(guardianName)},</p>
             <p>{System.Net.WebUtility.HtmlEncode(childFirstName)} is lid van De Vrolijke Drammers. Welkom!</p>
             <p>Als ouder/verzorger kun je de app van de vereniging gebruiken. <strong>Zo log je de eerste keer in:</strong></p>
-            <ol><li>Open de app en kies <em>Meer → Inloggen</em>.</li><li>Kies op de inlogpagina voor een nieuw account (&quot;Maak er een&quot;) en vul dit e-mailadres in: {System.Net.WebUtility.HtmlEncode(to)}.</li><li>Je krijgt een code per e-mail. Vul die in; een wachtwoord is niet nodig.</li></ol>
+            {stepsHtml}
+            <p>{System.Net.WebUtility.HtmlEncode(afterText)}</p>
             <p>De contributie wordt automatisch geïncasseerd volgens de machtiging die je hebt gegeven.</p>
-            <p>Groeten,<br>De Vrolijke Drammers</p>
+            <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
             """;
         return new EmailMessage(to, Subject, text, html);
     }

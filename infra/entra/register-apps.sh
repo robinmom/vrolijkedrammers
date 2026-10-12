@@ -117,7 +117,14 @@ ensure_consent() { # <client-sp-id> <resource-sp-id> <scopes>
 }
 
 ensure_in_user_flow() { # <appId>
-  local linked
+  local linked pw_flow
+  # Omgeving al op inloggen met wachtwoord (wachtwoord-inloggen.sh)? Dan niet terugzetten.
+  pw_flow="$(graph --method get --url "$GRAPH/identity/authenticationEventsFlows" \
+    --query "value[?displayName=='DVD inloggen met wachtwoord'].id | [0]" -o tsv)"
+  if [[ -n "$pw_flow" && -n "$(graph --method get --url "$GRAPH/identity/authenticationEventsFlows/$pw_flow/conditions/applications/includeApplications" \
+    --query "value[?appId=='$1'].appId | [0]" -o tsv)" ]]; then
+    return 0
+  fi
   linked="$(graph --method get --url "$GRAPH/identity/authenticationEventsFlows/$FLOW_ID/conditions/applications/includeApplications" \
     --query "value[?appId=='$1'].appId | [0]" -o tsv)"
   if [[ -z "$linked" ]]; then

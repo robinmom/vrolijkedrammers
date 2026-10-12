@@ -70,6 +70,9 @@ param emailCustomDomain string = ''
 @description('Pas true na de DNS-records en verificatie in ACS (runbook eigen-maildomein); koppelt het domein en zet de eigen afzenders aan.')
 param emailCustomDomainVerified bool = false
 
+@description('Inloggen met e-mail + wachtwoord (infra/entra/wachtwoord-inloggen.sh, runbook accounts-wachtwoord): de API maakt de inlog bij elk account.')
+param passwordSignIn bool = false
+
 // Afzenders op het eigen domein, gelijk aan de contactadressen (besluit 2026-09-30); DoNotReply maakt ACS zelf aan.
 var emailSenders = {
   secretaris: 'De Vrolijke Drammers – Secretariaat'
@@ -184,6 +187,7 @@ module api 'modules/appservice.bicep' = {
       Sales__PublicBaseUrl: publicBaseUrl
       // Andere eigen domeinen (bijv. zonder www) sturen door naar het hoofdadres.
       Website__CanonicalHost: empty(customHostNames) ? '' : customHostNames[0]
+      Accounts__PasswordSignIn: passwordSignIn ? 'true' : 'false'
       Auth__Authority: externalIdAuthority
       Auth__Audience: apiClientId
       Auth__EnvironmentAccessClaim: environmentAccessClaim

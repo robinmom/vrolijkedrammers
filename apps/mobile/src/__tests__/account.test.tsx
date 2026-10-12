@@ -137,7 +137,9 @@ describe('Meer en inloggen', () => {
     await fireEvent.press(await screen.findByLabelText(/Inloggen voor leden/));
     expect(await screen.findByText('Voor leden')).toBeTruthy();
     expect(screen.queryByText(/Registreren/)).toBeNull();
-    expect(screen.getByText('Account aanvragen')).toBeTruthy();
+    // Geen accountverzoeken meer (2026-10-12): elk lid krijgt een account met een welkomstmail.
+    expect(screen.queryByText('Account aanvragen')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Contact' })).toBeTruthy();
   });
 
   it('ingelogd: Mijn gegevens met naam in plaats van Lid worden', async () => {

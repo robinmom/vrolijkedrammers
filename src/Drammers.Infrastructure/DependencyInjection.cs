@@ -80,6 +80,7 @@ public static class DependencyInjection
         // Graph in de External ID-tenant (provisioning, blokkeren); zonder configuratie faalt elke aanroep duidelijk.
         var graph = configuration.GetSection(GraphOptions.SectionName);
         services.Configure<GraphOptions>(graph);
+        services.Configure<AccountOptions>(configuration.GetSection(AccountOptions.SectionName));
         services.Configure<TestAccessOptions>(o =>
         {
             o.Environment = configuration["Auth:RequiredEnvironmentAccess"];
@@ -248,8 +249,11 @@ public static class DependencyInjection
         services.AddScoped<ParadeManagement.ParadeArrivals>();
         services.AddScoped<Dansgarde>();
         services.AddScoped<IOutboxMessageHandler, MemberSyncHandler>();
+        services.AddScoped<EntraLogins>();
         services.AddScoped<MemberAccounts>();
         services.AddScoped<IOutboxMessageHandler, MemberAccountProvisioningHandler>();
+        services.AddScoped<AccountWelcomes>();
+        services.AddScoped<IOutboxMessageHandler, AccountWelcomeHandler>();
         services.AddScoped<IOutboxMessageHandler, MemberAccountReminderHandler>();
         services.AddScoped<IOutboxMessageHandler, AccountRequestRecheckHandler>();
         services.AddScoped<MyAccount>();

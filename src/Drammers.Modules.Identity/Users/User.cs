@@ -32,6 +32,9 @@ public sealed class User : IAuditable
 
     public DateTime? LastLoginAt { get; set; }
 
+    /// <summary>Laatste welkomstmail met de inloguitleg (bulk of opnieuw gestuurd vanuit het portal).</summary>
+    public DateTime? WelcomeSentAt { get; set; }
+
     /// <summary>Opgehoogd bij elke rolwijziging; maakt de permission-cache ongeldig.</summary>
     public int PermissionsVersion { get; set; }
 

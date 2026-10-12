@@ -14,6 +14,22 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
 
     public ConcurrentBag<string> Deleted { get; } = [];
 
+    /// <summary>Accounts (oid) die met e-mail + wachtwoord kunnen inloggen.</summary>
+    public ConcurrentDictionary<string, bool> PasswordSignIn { get; } = new();
+
+    public Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken)
+    {
+        var id = SignUp(email);
+        PasswordSignIn[id] = true;
+        return Task.FromResult(id);
+    }
+
+    public Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken)
+    {
+        PasswordSignIn[objectId] = true;
+        return Task.CompletedTask;
+    }
+
     /// <summary>Testtoegang per <c>oid</c>: lid van Testers als er een waarde is.</summary>
     public ConcurrentDictionary<string, string> TestAccess { get; } = new();
 

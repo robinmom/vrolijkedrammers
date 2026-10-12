@@ -3633,6 +3633,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("updated_by");
 
+                    b.Property<DateTime?>("WelcomeSentAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("welcome_sent_at");
+
                     b.HasKey("Id")
                         .HasName("PK_User");
 

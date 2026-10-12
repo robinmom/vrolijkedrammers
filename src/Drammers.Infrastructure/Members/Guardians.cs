@@ -134,7 +134,7 @@ public sealed class Guardians(
         await LinkCoreAsync(memberId, userId, relationship, null, "invite", cancellationToken);
         if (!existed)
         {
-            await email.SendAsync(MembershipApplications.GuardianWelcomeMail(address, displayName, child.FirstName ?? child.FullName), cancellationToken);
+            await email.SendAsync(MembershipApplications.GuardianWelcomeMail(address, displayName, child.FirstName ?? child.FullName, accounts.PasswordSignIn), cancellationToken);
         }
     }
 
@@ -225,7 +225,7 @@ public sealed class Guardians(
         {
             var parent = await FindMemberAsync(parentMemberId, cancellationToken);
             userId = await accounts.EnsureAccountAsync(suggestion.Email, parent.FullName, parentMemberId, DefaultRoles.Lid, cancellationToken);
-            await email.SendAsync(MemberAccounts.WelcomeMail(suggestion.Email, parent.FirstName ?? parent.FullName), cancellationToken);
+            await email.SendAsync(MemberAccounts.WelcomeMail(suggestion.Email, parent.FirstName ?? parent.FullName, accounts.PasswordSignIn), cancellationToken);
         }
 
         await LinkCoreAsync(childMemberId, userId.Value, GuardianRelationship.Parent, null, "suggestion", cancellationToken);

@@ -548,6 +548,26 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too Many Requests",
             "content": {
@@ -695,6 +715,194 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AccessDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/account-welcomes/preview": {
+      "get": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Wat \"welkomstmail naar iedereen\" zou doen (inloggen met wachtwoord, 2026-10-12).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/account-welcomes/send-all": {
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Welkomstmail naar alle huidige leden en overige accounts die er nog geen kregen (via de wachtrij).",
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomesQueuedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomesQueuedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomesQueuedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/members/{id}/welcome": {
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Welkomstmail (opnieuw) naar één lid; maakt zo nodig eerst het account.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{id}/welcome": {
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Welkomstmail (opnieuw) naar een account (ook ouders en beheerders zonder lid).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -31824,6 +32032,13 @@
           },
           "awaitingFirstSignIn": {
             "type": "boolean"
+          },
+          "welcomeSentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         },
         "description": "App-account van een lid; `AwaitingFirstSignIn`: goedgekeurd, maar nog geen eigen inlog gemaakt (ADR-014, herzien 2026-09-27)."
@@ -35925,6 +36140,61 @@
             "type": "boolean"
           }
         }
+      },
+      "Preview": {
+        "required": [
+          "members",
+          "otherAccounts",
+          "alreadySent",
+          "withoutEmail",
+          "children",
+          "sharedEmail",
+          "passwordSignIn",
+          "estimatedMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "integer",
+            "description": "Leden die een mail krijgen.",
+            "format": "int32"
+          },
+          "otherAccounts": {
+            "type": "integer",
+            "description": "Accounts zonder lid (ouders, beheerders) die een mail krijgen.",
+            "format": "int32"
+          },
+          "alreadySent": {
+            "type": "integer",
+            "description": "Al eerder een welkomstmail gekregen (worden overgeslagen).",
+            "format": "int32"
+          },
+          "withoutEmail": {
+            "type": "integer",
+            "description": "Actieve leden zonder e-mailadres.",
+            "format": "int32"
+          },
+          "children": {
+            "type": "integer",
+            "description": "Kinderen: geen eigen account, de ouder logt in.",
+            "format": "int32"
+          },
+          "sharedEmail": {
+            "type": "integer",
+            "description": "Volwassenen met het e-mailadres van een ander lid: geen eigen account.",
+            "format": "int32"
+          },
+          "passwordSignIn": {
+            "type": "boolean",
+            "description": "Inloggen met wachtwoord staat aan (anders kan versturen nog niet)."
+          },
+          "estimatedMinutes": {
+            "type": "integer",
+            "description": "Hoe lang het versturen ongeveer duurt.",
+            "format": "int32"
+          }
+        },
+        "description": "Wat \"Welkomstmail naar iedereen\" zou doen."
       },
       "PrinceKind": {
         "enum": [
@@ -40243,6 +40513,18 @@
             "type": "boolean"
           },
           "youthPrinceCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WelcomesQueuedResponse": {
+        "required": [
+          "queued"
+        ],
+        "type": "object",
+        "properties": {
+          "queued": {
             "type": "integer",
             "format": "int32"
           }

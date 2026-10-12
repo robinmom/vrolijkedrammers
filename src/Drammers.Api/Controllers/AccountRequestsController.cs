@@ -24,6 +24,7 @@ public sealed class AccountRequestsController(MemberAccounts accounts) : Control
     [HttpPost]
     [ProducesResponseType<AccountRequestAcceptedResponse>(StatusCodes.Status202Accepted)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<AcceptedResult> Submit(AccountRequestRequest request, CancellationToken cancellationToken)
     {

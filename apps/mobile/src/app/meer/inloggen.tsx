@@ -7,8 +7,9 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, LargeTitleHeader, Screen } from '../../ui';
 
 /**
- * Inloggen voor leden (fase 9): e-mailadres + eenmalige code via de inlogpagina van de vereniging. Bewust geen
- * "Registreren": een account ontstaat via "Ik ben al lid" of het bestuur (ADR-014).
+ * Inloggen voor leden: e-mailadres + wachtwoord via de inlogpagina van de vereniging (2026-10-12). Bewust geen
+ * "Registreren" of "Account aanvragen": elk lid krijgt een account met een welkomstmail (ADR-014); de eerste keer kiest het
+ * lid zelf een wachtwoord via "Wachtwoord vergeten?".
  */
 export default function InloggenScreen() {
   const { colors } = useTheme();
@@ -29,7 +30,7 @@ export default function InloggenScreen() {
     } catch (error) {
       setMessage(
         error instanceof NoAccountError
-          ? 'Voor dit e-mailadres is (nog) geen account. Ben je lid? Vraag hieronder een account aan.'
+          ? 'Voor dit e-mailadres is (nog) geen account. Ben je lid? Neem dan contact op met het secretariaat.'
           : 'Inloggen lukt nu niet. Controleer je verbinding en probeer het opnieuw.',
       );
     } finally {
@@ -47,8 +48,8 @@ export default function InloggenScreen() {
             Voor leden
           </AppText>
           <AppText variant="body" color={colors.textSecondary}>
-            Log in met het e-mailadres dat bij de vereniging bekend is. Je krijgt een code per e-mail; een wachtwoord is
-            niet nodig.
+            Log in met het e-mailadres dat bij de vereniging bekend is. De eerste keer? Kies op de inlogpagina
+            &quot;Wachtwoord vergeten?&quot;: je krijgt een code per e-mail en kiest zelf een wachtwoord.
           </AppText>
           <Button label={busy ? 'Even geduld…' : 'Inloggen'} onPress={login} disabled={busy} />
           {message ? (
@@ -63,13 +64,10 @@ export default function InloggenScreen() {
             Nog geen account?
           </AppText>
           <AppText variant="body" color={colors.textSecondary}>
-            Ben je al lid? Vraag dan een account aan met je lidnummer en e-mailadres.
+            Elk lid krijgt een account en een welkomstmail. Geen mail gehad of lukt inloggen niet? Neem contact op met
+            het secretariaat.
           </AppText>
-          <Button
-            label="Account aanvragen"
-            variant="secondary"
-            onPress={() => router.push('/meer/account-aanvragen')}
-          />
+          <Button label="Contact" variant="secondary" onPress={() => router.push('/meer/contact')} />
           <AppText variant="body" color={colors.textSecondary}>
             Nog geen lid? Kijk bij Lid worden.
           </AppText>

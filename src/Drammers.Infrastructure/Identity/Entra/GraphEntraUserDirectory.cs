@@ -153,16 +153,24 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
         return created?.Id ?? throw new InvalidOperationException("Graph gaf geen id voor het nieuwe account.");
     }
 
-    public async Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken)
+    public async Task<bool> EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken)
     {
         using var get = await CreateRequestAsync(HttpMethod.Get, $"users/{Uri.EscapeDataString(objectId)}?$select=identities", cancellationToken);
         using var getResponse = await http.SendAsync(get, cancellationToken);
         await EnsureSuccessAsync(getResponse, cancellationToken);
         var user = await getResponse.Content.ReadFromJsonAsync<GraphIdentities>(cancellationToken);
         var identities = user?.Identities ?? [];
-        if (identities.Any(i => i.SignInType == "emailAddress" && i.Issuer == options.Value.IssuerDomain))
+        if (identities.Any(i => i.SignInType == "emailAddress" && i.Issuer == options.Value.IssuerDomain
+                && string.Equals(i.IssuerAssignedId, email, StringComparison.OrdinalIgnoreCase)))
         {
-            return;
+            return true;
+        }
+
+        // Alleen een inlog met e-mail + code (federated, issuer "mail"): Graph staat geen wachtwoordinlog erbij toe
+        // ("Please recreate the user"); de aanroeper maakt een nieuw account.
+        if (!identities.Any(i => i.SignInType is "emailAddress" or "userName"))
+        {
+            return false;
         }
 
         // Graph vervangt de hele lijst: de bestaande identities (o.a. de inlog met e-mail + code) gaan mee.
@@ -178,6 +186,7 @@ internal sealed class GraphEntraUserDirectory(HttpClient http, GraphCredentialPr
         });
         using var patchResponse = await http.SendAsync(patch, cancellationToken);
         await EnsureSuccessAsync(patchResponse, cancellationToken);
+        return true;
     }
 
     /// <summary>Willekeurig en sterk; niemand kent het: het lid kiest zelf een wachtwoord via "Wachtwoord vergeten?".</summary>
@@ -255,7 +264,7 @@ internal sealed class UnconfiguredEntraUserDirectory : IEntraUserDirectory
 
     public Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken) => throw NotConfigured();
 
-    public Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken) => throw NotConfigured();
+    public Task<bool> EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken) => throw NotConfigured();
 }
 
 /// <summary>

@@ -42,10 +42,11 @@ public interface IEntraUserDirectory
     Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Zorgt dat een bestaand account (bijv. een inlog met e-mail + code) ook met e-mail + wachtwoord kan inloggen: voegt de
-    /// identity toe met een willekeurig wachtwoord. Een account dat al een wachtwoordinlog heeft, blijft ongewijzigd.
+    /// Zorgt dat een bestaand account ook met e-mail + wachtwoord op dit adres kan inloggen: voegt de identity toe met een
+    /// willekeurig wachtwoord. Geeft <c>false</c> als dat niet kan: een account dat alleen met e-mail + code inlogt (alleen
+    /// federated identities) weigert Graph; dat moet opnieuw worden aangemaakt (<see cref="EntraLogins"/>).
     /// </summary>
-    Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken);
+    Task<bool> EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken);
 }
 
 /// <summary>Instellingen voor accounts (<c>Accounts__*</c>).</summary>

@@ -17,17 +17,27 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
     /// <summary>Accounts (oid) die met e-mail + wachtwoord kunnen inloggen.</summary>
     public ConcurrentDictionary<string, bool> PasswordSignIn { get; } = new();
 
+    /// <summary>Inloggen alleen met e-mail + code (zelf aangemaakt via <see cref="SignUp"/>): Graph weigert daar een wachtwoord bij.</summary>
+    public ConcurrentDictionary<string, bool> CodeOnly { get; } = new();
+
     public Task<string> CreatePasswordAccountAsync(string email, string displayName, CancellationToken cancellationToken)
     {
-        var id = SignUp(email);
+        var id = Guid.NewGuid().ToString();
+        AccountsByEmail[email] = id;
+        Enabled[id] = true;
         PasswordSignIn[id] = true;
         return Task.FromResult(id);
     }
 
-    public Task EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken)
+    public Task<bool> EnsurePasswordSignInAsync(string objectId, string email, CancellationToken cancellationToken)
     {
+        if (CodeOnly.ContainsKey(objectId))
+        {
+            return Task.FromResult(false);
+        }
+
         PasswordSignIn[objectId] = true;
-        return Task.CompletedTask;
+        return Task.FromResult(true);
     }
 
     /// <summary>Testtoegang per <c>oid</c>: lid van Testers als er een waarde is.</summary>
@@ -39,6 +49,7 @@ public sealed class FakeEntraUserDirectory : IEntraUserDirectory
         var id = Guid.NewGuid().ToString();
         AccountsByEmail[email] = id;
         Enabled[id] = true;
+        CodeOnly[id] = true;
         return id;
     }
 

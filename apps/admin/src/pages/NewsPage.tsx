@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
@@ -65,6 +66,7 @@ const emptyNews: NewsRequest = {
   websiteBody: null,
   slug: null,
   image: null,
+  photoAlbumId: null,
 };
 
 export function NewsEditorPage() {
@@ -96,6 +98,7 @@ export function NewsEditorPage() {
         websiteBody: n.websiteBody ?? null,
         slug: n.slug ?? null,
         image: null,
+        photoAlbumId: n.photoAlbumId ?? null,
       });
     }
   }, [existing.data]);
@@ -108,6 +111,10 @@ export function NewsEditorPage() {
     [['admin-news'], ['admin-news-item', id]],
   );
   const remove = useApiMutation(() => api.DELETE('/api/v1/admin/news/{id}', { params: { path: { id } } }), [['admin-news']]);
+  const albums = useQuery({
+    queryKey: ['admin-news', 'albums'],
+    queryFn: async () => (await api.GET('/api/v1/admin/news/albums')).data ?? [],
+  });
   const set = (change: Partial<NewsRequest>) => setForm({ ...form, ...change });
 
   function submit(event: FormEvent) {
@@ -135,7 +142,38 @@ export function NewsEditorPage() {
         <Field label="Korte samenvatting" maxLength={500} value={form.summary ?? ''} onChange={(e) => set({ summary: e.target.value || null })} />
         <div className="field">
           <label htmlFor="bericht">Bericht (Markdown)</label>
-          <textarea id="bericht" rows={10} required value={form.body} onChange={(e) => set({ body: e.target.value })} />
+          <textarea
+            id="bericht"
+            rows={10}
+            required
+            aria-describedby="bericht-hint"
+            value={form.body}
+            onChange={(e) => set({ body: e.target.value })}
+          />
+          <small id="bericht-hint" className="muted">
+            Link: [tekst](/fotos/…) of [tekst](https://…). Links naar onze eigen site openen in hetzelfde venster, andere sites in
+            een nieuw tabblad.
+          </small>
+        </div>
+        <div className="field">
+          <label htmlFor="bericht-album">Fotoalbum onder het bericht</label>
+          <select
+            id="bericht-album"
+            aria-describedby="bericht-album-hint"
+            value={form.photoAlbumId ?? ''}
+            onChange={(e) => set({ photoAlbumId: e.target.value || null })}
+          >
+            <option value="">Geen album</option>
+            {(albums.data ?? []).map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.title} ({a.photoCount} foto&apos;s)
+              </option>
+            ))}
+          </select>
+          <small id="bericht-album-hint" className="muted">
+            In de app en op de website staan een paar foto&apos;s onder het bericht, met een knop naar het hele album. Alleen te zien
+            als het album gepubliceerd is en de lezer het mag zien.
+          </small>
         </div>
         <div className="form-grid">
           <Field label="Categorie" value={form.category ?? ''} onChange={(e) => set({ category: e.target.value || null })} />

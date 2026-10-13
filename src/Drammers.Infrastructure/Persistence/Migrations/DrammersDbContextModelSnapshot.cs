@@ -1278,6 +1278,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(300)")
                         .HasColumnName("image_blob_path");
 
+                    b.Property<Guid?>("PhotoAlbumId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("photo_album_id");
+
                     b.Property<DateTime?>("PublishAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("publish_at");
@@ -1342,6 +1346,9 @@ namespace Drammers.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK_News");
+
+                    b.HasIndex("PhotoAlbumId")
+                        .HasDatabaseName("IX_News_photo_album_id");
 
                     b.HasIndex("Slug")
                         .IsUnique()
@@ -9000,6 +9007,14 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasForeignKey("NewsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.News.NewsItem", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Photos.PhotoAlbum", null)
+                        .WithMany()
+                        .HasForeignKey("PhotoAlbumId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Drammers.Modules.Content.Photos.Photo", b =>

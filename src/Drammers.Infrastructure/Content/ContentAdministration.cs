@@ -31,7 +31,7 @@ public sealed record EventInput(
 /// <summary>Nieuws; <c>Image</c> is het pad van een vooraf geüploade afbeelding (<see cref="UploadedImages"/>): <c>null</c> = ongewijzigd, leeg = weghalen.</summary>
 public sealed record NewsInput(
     string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false,
-    bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null, string? Image = null);
+    bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null, string? Image = null, Guid? PhotoAlbumId = null);
 
 public sealed record AlbumInput(
     string Title, DateOnly? AlbumDate, string? Description, Guid? EventId, PublicationInput Publication, PhotoCategory Category = PhotoCategory.Other);
@@ -166,6 +166,12 @@ public sealed class ContentAdministration(
                     : slug;
         }
 
+        if (input.PhotoAlbumId is { } albumId && !await db.PhotoAlbums.AnyAsync(a => a.Id == albumId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het gekozen fotoalbum bestaat niet (meer).");
+        }
+
+        n.PhotoAlbumId = input.PhotoAlbumId;
         var (image, obsolete) = UploadedImages.Resolve(n.ImageBlobPath, input.Image);
         n.ImageBlobPath = image;
         return obsolete;

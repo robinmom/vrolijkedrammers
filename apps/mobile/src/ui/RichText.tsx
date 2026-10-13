@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { parseHtml } from '../lib/html';
+import { openLink } from '../lib/links';
 import { useTheme } from '../theme/ThemeProvider';
 import { AppText } from './AppText';
 
@@ -15,7 +16,7 @@ export function RichText({ html }: { html: string }) {
           <Text
             key={i}
             style={[span.bold && styles.bold, span.italic && styles.italic, span.href ? { color: colors.linkText, textDecorationLine: 'underline' } : null]}
-            onPress={span.href ? () => Linking.openURL(span.href as string) : undefined}
+            onPress={span.href ? () => openLink(span.href as string) : undefined}
             accessibilityRole={span.href ? 'link' : undefined}
           >
             {span.text}

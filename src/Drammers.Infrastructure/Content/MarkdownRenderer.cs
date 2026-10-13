@@ -21,6 +21,25 @@ public static class MarkdownRenderer
     public static string? ToSafeLetterHtml(string? markdown) =>
         string.IsNullOrWhiteSpace(markdown) ? null : Sanitizer.Sanitize(Markdown.ToHtml(markdown, LetterPipeline));
 
+    /// <summary>Eigen site: een pad (<c>/fotos/…</c>), een anker, mail/telefoon of een adres op vrolijkedrammers.nl.</summary>
+    public static bool IsOwnSite(string? href)
+    {
+        if (string.IsNullOrWhiteSpace(href))
+        {
+            return true;
+        }
+
+        if ((href.StartsWith('/') && !href.StartsWith("//", StringComparison.Ordinal)) || href.StartsWith('#')
+            || href.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase) || href.StartsWith("tel:", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return Uri.TryCreate(href, UriKind.Absolute, out var uri)
+            && (uri.Host.Equals("vrolijkedrammers.nl", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith(".vrolijkedrammers.nl", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static HtmlSanitizer CreateSanitizer()
     {
         var sanitizer = new HtmlSanitizer();
@@ -32,8 +51,17 @@ public static class MarkdownRenderer
         {
             if (e.Node is AngleSharp.Dom.IElement { TagName: "A" } link)
             {
-                link.SetAttribute("rel", "noopener noreferrer nofollow");
-                link.SetAttribute("target", "_blank");
+                // Links naar onze eigen site (en mail/telefoon) openen in hetzelfde venster; andere sites in een nieuw tabblad.
+                if (IsOwnSite(link.GetAttribute("href")))
+                {
+                    link.RemoveAttribute("target");
+                    link.RemoveAttribute("rel");
+                }
+                else
+                {
+                    link.SetAttribute("rel", "noopener noreferrer nofollow");
+                    link.SetAttribute("target", "_blank");
+                }
             }
         };
         return sanitizer;

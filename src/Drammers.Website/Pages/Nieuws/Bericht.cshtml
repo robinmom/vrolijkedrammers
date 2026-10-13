@@ -25,6 +25,14 @@
                 @Html.Raw(ContactLinks.Rewrite(a.BodyHtml))
                 @Html.Raw(ContactLinks.Rewrite(a.WebsiteBodyHtml))
             </div>
+            @if (a.Album is { } album && a.Photos is { Count: > 0 } photos)
+            {
+                <section class="page-album news-album" aria-labelledby="album-titel">
+                    <h2 id="album-titel">Foto's: @album.Title</h2>
+                    <partial name="_PhotoGallery" model="new PhotoGallery(album.Title, photos.Take(8).ToList())" />
+                    <p><a class="button outline" href="/fotos/@album.Id">Bekijk alle @(photos.Count == 1 ? "foto" : $"{photos.Count} foto's") →</a></p>
+                </section>
+            }
             <div class="share">
                 <strong>Delen:</strong>
                 <a class="button outline" href="https://wa.me/?text=@Uri.EscapeDataString($"{a.Card.Title} {url}")" rel="noopener">WhatsApp</a>

@@ -17,6 +17,9 @@ public sealed class NewsItem : IAuditable, IPublishable
 
     public string? ImageBlobPath { get; set; }
 
+    /// <summary>Gekoppeld fotoalbum (2026-10-13): voorbeeldfoto's en een knop naar het album onder het bericht.</summary>
+    public Guid? PhotoAlbumId { get; set; }
+
     public Guid? AuthorUserId { get; set; }
 
     public string? Category { get; set; }

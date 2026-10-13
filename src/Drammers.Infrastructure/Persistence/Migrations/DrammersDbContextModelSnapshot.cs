@@ -780,6 +780,440 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestival", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit")
+                        .HasColumnName("active");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int")
+                        .HasColumnName("capacity");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("FestivalDate")
+                        .HasColumnType("date")
+                        .HasColumnName("festival_date");
+
+                    b.Property<int>("LastRegistrationNumber")
+                        .HasColumnType("int")
+                        .HasColumnName("last_registration_number");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("location");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NotificationEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)")
+                        .HasColumnName("notification_email");
+
+                    b.Property<bool>("PageEnabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("page_enabled");
+
+                    b.Property<bool>("PaymentsEnabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("payments_enabled");
+
+                    b.Property<int>("PriceGroupOneDanceCents")
+                        .HasColumnType("int")
+                        .HasColumnName("price_group_one_dance_cents");
+
+                    b.Property<int>("PriceGroupTwoDancesCents")
+                        .HasColumnType("int")
+                        .HasColumnName("price_group_two_dances_cents");
+
+                    b.Property<int>("PriceSoloDuoCents")
+                        .HasColumnType("int")
+                        .HasColumnName("price_solo_duo_cents");
+
+                    b.Property<string>("PrivacyBlobPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("privacy_blob_path");
+
+                    b.Property<DateTime?>("RegistrationClosesAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("registration_closes_at");
+
+                    b.Property<DateTime?>("RegistrationOpensAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("registration_opens_at");
+
+                    b.Property<string>("RulesBlobPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("rules_blob_path");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestival");
+
+                    b.HasIndex("Active")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DanceFestival_active")
+                        .HasFilter("[active] = 1");
+
+                    b.ToTable("DanceFestival", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_DanceFestival_capacity", "[capacity] >= 0");
+
+                            t.HasCheckConstraint("CK_DanceFestival_prices", "[price_solo_duo_cents] >= 0 AND [price_group_one_dance_cents] >= 0 AND [price_group_two_dances_cents] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AverageAge")
+                        .HasPrecision(4, 1)
+                        .HasColumnType("decimal(4,1)")
+                        .HasColumnName("average_age");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("DanceType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("dance_type");
+
+                    b.Property<int>("DancerCount")
+                        .HasColumnType("int")
+                        .HasColumnName("dancer_count");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("decided_at");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("format");
+
+                    b.Property<bool>("HoldsPlace")
+                        .HasColumnType("bit")
+                        .HasColumnName("holds_place");
+
+                    b.Property<string>("LeaderName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("leader_name");
+
+                    b.Property<string>("Names")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("names");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("registration_id");
+
+                    b.Property<DateTime?>("RemovedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("removed_at");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<string>("ShowStyle")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("show_style");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("title");
+
+                    b.Property<int?>("WaitlistPosition")
+                        .HasColumnType("int")
+                        .HasColumnName("waitlist_position");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestivalEntry");
+
+                    b.HasIndex("RegistrationId", "SortOrder")
+                        .HasDatabaseName("IX_DanceFestivalEntry_registration_id_sort_order");
+
+                    b.ToTable("DanceFestivalEntry", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_age", "[average_age] >= 0 AND [average_age] <= 99");
+
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_category", "[category] IN ('Minioren', 'Junioren', 'Jeugd', 'Senioren')");
+
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_dance_type", "[dance_type] IN ('Garde', 'Show')");
+
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_dancers", "[dancer_count] >= 1 AND [dancer_count] <= 200");
+
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_format", "[format] IN ('Solo', 'Duo', 'Group')");
+
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_show_style", "[show_style] IN ('Character', 'Modern')");
+
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_status", "[status] IN ('New', 'InfoRequested', 'Approved', 'Waitlisted', 'Rejected', 'Changed')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AmountCents")
+                        .HasColumnType("int")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("MolliePaymentId")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("mollie_payment_id");
+
+                    b.Property<string>("MollieStatus")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("mollie_status");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("registration_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestivalPayment");
+
+                    b.HasIndex("MolliePaymentId")
+                        .HasDatabaseName("IX_DanceFestivalPayment_mollie_payment_id")
+                        .HasFilter("[mollie_payment_id] IS NOT NULL");
+
+                    b.HasIndex("RegistrationId")
+                        .HasDatabaseName("IX_DanceFestivalPayment_registration_id");
+
+                    b.ToTable("DanceFestivalPayment", "payments", t =>
+                        {
+                            t.HasCheckConstraint("CK_DanceFestivalPayment_amount", "[amount_cents] > 0");
+
+                            t.HasCheckConstraint("CK_DanceFestivalPayment_status", "[status] IN ('Open', 'Paid', 'Canceled')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccessTokenProtected")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("access_token_protected");
+
+                    b.Property<string>("AddressLine")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("address_line");
+
+                    b.Property<DateTime?>("ChangedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("changed_at");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("ClubName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("club_name");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)")
+                        .HasColumnName("email");
+
+                    b.Property<Guid>("FestivalId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("festival_id");
+
+                    b.Property<string>("InfoRequest")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("info_request");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("phone");
+
+                    b.Property<bool>("PhotoConsent")
+                        .HasColumnType("bit")
+                        .HasColumnName("photo_consent");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<DateTime>("PrivacyAcceptedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("privacy_accepted_at");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("remarks");
+
+                    b.Property<DateTime>("RulesAcceptedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("rules_accepted_at");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestivalRegistration");
+
+                    b.HasIndex("FestivalId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DanceFestivalRegistration_festival_id_number");
+
+                    b.ToTable("DanceFestivalRegistration", "content");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalRegistrationVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("registration_id");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("snapshot");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestivalRegistrationVersion");
+
+                    b.HasIndex("RegistrationId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DanceFestivalRegistrationVersion_registration_id_version");
+
+                    b.ToTable("DanceFestivalRegistrationVersion", "content");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsAudience", b =>
                 {
                     b.Property<Guid>("NewsId")
@@ -2375,6 +2809,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Financieel",
                             Code = "advertiser.collect",
                             Description = "Adverteerders ophalen in de app (collectant)"
+                        },
+                        new
+                        {
+                            Id = 52,
+                            Category = "Content",
+                            Code = "festival.manage",
+                            Description = "Dansgardefestival: instellingen, inschrijvingen beoordelen, wachtlijst en betaallinks"
                         });
                 });
 
@@ -2636,6 +3077,16 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsSystem = false,
                             Name = "Adjudant",
                             SortOrder = 210
+                        },
+                        new
+                        {
+                            Id = 205,
+                            Code = "dansgardefestival",
+                            Description = "Organisatie van het Dansgardefestival; ziet in het portal alleen het festival",
+                            IsAssignableBySync = false,
+                            IsSystem = false,
+                            Name = "Dansgardefestival",
+                            SortOrder = 220
                         });
                 });
 
@@ -3235,6 +3686,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            RoleId = 11,
+                            PermissionId = 52
+                        },
+                        new
+                        {
                             RoleId = 12,
                             PermissionId = 1
                         },
@@ -3507,6 +3963,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 204,
                             PermissionId = 28
+                        },
+                        new
+                        {
+                            RoleId = 205,
+                            PermissionId = 52
                         });
                 });
 
@@ -8496,6 +8957,42 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalEntry", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalRegistration", null)
+                        .WithMany("Entries")
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalPayment", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalRegistration", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestival", null)
+                        .WithMany()
+                        .HasForeignKey("FestivalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalRegistrationVersion", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsAudience", b =>
                 {
                     b.HasOne("Drammers.Modules.Content.News.NewsItem", null)
@@ -9359,6 +9856,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Navigation("Attachments");
 
                     b.Navigation("Audiences");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalRegistration", b =>
+                {
+                    b.Navigation("Entries");
                 });
 
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsItem", b =>

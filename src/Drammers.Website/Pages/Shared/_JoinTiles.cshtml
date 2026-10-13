@@ -1,9 +1,10 @@
 @{
     var showApp = await Shell.ShowAppAsync();
     var showTickets = await Shell.ShowTicketsAsync();
-    var tiles = 2 + (showApp ? 1 : 0) + (showTickets ? 1 : 0);
+    var festival = await Shell.FestivalAsync();
+    var tiles = 2 + (showApp ? 1 : 0) + (showTickets ? 1 : 0) + (festival is not null ? 1 : 0);
 }
-<div class="@(tiles == 4 ? "grid-4" : tiles == 3 ? "grid-3" : "grid-2")">
+<div class="@(tiles >= 4 ? "grid-4" : tiles == 3 ? "grid-3" : "grid-2")">
     <a class="join-tile" href="/lid-worden/">
         <h3>Lid worden</h3>
         <p>Meld je aan; het bestuur keurt je aanmelding goed.</p>
@@ -19,6 +20,14 @@
         <a class="join-tile" href="/kaarten/">
             <h3>Kaarten kopen</h3>
             <p>Pronkzitting, dagkaarten en munten met iDEAL.</p>
+            <span class="link-arrow">Start →</span>
+        </a>
+    }
+    @if (festival is not null)
+    {
+        <a class="join-tile" href="/dansgardefestival/">
+            <h3>Dansgardefestival</h3>
+            <p>Schrijf je dansgarde in: gardedans en showdans.</p>
             <span class="link-arrow">Start →</span>
         </a>
     }

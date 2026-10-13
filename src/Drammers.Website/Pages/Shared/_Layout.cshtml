@@ -18,6 +18,7 @@
         ("/optocht-inschrijven/", "Optocht inschrijven", "Groep, wagen of loopgroep aanmelden"),
     };
     if (showTickets) joinIn.Add(("/kaarten/", "Kaarten en munten", "Pronkzitting, dagkaarten en munten"));
+    if (await Shell.FestivalAsync() is not null) joinIn.Add(("/dansgardefestival/", "Dansgardefestival", "Je dansgarde inschrijven"));
     if (showApp) joinIn.Add(("/doe-mee#app", "Download de app", "iPhone en Android"));
     var main = new (string Key, string Href, string Label)[]
     {

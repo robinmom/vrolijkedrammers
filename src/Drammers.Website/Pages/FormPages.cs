@@ -43,6 +43,26 @@ public sealed class AanrijtijdenModel : FormPage
     }
 }
 
+/// <summary>Dansgardefestival (2026-10-12): bestaat alleen als de pagina in het portal aan staat.</summary>
+public sealed class DansgardefestivalModel(SiteShell shell) : FormPage
+{
+    public Modules.Content.Festival.DanceFestival Festival { get; private set; } = null!;
+
+    public async Task<IActionResult> OnGetAsync()
+    {
+        if (await shell.FestivalAsync() is not { } festival)
+        {
+            return NotFoundPage();
+        }
+
+        Festival = festival;
+        (ActiveMenu, PageTitle) = ("", festival.Name);
+        MetaDescription = $"Schrijf je dansgarde in voor het {festival.Name} van De Vrolijke Drammers in Loil: gardedans en showdans, solo, duo en groepen.";
+        Scripts = [Script("dansgardefestival")];
+        return Page();
+    }
+}
+
 public sealed class KaartenModel(SiteShell shell) : FormPage
 {
     public async Task<IActionResult> OnGetAsync()

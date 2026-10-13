@@ -92,6 +92,16 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<CarnivalYear> CarnivalYears => Set<CarnivalYear>();
 
+    public DbSet<Modules.Content.Festival.DanceFestival> DanceFestivals => Set<Modules.Content.Festival.DanceFestival>();
+
+    public DbSet<Modules.Content.Festival.DanceFestivalRegistration> DanceFestivalRegistrations => Set<Modules.Content.Festival.DanceFestivalRegistration>();
+
+    public DbSet<Modules.Content.Festival.DanceFestivalEntry> DanceFestivalEntries => Set<Modules.Content.Festival.DanceFestivalEntry>();
+
+    public DbSet<Modules.Content.Festival.DanceFestivalRegistrationVersion> DanceFestivalRegistrationVersions => Set<Modules.Content.Festival.DanceFestivalRegistrationVersion>();
+
+    public DbSet<Modules.Content.Festival.DanceFestivalPayment> DanceFestivalPayments => Set<Modules.Content.Festival.DanceFestivalPayment>();
+
     public DbSet<Modules.Ticketing.Tickets.Ticket> Tickets => Set<Modules.Ticketing.Tickets.Ticket>();
 
     public DbSet<Modules.Ticketing.Tickets.TicketSigningKey> TicketSigningKeys => Set<Modules.Ticketing.Tickets.TicketSigningKey>();

@@ -128,7 +128,7 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/payments/mollie")]
-public sealed class MollieWebhookController(TicketSales sales) : ControllerBase
+public sealed class MollieWebhookController(TicketSales sales, Infrastructure.Festival.DanceFestivals festivals) : ControllerBase
 {
     [HttpPost("webhook")]
     [Consumes("application/x-www-form-urlencoded")]
@@ -143,7 +143,12 @@ public sealed class MollieWebhookController(TicketSales sales) : ControllerBase
 
         try
         {
-            await sales.HandleWebhookAsync(id, $"{Request.Scheme}://{Request.Host}", cancellationToken);
+            // Betalingen van het Dansgardefestival eerst; anders een bestelling uit de kaartverkoop.
+            if (!await festivals.HandleWebhookAsync(id, cancellationToken))
+            {
+                await sales.HandleWebhookAsync(id, $"{Request.Scheme}://{Request.Host}", cancellationToken);
+            }
+
             return Ok();
         }
         catch (Exception ex) when (ex is MollieException or HttpRequestException)

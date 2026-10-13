@@ -55,6 +55,10 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
     public Task<bool> FeatureEnabledAsync(string key, CancellationToken cancellationToken) =>
         db.FeatureFlags.AsNoTracking().AnyAsync(f => f.Key == key && f.Enabled, cancellationToken);
 
+    /// <summary>Het Dansgardefestival als de pagina aan staat (anders <c>null</c>).</summary>
+    public Task<Modules.Content.Festival.DanceFestival?> FestivalAsync(CancellationToken cancellationToken) =>
+        db.DanceFestivals.AsNoTracking().SingleOrDefaultAsync(f => f.Active && f.PageEnabled, cancellationToken);
+
     public async Task<WebsiteSettings> SettingsAsync(CancellationToken cancellationToken) =>
         await db.WebsiteSettings.AsNoTracking().SingleAsync(cancellationToken);
 

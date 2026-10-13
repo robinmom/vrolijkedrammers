@@ -70,6 +70,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Jubilarissen', to: '/jubilarissen', permission: 'member.read', icon: 'jaar', section: 'Leden' },
   { label: 'Overzicht', to: '/dansgarde', permission: 'member.read', icon: 'leden', section: 'Dansgarde' },
   { label: 'Dansgroepen', to: '/dansgarde/groepen', permission: 'member.read', icon: 'groepen', section: 'Dansgarde' },
+  // 2026-10-12: Dansgardefestival; de organisatie (rol Dansgardefestival) ziet in het portal alleen dit.
+  { label: 'Dansgardefestival', to: '/dansgarde/festival', permission: 'festival.manage', icon: 'agenda', section: 'Dansgarde' },
   // 2026-10-10: prins(es) en adjudanten, met hun informatie in de app.
   { label: 'Prins en adjudanten', to: '/prins', permission: 'role.manage', icon: 'rollen', section: 'Prins' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },

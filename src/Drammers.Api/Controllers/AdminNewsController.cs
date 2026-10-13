@@ -36,8 +36,16 @@ public sealed class AdminNewsController(DrammersDbContext db, ContentAdministrat
         return new AdminNewsResponse(n.Id, n.Title, n.Summary, n.Body, n.Category, n.ExpireAt,
             PublicationResponse.From(n.Visibility, n.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), n.Status, n.PublishAt),
             await urls.ForAsync(FileContainers.Content, n.ImageBlobPath, cancellationToken), n.PushOnPublish, push,
-            n.ShowOnWebsite, n.WebsiteBody, n.Slug);
+            n.ShowOnWebsite, n.WebsiteBody, n.Slug, n.PhotoAlbumId);
     }
+
+    /// <summary>Albums om aan een bericht te koppelen (zonder fotobeheer-rechten), nieuwste eerst.</summary>
+    [HttpGet("albums")]
+    [ProducesResponseType<IReadOnlyList<WebsiteAlbumOptionResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<WebsiteAlbumOptionResponse>> GetAlbums(CancellationToken cancellationToken) =>
+        await db.PhotoAlbums.AsNoTracking().OrderByDescending(a => a.AlbumDate).ThenBy(a => a.Title)
+            .Select(a => new WebsiteAlbumOptionResponse(a.Id, a.Title, a.AlbumDate, db.Photos.Count(p => p.AlbumId == a.Id)))
+            .ToListAsync(cancellationToken);
 
     /// <summary>Afbeelding vooraf uploaden (ook vóór het eerste opslaan); stuur het pad mee in <c>image</c>.</summary>
     [HttpPost("images")]
@@ -141,4 +149,4 @@ public sealed record AdminNewsSummaryResponse(
 public sealed record AdminNewsResponse(
     Guid Id, string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationResponse Publication, string? ImageUrl,
     bool PushOnPublish, Modules.Notification.Notifications.NotificationStatus? PushStatus,
-    bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null);
+    bool ShowOnWebsite = false, string? WebsiteBody = null, string? Slug = null, Guid? PhotoAlbumId = null);

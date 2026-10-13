@@ -549,3 +549,7 @@ ul.grid-3, ul.grid-4, ul.grid-5 { list-style: none; padding: 0; margin: 0; }
 .festival-page details.doc summary::before { content: "▸"; margin-right: 8px; color: var(--tekst-3); }
 .festival-page details.doc[open] summary::before { content: "▾"; }
 .festival-page details.doc summary a { margin-left: auto; }
+
+/* Nieuws met fotoalbum (2026-10-13). */
+.news-album { margin-top: 28px; }
+.news-album h2 { font-size: 1.3rem; }

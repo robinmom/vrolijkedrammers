@@ -9895,6 +9895,45 @@
         }
       }
     },
+    "/api/v1/admin/news/albums": {
+      "get": {
+        "tags": [
+          "AdminNews"
+        ],
+        "summary": "Albums om aan een bericht te koppelen (zonder fotobeheer-rechten), nieuwste eerst.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteAlbumOptionResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteAlbumOptionResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteAlbumOptionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/news/images": {
       "post": {
         "tags": [
@@ -25320,6 +25359,13 @@
               "null",
               "string"
             ]
+          },
+          "photoAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -36186,6 +36232,35 @@
           }
         }
       },
+      "NewsAlbumResponse": {
+        "required": [
+          "id",
+          "title",
+          "photoCount",
+          "previewUrls"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "photoCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "previewUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Gekoppeld fotoalbum onder een nieuwsbericht: titel, aantal foto's en de eerste paar als voorbeeld."
+      },
       "NewsDetailResponse": {
         "required": [
           "id",
@@ -36228,6 +36303,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "album": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NewsAlbumResponse"
+              }
             ]
           }
         }
@@ -36296,6 +36381,13 @@
               "null",
               "string"
             ]
+          },
+          "photoAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

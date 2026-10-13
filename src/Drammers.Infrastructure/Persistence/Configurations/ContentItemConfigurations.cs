@@ -83,6 +83,7 @@ internal sealed class NewsItemConfiguration : IEntityTypeConfiguration<NewsItem>
         builder.HasMany(n => n.Audiences).WithOne().HasForeignKey(a => a.NewsId).OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(n => new { n.Status, n.PublishAt });
         builder.HasIndex(n => n.Slug).IsUnique().HasFilter("[slug] IS NOT NULL");
+        builder.HasOne<Modules.Content.Photos.PhotoAlbum>().WithMany().HasForeignKey(n => n.PhotoAlbumId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

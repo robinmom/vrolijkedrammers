@@ -1,7 +1,7 @@
 import { brand } from '@drammers/design-tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { queryKeys, useNewsItem } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
@@ -9,7 +9,7 @@ import { newsDateLong } from '../../lib/dates';
 import { isGuid } from '../../lib/ids';
 import { useTheme } from '../../theme/ThemeProvider';
 import { useHeroStatusBar } from '../../theme/useHeroStatusBar';
-import { AppText, BackLink, Badge, EmptyState, HeroButton, QueryState, RemoteImage, RichText, Screen } from '../../ui';
+import { AppText, BackLink, Badge, Button, EmptyState, HeroButton, QueryState, RemoteImage, RichText, Screen } from '../../ui';
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace('/nieuws'));
 
@@ -44,6 +44,7 @@ function Bericht({ id }: { id: string }) {
     <Screen hero={Boolean(n.imageUrl)} {...refresh}>
       {n.imageUrl ? <Hero id={n.id} imageUrl={n.imageUrl} onShare={share} /> : <BackLink label="Nieuws" />}
       <Body category={n.category} date={newsDateLong(n.publishedAt)} title={n.title} summary={n.summary} bodyHtml={n.bodyHtml} />
+      {n.album ? <AlbumPreview album={n.album} /> : null}
     </Screen>
   );
 }
@@ -86,7 +87,44 @@ function Body({ category, date, title, summary, bodyHtml }: { category: string |
   );
 }
 
+/** Gekoppeld fotoalbum (2026-10-13): de eerste foto's en een knop naar het hele album. */
+function AlbumPreview({ album }: { album: { id: string; title: string; photoCount: number; previewUrls: string[] } }) {
+  const { colors } = useTheme();
+  const open = () => router.push(`/fotos/${album.id}`);
+  return (
+    <View style={styles.album}>
+      <AppText variant="sectionHeader" accessibilityRole="header">
+        {"Foto's"}
+      </AppText>
+      <AppText variant="body" color={colors.textSecondary}>
+        {album.title}
+      </AppText>
+      <View style={styles.thumbs}>
+        {album.previewUrls.map((url, index) => (
+          <Pressable
+            key={url}
+            onPress={open}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`Foto ${index + 1} uit ${album.title}`}
+            style={styles.thumb}
+          >
+            <RemoteImage uri={url} cacheKey={`album-${album.id}-${index}`} style={StyleSheet.absoluteFill} />
+          </Pressable>
+        ))}
+      </View>
+      <Button
+        label={`Bekijk alle ${album.photoCount === 1 ? 'foto' : `${album.photoCount} foto's`}`}
+        variant="secondary"
+        onPress={open}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  album: { paddingHorizontal: 20, paddingBottom: 24, gap: 10 },
+  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  thumb: { width: '32%', aspectRatio: 1, borderRadius: 10, overflow: 'hidden' },
   hero: { height: 280, backgroundColor: brand.navy, overflow: 'hidden' },
   heroButtons: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 },
   content: { padding: 20, gap: 14 },

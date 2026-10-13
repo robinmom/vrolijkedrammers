@@ -8325,6 +8325,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/news/albums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Albums om aan een bericht te koppelen (zonder fotobeheer-rechten), nieuwste eerst. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WebsiteAlbumOptionResponse"][];
+                        "application/json": components["schemas"]["WebsiteAlbumOptionResponse"][];
+                        "text/json": components["schemas"]["WebsiteAlbumOptionResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/news/images": {
         parameters: {
             query?: never;
@@ -20509,6 +20547,8 @@ export interface components {
             showOnWebsite: boolean;
             websiteBody?: null | string;
             slug?: null | string;
+            /** Format: uuid */
+            photoAlbumId?: null | string;
         };
         AdminNewsSummaryResponse: {
             /** Format: uuid */
@@ -23367,6 +23407,15 @@ export interface components {
             /** @default false */
             cashReceived: boolean;
         };
+        /** @description Gekoppeld fotoalbum onder een nieuwsbericht: titel, aantal foto's en de eerste paar als voorbeeld. */
+        NewsAlbumResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: int32 */
+            photoCount: number;
+            previewUrls: string[];
+        };
         NewsDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -23377,6 +23426,7 @@ export interface components {
             /** Format: date-time */
             publishedAt: string;
             imageUrl: null | string;
+            album?: null | components["schemas"]["NewsAlbumResponse"];
         };
         NewsRequest: {
             title: string;
@@ -23393,6 +23443,8 @@ export interface components {
             websiteBody?: null | string;
             slug?: null | string;
             image?: null | string;
+            /** Format: uuid */
+            photoAlbumId?: null | string;
         };
         NewsSummaryResponse: {
             /** Format: uuid */

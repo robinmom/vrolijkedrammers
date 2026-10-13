@@ -48,10 +48,11 @@ public sealed record NewsRequest(
     bool ShowOnWebsite = false,
     [StringLength(100000)] string? WebsiteBody = null,
     [StringLength(100)] string? Slug = null,
-    [StringLength(300)] string? Image = null)
+    [StringLength(300)] string? Image = null,
+    Guid? PhotoAlbumId = null)
 {
     public NewsInput ToInput() => new(Title, Summary, Body, Category, ExpireAt?.ToUniversalTime(), Publication.ToInput(), PushOnPublish,
-        ShowOnWebsite, WebsiteBody, Slug, Image);
+        ShowOnWebsite, WebsiteBody, Slug, Image, PhotoAlbumId);
 }
 
 /// <summary>Een vooraf geüploade afbeelding: stuur <see cref="Path"/> mee bij het opslaan; <see cref="Url"/> is voor het voorbeeld.</summary>

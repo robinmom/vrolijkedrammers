@@ -21,7 +21,7 @@ public sealed record EventCard(
 
 public sealed record NewsCard(Guid Id, string Slug, string Title, string? Summary, DateTime PublishedAt, string? ImageUrl, string? Category);
 
-public sealed record NewsArticle(NewsCard Card, string? BodyHtml, string? WebsiteBodyHtml);
+public sealed record NewsArticle(NewsCard Card, string? BodyHtml, string? WebsiteBodyHtml, AlbumCard? Album = null, IReadOnlyList<PhotoView>? Photos = null);
 
 public sealed record PageContent(
     string Slug, string Title, string? Intro, string BodyHtml, string? ImageUrl, WebsiteMenu Menu, AlbumCard? Album, IReadOnlyList<PhotoView> Photos);
@@ -125,7 +125,15 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
     public async Task<NewsArticle?> NewsArticleAsync(string slug, CancellationToken cancellationToken)
     {
         var n = await WebsiteNews().SingleOrDefaultAsync(x => x.Slug == slug, cancellationToken);
-        return n is null ? null : new NewsArticle(ToCard(n), MarkdownRenderer.ToSafeHtml(n.Body), MarkdownRenderer.ToSafeHtml(n.WebsiteBody));
+        if (n is null)
+        {
+            return null;
+        }
+
+        // Gekoppeld album (2026-10-13): alleen als het voor gasten zichtbaar is en er foto's in staan.
+        var album = n.PhotoAlbumId is { } albumId ? await AlbumAsync(albumId, cancellationToken) : null;
+        return new NewsArticle(ToCard(n), MarkdownRenderer.ToSafeHtml(n.Body), MarkdownRenderer.ToSafeHtml(n.WebsiteBody),
+            album is { Photos.Count: > 0 } ? album.Value.Album : null, album?.Photos);
     }
 
     private static NewsCard ToCard(Modules.Content.News.NewsItem n) =>

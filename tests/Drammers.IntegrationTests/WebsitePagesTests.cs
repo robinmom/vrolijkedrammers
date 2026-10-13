@@ -325,6 +325,55 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Contains(options!, o => o.GetProperty("title").GetString() == "Optocht 2026" && o.GetProperty("photoCount").GetInt32() == 1);
     }
 
+    [Fact]
+    public async Task Nieuws_met_fotoalbum_en_links_naar_de_eigen_site_in_hetzelfde_venster()
+    {
+        var album = await AlbumAsync("Pronkzitting 2027", "Public");
+        await UploadPhotoAsync(album);
+        var response = await _bestuur.PostAsJsonAsync("/api/v1/admin/news", new
+        {
+            title = "Foto's van de pronkzitting",
+            summary = (string?)null,
+            body = "Bekijk [de foto's](/fotos/" + album + ") of [de krant](https://example.com/krant).",
+            category = (string?)null,
+            expireAt = (DateTime?)null,
+            publication = new { visibility = "Public", audienceRoles = Array.Empty<string>(), status = "Published" },
+            showOnWebsite = true,
+            websiteBody = (string?)null,
+            photoAlbumId = album,
+        });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var id = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        Assert.Equal(album, (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/news/{id}")).GetProperty("photoAlbumId").GetGuid());
+        Assert.Contains((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/news/albums"))!,
+            o => o.GetProperty("id").GetGuid() == album);
+
+        // App: het album met voorbeeldfoto's; de link naar onze site zonder nieuw tabblad, een andere site wel.
+        var detail = await _guest.GetFromJsonAsync<JsonElement>($"/api/v1/news/{id}");
+        var linked = detail.GetProperty("album");
+        Assert.Equal(1, linked.GetProperty("photoCount").GetInt32());
+        Assert.Single(linked.GetProperty("previewUrls").EnumerateArray());
+        var html = detail.GetProperty("bodyHtml").GetString()!;
+        Assert.Contains($"<a href=\"/fotos/{album}\">", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"https://example.com/krant\" rel=\"noopener noreferrer nofollow\" target=\"_blank\"", html, StringComparison.Ordinal);
+
+        // Website: de foto's en een knop naar het hele album.
+        var page = await HtmlAsync("/nieuws/fotos-van-de-pronkzitting");
+        Assert.Contains("class=\"photo-grid\"", page);
+        Assert.Contains($"href=\"/fotos/{album}\">Bekijk alle foto", page);
+
+        // Een album dat niet (meer) openbaar is, verdwijnt onder het bericht.
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await db.PhotoAlbums.Where(a => a.Id == album).ExecuteUpdateAsync(u => u.SetProperty(a => a.Visibility, Modules.Content.Shared.ContentVisibility.Members));
+        }
+
+        Assert.False((await _guest.GetFromJsonAsync<JsonElement>($"/api/v1/news/{id}")).TryGetProperty("album", out var hidden) && hidden.ValueKind != JsonValueKind.Null);
+        // (Rechtstreeks in de database gewijzigd, dus zonder de cache-ontruiming van het portal: een andere URL.)
+        Assert.DoesNotContain("class=\"photo-grid\"", await HtmlAsync("/nieuws/fotos-van-de-pronkzitting?na=wijziging"));
+    }
+
     private async Task<Guid> AlbumAsync(string title, string visibility)
     {
         var response = await _bestuur.PostAsJsonAsync("/api/v1/admin/photo-albums", new

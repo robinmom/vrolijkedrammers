@@ -39,10 +39,17 @@ wachtwoord in de mail zou blijven werken.
      tenzij je dat wilt.
 5. **Prod.** Herhaal stap 1 t/m 3 met `prod`. Doe dit vlak voor de lancering: vanaf dat moment werkt alleen inloggen met
    een wachtwoord.
-6. **Lancering:**
-   - zet de apps in de stores live;
+6. **Eerst een selectie** (vanaf 2026-10-13). Ga naar **Accountverzoeken → Welkomstmails**, laat **Selectie** aanstaan en kies wie de mail krijgt. Je kunt kiezen uit:
+   - het kader op de website;
+   - gesplitste leden (het hoofdlid en het tweede lid);
+   - rollen;
+   - groepen;
+   - losse leden.
+
+   Klik op **Ontvangers bekijken** om de lijst te controleren voordat je verstuurt.
+7. **Lancering voor iedereen (11-11):**
    - zet de feature flag `website.app` aan;
-   - kies in het portal bij "Welkomstmails" **Welkomstmail naar iedereen sturen…**.
+   - kies bij Welkomstmails **Iedereen** en verstuur. Wie al een welkomstmail kreeg, wordt overgeslagen.
 
    De mails gaan één voor één, met 40 seconden ertussen. Dat blijft binnen de maillimiet van ongeveer 90 per uur.
 

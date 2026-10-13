@@ -49,23 +49,64 @@ public sealed class AccountWelcomes(
     /// <param name="SharedEmail">Volwassenen met het e-mailadres van een ander lid: geen eigen account.</param>
     /// <param name="PasswordSignIn">Inloggen met wachtwoord staat aan (anders kan versturen nog niet).</param>
     /// <param name="EstimatedMinutes">Hoe lang het versturen ongeveer duurt.</param>
+    /// <param name="Recipients">Wie de mail krijgt (naam en e-mailadres; bij iedereen de eerste 500).</param>
     public sealed record Preview(
-        int Members, int OtherAccounts, int AlreadySent, int WithoutEmail, int Children, int SharedEmail, bool PasswordSignIn, int EstimatedMinutes);
+        int Members, int OtherAccounts, int AlreadySent, int WithoutEmail, int Children, int SharedEmail, bool PasswordSignIn, int EstimatedMinutes,
+        IReadOnlyList<WelcomeRecipient> Recipients);
 
-    private sealed record Target(Guid? MemberId, Guid? UserId);
+    public sealed record WelcomeRecipient(string Name, string Email);
 
-    public async Task<Preview> PreviewAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Wie een welkomstmail krijgt (2026-10-13): iedereen, of een selectie, bijvoorbeeld eerst het kader en de gesplitste
+    /// leden en op 11-11 de rest. Binnen een selectie telt een lid mee als het aan een van de keuzes voldoet.
+    /// </summary>
+    /// <param name="Everyone">Alle huidige leden en overige accounts (de rest van de velden telt dan niet).</param>
+    /// <param name="RoleCodes">Accounts met een van deze rollen.</param>
+    /// <param name="GroupIds">Leden van een van deze groepen.</param>
+    /// <param name="Committee">Het kader op de website (gekoppeld aan een lid).</param>
+    /// <param name="Split">Gesplitste tweepersoonslidmaatschappen: het hoofdlid en het tweede lid.</param>
+    /// <param name="MemberIds">Losse leden.</param>
+    public sealed record WelcomeSelection(
+        bool Everyone, IReadOnlyList<string>? RoleCodes = null, IReadOnlyList<Guid>? GroupIds = null, bool Committee = false, bool Split = false,
+        IReadOnlyList<Guid>? MemberIds = null)
     {
-        var plan = await PlanAsync(cancellationToken);
+        public static readonly WelcomeSelection All = new(true);
+    }
+
+    /// <summary>Keuzes voor de selectie in het portal.</summary>
+    public sealed record SelectionOptions(IReadOnlyList<SelectionOption> Roles, IReadOnlyList<SelectionOption> Groups, int CommitteeMembers, int SplitMembers);
+
+    public sealed record SelectionOption(string Key, string Name);
+
+    private sealed record Target(Guid? MemberId, Guid? UserId, string Name, string Email);
+
+    public async Task<SelectionOptions> OptionsAsync(CancellationToken cancellationToken)
+    {
+        var roles = await db.Roles.AsNoTracking().OrderBy(r => r.SortOrder).Select(r => new SelectionOption(r.Code, r.Name)).ToListAsync(cancellationToken);
+        var groups = await db.Groups.AsNoTracking().Where(g => g.Active).OrderBy(g => g.Name)
+            .Select(g => new SelectionOption(g.Id.ToString(), g.Name)).ToListAsync(cancellationToken);
+        var committee = await db.CommitteeMembers.AsNoTracking().Where(c => c.MemberId != null).Select(c => c.MemberId).Distinct().CountAsync(cancellationToken);
+        var split = (await SplitMemberIdsAsync(cancellationToken)).Count;
+        return new SelectionOptions(roles, groups, committee, split);
+    }
+
+    public Task<Preview> PreviewAsync(CancellationToken cancellationToken) => PreviewAsync(WelcomeSelection.All, cancellationToken);
+
+    public async Task<Preview> PreviewAsync(WelcomeSelection selection, CancellationToken cancellationToken)
+    {
+        var plan = await PlanAsync(selection, cancellationToken);
         var count = plan.Targets.Count;
         return new Preview(
             plan.Targets.Count(t => t.MemberId is not null), plan.Targets.Count(t => t.UserId is not null), plan.AlreadySent,
             plan.WithoutEmail, plan.Children, plan.SharedEmail, logins.PasswordSignIn,
-            (int)Math.Ceiling(count * Interval.TotalMinutes));
+            (int)Math.Ceiling(count * Interval.TotalMinutes),
+            [.. plan.Targets.OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase).Take(500).Select(t => new WelcomeRecipient(t.Name, t.Email))]);
     }
 
+    public Task<int> SendToAllAsync(CancellationToken cancellationToken) => SendAsync(WelcomeSelection.All, cancellationToken);
+
     /// <summary>Zet de welkomstmails in de wachtrij. Een tweede keer starten stuurt niemand dubbel.</summary>
-    public async Task<int> SendToAllAsync(CancellationToken cancellationToken)
+    public async Task<int> SendAsync(WelcomeSelection selection, CancellationToken cancellationToken)
     {
         if (!logins.PasswordSignIn)
         {
@@ -74,7 +115,12 @@ public sealed class AccountWelcomes(
                 DomainErrorKind.Conflict);
         }
 
-        var plan = await PlanAsync(cancellationToken);
+        var plan = await PlanAsync(selection, cancellationToken);
+        if (!selection.Everyone && plan.Targets.Count == 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "In deze selectie is niemand die nog een welkomstmail moet krijgen.");
+        }
+
         var start = clock.UtcNow.UtcDateTime;
         for (var i = 0; i < plan.Targets.Count; i++)
         {
@@ -84,7 +130,8 @@ public sealed class AccountWelcomes(
 
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(
-            new AuditEntry("account.welcome-all", "User", "all", null, JsonSerializer.Serialize(new { count = plan.Targets.Count }, JsonSerializerOptions.Web)),
+            new AuditEntry(selection.Everyone ? "account.welcome-all" : "account.welcome-selection", "User", selection.Everyone ? "all" : "selection", null,
+                JsonSerializer.Serialize(new { count = plan.Targets.Count, selection }, JsonSerializerOptions.Web)),
             cancellationToken);
         return plan.Targets.Count;
     }
@@ -227,22 +274,76 @@ public sealed class AccountWelcomes(
 
     private sealed record Plan(List<Target> Targets, int AlreadySent, int WithoutEmail, int Children, int SharedEmail);
 
-    private async Task<Plan> PlanAsync(CancellationToken cancellationToken)
+    /// <summary>Gesplitste lidmaatschappen: het tweede lid (Partner) en het hoofdlid dat betaalt.</summary>
+    private async Task<HashSet<Guid>> SplitMemberIdsAsync(CancellationToken cancellationToken)
+    {
+        var partners = await db.Members.AsNoTracking().Where(m => m.MembershipKind == MembershipKind.Partner)
+            .Select(m => new { m.Id, m.PayerMemberId }).ToListAsync(cancellationToken);
+        return [.. partners.Select(p => p.Id), .. partners.Where(p => p.PayerMemberId != null).Select(p => p.PayerMemberId!.Value)];
+    }
+
+    private async Task<Plan> PlanAsync(WelcomeSelection selection, CancellationToken cancellationToken)
     {
         var members = (await db.Members.AsNoTracking().OrderBy(m => m.MemberNumber).ToListAsync(cancellationToken))
             .Where(m => m.EffectiveStatus == MembershipStatus.Active)
             .ToList();
         var users = await db.Users.AsNoTracking()
             .Where(u => u.AccountStatus != AccountStatus.Deleted)
-            .Select(u => new { u.Id, u.Email, u.MemberId, u.WelcomeSentAt, u.AccountStatus })
+            .Select(u => new { u.Id, u.Email, u.DisplayName, u.MemberId, u.WelcomeSentAt, u.AccountStatus })
             .ToListAsync(cancellationToken);
+
+        // Selectie: welke leden en accounts zonder lid meedoen (bij iedereen: alles).
+        HashSet<Guid>? selectedMembers = null;
+        HashSet<Guid>? selectedUsers = null;
+        if (!selection.Everyone)
+        {
+            selectedMembers = [.. selection.MemberIds ?? []];
+            selectedUsers = [];
+            var today = Today;
+            if (selection.RoleCodes is { Count: > 0 } codes)
+            {
+                var withRole = (await db.UserRoles.AsNoTracking()
+                        .Where(ur => db.Roles.Any(r => r.Id == ur.RoleId && codes.Contains(r.Code)))
+                        .ToListAsync(cancellationToken))
+                    .Where(ur => ur.IsValidOn(today)).Select(ur => ur.UserId).ToHashSet();
+                foreach (var user in users.Where(u => withRole.Contains(u.Id)))
+                {
+                    if (user.MemberId is { } memberId)
+                    {
+                        selectedMembers.Add(memberId);
+                    }
+                    else
+                    {
+                        selectedUsers.Add(user.Id);
+                    }
+                }
+            }
+
+            if (selection.GroupIds is { Count: > 0 } groupIds)
+            {
+                var inGroups = await db.GroupMemberships.AsNoTracking().Where(gm => groupIds.Contains(gm.GroupId)).ToListAsync(cancellationToken);
+                selectedMembers.UnionWith(inGroups.Where(gm => gm.IsValidOn(today)).Select(gm => gm.MemberId));
+            }
+
+            if (selection.Committee)
+            {
+                selectedMembers.UnionWith(await db.CommitteeMembers.AsNoTracking().Where(c => c.MemberId != null).Select(c => c.MemberId!.Value)
+                    .ToListAsync(cancellationToken));
+            }
+
+            if (selection.Split)
+            {
+                selectedMembers.UnionWith(await SplitMemberIdsAsync(cancellationToken));
+            }
+        }
+
         var byMember = users.Where(u => u.MemberId is not null).GroupBy(u => u.MemberId!.Value).ToDictionary(g => g.Key, g => g.First());
         var activeIds = members.Select(m => m.Id).ToHashSet();
 
         var targets = new List<Target>();
         var claimed = users.Where(u => u.MemberId is { } m && activeIds.Contains(m)).Select(u => u.Email).ToHashSet(StringComparer.Ordinal);
         int alreadySent = 0, withoutEmail = 0, children = 0, shared = 0;
-        foreach (var member in members)
+        foreach (var member in members.Where(m => selectedMembers is null || selectedMembers.Contains(m.Id)))
         {
             if (byMember.TryGetValue(member.Id, out var own))
             {
@@ -257,7 +358,7 @@ public sealed class AccountWelcomes(
                 }
                 else
                 {
-                    targets.Add(new Target(member.Id, null));
+                    targets.Add(new Target(member.Id, null, member.FullName, own.Email));
                 }
 
                 continue;
@@ -282,10 +383,11 @@ public sealed class AccountWelcomes(
                 continue;
             }
 
-            targets.Add(new Target(member.Id, null));
+            targets.Add(new Target(member.Id, null, member.FullName, address));
         }
 
-        foreach (var user in users.Where(u => u.AccountStatus == AccountStatus.Active && (u.MemberId is null || !activeIds.Contains(u.MemberId.Value))))
+        foreach (var user in users.Where(u => u.AccountStatus == AccountStatus.Active && (u.MemberId is null || !activeIds.Contains(u.MemberId.Value))
+            && (selectedUsers is null || selectedUsers.Contains(u.Id))))
         {
             if (claimed.Contains(user.Email))
             {
@@ -298,7 +400,7 @@ public sealed class AccountWelcomes(
             }
             else if (user.MemberId is null)
             {
-                targets.Add(new Target(null, user.Id));
+                targets.Add(new Target(null, user.Id, user.DisplayName, user.Email));
             }
         }
 

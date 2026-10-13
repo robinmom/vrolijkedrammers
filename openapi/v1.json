@@ -750,6 +750,54 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Wat een welkomstmail aan deze selectie (of iedereen) zou doen, met de ontvangers.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSelection"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSelection"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/account-welcomes/send-all": {
@@ -781,6 +829,126 @@
           },
           "409": {
             "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/account-welcomes/options": {
+      "get": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Keuzes voor een selectie: rollen, groepen, kader op de website en gesplitste leden.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionOptions"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionOptions"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionOptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/account-welcomes/send": {
+      "post": {
+        "tags": [
+          "AdminAccounts"
+        ],
+        "summary": "Welkomstmail aan een selectie (of iedereen), via de wachtrij; wie er al een kreeg, wordt overgeslagen.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSelection"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSelection"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/WelcomeSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomesQueuedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomesQueuedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WelcomesQueuedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
             "content": {
               "text/plain": {
                 "schema": {
@@ -38263,7 +38431,8 @@
           "children",
           "sharedEmail",
           "passwordSignIn",
-          "estimatedMinutes"
+          "estimatedMinutes",
+          "recipients"
         ],
         "type": "object",
         "properties": {
@@ -38305,6 +38474,13 @@
             "type": "integer",
             "description": "Hoe lang het versturen ongeveer duurt.",
             "format": "int32"
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WelcomeRecipient"
+            },
+            "description": "Wie de mail krijgt (naam en e-mailadres; bij iedereen de eerste 500)."
           }
         },
         "description": "Wat \"Welkomstmail naar iedereen\" zou doen."
@@ -40546,6 +40722,53 @@
         },
         "description": "Het actieve carnavalsjaar en de oudere jaren met inhoud (nieuwste eerst)."
       },
+      "SelectionOption": {
+        "required": [
+          "key",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "SelectionOptions": {
+        "required": [
+          "roles",
+          "groups",
+          "committeeMembers",
+          "splitMembers"
+        ],
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SelectionOption"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SelectionOption"
+            }
+          },
+          "committeeMembers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "splitMembers": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Keuzes voor de selectie in het portal."
+      },
       "SepaCreditor": {
         "required": [
           "name",
@@ -42637,6 +42860,76 @@
             "format": "int32"
           }
         }
+      },
+      "WelcomeRecipient": {
+        "required": [
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "WelcomeSelection": {
+        "required": [
+          "everyone"
+        ],
+        "type": "object",
+        "properties": {
+          "everyone": {
+            "type": "boolean",
+            "description": "Alle huidige leden en overige accounts (de rest van de velden telt dan niet)."
+          },
+          "roleCodes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Accounts met een van deze rollen."
+          },
+          "groupIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Leden van een van deze groepen."
+          },
+          "committee": {
+            "type": "boolean",
+            "description": "Het kader op de website (gekoppeld aan een lid).",
+            "default": false
+          },
+          "split": {
+            "type": "boolean",
+            "description": "Gesplitste tweepersoonslidmaatschappen: het hoofdlid en het tweede lid.",
+            "default": false
+          },
+          "memberIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Losse leden."
+          }
+        },
+        "description": "Wie een welkomstmail krijgt (2026-10-13): iedereen, of een selectie, bijvoorbeeld eerst het kader en de gesplitste\nleden en op 11-11 de rest. Binnen een selectie telt een lid mee als het aan een van de keuzes voldoet."
       },
       "WelcomesQueuedResponse": {
         "required": [

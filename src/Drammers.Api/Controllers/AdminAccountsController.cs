@@ -30,6 +30,28 @@ public sealed class AdminAccountsController(DrammersDbContext db, MemberAccounts
     public async Task<AcceptedResult> WelcomeAll(CancellationToken cancellationToken) =>
         Accepted((string?)null, new WelcomesQueuedResponse(await welcomes.SendToAllAsync(cancellationToken)));
 
+    /// <summary>Keuzes voor een selectie: rollen, groepen, kader op de website en gesplitste leden.</summary>
+    [HttpGet("account-welcomes/options")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<AccountWelcomes.SelectionOptions>(StatusCodes.Status200OK)]
+    public Task<AccountWelcomes.SelectionOptions> WelcomeOptions(CancellationToken cancellationToken) => welcomes.OptionsAsync(cancellationToken);
+
+    /// <summary>Wat een welkomstmail aan deze selectie (of iedereen) zou doen, met de ontvangers.</summary>
+    [HttpPost("account-welcomes/preview")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<AccountWelcomes.Preview>(StatusCodes.Status200OK)]
+    public Task<AccountWelcomes.Preview> WelcomeSelectionPreview(AccountWelcomes.WelcomeSelection selection, CancellationToken cancellationToken) =>
+        welcomes.PreviewAsync(selection, cancellationToken);
+
+    /// <summary>Welkomstmail aan een selectie (of iedereen), via de wachtrij; wie er al een kreeg, wordt overgeslagen.</summary>
+    [HttpPost("account-welcomes/send")]
+    [RequirePermission(Permissions.MemberApprove)]
+    [ProducesResponseType<WelcomesQueuedResponse>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<AcceptedResult> WelcomeSelection(AccountWelcomes.WelcomeSelection selection, CancellationToken cancellationToken) =>
+        Accepted((string?)null, new WelcomesQueuedResponse(await welcomes.SendAsync(selection, cancellationToken)));
+
     /// <summary>Welkomstmail (opnieuw) naar één lid; maakt zo nodig eerst het account.</summary>
     [HttpPost("members/{id:guid}/welcome")]
     [RequirePermission(Permissions.MemberApprove)]

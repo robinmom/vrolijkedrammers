@@ -223,11 +223,11 @@ export function WelcomeMailsCard() {
       <ProblemAlert error={send.error} />
       <button
         type="button"
-        className="button"
+        className="button welcome-send"
         disabled={!p?.passwordSignIn || total === 0 || send.isPending}
         onClick={() => setConfirming(true)}
       >
-        {everyone ? 'Welkomstmail naar iedereen sturen…' : `Welkomstmail naar deze selectie sturen (${total})…`}
+        {everyone ? 'Naar iedereen sturen…' : `Naar selectie sturen (${total})…`}
       </button>
       <Dialog
         open={confirming}

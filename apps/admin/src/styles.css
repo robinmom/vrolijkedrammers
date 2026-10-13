@@ -2096,3 +2096,8 @@ fieldset {
   max-height: 280px;
   overflow: auto;
 }
+
+.welcome-send {
+  white-space: normal;
+  text-align: center;
+}

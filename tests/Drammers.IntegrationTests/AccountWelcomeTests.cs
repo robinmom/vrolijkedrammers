@@ -219,6 +219,48 @@ public class AccountWelcomeTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Bestaand_account_met_e_mail_en_code_wordt_een_wachtwoordaccount_met_behoud_van_alles()
+    {
+        var memberId = await AddMemberAsync("0601", "code@example.com");
+        // Zelf ingelogd met e-mail + code (zoals vóór de omschakeling) en gekoppeld aan het lid, met testtoegang.
+        var oldObjectId = _api.Entra.SignUp("code@example.com");
+        _api.Entra.TestAccess[oldObjectId] = "dev";
+        var userId = await WithDbAsync(async db =>
+        {
+            var user = new User
+            {
+                Id = IdGenerator.NewId(),
+                ExternalObjectId = oldObjectId,
+                Email = "code@example.com",
+                DisplayName = "Piet Code",
+                MemberId = memberId,
+                AccountStatus = AccountStatus.Active,
+            };
+            var lid = await db.Roles.Where(r => r.Code == DefaultRoles.Lid).Select(r => r.Id).SingleAsync();
+            user.Roles.Add(new UserRole { UserId = user.Id, RoleId = lid, AssignedAt = DateTime.UtcNow });
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+            return user.Id;
+        });
+
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/welcome", null)).StatusCode);
+        await RunOutboxAsync();
+
+        var user = await WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.Id == userId));
+        Assert.NotEqual(oldObjectId, user.ExternalObjectId);
+        Assert.True(_api.Entra.PasswordSignIn.ContainsKey(user.ExternalObjectId));
+        Assert.Contains(oldObjectId, _api.Entra.Deleted);
+        Assert.Equal("dev", _api.Entra.TestAccess[user.ExternalObjectId]);
+        Assert.NotNull(user.WelcomeSentAt);
+        Assert.Contains(_api.Emails.Sent, m => m.To == "code@example.com" && m.PlainText.Contains("Wachtwoord vergeten?", StringComparison.Ordinal));
+
+        // Het nieuwe account is hetzelfde account: zelfde lid en rollen.
+        var me = await _api.ClientFor(user.ExternalObjectId).GetFromJsonAsync<JsonElement>("/api/v1/me/member");
+        Assert.Equal("0601", me.GetProperty("memberNumber").GetString());
+        Assert.Equal(1, await WithDbAsync(db => db.Users.CountAsync(u => u.Email == "code@example.com")));
+    }
+
+    [Fact]
     public async Task Welkomstmail_voor_een_kind_kan_niet()
     {
         var kind = await AddMemberAsync("0401", "kind2@example.com", DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-8));

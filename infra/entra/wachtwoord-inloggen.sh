@@ -6,7 +6,7 @@
 # Het script:
 #   1. maakt de user flow "DVD inloggen met wachtwoord" (e-mail + wachtwoord, zelf aanmelden UIT);
 #   2. verplaatst de beheerportal- en app-registratie van deze omgeving naar die flow (een app hoort bij één flow);
-#   3. geeft de provisioning-app het Graph-recht User-PasswordProfile.ReadWrite.All (wachtwoordinlog toevoegen aan
+#   3. geeft de provisioning-app de Graph-rechten User-PasswordProfile.ReadWrite.All en User.ManageIdentities.All (wachtwoordinlog toevoegen aan
 #      bestaande inlogs met e-mail + code, zodat ook die leden met "Wachtwoord vergeten?" verder kunnen).
 # Daarna in GitHub (environment): DVD_PASSWORD_SIGN_IN=true en Deploy.
 #   az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
@@ -64,17 +64,21 @@ move_app "DVD Beheerportal ($ENV)"
 move_app "DVD App ($ENV)"
 
 if [[ "$BACK" != "--terug" ]]; then
-  echo "==> Provisioning-app: User-PasswordProfile.ReadWrite.All"
+  # User-PasswordProfile.ReadWrite.All: een (willekeurig) wachtwoord zetten. User.ManageIdentities.All: de inlog met
+  # e-mail + wachtwoord toevoegen aan een bestaand account met e-mail + code (identities wijzigen; zonder dit recht 403).
   GRAPH_SP_ID="$(graph --method get --url "$GRAPH/servicePrincipals(appId='$GRAPH_APP_ID')" --query id -o tsv)"
-  ROLE="$(graph --method get --url "$GRAPH/servicePrincipals/$GRAPH_SP_ID" --url-parameters "\$select=appRoles" \
-    --query "appRoles[?value=='User-PasswordProfile.ReadWrite.All'].id | [0]" -o tsv)"
   PROV_APP_ID="$(find_by_name "$GRAPH/applications" "DVD Provisioning ($ENV)" appId)"
   PROV_SP_ID="$(graph --method get --url "$GRAPH/servicePrincipals(appId='$PROV_APP_ID')" --query id -o tsv)"
-  GRANTED="$(graph --method get --url "$GRAPH/servicePrincipals/$PROV_SP_ID/appRoleAssignments" --query "value[?appRoleId=='$ROLE'].id | [0]" -o tsv)"
-  if [[ -z "$GRANTED" ]]; then
-    graph --method post --url "$GRAPH/servicePrincipals/$GRAPH_SP_ID/appRoleAssignedTo" --body "{
-      \"principalId\": \"$PROV_SP_ID\", \"resourceId\": \"$GRAPH_SP_ID\", \"appRoleId\": \"$ROLE\"}" -o none
-  fi
+  for PERMISSION in User-PasswordProfile.ReadWrite.All User.ManageIdentities.All; do
+    echo "==> Provisioning-app: $PERMISSION"
+    ROLE="$(graph --method get --url "$GRAPH/servicePrincipals/$GRAPH_SP_ID" --url-parameters "\$select=appRoles" \
+      --query "appRoles[?value=='$PERMISSION'].id | [0]" -o tsv)"
+    GRANTED="$(graph --method get --url "$GRAPH/servicePrincipals/$PROV_SP_ID/appRoleAssignments" --query "value[?appRoleId=='$ROLE'].id | [0]" -o tsv)"
+    if [[ -z "$GRANTED" ]]; then
+      graph --method post --url "$GRAPH/servicePrincipals/$GRAPH_SP_ID/appRoleAssignedTo" --body "{
+        \"principalId\": \"$PROV_SP_ID\", \"resourceId\": \"$GRAPH_SP_ID\", \"appRoleId\": \"$ROLE\"}" -o none
+    fi
+  done
 fi
 
 cat <<NEXT

@@ -172,6 +172,53 @@ public class AccountWelcomeTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Welkomstmail_eerst_aan_een_selectie_daarna_aan_de_rest()
+    {
+        var inGroep = await AddMemberAsync("0501", "groep@example.com");
+        var hoofdlid = await AddMemberAsync("0502", "hoofd@example.com");
+        var tweede = await AddMemberAsync("0503", "tweede@example.com");
+        var los = await AddMemberAsync("0504", "los@example.com");
+        await AddMemberAsync("0505", "rest@example.com");
+        var groupId = IdGenerator.NewId();
+        await WithDbAsync(async db =>
+        {
+            db.Groups.Add(new Drammers.Modules.Membership.Groups.Group { Id = groupId, Name = "Kader", Type = Drammers.Modules.Membership.Groups.GroupType.Committee });
+            db.GroupMemberships.Add(new Drammers.Modules.Membership.Groups.GroupMembership { GroupId = groupId, MemberId = inGroep });
+            var partner = await db.Members.SingleAsync(m => m.Id == tweede);
+            partner.MembershipKind = MembershipKind.Partner;
+            partner.PayerMemberId = hoofdlid;
+            return await db.SaveChangesAsync();
+        });
+
+        var options = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/account-welcomes/options");
+        Assert.Equal(2, options.GetProperty("splitMembers").GetInt32());
+        Assert.Contains(options.GetProperty("groups").EnumerateArray(), g => g.GetProperty("name").GetString() == "Kader");
+
+        var selection = new { everyone = false, roleCodes = new[] { DefaultRoles.Bestuur }, groupIds = new[] { groupId }, committee = false, split = true, memberIds = new[] { los } };
+        var preview = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/account-welcomes/preview", selection)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(4, preview.GetProperty("members").GetInt32());
+        Assert.Equal(1, preview.GetProperty("otherAccounts").GetInt32()); // het bestuur (account zonder lid)
+        Assert.Equal(5, preview.GetProperty("recipients").GetArrayLength());
+
+        var send = await _bestuur.PostAsJsonAsync("/api/v1/admin/account-welcomes/send", selection);
+        Assert.Equal(HttpStatusCode.Accepted, send.StatusCode);
+        await RunOutboxAsync();
+        Assert.Equal(
+            ["bestuur@example.com", "groep@example.com", "hoofd@example.com", "los@example.com", "tweede@example.com"],
+            _api.Emails.Sent.Select(m => m.To).Order().ToArray());
+
+        // Op 11-11 de rest: wie al een welkomstmail kreeg, wordt overgeslagen.
+        var everyone = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/account-welcomes/send", new { everyone = true, committee = false, split = false }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, everyone.GetProperty("queued").GetInt32());
+        await RunOutboxAsync();
+        Assert.Equal("rest@example.com", _api.Emails.Sent.Last().To);
+
+        // Een lege selectie (iedereen heeft al een mail) geeft een melding in plaats van niets.
+        Assert.False((await _bestuur.PostAsJsonAsync("/api/v1/admin/account-welcomes/send", selection)).IsSuccessStatusCode);
+    }
+
+    [Fact]
     public async Task Welkomstmail_voor_een_kind_kan_niet()
     {
         var kind = await AddMemberAsync("0401", "kind2@example.com", DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-8));

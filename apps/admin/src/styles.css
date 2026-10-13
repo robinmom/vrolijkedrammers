@@ -2073,3 +2073,26 @@ fieldset {
   border-radius: 10px;
   font-size: 12px;
 }
+
+/* ---------- Welkomstmails: selectie (2026-10-13) ---------- */
+.welcome-selection {
+  margin: 12px 0;
+}
+
+.check-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0 16px;
+}
+
+.pick-list,
+.recipient-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.recipient-list {
+  max-height: 280px;
+  overflow: auto;
+}

@@ -644,7 +644,35 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /** Wat een welkomstmail aan deze selectie (of iedereen) zou doen, met de ontvangers. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WelcomeSelection"];
+                    "text/json": components["schemas"]["WelcomeSelection"];
+                    "application/*+json": components["schemas"]["WelcomeSelection"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["Preview"];
+                        "application/json": components["schemas"]["Preview"];
+                        "text/json": components["schemas"]["Preview"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -683,6 +711,110 @@ export interface paths {
                 };
                 /** @description Conflict */
                 409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-welcomes/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Keuzes voor een selectie: rollen, groepen, kader op de website en gesplitste leden. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SelectionOptions"];
+                        "application/json": components["schemas"]["SelectionOptions"];
+                        "text/json": components["schemas"]["SelectionOptions"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/account-welcomes/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Welkomstmail aan een selectie (of iedereen), via de wachtrij; wie er al een kreeg, wordt overgeslagen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WelcomeSelection"];
+                    "text/json": components["schemas"]["WelcomeSelection"];
+                    "application/*+json": components["schemas"]["WelcomeSelection"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["WelcomesQueuedResponse"];
+                        "application/json": components["schemas"]["WelcomesQueuedResponse"];
+                        "text/json": components["schemas"]["WelcomesQueuedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -24004,6 +24136,8 @@ export interface components {
              * @description Hoe lang het versturen ongeveer duurt.
              */
             estimatedMinutes: number;
+            /** @description Wie de mail krijgt (naam en e-mailadres; bij iedereen de eerste 500). */
+            recipients: components["schemas"]["WelcomeRecipient"][];
         };
         /** @enum {unknown} */
         PrinceKind: "Prince" | "YouthPrince";
@@ -24585,6 +24719,19 @@ export interface components {
             current: components["schemas"]["SeasonResponse"];
             archive: components["schemas"]["SeasonResponse"][];
         };
+        SelectionOption: {
+            key: string;
+            name: string;
+        };
+        /** @description Keuzes voor de selectie in het portal. */
+        SelectionOptions: {
+            roles: components["schemas"]["SelectionOption"][];
+            groups: components["schemas"]["SelectionOption"][];
+            /** Format: int32 */
+            committeeMembers: number;
+            /** Format: int32 */
+            splitMembers: number;
+        };
         /** @description Gegevens van de vereniging als incassant (niet geheim; de IBAN van de vereniging en het incassant-ID). */
         SepaCreditor: {
             name: null | string;
@@ -25112,6 +25259,34 @@ export interface components {
             showYouthPrinces: boolean;
             /** Format: int32 */
             youthPrinceCount: number;
+        };
+        WelcomeRecipient: {
+            name: string;
+            email: string;
+        };
+        /**
+         * @description Wie een welkomstmail krijgt (2026-10-13): iedereen, of een selectie, bijvoorbeeld eerst het kader en de gesplitste
+         *     leden en op 11-11 de rest. Binnen een selectie telt een lid mee als het aan een van de keuzes voldoet.
+         */
+        WelcomeSelection: {
+            /** @description Alle huidige leden en overige accounts (de rest van de velden telt dan niet). */
+            everyone: boolean;
+            /** @description Accounts met een van deze rollen. */
+            roleCodes?: null | string[];
+            /** @description Leden van een van deze groepen. */
+            groupIds?: null | string[];
+            /**
+             * @description Het kader op de website (gekoppeld aan een lid).
+             * @default false
+             */
+            committee: boolean;
+            /**
+             * @description Gesplitste tweepersoonslidmaatschappen: het hoofdlid en het tweede lid.
+             * @default false
+             */
+            split: boolean;
+            /** @description Losse leden. */
+            memberIds?: null | string[];
         };
         WelcomesQueuedResponse: {
             /** Format: int32 */

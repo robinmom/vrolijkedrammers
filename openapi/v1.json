@@ -2558,6 +2558,76 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/collectors/link": {
+      "post": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Een niet-gekoppelde collectantnaam uit Excel aan een kaderlid of collectant koppelen (alle adverteerders met die naam).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectorLinkRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectorLinkRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectorLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorLinkedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorLinkedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorLinkedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/campaign-year": {
       "get": {
         "tags": [
@@ -2616,6 +2686,56 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/campaign/reset": {
+      "post": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "De campagne van het lopende jaar opnieuw beginnen: iedereen terug op \"open\" (zolang er geen facturen zijn).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResetResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResetResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignResetResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "text/plain": {
                 "schema": {
@@ -28318,6 +28438,23 @@
           }
         }
       },
+      "CampaignResetResponse": {
+        "required": [
+          "year",
+          "reset"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reset": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CampaignYearResponse": {
         "required": [
           "year"
@@ -28925,6 +29062,34 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "CollectorLinkedResponse": {
+        "required": [
+          "linked"
+        ],
+        "type": "object",
+        "properties": {
+          "linked": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CollectorLinkRequest": {
+        "required": [
+          "importedName",
+          "memberId"
+        ],
+        "type": "object",
+        "properties": {
+          "importedName": {
+            "type": "string"
+          },
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

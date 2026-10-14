@@ -119,6 +119,13 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     [ProducesResponseType<IReadOnlyList<AdvertiserCollector>>(StatusCodes.Status200OK)]
     public Task<IReadOnlyList<AdvertiserCollector>> Collectors(CancellationToken cancellationToken) => advertisers.CollectorsAsync(cancellationToken);
 
+    /// <summary>Een niet-gekoppelde collectantnaam uit Excel aan een kaderlid of collectant koppelen (alle adverteerders met die naam).</summary>
+    [HttpPost("collectors/link")]
+    [ProducesResponseType<CollectorLinkedResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<CollectorLinkedResponse> LinkCollector(CollectorLinkRequest request, CancellationToken cancellationToken) =>
+        new(await advertisers.LinkImportedCollectorAsync(request.ImportedName, request.MemberId, cancellationToken));
+
     // ----- Campagne ------------------------------------------------------------------------------------------------
 
     [HttpGet("campaign-year")]
@@ -132,6 +139,16 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     {
         await advertisers.SetCampaignYearAsync(request.Year, cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>De campagne van het lopende jaar opnieuw beginnen: iedereen terug op "open" (zolang er geen facturen zijn).</summary>
+    [HttpPost("campaign/reset")]
+    [ProducesResponseType<CampaignResetResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<CampaignResetResponse> ResetCampaign(CancellationToken cancellationToken)
+    {
+        var year = await advertisers.CampaignYearAsync(cancellationToken);
+        return new CampaignResetResponse(year, await advertisers.ResetCampaignAsync(year, cancellationToken));
     }
 
     /// <summary>Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar.</summary>
@@ -446,3 +463,9 @@ public sealed record AdvertiserRequest(
     public AdvertiserInput ToInput() => new(Number, CompanyName, ContactName, Phone, Mobile, Email, AddressLine, PostalCode, City, Website, Page, Kind, Payment,
         Iban, MandateReference, CollectorMemberId, Notes, Active);
 }
+
+public sealed record CampaignResetResponse(int Year, int Reset);
+
+public sealed record CollectorLinkRequest([param: System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.StringLength(150)] string ImportedName, Guid MemberId);
+
+public sealed record CollectorLinkedResponse(int Linked);

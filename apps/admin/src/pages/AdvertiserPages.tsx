@@ -26,7 +26,7 @@ import {
 import { useApiMutation, type Schemas } from '../api/hooks';
 import { uploadJson } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
-import { ConfirmDialog } from '../components/Dialog';
+import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { formatDate, formatDateTime } from '../format';
@@ -733,6 +733,23 @@ export function AdvertiserStatusPage() {
     ADVERTISER_KEYS,
   );
   const [exportError, setExportError] = useState<unknown>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [linking, setLinking] = useState<string | null>(null);
+  const [linkTo, setLinkTo] = useState('');
+  const linkCollector = useApiMutation(
+    async () =>
+      (
+        await api.POST('/api/v1/admin/advertisers/collectors/link', {
+          body: { importedName: linking!, memberId: linkTo },
+        })
+      ).data,
+    ADVERTISER_KEYS,
+  );
+  const [resetDone, setResetDone] = useState<string | null>(null);
+  const resetCampaign = useApiMutation(
+    async () => (await api.POST('/api/v1/admin/advertisers/campaign/reset')).data,
+    ADVERTISER_KEYS,
+  );
   async function exportExcel() {
     setExportError(null);
     try {
@@ -777,10 +794,66 @@ export function AdvertiserStatusPage() {
           <h1>Campagne {shownYear ? season(shownYear) : ''}</h1>
           <p className="muted">Wie is opgehaald, wie stopt en bij wie de collectant nog langs moet.</p>
         </div>
-        <button type="button" className="button secondary" onClick={() => void exportExcel()}>
-          Exporteren (Excel)
-        </button>
+        <div className="actions">
+          {campaign.data && shownYear === campaign.data.year ? (
+            <button type="button" className="button secondary" onClick={() => setConfirmReset(true)}>
+              Campagne opnieuw beginnen…
+            </button>
+          ) : null}
+          <button type="button" className="button secondary" onClick={() => void exportExcel()}>
+            Exporteren (Excel)
+          </button>
+        </div>
       </div>
+      <ConfirmDialog
+        open={confirmReset}
+        title={`Campagne ${shownYear ? season(shownYear) : ''} opnieuw beginnen`}
+        message="Alle adverteerders gaan terug naar 'nog open': opgehaald, gestopt, bedragen, rondes, opmerkingen en contant ontvangen van dit jaar worden gewist. De bedragen van vorige jaren blijven staan. Dit kan alleen zolang er voor dit jaar nog geen facturen zijn."
+        confirmLabel="Opnieuw beginnen"
+        busy={resetCampaign.isPending}
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() =>
+          resetCampaign.mutate(undefined, {
+            onSuccess: (data) => {
+              setConfirmReset(false);
+              const count = (data as { reset?: number } | undefined)?.reset ?? 0;
+              setResetDone(
+                `De campagne begint opnieuw: ${count} adverteerder${count === 1 ? '' : 's'} terug op 'nog open'.`,
+              );
+            },
+          })
+        }
+      />
+      <SuccessMessage message={resetDone} />
+      <Dialog open={linking !== null} title={`"${linking ?? ''}" koppelen`} onClose={() => setLinking(null)}>
+        <p>
+          Deze naam uit Excel is niet automatisch herkend. Kies het kaderlid of de collectant: alle adverteerders met
+          deze naam gaan naar dit lid en verschijnen in de app bij Adverteerders.
+        </p>
+        <CollectorSelect id="koppel-collectant" label="Kaderlid of collectant" value={linkTo} onChange={setLinkTo} />
+        <ProblemAlert error={linkCollector.error} />
+        <div className="actions">
+          <button type="button" className="button secondary" onClick={() => setLinking(null)}>
+            Annuleren
+          </button>
+          <button
+            type="button"
+            className="button"
+            disabled={!linkTo || linkCollector.isPending}
+            onClick={() =>
+              linkCollector.mutate(undefined, {
+                onSuccess: (data) => {
+                  const count = (data as { linked?: number } | undefined)?.linked ?? 0;
+                  setResetDone(`"${linking}" gekoppeld: ${count} adverteerder${count === 1 ? '' : 's'}.`);
+                  setLinking(null);
+                },
+              })
+            }
+          >
+            Koppelen
+          </button>
+        </div>
+      </Dialog>
       <div className="toolbar">
         <Field
           label="Jaar"
@@ -831,7 +904,13 @@ export function AdvertiserStatusPage() {
       </div>
       <ProblemAlert
         error={
-          status.error ?? setStatus.error ?? setRound.error ?? setCash.error ?? makeCampaignYear.error ?? exportError
+          status.error ??
+          setStatus.error ??
+          setRound.error ??
+          setCash.error ??
+          makeCampaignYear.error ??
+          resetCampaign.error ??
+          exportError
         }
       />
 
@@ -908,7 +987,19 @@ export function AdvertiserStatusPage() {
                           {c.name}
                         </button>
                       ) : (
-                        c.name
+                        <>
+                          {c.name}{' '}
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={() => {
+                              setLinkTo('');
+                              setLinking(c.name);
+                            }}
+                          >
+                            Koppelen…
+                          </button>
+                        </>
                       )}
                     </td>
                     <td>

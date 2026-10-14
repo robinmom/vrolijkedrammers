@@ -2196,6 +2196,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/collectors/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Een niet-gekoppelde collectantnaam uit Excel aan een kaderlid of collectant koppelen (alle adverteerders met die naam). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CollectorLinkRequest"];
+                    "text/json": components["schemas"]["CollectorLinkRequest"];
+                    "application/*+json": components["schemas"]["CollectorLinkRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectorLinkedResponse"];
+                        "application/json": components["schemas"]["CollectorLinkedResponse"];
+                        "text/json": components["schemas"]["CollectorLinkedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/campaign-year": {
         parameters: {
             query?: never;
@@ -2261,6 +2316,55 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/campaign/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De campagne van het lopende jaar opnieuw beginnen: iedereen terug op "open" (zolang er geen facturen zijn). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CampaignResetResponse"];
+                        "application/json": components["schemas"]["CampaignResetResponse"];
+                        "text/json": components["schemas"]["CampaignResetResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -21392,6 +21496,12 @@ export interface components {
             /** Format: date-time */
             lastUsedAt: string;
         };
+        CampaignResetResponse: {
+            /** Format: int32 */
+            year: number;
+            /** Format: int32 */
+            reset: number;
+        };
         CampaignYearResponse: {
             /** Format: int32 */
             year: number;
@@ -21571,6 +21681,15 @@ export interface components {
             /** Format: double */
             amount: number;
             reason: string;
+        };
+        CollectorLinkedResponse: {
+            /** Format: int32 */
+            linked: number;
+        };
+        CollectorLinkRequest: {
+            importedName: string;
+            /** Format: uuid */
+            memberId: string;
         };
         /** @enum {unknown} */
         CombinationBreakStatus: "AwaitingAgreement" | "AwaitingApproval" | "Approved" | "Rejected" | "Cancelled";

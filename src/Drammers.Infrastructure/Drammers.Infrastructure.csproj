@@ -5,6 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Beveiligingsupdate (2026-10-14, GHSA-846f-f764-76mx e.a.): de indirecte versie expliciet op de gepatchte zetten. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="Azure.Communication.Email" Version="1.1.0" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.4" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.4" />

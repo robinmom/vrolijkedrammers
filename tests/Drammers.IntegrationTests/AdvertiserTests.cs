@@ -517,6 +517,56 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
     };
 
     [Fact]
+    public async Task Campagne_opnieuw_beginnen_en_de_lopende_campagne_niet_uit_Excel()
+    {
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2026 });
+        // De kolom 2026 hoort nu bij de lopende campagne: die wordt niet ingelezen, iedereen begint op "open".
+        var imported = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "C", null, null, 35, 40),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "G", "C", null, null, 70, "GRATIS")))).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains(imported.GetProperty("warnings").EnumerateArray(),
+            w => w.GetProperty("message").GetString()!.Contains("kolom 2026 hoort bij de lopende campagne", StringComparison.Ordinal));
+        var status = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status?year=2026");
+        Assert.Equal((0, 2), (status.GetProperty("totals").GetProperty("collected").GetInt32(), status.GetProperty("totals").GetProperty("open").GetInt32()));
+        // Vorig jaar blijft staan (voor de collectant).
+        Assert.Contains(status.GetProperty("rows").EnumerateArray(), r => r.GetProperty("previousAmount").GetDecimal() == 35m);
+
+        // In het portal opgehaald, daarna toch opnieuw beginnen: alles weer open.
+        var bakkerij = status.GetProperty("rows").EnumerateArray().Single(r => r.GetProperty("companyName").GetString() == "Bakkerij De Test").GetProperty("id").GetGuid();
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{bakkerij}/years/2026", new { status = "Collected", amount = 40m, note = (string?)null });
+        var reset = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/campaign/reset", null)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2026, reset.GetProperty("year").GetInt32());
+        var after = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status?year=2026");
+        Assert.Equal((0, 2), (after.GetProperty("totals").GetProperty("collected").GetInt32(), after.GetProperty("totals").GetProperty("open").GetInt32()));
+        Assert.Equal(35m, after.GetProperty("rows").EnumerateArray().Single(r => r.GetProperty("id").GetGuid() == bakkerij).GetProperty("previousAmount").GetDecimal());
+    }
+
+    [Fact]
+    public async Task Collectant_met_dubbele_achternaam_herkend_en_een_losse_naam_achteraf_koppelen()
+    {
+        var (femke, _) = await LidMetAccountAsync("Femke Franken-Peters", "femke@example.com", kader: true);
+        var imported = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("FEMKE PETERS", 1, "Bakkerij De Test", "A", "C", null, null, 35, 40),
+            Row("Jan Later", 2, "Garage Proef", "G", "C", null, null, 70, 70)))).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(["Jan Later"], imported.GetProperty("unknownCollectors").EnumerateArray().Select(n => n.GetString()));
+        var status = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status");
+        Assert.Contains(status.GetProperty("perCollector").EnumerateArray(),
+            c => c.GetProperty("name").GetString() == "Femke Franken-Peters" && c.GetProperty("collectorMemberId").GetGuid() == femke);
+
+        // Jan wordt later kaderlid: zijn naam uit Excel achteraf koppelen.
+        var (jan, _) = await LidMetAccountAsync("Jan Later", "jan@example.com", kader: true);
+        var linked = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/collectors/link", new { importedName = "Jan Later", memberId = jan }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, linked.GetProperty("linked").GetInt32());
+        var after = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status");
+        Assert.All(after.GetProperty("perCollector").EnumerateArray(), c => Assert.NotEqual(JsonValueKind.Null, c.GetProperty("collectorMemberId").ValueKind));
+
+        // Alleen aan een kaderlid of collectant.
+        var (gewoon, _) = await LidMetAccountAsync("Gewoon Lid", "gewoon@example.com", kader: false);
+        Assert.False((await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/collectors/link", new { importedName = "X", memberId = gewoon })).IsSuccessStatusCode);
+    }
+
+    [Fact]
     public async Task Adverteerder_toevoegen_met_collectant_uit_het_kader_en_alleen_met_het_recht()
     {
         var kader = await KaderlidAsync("Karin Kader");

@@ -442,6 +442,16 @@ public sealed class AdvertiserAdministration(
             warnings.Add(new AdvertiserImportIssue(0, $"Collectant \"{name}\" is geen (gekoppeld) kaderlid of collectant; koppel de adverteerders daarna in het portal."));
         }
 
+        // De lopende campagne (en later) begint op nul: die stand komt uit de app en het portal, niet uit Excel (2026-10-14).
+        var campaignYear = await CampaignYearAsync(cancellationToken);
+        foreach (var skipped in years.Where(y => y >= campaignYear))
+        {
+            warnings.Add(new AdvertiserImportIssue(0, $"De kolom {skipped} hoort bij de lopende campagne en wordt niet ingelezen; iedereen begint daar op \"open\"."));
+        }
+
+        items = [.. items.Select(i => i with { Years = [.. i.Years.Where(y => y.Year < campaignYear)] })];
+        years.RemoveWhere(y => y >= campaignYear);
+
         var known = await db.Advertisers.AsNoTracking().Where(a => seen.Keys.Contains(a.Number)).Select(a => a.Number).ToListAsync(cancellationToken);
         var preview = new AdvertiserImportPreview(rows.Count, items.Count(i => !known.Contains(i.Number)), items.Count(i => known.Contains(i.Number)),
             errors, warnings, [.. unknown], [.. years]);
@@ -521,6 +531,33 @@ public sealed class AdvertiserAdministration(
     }
 
     // ----- Campagne ------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Campagne opnieuw beginnen (2026-10-14): alle standen van het jaar terug op "open", zonder bedrag, ronde of betaling.
+    /// Kan alleen zolang er voor dat jaar nog geen facturen zijn; geeft het aantal teruggezette adverteerders.
+    /// </summary>
+    public async Task<int> ResetCampaignAsync(int year, CancellationToken cancellationToken)
+    {
+        if (await db.AdvertiserInvoices.AnyAsync(i => i.Year == year, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation,
+                $"Voor {year} zijn al facturen gemaakt; de campagne kan dan niet meer opnieuw beginnen.", DomainErrorKind.Conflict);
+        }
+
+        var reset = await db.AdvertiserYears.Where(y => y.Year == year).ExecuteUpdateAsync(s => s
+            .SetProperty(y => y.Status, AdvertiserYearStatus.Open)
+            .SetProperty(y => y.Amount, (decimal?)null)
+            .SetProperty(y => y.IsFree, false)
+            .SetProperty(y => y.Note, (string?)null)
+            .SetProperty(y => y.Round, (byte?)null)
+            .SetProperty(y => y.StatusChangedAt, (DateTime?)null)
+            .SetProperty(y => y.StatusChangedBy, (Guid?)null)
+            .SetProperty(y => y.PaidAt, (DateTime?)null)
+            .SetProperty(y => y.PaidBy, (Guid?)null), cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.campaign-reset", "AdvertiserCampaign", year.ToString(CultureInfo.InvariantCulture), null,
+            reset.ToString(CultureInfo.InvariantCulture)), cancellationToken);
+        return reset;
+    }
 
     /// <summary>De stand van de campagne van een jaar: per adverteerder, per collectant en in totaal.</summary>
     public async Task<AdvertiserStatusReport> StatusAsync(int year, Guid? collectorMemberId, CancellationToken cancellationToken)

@@ -733,6 +733,12 @@ export function AdvertiserStatusPage() {
     ADVERTISER_KEYS,
   );
   const [exportError, setExportError] = useState<unknown>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetDone, setResetDone] = useState<string | null>(null);
+  const resetCampaign = useApiMutation(
+    async () => (await api.POST('/api/v1/admin/advertisers/campaign/reset')).data,
+    ADVERTISER_KEYS,
+  );
   async function exportExcel() {
     setExportError(null);
     try {
@@ -777,10 +783,37 @@ export function AdvertiserStatusPage() {
           <h1>Campagne {shownYear ? season(shownYear) : ''}</h1>
           <p className="muted">Wie is opgehaald, wie stopt en bij wie de collectant nog langs moet.</p>
         </div>
-        <button type="button" className="button secondary" onClick={() => void exportExcel()}>
-          Exporteren (Excel)
-        </button>
+        <div className="actions">
+          {campaign.data && shownYear === campaign.data.year ? (
+            <button type="button" className="button secondary" onClick={() => setConfirmReset(true)}>
+              Campagne opnieuw beginnen…
+            </button>
+          ) : null}
+          <button type="button" className="button secondary" onClick={() => void exportExcel()}>
+            Exporteren (Excel)
+          </button>
+        </div>
       </div>
+      <ConfirmDialog
+        open={confirmReset}
+        title={`Campagne ${shownYear ? season(shownYear) : ''} opnieuw beginnen`}
+        message="Alle adverteerders gaan terug naar 'nog open': opgehaald, gestopt, bedragen, rondes, opmerkingen en contant ontvangen van dit jaar worden gewist. De bedragen van vorige jaren blijven staan. Dit kan alleen zolang er voor dit jaar nog geen facturen zijn."
+        confirmLabel="Opnieuw beginnen"
+        busy={resetCampaign.isPending}
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() =>
+          resetCampaign.mutate(undefined, {
+            onSuccess: (data) => {
+              setConfirmReset(false);
+              const count = (data as { reset?: number } | undefined)?.reset ?? 0;
+              setResetDone(
+                `De campagne begint opnieuw: ${count} adverteerder${count === 1 ? '' : 's'} terug op 'nog open'.`,
+              );
+            },
+          })
+        }
+      />
+      <SuccessMessage message={resetDone} />
       <div className="toolbar">
         <Field
           label="Jaar"
@@ -831,7 +864,13 @@ export function AdvertiserStatusPage() {
       </div>
       <ProblemAlert
         error={
-          status.error ?? setStatus.error ?? setRound.error ?? setCash.error ?? makeCampaignYear.error ?? exportError
+          status.error ??
+          setStatus.error ??
+          setRound.error ??
+          setCash.error ??
+          makeCampaignYear.error ??
+          resetCampaign.error ??
+          exportError
         }
       />
 

@@ -134,6 +134,16 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return NoContent();
     }
 
+    /// <summary>De campagne van het lopende jaar opnieuw beginnen: iedereen terug op "open" (zolang er geen facturen zijn).</summary>
+    [HttpPost("campaign/reset")]
+    [ProducesResponseType<CampaignResetResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<CampaignResetResponse> ResetCampaign(CancellationToken cancellationToken)
+    {
+        var year = await advertisers.CampaignYearAsync(cancellationToken);
+        return new CampaignResetResponse(year, await advertisers.ResetCampaignAsync(year, cancellationToken));
+    }
+
     /// <summary>Informatie voor de collectanten (fase 27h); zonder jaar het lopende campagnejaar.</summary>
     [HttpGet("info")]
     [ProducesResponseType<AdvertiserCampaignInfo>(StatusCodes.Status200OK)]
@@ -446,3 +456,5 @@ public sealed record AdvertiserRequest(
     public AdvertiserInput ToInput() => new(Number, CompanyName, ContactName, Phone, Mobile, Email, AddressLine, PostalCode, City, Website, Page, Kind, Payment,
         Iban, MandateReference, CollectorMemberId, Notes, Active);
 }
+
+public sealed record CampaignResetResponse(int Year, int Reset);

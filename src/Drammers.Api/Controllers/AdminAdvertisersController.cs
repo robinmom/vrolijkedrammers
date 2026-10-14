@@ -119,6 +119,13 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     [ProducesResponseType<IReadOnlyList<AdvertiserCollector>>(StatusCodes.Status200OK)]
     public Task<IReadOnlyList<AdvertiserCollector>> Collectors(CancellationToken cancellationToken) => advertisers.CollectorsAsync(cancellationToken);
 
+    /// <summary>Een niet-gekoppelde collectantnaam uit Excel aan een kaderlid of collectant koppelen (alle adverteerders met die naam).</summary>
+    [HttpPost("collectors/link")]
+    [ProducesResponseType<CollectorLinkedResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<CollectorLinkedResponse> LinkCollector(CollectorLinkRequest request, CancellationToken cancellationToken) =>
+        new(await advertisers.LinkImportedCollectorAsync(request.ImportedName, request.MemberId, cancellationToken));
+
     // ----- Campagne ------------------------------------------------------------------------------------------------
 
     [HttpGet("campaign-year")]
@@ -458,3 +465,7 @@ public sealed record AdvertiserRequest(
 }
 
 public sealed record CampaignResetResponse(int Year, int Reset);
+
+public sealed record CollectorLinkRequest([param: System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.StringLength(150)] string ImportedName, Guid MemberId);
+
+public sealed record CollectorLinkedResponse(int Linked);

@@ -315,7 +315,7 @@ public sealed class AdvertiserAdministration(
         var errors = new List<AdvertiserImportIssue>();
         var warnings = new List<AdvertiserImportIssue>();
         var unknown = new SortedSet<string>(StringComparer.CurrentCultureIgnoreCase);
-        var collectors = (await CollectorsAsync(cancellationToken)).GroupBy(c => NameKey(c.Name)).ToDictionary(g => g.Key, g => g.ToList());
+        var collectors = await CollectorsAsync(cancellationToken);
         var items = new List<PlannedAdvertiser>();
         var seen = new Dictionary<int, int>();
         var years = new SortedSet<int>();
@@ -421,11 +421,8 @@ public sealed class AdvertiserAdministration(
             var collectorName = Clean(row.Collector, 150);
             if (collectorName is not null)
             {
-                if (collectors.TryGetValue(NameKey(collectorName), out var matches) && matches.Count == 1)
-                {
-                    collectorId = matches[0].MemberId;
-                }
-                else
+                collectorId = MatchCollector(collectors, collectorName);
+                if (collectorId is null)
                 {
                     unknown.Add(collectorName);
                 }
@@ -628,6 +625,26 @@ public sealed class AdvertiserAdministration(
     }
 
     // ----- De collectant in de app (fase 27b-2) -------------------------------------------------------------------
+
+    /// <summary>
+    /// Een collectantnaam uit Excel die niet gekoppeld kon worden (bijv. een andere schrijfwijze of iemand die pas later
+    /// kader werd) aan een lid koppelen: alle adverteerders met die naam gaan naar dit lid. Geeft het aantal.
+    /// </summary>
+    public async Task<int> LinkImportedCollectorAsync(string importedName, Guid memberId, CancellationToken cancellationToken)
+    {
+        if (!await IsCollectorAsync(memberId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Dit lid is geen kaderlid of collectant.");
+        }
+
+        var name = importedName.Trim();
+        var linked = await db.Advertisers.Where(a => a.ImportedCollectorName == name && a.CollectorMemberId == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.CollectorMemberId, memberId).SetProperty(a => a.ImportedCollectorName, (string?)null),
+                cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.collector-linked", "Member", memberId.ToString(), name,
+            linked.ToString(CultureInfo.InvariantCulture)), cancellationToken);
+        return linked;
+    }
 
     /// <summary>Of het lid collectant kan zijn: kaderlid of het recht <c>advertiser.collect</c> via een rol.</summary>
     public Task<bool> IsCollectorAsync(Guid memberId, CancellationToken cancellationToken) =>
@@ -835,6 +852,34 @@ public sealed class AdvertiserAdministration(
     }
 
     /// <summary>Naam om op te vergelijken: hoofdletters, zonder accenten en dubbele spaties ("ALFRED RASING" = "Alfred  Rasing").</summary>
+    /// <summary>
+    /// Collectant bij een naam uit Excel: eerst precies dezelfde naam; anders dezelfde voornaam en een achternaam die een
+    /// deel is van een dubbele achternaam ("Femke Peters" = "Femke Franken-Peters"). Alleen als er precies één past.
+    /// </summary>
+    public static Guid? MatchCollector(IReadOnlyList<AdvertiserCollector> collectors, string name)
+    {
+        var key = NameKey(name);
+        var exact = collectors.Where(c => NameKey(c.Name) == key).ToList();
+        if (exact.Count > 0)
+        {
+            return exact.Count == 1 ? exact[0].MemberId : null;
+        }
+
+        var words = key.Split(' ');
+        if (words.Length < 2)
+        {
+            return null;
+        }
+
+        var (first, last) = (words[0], words[^1]);
+        var loose = collectors.Where(c =>
+        {
+            var parts = NameKey(c.Name).Split(' ', '-');
+            return parts[0] == first && parts.Skip(1).Contains(last, StringComparer.Ordinal);
+        }).ToList();
+        return loose.Count == 1 ? loose[0].MemberId : null;
+    }
+
     public static string NameKey(string name)
     {
         var normalized = name.Normalize(NormalizationForm.FormD);

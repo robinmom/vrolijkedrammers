@@ -542,6 +542,31 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Collectant_met_dubbele_achternaam_herkend_en_een_losse_naam_achteraf_koppelen()
+    {
+        var (femke, _) = await LidMetAccountAsync("Femke Franken-Peters", "femke@example.com", kader: true);
+        var imported = await (await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("FEMKE PETERS", 1, "Bakkerij De Test", "A", "C", null, null, 35, 40),
+            Row("Jan Later", 2, "Garage Proef", "G", "C", null, null, 70, 70)))).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(["Jan Later"], imported.GetProperty("unknownCollectors").EnumerateArray().Select(n => n.GetString()));
+        var status = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status");
+        Assert.Contains(status.GetProperty("perCollector").EnumerateArray(),
+            c => c.GetProperty("name").GetString() == "Femke Franken-Peters" && c.GetProperty("collectorMemberId").GetGuid() == femke);
+
+        // Jan wordt later kaderlid: zijn naam uit Excel achteraf koppelen.
+        var (jan, _) = await LidMetAccountAsync("Jan Later", "jan@example.com", kader: true);
+        var linked = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/collectors/link", new { importedName = "Jan Later", memberId = jan }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, linked.GetProperty("linked").GetInt32());
+        var after = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status");
+        Assert.All(after.GetProperty("perCollector").EnumerateArray(), c => Assert.NotEqual(JsonValueKind.Null, c.GetProperty("collectorMemberId").ValueKind));
+
+        // Alleen aan een kaderlid of collectant.
+        var (gewoon, _) = await LidMetAccountAsync("Gewoon Lid", "gewoon@example.com", kader: false);
+        Assert.False((await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/collectors/link", new { importedName = "X", memberId = gewoon })).IsSuccessStatusCode);
+    }
+
+    [Fact]
     public async Task Adverteerder_toevoegen_met_collectant_uit_het_kader_en_alleen_met_het_recht()
     {
         var kader = await KaderlidAsync("Karin Kader");

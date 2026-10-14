@@ -2558,6 +2558,76 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/collectors/link": {
+      "post": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Een niet-gekoppelde collectantnaam uit Excel aan een kaderlid of collectant koppelen (alle adverteerders met die naam).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectorLinkRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectorLinkRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectorLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorLinkedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorLinkedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectorLinkedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/campaign-year": {
       "get": {
         "tags": [
@@ -28992,6 +29062,34 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "CollectorLinkedResponse": {
+        "required": [
+          "linked"
+        ],
+        "type": "object",
+        "properties": {
+          "linked": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CollectorLinkRequest": {
+        "required": [
+          "importedName",
+          "memberId"
+        ],
+        "type": "object",
+        "properties": {
+          "importedName": {
+            "type": "string"
+          },
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

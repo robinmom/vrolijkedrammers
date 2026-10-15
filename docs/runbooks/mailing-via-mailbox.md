@@ -38,6 +38,9 @@ Het script:
    Applications);
 4. toont per mailbox of het versturen is toegestaan.
 
+De eerste keer zet het script de organisatie-aanpassingen van Exchange Online aan (`Enable-OrganizationCustomization`) en
+stopt dan. Wacht tot een uur en draai het script opnieuw.
+
 **Niet doen:** in Entra de API-machtiging `Mail.Send` aan de managed identity geven. Die geldt voor álle mailboxen.
 
 ## 2. Aanzetten

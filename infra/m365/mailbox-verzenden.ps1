@@ -65,6 +65,14 @@ foreach ($mailbox in $Mailboxes) {
     }
 }
 
+# Kleine organisaties staan in Exchange Online in een compacte modus waarin New-ManagementScope niet mag.
+if ((Get-OrganizationConfig).IsDehydrated) {
+    Enable-OrganizationCustomization
+    Write-Host 'Organisatie-aanpassingen aangezet. Dit kan tot een uur duren; draai het script daarna opnieuw.' -ForegroundColor Yellow
+    Disconnect-ExchangeOnline -Confirm:$false
+    return
+}
+
 if (-not (Get-ServicePrincipal -Identity $appId -ErrorAction SilentlyContinue)) {
     New-ServicePrincipal -AppId $appId -ObjectId $principalId -DisplayName "DVD API ($WebApp)" | Out-Null
 }

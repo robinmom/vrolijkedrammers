@@ -21,7 +21,8 @@ export function ImagePicker({
   uploadPath: '/api/v1/admin/website/images' | '/api/v1/admin/news/images' | '/api/v1/admin/mailing/images';
   /** De opgeslagen afbeelding (voorbeeld zolang er niets nieuws is gekozen). */
   currentUrl: string | null | undefined;
-  onChange: (path: string) => void;
+  /** Met het adres van de nieuwe afbeelding (om hem te tonen of te meten). */
+  onChange: (path: string, url?: string) => void;
   round?: boolean;
 }) {
   const auth = useAuth();
@@ -39,7 +40,7 @@ export function ImagePicker({
     try {
       const uploaded = await uploadJson<UploadedImage>(auth, uploadPath, data);
       setPreview(uploaded.url);
-      onChange(uploaded.path);
+      onChange(uploaded.path, uploaded.url);
     } catch (e) {
       setError(e);
     } finally {

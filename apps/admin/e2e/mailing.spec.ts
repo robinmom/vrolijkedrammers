@@ -96,3 +96,37 @@ test('fase 27a: mailing opstellen met blokken, voorbeeld, testmail en versturen'
   await expect(page).toHaveURL(/\/mailing\/mail-2$/);
   await expect(page.getByLabel('Onderwerp')).toBeEnabled();
 });
+
+test('mailing: tekst uitlijnen en een foto kleiner dan de volle breedte', async ({ page }) => {
+  const api = new MockApi(['mailing.manage']);
+  await api.install(page);
+  await page.goto('/beheer/mailing/nieuw');
+
+  await page.getByLabel('Onderwerp').fill('Nieuwsbrief');
+  await page.getByRole('group', { name: 'Uitlijnen blok 2' }).getByRole('button', { name: 'Midden' }).click();
+  await expect(
+    page.getByRole('group', { name: 'Uitlijnen blok 2' }).getByRole('button', { name: 'Midden' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: '+ Foto' }).click();
+  await page.getByLabel(/^Foto \(JPEG/).setInputFiles({
+    name: 'logo.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64',
+    ),
+  });
+  const size = page.getByRole('group', { name: 'Grootte foto blok 4' });
+  await expect(size.getByRole('button', { name: 'Volle breedte' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Breedte (px)')).toHaveValue('552');
+  await page.getByLabel('Breedte (px)').fill('300');
+  await page.getByRole('group', { name: 'Uitlijnen blok 4' }).getByRole('button', { name: 'Rechts' }).click();
+  await expect(size.getByRole('button', { name: 'Volle breedte' })).toHaveAttribute('aria-pressed', 'false');
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Mailing opgeslagen.')).toBeVisible();
+  expect(api.mailings[0]!.blocks[1]).toMatchObject({ type: 'text', align: 'center' });
+  expect(api.mailings[0]!.blocks[3]).toMatchObject({ type: 'image', align: 'right', width: 300 });
+});

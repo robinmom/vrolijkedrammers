@@ -10,8 +10,11 @@ namespace Drammers.Infrastructure.Mailings;
 /// Eén blok van een mailing. Per soort: <c>heading</c> (Text), <c>text</c> (Text, Markdown), <c>image</c> (Image = pad uit
 /// de upload-map, Text = omschrijving, Url = link), <c>button</c> (Label, Url), <c>highlight</c> (Label, Text = waarde,
 /// Note), <c>divider</c> en <c>closing</c> (Text = de groet, Markdown; samen met de voettekst in één blok onderaan).
+/// <c>Align</c> (left, center of right; leeg = links) geldt voor kop, tekst, foto, knop en uitgelicht; <c>Width</c> is de
+/// breedte van een foto in pixels (leeg = volle breedte; de hoogte gaat mee zodat de foto niet vervormt).
 /// </summary>
-public sealed record MailingBlock(string Type, string? Text = null, string? Label = null, string? Url = null, string? Image = null, string? Note = null);
+public sealed record MailingBlock(
+    string Type, string? Text = null, string? Label = null, string? Url = null, string? Image = null, string? Note = null, string? Align = null, int? Width = null);
 
 /// <summary>Voor wie de mail is: vult {voornaam}, {naam} en {bedrijf}.</summary>
 public sealed record MailingPerson(string? FirstName, string? Name, string? Company = null);
@@ -35,6 +38,13 @@ public sealed record RenderedMailing(string Subject, string Html, string PlainTe
 public static partial class MailingRenderer
 {
     public const int MaxBlocks = 60;
+
+    /// <summary>Breedte van de inhoud van de mail; een foto is nooit breder.</summary>
+    public const int ContentWidth = 552;
+
+    public const int MinImageWidth = 40;
+
+    public static readonly IReadOnlyList<string> Alignments = ["left", "center", "right"];
 
     public static readonly IReadOnlyList<string> BlockTypes = ["heading", "text", "image", "button", "highlight", "divider", "closing"];
 
@@ -78,6 +88,16 @@ public static partial class MailingRenderer
         foreach (var (block, i) in blocks.Select((b, i) => (b, i + 1)))
         {
             string Fail(string message) => throw new DomainException(ErrorCodes.Validation, $"Blok {i}: {message}");
+            if (block.Align is not null && !Alignments.Contains(block.Align))
+            {
+                Fail("uitlijnen kan links, midden of rechts.");
+            }
+
+            if (block.Width is { } width && (block.Type != "image" || width is < MinImageWidth or > ContentWidth))
+            {
+                Fail($"de breedte van een foto is {MinImageWidth} tot {ContentWidth} pixels.");
+            }
+
             switch (block.Type)
             {
                 case "heading" when string.IsNullOrWhiteSpace(block.Text) || block.Text.Length > 200:
@@ -146,18 +166,20 @@ public static partial class MailingRenderer
         {
             case "heading":
                 var heading = Fill(block.Text!, person);
-                html.Append($"<h1 style=\"margin:0 0 16px;{Display}font-weight:700;font-size:26px;line-height:33px;color:{HeadingRed}\">")
+                html.Append($"<h1 style=\"margin:0 0 16px;{TextAlign(block)}{Display}font-weight:700;font-size:26px;line-height:33px;color:{HeadingRed}\">")
                     .Append(Encode(heading)).Append("</h1>\n");
                 text.Append(heading.ToUpperInvariant()).Append("\n\n");
                 break;
             case "text":
                 var markdown = Fill(block.Text!, person);
-                html.Append(StyleText(MarkdownRenderer.ToSafeLetterHtml(markdown) ?? "")).Append('\n');
+                html.Append(StyleText(MarkdownRenderer.ToSafeLetterHtml(markdown) ?? "", TextAlign(block))).Append('\n');
                 text.Append(PlainMarkdown(markdown)).Append("\n\n");
                 break;
             case "image" when imageUrl(block.Image!) is { } src:
-                var img = $"<img src=\"{Encode(src)}\" width=\"552\" alt=\"{Encode(block.Text ?? "")}\" style=\"display:block;width:100%;max-width:552px;height:auto;border:0;border-radius:{Radius}\">";
-                html.Append("<div style=\"margin:0 0 20px\">")
+                // Volle breedte, of een vaste breedte (nooit breder dan de mail) met de hoogte die meegaat.
+                var width = block.Width ?? ContentWidth;
+                var img = $"<img src=\"{Encode(src)}\" width=\"{width}\" alt=\"{Encode(block.Text ?? "")}\" style=\"display:inline-block;vertical-align:top;width:100%;max-width:{width}px;height:auto;border:0;border-radius:{Radius}\">";
+                html.Append($"<div style=\"margin:0 0 20px;{TextAlign(block)}line-height:0\">")
                     .Append(block.Url is null ? img : $"<a href=\"{Encode(block.Url)}\" target=\"_blank\">{img}</a>").Append("</div>\n");
                 if (block.Url is not null)
                 {
@@ -167,14 +189,15 @@ public static partial class MailingRenderer
                 break;
             case "button":
                 // Pilvormige knop zoals op de website (Drammers Rood, witte tekst).
-                html.Append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"margin:4px 0 20px\"><tr>")
+                var margin = block.Align switch { "center" => "4px auto 20px", "right" => "4px 0 20px auto", _ => "4px 0 20px" };
+                html.Append($"<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\"{(block.Align is "center" or "right" ? $" align=\"{block.Align}\"" : "")} style=\"margin:{margin}\"><tr>")
                     .Append($"<td style=\"background:{Red};border-radius:999px\">")
                     .Append($"<a href=\"{Encode(block.Url!)}\" target=\"_blank\" style=\"display:inline-block;padding:13px 28px;{Display}font-size:15px;line-height:20px;font-weight:600;color:#FFFFFF;text-decoration:none;border-radius:999px\">")
                     .Append(Encode(block.Label!)).Append("</a></td></tr></table>\n");
                 text.Append(block.Label).Append(": ").Append(block.Url).Append("\n\n");
                 break;
             case "highlight":
-                html.Append($"<div style=\"margin:0 0 20px;padding:18px 20px;background:{Grey};border-radius:{Radius}\">");
+                html.Append($"<div style=\"margin:0 0 20px;padding:18px 20px;{TextAlign(block)}background:{Grey};border-radius:{Radius}\">");
                 if (block.Label is { Length: > 0 } label)
                 {
                     html.Append($"<div style=\"{Body}font-size:12px;line-height:18px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:{BlueText}\">{Encode(Fill(label, person))}</div>");
@@ -222,13 +245,16 @@ public static partial class MailingRenderer
         html.Append("</div></div>\n");
     }
 
+    /// <summary>Uitlijning als inline stijl; links (de standaard) laat de stijl leeg.</summary>
+    private static string TextAlign(MailingBlock block) => block.Align is "center" or "right" ? $"text-align:{block.Align};" : "";
+
     /// <summary>Inline stijlen voor de HTML uit Markdown (mailprogramma's negeren stylesheets vaak).</summary>
-    private static string StyleText(string html) => html
-        .Replace("<p>", $"<p style=\"margin:0 0 16px;{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
+    private static string StyleText(string html, string align = "") => html
+        .Replace("<p>", $"<p style=\"margin:0 0 16px;{align}{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
         .Replace("<ul>", $"<ul style=\"margin:0 0 16px;padding-left:22px;{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
         .Replace("<ol>", $"<ol style=\"margin:0 0 16px;padding-left:22px;{Body}font-size:16px;line-height:26px;color:{Navy}\">", StringComparison.Ordinal)
-        .Replace("<h2>", $"<h2 style=\"margin:8px 0 12px;{Display}font-weight:700;font-size:20px;line-height:27px;color:{HeadingRed}\">", StringComparison.Ordinal)
-        .Replace("<h3>", $"<h3 style=\"margin:8px 0 8px;{Display}font-weight:700;font-size:17px;line-height:24px;color:{HeadingRed}\">", StringComparison.Ordinal)
+        .Replace("<h2>", $"<h2 style=\"margin:8px 0 12px;{align}{Display}font-weight:700;font-size:20px;line-height:27px;color:{HeadingRed}\">", StringComparison.Ordinal)
+        .Replace("<h3>", $"<h3 style=\"margin:8px 0 8px;{align}{Display}font-weight:700;font-size:17px;line-height:24px;color:{HeadingRed}\">", StringComparison.Ordinal)
         .Replace("<a ", $"<a style=\"color:{BlueText};text-decoration:underline\" ", StringComparison.Ordinal);
 
     /// <summary>

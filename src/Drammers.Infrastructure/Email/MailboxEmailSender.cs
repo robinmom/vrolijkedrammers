@@ -36,9 +36,10 @@ public sealed partial class MailboxEmailSender(
         var token = await credential.GetTokenAsync(new TokenRequestContext(GraphScope), cancellationToken);
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.GraphBaseUrl.TrimEnd('/')}/v1.0/users/{Uri.EscapeDataString(mailbox)}/sendMail")
         {
-            // Graph verwacht de MIME-tekst base64-gecodeerd met Content-Type text/plain.
-            Content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(mime)), Encoding.ASCII, "text/plain"),
+            // Graph verwacht de MIME-tekst base64-gecodeerd met Content-Type text/plain (geen HTML naar een browser).
+            Content = new ByteArrayContent(Encoding.ASCII.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(mime)))),
         };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
         using var response = await http.SendAsync(request, cancellationToken);
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound)

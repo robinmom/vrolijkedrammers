@@ -58,6 +58,7 @@ public static class Permissions
     public const string AdvertiserManage = "advertiser.manage";
     public const string AdvertiserCollect = "advertiser.collect";
     public const string FestivalManage = "festival.manage";
+    public const string TaskManage = "task.manage";
 
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
@@ -120,6 +121,7 @@ public static class Permissions
         // Fase 27g: adverteerders ophalen in de app, ook door leden die niet in het kader zitten.
         new(AdvertiserCollect, "Adverteerders ophalen in de app (collectant)", "Financieel"),
         new(FestivalManage, "Dansgardefestival: instellingen, inschrijvingen beoordelen, wachtlijst en betaallinks", "Content"),
+        new(TaskManage, "Takenlijst carnaval: taken, categorieën, voortgang en rapportage", "Beheer"),
     ];
 }
 

@@ -120,6 +120,8 @@ for (const path of [
   'carnavalsjaren',
   'configuratie',
   'auditlog',
+  'taken',
+  'taken/rapportage',
 ]) {
   for (const scheme of ['light', 'dark'] as const) {
     test(`toegankelijkheid (axe, ${scheme === 'light' ? 'licht' : 'donker'}) /${path}`, async ({ page }) => {
@@ -902,4 +904,29 @@ test('hetzelfde e-mailadres bij ouder en kind: samenvoegen tot één account', a
   await page.getByRole('button', { name: 'Samenvoegen: gezin@example.com' }).click();
   await expect(page.getByText('gezin@example.com: samengevoegd tot één account.')).toBeVisible();
   expect(api.sharedEmail).toEqual([]);
+});
+
+test('takenlijst: totaal, taak bijwerken met voortgang en kopiëren naar volgend jaar', async ({ page }) => {
+  const api = new MockApi(['task.manage', 'report.view']);
+  await open(page, api, 'taken');
+  await expect(page.getByRole('heading', { name: 'Voorbereiding carnaval: 67%' })).toBeVisible();
+  await expect(page.getByText('over datum').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'Artiesten boeken' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Taak bewerken' });
+  await dialog.getByRole('button', { name: '75%' }).click();
+  await dialog.getByLabel('Personen (leden)').fill('Femke');
+  await dialog.getByRole('button', { name: '+ Femke Franken-Peters' }).click();
+  await dialog.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Taak opgeslagen.')).toBeVisible();
+  expect(api.tasks.find((t) => t.id === 't-2')).toMatchObject({ progress: 75, memberIds: ['m-1', 'm-2'] });
+
+  await page.getByRole('button', { name: 'Kopiëren naar volgend jaar…' }).click();
+  const copy = page.getByRole('dialog', { name: 'Kopiëren naar 2027/2028' });
+  await copy.getByLabel('Vergunning aanvragen').uncheck();
+  await copy.getByRole('button', { name: '2 taken kopiëren' }).click();
+  await expect(page.getByText('2 taken gekopieerd naar 2027/2028.')).toBeVisible();
+
+  await open(page, api, 'taken/rapportage');
+  await expect(page.getByRole('region', { name: 'Per persoon' }).getByText('Robin Mom')).toBeVisible();
 });

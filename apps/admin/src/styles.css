@@ -2137,3 +2137,128 @@ fieldset {
   margin-right: 6px;
   vertical-align: middle;
 }
+
+/* ---------- Takenlijst carnaval (2026-10-15) ---------- */
+.mini-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.mini-bar-track {
+  display: inline-block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--dvd-surface-muted);
+  overflow: hidden;
+}
+
+.mini-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--dvd-action-secondary);
+}
+
+.mini-bar-fill.done {
+  background: var(--dvd-success-text);
+}
+
+.progress.big {
+  height: 12px;
+}
+
+.progress.big > span {
+  background: var(--dvd-success-text);
+}
+
+.tasks-table .group-row th,
+.tasks-table .group-row td {
+  background: var(--dvd-surface-muted);
+  color: var(--dvd-text-primary);
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+.tasks-table .link-button {
+  color: var(--dvd-link-text);
+}
+
+.tasks-table tr.cancelled td {
+  color: var(--dvd-text-secondary);
+}
+
+.tasks-table .overdue {
+  color: var(--dvd-accent-text);
+  font-weight: 600;
+}
+
+.task-form {
+  display: grid;
+  gap: 4px;
+  min-width: min(520px, 80vw);
+}
+
+.task-status {
+  border: 0;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.task-status legend {
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.segments-portal {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--dvd-surface-muted);
+}
+
+.segments-portal label {
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.segments-portal label.active {
+  background: var(--dvd-text-primary);
+  color: var(--dvd-surface);
+  font-weight: 600;
+}
+
+.segments-portal input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.segments-portal label:has(input:focus-visible) {
+  outline: 3px solid var(--dvd-action-secondary);
+  outline-offset: 2px;
+}
+
+.copy-list {
+  max-height: 50vh;
+  overflow: auto;
+  margin: 8px 0;
+}
+
+.copy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.button.danger-outline {
+  color: var(--dvd-action-danger);
+  border: 1px solid var(--dvd-action-danger);
+  background: transparent;
+}

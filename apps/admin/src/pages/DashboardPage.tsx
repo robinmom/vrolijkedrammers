@@ -192,6 +192,8 @@ export function DashboardPage() {
         <div>
           {pending.data ? <PendingApplicationsCard pending={pending.data} /> : null}
 
+          {can('task.manage') ? <TasksDashboardCard /> : null}
+
           <section className="card" aria-labelledby="aandacht">
             <h2 id="aandacht">Aandacht nodig</h2>
             {attention.length === 0 ? (
@@ -358,6 +360,43 @@ function PendingApplicationsCard({ pending }: { pending: Pending }) {
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+/** Voorbereiding carnaval (2026-10-15): de totale voortgang van de takenlijst van het lopende jaar. */
+function TasksDashboardCard() {
+  const api = useApi();
+  const tasks = useQuery({
+    queryKey: ['tasks', 'year', null],
+    queryFn: async () => (await api.GET('/api/v1/admin/tasks')).data ?? null,
+  });
+  const y = tasks.data;
+  if (!y) return null;
+  const s = y.summary;
+  return (
+    <section className="card" aria-labelledby="voorbereiding">
+      <div className="card-header">
+        <h2 id="voorbereiding">Voorbereiding carnaval</h2>
+        <Link to="/taken" className="button ghost small">
+          Takenlijst →
+        </Link>
+      </div>
+      <p className="kpi-value">{s.percent}%</p>
+      <div
+        className="progress big"
+        role="progressbar"
+        aria-label="Voortgang voorbereiding carnaval"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={s.percent}
+      >
+        <span style={{ width: `${s.percent}%` }} />
+      </div>
+      <p className="muted small-text">
+        {s.done} van {s.total - s.cancelled} taken afgerond · {s.inProgress} bezig · {s.overdue} over datum · nog{' '}
+        {y.daysUntilCarnival} dagen tot carnaval
+      </p>
     </section>
   );
 }

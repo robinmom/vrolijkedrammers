@@ -402,6 +402,17 @@ public sealed class MailingService(
             imageUrl ?? (path => baseUrl is null ? null : $"{baseUrl}{MediaPath(path)}"), unsubscribe, baseUrl, ContactFor(mailing.Sender));
     }
 
+    /// <summary>
+    /// Afmelden met één klik vanuit het mailprogramma (kop List-Unsubscribe): het programma doet zelf een POST naar dit
+    /// adres. <c>null</c> zonder openbaar adres van de website.
+    /// </summary>
+    public string? OneClickUnsubscribeUrl(string emailAddress) =>
+        options.Value.PublicBaseUrl?.TrimEnd('/') is { Length: > 0 } baseUrl
+            ? $"{baseUrl}{OneClickUnsubscribePath}?t={Uri.EscapeDataString(tokens.Create(emailAddress))}"
+            : null;
+
+    public const string OneClickUnsubscribePath = "/afmelden/een-klik";
+
     /// <summary>Openbaar adres van een foto in een mailing (<c>/media/mailing/{id}</c>, zie MediaEndpoints).</summary>
     public static string MediaPath(string uploadPath) => $"/media/mailing/{Path.GetFileNameWithoutExtension(uploadPath)}";
 
@@ -472,7 +483,8 @@ public sealed class MailingRecipientMailHandler(DrammersDbContext db, MailingSer
                 var rendered = mailings.Render(mailing, new MailingPerson(recipient.FirstName, recipient.Name, recipient.Company), recipient.Email);
                 var contact = MailingService.ContactFor(mailing.Sender);
                 await email.SendAsync(
-                    new EmailMessage(recipient.Email, rendered.Subject, rendered.PlainText, rendered.Html, contact.Email, contact.Role), cancellationToken);
+                    new EmailMessage(recipient.Email, rendered.Subject, rendered.PlainText, rendered.Html, contact.Email, contact.Role,
+                        UnsubscribeUrl: mailings.OneClickUnsubscribeUrl(recipient.Email)), cancellationToken);
                 (recipient.Status, recipient.SentAt, recipient.Error) = (MailingRecipientStatus.Sent, clock.UtcNow.UtcDateTime, null);
             }
             catch (Exception ex) when (ex is not OperationCanceledException && message.Attempts + 1 >= OutboxProcessor.MaxAttempts)

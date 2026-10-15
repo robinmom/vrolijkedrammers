@@ -127,6 +127,7 @@ public static class WebsiteSetup
     {
         app.MapRazorPages().CacheOutput(CachePolicy);
         app.MapWebsiteMedia();
+        app.MapOneClickUnsubscribe();
         // Alleen Productie mag in zoekmachines; Dev/Acc zijn kopieën en zouden anders dubbel gevonden worden.
         var robots = app.Environment.IsProduction()
             ? "User-agent: *\nDisallow: /beheer/\nDisallow: /api/\nSitemap: /sitemap.xml\n"

@@ -211,6 +211,16 @@ public partial class MailingTests(SqlServerFixture sql) : IAsyncLifetime
             u => u.GetProperty("email").GetString() == "gast@example.com");
         Assert.Contains("Deze link werkt niet", await guest.GetStringAsync("/afmelden?t=nep"));
 
+        // Afmelden met één klik vanuit het mailprogramma (List-Unsubscribe-Post): een POST zonder pagina of knop.
+        var toAnna = mails.Single(m => m.To == "anna@example.com");
+        Assert.StartsWith("https://dvd.test/afmelden/een-klik?t=", toAnna.UnsubscribeUrl);
+        var oneClick = new Uri(toAnna.UnsubscribeUrl!).PathAndQuery;
+        Assert.Equal(HttpStatusCode.Redirect, (await _api.CreateClient(new() { AllowAutoRedirect = false }).GetAsync(oneClick)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await guest.PostAsync(oneClick, new FormUrlEncodedContent(new Dictionary<string, string> { ["List-Unsubscribe"] = "One-Click" }))).StatusCode);
+        Assert.Contains(await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/mailing/unsubscribes") ?? [],
+            u => u.GetProperty("email").GetString() == "anna@example.com");
+        Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsync("/afmelden/een-klik?t=nep", null)).StatusCode);
+
         // Een kopie is weer een concept.
         var copy = await _bestuur.PostAsync($"/api/v1/admin/mailing/mailings/{mailingId}/duplicate", null);
         var copyId = (await copy.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();

@@ -336,7 +336,9 @@ public sealed class MailingService(
             : null;
         var rendered = Render(mailing, new MailingPerson(firstName, user.DisplayName), user.Email);
         var contact = ContactFor(mailing.Sender);
-        await email.SendAsync(new EmailMessage(user.Email, $"[TEST] {rendered.Subject}", rendered.PlainText, rendered.Html, contact.Email, contact.Role), cancellationToken);
+        // Dezelfde route als de echte verzending (mailbox of ACS), zodat de testmail laat zien waar de mail aankomt.
+        await email.SendAsync(new EmailMessage(user.Email, $"[TEST] {rendered.Subject}", rendered.PlainText, rendered.Html, contact.Email, contact.Role,
+            UnsubscribeUrl: OneClickUnsubscribeUrl(user.Email), ViaMailbox: true), cancellationToken);
         await audit.WriteAsync(new AuditEntry("mailing.test-sent", "Mailing", id.ToString(), null, null), cancellationToken);
         return user.Email;
     }
@@ -484,7 +486,7 @@ public sealed class MailingRecipientMailHandler(DrammersDbContext db, MailingSer
                 var contact = MailingService.ContactFor(mailing.Sender);
                 await email.SendAsync(
                     new EmailMessage(recipient.Email, rendered.Subject, rendered.PlainText, rendered.Html, contact.Email, contact.Role,
-                        UnsubscribeUrl: mailings.OneClickUnsubscribeUrl(recipient.Email)), cancellationToken);
+                        UnsubscribeUrl: mailings.OneClickUnsubscribeUrl(recipient.Email), ViaMailbox: true), cancellationToken);
                 (recipient.Status, recipient.SentAt, recipient.Error) = (MailingRecipientStatus.Sent, clock.UtcNow.UtcDateTime, null);
             }
             catch (Exception ex) when (ex is not OperationCanceledException && message.Attempts + 1 >= OutboxProcessor.MaxAttempts)

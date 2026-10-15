@@ -70,6 +70,9 @@ param emailCustomDomain string = ''
 @description('Pas true na de DNS-records en verificatie in ACS (runbook eigen-maildomein); koppelt het domein en zet de eigen afzenders aan.')
 param emailCustomDomainVerified bool = false
 
+@description('Afzenders waarvan mailings via de mailbox in Microsoft 365 gaan (bijv. voorzitter,secretaris); leeg = via ACS. Pas na infra/m365/mailbox-verzenden.ps1 (runbook mailing-via-mailbox).')
+param emailMailboxSenders string = ''
+
 @description('Inloggen met e-mail + wachtwoord (infra/entra/wachtwoord-inloggen.sh, runbook accounts-wachtwoord): de API maakt de inlog bij elk account.')
 param passwordSignIn bool = false
 
@@ -183,6 +186,7 @@ module api 'modules/appservice.bicep' = {
       Email__CustomSenderDomain: email.outputs.customSenderDomain
       Email__CustomSenders: join(objectKeys(emailSenders), ',')
       Email__RedirectAllTo: emailRedirectTo
+      Email__MailboxSenders: emailMailboxSenders
       // Kaartverkoop (fase 19): links in e-mails van de nachtelijke job; de Mollie-sleutel staat in Key Vault (mollie-api-key).
       Sales__PublicBaseUrl: publicBaseUrl
       // Andere eigen domeinen (bijv. zonder www) sturen door naar het hoofdadres.

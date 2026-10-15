@@ -32,6 +32,8 @@ param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAM
 // Eigen maildomein (runbook eigen-maildomein): eerst aanmaken en DNS zetten, na de verificatie DVD_EMAIL_DOMAIN_VERIFIED=true.
 param emailCustomDomain = 'vrolijkedrammers.nl'
 param emailCustomDomainVerified = readEnvironmentVariable('DVD_EMAIL_DOMAIN_VERIFIED', 'false') == 'true'
+// Mailings via de mailbox in Microsoft 365 (runbook mailing-via-mailbox): na infra/m365/mailbox-verzenden.ps1 DVD_EMAIL_MAILBOX_SENDERS=voorzitter,secretaris.
+param emailMailboxSenders = readEnvironmentVariable('DVD_EMAIL_MAILBOX_SENDERS', '')
 param boundHostNames = filter(split(readEnvironmentVariable('DVD_BOUND_HOSTNAMES', ''), ','), host => !empty(host))
 param budgetAmount = 40
 param budgetStartDate = '2026-10-01'

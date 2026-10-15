@@ -11,11 +11,12 @@ namespace Drammers.Infrastructure.Email;
 /// gaan naar dit adres. <paramref name="From"/>: afzendernaam vóór de @ (bijv. <c>secretaris</c>), alleen gebruikt als er
 /// een eigen domein is ingesteld (<see cref="EmailOptions.CustomSenderDomain"/>); anders blijft het DoNotReply.
 /// <paramref name="UnsubscribeUrl"/>: afmelden met één klik (koppen List-Unsubscribe en List-Unsubscribe-Post, RFC 8058),
-/// alleen bij nieuwsbrieven en uitnodigingen; mailprogramma's tonen dan een eigen afmeldknop.
+/// alleen bij nieuwsbrieven en uitnodigingen; mailprogramma's tonen dan een eigen afmeldknop. <paramref name="ViaMailbox"/>:
+/// versturen via de echte mailbox in Microsoft 365 als die afzender daarvoor is ingesteld (<see cref="MailboxEmailSender"/>).
 /// </summary>
 public sealed record EmailMessage(
     string To, string Subject, string PlainText, string Html, string? ReplyTo = null, string? From = null,
-    IReadOnlyList<EmailFile>? Attachments = null, string? UnsubscribeUrl = null);
+    IReadOnlyList<EmailFile>? Attachments = null, string? UnsubscribeUrl = null, bool ViaMailbox = false);
 
 /// <summary>Een bijlage, bijvoorbeeld de factuur als PDF (fase 27e).</summary>
 public sealed record EmailFile(string Name, string ContentType, byte[] Content);
@@ -52,6 +53,14 @@ public sealed class EmailOptions
     /// kopie van de echte ledenadministratie heeft. Leeg (Prod) = gewoon versturen.
     /// </summary>
     public string? RedirectAllTo { get; set; }
+
+    /// <summary>
+    /// Afzenders (kommagescheiden, bijv. <c>voorzitter,secretaris</c>) waarvan mailings via de echte mailbox in Microsoft
+    /// 365 gaan in plaats van via ACS; leeg = alles via ACS. Pas zetten na infra/m365/mailbox-verzenden.ps1.
+    /// </summary>
+    public string? MailboxSenders { get; set; }
+
+    public string GraphBaseUrl { get; set; } = "https://graph.microsoft.com";
 
     public bool IsConfigured => Endpoint is not null && !string.IsNullOrWhiteSpace(SenderDomain);
 }

@@ -10,10 +10,12 @@ namespace Drammers.Infrastructure.Email;
 /// Een e-mail met platte tekst en HTML (docs/06: geen persoonsgegevens in logs). <paramref name="ReplyTo"/>: antwoorden
 /// gaan naar dit adres. <paramref name="From"/>: afzendernaam vóór de @ (bijv. <c>secretaris</c>), alleen gebruikt als er
 /// een eigen domein is ingesteld (<see cref="EmailOptions.CustomSenderDomain"/>); anders blijft het DoNotReply.
+/// <paramref name="UnsubscribeUrl"/>: afmelden met één klik (koppen List-Unsubscribe en List-Unsubscribe-Post, RFC 8058),
+/// alleen bij nieuwsbrieven en uitnodigingen; mailprogramma's tonen dan een eigen afmeldknop.
 /// </summary>
 public sealed record EmailMessage(
     string To, string Subject, string PlainText, string Html, string? ReplyTo = null, string? From = null,
-    IReadOnlyList<EmailFile>? Attachments = null);
+    IReadOnlyList<EmailFile>? Attachments = null, string? UnsubscribeUrl = null);
 
 /// <summary>Een bijlage, bijvoorbeeld de factuur als PDF (fase 27e).</summary>
 public sealed record EmailFile(string Name, string ContentType, byte[] Content);
@@ -55,7 +57,7 @@ public sealed class EmailOptions
 }
 
 /// <summary>Verstuurt via Azure Communication Services Email met de managed identity van de API.</summary>
-internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCredential credential) : IEmailSender
+internal sealed partial class AcsEmailSender(IOptions<EmailOptions> options, TokenCredential credential, ILogger<AcsEmailSender> logger) : IEmailSender
 {
     private readonly EmailClient _client = new(options.Value.Endpoint!, credential);
 
@@ -70,14 +72,35 @@ internal sealed class AcsEmailSender(IOptions<EmailOptions> options, TokenCreden
             email.ReplyTo.Add(new EmailAddress(replyTo));
         }
 
+        // Outlook.com en Gmail verwachten deze koppen bij mail naar meerdere mensen; zonder komt die eerder in Ongewenst.
+        if (message.UnsubscribeUrl is { Length: > 0 } unsubscribe)
+        {
+            email.Headers.Add("List-Unsubscribe", $"<{unsubscribe}>");
+            email.Headers.Add("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+        }
+
         foreach (var file in message.Attachments ?? [])
         {
             email.Attachments.Add(new EmailAttachment(file.Name, file.ContentType, BinaryData.FromBytes(file.Content)));
         }
 
         // WaitUntil.Started: ACS neemt het bericht aan en bezorgt het zelf; een fout bij aannemen gooit hier.
-        await _client.SendAsync(WaitUntil.Started, email, cancellationToken);
+        try
+        {
+            await _client.SendAsync(WaitUntil.Started, email, cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 400 && email.Headers.ContainsKey("List-Unsubscribe"))
+        {
+            // Vangnet: weigert ACS de afmeldkoppen, dan gaat de mail zonder (de afmeldlink staat ook onderaan de mail).
+            LogUnsubscribeHeadersRejected(ex.ErrorCode);
+            email.Headers.Remove("List-Unsubscribe");
+            email.Headers.Remove("List-Unsubscribe-Post");
+            await _client.SendAsync(WaitUntil.Started, email, cancellationToken);
+        }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "ACS weigerde de afmeldkoppen ({ErrorCode}); verstuurd zonder List-Unsubscribe.")]
+    private partial void LogUnsubscribeHeadersRejected(string? errorCode);
 }
 
 /// <summary>

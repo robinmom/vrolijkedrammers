@@ -1078,6 +1078,83 @@ export class MockApi {
   ];
   news: Record<string, unknown>[] = [];
 
+  tasks: {
+    id: string;
+    title: string;
+    categoryId: string;
+    status: string;
+    progress: number;
+    dueOn: string | null;
+    memberIds?: string[];
+  }[] = [
+    { id: 't-1', title: 'Zaal reserveren', categoryId: 'c-1', status: 'Done', progress: 100, dueOn: '2026-10-01' },
+    {
+      id: 't-2',
+      title: 'Artiesten boeken',
+      categoryId: 'c-1',
+      status: 'InProgress',
+      progress: 40,
+      dueOn: '2026-12-01',
+    },
+    {
+      id: 't-3',
+      title: 'Vergunning aanvragen',
+      categoryId: 'c-2',
+      status: 'InProgress',
+      progress: 60,
+      dueOn: '2026-10-10',
+    },
+  ];
+
+  taskYear() {
+    const names: Record<string, string> = { 'c-1': 'Pronkzitting', 'c-2': 'Optocht' };
+    const tasks = this.tasks.map((t) => {
+      const effective =
+        t.status === 'Done' ? 100 : t.status === 'InProgress' ? t.progress : t.status === 'NotStarted' ? 0 : null;
+      return {
+        id: t.id,
+        categoryId: t.categoryId,
+        categoryName: names[t.categoryId] ?? 'Overig',
+        title: t.title,
+        description: null,
+        status: t.status,
+        progress: t.progress,
+        effectiveProgress: effective,
+        startedOn: t.status === 'NotStarted' ? null : '2026-09-15',
+        dueOn: t.dueOn,
+        completedOn: t.status === 'Done' ? '2026-10-01' : null,
+        overdue: t.id === 't-3',
+        assignees: [{ memberId: 'm-1', name: 'Robin Mom' }],
+        updatedAt: '2026-10-12T10:00:00Z',
+      };
+    });
+    const counted = tasks.filter((t) => t.effectiveProgress !== null);
+    const percent = Math.round(
+      counted.reduce((s, t) => s + (t.effectiveProgress ?? 0), 0) / Math.max(1, counted.length),
+    );
+    return {
+      yearId: 1,
+      yearName: '2026/2027',
+      carnivalStartDate: '2027-02-06',
+      daysUntilCarnival: 114,
+      summary: {
+        total: tasks.length,
+        done: tasks.filter((t) => t.status === 'Done').length,
+        inProgress: tasks.filter((t) => t.status === 'InProgress').length,
+        notStarted: tasks.filter((t) => t.status === 'NotStarted').length,
+        cancelled: tasks.filter((t) => t.status === 'Cancelled').length,
+        overdue: 1,
+        percent,
+      },
+      tasks,
+      years: [
+        { id: 1, name: '2026/2027' },
+        { id: 2, name: '2027/2028' },
+      ],
+      nextYear: { id: 2, name: '2027/2028' },
+    };
+  }
+
   constructor(
     permissions: string[] = [
       'report.view',
@@ -1095,6 +1172,7 @@ export class MockApi {
       'member.block',
       'member.privacy',
       'import.run',
+      'task.manage',
     ],
   ) {
     this.permissions = permissions;
@@ -2006,6 +2084,88 @@ export class MockApi {
         roles: [{ code: 'bestuur', name: 'Bestuur' }],
         permissions: this.permissions,
         features: {},
+      });
+    }
+    if (path === '/admin/tasks' && method === 'GET') {
+      return json(this.taskYear());
+    }
+    if (path === '/admin/tasks' && method === 'POST') {
+      const id = `t-${this.tasks.length + 1}`;
+      this.tasks.push({ ...(body as object), id } as never);
+      return json({ id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/tasks\/(t-[^/]+)$/)) && method === 'PUT') {
+      const task = this.tasks.find((t) => t.id === m![1])!;
+      Object.assign(task, body);
+      return noContent();
+    }
+    if (path === '/admin/tasks/copy' && method === 'POST') {
+      return json({ copied: ((body as { taskIds: string[] }).taskIds ?? []).length });
+    }
+    if (path === '/admin/tasks/categories' && method === 'GET') {
+      return json([
+        { id: 'c-1', name: 'Pronkzitting', sortOrder: 10, active: true, taskCount: 2 },
+        { id: 'c-2', name: 'Optocht', sortOrder: 20, active: true, taskCount: 1 },
+      ]);
+    }
+    if (path === '/admin/tasks/members' && method === 'GET') {
+      return json([{ memberId: 'm-2', name: 'Femke Franken-Peters' }]);
+    }
+    if (path === '/admin/tasks/report' && method === 'GET') {
+      const y = this.taskYear();
+      const row = (name: string, percent: number) => ({
+        name,
+        total: 2,
+        done: 1,
+        inProgress: 1,
+        notStarted: 0,
+        cancelled: 0,
+        overdue: 0,
+        percent,
+      });
+      return json({
+        yearId: 1,
+        yearName: '2026/2027',
+        summary: y.summary,
+        perCategory: [row('Pronkzitting', 70)],
+        perPerson: [row('Robin Mom', 70)],
+      });
+    }
+    if (path === '/admin/dashboard/pending') {
+      const has = (p: string) => this.permissions.includes(p);
+      return json({
+        members: has('member.approve') ? { new: 2, inReview: 1, supplementReceived: 0 } : null,
+        parade: has('parade.read') ? { new: 3, inReview: 0, supplementReceived: 1 } : null,
+        festival: has('festival.manage') ? { new: 0, inReview: 0, supplementReceived: 0 } : null,
+      });
+    }
+    if (path === '/admin/reports/members/history' && method === 'GET') {
+      return json({
+        currentYear: 2027,
+        trackedSince: 2027,
+        rows: [
+          {
+            year: 2025,
+            newMembers: 30,
+            leftMembers: 12,
+            totalMembers: 610,
+            manual: { newMembers: true, leftMembers: true, totalMembers: true },
+          },
+          {
+            year: 2026,
+            newMembers: 28,
+            leftMembers: 9,
+            totalMembers: 629,
+            manual: { newMembers: false, leftMembers: true, totalMembers: true },
+          },
+          {
+            year: 2027,
+            newMembers: 12,
+            leftMembers: 0,
+            totalMembers: 633,
+            manual: { newMembers: false, leftMembers: false, totalMembers: false },
+          },
+        ],
       });
     }
     if (path === '/admin/dashboard') {

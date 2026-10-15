@@ -1574,6 +1574,147 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Tasks.CarnivalTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CarnivalYearId")
+                        .HasColumnType("int")
+                        .HasColumnName("carnival_year_id");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateOnly?>("CompletedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("completed_on");
+
+                    b.Property<Guid?>("CopiedFromId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("copied_from_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly?>("DueOn")
+                        .HasColumnType("date")
+                        .HasColumnName("due_on");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int")
+                        .HasColumnName("progress");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<DateOnly?>("StartedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("started_on");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("PK_CarnivalTask");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("IX_CarnivalTask_category_id");
+
+                    b.HasIndex("CarnivalYearId", "CategoryId")
+                        .HasDatabaseName("IX_CarnivalTask_carnival_year_id_category_id");
+
+                    b.ToTable("CarnivalTask", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_CarnivalTask_progress", "[progress] >= 0 AND [progress] <= 100");
+
+                            t.HasCheckConstraint("CK_CarnivalTask_status", "[status] IN ('NotStarted', 'InProgress', 'Done', 'Cancelled')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Tasks.CarnivalTaskAssignee", b =>
+                {
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("task_id");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("member_id");
+
+                    b.HasKey("TaskId", "MemberId")
+                        .HasName("PK_CarnivalTaskAssignee");
+
+                    b.HasIndex("MemberId")
+                        .HasDatabaseName("IX_CarnivalTaskAssignee_member_id");
+
+                    b.ToTable("CarnivalTaskAssignee", "content");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Tasks.TaskCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit")
+                        .HasColumnName("active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.HasKey("Id")
+                        .HasName("PK_TaskCategory");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TaskCategory_name");
+
+                    b.ToTable("TaskCategory", "content");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.Website.Award", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2823,6 +2964,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Content",
                             Code = "festival.manage",
                             Description = "Dansgardefestival: instellingen, inschrijvingen beoordelen, wachtlijst en betaallinks"
+                        },
+                        new
+                        {
+                            Id = 53,
+                            Category = "Beheer",
+                            Code = "task.manage",
+                            Description = "Takenlijst carnaval: taken, categorieën, voortgang en rapportage"
                         });
                 });
 
@@ -3695,6 +3843,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 11,
                             PermissionId = 52
+                        },
+                        new
+                        {
+                            RoleId = 11,
+                            PermissionId = 53
                         },
                         new
                         {
@@ -5951,6 +6104,83 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.ToTable("MemberChangeRequest", "membership", t =>
                         {
                             t.HasCheckConstraint("CK_MemberChangeRequest_status", "[status] IN ('Pending', 'Approved', 'Rejected', 'Cancelled')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Members.MemberExit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CarnivalYear")
+                        .HasColumnType("int")
+                        .HasColumnName("carnival_year");
+
+                    b.Property<DateOnly>("ExitedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("exited_on");
+
+                    b.Property<string>("MemberNumber")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)")
+                        .HasColumnName("member_number");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id")
+                        .HasName("PK_MemberExit");
+
+                    b.HasIndex("CarnivalYear")
+                        .HasDatabaseName("IX_MemberExit_carnival_year");
+
+                    b.HasIndex("MemberNumber")
+                        .HasDatabaseName("IX_MemberExit_member_number");
+
+                    b.ToTable("MemberExit", "membership", t =>
+                        {
+                            t.HasCheckConstraint("CK_MemberExit_reason", "[reason] IN ('Inactive', 'Deceased', 'Suspended', 'Removed')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Members.MemberYearStat", b =>
+                {
+                    b.Property<int>("CarnivalYear")
+                        .HasColumnType("int")
+                        .HasColumnName("carnival_year");
+
+                    b.Property<int?>("ManualLeft")
+                        .HasColumnType("int")
+                        .HasColumnName("manual_left");
+
+                    b.Property<int?>("ManualNew")
+                        .HasColumnType("int")
+                        .HasColumnName("manual_new");
+
+                    b.Property<int?>("ManualTotal")
+                        .HasColumnType("int")
+                        .HasColumnName("manual_total");
+
+                    b.Property<DateTime?>("SnapshotAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("snapshot_at");
+
+                    b.Property<int?>("SnapshotTotal")
+                        .HasColumnType("int")
+                        .HasColumnName("snapshot_total");
+
+                    b.HasKey("CarnivalYear")
+                        .HasName("PK_MemberYearStat");
+
+                    b.ToTable("MemberYearStat", "membership", t =>
+                        {
+                            t.HasCheckConstraint("CK_MemberYearStat_values", "([manual_new] IS NULL OR [manual_new] >= 0) AND ([manual_left] IS NULL OR [manual_left] >= 0) AND ([manual_total] IS NULL OR [manual_total] >= 0)");
                         });
                 });
 
@@ -9035,6 +9265,36 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Tasks.CarnivalTask", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.CarnivalYears.CarnivalYear", null)
+                        .WithMany()
+                        .HasForeignKey("CarnivalYearId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Drammers.Modules.Content.Tasks.TaskCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Tasks.CarnivalTaskAssignee", b =>
+                {
+                    b.HasOne("Drammers.Modules.Membership.Members.Member", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Drammers.Modules.Content.Tasks.CarnivalTask", null)
+                        .WithMany("Assignees")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.Website.CommitteeMember", b =>
                 {
                     b.HasOne("Drammers.Modules.Content.Website.Committee", null)
@@ -9886,6 +10146,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Drammers.Modules.Content.Photos.PhotoAlbum", b =>
                 {
                     b.Navigation("Audiences");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Tasks.CarnivalTask", b =>
+                {
+                    b.Navigation("Assignees");
                 });
 
             modelBuilder.Entity("Drammers.Modules.Identity.Roles.Role", b =>

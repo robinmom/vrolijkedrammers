@@ -12757,6 +12757,35 @@
         }
       }
     },
+    "/api/v1/admin/dashboard/pending": {
+      "get": {
+        "tags": [
+          "AdminPending"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/photo-albums": {
       "get": {
         "tags": [
@@ -13540,6 +13569,165 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MemberReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/members/history": {
+      "get": {
+        "tags": [
+          "AdminReports"
+        ],
+        "summary": "Ledenverloop per carnavalsjaar (grafiek): nieuw, uitgeschreven en totaal.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHistoryReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHistoryReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHistoryReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/members/history/{year}": {
+      "put": {
+        "tags": [
+          "AdminReports"
+        ],
+        "summary": "Cijfers van een carnavalsjaar zelf invullen (leeg = weer berekenen).",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberHistoryInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberHistoryInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberHistoryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/members/history/import": {
+      "post": {
+        "tags": [
+          "AdminReports"
+        ],
+        "summary": "Oudere jaren importeren uit Excel: kolommen Jaar, Nieuw, Uitgeschreven en Totaal.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryImportedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryImportedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryImportedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -15410,6 +15598,637 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks": {
+      "get": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "summary": "De takenlijst van een carnavalsjaar (zonder jaar: het actieve), met de totalen.",
+        "parameters": [
+          {
+            "name": "yearId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskYearView"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskYearView"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskYearView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "parameters": [
+          {
+            "name": "yearId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks/{id}": {
+      "put": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks/copy": {
+      "post": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "summary": "De aangevinkte taken naar het volgende carnavalsjaar kopiëren.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCopyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCopyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCopyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksCopiedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksCopiedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksCopiedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks/report": {
+      "get": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "parameters": [
+          {
+            "name": "yearId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks/categories": {
+      "get": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskCategoryView"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskCategoryView"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskCategoryView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCategoryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCategoryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks/categories/{id}": {
+      "put": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCategoryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCategoryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tasks/members": {
+      "get": {
+        "tags": [
+          "AdminTasks"
+        ],
+        "summary": "Actieve leden zoeken om aan een taak te koppelen.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskPerson"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskPerson"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskPerson"
+                  }
                 }
               }
             }
@@ -28481,6 +29300,14 @@
           }
         }
       },
+      "CarnivalTaskStatus": {
+        "enum": [
+          "NotStarted",
+          "InProgress",
+          "Done",
+          "Cancelled"
+        ]
+      },
       "CarnivalYearRequest": {
         "required": [
           "name",
@@ -32493,6 +33320,18 @@
           }
         }
       },
+      "HistoryImportedResponse": {
+        "required": [
+          "years"
+        ],
+        "type": "object",
+        "properties": {
+          "years": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "HourBucket": {
         "required": [
           "hourStart",
@@ -35107,6 +35946,128 @@
           },
           "ownAccount": {
             "$ref": "#/components/schemas/OwnAccountInfo"
+          }
+        }
+      },
+      "MemberHistoryInput": {
+        "required": [
+          "newMembers",
+          "leftMembers",
+          "totalMembers"
+        ],
+        "type": "object",
+        "properties": {
+          "newMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "leftMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "totalMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MemberHistoryManual": {
+        "required": [
+          "newMembers",
+          "leftMembers",
+          "totalMembers"
+        ],
+        "type": "object",
+        "properties": {
+          "newMembers": {
+            "type": "boolean"
+          },
+          "leftMembers": {
+            "type": "boolean"
+          },
+          "totalMembers": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberHistoryReport": {
+        "required": [
+          "currentYear",
+          "trackedSince",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "currentYear": {
+            "type": "integer",
+            "description": "Het lopende carnavalsjaar.",
+            "format": "int32"
+          },
+          "trackedSince": {
+            "type": "integer",
+            "description": "Vanaf dit carnavalsjaar legt het systeem uitschrijvingen en het totaal zelf vast.",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberHistoryRow"
+            },
+            "description": "Per carnavalsjaar, oudste eerst."
+          }
+        }
+      },
+      "MemberHistoryRow": {
+        "required": [
+          "year",
+          "newMembers",
+          "leftMembers",
+          "totalMembers",
+          "manual"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "description": "Carnavalsjaar (het jaar van het carnaval, bijv. 2027).",
+            "format": "int32"
+          },
+          "newMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Nieuwe leden (zonder gesplitste tweede leden).",
+            "format": "int32"
+          },
+          "leftMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Uitgeschreven: inactief, overleden, geschorst of verwijderd.",
+            "format": "int32"
+          },
+          "totalMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Actieve leden aan het eind van het jaar (lopend jaar: nu).",
+            "format": "int32"
+          },
+          "manual": {
+            "description": "Welke waarden het bestuur zelf heeft ingevuld of geïmporteerd.",
+            "$ref": "#/components/schemas/MemberHistoryManual"
           }
         }
       },
@@ -38337,6 +39298,72 @@
           "AdultsOnly"
         ],
         "description": "Welke deelnemers tellen voor de grenzen (OQ-10: alleen de doelgroep)."
+      },
+      "PendingCount": {
+        "required": [
+          "new",
+          "inReview",
+          "supplementReceived"
+        ],
+        "type": "object",
+        "properties": {
+          "new": {
+            "type": "integer",
+            "description": "Nieuw, nog niet beoordeeld.",
+            "format": "int32"
+          },
+          "inReview": {
+            "type": "integer",
+            "description": "In behandeling genomen, nog geen besluit.",
+            "format": "int32"
+          },
+          "supplementReceived": {
+            "type": "integer",
+            "description": "Aanvulling ontvangen of gewijzigd: opnieuw beoordelen.",
+            "format": "int32"
+          }
+        }
+      },
+      "PendingResponse": {
+        "required": [
+          "members",
+          "parade",
+          "festival"
+        ],
+        "type": "object",
+        "properties": {
+          "members": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingCount"
+              }
+            ]
+          },
+          "parade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingCount"
+              }
+            ]
+          },
+          "festival": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingCount"
+              }
+            ]
+          }
+        },
+        "description": "Per onderdeel `null` als de gebruiker er geen recht voor heeft."
       },
       "PermissionResponse": {
         "required": [
@@ -41911,6 +42938,441 @@
           "Manual"
         ]
       },
+      "TaskCategoryRequest": {
+        "required": [
+          "name",
+          "sortOrder"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "TaskCategoryView": {
+        "required": [
+          "id",
+          "name",
+          "sortOrder",
+          "active",
+          "taskCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "taskCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TaskCopyRequest": {
+        "required": [
+          "fromYearId",
+          "taskIds"
+        ],
+        "type": "object",
+        "properties": {
+          "fromYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "taskIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "TaskPerson": {
+        "required": [
+          "memberId",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskReport": {
+        "required": [
+          "yearId",
+          "yearName",
+          "summary",
+          "perCategory",
+          "perPerson"
+        ],
+        "type": "object",
+        "properties": {
+          "yearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yearName": {
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TaskSummary"
+          },
+          "perCategory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskReportRow"
+            }
+          },
+          "perPerson": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskReportRow"
+            }
+          }
+        }
+      },
+      "TaskReportRow": {
+        "required": [
+          "name",
+          "total",
+          "done",
+          "inProgress",
+          "notStarted",
+          "cancelled",
+          "overdue",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "done": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inProgress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notStarted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cancelled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overdue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "percent": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TaskRequest": {
+        "required": [
+          "categoryId",
+          "title",
+          "description",
+          "status",
+          "progress",
+          "dueOn",
+          "memberIds"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/CarnivalTaskStatus"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "memberIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "TasksCopiedResponse": {
+        "required": [
+          "copied"
+        ],
+        "type": "object",
+        "properties": {
+          "copied": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TaskSummary": {
+        "required": [
+          "total",
+          "done",
+          "inProgress",
+          "notStarted",
+          "cancelled",
+          "overdue",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "done": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inProgress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notStarted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cancelled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overdue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "percent": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Totalen van een takenlijst; `Percent` is de gemiddelde voortgang van alle taken behalve geannuleerde."
+      },
+      "TaskView": {
+        "required": [
+          "id",
+          "categoryId",
+          "categoryName",
+          "title",
+          "description",
+          "status",
+          "progress",
+          "effectiveProgress",
+          "startedOn",
+          "dueOn",
+          "completedOn",
+          "overdue",
+          "assignees",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/CarnivalTaskStatus"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "effectiveProgress": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "startedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "completedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskPerson"
+            }
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TaskYearOption": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskYearView": {
+        "required": [
+          "yearId",
+          "yearName",
+          "carnivalStartDate",
+          "daysUntilCarnival",
+          "summary",
+          "tasks",
+          "years",
+          "nextYear"
+        ],
+        "type": "object",
+        "properties": {
+          "yearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yearName": {
+            "type": "string"
+          },
+          "carnivalStartDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "daysUntilCarnival": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TaskSummary"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskView"
+            }
+          },
+          "years": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskYearOption"
+            }
+          },
+          "nextYear": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TaskYearOption"
+              }
+            ]
+          }
+        }
+      },
       "TestAccessStatus": {
         "required": [
           "available",
@@ -43330,6 +44792,9 @@
       "name": "AdminParades"
     },
     {
+      "name": "AdminPending"
+    },
+    {
       "name": "AdminPhotoAlbums"
     },
     {
@@ -43349,6 +44814,9 @@
     },
     {
       "name": "AdminSharedEmail"
+    },
+    {
+      "name": "AdminTasks"
     },
     {
       "name": "AdminTickets"

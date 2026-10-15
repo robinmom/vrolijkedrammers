@@ -336,3 +336,26 @@ internal sealed class ExcludedMemberConfiguration : IEntityTypeConfiguration<Exc
         builder.Property(e => e.MemberNumber).HasMaxLength(15);
     }
 }
+
+internal sealed class MemberExitConfiguration : IEntityTypeConfiguration<MemberExit>
+{
+    public void Configure(EntityTypeBuilder<MemberExit> builder)
+    {
+        builder.ToTable("MemberExit", Schemas.Membership);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+        builder.Property(e => e.MemberNumber).HasMaxLength(15);
+        builder.HasIndex(e => e.MemberNumber);
+        builder.HasIndex(e => e.CarnivalYear);
+    }
+}
+
+internal sealed class MemberYearStatConfiguration : IEntityTypeConfiguration<MemberYearStat>
+{
+    public void Configure(EntityTypeBuilder<MemberYearStat> builder)
+    {
+        builder.ToTable("MemberYearStat", Schemas.Membership, t => t.HasCheckConstraint("CK_MemberYearStat_values",
+            "([manual_new] IS NULL OR [manual_new] >= 0) AND ([manual_left] IS NULL OR [manual_left] >= 0) AND ([manual_total] IS NULL OR [manual_total] >= 0)"));
+        builder.HasKey(s => s.CarnivalYear);
+        builder.Property(s => s.CarnivalYear).ValueGeneratedNever();
+    }
+}

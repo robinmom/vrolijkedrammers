@@ -79,9 +79,12 @@ test('fase 27a: mailing opstellen met blokken, voorbeeld, testmail en versturen'
   expect(api.mailings[0]!.blocks.map((b) => b.type)).toEqual(['heading', 'text', 'button', 'closing']);
   await expectNoSeriousA11yIssues(page);
 
+  // Een wijziging na het opslaan gaat mee met de testmail (die slaat eerst op).
+  await page.getByLabel('Onderwerp').fill('Uitnodiging pronkzitting 2027 (nieuw)');
   await page.getByRole('button', { name: 'Testmail naar mij' }).click();
   await expect(page.getByText('Testmail verstuurd naar bestuur@example.com.')).toBeVisible();
   expect(api.mailingTests).toBe(1);
+  expect(api.mailings[0]!.subject).toBe('Uitnodiging pronkzitting 2027 (nieuw)');
 
   await page.getByRole('button', { name: 'Versturen…' }).click();
   await expect(page.getByRole('dialog')).toContainText('De mailing gaat naar 120 ontvangers');

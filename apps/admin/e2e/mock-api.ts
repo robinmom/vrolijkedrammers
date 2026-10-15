@@ -2021,9 +2021,27 @@ export class MockApi {
         currentYear: 2027,
         trackedSince: 2027,
         rows: [
-          { year: 2025, newMembers: 30, leftMembers: 12, totalMembers: 610, manual: { newMembers: true, leftMembers: true, totalMembers: true } },
-          { year: 2026, newMembers: 28, leftMembers: 9, totalMembers: 629, manual: { newMembers: false, leftMembers: true, totalMembers: true } },
-          { year: 2027, newMembers: 12, leftMembers: 0, totalMembers: 633, manual: { newMembers: false, leftMembers: false, totalMembers: false } },
+          {
+            year: 2025,
+            newMembers: 30,
+            leftMembers: 12,
+            totalMembers: 610,
+            manual: { newMembers: true, leftMembers: true, totalMembers: true },
+          },
+          {
+            year: 2026,
+            newMembers: 28,
+            leftMembers: 9,
+            totalMembers: 629,
+            manual: { newMembers: false, leftMembers: true, totalMembers: true },
+          },
+          {
+            year: 2027,
+            newMembers: 12,
+            leftMembers: 0,
+            totalMembers: 633,
+            manual: { newMembers: false, leftMembers: false, totalMembers: false },
+          },
         ],
       });
     }

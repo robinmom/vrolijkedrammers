@@ -1,7 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import {
-  useAdminEvents,
   useAdminNews,
   useCurrentCarnivalYear,
   useDashboard,
@@ -10,23 +10,21 @@ import {
   useMe,
   useMemberSummary,
   useSyncConflicts,
+  type Schemas,
 } from '../api/hooks';
+import { useApi } from '../api/ApiContext';
 import { season, useAdvertiserStatus } from '../api/advertisers';
 import appIcon from '../assets/logo-cirkel.png';
 import { AccessDashboardCard } from '../components/AccessDashboardCard';
 import { useSharedEmailConflicts } from '../components/SharedEmailCard';
 import { ProblemAlert } from '../components/ProblemAlert';
-import { formatDateTime, visibilityLabels } from '../format';
+import { formatDateTime } from '../format';
 
 const statusLabels: Record<string, string> = { Healthy: 'Werkt', Degraded: 'Verminderd', Unhealthy: 'Storing' };
 const checkLabels: Record<string, string> = { sql: 'Database', worker: 'Achtergrondtaken', keyvault: 'Key Vault', blob: 'Bestandsopslag' };
 
 const zone = 'Europe/Amsterdam';
 const hourFormat = new Intl.DateTimeFormat('nl-NL', { hour: 'numeric', hourCycle: 'h23', timeZone: zone });
-const weekday = new Intl.DateTimeFormat('nl-NL', { weekday: 'short', timeZone: zone });
-const day = new Intl.DateTimeFormat('nl-NL', { day: '2-digit', timeZone: zone });
-const month = new Intl.DateTimeFormat('nl-NL', { month: 'short', timeZone: zone });
-const time = new Intl.DateTimeFormat('nl-NL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone });
 
 function greeting(now: Date): string {
   const h = Number(hourFormat.format(now));
@@ -48,8 +46,6 @@ function useNow(intervalMs: number) {
   return now;
 }
 
-const clean = (value: string) => value.replace('.', '').toUpperCase();
-
 interface Attention {
   key: string;
   tone: string;
@@ -59,7 +55,10 @@ interface Attention {
   action?: string;
 }
 
-/** Dashboard (Figma "Dashboard"): welkom met countdown, kengetallen, aandachtspunten, activiteiten en systeemstatus. */
+/**
+ * Dashboard (Figma "Dashboard"): welkom met countdown, kengetallen, openstaande aanmeldingen (2026-10-15, in plaats van de
+ * activiteiten), aandachtspunten en systeemstatus.
+ */
 export function DashboardPage() {
   const me = useMe();
   const permissions = me.data?.permissions ?? [];
@@ -69,7 +68,7 @@ export function DashboardPage() {
   const year = useCurrentCarnivalYear();
   const summary = useMemberSummary(can('member.read'));
   const conflicts = useSyncConflicts(can('import.run'));
-  const events = useAdminEvents(false, can('event.manage'));
+  const pending = usePendingApplications();
   const news = useAdminNews(can('news.manage'));
   const guardianRequests = useGuardianRequests('Pending', can('member.update'));
   const guardianSuggestions = useGuardianSuggestions(can('member.update'));
@@ -86,8 +85,6 @@ export function DashboardPage() {
     minutes: Math.floor((left % 3_600_000) / 60_000),
   };
 
-  const activeEvents = (events.data ?? []).filter((e) => e.status !== 'Archived');
-  const upcoming = activeEvents.filter((e) => new Date(e.startAt) >= now).slice(0, 3);
   const publishedNews = (news.data ?? []).filter((n) => n.status === 'Published').length;
   const scheduledNews = (news.data ?? []).filter((n) => n.status === 'Scheduled');
 
@@ -182,13 +179,6 @@ export function DashboardPage() {
             <span className="kpi-hint">{d.blockedUsers ? `${d.blockedUsers} geblokkeerd` : 'Actieve accounts'}</span>
           </div>
         ) : null}
-        {events.data ? (
-          <div className="kpi">
-            <span className="kpi-label">Komende activiteiten</span>
-            <span className="kpi-value">{activeEvents.length}</span>
-            <span className="kpi-hint">{d?.carnivalYear ? `Seizoen ${d.carnivalYear.replace('/', '–')}` : 'Vanaf vandaag'}</span>
-          </div>
-        ) : null}
         {news.data ? (
           <div className="kpi">
             <span className="kpi-label">Gepubliceerd nieuws</span>
@@ -200,6 +190,8 @@ export function DashboardPage() {
 
       <div className="columns">
         <div>
+          {pending.data ? <PendingApplicationsCard pending={pending.data} /> : null}
+
           <section className="card" aria-labelledby="aandacht">
             <h2 id="aandacht">Aandacht nodig</h2>
             {attention.length === 0 ? (
@@ -240,44 +232,6 @@ export function DashboardPage() {
           {advertisers.data ? <AdvertiserProgressCard report={advertisers.data} /> : null}
 
           {can('ticket.read') ? <AccessDashboardCard /> : null}
-
-          {events.data ? (
-            <section className="card" aria-labelledby="activiteiten">
-              <div className="card-header">
-                <h2 id="activiteiten">Eerstvolgende activiteiten</h2>
-                <Link to="/agenda" className="button ghost small">
-                  Hele agenda
-                </Link>
-              </div>
-              {upcoming.length === 0 ? (
-                <p className="muted">Er staan geen activiteiten gepland.</p>
-              ) : (
-                <ul className="list">
-                  {upcoming.map((e) => {
-                    const date = new Date(e.startAt);
-                    return (
-                      <li key={e.id} className="list-row">
-                        <span className="date-block" aria-hidden="true">
-                          {clean(weekday.format(date)).slice(0, 2)}
-                          <strong>{day.format(date)}</strong>
-                          {clean(month.format(date)).slice(0, 3)}
-                        </span>
-                        <div className="grow">
-                          <Link to="/agenda/$id" params={{ id: e.id }} className="cell-title">
-                            {e.title}
-                          </Link>
-                          <p className="muted small-text">
-                            {weekday.format(date)} {day.format(date)} {month.format(date)} · {time.format(date)} uur
-                          </p>
-                        </div>
-                        <span className={`badge ${e.visibility === 'Public' ? 'ok' : 'info'}`}>{visibilityLabels[e.visibility] ?? e.visibility}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-          ) : null}
         </div>
 
         <div>
@@ -350,6 +304,60 @@ function AdvertiserProgressCard({ report }: { report: NonNullable<ReturnType<typ
       >
         <span style={{ width: `${percent}%` }} />
       </div>
+    </section>
+  );
+}
+
+type Pending = Schemas['PendingResponse'];
+
+function usePendingApplications() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['dashboard', 'pending'],
+    queryFn: async () => (await api.GET('/api/v1/admin/dashboard/pending')).data ?? null,
+    refetchInterval: 60_000,
+  });
+}
+
+/** Openstaande aanmeldingen per onderdeel, met een knop naar de pagina waar ze beoordeeld worden. */
+function PendingApplicationsCard({ pending }: { pending: Pending }) {
+  const rows = [
+    { key: 'leden', label: 'Leden', counts: pending.members, to: '/aanmeldingen' as const },
+    { key: 'optocht', label: 'Optocht', counts: pending.parade, to: '/optocht/inschrijvingen' as const },
+    { key: 'festival', label: 'Dansgardefestival', counts: pending.festival, to: '/dansgarde/festival' as const },
+  ].filter((r) => r.counts);
+  if (rows.length === 0) return null;
+  return (
+    <section className="card" aria-labelledby="aanmeldingen">
+      <h2 id="aanmeldingen">Openstaande aanmeldingen</h2>
+      <ul className="list">
+        {rows.map((r) => {
+          const c = r.counts!;
+          const open = c.new + c.inReview + c.supplementReceived;
+          return (
+            <li key={r.key} className="list-row">
+              <div className="grow">
+                <strong>{r.label}</strong>
+                <p className="muted small-text">
+                  {open === 0
+                    ? 'Niets openstaand'
+                    : [
+                        c.new ? `${c.new} nieuw` : null,
+                        c.supplementReceived ? `${c.supplementReceived} aanvulling ontvangen` : null,
+                        c.inReview ? `${c.inReview} in behandeling` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </p>
+              </div>
+              <span className={`badge ${open ? 'warn' : 'ok'}`}>{open}</span>
+              <Link to={r.to} className="button ghost small">
+                Bekijken →
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

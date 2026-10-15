@@ -10659,6 +10659,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/dashboard/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PendingResponse"];
+                        "application/json": components["schemas"]["PendingResponse"];
+                        "text/json": components["schemas"]["PendingResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/photo-albums": {
         parameters: {
             query?: never;
@@ -11300,6 +11337,152 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/members/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ledenverloop per carnavalsjaar (grafiek): nieuw, uitgeschreven en totaal. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MemberHistoryReport"];
+                        "application/json": components["schemas"]["MemberHistoryReport"];
+                        "text/json": components["schemas"]["MemberHistoryReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/members/history/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Cijfers van een carnavalsjaar zelf invullen (leeg = weer berekenen). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MemberHistoryInput"];
+                    "text/json": components["schemas"]["MemberHistoryInput"];
+                    "application/*+json": components["schemas"]["MemberHistoryInput"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/members/history/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Oudere jaren importeren uit Excel: kolommen Jaar, Nieuw, Uitgeschreven en Totaal. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HistoryImportedResponse"];
+                        "application/json": components["schemas"]["HistoryImportedResponse"];
+                        "text/json": components["schemas"]["HistoryImportedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -22628,6 +22811,10 @@ export interface components {
             name: string;
             status: string;
         };
+        HistoryImportedResponse: {
+            /** Format: int32 */
+            years: number;
+        };
         /** @description Aankomsten en scans in één uur (begin van het uur in UTC; het portal toont Loil-tijd). */
         HourBucket: {
             /** Format: date-time */
@@ -23303,6 +23490,57 @@ export interface components {
             suggestions: components["schemas"]["GuardianSuggestion"][];
             requests: components["schemas"]["GuardianRequestView"][];
             ownAccount: components["schemas"]["OwnAccountInfo"];
+        };
+        MemberHistoryInput: {
+            /** Format: int32 */
+            newMembers: null | number;
+            /** Format: int32 */
+            leftMembers: null | number;
+            /** Format: int32 */
+            totalMembers: null | number;
+        };
+        MemberHistoryManual: {
+            newMembers: boolean;
+            leftMembers: boolean;
+            totalMembers: boolean;
+        };
+        MemberHistoryReport: {
+            /**
+             * Format: int32
+             * @description Het lopende carnavalsjaar.
+             */
+            currentYear: number;
+            /**
+             * Format: int32
+             * @description Vanaf dit carnavalsjaar legt het systeem uitschrijvingen en het totaal zelf vast.
+             */
+            trackedSince: number;
+            /** @description Per carnavalsjaar, oudste eerst. */
+            rows: components["schemas"]["MemberHistoryRow"][];
+        };
+        MemberHistoryRow: {
+            /**
+             * Format: int32
+             * @description Carnavalsjaar (het jaar van het carnaval, bijv. 2027).
+             */
+            year: number;
+            /**
+             * Format: int32
+             * @description Nieuwe leden (zonder gesplitste tweede leden).
+             */
+            newMembers: null | number;
+            /**
+             * Format: int32
+             * @description Uitgeschreven: inactief, overleden, geschorst of verwijderd.
+             */
+            leftMembers: null | number;
+            /**
+             * Format: int32
+             * @description Actieve leden aan het eind van het jaar (lopend jaar: nu).
+             */
+            totalMembers: null | number;
+            /** @description Welke waarden het bestuur zelf heeft ingevuld of geïmporteerd. */
+            manual: components["schemas"]["MemberHistoryManual"];
         };
         /** @description Functie in het kader op de website (fase 21a); beheer onder Website → Kader. */
         MemberKaderResponse: {
@@ -24174,6 +24412,29 @@ export interface components {
          * @enum {unknown}
          */
         ParticipantCountBasis: "Total" | "ChildrenOnly" | "AdultsOnly";
+        PendingCount: {
+            /**
+             * Format: int32
+             * @description Nieuw, nog niet beoordeeld.
+             */
+            new: number;
+            /**
+             * Format: int32
+             * @description In behandeling genomen, nog geen besluit.
+             */
+            inReview: number;
+            /**
+             * Format: int32
+             * @description Aanvulling ontvangen of gewijzigd: opnieuw beoordelen.
+             */
+            supplementReceived: number;
+        };
+        /** @description Per onderdeel `null` als de gebruiker er geen recht voor heeft. */
+        PendingResponse: {
+            members: null | components["schemas"]["PendingCount"];
+            parade: null | components["schemas"]["PendingCount"];
+            festival: null | components["schemas"]["PendingCount"];
+        };
         PermissionResponse: {
             code: string;
             description: string;

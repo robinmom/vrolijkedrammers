@@ -749,7 +749,7 @@ test('fase 14: zonder ticket.scan geen toegangskaart; toegangslog voor het bestu
   await expectNoSeriousA11yIssues(page);
 });
 
-test('toegang: dashboardblok tussen aandacht en activiteiten, alleen met ticket.read', async ({ page }) => {
+test('toegang: dashboardblok onder aandacht, alleen met ticket.read', async ({ page }) => {
   const api = new MockApi(['report.view', 'ticket.read', 'event.manage']);
   await open(page, api);
   const card = page.getByRole('region', { name: 'Toegang' });
@@ -758,13 +758,37 @@ test('toegang: dashboardblok tussen aandacht en activiteiten, alleen met ticket.
   await expect(card.getByText('23 nog niet')).toBeVisible();
   const order = await page.locator('section.card h2').allTextContents();
   expect(order.indexOf('Toegang')).toBe(order.indexOf('Aandacht nodig') + 1);
-  expect(order.indexOf('Eerstvolgende activiteiten')).toBe(order.indexOf('Toegang') + 1);
+  // 2026-10-15: geen activiteiten meer op het dashboard.
+  expect(order).not.toContain('Eerstvolgende activiteiten');
   await expectNoSeriousA11yIssues(page);
 
   const zonder = new MockApi(['report.view', 'event.manage']);
   await open(page, zonder);
-  await expect(page.getByRole('heading', { name: 'Eerstvolgende activiteiten' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Aandacht nodig' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Toegang' })).toHaveCount(0);
+});
+
+test('dashboard: openstaande aanmeldingen per onderdeel met een knop naar de pagina', async ({ page }) => {
+  const api = new MockApi(['report.view', 'member.approve', 'parade.read']);
+  await open(page, api);
+  const card = page.getByRole('region', { name: 'Openstaande aanmeldingen' });
+  await expect(card.getByText('2 nieuw · 1 in behandeling')).toBeVisible();
+  await expect(card.getByText('3 nieuw · 1 aanvulling ontvangen')).toBeVisible();
+  // Zonder festival.manage geen regel voor het festival.
+  await expect(card.getByText('Dansgardefestival')).toHaveCount(0);
+  await expectNoSeriousA11yIssues(page);
+  await card.getByRole('listitem').filter({ hasText: 'Optocht' }).getByRole('link', { name: 'Bekijken →' }).click();
+  await expect(page).toHaveURL(/\/optocht\/inschrijvingen$/);
+});
+
+test('rapportage: ledenverloop als grafiek met cijfers per jaar', async ({ page }) => {
+  const api = new MockApi(['report.view', 'member.update']);
+  await open(page, api, 'rapportage');
+  const card = page.getByRole('region', { name: 'Ledenverloop per carnavalsjaar' });
+  await expect(card.getByRole('img', { name: /2026\/2027: 12 nieuw, 0 uitgeschreven, 633 totaal/ })).toBeVisible();
+  await card.getByText('Cijfers per jaar bekijken en aanvullen').click();
+  await expect(card.getByRole('cell', { name: '2024/2025' })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
 });
 
 test('toegang: statistieken per moment en vergelijking', async ({ page }) => {

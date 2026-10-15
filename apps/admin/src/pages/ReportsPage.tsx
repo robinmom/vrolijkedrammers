@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useMemberReport, type MemberReport } from '../api/hooks';
 import { ProblemAlert } from '../components/ProblemAlert';
+import { MemberHistoryCard } from '../components/MemberHistoryCard';
 
 type Rows = MemberReport['byStatus'];
 
@@ -71,6 +72,7 @@ export function ReportsPage() {
         </div>
       </div>
       <ProblemAlert error={exportError ?? report.error} />
+      <MemberHistoryCard />
       {report.data ? (
         <>
           <p>

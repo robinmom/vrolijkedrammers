@@ -12757,6 +12757,35 @@
         }
       }
     },
+    "/api/v1/admin/dashboard/pending": {
+      "get": {
+        "tags": [
+          "AdminPending"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/photo-albums": {
       "get": {
         "tags": [
@@ -13540,6 +13569,165 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MemberReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/members/history": {
+      "get": {
+        "tags": [
+          "AdminReports"
+        ],
+        "summary": "Ledenverloop per carnavalsjaar (grafiek): nieuw, uitgeschreven en totaal.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHistoryReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHistoryReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHistoryReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/members/history/{year}": {
+      "put": {
+        "tags": [
+          "AdminReports"
+        ],
+        "summary": "Cijfers van een carnavalsjaar zelf invullen (leeg = weer berekenen).",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberHistoryInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberHistoryInput"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberHistoryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/members/history/import": {
+      "post": {
+        "tags": [
+          "AdminReports"
+        ],
+        "summary": "Oudere jaren importeren uit Excel: kolommen Jaar, Nieuw, Uitgeschreven en Totaal.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryImportedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryImportedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryImportedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -32493,6 +32681,18 @@
           }
         }
       },
+      "HistoryImportedResponse": {
+        "required": [
+          "years"
+        ],
+        "type": "object",
+        "properties": {
+          "years": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "HourBucket": {
         "required": [
           "hourStart",
@@ -35094,6 +35294,128 @@
           },
           "ownAccount": {
             "$ref": "#/components/schemas/OwnAccountInfo"
+          }
+        }
+      },
+      "MemberHistoryInput": {
+        "required": [
+          "newMembers",
+          "leftMembers",
+          "totalMembers"
+        ],
+        "type": "object",
+        "properties": {
+          "newMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "leftMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "totalMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MemberHistoryManual": {
+        "required": [
+          "newMembers",
+          "leftMembers",
+          "totalMembers"
+        ],
+        "type": "object",
+        "properties": {
+          "newMembers": {
+            "type": "boolean"
+          },
+          "leftMembers": {
+            "type": "boolean"
+          },
+          "totalMembers": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MemberHistoryReport": {
+        "required": [
+          "currentYear",
+          "trackedSince",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "currentYear": {
+            "type": "integer",
+            "description": "Het lopende carnavalsjaar.",
+            "format": "int32"
+          },
+          "trackedSince": {
+            "type": "integer",
+            "description": "Vanaf dit carnavalsjaar legt het systeem uitschrijvingen en het totaal zelf vast.",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberHistoryRow"
+            },
+            "description": "Per carnavalsjaar, oudste eerst."
+          }
+        }
+      },
+      "MemberHistoryRow": {
+        "required": [
+          "year",
+          "newMembers",
+          "leftMembers",
+          "totalMembers",
+          "manual"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "description": "Carnavalsjaar (het jaar van het carnaval, bijv. 2027).",
+            "format": "int32"
+          },
+          "newMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Nieuwe leden (zonder gesplitste tweede leden).",
+            "format": "int32"
+          },
+          "leftMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Uitgeschreven: inactief, overleden, geschorst of verwijderd.",
+            "format": "int32"
+          },
+          "totalMembers": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Actieve leden aan het eind van het jaar (lopend jaar: nu).",
+            "format": "int32"
+          },
+          "manual": {
+            "description": "Welke waarden het bestuur zelf heeft ingevuld of geïmporteerd.",
+            "$ref": "#/components/schemas/MemberHistoryManual"
           }
         }
       },
@@ -38324,6 +38646,72 @@
           "AdultsOnly"
         ],
         "description": "Welke deelnemers tellen voor de grenzen (OQ-10: alleen de doelgroep)."
+      },
+      "PendingCount": {
+        "required": [
+          "new",
+          "inReview",
+          "supplementReceived"
+        ],
+        "type": "object",
+        "properties": {
+          "new": {
+            "type": "integer",
+            "description": "Nieuw, nog niet beoordeeld.",
+            "format": "int32"
+          },
+          "inReview": {
+            "type": "integer",
+            "description": "In behandeling genomen, nog geen besluit.",
+            "format": "int32"
+          },
+          "supplementReceived": {
+            "type": "integer",
+            "description": "Aanvulling ontvangen of gewijzigd: opnieuw beoordelen.",
+            "format": "int32"
+          }
+        }
+      },
+      "PendingResponse": {
+        "required": [
+          "members",
+          "parade",
+          "festival"
+        ],
+        "type": "object",
+        "properties": {
+          "members": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingCount"
+              }
+            ]
+          },
+          "parade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingCount"
+              }
+            ]
+          },
+          "festival": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingCount"
+              }
+            ]
+          }
+        },
+        "description": "Per onderdeel `null` als de gebruiker er geen recht voor heeft."
       },
       "PermissionResponse": {
         "required": [
@@ -43315,6 +43703,9 @@
     },
     {
       "name": "AdminParades"
+    },
+    {
+      "name": "AdminPending"
     },
     {
       "name": "AdminPhotoAlbums"

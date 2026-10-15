@@ -1,10 +1,12 @@
 using ClosedXML.Excel;
 using Drammers.Api.Authorization;
+using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Authorization;
+using Drammers.SharedKernel.Errors;
 using Drammers.SharedKernel.Time;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +29,59 @@ public sealed class AdminReportsController(DrammersDbContext db, IClock clock, I
     [HttpGet]
     [ProducesResponseType<MemberReportResponse>(StatusCodes.Status200OK)]
     public Task<MemberReportResponse> Get(CancellationToken cancellationToken) => BuildAsync(cancellationToken);
+
+    /// <summary>Ledenverloop per carnavalsjaar (grafiek): nieuw, uitgeschreven en totaal.</summary>
+    [HttpGet("history")]
+    [ProducesResponseType<MemberHistoryReport>(StatusCodes.Status200OK)]
+    public Task<MemberHistoryReport> History([FromServices] MemberHistory history, CancellationToken cancellationToken) =>
+        history.ReportAsync(cancellationToken);
+
+    /// <summary>Cijfers van een carnavalsjaar zelf invullen (leeg = weer berekenen).</summary>
+    [HttpPut("history/{year:int}")]
+    [RequirePermission(Permissions.MemberUpdate)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetHistory(int year, MemberHistoryInput input, [FromServices] MemberHistory history, CancellationToken cancellationToken)
+    {
+        await history.SetAsync(year, input, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Oudere jaren importeren uit Excel: kolommen Jaar, Nieuw, Uitgeschreven en Totaal.</summary>
+    [HttpPost("history/import")]
+    [RequirePermission(Permissions.MemberUpdate)]
+    [RequestSizeLimit(5_000_000)]
+    [ProducesResponseType<HistoryImportedResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<HistoryImportedResponse> ImportHistory(IFormFile file, [FromServices] MemberHistory history, CancellationToken cancellationToken)
+    {
+        List<MemberHistoryImportRow> rows;
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var sheet = workbook.Worksheets.First();
+            var header = sheet.FirstRowUsed() ?? throw new DomainException(ErrorCodes.Validation, "Het Excel-bestand is leeg.");
+            int? Column(params string[] names) => header.CellsUsed().FirstOrDefault(c =>
+                names.Any(n => c.GetString().Trim().StartsWith(n, StringComparison.OrdinalIgnoreCase)))?.Address.ColumnNumber;
+            var year = Column("jaar", "carnavalsjaar", "seizoen") ?? throw new DomainException(ErrorCodes.Validation, "Kolom \"Jaar\" ontbreekt.");
+            var (added, left, total) = (Column("nieuw"), Column("uitgeschreven", "uit", "opgezegd", "vertrokken"), Column("totaal"));
+            if (added is null && left is null && total is null)
+            {
+                throw new DomainException(ErrorCodes.Validation, "Geen kolommen \"Nieuw\", \"Uitgeschreven\" of \"Totaal\" gevonden.");
+            }
+
+            string? Cell(IXLRow row, int? column) => column is null ? null : row.Cell(column.Value).GetString();
+            rows = [.. sheet.RowsUsed().Where(r => r.RowNumber() > header.RowNumber())
+                .Select(r => new MemberHistoryImportRow(r.RowNumber(), r.Cell(year).GetString(), Cell(r, added), Cell(r, left), Cell(r, total)))];
+        }
+        catch (Exception ex) when (ex is not DomainException and not OperationCanceledException)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Dit is geen leesbaar Excel-bestand (.xlsx).");
+        }
+
+        return new HistoryImportedResponse(await history.ImportAsync(rows, cancellationToken));
+    }
 
     [HttpGet("export")]
     [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
@@ -117,3 +172,5 @@ public sealed record ReportRow(string Label, int Count);
 public sealed record MemberReportResponse(
     int Total, int Active, IReadOnlyList<ReportRow> ByStatus, IReadOnlyList<ReportRow> ByRole, IReadOnlyList<ReportRow> ByAgeClass,
     IReadOnlyList<ReportRow> ByJoinYear, IReadOnlyList<ReportRow> ByGroup);
+
+public sealed record HistoryImportedResponse(int Years);

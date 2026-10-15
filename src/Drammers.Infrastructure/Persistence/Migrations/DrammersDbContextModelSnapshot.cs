@@ -5954,6 +5954,83 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Members.MemberExit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CarnivalYear")
+                        .HasColumnType("int")
+                        .HasColumnName("carnival_year");
+
+                    b.Property<DateOnly>("ExitedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("exited_on");
+
+                    b.Property<string>("MemberNumber")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)")
+                        .HasColumnName("member_number");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id")
+                        .HasName("PK_MemberExit");
+
+                    b.HasIndex("CarnivalYear")
+                        .HasDatabaseName("IX_MemberExit_carnival_year");
+
+                    b.HasIndex("MemberNumber")
+                        .HasDatabaseName("IX_MemberExit_member_number");
+
+                    b.ToTable("MemberExit", "membership", t =>
+                        {
+                            t.HasCheckConstraint("CK_MemberExit_reason", "[reason] IN ('Inactive', 'Deceased', 'Suspended', 'Removed')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Members.MemberYearStat", b =>
+                {
+                    b.Property<int>("CarnivalYear")
+                        .HasColumnType("int")
+                        .HasColumnName("carnival_year");
+
+                    b.Property<int?>("ManualLeft")
+                        .HasColumnType("int")
+                        .HasColumnName("manual_left");
+
+                    b.Property<int?>("ManualNew")
+                        .HasColumnType("int")
+                        .HasColumnName("manual_new");
+
+                    b.Property<int?>("ManualTotal")
+                        .HasColumnType("int")
+                        .HasColumnName("manual_total");
+
+                    b.Property<DateTime?>("SnapshotAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("snapshot_at");
+
+                    b.Property<int?>("SnapshotTotal")
+                        .HasColumnType("int")
+                        .HasColumnName("snapshot_total");
+
+                    b.HasKey("CarnivalYear")
+                        .HasName("PK_MemberYearStat");
+
+                    b.ToTable("MemberYearStat", "membership", t =>
+                        {
+                            t.HasCheckConstraint("CK_MemberYearStat_values", "([manual_new] IS NULL OR [manual_new] >= 0) AND ([manual_left] IS NULL OR [manual_left] >= 0) AND ([manual_total] IS NULL OR [manual_total] >= 0)");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Members.MembershipSplitInvitation", b =>
                 {
                     b.Property<Guid>("Id")

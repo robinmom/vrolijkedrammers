@@ -2101,3 +2101,39 @@ fieldset {
   white-space: normal;
   text-align: center;
 }
+
+/* ---------- Ledenverloop (2026-10-15) ---------- */
+.line-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 8px 0;
+}
+
+.line-chart .grid {
+  stroke: var(--dvd-border);
+  stroke-width: 1;
+}
+
+.line-chart .axis {
+  fill: var(--dvd-text-secondary);
+  font-size: 11px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 8px;
+}
+
+.chart-legend .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}

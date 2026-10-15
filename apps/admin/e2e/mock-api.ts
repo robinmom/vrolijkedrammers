@@ -2008,6 +2008,43 @@ export class MockApi {
         features: {},
       });
     }
+    if (path === '/admin/dashboard/pending') {
+      const has = (p: string) => this.permissions.includes(p);
+      return json({
+        members: has('member.approve') ? { new: 2, inReview: 1, supplementReceived: 0 } : null,
+        parade: has('parade.read') ? { new: 3, inReview: 0, supplementReceived: 1 } : null,
+        festival: has('festival.manage') ? { new: 0, inReview: 0, supplementReceived: 0 } : null,
+      });
+    }
+    if (path === '/admin/reports/members/history' && method === 'GET') {
+      return json({
+        currentYear: 2027,
+        trackedSince: 2027,
+        rows: [
+          {
+            year: 2025,
+            newMembers: 30,
+            leftMembers: 12,
+            totalMembers: 610,
+            manual: { newMembers: true, leftMembers: true, totalMembers: true },
+          },
+          {
+            year: 2026,
+            newMembers: 28,
+            leftMembers: 9,
+            totalMembers: 629,
+            manual: { newMembers: false, leftMembers: true, totalMembers: true },
+          },
+          {
+            year: 2027,
+            newMembers: 12,
+            leftMembers: 0,
+            totalMembers: 633,
+            manual: { newMembers: false, leftMembers: false, totalMembers: false },
+          },
+        ],
+      });
+    }
     if (path === '/admin/dashboard') {
       return json({
         activeUsers: this.users.length,

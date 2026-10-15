@@ -1019,7 +1019,17 @@ test('dansgardefestival: jury uitnodigen en uitslag naar de hoofdjury, afdrukken
   await page.getByRole('button', { name: 'Exporteren (PDF)' }).click();
   expect((await download).suggestedFilename()).toBe('uitslag-dansgardefestival.pdf');
 
+  await expect(page.getByRole('button', { name: 'Publiceer op website' })).toBeDisabled();
   await page.getByRole('button', { name: 'Prijsuitreiking afgerond (overrulen)' }).click();
   await expect(page.getByText('Prijsuitreiking staat op afgerond.')).toBeVisible();
+
+  // Na de prijsuitreiking: uitslag op de website en de rapporten naar de verenigingen.
+  await page.getByRole('button', { name: 'Publiceer op website' }).click();
+  await expect(page.getByText('De uitslag staat op de website.')).toBeVisible();
+  await expect(page.getByRole('link', { name: '/nieuws/uitslag-dansgardefestival-2027' })).toBeVisible();
+  await page.getByRole('button', { name: 'Rapporten versturen' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Versturen' }).click();
+  await expect(page.getByText('14 rapporten worden verstuurd.')).toBeVisible();
+  await expect(page.getByText('Rapporten verstuurd: 14 van 14 inschrijvingen')).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });

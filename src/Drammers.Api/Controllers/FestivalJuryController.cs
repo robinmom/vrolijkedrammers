@@ -136,7 +136,39 @@ public sealed class AdminFestivalResultsController(FestivalJudgingService judgin
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<FileContentResult> Pdf(CancellationToken cancellationToken) =>
         File(FestivalPdf.Results(await judging.ResultsAsync(cancellationToken)), "application/pdf", "uitslag-dansgardefestival.pdf");
+
+    /// <summary>Staat de uitslag op de website en hoeveel rapporten zijn verstuurd.</summary>
+    [HttpGet("publish")]
+    [ProducesResponseType<FestivalPublishStatus>(StatusCodes.Status200OK)]
+    public Task<FestivalPublishStatus> PublishStatus([FromServices] FestivalResultsPublisher publisher, CancellationToken cancellationToken) =>
+        publisher.StatusAsync(cancellationToken);
+
+    /// <summary>De uitslag als nieuwsbericht op de website (pas na de prijsuitreiking).</summary>
+    [HttpPost("website")]
+    [ProducesResponseType<CreatedResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<CreatedResponse> Website([FromServices] FestivalResultsPublisher publisher, CancellationToken cancellationToken) =>
+        new(await publisher.PublishWebsiteAsync(cancellationToken));
+
+    /// <summary>De juryrapporten naar de verenigingen (pas na de prijsuitreiking; wie er al een heeft, krijgt geen tweede).</summary>
+    [HttpPost("reports")]
+    [ProducesResponseType<FestivalReportsQueued>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<FestivalReportsQueued> Reports([FromServices] FestivalResultsPublisher publisher, CancellationToken cancellationToken) =>
+        new(await publisher.SendReportsAsync(cancellationToken));
+
+    /// <summary>Voorbeeld van het rapport van één inschrijving (PDF).</summary>
+    [HttpGet("reports/{registrationId:guid}/pdf")]
+    [Produces("application/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReportPdf(Guid registrationId, [FromServices] FestivalResultsPublisher publisher, CancellationToken cancellationToken) =>
+        await publisher.ReportAsync(registrationId, cancellationToken) is { } report
+            ? File(FestivalPdf.Report(report), "application/pdf", $"juryrapport-{report.ClubName}.pdf")
+            : NotFound();
 }
+
+public sealed record FestivalReportsQueued(int Queued);
 
 public sealed record FestivalScoresRequest([param: MaxLength(1000)] IReadOnlyList<FestivalScoreInput>? Scores, [param: MaxLength(200)] IReadOnlyList<FestivalCommentInput>? Comments);
 

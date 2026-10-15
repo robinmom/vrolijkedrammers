@@ -18022,6 +18022,189 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/dance-festival/results/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Staat de uitslag op de website en hoeveel rapporten zijn verstuurd. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalPublishStatus"];
+                        "application/json": components["schemas"]["FestivalPublishStatus"];
+                        "text/json": components["schemas"]["FestivalPublishStatus"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results/website": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De uitslag als nieuwsbericht op de website (pas na de prijsuitreiking). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De juryrapporten naar de verenigingen (pas na de prijsuitreiking; wie er al een heeft, krijgt geen tweede). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalReportsQueued"];
+                        "application/json": components["schemas"]["FestivalReportsQueued"];
+                        "text/json": components["schemas"]["FestivalReportsQueued"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results/reports/{registrationId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voorbeeld van het rapport van één inschrijving (PDF). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    registrationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jury/current": {
         parameters: {
             query?: never;
@@ -24581,6 +24764,17 @@ export interface components {
             /** @default false */
             force: boolean;
         };
+        FestivalPublishStatus: {
+            /** Format: uuid */
+            newsId: null | string;
+            newsSlug: null | string;
+            /** Format: date-time */
+            reportsSentAt: null | string;
+            /** Format: int32 */
+            reportsSent: number;
+            /** Format: int32 */
+            registrations: number;
+        };
         FestivalRegistrationDetail: {
             /** Format: uuid */
             id: string;
@@ -24635,6 +24829,10 @@ export interface components {
             submittedAt: string;
             /** Format: date-time */
             changedAt: null | string;
+        };
+        FestivalReportsQueued: {
+            /** Format: int32 */
+            queued: number;
         };
         FestivalResults: {
             /** Format: uuid */

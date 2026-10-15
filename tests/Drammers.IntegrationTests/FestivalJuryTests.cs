@@ -1,10 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Drammers.Infrastructure.Festival;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Content.Festival;
+using Drammers.Worker.Outbox;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Drammers.IntegrationTests.Infrastructure.FestivalSeed;
 
@@ -127,6 +130,82 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
 
         var pdf = await _org.GetAsync("/api/v1/admin/dance-festival/results/pdf");
         Assert.True(pdf.Content.Headers.ContentType?.MediaType == "application/pdf", await pdf.Content.ReadAsStringAsync());
+    }
+
+    private async Task RunReportMailsAsync()
+    {
+        using var scope = _api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+        var messages = await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == FestivalResultsPublisher.ReportMailMessageType).ToListAsync();
+        foreach (var message in messages)
+        {
+            using var handlerScope = _api.Services.CreateScope();
+            var handler = handlerScope.ServiceProvider.GetServices<IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+            await handler.HandleAsync(new OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            await db.Outbox.Where(m => m.Id == message.Id).ExecuteUpdateAsync(x => x.SetProperty(m => m.ProcessedAt, DateTime.UtcNow));
+        }
+    }
+
+    [Fact]
+    public async Task Na_de_prijsuitreiking_uitslag_op_de_website_en_rapporten_naar_de_verenigingen()
+    {
+        await _api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur);
+        var j1 = await JurorAsync("jurylid1@example.com");
+        var j2 = await JurorAsync("jurylid2@example.com");
+        foreach (var (j, n) in new[] { (j1, 0), (j2, 1) })
+        {
+            await ScoreAsync(j, "Mini Drammers", 8, 8, 9 - n, 8, n == 0 ? "Mooie lijnen in de rijen" : null);
+            await ScoreAsync(j, "Flames", 7, 7, 7, 7);
+            await ScoreAsync(j, "ShowSparks", 6, 6, 6, 6);
+            await SubmitAsync(j, Mini);
+            await ScoreAsync(j, "Lynn Knuman", 9, 9, 9, 9, n == 1 ? "Sterke uitstraling" : null);
+            await SubmitAsync(j, Solo);
+        }
+
+        // Pas na de prijsuitreiking.
+        Assert.Equal(HttpStatusCode.Conflict, (await _org.PostAsync("/api/v1/admin/dance-festival/results/website", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await _org.PostAsync("/api/v1/admin/dance-festival/results/reports", null)).StatusCode);
+        await _org.PostAsJsonAsync("/api/v1/admin/dance-festival/results/awards", new { completed = true });
+
+        var website = await _org.PostAsync("/api/v1/admin/dance-festival/results/website", null);
+        Assert.True(website.StatusCode == HttpStatusCode.OK, await website.Content.ReadAsStringAsync());
+        using (var scope = _api.Services.CreateScope())
+        {
+            var news = await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().News.AsNoTracking().SingleAsync();
+            Assert.Equal("Uitslag Dansgardefestival 2027", news.Title);
+            Assert.True(news.ShowOnWebsite);
+            Assert.Contains("| 1 | De Vrolijke Drammers | Mini Drammers | 65 |", news.Body);
+            Assert.Contains("## Deel 3 · Jeugd en hoofdklasse", news.Body);
+        }
+
+        // Opnieuw publiceren werkt hetzelfde bericht bij.
+        Assert.Equal(HttpStatusCode.OK, (await _org.PostAsync("/api/v1/admin/dance-festival/results/website", null)).StatusCode);
+
+        var queued = await (await _org.PostAsync("/api/v1/admin/dance-festival/results/reports", null)).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(3, queued.GetProperty("queued").GetInt32());
+        await RunReportMailsAsync();
+        var deurdouwers = Assert.Single(_api.Emails.Sent, m => m.To == "dedeurdouwers@example.com");
+        Assert.Equal(("dansgardefestival", true), (deurdouwers.From, deurdouwers.ViaMailbox));
+        Assert.Contains("Senioren", deurdouwers.PlainText);
+        var pdf = Assert.Single(deurdouwers.Attachments!);
+        Assert.Equal("application/pdf", pdf.ContentType);
+
+        // Opmerkingen alleen voor de eigen dansen, anoniem met het jurynummer.
+        using (var scope = _api.Services.CreateScope())
+        {
+            var publisher = scope.ServiceProvider.GetRequiredService<FestivalResultsPublisher>();
+            var registrationId = scope.ServiceProvider.GetRequiredService<DrammersDbContext>().DanceFestivalRegistrations.Single(r => r.ClubName == "De Deurdouwers").Id;
+            var report = (await publisher.ReportAsync(registrationId, CancellationToken.None))!;
+            Assert.Equal(["Gardedans · Groep · Minioren", "Gardedans · Solo · Senioren"], report.Dances.Select(d => d.Heading).Order().ToArray());
+            var solo = report.Dances.Single(d => d.Solo);
+            Assert.Equal((2, "Sterke uitstraling"), (Assert.Single(solo.Comments).JurorNumber, solo.Comments[0].Text));
+            Assert.DoesNotContain(report.Dances, d => d.Comments.Any(c => c.Text.Contains("Mooie lijnen", StringComparison.Ordinal)));
+        }
+
+        // Niemand krijgt een tweede rapport.
+        Assert.Equal(0, (await (await _org.PostAsync("/api/v1/admin/dance-festival/results/reports", null)).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("queued").GetInt32());
+        var status = await _org.GetFromJsonAsync<JsonElement>("/api/v1/admin/dance-festival/results/publish");
+        Assert.Equal((3, 3), (status.GetProperty("reportsSent").GetInt32(), status.GetProperty("registrations").GetInt32()));
     }
 
     [Fact]

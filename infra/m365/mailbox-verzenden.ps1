@@ -16,7 +16,7 @@
   van Microsoft 365.
 #>
 param(
-    [string[]] $Mailboxes = @('voorzitter@vrolijkedrammers.nl', 'secretaris@vrolijkedrammers.nl'),
+    [string[]] $Mailboxes = @('voorzitter@vrolijkedrammers.nl', 'secretaris@vrolijkedrammers.nl', 'dansgardefestival@vrolijkedrammers.nl'),
     [string] $WebApp = 'app-dvd-api-prod',
     [string] $ResourceGroup = 'rg-dvd-prod',
     [string] $Domain = 'vrolijkedrammers.nl',

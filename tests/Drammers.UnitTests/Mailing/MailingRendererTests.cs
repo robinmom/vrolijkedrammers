@@ -54,6 +54,32 @@ public class MailingRendererTests
         Assert.Contains("background:#D4000F", mail.Html);
     }
 
+    [Fact]
+    public void Uitlijnen_per_blok_en_een_foto_in_eigen_breedte()
+    {
+        const string Photo = "uploads/0123456789abcdef0123456789abcdef.jpg";
+        var mail = Render(
+            [
+                new("heading", "Midden", Align: "center"),
+                new("text", "Rechts", Align: "right"),
+                new("button", Label: "Knop", Url: "https://dvd.test", Align: "center"),
+                new("image", "Klein", Image: Photo, Align: "center", Width: 200),
+                new("image", "Groot", Image: Photo),
+            ],
+            new("Piet", null));
+
+        Assert.Contains("text-align:center;font-family:Poppins", mail.Html);
+        Assert.Contains("<p style=\"margin:0 0 16px;text-align:right;", mail.Html);
+        Assert.Contains("align=\"center\" style=\"margin:4px auto 20px\"", mail.Html);
+        Assert.Contains("width=\"200\" alt=\"Klein\"", mail.Html);
+        Assert.Contains("max-width:200px;height:auto", mail.Html);
+        Assert.Contains("width=\"552\" alt=\"Groot\"", mail.Html);
+
+        Assert.Throws<DomainException>(() => MailingRenderer.Validate([new("text", "x", Align: "justify")]));
+        Assert.Throws<DomainException>(() => MailingRenderer.Validate([new("image", Image: Photo, Width: 900)]));
+        Assert.Throws<DomainException>(() => MailingRenderer.Validate([new("text", "x", Width: 200)]));
+    }
+
     [Theory]
     [InlineData("button", null, "Knop", "http://onveilig.test", null, "https://")]
     [InlineData("image", null, null, null, "elders/foto.jpg", "kies een foto")]

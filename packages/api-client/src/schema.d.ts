@@ -23016,6 +23016,9 @@ export interface components {
             image: null | string;
             note: null | string;
             imageUrl?: null | string;
+            align?: null | string;
+            /** Format: int32 */
+            width?: null | number;
         };
         /**
          * @description Soort mailing; beide houden rekening met afmeldingen.

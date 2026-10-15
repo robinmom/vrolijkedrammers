@@ -99,6 +99,8 @@ const block = (type: string, fields: Partial<MailingBlock> = {}): MailingBlock =
   url: null,
   image: null,
   note: null,
+  align: null,
+  width: null,
   ...fields,
 });
 
@@ -141,7 +143,15 @@ const duration = (recipients: number, perHour: number) => {
 
 /** De API stuurt ook imageUrl mee (om de foto te tonen); die hoort niet in het verzoek. */
 const toRequestBlock = (b: MailingBlock): MailingBlock =>
-  block(b.type, { text: b.text, label: b.label, url: b.url, image: b.image, note: b.note });
+  block(b.type, {
+    text: b.text,
+    label: b.label,
+    url: b.url,
+    image: b.image,
+    note: b.note,
+    align: b.align,
+    width: b.width,
+  });
 
 /**
  * Een mailing opstellen (fase 27a): onderwerp, groepen en blokken links, het voorbeeld zoals een lid hem ziet rechts.
@@ -427,6 +437,7 @@ export function MailingEditorPage() {
                     block={block}
                     index={index}
                     imageUrl={imageUrls[index]}
+                    onImageUrl={(url) => setImageUrls({ ...imageUrls, [index]: url })}
                     onChange={(change) => setBlock(index, change)}
                   />
                 </li>
@@ -552,7 +563,57 @@ export function MailingEditorPage() {
   );
 }
 
-function BlockFields({
+/** Breedte van de inhoud van de mail (MailingRenderer.ContentWidth); een foto is nooit breder. */
+const CONTENT_WIDTH = 552;
+const MIN_IMAGE_WIDTH = 40;
+const ALIGNMENTS = [
+  { value: null, label: 'Links' },
+  { value: 'center', label: 'Midden' },
+  { value: 'right', label: 'Rechts' },
+] as const;
+
+function BlockFields(props: {
+  block: MailingBlock;
+  index: number;
+  imageUrl: string | null | undefined;
+  onImageUrl: (url: string | null) => void;
+  onChange: (change: Partial<MailingBlock>) => void;
+}) {
+  const { block, index, onChange } = props;
+  const alignable = ['heading', 'text', 'image', 'button', 'highlight'].includes(block.type);
+  return (
+    <>
+      <BlockContent {...props} />
+      {alignable ? (
+        <div className="block-options">
+          <div className="chips" role="group" aria-label={`Uitlijnen blok ${index + 1}`}>
+            <span className="muted small-text">Uitlijnen:</span>
+            {ALIGNMENTS.map((a) => {
+              const active = (block.align ?? null) === a.value;
+              return (
+                <button
+                  key={a.label}
+                  type="button"
+                  className={`chip${active ? ' active' : ''}`}
+                  aria-pressed={active}
+                  onClick={() => onChange({ align: a.value })}
+                >
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Grootte van een foto: volle breedte (standaard), de ware grootte van het bestand of een eigen breedte of hoogte. De
+ * verhouding blijft altijd gelijk; we bewaren alleen de breedte.
+ */
+function ImageSize({
   block,
   index,
   imageUrl,
@@ -561,6 +622,93 @@ function BlockFields({
   block: MailingBlock;
   index: number;
   imageUrl: string | null | undefined;
+  onChange: (change: Partial<MailingBlock>) => void;
+}) {
+  const [natural, setNatural] = useState<{ url: string; width: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!imageUrl) return;
+    const img = new Image();
+    img.onload = () => setNatural({ url: imageUrl, width: img.naturalWidth, height: img.naturalHeight });
+    img.src = imageUrl;
+    return () => {
+      img.onload = null;
+    };
+  }, [imageUrl]);
+  const size = natural && natural.url === imageUrl ? natural : null;
+  const ratio = size && size.width > 0 ? size.height / size.width : null;
+  const shownWidth = block.width ?? CONTENT_WIDTH;
+  const clamp = (w: number) => Math.min(CONTENT_WIDTH, Math.max(MIN_IMAGE_WIDTH, Math.round(w)));
+  const setWidth = (w: number | null) => onChange({ width: w === null || w >= CONTENT_WIDTH ? null : clamp(w) });
+  const id = `blok-${index}-grootte`;
+  const mode = block.width == null ? 'full' : size && block.width === clamp(size.width) ? 'natural' : 'custom';
+
+  return (
+    <fieldset className="image-size">
+      <legend>Grootte</legend>
+      <div className="chips" role="group" aria-label={`Grootte foto blok ${index + 1}`}>
+        <button
+          type="button"
+          className={`chip${mode === 'full' ? ' active' : ''}`}
+          aria-pressed={mode === 'full'}
+          onClick={() => setWidth(null)}
+        >
+          Volle breedte
+        </button>
+        <button
+          type="button"
+          className={`chip${mode === 'natural' ? ' active' : ''}`}
+          aria-pressed={mode === 'natural'}
+          disabled={!size}
+          onClick={() => size && onChange({ width: clamp(size.width) >= CONTENT_WIDTH ? null : clamp(size.width) })}
+        >
+          Ware grootte{size ? ` (${size.width} × ${size.height})` : ''}
+        </button>
+      </div>
+      <div className="form-grid">
+        <div className="field">
+          <label htmlFor={`${id}-breedte`}>Breedte (px)</label>
+          <input
+            id={`${id}-breedte`}
+            type="number"
+            inputMode="numeric"
+            min={MIN_IMAGE_WIDTH}
+            max={CONTENT_WIDTH}
+            value={shownWidth}
+            onChange={(e) => e.target.value !== '' && setWidth(Number(e.target.value))}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor={`${id}-hoogte`}>Hoogte (px)</label>
+          <input
+            id={`${id}-hoogte`}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            disabled={!ratio}
+            value={ratio ? Math.round(shownWidth * ratio) : ''}
+            onChange={(e) => ratio && e.target.value !== '' && setWidth(Number(e.target.value) / ratio)}
+          />
+        </div>
+      </div>
+      <small className="muted">
+        Hooguit {CONTENT_WIDTH} px breed (de breedte van de mail). De hoogte gaat vanzelf mee, zodat de foto niet
+        vervormt; op een telefoon wordt hij zo nodig kleiner.
+      </small>
+    </fieldset>
+  );
+}
+
+function BlockContent({
+  block,
+  index,
+  imageUrl,
+  onImageUrl,
+  onChange,
+}: {
+  block: MailingBlock;
+  index: number;
+  imageUrl: string | null | undefined;
+  onImageUrl: (url: string | null) => void;
   onChange: (change: Partial<MailingBlock>) => void;
 }) {
   const id = `blok-${index}`;
@@ -594,8 +742,13 @@ function BlockFields({
             label="Foto"
             uploadPath="/api/v1/admin/mailing/images"
             currentUrl={imageUrl}
-            onChange={(path) => onChange({ image: path || null })}
+            onChange={(path, url) => {
+              onImageUrl(url ?? null);
+              // Nieuwe foto: terug naar volle breedte, de oude maat past er misschien niet bij.
+              onChange({ image: path || null, width: null });
+            }}
           />
+          {block.image ? <ImageSize block={block} index={index} imageUrl={imageUrl} onChange={onChange} /> : null}
           <div className="form-grid">
             <Field
               label="Omschrijving (voor schermlezers)"

@@ -33898,6 +33898,19 @@
               "null",
               "string"
             ]
+          },
+          "align": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "width": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         },
         "description": "Een blok; `imageUrl` alleen in antwoorden (om de foto in het portal te tonen)."

@@ -259,11 +259,13 @@ public sealed record MailingBlockDto(
     [StringLength(500)] string? Url,
     [StringLength(100)] string? Image,
     [StringLength(300)] string? Note,
-    string? ImageUrl = null)
+    string? ImageUrl = null,
+    [StringLength(10)] string? Align = null,
+    int? Width = null)
 {
-    public MailingBlock ToBlock() => new(Type, Text, Label, Url, Image, Note);
+    public MailingBlock ToBlock() => new(Type, Text, Label, Url, Image, Note, Align, Width);
 
-    public static MailingBlockDto From(MailingBlock b, string? imageUrl) => new(b.Type, b.Text, b.Label, b.Url, b.Image, b.Note, imageUrl);
+    public static MailingBlockDto From(MailingBlock b, string? imageUrl) => new(b.Type, b.Text, b.Label, b.Url, b.Image, b.Note, imageUrl, b.Align, b.Width);
 }
 
 public sealed record MailingRequest(

@@ -2101,3 +2101,23 @@ fieldset {
   white-space: normal;
   text-align: center;
 }
+
+/* Mailing: uitlijnen per blok en de grootte van een foto (2026-10-15). */
+.block-options {
+  margin-top: 10px;
+}
+
+.block-options .chips,
+.image-size .chips {
+  align-items: center;
+}
+
+.image-size {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.image-size .field input[type='number'] {
+  max-width: 140px;
+}

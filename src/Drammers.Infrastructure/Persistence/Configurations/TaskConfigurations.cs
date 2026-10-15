@@ -13,7 +13,7 @@ internal sealed class TaskCategoryConfiguration : IEntityTypeConfiguration<TaskC
         builder.ToTable("TaskCategory", Schemas.Content);
         builder.Property(c => c.Id).ValueGeneratedNever();
         builder.Property(c => c.Name).HasMaxLength(80);
-        builder.HasIndex(c => c.Name).IsUnique();
+        builder.HasIndex(c => new { c.List, c.Name }).IsUnique();
     }
 }
 
@@ -25,6 +25,7 @@ internal sealed class CarnivalTaskConfiguration : IEntityTypeConfiguration<Carni
         builder.Property(t => t.Id).ValueGeneratedNever();
         builder.Property(t => t.Title).HasMaxLength(200);
         builder.Property(t => t.Description).HasMaxLength(2000);
+        builder.Property(t => t.OtherPeople).HasMaxLength(300);
         builder.Property(t => t.RowVersion).IsRowVersion();
         builder.Ignore(t => t.EffectiveProgress);
         builder.HasIndex(t => new { t.CarnivalYearId, t.CategoryId });

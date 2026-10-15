@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useMe, type Schemas } from '../api/hooks';
+import { uploadJson } from '../api/upload';
+import { useAuth } from '../auth/AuthContext';
 import { Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
@@ -14,8 +16,72 @@ type YearView = Schemas['TaskYearView'];
 type Category = Schemas['TaskCategoryView'];
 type Person = Schemas['TaskPerson'];
 type ReportRow = Schemas['TaskReportRow'];
+type TaskBody = Schemas['TaskRequest'];
+type CategoryBody = Schemas['TaskCategoryRequest'];
+export type TaskListKind = 'carnival' | 'festival';
 
-const KEY = ['tasks'];
+/**
+ * Twee takenlijsten (2026-10-15): carnaval (/admin/tasks, recht task.manage) en het Dansgardefestival
+ * (/admin/festival/tasks, recht festival.manage). Zelfde schermen, andere adressen.
+ */
+function useTaskApi(list: TaskListKind) {
+  const api = useApi();
+  return useMemo(() => {
+    const f = list === 'festival';
+    return {
+      key: ['tasks', list],
+      year: async (yearId: number | null) =>
+        (f
+          ? await api.GET('/api/v1/admin/festival/tasks', { params: { query: { yearId: yearId ?? undefined } } })
+          : await api.GET('/api/v1/admin/tasks', { params: { query: { yearId: yearId ?? undefined } } })
+        ).data ?? null,
+      categories: async () =>
+        (f ? await api.GET('/api/v1/admin/festival/tasks/categories') : await api.GET('/api/v1/admin/tasks/categories'))
+          .data ?? [],
+      members: async (search: string) =>
+        (f
+          ? await api.GET('/api/v1/admin/festival/tasks/members', { params: { query: { search } } })
+          : await api.GET('/api/v1/admin/tasks/members', { params: { query: { search } } })
+        ).data ?? [],
+      create: (yearId: number, body: TaskBody) =>
+        f
+          ? api.POST('/api/v1/admin/festival/tasks', { params: { query: { yearId } }, body })
+          : api.POST('/api/v1/admin/tasks', { params: { query: { yearId } }, body }),
+      update: (id: string, body: TaskBody) =>
+        f
+          ? api.PUT('/api/v1/admin/festival/tasks/{id}', { params: { path: { id } }, body })
+          : api.PUT('/api/v1/admin/tasks/{id}', { params: { path: { id } }, body }),
+      remove: (id: string) =>
+        f
+          ? api.DELETE('/api/v1/admin/festival/tasks/{id}', { params: { path: { id } } })
+          : api.DELETE('/api/v1/admin/tasks/{id}', { params: { path: { id } } }),
+      copy: async (fromYearId: number, taskIds: string[]) =>
+        (f
+          ? await api.POST('/api/v1/admin/festival/tasks/copy', { body: { fromYearId, taskIds } })
+          : await api.POST('/api/v1/admin/tasks/copy', { body: { fromYearId, taskIds } })
+        ).data,
+      report: async () =>
+        (f ? await api.GET('/api/v1/admin/festival/tasks/report') : await api.GET('/api/v1/admin/tasks/report')).data ??
+        null,
+      addCategory: (body: CategoryBody) =>
+        f
+          ? api.POST('/api/v1/admin/festival/tasks/categories', { body })
+          : api.POST('/api/v1/admin/tasks/categories', { body }),
+      updateCategory: (id: string, body: CategoryBody) =>
+        f
+          ? api.PUT('/api/v1/admin/festival/tasks/categories/{id}', { params: { path: { id } }, body })
+          : api.PUT('/api/v1/admin/tasks/categories/{id}', { params: { path: { id } }, body }),
+      removeCategory: (id: string) =>
+        f
+          ? api.DELETE('/api/v1/admin/festival/tasks/categories/{id}', { params: { path: { id } } })
+          : api.DELETE('/api/v1/admin/tasks/categories/{id}', { params: { path: { id } } }),
+    };
+  }, [api, list]);
+}
+
+type TaskApi = ReturnType<typeof useTaskApi>;
+const TaskApiContext = createContext<TaskApi | null>(null);
+const useTasks = () => useContext(TaskApiContext)!;
 const STATUS: Record<TaskStatus, [string, string]> = {
   NotStarted: ['Nog niet gestart', 'neutral'],
   InProgress: ['Bezig', 'info'],
@@ -24,21 +90,12 @@ const STATUS: Record<TaskStatus, [string, string]> = {
 };
 type Filter = 'all' | 'mine' | 'progress' | 'overdue' | 'done';
 
-function useTaskYear(yearId: number | null) {
-  const api = useApi();
-  return useQuery({
-    queryKey: [...KEY, 'year', yearId],
-    queryFn: async () =>
-      (await api.GET('/api/v1/admin/tasks', { params: { query: { yearId: yearId ?? undefined } } })).data ?? null,
-  });
+function useTaskYear(tasks: TaskApi, yearId: number | null) {
+  return useQuery({ queryKey: [...tasks.key, 'year', yearId], queryFn: () => tasks.year(yearId) });
 }
 
-function useCategories() {
-  const api = useApi();
-  return useQuery({
-    queryKey: [...KEY, 'categories'],
-    queryFn: async () => (await api.GET('/api/v1/admin/tasks/categories')).data ?? [],
-  });
+function useCategories(tasks: TaskApi) {
+  return useQuery({ queryKey: [...tasks.key, 'categories'], queryFn: () => tasks.categories() });
 }
 
 /** Korte voortgangsbalk met percentage, zoals bij de campagne. */
@@ -55,12 +112,30 @@ export function MiniBar({ percent, done, width = 90 }: { percent: number; done?:
 
 /**
  * Takenlijst carnaval (2026-10-15): taken per carnavalsjaar en categorie, met leden, status, voortgang, gestart op en
- * verwacht klaar; kopiëren naar volgend jaar met vinkjes.
+ * verwacht klaar; kopiëren naar volgend jaar met vinkjes. Met <c>list="festival"</c> de lijst van het Dansgardefestival
+ * (als tabblad op de festivalpagina), met import uit het draaiboek en de rapportage erbij.
  */
 export function TasksPage() {
+  return <TaskListPage list="carnival" />;
+}
+
+export function TaskListPage({ list }: { list: TaskListKind }) {
+  const tasksApi = useTaskApi(list);
+  return (
+    <TaskApiContext.Provider value={tasksApi}>
+      <TaskList festival={list === 'festival'} />
+    </TaskApiContext.Provider>
+  );
+}
+
+function TaskList({ festival }: { festival: boolean }) {
+  const tasksApi = useTasks();
+  const auth = useAuth();
   const [yearId, setYearId] = useState<number | null>(null);
-  const year = useTaskYear(yearId);
-  const categories = useCategories();
+  const year = useTaskYear(tasksApi, yearId);
+  const categories = useCategories(tasksApi);
+  const [showReport, setShowReport] = useState(false);
+  const [importError, setImportError] = useState<unknown>(null);
   const me = useMe();
   const [filter, setFilter] = useState<Filter>('all');
   const [category, setCategory] = useState('');
@@ -96,11 +171,44 @@ export function TasksPage() {
     ).length;
   const s = y.summary;
 
+  async function importFile(file: File | undefined) {
+    if (!file || !y) return;
+    setImportError(null);
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const result = await uploadJson<{ categories: number; tasks: number; skipped: number }>(
+        auth,
+        `/api/v1/admin/festival/tasks/import?yearId=${y.yearId}`,
+        form,
+      );
+      setMessage(
+        `Draaiboek ingelezen: ${result.tasks} taken en ${result.categories} categorieën toegevoegd` +
+          (result.skipped ? `, ${result.skipped} bestonden al.` : '.'),
+      );
+      await Promise.all([year.refetch(), categories.refetch()]);
+    } catch (error) {
+      setImportError(error);
+    }
+  }
+
+  if (festival && showReport)
+    return (
+      <>
+        <div className="actions">
+          <button type="button" className="button secondary" onClick={() => setShowReport(false)}>
+            ← Terug naar de takenlijst
+          </button>
+        </div>
+        <TaskReport festival />
+      </>
+    );
+
   return (
     <>
       <div className="page-header">
         <div className="page-title">
-          <h1>Takenlijst carnaval {y.yearName}</h1>
+          {festival ? <h2>Takenlijst Dansgardefestival {y.yearName}</h2> : <h1>Takenlijst carnaval {y.yearName}</h1>}
           <p className="page-subtitle">
             Carnaval begint {formatDate(y.carnivalStartDate)} · nog {y.daysUntilCarnival} dagen
           </p>
@@ -121,6 +229,25 @@ export function TasksPage() {
           <button type="button" className="button secondary" onClick={() => setManaging(true)}>
             Categorieën
           </button>
+          {festival ? (
+            <>
+              <button type="button" className="button secondary" onClick={() => setShowReport(true)}>
+                Rapportage
+              </button>
+              <label className="button secondary file-button">
+                Draaiboek importeren
+                <input
+                  type="file"
+                  className="visually-hidden"
+                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(e) => {
+                    void importFile(e.target.files?.[0]);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </>
+          ) : null}
           <button
             type="button"
             className="button secondary"
@@ -141,10 +268,13 @@ export function TasksPage() {
         </div>
       </div>
       <SuccessMessage message={message} />
+      <ProblemAlert error={importError} />
 
       <section className="card" aria-labelledby="taken-totaal">
         <div className="card-header">
-          <h2 id="taken-totaal">Voorbereiding carnaval: {s.percent}%</h2>
+          <h2 id="taken-totaal">
+            {festival ? 'Voorbereiding festival' : 'Voorbereiding carnaval'}: {s.percent}%
+          </h2>
           <span className="muted">
             {s.done} van {s.total - s.cancelled} taken afgerond · {s.inProgress} bezig · {s.overdue} over datum
           </span>
@@ -247,7 +377,11 @@ export function TasksPage() {
                             </button>
                             {t.description ? <div className="muted small-text">{t.description}</div> : null}
                           </td>
-                          <td>{t.assignees.map((a) => a.name).join(', ') || <span className="muted">—</span>}</td>
+                          <td>
+                            {[...t.assignees.map((a) => a.name), ...(t.otherPeople ? [t.otherPeople] : [])].join(
+                              ', ',
+                            ) || <span className="muted">—</span>}
+                          </td>
                           <td>
                             <span className={`badge ${tone}`}>{label}</span>
                           </td>
@@ -316,7 +450,7 @@ function TaskDialog({
   categories: Category[];
   onClose: (message?: string) => void;
 }) {
-  const api = useApi();
+  const tasksApi = useTasks();
   const [form, setForm] = useState({
     title: task?.title ?? '',
     description: task?.description ?? '',
@@ -325,14 +459,14 @@ function TaskDialog({
     status: (task?.status ?? 'NotStarted') as TaskStatus,
     progress: task?.progress ?? 0,
     people: task?.assignees ?? ([] as Person[]),
+    otherPeople: task?.otherPeople ?? '',
   });
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const found = useQuery({
-    queryKey: [...KEY, 'members', search],
+    queryKey: [...tasksApi.key, 'members', search],
     enabled: search.trim().length >= 2,
-    queryFn: async () =>
-      (await api.GET('/api/v1/admin/tasks/members', { params: { query: { search: search.trim() } } })).data ?? [],
+    queryFn: () => tasksApi.members(search.trim()),
   });
   const body = () => ({
     categoryId: form.categoryId,
@@ -342,18 +476,13 @@ function TaskDialog({
     progress: form.progress,
     dueOn: form.dueOn || null,
     memberIds: form.people.map((p) => p.memberId),
+    otherPeople: form.otherPeople || null,
   });
   const save = useApiMutation(
-    () =>
-      task
-        ? api.PUT('/api/v1/admin/tasks/{id}', { params: { path: { id: task.id } }, body: body() })
-        : api.POST('/api/v1/admin/tasks', { params: { query: { yearId } }, body: body() }),
-    [KEY],
+    () => (task ? tasksApi.update(task.id, body()) : tasksApi.create(yearId, body())),
+    [tasksApi.key],
   );
-  const remove = useApiMutation(
-    () => api.DELETE('/api/v1/admin/tasks/{id}', { params: { path: { id: task!.id } } }),
-    [KEY],
-  );
+  const remove = useApiMutation(() => tasksApi.remove(task!.id), [tasksApi.key]);
   const set = (change: Partial<typeof form>) => setForm({ ...form, ...change });
 
   return (
@@ -450,6 +579,13 @@ function TaskDialog({
             </ul>
           ) : null}
         </div>
+        <Field
+          label="Overige personen (geen lid of een groep)"
+          hint="Bijvoorbeeld: Raad van Elf, Hart van Loil"
+          maxLength={300}
+          value={form.otherPeople}
+          onChange={(e) => set({ otherPeople: e.target.value })}
+        />
         <fieldset className="task-status">
           <legend>Status</legend>
           <div className="segments-portal" role="radiogroup" aria-label="Status">
@@ -535,15 +671,11 @@ function TaskDialog({
 }
 
 function CopyDialog({ year, onClose }: { year: YearView; onClose: (message?: string) => void }) {
-  const api = useApi();
+  const tasksApi = useTasks();
   const [selected, setSelected] = useState<string[]>(() =>
     year.tasks.filter((t) => t.status !== 'Cancelled').map((t) => t.id),
   );
-  const copy = useApiMutation(
-    async () =>
-      (await api.POST('/api/v1/admin/tasks/copy', { body: { fromYearId: year.yearId, taskIds: selected } })).data,
-    [KEY],
-  );
+  const copy = useApiMutation(() => tasksApi.copy(year.yearId, selected), [tasksApi.key]);
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const groups = groupBy(year.tasks, (t) => t.categoryName);
   const next = year.nextYear;
@@ -626,27 +758,17 @@ function CopyDialog({ year, onClose }: { year: YearView; onClose: (message?: str
 }
 
 function CategoriesDialog({ categories, onClose }: { categories: Category[]; onClose: () => void }) {
-  const api = useApi();
+  const tasksApi = useTasks();
   const [name, setName] = useState('');
   const add = useApiMutation(
-    () =>
-      api.POST('/api/v1/admin/tasks/categories', {
-        body: { name, sortOrder: (categories.at(-1)?.sortOrder ?? 0) + 10, active: true },
-      }),
-    [KEY],
+    () => tasksApi.addCategory({ name, sortOrder: (categories.at(-1)?.sortOrder ?? 0) + 10, active: true }),
+    [tasksApi.key],
   );
   const update = useApiMutation(
-    (c: Category) =>
-      api.PUT('/api/v1/admin/tasks/categories/{id}', {
-        params: { path: { id: c.id } },
-        body: { name: c.name, sortOrder: c.sortOrder, active: c.active },
-      }),
-    [KEY],
+    (c: Category) => tasksApi.updateCategory(c.id, { name: c.name, sortOrder: c.sortOrder, active: c.active }),
+    [tasksApi.key],
   );
-  const remove = useApiMutation(
-    (id: string) => api.DELETE('/api/v1/admin/tasks/categories/{id}', { params: { path: { id } } }),
-    [KEY],
-  );
+  const remove = useApiMutation((id: string) => tasksApi.removeCategory(id), [tasksApi.key]);
 
   return (
     <Dialog open title="Categorieën" onClose={onClose}>
@@ -694,11 +816,17 @@ function CategoriesDialog({ categories, onClose }: { categories: Category[]; onC
 
 /** Rapportage takenlijst: kerncijfers, per categorie en per persoon met korte balkjes. */
 export function TaskReportPage() {
-  const api = useApi();
-  const report = useQuery({
-    queryKey: [...KEY, 'report'],
-    queryFn: async () => (await api.GET('/api/v1/admin/tasks/report')).data ?? null,
-  });
+  const tasksApi = useTaskApi('carnival');
+  return (
+    <TaskApiContext.Provider value={tasksApi}>
+      <TaskReport festival={false} />
+    </TaskApiContext.Provider>
+  );
+}
+
+function TaskReport({ festival }: { festival: boolean }) {
+  const tasksApi = useTasks();
+  const report = useQuery({ queryKey: [...tasksApi.key, 'report'], queryFn: () => tasksApi.report() });
   const r = report.data;
   if (!r) return report.error ? <ProblemAlert error={report.error} /> : <p>Laden…</p>;
   const s = r.summary;
@@ -706,12 +834,18 @@ export function TaskReportPage() {
     <>
       <div className="page-header">
         <div className="page-title">
-          <h1>Rapportage takenlijst {r.yearName}</h1>
+          {festival ? (
+            <h2>Rapportage takenlijst festival {r.yearName}</h2>
+          ) : (
+            <h1>Rapportage takenlijst {r.yearName}</h1>
+          )}
           <p className="page-subtitle">Hoe ver staat de voorbereiding per categorie en per persoon</p>
         </div>
-        <Link to="/taken" className="button secondary">
-          Naar de takenlijst
-        </Link>
+        {festival ? null : (
+          <Link to="/taken" className="button secondary">
+            Naar de takenlijst
+          </Link>
+        )}
       </div>
       <div className="kpis">
         <div className="kpi">

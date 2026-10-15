@@ -9,6 +9,7 @@ import { Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { formatDate, formatDateTime } from '../format';
+import { TaskListPage } from './TasksPage';
 
 type Settings = Schemas['FestivalSettingsView'];
 type Summary = Schemas['FestivalRegistrationSummary'];
@@ -62,7 +63,7 @@ const decisionLabels: Record<Decision, string> = {
  */
 export function DanceFestivalPage() {
   const api = useApi();
-  const [tab, setTab] = useState<'registrations' | 'settings'>('registrations');
+  const [tab, setTab] = useState<'registrations' | 'tasks' | 'settings'>('registrations');
   const list = useQuery({
     queryKey: KEYS.list,
     queryFn: async () => (await api.GET('/api/v1/admin/dance-festival/registrations')).data ?? null,
@@ -100,6 +101,15 @@ export function DanceFestivalPage() {
           type="button"
           role="tab"
           className="tab"
+          aria-selected={tab === 'tasks'}
+          onClick={() => setTab('tasks')}
+        >
+          Takenlijst
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className="tab"
           aria-selected={tab === 'settings'}
           onClick={() => setTab('settings')}
         >
@@ -113,7 +123,9 @@ export function DanceFestivalPage() {
         </button>
       </div>
       <ProblemAlert error={list.error} />
-      {tab === 'settings' || (list.isSuccess && !festival) ? (
+      {tab === 'tasks' ? (
+        <TaskListPage list="festival" />
+      ) : tab === 'settings' || (list.isSuccess && !festival) ? (
         <SettingsTab />
       ) : list.data ? (
         <RegistrationsTab data={list.data} />

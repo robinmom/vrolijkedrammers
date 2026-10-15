@@ -1613,6 +1613,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("due_on");
 
+                    b.Property<string>("OtherPeople")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("other_people");
+
                     b.Property<int>("Progress")
                         .HasColumnType("int")
                         .HasColumnName("progress");
@@ -1695,6 +1700,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("active");
 
+                    b.Property<string>("List")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("list");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -1708,11 +1720,14 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("PK_TaskCategory");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("List", "Name")
                         .IsUnique()
-                        .HasDatabaseName("IX_TaskCategory_name");
+                        .HasDatabaseName("IX_TaskCategory_list_name");
 
-                    b.ToTable("TaskCategory", "content");
+                    b.ToTable("TaskCategory", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_TaskCategory_list", "[list] IN ('Carnival', 'Festival')");
+                        });
                 });
 
             modelBuilder.Entity("Drammers.Modules.Content.Website.Award", b =>

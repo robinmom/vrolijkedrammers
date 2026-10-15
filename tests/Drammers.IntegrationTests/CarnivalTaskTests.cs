@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using ClosedXML.Excel;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
@@ -132,6 +134,70 @@ public class CarnivalTaskTests(SqlServerFixture sql) : IAsyncLifetime
         // Een categorie met taken kan niet weg.
         Assert.Equal(HttpStatusCode.Conflict, (await _bestuur.DeleteAsync($"/api/v1/admin/tasks/categories/{optocht}")).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/tasks/{zaal}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Festivallijst_apart_met_import_uit_het_draaiboek()
+    {
+        var (_, oid) = await _api.CreateUserAsync("chantal@example.com", DefaultRoles.Dansgardefestival);
+        var chantal = _api.ClientFor(oid);
+        Assert.Equal(HttpStatusCode.Forbidden, (await chantal.GetAsync("/api/v1/admin/tasks")).StatusCode);
+
+        // Een categorie van carnaval is niet te zien of te gebruiken in de festivallijst.
+        var carnaval = await CreatedIdAsync(await _bestuur.PostAsJsonAsync("/api/v1/admin/tasks/categories", new { name = "Pronkzitting", sortOrder = 1 }));
+        var yearId = (await chantal.GetFromJsonAsync<JsonElement>("/api/v1/admin/festival/tasks")).GetProperty("yearId").GetInt32();
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await chantal.PostAsJsonAsync($"/api/v1/admin/festival/tasks?yearId={yearId}",
+            new { categoryId = carnaval, title = "x", status = "NotStarted", progress = 0 })).StatusCode);
+
+        using var book = new XLWorkbook();
+        var sheet = book.AddWorksheet("Actiepunten");
+        string?[][] rows =
+        [
+            ["Actiepuntenlijst Dansgardefestival De Vrolijke Drammers", null, null, null],
+            ["Actie", "Wie", "Plan", "opmerkingen"],
+            ["Eerste voorbereidingen November 2025", null, null, null],
+            ["Geluid/ muziek regelen", "Naomie/Twan/Rick", null, "Twan organiseert dit."],
+            ["Jury vragen", "Miranda", null, "Merel, Demi, Tonny"],
+            ["Op de dag zelf", null, null, null],
+            ["wc's bijhouden", "Vrijwilligers", null, null],
+        ];
+        for (var r = 0; r < rows.Length; r++)
+        {
+            for (var c = 0; c < 4; c++)
+            {
+                if (rows[r][c] is { } v)
+                {
+                    sheet.Cell(r + 1, c + 1).Value = v;
+                }
+            }
+        }
+
+        using var stream = new MemoryStream();
+        book.SaveAs(stream);
+        HttpResponseMessage Import()
+        {
+            var file = new ByteArrayContent(stream.ToArray());
+            file.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            var content = new MultipartFormDataContent { { file, "file", "draaiboek.xlsx" } };
+            return chantal.PostAsync($"/api/v1/admin/festival/tasks/import?yearId={yearId}", content).GetAwaiter().GetResult();
+        }
+
+        var result = await Import().Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal((2, 3, 0), (result.GetProperty("categories").GetInt32(), result.GetProperty("tasks").GetInt32(), result.GetProperty("skipped").GetInt32()));
+        Assert.Equal(3, (await Import().Content.ReadFromJsonAsync<JsonElement>()).GetProperty("skipped").GetInt32());
+
+        var categories = (await chantal.GetFromJsonAsync<JsonElement>("/api/v1/admin/festival/tasks/categories")).EnumerateArray()
+            .Select(c => c.GetProperty("name").GetString()!).ToArray();
+        Assert.Equal(["Eerste voorbereidingen November", "Op de dag zelf"], categories);
+        var list = await chantal.GetFromJsonAsync<JsonElement>("/api/v1/admin/festival/tasks");
+        var geluid = list.GetProperty("tasks").EnumerateArray().Single(t => t.GetProperty("title").GetString() == "Geluid/ muziek regelen");
+        Assert.Equal(("Naomie/Twan/Rick", "Twan organiseert dit."), (geluid.GetProperty("otherPeople").GetString(), geluid.GetProperty("description").GetString()));
+
+        // De carnavalslijst blijft leeg; per persoon telt elke losse naam.
+        Assert.Equal(0, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/tasks")).GetProperty("tasks").GetArrayLength());
+        var people = (await chantal.GetFromJsonAsync<JsonElement>("/api/v1/admin/festival/tasks/report")).GetProperty("perPerson").EnumerateArray()
+            .Select(p => p.GetProperty("name").GetString()!).Order().ToArray();
+        Assert.Equal(["Miranda", "Naomie", "Rick", "Twan", "Vrijwilligers"], people);
     }
 
     [Fact]

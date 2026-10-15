@@ -292,6 +292,7 @@ public static class DependencyInjection
         services.AddScoped<Sales.TicketSales>();
         services.AddScoped<Festival.DanceFestivals>();
         services.AddScoped<Members.MemberHistory>();
+        services.AddScoped<Tasks.CarnivalTasks>();
         services.AddScoped<Sales.SaleAdministration>();
         services.AddScoped<Sales.TokenCollection>();
         services.TryAddScoped<Sales.SaleExpiryJob>();

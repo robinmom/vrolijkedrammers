@@ -16,6 +16,7 @@ export interface NavItem {
     | 'Leden'
     | 'Dansgarde'
     | 'Prins'
+    | 'Carnaval'
     | 'Optocht'
     | 'Toegang'
     | 'Verkoop'
@@ -74,6 +75,9 @@ export const navItems: readonly NavItem[] = [
   { label: 'Dansgardefestival', to: '/dansgarde/festival', permission: 'festival.manage', icon: 'agenda', section: 'Dansgarde' },
   // 2026-10-10: prins(es) en adjudanten, met hun informatie in de app.
   { label: 'Prins en adjudanten', to: '/prins', permission: 'role.manage', icon: 'rollen', section: 'Prins' },
+  // 2026-10-15: takenlijst voor de voorbereiding van carnaval.
+  { label: 'Takenlijst', to: '/taken', permission: 'task.manage', icon: 'audit', section: 'Carnaval' },
+  { label: 'Rapportage taken', to: '/taken/rapportage', permission: 'task.manage', icon: 'rapport', section: 'Carnaval' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },
   { label: 'Samenstellen', to: '/optocht/samenstellen', permission: 'parade.read', icon: 'audit', section: 'Optocht' },
   { label: 'Aanrijtijden', to: '/optocht/aanrijtijden', permission: 'parade.import-arrival-times', icon: 'agenda', section: 'Optocht' },

@@ -29,6 +29,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Drammers.Infrastructure;
 
@@ -122,9 +124,22 @@ public static class DependencyInjection
         services.PostConfigure<EmailOptions>(o => o.LogoUrl ??= configuration["Sales:PublicBaseUrl"] is { Length: > 0 } baseUrl
             ? $"{baseUrl.TrimEnd('/')}/_content/Drammers.Website/img/logo.png"
             : null);
-        if (email.Get<EmailOptions>()?.IsConfigured == true)
+        if (email.Get<EmailOptions>() is { IsConfigured: true } emailOptions)
         {
-            services.AddSingleton<IEmailSender, AcsEmailSender>();
+            if (string.IsNullOrWhiteSpace(emailOptions.MailboxSenders))
+            {
+                services.AddSingleton<IEmailSender, AcsEmailSender>();
+            }
+            else
+            {
+                // Mailings van deze afzenders via de mailbox in Microsoft 365 (Graph), de rest en de terugval via ACS.
+                services.AddSingleton<AcsEmailSender>();
+                services.AddHttpClient(nameof(MailboxEmailSender), http => http.Timeout = TimeSpan.FromSeconds(60));
+                services.AddSingleton<IEmailSender>(sp => new MailboxEmailSender(
+                    sp.GetRequiredService<AcsEmailSender>(), sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(MailboxEmailSender)),
+                    sp.GetRequiredService<TokenCredential>(), sp.GetRequiredService<IOptions<EmailOptions>>(),
+                    sp.GetRequiredService<ILogger<MailboxEmailSender>>()));
+            }
         }
 
         // Contactformulier van de website (fase 21i); Turnstile staat aan zodra beide sleutels zijn gezet.

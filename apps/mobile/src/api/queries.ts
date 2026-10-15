@@ -39,6 +39,9 @@ export const queryKeys = {
   parade: ['parade'] as const,
   /** Jureren (fase 22b): bewaard in de cache, zodat het jurylid ook zonder netwerk de optocht ziet. */
   jury: ['jury', 'current'] as const,
+  /** Jureren op het Dansgardefestival (2026-10-15): de categorie die aan de beurt is, en de uitslag voor de hoofdjury. */
+  festivalJury: ['festival-jury'] as const,
+  headJury: ['festival-jury', 'head'] as const,
   paradeResults: ['parade', 'results'] as const,
   paradeCategories: ['parade', 'categories'] as const,
   arrivalTimes: ['parade', 'arrival-times'] as const,
@@ -333,6 +336,12 @@ export const useOfflinePack = (enabled: boolean) => {
 };
 
 /** De optocht om te jureren met de eigen scores (alleen met <c>parade.judge</c>). */
+export const useFestivalJurySession = (enabled: boolean) =>
+  useQuery({ queryKey: queryKeys.festivalJury, queryFn: () => unwrap(api.GET('/api/v1/festival-jury')), enabled });
+
+export const useHeadJury = (enabled: boolean) =>
+  useQuery({ queryKey: queryKeys.headJury, queryFn: () => unwrap(api.GET('/api/v1/festival-jury/head')), enabled, refetchInterval: 20_000 });
+
 export const useJurySession = (enabled: boolean) =>
   useQuery({ queryKey: queryKeys.jury, queryFn: () => unwrap(api.GET('/api/v1/jury/current')), enabled });
 

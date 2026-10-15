@@ -790,6 +790,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("active");
 
+                    b.Property<DateTime?>("AwardsCompletedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("awards_completed_at");
+
+                    b.Property<string>("AwardsCompletedBy")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("awards_completed_by");
+
                     b.Property<int>("Capacity")
                         .HasColumnType("int")
                         .HasColumnName("capacity");
@@ -809,6 +818,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("FestivalDate")
                         .HasColumnType("date")
                         .HasColumnName("festival_date");
+
+                    b.Property<DateTime?>("HeadJuryPublishedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("head_jury_published_at");
 
                     b.Property<int>("LastRegistrationNumber")
                         .HasColumnType("int")
@@ -1282,6 +1295,138 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_DanceFestivalRegistrationVersion_registration_id_version");
 
                     b.ToTable("DanceFestivalRegistrationVersion", "content");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalCategorySubmission", b =>
+                {
+                    b.Property<Guid>("FestivalId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("festival_id");
+
+                    b.Property<string>("CategoryKey")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("category_key");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("submitted_at");
+
+                    b.HasKey("FestivalId", "CategoryKey", "UserId")
+                        .HasName("PK_FestivalCategorySubmission");
+
+                    b.ToTable("FestivalCategorySubmission", "content");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalComment", b =>
+                {
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("entry_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("FestivalId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("festival_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("text");
+
+                    b.Property<DateTime>("WrittenAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("written_at");
+
+                    b.HasKey("EntryId", "UserId")
+                        .HasName("PK_FestivalComment");
+
+                    b.HasIndex("FestivalId", "UserId")
+                        .HasDatabaseName("IX_FestivalComment_festival_id_user_id");
+
+                    b.ToTable("FestivalComment", "content");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalJuror", b =>
+                {
+                    b.Property<Guid>("FestivalId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("festival_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("added_at");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int")
+                        .HasColumnName("number");
+
+                    b.HasKey("FestivalId", "UserId")
+                        .HasName("PK_FestivalJuror");
+
+                    b.HasIndex("FestivalId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("IX_FestivalJuror_festival_id_number");
+
+                    b.ToTable("FestivalJuror", "content");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalScore", b =>
+                {
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("entry_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("Criterion")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("criterion");
+
+                    b.Property<Guid>("FestivalId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("festival_id");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("received_at");
+
+                    b.Property<DateTime>("ScoredAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("scored_at");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("int")
+                        .HasColumnName("value");
+
+                    b.HasKey("EntryId", "UserId", "Criterion")
+                        .HasName("PK_FestivalScore");
+
+                    b.HasIndex("FestivalId", "UserId")
+                        .HasDatabaseName("IX_FestivalScore_festival_id_user_id");
+
+                    b.ToTable("FestivalScore", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_FestivalScore_criterion", "[criterion] IN ('Synchronicity', 'Choreography', 'Execution', 'Difficulty')");
+
+                            t.HasCheckConstraint("CK_FestivalScore_value", "[value] >= 0 AND [value] <= 10");
+                        });
                 });
 
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsAudience", b =>
@@ -3056,6 +3201,20 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Beheer",
                             Code = "task.manage",
                             Description = "Takenlijst carnaval: taken, categorieën, voortgang en rapportage"
+                        },
+                        new
+                        {
+                            Id = 54,
+                            Category = "Content",
+                            Code = "festival.judge",
+                            Description = "Dansgardefestival: jureren in de app"
+                        },
+                        new
+                        {
+                            Id = 55,
+                            Category = "Content",
+                            Code = "festival.head-jury",
+                            Description = "Dansgardefestival: hoofdjury (uitslag voor de prijsuitreiking, prijsuitreiking afronden)"
                         });
                 });
 
@@ -3327,6 +3486,26 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsSystem = false,
                             Name = "Dansgardefestival",
                             SortOrder = 220
+                        },
+                        new
+                        {
+                            Id = 206,
+                            Code = "jury-dansgardefestival",
+                            Description = "Jurylid van het Dansgardefestival: beoordeelt in de app alle dansen",
+                            IsAssignableBySync = false,
+                            IsSystem = false,
+                            Name = "Jury dansgardefestival",
+                            SortOrder = 230
+                        },
+                        new
+                        {
+                            Id = 207,
+                            Code = "hoofdjury-dansgardefestival",
+                            Description = "Ziet de uitslag voor de prijsuitreiking en rondt die af (app)",
+                            IsAssignableBySync = false,
+                            IsSystem = false,
+                            Name = "Hoofdjury dansgardefestival",
+                            SortOrder = 240
                         });
                 });
 
@@ -4213,6 +4392,16 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 205,
                             PermissionId = 52
+                        },
+                        new
+                        {
+                            RoleId = 206,
+                            PermissionId = 54
+                        },
+                        new
+                        {
+                            RoleId = 207,
+                            PermissionId = 55
                         });
                 });
 
@@ -9320,6 +9509,42 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalRegistration", null)
                         .WithMany()
                         .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalCategorySubmission", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestival", null)
+                        .WithMany()
+                        .HasForeignKey("FestivalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalComment", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalEntry", null)
+                        .WithMany()
+                        .HasForeignKey("EntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalJuror", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestival", null)
+                        .WithMany()
+                        .HasForeignKey("FestivalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.FestivalScore", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalEntry", null)
+                        .WithMany()
+                        .HasForeignKey("EntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

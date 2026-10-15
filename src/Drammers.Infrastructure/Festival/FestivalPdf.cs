@@ -75,6 +75,79 @@ public static class FestivalPdf
             Footer(page);
         })).WithMetadata(new DocumentMetadata { Title = $"Programma {program.FestivalName}", Author = "De Vrolijke Drammers" }).GeneratePdf();
 
+    /// <summary>
+    /// De uitslag per categorie (A4) om af te drukken: plaats, vereniging, naam, punten per onderdeel en totaal. Per deel van
+    /// de prijsuitreiking een nieuwe pagina.
+    /// </summary>
+    public static byte[] Results(FestivalResults results) =>
+        Document.Create(document =>
+        {
+            foreach (var part in results.Categories.GroupBy(c => c.Part).OrderBy(g => g.Key))
+            {
+                document.Page(page =>
+                {
+                    Setup(page, "Uitslag", $"{results.FestivalName} · {FestivalJudgingService.PartName(part.Key)}");
+                    page.Content().PaddingHorizontal(36).PaddingTop(16).Column(column =>
+                    {
+                        column.Spacing(12);
+                        foreach (var category in part)
+                        {
+                            column.Item().ShowEntire().Column(c => ResultTable(c, category, null));
+                        }
+                    });
+                    Footer(page);
+                });
+            }
+        }).WithMetadata(new DocumentMetadata { Title = $"Uitslag {results.FestivalName}", Author = "De Vrolijke Drammers" }).GeneratePdf();
+
+    /// <summary>Tabel van één categorie; <paramref name="highlight"/>: rijen van deze inschrijving gemarkeerd (rapport).</summary>
+    internal static void ResultTable(ColumnDescriptor column, ResultCategory category, Guid? highlight)
+    {
+        column.Item().PaddingBottom(3).Row(row =>
+        {
+            row.RelativeItem().Text(category.Name).FontFamily("Poppins").Bold().FontColor(Red);
+            if (!category.Complete)
+            {
+                row.ConstantItem(140).AlignRight().Text($"{category.Submitted} van {category.Jurors} juryleden").FontSize(8).FontColor(Muted);
+            }
+        });
+        column.Item().Table(table =>
+        {
+            table.ColumnsDefinition(c =>
+            {
+                c.ConstantColumn(28);
+                c.RelativeColumn(3);
+                c.RelativeColumn(3);
+                c.ConstantColumn(40);
+                c.ConstantColumn(40);
+                c.ConstantColumn(40);
+                c.ConstantColumn(40);
+                c.ConstantColumn(44);
+            });
+            table.Header(h =>
+            {
+                foreach (var label in new[] { "Pl.", "Vereniging", "Naam", category.Solo ? "Ritme" : "Synchr.", "Choreo.", "Uitv.", "Moeil.", "Totaal" })
+                {
+                    h.Cell().Background(Grey).PaddingVertical(3).PaddingHorizontal(4).Text(label).FontSize(8).Bold();
+                }
+            });
+            foreach (var r in category.Rows)
+            {
+                var mark = highlight is { } id && r.RegistrationId == id;
+                IContainer Cell(IContainer c) => c.Background(mark ? Gold : Colors.White).BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).PaddingHorizontal(4);
+                table.Cell().Element(Cell).Text(r.Place.ToString(Dutch)).Bold();
+                table.Cell().Element(Cell).Text(r.Club);
+                table.Cell().Element(Cell).Text(r.Title is { Length: > 0 } title ? $"{title} ({r.Names})" : r.Names);
+                foreach (var v in new[] { r.Synchronicity, r.Choreography, r.Execution, r.Difficulty })
+                {
+                    table.Cell().Element(Cell).AlignRight().Text(v.ToString(Dutch));
+                }
+
+                table.Cell().Element(Cell).AlignRight().Text(r.Total.ToString(Dutch)).Bold();
+            }
+        });
+    }
+
     internal static void Setup(PageDescriptor page, string title, string subtitle)
     {
         page.Size(PageSizes.A4);

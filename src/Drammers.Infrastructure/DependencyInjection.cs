@@ -307,6 +307,7 @@ public static class DependencyInjection
         services.AddScoped<Sales.TicketSales>();
         services.AddScoped<Festival.DanceFestivals>();
         services.AddScoped<Festival.FestivalProgramService>();
+        services.AddScoped<Festival.FestivalJudgingService>();
         services.AddScoped<Members.MemberHistory>();
         services.AddScoped<Tasks.CarnivalTasks>();
         services.AddScoped<Sales.SaleAdministration>();

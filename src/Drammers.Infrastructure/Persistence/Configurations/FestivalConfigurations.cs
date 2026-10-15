@@ -17,6 +17,7 @@ internal sealed class DanceFestivalConfiguration : IEntityTypeConfiguration<Danc
         builder.Property(f => f.Name).HasMaxLength(100);
         builder.Property(f => f.Location).HasMaxLength(200);
         builder.Property(f => f.NotificationEmail).HasMaxLength(254);
+        builder.Property(f => f.AwardsCompletedBy).HasMaxLength(20);
         builder.Property(f => f.RulesBlobPath).HasMaxLength(300);
         builder.Property(f => f.PrivacyBlobPath).HasMaxLength(300);
         // Precies één actieve editie.
@@ -101,5 +102,50 @@ internal sealed class DanceFestivalProgramItemConfiguration : IEntityTypeConfigu
         builder.HasIndex(i => new { i.FestivalId, i.SortOrder });
         builder.HasIndex(i => new { i.FestivalId, i.CategoryKey }).IsUnique().HasFilter("[category_key] IS NOT NULL");
         builder.HasOne<DanceFestival>().WithMany().HasForeignKey(i => i.FestivalId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class FestivalJurorConfiguration : IEntityTypeConfiguration<FestivalJuror>
+{
+    public void Configure(EntityTypeBuilder<FestivalJuror> builder)
+    {
+        builder.ToTable("FestivalJuror", Schemas.Content);
+        builder.HasKey(j => new { j.FestivalId, j.UserId });
+        builder.HasIndex(j => new { j.FestivalId, j.Number }).IsUnique();
+        builder.HasOne<DanceFestival>().WithMany().HasForeignKey(j => j.FestivalId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class FestivalScoreConfiguration : IEntityTypeConfiguration<FestivalScore>
+{
+    public void Configure(EntityTypeBuilder<FestivalScore> builder)
+    {
+        builder.ToTable("FestivalScore", Schemas.Content, t => t.HasCheckConstraint("CK_FestivalScore_value", "[value] >= 0 AND [value] <= 10"));
+        builder.HasKey(s => new { s.EntryId, s.UserId, s.Criterion });
+        builder.HasIndex(s => new { s.FestivalId, s.UserId });
+        builder.HasOne<DanceFestivalEntry>().WithMany().HasForeignKey(s => s.EntryId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class FestivalCommentConfiguration : IEntityTypeConfiguration<FestivalComment>
+{
+    public void Configure(EntityTypeBuilder<FestivalComment> builder)
+    {
+        builder.ToTable("FestivalComment", Schemas.Content);
+        builder.HasKey(c => new { c.EntryId, c.UserId });
+        builder.Property(c => c.Text).HasMaxLength(1000);
+        builder.HasIndex(c => new { c.FestivalId, c.UserId });
+        builder.HasOne<DanceFestivalEntry>().WithMany().HasForeignKey(c => c.EntryId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class FestivalCategorySubmissionConfiguration : IEntityTypeConfiguration<FestivalCategorySubmission>
+{
+    public void Configure(EntityTypeBuilder<FestivalCategorySubmission> builder)
+    {
+        builder.ToTable("FestivalCategorySubmission", Schemas.Content);
+        builder.HasKey(s => new { s.FestivalId, s.CategoryKey, s.UserId });
+        builder.Property(s => s.CategoryKey).HasMaxLength(60);
+        builder.HasOne<DanceFestival>().WithMany().HasForeignKey(s => s.FestivalId).OnDelete(DeleteBehavior.Cascade);
     }
 }

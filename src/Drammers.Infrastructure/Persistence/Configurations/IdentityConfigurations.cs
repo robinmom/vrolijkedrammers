@@ -39,6 +39,8 @@ public static class DefaultRoles
     public const string Prins = "prins";
     public const string Adjudant = "adjudant";
     public const string Dansgardefestival = "dansgardefestival";
+    public const string JuryDansgardefestival = "jury-dansgardefestival";
+    public const string HoofdjuryDansgardefestival = "hoofdjury-dansgardefestival";
 
     /// <summary>Rollen met een maximum aantal personen tegelijk (2026-10-10): één prins(es), twee adjudanten.</summary>
     public static readonly IReadOnlyDictionary<string, int> MaxHolders = new Dictionary<string, int>(StringComparer.Ordinal)
@@ -105,6 +107,11 @@ public static class DefaultRoles
         // Dansgardefestival (2026-10-12): de organisatie heeft een eigen inlog en ziet in het portal alleen dit onderdeel.
         new(205, Dansgardefestival, "Dansgardefestival", "Organisatie van het Dansgardefestival; ziet in het portal alleen het festival", false, false,
             [P.FestivalManage]),
+        // 2026-10-15: juryleden van het festival (eigen account, uitgenodigd door de organisatie); de hoofdjury jureert ook.
+        new(206, JuryDansgardefestival, "Jury dansgardefestival", "Jurylid van het Dansgardefestival: beoordeelt in de app alle dansen", false, false,
+            [P.FestivalJudge]),
+        new(207, HoofdjuryDansgardefestival, "Hoofdjury dansgardefestival", "Ziet de uitslag voor de prijsuitreiking en rondt die af (app)", false, false,
+            [P.FestivalHeadJury]),
     ];
 
     /// <summary>Vast Id per permission (volgorde in de catalogus, vanaf 1); nieuwe permissions achteraan toevoegen.</summary>

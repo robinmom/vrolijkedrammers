@@ -53,6 +53,15 @@ public sealed class DanceFestival : IAuditable
     /// <summary>Wanneer de volgorde binnen de categorieën is geloot (leeg = nog niet).</summary>
     public DateTime? DrawnAt { get; set; }
 
+    /// <summary>De uitslag staat voor de hoofdjury klaar (in de app) voor de prijsuitreiking.</summary>
+    public DateTime? HeadJuryPublishedAt { get; set; }
+
+    /// <summary>De prijsuitreiking is afgerond (door de hoofdjury, of overruled in het portal).</summary>
+    public DateTime? AwardsCompletedAt { get; set; }
+
+    /// <summary>"hoofdjury" of "organisatie".</summary>
+    public string? AwardsCompletedBy { get; set; }
+
     /// <summary>Laatst uitgegeven inschrijfnummer (UPDATE … OUTPUT, zoals bij de optocht).</summary>
     public int LastRegistrationNumber { get; set; }
 

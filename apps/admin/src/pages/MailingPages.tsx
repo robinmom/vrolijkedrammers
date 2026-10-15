@@ -218,14 +218,17 @@ export function MailingEditorPage() {
   );
   type TestResult = Schemas['MailingTestResponse'];
   type SendResult = Schemas['MailingSendResponse'];
-  const test = useApiMutation(
-    async () => (await api.POST('/api/v1/admin/mailing/mailings/{id}/test', { params: { path: { id } } })).data,
-    MAILING_KEYS,
-  );
-  const send = useApiMutation(
-    async () => (await api.POST('/api/v1/admin/mailing/mailings/{id}/send', { params: { path: { id } } })).data,
-    MAILING_KEYS,
-  );
+  // Testmail en versturen slaan eerst de huidige versie op: anders gaat de laatst opgeslagen versie weg, terwijl het
+  // voorbeeld al de wijzigingen toont (bijv. een foto op ware grootte die nog niet was opgeslagen).
+  const saveDraft = () => api.PUT('/api/v1/admin/mailing/mailings/{id}', { params: { path: { id } }, body: form });
+  const test = useApiMutation(async () => {
+    await saveDraft();
+    return (await api.POST('/api/v1/admin/mailing/mailings/{id}/test', { params: { path: { id } } })).data;
+  }, MAILING_KEYS);
+  const send = useApiMutation(async () => {
+    await saveDraft();
+    return (await api.POST('/api/v1/admin/mailing/mailings/{id}/send', { params: { path: { id } } })).data;
+  }, MAILING_KEYS);
   const remove = useApiMutation(
     () => api.DELETE('/api/v1/admin/mailing/mailings/{id}', { params: { path: { id } } }),
     MAILING_KEYS,
@@ -501,7 +504,7 @@ export function MailingEditorPage() {
             </div>
           ) : null}
           {!isNew && !readOnly ? (
-            <p className="muted">Sla eerst op; de testmail en het versturen gebruiken de opgeslagen versie.</p>
+            <p className="muted">De testmail en het versturen slaan eerst je wijzigingen op.</p>
           ) : null}
         </form>
 

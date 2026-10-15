@@ -30,7 +30,8 @@ test('fase 16: aanrijtijden genereren, aanpassen, meldplek en publiceren', async
   await expect(page.getByLabel('Aanrijtijd De Sökkels')).toHaveValue('10:34');
 
   await page.getByLabel('Aanrijtijd De Sökkels').fill('10:40');
-  await page.getByLabel('Aanrijtijd De Sökkels').blur();
+  // Ergens anders klikken, zoals een gebruiker doet; blur() werkt sinds Playwright 1.64 niet meer in de mobiele emulatie.
+  await page.getByRole('heading', { name: 'Aanrijtijden', level: 1 }).click();
   await expect
     .poll(() => api.lineupCalls.at(-1))
     .toMatchObject({ path: '/admin/parade/arrival-times/r-7', body: { arrivalTime: '10:40:00' } });

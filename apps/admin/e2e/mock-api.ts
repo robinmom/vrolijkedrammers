@@ -1107,6 +1107,93 @@ export class MockApi {
   ];
 
   festivalTaskCalls: string[] = [];
+  programCalls: string[] = [];
+  programDrawn = false;
+  programItems = [
+    {
+      id: 'b-1',
+      kind: 'Block',
+      title: 'Opening',
+      categoryKey: null,
+      start: '10:30',
+      end: '10:35',
+      startOverridden: false,
+      minutes: 5,
+      solo: false,
+      dances: [] as unknown[],
+    },
+    {
+      id: 'c-1',
+      kind: 'Category',
+      title: 'Minioren Garde',
+      categoryKey: 'Minioren|Garde|Group|',
+      start: '10:35',
+      end: '10:43',
+      startOverridden: false,
+      minutes: 4,
+      solo: false,
+      dances: [
+        {
+          entryId: 'e-1',
+          registrationId: 'r-1',
+          number: 1,
+          time: '10:35',
+          club: 'CV De Mölledraejers',
+          names: 'Möllekuukens',
+          title: null,
+          dancerCount: 8,
+          averageAge: 7,
+        },
+        {
+          entryId: 'e-2',
+          registrationId: 'r-2',
+          number: 2,
+          time: '10:39',
+          club: 'DG Iseldonk',
+          names: 'Unify',
+          title: null,
+          dancerCount: 9,
+          averageAge: 7.5,
+        },
+      ],
+    },
+    {
+      id: 'c-2',
+      kind: 'Category',
+      title: 'Senioren Solo Garde',
+      categoryKey: 'Senioren|Garde|Solo|',
+      start: '10:43',
+      end: '10:48',
+      startOverridden: false,
+      minutes: 5,
+      solo: true,
+      dances: [
+        {
+          entryId: 'e-3',
+          registrationId: 'r-3',
+          number: 1,
+          time: '10:43',
+          club: 'CV De Deurdouwers',
+          names: 'Lynn Knuman',
+          title: null,
+          dancerCount: 1,
+          averageAge: 16,
+        },
+      ],
+    },
+    {
+      id: 'b-2',
+      kind: 'Block',
+      title: 'Prijsuitreiking',
+      categoryKey: null,
+      start: '10:48',
+      end: '11:18',
+      startOverridden: false,
+      minutes: 30,
+      solo: false,
+      dances: [] as unknown[],
+    },
+  ];
 
   taskYear() {
     const names: Record<string, string> = { 'c-1': 'Pronkzitting', 'c-2': 'Optocht' };
@@ -2084,6 +2171,53 @@ export class MockApi {
     const taskPath = path.replace('/admin/festival/tasks', '/admin/tasks');
     if (path === '/admin/dance-festival/registrations') {
       return json({ festival: null, stats: {}, registrations: [] });
+    }
+    if (path.startsWith('/admin/dance-festival/program')) {
+      this.programCalls.push(`${method} ${path}${isJson ? ' ' + JSON.stringify(body) : ''}`);
+      const items = this.programItems;
+      if (path === '/admin/dance-festival/program' && method === 'GET') {
+        return json({
+          festivalId: 'f-1',
+          festivalName: 'Dansgardefestival 2027',
+          festivalDate: '2027-02-21',
+          location: 'Hart van Loil',
+          start: '10:30',
+          end: '11:30',
+          drawnAt: this.programDrawn ? '2026-10-15T20:00:00Z' : null,
+          categories: items.filter((i) => i.kind === 'Category').length,
+          dances: 3,
+          items,
+        });
+      }
+      if ((m = path.match(/^\/admin\/dance-festival\/program\/items\/([^/]+)\/move$/))) {
+        const index = items.findIndex((i) => i.id === m![1]);
+        const target = index + Number((body as { direction: number }).direction);
+        [items[index], items[target]] = [items[target]!, items[index]!];
+        return noContent();
+      }
+      if (path === '/admin/dance-festival/program/draw') {
+        this.programDrawn = true;
+        return noContent();
+      }
+      if (path === '/admin/dance-festival/program/blocks') {
+        items.splice(items.length - 1, 0, {
+          id: 'b-new',
+          kind: 'Block',
+          title: String((body as { title: string }).title),
+          categoryKey: null,
+          start: '11:00',
+          end: '11:15',
+          startOverridden: false,
+          minutes: Number((body as { minutes: number }).minutes),
+          solo: false,
+          dances: [],
+        });
+        return json({ id: 'b-new' }, 201);
+      }
+      if (path === '/admin/dance-festival/program/pdf') {
+        return route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.7' });
+      }
+      return noContent();
     }
 
     if (path === '/me') {

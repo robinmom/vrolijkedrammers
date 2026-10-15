@@ -9,6 +9,7 @@ import { Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { formatDate, formatDateTime } from '../format';
+import { FestivalProgramTab } from './FestivalProgramTab';
 import { TaskListPage } from './TasksPage';
 
 type Settings = Schemas['FestivalSettingsView'];
@@ -63,7 +64,7 @@ const decisionLabels: Record<Decision, string> = {
  */
 export function DanceFestivalPage() {
   const api = useApi();
-  const [tab, setTab] = useState<'registrations' | 'tasks' | 'settings'>('registrations');
+  const [tab, setTab] = useState<'registrations' | 'program' | 'tasks' | 'settings'>('registrations');
   const list = useQuery({
     queryKey: KEYS.list,
     queryFn: async () => (await api.GET('/api/v1/admin/dance-festival/registrations')).data ?? null,
@@ -101,6 +102,15 @@ export function DanceFestivalPage() {
           type="button"
           role="tab"
           className="tab"
+          aria-selected={tab === 'program'}
+          onClick={() => setTab('program')}
+        >
+          Programma
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className="tab"
           aria-selected={tab === 'tasks'}
           onClick={() => setTab('tasks')}
         >
@@ -118,12 +128,11 @@ export function DanceFestivalPage() {
         <button type="button" role="tab" className="tab" aria-selected={false} disabled title="Volgt later">
           Jurering (later)
         </button>
-        <button type="button" role="tab" className="tab" aria-selected={false} disabled title="Volgt later">
-          Programma (later)
-        </button>
       </div>
       <ProblemAlert error={list.error} />
-      {tab === 'tasks' ? (
+      {tab === 'program' ? (
+        <FestivalProgramTab />
+      ) : tab === 'tasks' ? (
         <TaskListPage list="festival" />
       ) : tab === 'settings' || (list.isSuccess && !festival) ? (
         <SettingsTab />

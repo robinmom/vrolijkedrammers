@@ -5210,6 +5210,397 @@
         }
       }
     },
+    "/api/v1/admin/dance-festival/program": {
+      "get": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramView"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramView"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/start": {
+      "put": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "summary": "Begintijd van het programma (de opening).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramStartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramStartRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/blocks": {
+      "post": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramBlockRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramBlockRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramBlockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/items/{id}": {
+      "put": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "summary": "Starttijd (leeg = aansluiten op het vorige), minuten per dans of duur, en bij een blok de naam.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramItemRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramItemRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/items/{id}/move": {
+      "post": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramMoveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramMoveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/dances/{entryId}/move": {
+      "post": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "parameters": [
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramMoveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramMoveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/draw": {
+      "post": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "summary": "Loting: de volgorde binnen elke categorie willekeurig maken.",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/program/pdf": {
+      "get": {
+        "tags": [
+          "AdminFestivalProgram"
+        ],
+        "summary": "Het programma als PDF (A4, huisstijl) om af te drukken.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/pdf": { }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/groups": {
       "get": {
         "tags": [
@@ -32912,6 +33303,12 @@
           }
         }
       },
+      "FestivalProgramItemKind": {
+        "enum": [
+          "Category",
+          "Block"
+        ]
+      },
       "FestivalPublicView": {
         "required": [
           "state",
@@ -40715,6 +41112,243 @@
           }
         }
       },
+      "ProgramBlockRequest": {
+        "required": [
+          "title",
+          "minutes"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "minutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "afterItemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ProgramDance": {
+        "required": [
+          "entryId",
+          "registrationId",
+          "number",
+          "time",
+          "club",
+          "names",
+          "title",
+          "dancerCount",
+          "averageAge"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "time": {
+            "type": "string"
+          },
+          "club": {
+            "type": "string"
+          },
+          "names": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dancerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averageAge": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Een dans in het programma; `Time` is de starttijd (HH:mm), `Number` de plek in de categorie."
+      },
+      "ProgramItemRequest": {
+        "required": [
+          "start",
+          "minutes"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "minutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ProgramItemView": {
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "categoryKey",
+          "start",
+          "end",
+          "startOverridden",
+          "minutes",
+          "solo",
+          "dances"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/FestivalProgramItemKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "categoryKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "startOverridden": {
+            "type": "boolean"
+          },
+          "minutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "solo": {
+            "type": "boolean"
+          },
+          "dances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramDance"
+            }
+          }
+        },
+        "description": "Een onderdeel; `StartOverridden`: de starttijd is met de hand gezet (anders sluit het aan op het vorige)."
+      },
+      "ProgramMoveRequest": {
+        "required": [
+          "direction"
+        ],
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ProgramStartRequest": {
+        "required": [
+          "start"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string"
+          }
+        }
+      },
+      "ProgramView": {
+        "required": [
+          "festivalId",
+          "festivalName",
+          "festivalDate",
+          "location",
+          "start",
+          "end",
+          "drawnAt",
+          "categories",
+          "dances",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "festivalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "festivalName": {
+            "type": "string"
+          },
+          "festivalDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "drawnAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "categories": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dances": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramItemView"
+            }
+          }
+        }
+      },
       "ProvisioningResponse": {
         "required": [
           "id",
@@ -45479,6 +46113,9 @@
     },
     {
       "name": "AdminEvents"
+    },
+    {
+      "name": "AdminFestivalProgram"
     },
     {
       "name": "AdminGroups"

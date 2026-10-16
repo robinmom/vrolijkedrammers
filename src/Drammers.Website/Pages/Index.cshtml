@@ -112,33 +112,43 @@
         <partial name="_JoinTiles" />
     </section>
 
-    <section class="card facebook" aria-labelledby="facebook-kop">
+    <section class="card instagram" aria-labelledby="instagram-kop">
         <div class="section-head">
-            <h2 id="facebook-kop">Volg ons op Facebook</h2>
-            @if (Model.FacebookPageUrl is not null)
+            <h2 id="instagram-kop">Volg ons op Instagram</h2>
+            @if (Model.InstagramUrl is not null)
             {
-                <a class="link-arrow" href="@Model.FacebookPageUrl" rel="noopener">Naar onze pagina ↗</a>
+                <a class="link-arrow" href="@Model.InstagramUrl" rel="noopener">Naar ons Instagram ↗</a>
             }
         </div>
-        @if (Model.Facebook.Count > 0)
+        @if (Model.Instagram.Count > 0)
         {
-            <div class="fb-posts">
-                @foreach (var p in Model.Facebook)
+            <div class="ig-posts">
+                @foreach (var p in Model.Instagram)
                 {
-                    <a class="fb-post" href="@p.Link" rel="noopener">
+                    <a class="ig-post" href="@p.Link" rel="noopener" aria-label="@(p.Video ? "Video" : "Foto") op Instagram, @Nl.Date(p.CreatedAt)@(p.Caption is { Length: > 0 } ? ": " + p.Caption : "")">
                         @if (p.ImageUrl is not null)
                         {
                             <img src="@p.ImageUrl" alt="" loading="lazy" referrerpolicy="no-referrer">
                         }
-                        <p>@(p.Message ?? "Bekijk dit bericht op Facebook")</p>
-                        <small>@Nl.Date(p.CreatedAt)</small>
+                        else
+                        {
+                            <span class="img-empty" aria-hidden="true"></span>
+                        }
+                        @if (p.Video)
+                        {
+                            <span class="ig-video" aria-hidden="true">▶</span>
+                        }
+                        @if (p.Caption is { Length: > 0 })
+                        {
+                            <p aria-hidden="true">@p.Caption</p>
+                        }
                     </a>
                 }
             </div>
         }
         else
         {
-            <p class="muted">Het laatste nieuws, foto's en filmpjes delen we ook op Facebook.</p>
+            <p class="muted">Foto's en filmpjes van onze activiteiten delen we op Instagram.</p>
         }
     </section>
 </div>

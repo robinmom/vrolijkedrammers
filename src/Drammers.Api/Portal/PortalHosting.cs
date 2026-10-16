@@ -13,16 +13,16 @@ public static class PortalHosting
         "default-src 'self'; img-src 'self' data: https:; connect-src 'self' https://*.ciamlogin.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
-    // De website (fase 21c): alles van de eigen origin; afbeeldingen ook van het Facebook-CDN (feed op de homepage).
+    // De website (fase 21c): alles van de eigen origin; afbeeldingen ook van het CDN van Facebook/Instagram (feed op de homepage).
     // Sinds 21d horen lid worden, optocht inschrijven, aanrijtijden en kaarten bij de website; connect-src ook naar de
     // inlogpagina van Entra External ID (tokens ophalen bij het inloggen voor de optocht).
     private const string WebsiteContentSecurityPolicy =
-        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; connect-src 'self' https://*.ciamlogin.com; " +
+        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net https://*.cdninstagram.com; connect-src 'self' https://*.ciamlogin.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
     // Met Cloudflare Turnstile (fase 21i, alleen als de sleutels zijn gezet): het script en het iframe van Cloudflare.
     private const string WebsiteWithTurnstileContentSecurityPolicy =
-        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; connect-src 'self' https://*.ciamlogin.com; " +
+        "default-src 'self'; img-src 'self' data: https://*.fbcdn.net https://*.cdninstagram.com; connect-src 'self' https://*.ciamlogin.com; " +
         "script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 

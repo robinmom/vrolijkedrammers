@@ -37,9 +37,9 @@ public static class WebsiteSetup
         services.AddScoped<SiteShell>();
         services.AddScoped<Redirects>();
         services.AddScoped<ContactLinks>();
-        services.Configure<FacebookOptions>(configuration.GetSection(FacebookOptions.SectionName));
+        services.Configure<InstagramOptions>(configuration.GetSection(InstagramOptions.SectionName));
         services.AddMemoryCache();
-        services.AddHttpClient<FacebookFeed>(http => http.Timeout = TimeSpan.FromSeconds(10));
+        services.AddHttpClient<InstagramFeed>(http => http.Timeout = TimeSpan.FromSeconds(10));
         services.AddOutputCache(options =>
             options.AddPolicy(CachePolicy, policy => policy.Expire(TimeSpan.FromSeconds(60)).SetVaryByQuery("*").Tag(CachePolicy)));
         return services;

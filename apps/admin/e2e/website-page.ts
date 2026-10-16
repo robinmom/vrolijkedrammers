@@ -18,7 +18,7 @@ const types: Record<string, string> = {
 };
 
 export const websiteCsp =
-  "default-src 'self'; img-src 'self' data: https://*.fbcdn.net; connect-src 'self' https://*.ciamlogin.com; " +
+  "default-src 'self'; img-src 'self' data: https://*.fbcdn.net https://*.cdninstagram.com; connect-src 'self' https://*.ciamlogin.com; " +
   "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
 export interface WebsiteForm {

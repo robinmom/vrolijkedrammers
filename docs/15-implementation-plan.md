@@ -999,7 +999,7 @@ Legenda: **Tests** vermeldt de fase-specifieke tests bovenop de algemene DoD. En
 - Alleen openbare inhoud: dezelfde filters als de API voor gasten (`ContentViewer.Guest`), nieuws alleen met "Ook tonen op de website".
 - Afbeeldingen via `/media/{soort}/{id}?v=…` in plaats van SAS-links: het endpoint controleert per aanvraag of het item openbaar is (een verborgen foto of een ledenalbum geeft 404) en levert met `ETag` en `Cache-Control` (foto's 1 uur, overige afbeeldingen 1 dag).
 - Pagina's worden 60 seconden gecachet (output cache); een geslaagde wijziging via `/api/v1/admin/…` maakt de cache meteen leeg.
-- Facebook: `FacebookFeed` haalt de laatste 3 berichten op via de Graph API met het paginatoken uit Key Vault (secret `facebook-page-token`), een half uur in het geheugen. Zonder token toont de site alleen de link naar de pagina.
+- Instagram (2026-10-16, eerder Facebook): `InstagramFeed` haalt via de Graph API de laatste 6 posts op van het Instagram-account dat aan de Facebookpagina is gekoppeld, met het paginatoken uit Key Vault (secret `facebook-page-token`), een half uur in het geheugen. Zonder token of koppeling toont de site alleen de link naar Instagram (runbook instagram).
 - Beveiliging: CSP voor de website (alles van de eigen origin, afbeeldingen ook van `*.fbcdn.net`), `X-Frame-Options: DENY`. Lettertypen zelf gehost (Poppins en Inter, OFL), geen Google Fonts en geen cookies.
 - Toegankelijkheid: axe (WCAG 2.1 AA) zonder ernstige fouten op desktop en mobiel; de paginakop in het donkerdere Loils blauw (#066AA6) voor voldoende contrast.
 - Tests: integratie (`WebsitePagesTests`).

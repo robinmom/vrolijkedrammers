@@ -37,6 +37,12 @@ public static class InvoicePdf
         }
     }
 
+    /// <summary>Het logo (PNG) voor andere documenten in de huisstijl; registreert ook de lettertypen.</summary>
+    public static byte[] LogoPng => Logo.Value;
+
+    /// <summary>Andere documenten in de huisstijl (festival): zorgt dat Inter en Poppins zijn geregistreerd.</summary>
+    public static void EnsureFonts() => _ = Logo;
+
     /// <summary>Eén factuur.</summary>
     public static byte[] Generate(AdvertiserInvoice invoice, InvoiceIssuer issuer) => Generate([invoice], issuer);
 

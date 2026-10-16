@@ -1486,7 +1486,10 @@ ul.alert {
 /* Tabs (fase 17: koppelverzoeken). */
 .tabs {
   display: flex;
-  gap: 24px;
+  /* Veel tabbladen (bijv. het Dansgardefestival) lopen op de telefoon door naar een tweede regel. */
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 4px;
   border-bottom: 1px solid var(--dvd-border);
   margin-bottom: 20px;
 }
@@ -2284,4 +2287,80 @@ fieldset {
   color: var(--dvd-action-danger);
   border: 1px solid var(--dvd-action-danger);
   background: transparent;
+}
+
+/* Dansgardefestival: programma (2026-10-15). */
+.program-list,
+.program-dances {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.program-list {
+  display: grid;
+  gap: 10px;
+}
+
+.program-item {
+  background: var(--dvd-surface);
+  border: 1px solid var(--dvd-border);
+  border-radius: var(--dvd-radius-card);
+  overflow: hidden;
+}
+
+.program-item.block {
+  background: var(--dvd-surface-muted);
+}
+
+.program-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.program-row .grow {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.program-time {
+  width: 7.5em;
+}
+
+.program-minutes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.program-minutes input {
+  width: 4.5em;
+}
+
+.program-dances li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 8px 44px;
+  border-top: 1px solid var(--dvd-border);
+}
+
+.program-dances .grow {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.program-start input {
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border: 1px solid var(--dvd-border);
+  border-radius: 8px;
+  padding: 2px 6px;
+  background: var(--dvd-surface);
+  color: var(--dvd-text-primary);
 }

@@ -4435,6 +4435,394 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/dance-festival/program": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProgramView"];
+                        "application/json": components["schemas"]["ProgramView"];
+                        "text/json": components["schemas"]["ProgramView"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Begintijd van het programma (de opening). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProgramStartRequest"];
+                    "text/json": components["schemas"]["ProgramStartRequest"];
+                    "application/*+json": components["schemas"]["ProgramStartRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProgramBlockRequest"];
+                    "text/json": components["schemas"]["ProgramBlockRequest"];
+                    "application/*+json": components["schemas"]["ProgramBlockRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Starttijd (leeg = aansluiten op het vorige), minuten per dans of duur, en bij een blok de naam. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProgramItemRequest"];
+                    "text/json": components["schemas"]["ProgramItemRequest"];
+                    "application/*+json": components["schemas"]["ProgramItemRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/items/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProgramMoveRequest"];
+                    "text/json": components["schemas"]["ProgramMoveRequest"];
+                    "application/*+json": components["schemas"]["ProgramMoveRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/dances/{entryId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProgramMoveRequest"];
+                    "text/json": components["schemas"]["ProgramMoveRequest"];
+                    "application/*+json": components["schemas"]["ProgramMoveRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/draw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Loting: de volgorde binnen elke categorie willekeurig maken. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/program/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Het programma als PDF (A4, huisstijl) om af te drukken. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/groups": {
         parameters: {
             query?: never;
@@ -23497,6 +23885,8 @@ export interface components {
             /** Format: date-time */
             paidAt: null | string;
         };
+        /** @enum {unknown} */
+        FestivalProgramItemKind: "Category" | "Block";
         FestivalPublicView: {
             state: components["schemas"]["FestivalState"];
             name: string;
@@ -25643,6 +26033,75 @@ export interface components {
             status?: null | number;
             detail?: null | string;
             instance?: null | string;
+        };
+        ProgramBlockRequest: {
+            title: string;
+            /** Format: int32 */
+            minutes: number;
+            /** Format: uuid */
+            afterItemId?: null | string;
+        };
+        /** @description Een dans in het programma; `Time` is de starttijd (HH:mm), `Number` de plek in de categorie. */
+        ProgramDance: {
+            /** Format: uuid */
+            entryId: string;
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            number: number;
+            time: string;
+            club: string;
+            names: string;
+            title: null | string;
+            /** Format: int32 */
+            dancerCount: number;
+            /** Format: double */
+            averageAge: number;
+        };
+        ProgramItemRequest: {
+            start: null | string;
+            /** Format: int32 */
+            minutes: number;
+            title?: null | string;
+        };
+        /** @description Een onderdeel; `StartOverridden`: de starttijd is met de hand gezet (anders sluit het aan op het vorige). */
+        ProgramItemView: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["FestivalProgramItemKind"];
+            title: string;
+            categoryKey: null | string;
+            start: string;
+            end: string;
+            startOverridden: boolean;
+            /** Format: int32 */
+            minutes: number;
+            solo: boolean;
+            dances: components["schemas"]["ProgramDance"][];
+        };
+        ProgramMoveRequest: {
+            /** Format: int32 */
+            direction: number;
+        };
+        ProgramStartRequest: {
+            start: string;
+        };
+        ProgramView: {
+            /** Format: uuid */
+            festivalId: string;
+            festivalName: string;
+            /** Format: date */
+            festivalDate: string;
+            location: string;
+            start: string;
+            end: string;
+            /** Format: date-time */
+            drawnAt: null | string;
+            /** Format: int32 */
+            categories: number;
+            /** Format: int32 */
+            dances: number;
+            items: components["schemas"]["ProgramItemView"][];
         };
         ProvisioningResponse: {
             /** Format: uuid */

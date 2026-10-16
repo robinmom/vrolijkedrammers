@@ -89,3 +89,17 @@ internal sealed class DanceFestivalPaymentConfiguration : IEntityTypeConfigurati
         builder.HasOne<DanceFestivalRegistration>().WithMany().HasForeignKey(p => p.RegistrationId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+internal sealed class DanceFestivalProgramItemConfiguration : IEntityTypeConfiguration<DanceFestivalProgramItem>
+{
+    public void Configure(EntityTypeBuilder<DanceFestivalProgramItem> builder)
+    {
+        builder.ToTable("DanceFestivalProgramItem", Schemas.Content, t => t.HasCheckConstraint("CK_DanceFestivalProgramItem_minutes", "[minutes] >= 0 AND [minutes] <= 240"));
+        builder.Property(i => i.Id).ValueGeneratedNever();
+        builder.Property(i => i.CategoryKey).HasMaxLength(60);
+        builder.Property(i => i.Title).HasMaxLength(80);
+        builder.HasIndex(i => new { i.FestivalId, i.SortOrder });
+        builder.HasIndex(i => new { i.FestivalId, i.CategoryKey }).IsUnique().HasFilter("[category_key] IS NOT NULL");
+        builder.HasOne<DanceFestival>().WithMany().HasForeignKey(i => i.FestivalId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

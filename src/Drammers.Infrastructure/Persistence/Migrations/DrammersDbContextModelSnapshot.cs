@@ -802,6 +802,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
+                    b.Property<DateTime?>("DrawnAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("drawn_at");
+
                     b.Property<DateOnly>("FestivalDate")
                         .HasColumnType("date")
                         .HasColumnName("festival_date");
@@ -852,6 +856,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)")
                         .HasColumnName("privacy_blob_path");
+
+                    b.Property<TimeOnly>("ProgramStart")
+                        .HasColumnType("time")
+                        .HasColumnName("program_start");
 
                     b.Property<DateTime?>("RegistrationClosesAt")
                         .HasColumnType("datetime2(3)")
@@ -945,6 +953,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)")
                         .HasColumnName("names");
+
+                    b.Property<int?>("ProgramOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("program_order");
 
                     b.Property<Guid>("RegistrationId")
                         .HasColumnType("uniqueidentifier")
@@ -1071,6 +1083,64 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_DanceFestivalPayment_amount", "[amount_cents] > 0");
 
                             t.HasCheckConstraint("CK_DanceFestivalPayment_status", "[status] IN ('Open', 'Paid', 'Canceled')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalProgramItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CategoryKey")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("category_key");
+
+                    b.Property<Guid>("FestivalId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("festival_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("Minutes")
+                        .HasColumnType("int")
+                        .HasColumnName("minutes");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time")
+                        .HasColumnName("start_time");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestivalProgramItem");
+
+                    b.HasIndex("FestivalId", "CategoryKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DanceFestivalProgramItem_festival_id_category_key")
+                        .HasFilter("[category_key] IS NOT NULL");
+
+                    b.HasIndex("FestivalId", "SortOrder")
+                        .HasDatabaseName("IX_DanceFestivalProgramItem_festival_id_sort_order");
+
+                    b.ToTable("DanceFestivalProgramItem", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_DanceFestivalProgramItem_kind", "[kind] IN ('Category', 'Block')");
+
+                            t.HasCheckConstraint("CK_DanceFestivalProgramItem_minutes", "[minutes] >= 0 AND [minutes] <= 240");
                         });
                 });
 
@@ -9223,6 +9293,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalRegistration", null)
                         .WithMany()
                         .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalProgramItem", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestival", null)
+                        .WithMany()
+                        .HasForeignKey("FestivalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

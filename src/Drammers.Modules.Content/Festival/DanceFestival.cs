@@ -47,6 +47,12 @@ public sealed class DanceFestival : IAuditable
     /// <summary>Privacyverklaring (PDF) in de container <c>content</c>.</summary>
     public string? PrivacyBlobPath { get; set; }
 
+    /// <summary>Begin van het programma (de opening); de rest sluit daarop aan.</summary>
+    public TimeOnly ProgramStart { get; set; } = new(10, 30);
+
+    /// <summary>Wanneer de volgorde binnen de categorieën is geloot (leeg = nog niet).</summary>
+    public DateTime? DrawnAt { get; set; }
+
     /// <summary>Laatst uitgegeven inschrijfnummer (UPDATE … OUTPUT, zoals bij de optocht).</summary>
     public int LastRegistrationNumber { get; set; }
 
@@ -195,6 +201,9 @@ public sealed class DanceFestivalEntry
 
     /// <summary>Door de vereniging verwijderd na een beslissing (blijft zichtbaar in de geschiedenis).</summary>
     public DateTime? RemovedAt { get; set; }
+
+    /// <summary>Volgorde binnen de programmacategorie (loting of verschuiven); leeg = op inschrijfnummer.</summary>
+    public int? ProgramOrder { get; set; }
 
     public byte[] RowVersion { get; set; } = [];
 

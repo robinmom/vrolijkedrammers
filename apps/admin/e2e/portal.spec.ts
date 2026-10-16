@@ -936,7 +936,6 @@ test('dansgardefestival: eigen takenlijst met import uit het draaiboek en overig
   await open(page, api, 'dansgarde/festival');
   await page.getByRole('tab', { name: 'Takenlijst' }).click();
   await expect(page.getByRole('heading', { name: 'Voorbereiding festival: 67%' })).toBeVisible();
-  await expectNoSeriousA11yIssues(page);
 
   await page.getByLabel('Draaiboek importeren').setInputFiles({
     name: 'draaiboek.xlsx',
@@ -947,11 +946,46 @@ test('dansgardefestival: eigen takenlijst met import uit het draaiboek en overig
 
   await page.getByRole('button', { name: 'Artiesten boeken' }).click();
   await page.getByLabel('Overige personen (geen lid of een groep)').fill('Raad van Elf');
-  await page.getByLabel('Overige personen (geen lid of een groep)').press('Enter');
+  await page.getByRole('dialog').getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Taak opgeslagen.')).toBeVisible();
   expect(api.tasks.find((t) => t.id === 't-2')).toMatchObject({ otherPeople: 'Raad van Elf' });
   expect(api.festivalTaskCalls).toContain('PUT /admin/festival/tasks/t-2');
 
   await page.getByRole('button', { name: 'Rapportage' }).click();
   await expect(page.getByRole('heading', { name: 'Rapportage takenlijst festival 2026/2027' })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+});
+
+test('dansgardefestival: programma samenstellen met schuiven, loten, blok en afdrukken', async ({ page }) => {
+  const api = new MockApi(['festival.manage']);
+  await open(page, api, 'dansgarde/festival');
+  await page.getByRole('tab', { name: 'Programma' }).click();
+  await expect(page.getByRole('heading', { name: 'Programma', level: 2 })).toBeVisible();
+  await page.getByRole('button', { name: 'Toon dansen Minioren Garde' }).click();
+  await expect(page.getByText('Möllekuukens')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Senioren Solo Garde omhoog' }).click();
+  await expect
+    .poll(() => api.programCalls)
+    .toContain('POST /admin/dance-festival/program/items/c-2/move {"direction":-1}');
+  await expect(page.locator('.program-item').nth(1)).toContainText('Senioren Solo Garde');
+
+  await page.getByLabel('Minuten per dans Minioren Garde').fill('5');
+  await page.getByLabel('Minuten per dans Minioren Garde').blur();
+  await expect
+    .poll(() => api.programCalls.find((c) => c.startsWith('PUT /admin/dance-festival/program/items/c-1')))
+    .toContain('"minutes":5');
+
+  await page.getByRole('button', { name: 'Loten' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Loten' }).click();
+  await expect(page.getByText('Geloot: de volgorde binnen elke categorie is nieuw.')).toBeVisible();
+
+  await page.getByRole('button', { name: '+ Blok (pauze…)' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Toevoegen' }).click();
+  await expect(page.getByText('Pauze toegevoegd.')).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Afdrukken (A4)' }).click();
+  expect((await download).suggestedFilename()).toBe('programma-dansgardefestival.pdf');
+  await expectNoSeriousA11yIssues(page);
 });

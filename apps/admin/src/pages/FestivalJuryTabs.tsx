@@ -358,6 +358,8 @@ export function FestivalResultsTab() {
         </button>
       </section>
 
+      <AfterAwards results={r} onMessage={setMessage} />
+
       <ConfirmDialog
         open={publishing}
         title={r.complete ? 'Uitslag naar de hoofdjury?' : 'Uitslag nog niet compleet'}
@@ -377,6 +379,129 @@ export function FestivalResultsTab() {
         }
       />
     </>
+  );
+}
+
+/** Na de prijsuitreiking: de uitslag op de website (nieuwsbericht) en de juryrapporten naar de verenigingen. */
+function AfterAwards({
+  results,
+  onMessage,
+}: {
+  results: Schemas['FestivalResults'];
+  onMessage: (text: string) => void;
+}) {
+  const api = useApi();
+  const status = useQuery({
+    queryKey: [...RESULTS_KEY, 'publish'],
+    queryFn: async () => (await api.GET('/api/v1/admin/dance-festival/results/publish')).data ?? null,
+  });
+  const [sending, setSending] = useState(false);
+  const [previewError, setPreviewError] = useState<unknown>(null);
+  const website = useApiMutation(() => api.POST('/api/v1/admin/dance-festival/results/website'), [RESULTS_KEY]);
+  const reports = useApiMutation(
+    async () => (await api.POST('/api/v1/admin/dance-festival/results/reports')).data?.queued ?? 0,
+    [RESULTS_KEY],
+  );
+  const open = Boolean(results.awardsCompletedAt);
+  const s = status.data;
+  const clubs = new Map(results.categories.flatMap((c) => c.rows.map((r) => [r.registrationId, r.club] as const)));
+
+  async function preview(registrationId: string, club: string) {
+    setPreviewError(null);
+    try {
+      const response = await api.GET('/api/v1/admin/dance-festival/results/reports/{registrationId}/pdf', {
+        params: { path: { registrationId } },
+        parseAs: 'blob',
+      });
+      if (response.data) {
+        const url = URL.createObjectURL(response.data as Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `juryrapport-${club}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      setPreviewError(error);
+    }
+  }
+
+  return (
+    <section className="card" aria-labelledby="na-prijsuitreiking">
+      <h2 id="na-prijsuitreiking">Website en rapporten</h2>
+      <p className="muted">
+        {open
+          ? 'De prijsuitreiking is afgerond. Zet de uitslag op de website (een nieuwsbericht met plaatsen en punten) en stuur elke vereniging haar juryrapport.'
+          : 'Kan pas na de prijsuitreiking: de hoofdjury rondt die af in de app (of zet hem hierboven op afgerond).'}
+      </p>
+      <ProblemAlert error={website.error ?? reports.error ?? previewError} />
+      <div className="actions">
+        <button
+          type="button"
+          className="button secondary"
+          disabled={!open || website.isPending}
+          onClick={() =>
+            website.mutate(undefined, {
+              onSuccess: () => {
+                onMessage('De uitslag staat op de website.');
+                void status.refetch();
+              },
+            })
+          }
+        >
+          {s?.newsId ? 'Website bijwerken' : 'Publiceer op website'}
+        </button>
+        <button type="button" className="button" disabled={!open || reports.isPending} onClick={() => setSending(true)}>
+          Rapporten versturen
+        </button>
+      </div>
+      {s ? (
+        <p className="muted small-text">
+          {s.newsSlug ? (
+            <>
+              Op de website:{' '}
+              <a href={`/nieuws/${s.newsSlug}`} target="_blank" rel="noreferrer">
+                /nieuws/{s.newsSlug}
+              </a>
+              {' · '}
+            </>
+          ) : null}
+          Rapporten verstuurd: {s.reportsSent} van {s.registrations} inschrijvingen
+        </p>
+      ) : null}
+      {clubs.size > 0 ? (
+        <details>
+          <summary>Rapport bekijken per vereniging</summary>
+          <ul className="list">
+            {[...clubs.entries()].map(([id, club]) => (
+              <li key={id} className="list-row">
+                <span className="grow">{club}</span>
+                <button type="button" className="link-button" onClick={() => void preview(id, club)}>
+                  Rapport (PDF)
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      <ConfirmDialog
+        open={sending}
+        title="Rapporten versturen?"
+        message="Elke vereniging met goedgekeurde dansen krijgt een e-mail van dansgardefestival@vrolijkedrammers.nl met haar juryrapport (PDF). Wie er al een heeft gekregen, krijgt geen tweede."
+        confirmLabel="Versturen"
+        busy={reports.isPending}
+        onCancel={() => setSending(false)}
+        onConfirm={() =>
+          reports.mutate(undefined, {
+            onSuccess: (count) => {
+              onMessage(`${count as number} rapporten worden verstuurd.`);
+              void status.refetch();
+            },
+            onSettled: () => setSending(false),
+          })
+        }
+      />
+    </section>
   );
 }
 

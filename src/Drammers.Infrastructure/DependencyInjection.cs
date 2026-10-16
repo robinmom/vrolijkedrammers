@@ -308,6 +308,8 @@ public static class DependencyInjection
         services.AddScoped<Festival.DanceFestivals>();
         services.AddScoped<Festival.FestivalProgramService>();
         services.AddScoped<Festival.FestivalJudgingService>();
+        services.AddScoped<Festival.FestivalResultsPublisher>();
+        services.AddScoped<IOutboxMessageHandler, Festival.FestivalReportMailHandler>();
         services.AddScoped<Members.MemberHistory>();
         services.AddScoped<Tasks.CarnivalTasks>();
         services.AddScoped<Sales.SaleAdministration>();

@@ -62,6 +62,12 @@ public sealed class DanceFestival : IAuditable
     /// <summary>"hoofdjury" of "organisatie".</summary>
     public string? AwardsCompletedBy { get; set; }
 
+    /// <summary>Het nieuwsbericht met de uitslag op de website (na de prijsuitreiking).</summary>
+    public Guid? ResultsNewsId { get; set; }
+
+    /// <summary>Wanneer de rapporten naar de verenigingen zijn klaargezet om te versturen.</summary>
+    public DateTime? ReportsSentAt { get; set; }
+
     /// <summary>Laatst uitgegeven inschrijfnummer (UPDATE … OUTPUT, zoals bij de optocht).</summary>
     public int LastRegistrationNumber { get; set; }
 
@@ -124,6 +130,9 @@ public sealed class DanceFestivalRegistration
 
     /// <summary>Laatste vraag om meer informatie (voor de mail en de wijzigpagina).</summary>
     public string? InfoRequest { get; set; }
+
+    /// <summary>Het juryrapport is verstuurd (na de prijsuitreiking).</summary>
+    public DateTime? ReportSentAt { get; set; }
 
     public List<DanceFestivalEntry> Entries { get; set; } = [];
 }

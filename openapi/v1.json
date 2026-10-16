@@ -21545,6 +21545,173 @@
         }
       }
     },
+    "/api/v1/admin/dance-festival/results/publish": {
+      "get": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "summary": "Staat de uitslag op de website en hoeveel rapporten zijn verstuurd.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalPublishStatus"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalPublishStatus"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalPublishStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results/website": {
+      "post": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "summary": "De uitslag als nieuwsbericht op de website (pas na de prijsuitreiking).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results/reports": {
+      "post": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "summary": "De juryrapporten naar de verenigingen (pas na de prijsuitreiking; wie er al een heeft, krijgt geen tweede).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalReportsQueued"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalReportsQueued"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalReportsQueued"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results/reports/{registrationId}/pdf": {
+      "get": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "summary": "Voorbeeld van het rapport van één inschrijving (PDF).",
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/pdf": { }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jury/current": {
       "get": {
         "tags": [
@@ -34196,6 +34363,46 @@
           }
         }
       },
+      "FestivalPublishStatus": {
+        "required": [
+          "newsId",
+          "newsSlug",
+          "reportsSentAt",
+          "reportsSent",
+          "registrations"
+        ],
+        "type": "object",
+        "properties": {
+          "newsId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "newsSlug": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reportsSentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "reportsSent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "registrations": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "FestivalRegistrationDetail": {
         "required": [
           "id",
@@ -34384,6 +34591,18 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "FestivalReportsQueued": {
+        "required": [
+          "queued"
+        ],
+        "type": "object",
+        "properties": {
+          "queued": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

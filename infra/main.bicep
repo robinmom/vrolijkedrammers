@@ -82,6 +82,7 @@ var emailSenders = {
   optocht: 'De Vrolijke Drammers – Optocht'
   penningmeester: 'De Vrolijke Drammers – Penningmeester'
   voorzitter: 'De Vrolijke Drammers – Voorzitter'
+  dansgardefestival: 'De Vrolijke Drammers – Dansgardefestival'
 }
 
 @description('Eigen domeinen die al een certificaat (SNI) hebben; de deploy-workflow bepaalt dit vóór de uitrol.')

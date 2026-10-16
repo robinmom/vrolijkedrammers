@@ -3,7 +3,7 @@
 **Waarom.** Mailings via Azure Communication Services (ACS) belandden bij Outlook.com in Ongewenst. SPF, DKIM en DMARC
 slaagden wel (SCL 5, `SpamFilterAuthJ`). ACS verstuurt via gedeelde servers met weinig reputatie.
 
-**Wat verandert.** Mailings (nieuwsbrieven, uitnodigingen en hun testmail) van voorzitter@ en secretaris@ gaan via de
+**Wat verandert.** Mailings (nieuwsbrieven, uitnodigingen en hun testmail) van voorzitter@ en secretaris@, en de juryrapporten van dansgardefestival@, gaan via de
 echte mailbox in Microsoft 365, met Microsoft Graph. De koppen voor afmelden met één klik gaan mee.
 
 - Elke verstuurde mail staat ook bij **Verzonden items** van die mailbox.

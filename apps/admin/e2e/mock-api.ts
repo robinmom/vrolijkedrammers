@@ -1109,6 +1109,8 @@ export class MockApi {
   festivalTaskCalls: string[] = [];
   programCalls: string[] = [];
   festivalCalls: string[] = [];
+  festivalNewsId: string | null = null;
+  festivalReports = 0;
   festivalJurors = [
     {
       userId: 'j-1',
@@ -2281,6 +2283,23 @@ export class MockApi {
       this.festivalCalls.push(`${method} ${path}${isJson ? ' ' + JSON.stringify(body) : ''}`);
       if (path === '/admin/dance-festival/results/pdf') {
         return route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.7' });
+      }
+      if (path === '/admin/dance-festival/results/publish') {
+        return json({
+          newsId: this.festivalNewsId,
+          newsSlug: this.festivalNewsId ? 'uitslag-dansgardefestival-2027' : null,
+          reportsSentAt: null,
+          reportsSent: this.festivalReports,
+          registrations: 14,
+        });
+      }
+      if (path === '/admin/dance-festival/results/website') {
+        this.festivalNewsId = 'n-festival';
+        return json({ id: 'n-festival' });
+      }
+      if (path === '/admin/dance-festival/results/reports') {
+        this.festivalReports = 14;
+        return json({ queued: 14 });
       }
       if (path === '/admin/dance-festival/results/head-jury')
         this.festivalResults.headJuryPublishedAt = '2027-02-21T15:00:00Z';

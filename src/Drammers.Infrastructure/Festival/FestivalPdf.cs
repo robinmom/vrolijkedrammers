@@ -21,7 +21,7 @@ public static class FestivalPdf
     internal const string Line = "#E2E6EA";
     internal const string Gold = "#FFF3CC";
 
-    internal static readonly CultureInfo Dutch = CultureInfo.GetCultureInfo("nl-NL");
+    public static readonly CultureInfo Dutch = CultureInfo.GetCultureInfo("nl-NL");
 
     // Licentie (Community) en lettertypen zet de factuurcode; vóór het eerste document.
     static FestivalPdf() => InvoicePdf.EnsureFonts();
@@ -99,6 +99,94 @@ public static class FestivalPdf
                 });
             }
         }).WithMetadata(new DocumentMetadata { Title = $"Uitslag {results.FestivalName}", Author = "De Vrolijke Drammers" }).GeneratePdf();
+
+    /// <summary>Kleuren per jurylid in het rapport (blauw, groen, geel, dan herhalen); tekstkleur voor het label.</summary>
+    private static readonly (string Bar, string Text)[] JurorColors = [("#087BC1", "#066AA6"), ("#39A935", "#2A7F27"), ("#F4B942", "#8A6100"), ("#ED0012", "#B3000E")];
+
+    /// <summary>
+    /// Het juryrapport voor één vereniging (2026-10-15, Figma "Rapport A4"): per eigen dans de plaats, de punten per jurylid
+    /// en de opmerkingen (anoniem: "Jurylid 2"), daarna de totale uitslag met de eigen dansen gemarkeerd.
+    /// </summary>
+    public static byte[] Report(FestivalReport report) =>
+        Document.Create(document =>
+        {
+            document.Page(page =>
+            {
+                Setup(page, "Juryrapport", $"{report.Results.FestivalName} · {report.Results.FestivalDate.ToString("dddd d MMMM yyyy", Dutch)} · {report.Results.Location}");
+                page.Content().PaddingHorizontal(36).PaddingTop(16).Column(column =>
+                {
+                    column.Spacing(12);
+                    column.Item().Text(report.ClubName).FontFamily("Poppins").Bold().FontSize(15).FontColor(Red);
+                    column.Item().Text("Hartelijk dank voor jullie deelname. In dit rapport staan per dans de punten en opmerkingen van de jury. De juryleden zijn genummerd; achterin staat de volledige uitslag.");
+                    foreach (var dance in report.Dances)
+                    {
+                        column.Item().ShowEntire().Border(0.75f).BorderColor(Line).Padding(12).Column(card => DanceCard(card, dance));
+                    }
+
+                    column.Item().PageBreak();
+                    column.Item().Text("Uitslag").FontFamily("Poppins").Bold().FontSize(15).FontColor(Red);
+                    column.Item().Text("Totale uitslag per categorie (punten van alle juryleden samen). Jullie dansen zijn gemarkeerd.").FontColor(Muted);
+                    foreach (var category in report.Results.Categories)
+                    {
+                        column.Item().ShowEntire().Column(c => ResultTable(c, category, report.RegistrationId));
+                    }
+                });
+                Footer(page);
+            });
+        }).WithMetadata(new DocumentMetadata { Title = $"Juryrapport {report.ClubName}", Author = "De Vrolijke Drammers" }).GeneratePdf();
+
+    private static void DanceCard(ColumnDescriptor card, ReportDance dance)
+    {
+        card.Spacing(8);
+        card.Item().Row(row =>
+        {
+            row.RelativeItem().Column(c =>
+            {
+                c.Item().Text(dance.Heading).FontFamily("Poppins").Bold().FontSize(11.5f);
+                c.Item().Text(dance.Details).FontColor(Muted).FontSize(8.5f);
+            });
+            row.ConstantItem(90).Background(Gold).Padding(6).AlignCenter().Column(c =>
+            {
+                c.Item().AlignCenter().Text($"{dance.Place}e van {dance.Of}").FontFamily("Poppins").Bold();
+                c.Item().AlignCenter().Text($"{dance.Total} punten").FontSize(8).FontColor(Muted);
+            });
+        });
+        card.Item().Table(table =>
+        {
+            table.ColumnsDefinition(c =>
+            {
+                c.RelativeColumn(2);
+                for (var i = 0; i < 5; i++)
+                {
+                    c.RelativeColumn();
+                }
+            });
+            foreach (var label in new[] { "", dance.Solo ? "Ritme" : "Synchroniteit", "Choreografie", "Uitvoering", "Moeilijkheid", "Totaal" })
+            {
+                table.Cell().Background(Grey).PaddingVertical(3).PaddingHorizontal(4).AlignCenter().Text(label).FontSize(8).Bold();
+            }
+
+            foreach (var juror in dance.Jurors)
+            {
+                table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).PaddingHorizontal(4).Text($"Jurylid {juror.Number}").FontColor(JurorColors[(juror.Number - 1) % JurorColors.Length].Text).Bold();
+                foreach (var v in juror.Values)
+                {
+                    table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).AlignCenter().Text(v?.ToString(Dutch) ?? "–");
+                }
+
+                table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).AlignCenter().Text(juror.Values.Sum(v => v ?? 0).ToString(Dutch)).Bold();
+            }
+        });
+        foreach (var comment in dance.Comments)
+        {
+            var (bar, text) = JurorColors[(comment.JurorNumber - 1) % JurorColors.Length];
+            card.Item().BorderLeft(3).BorderColor(bar).Background("#FAFAF7").PaddingVertical(5).PaddingHorizontal(8).Column(c =>
+            {
+                c.Item().Text($"Jurylid {comment.JurorNumber} · {dance.ShortHeading} – {dance.Names}").FontSize(8).Bold().FontColor(text);
+                c.Item().Text(comment.Text);
+            });
+        }
+    }
 
     /// <summary>Tabel van één categorie; <paramref name="highlight"/>: rijen van deze inschrijving gemarkeerd (rapport).</summary>
     internal static void ResultTable(ColumnDescriptor column, ResultCategory category, Guid? highlight)
@@ -179,3 +267,15 @@ public static class FestivalPdf
             });
         });
 }
+
+/// <summary>Gegevens voor het juryrapport van één vereniging.</summary>
+public sealed record FestivalReport(Guid RegistrationId, string ClubName, FestivalResults Results, IReadOnlyList<ReportDance> Dances);
+
+/// <summary>Een eigen dans in het rapport: kop ("Gardedans · Solo · Senioren"), plaats, punten per jurylid en opmerkingen.</summary>
+public sealed record ReportDance(
+    string Heading, string ShortHeading, string Names, string Details, bool Solo, int Place, int Of, int Total, IReadOnlyList<ReportJuror> Jurors, IReadOnlyList<ReportComment> Comments);
+
+/// <summary>Punten van één jurylid in de volgorde Synchroniteit (Ritme), Choreografie, Uitvoering, Moeilijkheid.</summary>
+public sealed record ReportJuror(int Number, IReadOnlyList<int?> Values);
+
+public sealed record ReportComment(int JurorNumber, string Text);

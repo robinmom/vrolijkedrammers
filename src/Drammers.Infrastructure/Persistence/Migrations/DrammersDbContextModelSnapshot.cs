@@ -882,6 +882,14 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("registration_opens_at");
 
+                    b.Property<DateTime?>("ReportsSentAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("reports_sent_at");
+
+                    b.Property<Guid?>("ResultsNewsId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("results_news_id");
+
                     b.Property<string>("RulesBlobPath")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)")
@@ -1241,6 +1249,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)")
                         .HasColumnName("remarks");
+
+                    b.Property<DateTime?>("ReportSentAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("report_sent_at");
 
                     b.Property<DateTime>("RulesAcceptedAt")
                         .HasColumnType("datetime2(3)")

@@ -19,4 +19,19 @@ public class FestivalPdfTests
         var pdf = FestivalPdf.Program(program);
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 4));
     }
+
+    [Fact]
+    public void Juryrapport_als_pdf_met_uitslag()
+    {
+        var registration = Guid.NewGuid();
+        var rows = new[] { new ResultRow(Guid.NewGuid(), registration, 1, "CV De Deurdouwers", "Lynn Knuman", null, 18, 18, 18, 18, 72, [36, 36]) };
+        var results = new FestivalResults(Guid.NewGuid(), "Dansgardefestival 2027", new DateOnly(2027, 2, 21), "Hart van Loil", [],
+            [new ResultCategory("Senioren|Garde|Solo|", "Senioren Solo Garde", 3, true, 2, 2, true, rows)], true, null, null, null);
+        var dance = new ReportDance("Gardedans · Solo · Senioren", "Gardedans", "Lynn Knuman", "Lynn Knuman · 1 danser · 16 jr", true, 1, 1, 72,
+            [new ReportJuror(1, [9, 9, 9, 9]), new ReportJuror(2, [9, 9, 9, 9])], [new ReportComment(2, "Sterke uitstraling")]);
+
+        var pdf = FestivalPdf.Report(new FestivalReport(registration, "CV De Deurdouwers", results, [dance]));
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 4));
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(FestivalPdf.Results(results), 0, 4));
+    }
 }

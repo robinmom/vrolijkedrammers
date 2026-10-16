@@ -6886,6 +6886,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/mailing/mailings/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Meerdere mailings tegelijk verwijderen (bijv. testmails), ook verstuurde. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MailingsDeleteRequest"];
+                    "text/json": components["schemas"]["MailingsDeleteRequest"];
+                    "application/*+json": components["schemas"]["MailingsDeleteRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MailingsDeletedResponse"];
+                        "application/json": components["schemas"]["MailingsDeletedResponse"];
+                        "text/json": components["schemas"]["MailingsDeletedResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/mailing/mailings/{id}/duplicate": {
         parameters: {
             query?: never;
@@ -25651,6 +25706,13 @@ export interface components {
             /** Format: int32 */
             recipientCount: number;
             progress: components["schemas"]["MailingProgressResponse"];
+        };
+        MailingsDeletedResponse: {
+            /** Format: int32 */
+            deleted: number;
+        };
+        MailingsDeleteRequest: {
+            ids: string[];
         };
         /**
          * @description Namens wie de mailing gaat (fase 27c): het secretariaat, of de voorzitter (bijv. de brief aan de adverteerders).

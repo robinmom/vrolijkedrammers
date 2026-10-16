@@ -225,6 +225,25 @@ public partial class MailingTests(SqlServerFixture sql) : IAsyncLifetime
         var copy = await _bestuur.PostAsync($"/api/v1/admin/mailing/mailings/{mailingId}/duplicate", null);
         var copyId = (await copy.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
         Assert.Equal("Draft", (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/mailing/mailings/{copyId}")).GetProperty("status").GetString());
+
+        // Ook een verstuurde mailing kan weg (2026-10-16), met zijn ontvangers; de afmelding blijft staan.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/mailing/mailings/{mailingId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _bestuur.GetAsync($"/api/v1/admin/mailing/mailings/{mailingId}")).StatusCode);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            Assert.False(await db.MailingRecipients.AnyAsync(r => r.MailingId == mailingId));
+            Assert.True(await db.MailingUnsubscribes.AnyAsync(u => u.Email == "gast@example.com"));
+        }
+
+        // Meerdere tegelijk: de kopie en een tweede concept.
+        var second = (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/mailing/mailings", MailingBody(listId))).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        var deleted = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/mailing/mailings/delete", new { ids = new[] { copyId, second } })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, deleted.GetProperty("deleted").GetInt32());
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/mailing/mailings"))!);
+
+        // Zonder mailings kan de groep wel weg.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/mailing/lists/{listId}")).StatusCode);
     }
 
     [Fact]

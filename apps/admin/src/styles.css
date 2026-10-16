@@ -1124,6 +1124,9 @@ ul.alert {
   border-radius: var(--dvd-radius-card);
   padding: 24px;
   width: min(560px, calc(100vw - 32px));
+  /* Een lang formulier (bijv. een taak op de telefoon) scrolt binnen het venster in plaats van eruit te vallen. */
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   background: var(--dvd-surface);
   color: var(--dvd-text-primary);
 }

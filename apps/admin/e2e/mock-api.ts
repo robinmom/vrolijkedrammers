@@ -1106,6 +1106,8 @@ export class MockApi {
     },
   ];
 
+  festivalTaskCalls: string[] = [];
+
   taskYear() {
     const names: Record<string, string> = { 'c-1': 'Pronkzitting', 'c-2': 'Optocht' };
     const tasks = this.tasks.map((t) => {
@@ -2074,6 +2076,15 @@ export class MockApi {
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
     const noContent = () => route.fulfill({ status: 204 });
     let m: RegExpMatchArray | null;
+    // Takenlijst van het Dansgardefestival: dezelfde mock als die van carnaval.
+    if (path.startsWith('/admin/festival/tasks')) {
+      this.festivalTaskCalls.push(`${method} ${path}`);
+      if (path === '/admin/festival/tasks/import') return json({ categories: 2, tasks: 3, skipped: 0 });
+    }
+    const taskPath = path.replace('/admin/festival/tasks', '/admin/tasks');
+    if (path === '/admin/dance-festival/registrations') {
+      return json({ festival: null, stats: {}, registrations: [] });
+    }
 
     if (path === '/me') {
       return json({
@@ -2086,32 +2097,32 @@ export class MockApi {
         features: {},
       });
     }
-    if (path === '/admin/tasks' && method === 'GET') {
+    if (taskPath === '/admin/tasks' && method === 'GET') {
       return json(this.taskYear());
     }
-    if (path === '/admin/tasks' && method === 'POST') {
+    if (taskPath === '/admin/tasks' && method === 'POST') {
       const id = `t-${this.tasks.length + 1}`;
       this.tasks.push({ ...(body as object), id } as never);
       return json({ id }, 201);
     }
-    if ((m = path.match(/^\/admin\/tasks\/(t-[^/]+)$/)) && method === 'PUT') {
+    if ((m = taskPath.match(/^\/admin\/tasks\/(t-[^/]+)$/)) && method === 'PUT') {
       const task = this.tasks.find((t) => t.id === m![1])!;
       Object.assign(task, body);
       return noContent();
     }
-    if (path === '/admin/tasks/copy' && method === 'POST') {
+    if (taskPath === '/admin/tasks/copy' && method === 'POST') {
       return json({ copied: ((body as { taskIds: string[] }).taskIds ?? []).length });
     }
-    if (path === '/admin/tasks/categories' && method === 'GET') {
+    if (taskPath === '/admin/tasks/categories' && method === 'GET') {
       return json([
         { id: 'c-1', name: 'Pronkzitting', sortOrder: 10, active: true, taskCount: 2 },
         { id: 'c-2', name: 'Optocht', sortOrder: 20, active: true, taskCount: 1 },
       ]);
     }
-    if (path === '/admin/tasks/members' && method === 'GET') {
+    if (taskPath === '/admin/tasks/members' && method === 'GET') {
       return json([{ memberId: 'm-2', name: 'Femke Franken-Peters' }]);
     }
-    if (path === '/admin/tasks/report' && method === 'GET') {
+    if (taskPath === '/admin/tasks/report' && method === 'GET') {
       const y = this.taskYear();
       const row = (name: string, percent: number) => ({
         name,

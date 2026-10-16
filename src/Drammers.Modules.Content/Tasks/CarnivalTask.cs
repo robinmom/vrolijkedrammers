@@ -2,10 +2,23 @@ using Drammers.SharedKernel.Persistence;
 
 namespace Drammers.Modules.Content.Tasks;
 
+/// <summary>
+/// Welke takenlijst (2026-10-15): die van carnaval (bestuur, recht task.manage) of die van het Dansgardefestival
+/// (organisatie, recht festival.manage). Beide per carnavalsjaar; het festival valt in februari in het carnavalsjaar.
+/// </summary>
+public enum TaskList
+{
+    Carnival,
+    Festival,
+}
+
 /// <summary>Categorie van de takenlijst (2026-10-15), zelf beheerd door het bestuur (bijv. Pronkzitting, Optocht).</summary>
 public sealed class TaskCategory
 {
     public Guid Id { get; set; }
+
+    /// <summary>De lijst waar de categorie (en dus haar taken) bij hoort.</summary>
+    public TaskList List { get; set; }
 
     public required string Name { get; set; }
 
@@ -54,6 +67,9 @@ public sealed class CarnivalTask : IAuditable
     public Guid? CopiedFromId { get; set; }
 
     public List<CarnivalTaskAssignee> Assignees { get; set; } = [];
+
+    /// <summary>Personen die geen lid zijn of een groep (bijv. "Raad van Elf, Hart van Loil"), vrije tekst.</summary>
+    public string? OtherPeople { get; set; }
 
     public byte[] RowVersion { get; set; } = [];
 

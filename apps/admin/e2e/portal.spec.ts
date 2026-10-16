@@ -930,3 +930,28 @@ test('takenlijst: totaal, taak bijwerken met voortgang en kopiëren naar volgend
   await open(page, api, 'taken/rapportage');
   await expect(page.getByRole('region', { name: 'Per persoon' }).getByText('Robin Mom')).toBeVisible();
 });
+
+test('dansgardefestival: eigen takenlijst met import uit het draaiboek en overige personen', async ({ page }) => {
+  const api = new MockApi(['festival.manage']);
+  await open(page, api, 'dansgarde/festival');
+  await page.getByRole('tab', { name: 'Takenlijst' }).click();
+  await expect(page.getByRole('heading', { name: 'Voorbereiding festival: 67%' })).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+
+  await page.getByLabel('Draaiboek importeren').setInputFiles({
+    name: 'draaiboek.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from('xlsx'),
+  });
+  await expect(page.getByText('Draaiboek ingelezen: 3 taken en 2 categorieën toegevoegd.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Artiesten boeken' }).click();
+  await page.getByLabel('Overige personen (geen lid of een groep)').fill('Raad van Elf');
+  await page.getByLabel('Overige personen (geen lid of een groep)').press('Enter');
+  await expect(page.getByText('Taak opgeslagen.')).toBeVisible();
+  expect(api.tasks.find((t) => t.id === 't-2')).toMatchObject({ otherPeople: 'Raad van Elf' });
+  expect(api.festivalTaskCalls).toContain('PUT /admin/festival/tasks/t-2');
+
+  await page.getByRole('button', { name: 'Rapportage' }).click();
+  await expect(page.getByRole('heading', { name: 'Rapportage takenlijst festival 2026/2027' })).toBeVisible();
+});

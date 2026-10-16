@@ -989,3 +989,37 @@ test('dansgardefestival: programma samenstellen met schuiven, loten, blok en afd
   expect((await download).suggestedFilename()).toBe('programma-dansgardefestival.pdf');
   await expectNoSeriousA11yIssues(page);
 });
+
+test('dansgardefestival: jury uitnodigen en uitslag naar de hoofdjury, afdrukken en prijsuitreiking', async ({
+  page,
+}) => {
+  const api = new MockApi(['festival.manage']);
+  await open(page, api, 'dansgarde/festival');
+  await page.getByRole('tab', { name: 'Jury' }).click();
+  await expect(page.getByRole('cell', { name: 'Jurylid 2' })).toBeVisible();
+  await page.getByRole('button', { name: '+ Jurylid uitnodigen' }).click();
+  await page.getByLabel('Naam').fill('Tonny');
+  await page.getByLabel('E-mailadres').fill('tonny@example.com');
+  await page.getByRole('dialog').getByRole('button', { name: 'Uitnodigen' }).click();
+  await expect(page.getByText('Tonny is uitgenodigd.')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Jurylid 3' })).toBeVisible();
+
+  // Uitslag: eerst de vraag, want nog niet alles is binnen.
+  await page.getByRole('tab', { name: 'Uitslag' }).click();
+  await expect(page.getByRole('heading', { name: 'Uitslag nog niet compleet' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ja, uitslag bekijken' }).click();
+  await expect(page.getByText('Junioren Drammers')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Publiceer naar hoofdjury' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Toch publiceren' }).click();
+  await expect(page.getByText('De uitslag staat klaar voor de hoofdjury.')).toBeVisible();
+  expect(api.festivalCalls).toContain('POST /admin/dance-festival/results/head-jury {"force":true}');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporteren (PDF)' }).click();
+  expect((await download).suggestedFilename()).toBe('uitslag-dansgardefestival.pdf');
+
+  await page.getByRole('button', { name: 'Prijsuitreiking afgerond (overrulen)' }).click();
+  await expect(page.getByText('Prijsuitreiking staat op afgerond.')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+});

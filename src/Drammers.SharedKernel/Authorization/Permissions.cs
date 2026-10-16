@@ -60,6 +60,10 @@ public static class Permissions
     public const string FestivalManage = "festival.manage";
     public const string TaskManage = "task.manage";
 
+    public const string FestivalJudge = "festival.judge";
+
+    public const string FestivalHeadJury = "festival.head-jury";
+
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
     [
@@ -122,6 +126,9 @@ public static class Permissions
         new(AdvertiserCollect, "Adverteerders ophalen in de app (collectant)", "Financieel"),
         new(FestivalManage, "Dansgardefestival: instellingen, inschrijvingen beoordelen, wachtlijst en betaallinks", "Content"),
         new(TaskManage, "Takenlijst carnaval: taken, categorieën, voortgang en rapportage", "Beheer"),
+        // 2026-10-15: jury van het Dansgardefestival (jureren in de app; hoofdjury ziet de uitslag en rondt de prijsuitreiking af).
+        new(FestivalJudge, "Dansgardefestival: jureren in de app", "Content"),
+        new(FestivalHeadJury, "Dansgardefestival: hoofdjury (uitslag voor de prijsuitreiking, prijsuitreiking afronden)", "Content"),
     ];
 }
 

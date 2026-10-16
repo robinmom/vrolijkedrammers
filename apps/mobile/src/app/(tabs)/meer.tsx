@@ -58,6 +58,12 @@ export default function MeerScreen() {
         {me.data?.permissions.includes('sale.collect') ? (
           <Button label="Kassa: munten uitgeven" icon="munten" onPress={() => router.push('/kassa')} />
         ) : null}
+        {me.data?.permissions.includes('festival.judge') ? (
+          <Button label="Jureren dansgardefestival" icon="uitslagen" onPress={() => router.push('/dansgardefestival-jury')} />
+        ) : null}
+        {me.data?.permissions.includes('festival.head-jury') && !me.data?.permissions.includes('festival.judge') ? (
+          <Button label="Hoofdjury dansgardefestival" icon="uitslagen" onPress={() => router.push('/dansgardefestival-jury/hoofdjury')} />
+        ) : null}
         {me.data?.permissions.includes('ticket.scan') ? (
           <Button label="Scannen bij de deur" icon="qr" onPress={() => router.push('/scannen')} />
         ) : null}

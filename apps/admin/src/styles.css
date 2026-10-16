@@ -2364,3 +2364,63 @@ fieldset {
   background: var(--dvd-surface);
   color: var(--dvd-text-primary);
 }
+
+/* Dansgardefestival: uitslag (2026-10-15). */
+.steps {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .results-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.table tr.selected th,
+.table tr.selected td {
+  background: var(--dvd-tint-blue);
+}
+
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.ranking li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.ranking li.winner {
+  background: var(--dvd-tint-yellow);
+}
+
+.ranking-place,
+.ranking-total {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 700;
+}
+
+.ranking .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.results-grid .link-button {
+  color: var(--dvd-link-text);
+}

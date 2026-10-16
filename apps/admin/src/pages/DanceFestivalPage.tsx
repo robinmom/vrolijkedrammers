@@ -9,6 +9,7 @@ import { Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { formatDate, formatDateTime } from '../format';
+import { FestivalJuryTab, FestivalResultsTab } from './FestivalJuryTabs';
 import { FestivalProgramTab } from './FestivalProgramTab';
 import { TaskListPage } from './TasksPage';
 
@@ -64,7 +65,9 @@ const decisionLabels: Record<Decision, string> = {
  */
 export function DanceFestivalPage() {
   const api = useApi();
-  const [tab, setTab] = useState<'registrations' | 'program' | 'tasks' | 'settings'>('registrations');
+  const [tab, setTab] = useState<'registrations' | 'program' | 'tasks' | 'jury' | 'results' | 'settings'>(
+    'registrations',
+  );
   const list = useQuery({
     queryKey: KEYS.list,
     queryFn: async () => (await api.GET('/api/v1/admin/dance-festival/registrations')).data ?? null,
@@ -116,6 +119,18 @@ export function DanceFestivalPage() {
         >
           Takenlijst
         </button>
+        <button type="button" role="tab" className="tab" aria-selected={tab === 'jury'} onClick={() => setTab('jury')}>
+          Jury
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className="tab"
+          aria-selected={tab === 'results'}
+          onClick={() => setTab('results')}
+        >
+          Uitslag
+        </button>
         <button
           type="button"
           role="tab"
@@ -125,12 +140,13 @@ export function DanceFestivalPage() {
         >
           Instellingen
         </button>
-        <button type="button" role="tab" className="tab" aria-selected={false} disabled title="Volgt later">
-          Jurering (later)
-        </button>
       </div>
       <ProblemAlert error={list.error} />
-      {tab === 'program' ? (
+      {tab === 'jury' ? (
+        <FestivalJuryTab />
+      ) : tab === 'results' ? (
+        <FestivalResultsTab />
+      ) : tab === 'program' ? (
         <FestivalProgramTab />
       ) : tab === 'tasks' ? (
         <TaskListPage list="festival" />

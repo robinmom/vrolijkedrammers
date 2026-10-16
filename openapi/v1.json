@@ -20946,6 +20946,605 @@
         }
       }
     },
+    "/api/v1/festival-jury": {
+      "get": {
+        "tags": [
+          "FestivalJury"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalJurySession"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalJurySession"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalJurySession"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/festival-jury/scores": {
+      "put": {
+        "tags": [
+          "FestivalJury"
+        ],
+        "summary": "Punten en opmerkingen (in porties; per onderdeel wint de nieuwste).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalScoresRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalScoresRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalScoresRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/festival-jury/submit": {
+      "post": {
+        "tags": [
+          "FestivalJury"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalSubmitRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalSubmitRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/festival-jury/head": {
+      "get": {
+        "tags": [
+          "FestivalHeadJury"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeadJuryView"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeadJuryView"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeadJuryView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/festival-jury/head/awards": {
+      "post": {
+        "tags": [
+          "FestivalHeadJury"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalAwardsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalAwardsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalAwardsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/jury": {
+      "get": {
+        "tags": [
+          "AdminFestivalJury"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalJurorView"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalJurorView"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalJurorView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminFestivalJury"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalJurorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalJurorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalJurorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/jury/{userId}/head": {
+      "put": {
+        "tags": [
+          "AdminFestivalJury"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalHeadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalHeadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalHeadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/jury/{userId}/resend": {
+      "post": {
+        "tags": [
+          "AdminFestivalJury"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/jury/{userId}": {
+      "delete": {
+        "tags": [
+          "AdminFestivalJury"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results": {
+      "get": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalResults"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalResults"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalResults"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results/head-jury": {
+      "post": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "summary": "De uitslag naar de hoofdjury; met `force` ook als nog niet alles binnen is.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalPublishRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalPublishRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalPublishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results/awards": {
+      "post": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "summary": "Prijsuitreiking afgerond zetten of terugdraaien (overrulen van de hoofdjury).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalAwardsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalAwardsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalAwardsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dance-festival/results/pdf": {
+      "get": {
+        "tags": [
+          "AdminFestivalResults"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/pdf": { }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jury/current": {
       "get": {
         "tags": [
@@ -33083,6 +33682,61 @@
           }
         }
       },
+      "FestivalAwardsRequest": {
+        "required": [
+          "completed"
+        ],
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FestivalCommentInput": {
+        "required": [
+          "entryId",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "FestivalCommentView": {
+        "required": [
+          "entryId",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "FestivalCriterion": {
+        "enum": [
+          "Synchronicity",
+          "Choreography",
+          "Execution",
+          "Difficulty"
+        ],
+        "description": "De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10. Bij solo heet het eerste onderdeel Ritme in\nplaats van Synchroniteit (zoals in de uitslag-Excel van 2026)."
+      },
       "FestivalDecision": {
         "enum": [
           "Approve",
@@ -33179,6 +33833,148 @@
             "format": "date-time"
           }
         }
+      },
+      "FestivalHeadRequest": {
+        "required": [
+          "headJury"
+        ],
+        "type": "object",
+        "properties": {
+          "headJury": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FestivalJurorRequest": {
+        "required": [
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "headJury": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "FestivalJurorView": {
+        "required": [
+          "userId",
+          "number",
+          "name",
+          "email",
+          "active",
+          "headJury",
+          "submittedCategories"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "headJury": {
+            "type": "boolean"
+          },
+          "submittedCategories": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "FestivalJurySession": {
+        "required": [
+          "festivalId",
+          "festivalName",
+          "festivalDate",
+          "location",
+          "jurorNumber",
+          "headJury",
+          "categories",
+          "current",
+          "dances",
+          "scores",
+          "comments"
+        ],
+        "type": "object",
+        "properties": {
+          "festivalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "festivalName": {
+            "type": "string"
+          },
+          "festivalDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "jurorNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "headJury": {
+            "type": "boolean"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JuryCategory"
+            }
+          },
+          "current": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JuryCategory"
+              }
+            ]
+          },
+          "dances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JuryDance"
+            }
+          },
+          "scores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalScoreView"
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalCommentView"
+            }
+          }
+        },
+        "description": "Alles voor de app van het jurylid: alleen de dansen van de categorie die aan de beurt is."
       },
       "FestivalOwnRegistrationView": {
         "required": [
@@ -33391,6 +34187,15 @@
           }
         }
       },
+      "FestivalPublishRequest": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
       "FestivalRegistrationDetail": {
         "required": [
           "id",
@@ -33582,6 +34387,151 @@
           }
         }
       },
+      "FestivalResults": {
+        "required": [
+          "festivalId",
+          "festivalName",
+          "festivalDate",
+          "location",
+          "jurors",
+          "categories",
+          "complete",
+          "headJuryPublishedAt",
+          "awardsCompletedAt",
+          "awardsCompletedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "festivalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "festivalName": {
+            "type": "string"
+          },
+          "festivalDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": "string"
+          },
+          "jurors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalJurorView"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultCategory"
+            }
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "headJuryPublishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "awardsCompletedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "awardsCompletedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "FestivalScoreInput": {
+        "required": [
+          "entryId",
+          "criterion",
+          "value",
+          "scoredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "criterion": {
+            "$ref": "#/components/schemas/FestivalCriterion"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FestivalScoresRequest": {
+        "required": [
+          "scores",
+          "comments"
+        ],
+        "type": "object",
+        "properties": {
+          "scores": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FestivalScoreInput"
+            }
+          },
+          "comments": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FestivalCommentInput"
+            }
+          }
+        }
+      },
+      "FestivalScoreView": {
+        "required": [
+          "entryId",
+          "criterion",
+          "value",
+          "scoredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "criterion": {
+            "$ref": "#/components/schemas/FestivalCriterion"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scoredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "FestivalSettingsView": {
         "required": [
           "id",
@@ -33709,6 +34659,17 @@
           "requestedCents": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "FestivalSubmitRequest": {
+        "required": [
+          "categoryKey"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryKey": {
+            "type": "string"
           }
         }
       },
@@ -34397,6 +35358,29 @@
           }
         }
       },
+      "HeadJuryPart": {
+        "required": [
+          "part",
+          "name",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultCategory"
+            }
+          }
+        }
+      },
       "HeadJuryRequest": {
         "required": [
           "headJury"
@@ -34407,6 +35391,37 @@
             "type": "boolean"
           }
         }
+      },
+      "HeadJuryView": {
+        "required": [
+          "published",
+          "festivalName",
+          "parts",
+          "awardsCompletedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "published": {
+            "type": "boolean"
+          },
+          "festivalName": {
+            "type": "string"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeadJuryPart"
+            }
+          },
+          "awardsCompletedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "De uitslag voor de hoofdjury: per deel van de prijsuitreiking, per categorie van de laatste plaats naar de winnaar."
       },
       "HealthEntry": {
         "required": [
@@ -35402,6 +36417,85 @@
             "items": {
               "$ref": "#/components/schemas/JudgingScoreResponse"
             }
+          }
+        }
+      },
+      "JuryCategory": {
+        "required": [
+          "key",
+          "name",
+          "solo",
+          "dances",
+          "start",
+          "submitted",
+          "current"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "solo": {
+            "type": "boolean"
+          },
+          "dances": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "start": {
+            "type": "string"
+          },
+          "submitted": {
+            "type": "boolean"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        },
+        "description": "Een programmacategorie voor het jurylid: ingediend, aan de beurt (de eerste die nog niet is ingediend) of later."
+      },
+      "JuryDance": {
+        "required": [
+          "entryId",
+          "number",
+          "club",
+          "names",
+          "title",
+          "dancerCount",
+          "averageAge"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "club": {
+            "type": "string"
+          },
+          "names": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dancerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "averageAge": {
+            "type": "number",
+            "format": "double"
           }
         }
       },
@@ -42346,6 +43440,51 @@
           }
         }
       },
+      "ResultCategory": {
+        "required": [
+          "key",
+          "name",
+          "part",
+          "solo",
+          "jurors",
+          "submitted",
+          "complete",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "part": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "solo": {
+            "type": "boolean"
+          },
+          "jurors": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "submitted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultRow"
+            }
+          }
+        }
+      },
       "ResultOverviewResponse": {
         "required": [
           "paradeId",
@@ -42381,6 +43520,80 @@
             }
           }
         }
+      },
+      "ResultRow": {
+        "required": [
+          "entryId",
+          "registrationId",
+          "place",
+          "club",
+          "names",
+          "title",
+          "synchronicity",
+          "choreography",
+          "execution",
+          "difficulty",
+          "total",
+          "perJuror"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "place": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "club": {
+            "type": "string"
+          },
+          "names": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "synchronicity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "choreography": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "execution": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "perJuror": {
+            "type": "array",
+            "items": {
+              "type": [
+                "null",
+                "integer"
+              ],
+              "format": "int32"
+            }
+          }
+        },
+        "description": "Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid."
       },
       "ResultRowResponse": {
         "required": [
@@ -46227,6 +47440,18 @@
     },
     {
       "name": "Events"
+    },
+    {
+      "name": "FestivalJury"
+    },
+    {
+      "name": "FestivalHeadJury"
+    },
+    {
+      "name": "AdminFestivalJury"
+    },
+    {
+      "name": "AdminFestivalResults"
     },
     {
       "name": "Jury"

@@ -17415,6 +17415,613 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/festival-jury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalJurySession"];
+                        "application/json": components["schemas"]["FestivalJurySession"];
+                        "text/json": components["schemas"]["FestivalJurySession"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/festival-jury/scores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Punten en opmerkingen (in porties; per onderdeel wint de nieuwste). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalScoresRequest"];
+                    "text/json": components["schemas"]["FestivalScoresRequest"];
+                    "application/*+json": components["schemas"]["FestivalScoresRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/festival-jury/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalSubmitRequest"];
+                    "text/json": components["schemas"]["FestivalSubmitRequest"];
+                    "application/*+json": components["schemas"]["FestivalSubmitRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/festival-jury/head": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["HeadJuryView"];
+                        "application/json": components["schemas"]["HeadJuryView"];
+                        "text/json": components["schemas"]["HeadJuryView"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/festival-jury/head/awards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalAwardsRequest"];
+                    "text/json": components["schemas"]["FestivalAwardsRequest"];
+                    "application/*+json": components["schemas"]["FestivalAwardsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/jury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalJurorView"][];
+                        "application/json": components["schemas"]["FestivalJurorView"][];
+                        "text/json": components["schemas"]["FestivalJurorView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalJurorRequest"];
+                    "text/json": components["schemas"]["FestivalJurorRequest"];
+                    "application/*+json": components["schemas"]["FestivalJurorRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/jury/{userId}/head": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalHeadRequest"];
+                    "text/json": components["schemas"]["FestivalHeadRequest"];
+                    "application/*+json": components["schemas"]["FestivalHeadRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/jury/{userId}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/jury/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalResults"];
+                        "application/json": components["schemas"]["FestivalResults"];
+                        "text/json": components["schemas"]["FestivalResults"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results/head-jury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De uitslag naar de hoofdjury; met `force` ook als nog niet alles binnen is. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalPublishRequest"];
+                    "text/json": components["schemas"]["FestivalPublishRequest"];
+                    "application/*+json": components["schemas"]["FestivalPublishRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results/awards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prijsuitreiking afgerond zetten of terugdraaien (overrulen van de hoofdjury). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalAwardsRequest"];
+                    "text/json": components["schemas"]["FestivalAwardsRequest"];
+                    "application/*+json": components["schemas"]["FestivalAwardsRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dance-festival/results/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jury/current": {
         parameters: {
             query?: never;
@@ -23828,6 +24435,25 @@ export interface components {
             stats: components["schemas"]["FestivalStats"];
             registrations: components["schemas"]["FestivalRegistrationSummary"][];
         };
+        FestivalAwardsRequest: {
+            completed: boolean;
+        };
+        FestivalCommentInput: {
+            /** Format: uuid */
+            entryId: string;
+            text: null | string;
+        };
+        FestivalCommentView: {
+            /** Format: uuid */
+            entryId: string;
+            text: string;
+        };
+        /**
+         * @description De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10. Bij solo heet het eerste onderdeel Ritme in
+         *     plaats van Synchroniteit (zoals in de uitslag-Excel van 2026).
+         * @enum {unknown}
+         */
+        FestivalCriterion: "Synchronicity" | "Choreography" | "Execution" | "Difficulty";
         /** @enum {unknown} */
         FestivalDecision: "Approve" | "RequestInfo" | "Waitlist" | "Reject";
         FestivalEntryView: {
@@ -23852,6 +24478,44 @@ export interface components {
             waitlistPosition: null | number;
             /** Format: date-time */
             removedAt: null | string;
+        };
+        FestivalHeadRequest: {
+            headJury: boolean;
+        };
+        FestivalJurorRequest: {
+            name: string;
+            email: string;
+            /** @default false */
+            headJury: boolean;
+        };
+        FestivalJurorView: {
+            /** Format: uuid */
+            userId: string;
+            /** Format: int32 */
+            number: number;
+            name: string;
+            email: string;
+            active: boolean;
+            headJury: boolean;
+            /** Format: int32 */
+            submittedCategories: number;
+        };
+        /** @description Alles voor de app van het jurylid: alleen de dansen van de categorie die aan de beurt is. */
+        FestivalJurySession: {
+            /** Format: uuid */
+            festivalId: string;
+            festivalName: string;
+            /** Format: date */
+            festivalDate: string;
+            location: string;
+            /** Format: int32 */
+            jurorNumber: number;
+            headJury: boolean;
+            categories: components["schemas"]["JuryCategory"][];
+            current: null | components["schemas"]["JuryCategory"];
+            dances: components["schemas"]["JuryDance"][];
+            scores: components["schemas"]["FestivalScoreView"][];
+            comments: components["schemas"]["FestivalCommentView"][];
         };
         /** @description Wat de vereniging via de link in de mail ziet en kan wijzigen. */
         FestivalOwnRegistrationView: {
@@ -23913,6 +24577,10 @@ export interface components {
             /** Format: date */
             ageReferenceDate: string;
         };
+        FestivalPublishRequest: {
+            /** @default false */
+            force: boolean;
+        };
         FestivalRegistrationDetail: {
             /** Format: uuid */
             id: string;
@@ -23968,6 +24636,44 @@ export interface components {
             /** Format: date-time */
             changedAt: null | string;
         };
+        FestivalResults: {
+            /** Format: uuid */
+            festivalId: string;
+            festivalName: string;
+            /** Format: date */
+            festivalDate: string;
+            location: string;
+            jurors: components["schemas"]["FestivalJurorView"][];
+            categories: components["schemas"]["ResultCategory"][];
+            complete: boolean;
+            /** Format: date-time */
+            headJuryPublishedAt: null | string;
+            /** Format: date-time */
+            awardsCompletedAt: null | string;
+            awardsCompletedBy: null | string;
+        };
+        FestivalScoreInput: {
+            /** Format: uuid */
+            entryId: string;
+            criterion: components["schemas"]["FestivalCriterion"];
+            /** Format: int32 */
+            value: number;
+            /** Format: date-time */
+            scoredAt: string;
+        };
+        FestivalScoresRequest: {
+            scores: null | components["schemas"]["FestivalScoreInput"][];
+            comments: null | components["schemas"]["FestivalCommentInput"][];
+        };
+        FestivalScoreView: {
+            /** Format: uuid */
+            entryId: string;
+            criterion: components["schemas"]["FestivalCriterion"];
+            /** Format: int32 */
+            value: number;
+            /** Format: date-time */
+            scoredAt: string;
+        };
         FestivalSettingsView: {
             /** Format: uuid */
             id: string;
@@ -24009,6 +24715,9 @@ export interface components {
             paidCents: number;
             /** Format: int32 */
             requestedCents: number;
+        };
+        FestivalSubmitRequest: {
+            categoryKey: string;
         };
         FestivalVersionInfo: {
             /** Format: int32 */
@@ -24206,8 +24915,22 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        HeadJuryPart: {
+            /** Format: int32 */
+            part: number;
+            name: string;
+            categories: components["schemas"]["ResultCategory"][];
+        };
         HeadJuryRequest: {
             headJury: boolean;
+        };
+        /** @description De uitslag voor de hoofdjury: per deel van de prijsuitreiking, per categorie van de laatste plaats naar de winnaar. */
+        HeadJuryView: {
+            published: boolean;
+            festivalName: string;
+            parts: components["schemas"]["HeadJuryPart"][];
+            /** Format: date-time */
+            awardsCompletedAt: null | string;
         };
         HealthEntry: {
             name: string;
@@ -24492,6 +25215,30 @@ export interface components {
             categories: components["schemas"]["JudgingCategoryRefResponse"][];
             entries: components["schemas"]["JudgingEntryResponse"][];
             scores: components["schemas"]["JudgingScoreResponse"][];
+        };
+        /** @description Een programmacategorie voor het jurylid: ingediend, aan de beurt (de eerste die nog niet is ingediend) of later. */
+        JuryCategory: {
+            key: string;
+            name: string;
+            solo: boolean;
+            /** Format: int32 */
+            dances: number;
+            start: string;
+            submitted: boolean;
+            current: boolean;
+        };
+        JuryDance: {
+            /** Format: uuid */
+            entryId: string;
+            /** Format: int32 */
+            number: number;
+            club: string;
+            names: string;
+            title: null | string;
+            /** Format: int32 */
+            dancerCount: number;
+            /** Format: double */
+            averageAge: number;
         };
         JuryOverviewResponse: {
             /** Format: uuid */
@@ -26350,6 +27097,19 @@ export interface components {
             resolution: components["schemas"]["SyncConflictStatus"];
             note: null | string;
         };
+        ResultCategory: {
+            key: string;
+            name: string;
+            /** Format: int32 */
+            part: number;
+            solo: boolean;
+            /** Format: int32 */
+            jurors: number;
+            /** Format: int32 */
+            submitted: number;
+            complete: boolean;
+            rows: components["schemas"]["ResultRow"][];
+        };
         ResultOverviewResponse: {
             /** Format: uuid */
             paradeId: string;
@@ -26359,6 +27119,29 @@ export interface components {
             /** Format: date-time */
             publishedAt: null | string;
             categories: components["schemas"]["CategoryResultResponse"][];
+        };
+        /** @description Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid. */
+        ResultRow: {
+            /** Format: uuid */
+            entryId: string;
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            place: number;
+            club: string;
+            names: string;
+            title: null | string;
+            /** Format: int32 */
+            synchronicity: number;
+            /** Format: int32 */
+            choreography: number;
+            /** Format: int32 */
+            execution: number;
+            /** Format: int32 */
+            difficulty: number;
+            /** Format: int32 */
+            total: number;
+            perJuror: (null | number)[];
         };
         ResultRowResponse: {
             /** Format: int32 */

@@ -1108,6 +1108,93 @@ export class MockApi {
 
   festivalTaskCalls: string[] = [];
   programCalls: string[] = [];
+  festivalCalls: string[] = [];
+  festivalJurors = [
+    {
+      userId: 'j-1',
+      number: 1,
+      name: 'Merel',
+      email: 'merel@example.com',
+      active: true,
+      headJury: true,
+      submittedCategories: 2,
+    },
+    {
+      userId: 'j-2',
+      number: 2,
+      name: 'Demi',
+      email: 'demi@example.com',
+      active: true,
+      headJury: false,
+      submittedCategories: 1,
+    },
+  ];
+  festivalResults: Record<string, unknown> & {
+    headJuryPublishedAt: string | null;
+    awardsCompletedAt: string | null;
+    awardsCompletedBy: string | null;
+  } = {
+    festivalId: 'f-1',
+    festivalName: 'Dansgardefestival 2027',
+    festivalDate: '2027-02-21',
+    location: 'Hart van Loil',
+    jurors: [],
+    complete: false,
+    headJuryPublishedAt: null,
+    awardsCompletedAt: null,
+    awardsCompletedBy: null,
+    categories: [
+      {
+        key: 'Junioren|Garde|Group|',
+        name: 'Junioren Garde',
+        part: 2,
+        solo: false,
+        jurors: 2,
+        submitted: 2,
+        complete: true,
+        rows: [
+          {
+            entryId: 'e-1',
+            registrationId: 'r-1',
+            place: 1,
+            club: 'CV De Vrolijke Drammers',
+            names: 'Junioren Drammers',
+            title: null,
+            synchronicity: 16,
+            choreography: 16,
+            execution: 17,
+            difficulty: 15,
+            total: 64,
+            perJuror: [32, 32],
+          },
+          {
+            entryId: 'e-2',
+            registrationId: 'r-2',
+            place: 2,
+            club: 'CV De Deurdouwers',
+            names: 'ShowStars',
+            title: null,
+            synchronicity: 15,
+            choreography: 15,
+            execution: 16,
+            difficulty: 15,
+            total: 61,
+            perJuror: [30, 31],
+          },
+        ],
+      },
+      {
+        key: 'Jeugd|Show|Group|Modern',
+        name: 'Jeugd Modern',
+        part: 3,
+        solo: false,
+        jurors: 2,
+        submitted: 1,
+        complete: false,
+        rows: [],
+      },
+    ],
+  };
   programDrawn = false;
   programItems = [
     {
@@ -2171,6 +2258,38 @@ export class MockApi {
     const taskPath = path.replace('/admin/festival/tasks', '/admin/tasks');
     if (path === '/admin/dance-festival/registrations') {
       return json({ festival: null, stats: {}, registrations: [] });
+    }
+    if (path.startsWith('/admin/dance-festival/jury')) {
+      this.festivalCalls.push(`${method} ${path}${isJson ? ' ' + JSON.stringify(body) : ''}`);
+      if (method === 'GET') return json(this.festivalJurors);
+      if (method === 'POST' && path === '/admin/dance-festival/jury') {
+        const b = body as { name: string; email: string; headJury: boolean };
+        this.festivalJurors.push({
+          userId: `j-${this.festivalJurors.length + 1}`,
+          number: this.festivalJurors.length + 1,
+          name: b.name,
+          email: b.email,
+          active: true,
+          headJury: b.headJury,
+          submittedCategories: 0,
+        });
+        return json({ id: 'j-new' }, 201);
+      }
+      return noContent();
+    }
+    if (path.startsWith('/admin/dance-festival/results')) {
+      this.festivalCalls.push(`${method} ${path}${isJson ? ' ' + JSON.stringify(body) : ''}`);
+      if (path === '/admin/dance-festival/results/pdf') {
+        return route.fulfill({ status: 200, contentType: 'application/pdf', body: '%PDF-1.7' });
+      }
+      if (path === '/admin/dance-festival/results/head-jury')
+        this.festivalResults.headJuryPublishedAt = '2027-02-21T15:00:00Z';
+      if (path === '/admin/dance-festival/results/awards') {
+        const completed = (body as { completed: boolean }).completed;
+        this.festivalResults.awardsCompletedAt = completed ? '2027-02-21T16:40:00Z' : null;
+        this.festivalResults.awardsCompletedBy = completed ? 'organisatie' : null;
+      }
+      return method === 'GET' ? json(this.festivalResults) : noContent();
     }
     if (path.startsWith('/admin/dance-festival/program')) {
       this.programCalls.push(`${method} ${path}${isJson ? ' ' + JSON.stringify(body) : ''}`);

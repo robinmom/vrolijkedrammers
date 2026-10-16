@@ -7,7 +7,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { AppText } from './AppText';
 
 /**
- * Slider van 0 tot en met 100 voor het jureren (fase 22b, Figma J2). De native slider van iOS en Android
+ * Slider van 0 tot en met 100 (of `max`, bijv. 10 op het Dansgardefestival) voor het jureren (fase 22b, Figma J2). De native slider van iOS en Android
  * (@react-native-community/slider): die vangt het slepen zelf af, en tijdens het slepen zet het jureerscherm het swipen
  * naar de volgende wagen uit (`onSlidingStart`/`onSlidingEnd`). Zolang er nog niets is ingevuld staat er "–" en is de
  * balk grijs. Met VoiceOver/TalkBack is het geheel één instelbaar element: omhoog of omlaag vegen = 5 erbij of eraf.
@@ -19,6 +19,7 @@ export function ScoreSlider({
   onSlidingStart,
   onSlidingEnd,
   disabled = false,
+  max = 100,
 }: {
   label: string;
   value: number | null;
@@ -26,15 +27,17 @@ export function ScoreSlider({
   onSlidingStart?: () => void;
   onSlidingEnd?: () => void;
   disabled?: boolean;
+  max?: number;
 }) {
   const { colors } = useTheme();
   const [dragging, setDragging] = useState<number | null>(null);
   const shown = dragging ?? value;
 
   const onAction = (event: AccessibilityActionEvent) => {
-    const base = value ?? 50;
-    if (event.nativeEvent.actionName === 'increment') onChange(Math.min(100, value === null ? base : base + 5));
-    if (event.nativeEvent.actionName === 'decrement') onChange(Math.max(0, value === null ? base : base - 5));
+    const step = max <= 10 ? 1 : 5;
+    const base = value ?? Math.round(max / 2);
+    if (event.nativeEvent.actionName === 'increment') onChange(Math.min(max, value === null ? base : base + step));
+    if (event.nativeEvent.actionName === 'decrement') onChange(Math.max(0, value === null ? base : base - step));
   };
 
   return (
@@ -44,7 +47,7 @@ export function ScoreSlider({
       accessibilityRole="adjustable"
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
-      accessibilityValue={shown === null ? { text: 'nog niet ingevuld' } : { min: 0, max: 100, now: shown }}
+      accessibilityValue={shown === null ? { text: 'nog niet ingevuld' } : { min: 0, max, now: shown }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onAction}
     >
@@ -59,9 +62,9 @@ export function ScoreSlider({
       <Slider
         style={styles.slider}
         minimumValue={0}
-        maximumValue={100}
+        maximumValue={max}
         step={1}
-        value={value ?? 50}
+        value={value ?? Math.round(max / 2)}
         disabled={disabled}
         tapToSeek
         minimumTrackTintColor={shown === null ? colors.border : brand.red}

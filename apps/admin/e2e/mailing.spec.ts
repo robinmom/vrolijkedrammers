@@ -133,3 +133,33 @@ test('mailing: tekst uitlijnen en een foto kleiner dan de volle breedte', async 
   expect(api.mailings[0]!.blocks[1]).toMatchObject({ type: 'text', align: 'center' });
   expect(api.mailings[0]!.blocks[3]).toMatchObject({ type: 'image', align: 'right', width: 300 });
 });
+
+test('mailing: verstuurde testmails verwijderen, los en meerdere tegelijk', async ({ page }) => {
+  const api = new MockApi(['mailing.manage']);
+  await api.install(page);
+  await page.goto('/beheer/mailing/nieuw');
+  await page.getByLabel('Onderwerp').fill('Test 1');
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page).toHaveURL(/\/mailing\/mail-1$/);
+  await page.goto('/beheer/mailing/nieuw');
+  await page.getByLabel('Onderwerp').fill('Test 2');
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page).toHaveURL(/\/mailing\/mail-2$/);
+  Object.assign(api.mailings[0]!, { status: 'Sent', sentAt: '2026-10-15T12:00:00Z', recipientCount: 1 });
+
+  // Een verstuurde mailing heeft nu ook Verwijderen.
+  await page.goto('/beheer/mailing/mail-1');
+  await page.getByRole('button', { name: 'Verwijderen', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('Mails die al zijn verstuurd, blijven bij de ontvangers');
+  await page.getByRole('dialog').getByRole('button', { name: 'Annuleren' }).click();
+
+  // Meerdere tegelijk vanuit het overzicht.
+  await page.goto('/beheer/mailing');
+  await page.getByLabel('Alle mailings selecteren').check();
+  await page.getByRole('button', { name: 'Verwijderen (2)' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Verwijderen' }).click();
+  await expect(page.getByText('2 mailings verwijderd.')).toBeVisible();
+  await expect(page.getByText('Nog geen mailings.')).toBeVisible();
+  expect(api.mailings).toHaveLength(0);
+  await expectNoSeriousA11yIssues(page);
+});

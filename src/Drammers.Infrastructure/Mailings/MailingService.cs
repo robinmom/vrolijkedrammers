@@ -261,12 +261,34 @@ public sealed class MailingService(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+    /// <summary>
+    /// Een mailing verwijderen (2026-10-16): ook een verstuurde (bijv. testmails). Wordt hij nog verstuurd, dan stopt dat:
+    /// de ontvangers verdwijnen mee en de wachtende berichten in de outbox doen dan niets meer. Afmeldingen blijven staan.
+    /// </summary>
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken) => await DeleteManyAsync([id], cancellationToken);
+
+    /// <summary>Meerdere mailings tegelijk verwijderen; geeft het aantal terug.</summary>
+    public async Task<int> DeleteManyAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
     {
-        var mailing = await DraftAsync(id, cancellationToken);
-        db.Mailings.Remove(mailing);
+        var found = await db.Mailings.Include(m => m.Lists).Where(m => ids.Contains(m.Id)).ToListAsync(cancellationToken);
+        if (found.Count == 0)
+        {
+            throw MailingNotFound();
+        }
+
+        var counts = await db.MailingRecipients.Where(r => ids.Contains(r.MailingId)).GroupBy(r => r.MailingId)
+            .Select(g => new { g.Key, Sent = g.Count(r => r.Status == MailingRecipientStatus.Sent), Pending = g.Count(r => r.Status == MailingRecipientStatus.Pending) })
+            .ToDictionaryAsync(g => g.Key, cancellationToken);
+        db.Mailings.RemoveRange(found);
         await db.SaveChangesAsync(cancellationToken);
-        await audit.WriteAsync(new AuditEntry("mailing.deleted", "Mailing", id.ToString(), mailing.Subject, null), cancellationToken);
+        foreach (var mailing in found)
+        {
+            var c = counts.GetValueOrDefault(mailing.Id);
+            await audit.WriteAsync(new AuditEntry("mailing.deleted", "Mailing", mailing.Id.ToString(), mailing.Subject,
+                JsonSerializer.Serialize(new { status = mailing.Status, sent = c?.Sent ?? 0, stopped = c?.Pending ?? 0 }, JsonSerializerOptions.Web)), cancellationToken);
+        }
+
+        return found.Count;
     }
 
     /// <summary>Een kopie als nieuw concept, bijvoorbeeld voor de uitnodiging van volgend jaar.</summary>

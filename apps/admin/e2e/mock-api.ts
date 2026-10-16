@@ -1977,6 +1977,12 @@ export class MockApi {
         })),
       );
     }
+    if (path === '/admin/mailing/mailings/delete' && method === 'POST') {
+      const ids = (body as { ids: string[] }).ids;
+      const before = this.mailings.length;
+      this.mailings = this.mailings.filter((m) => !ids.includes(m.id));
+      return json({ deleted: before - this.mailings.length });
+    }
     if (path === '/admin/mailing/mailings' && method === 'POST') {
       const id = `mail-${this.mailings.length + 1}`;
       this.mailings.push({

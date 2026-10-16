@@ -24,6 +24,18 @@ import { formatDateTime } from '../format';
 /** Mailing → Mailings (fase 27a): nieuwsbrieven en uitnodigingen, nieuwste eerst. */
 export function MailingsPage() {
   const mailings = useMailings();
+  const api = useApi();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [confirming, setConfirming] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const remove = useApiMutation(
+    async () =>
+      (await api.POST('/api/v1/admin/mailing/mailings/delete', { body: { ids: selected } })).data?.deleted ?? 0,
+    MAILING_KEYS,
+  );
+  const all = mailings.data ?? [];
+  const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const sending = all.filter((m) => selected.includes(m.id) && m.status === 'Sending').length;
   return (
     <>
       <div className="page-header">
@@ -37,12 +49,32 @@ export function MailingsPage() {
           Nieuwe mailing
         </Link>
       </div>
-      <ProblemAlert error={mailings.error} />
+      <SuccessMessage message={message} />
+      <ProblemAlert error={mailings.error ?? remove.error} />
+      {selected.length > 0 ? (
+        <div className="actions">
+          <span className="muted grow">{selected.length} geselecteerd</span>
+          <button type="button" className="button secondary" onClick={() => setSelected([])}>
+            Selectie wissen
+          </button>
+          <button type="button" className="button danger" onClick={() => setConfirming(true)}>
+            Verwijderen ({selected.length})
+          </button>
+        </div>
+      ) : null}
       <div className="table-scroll table-wrapper" tabIndex={0} role="region" aria-label="Mailings">
         <table className="table">
           <caption className="visually-hidden">Mailings</caption>
           <thead>
             <tr>
+              <th scope="col">
+                <input
+                  type="checkbox"
+                  aria-label="Alle mailings selecteren"
+                  checked={all.length > 0 && selected.length === all.length}
+                  onChange={(e) => setSelected(e.target.checked ? all.map((m) => m.id) : [])}
+                />
+              </th>
               <th scope="col">Onderwerp</th>
               <th scope="col">Soort</th>
               <th scope="col">Status</th>
@@ -53,6 +85,14 @@ export function MailingsPage() {
           <tbody>
             {(mailings.data ?? []).map((m) => (
               <tr key={m.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    aria-label={`${m.subject} selecteren`}
+                    checked={selected.includes(m.id)}
+                    onChange={() => toggle(m.id)}
+                  />
+                </td>
                 <td>
                   <Link to="/mailing/$id" params={{ id: m.id }}>
                     {m.subject}
@@ -70,7 +110,7 @@ export function MailingsPage() {
             ))}
             {mailings.data?.length === 0 ? (
               <tr>
-                <td colSpan={5} className="muted">
+                <td colSpan={6} className="muted">
                   Nog geen mailings.
                 </td>
               </tr>
@@ -78,6 +118,23 @@ export function MailingsPage() {
           </tbody>
         </table>
       </div>
+      <ConfirmDialog
+        open={confirming}
+        title={`${selected.length} ${selected.length === 1 ? 'mailing' : 'mailings'} verwijderen?`}
+        message={`De mailings en hun lijsten van ontvangers verdwijnen uit het portal. Al verstuurde mails blijven bij de ontvangers; afmeldingen blijven staan.${sending > 0 ? ` ${sending} ${sending === 1 ? 'mailing wordt' : 'mailings worden'} nog verstuurd; dat stopt dan.` : ''}`}
+        confirmLabel="Verwijderen"
+        busy={remove.isPending}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() =>
+          remove.mutate(undefined, {
+            onSuccess: (count) => {
+              setMessage(`${count as number} ${count === 1 ? 'mailing' : 'mailings'} verwijderd.`);
+              setSelected([]);
+            },
+            onSettled: () => setConfirming(false),
+          })
+        }
+      />
     </>
   );
 }
@@ -296,20 +353,25 @@ export function MailingEditorPage() {
           ) : null}
         </div>
         {readOnly ? (
-          <button
-            type="button"
-            className="button secondary"
-            disabled={duplicate.isPending}
-            onClick={() =>
-              duplicate.mutate(undefined, {
-                onSuccess: (copy) => {
-                  if (typeof copy === 'string') void navigate({ to: '/mailing/$id', params: { id: copy } });
-                },
-              })
-            }
-          >
-            Kopie maken
-          </button>
+          <div className="actions">
+            <button type="button" className="button danger" onClick={() => setConfirm('delete')}>
+              Verwijderen
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={duplicate.isPending}
+              onClick={() =>
+                duplicate.mutate(undefined, {
+                  onSuccess: (copy) => {
+                    if (typeof copy === 'string') void navigate({ to: '/mailing/$id', params: { id: copy } });
+                  },
+                })
+              }
+            >
+              Kopie maken
+            </button>
+          </div>
         ) : null}
       </div>
       <SuccessMessage message={message} />
@@ -556,7 +618,13 @@ export function MailingEditorPage() {
       <ConfirmDialog
         open={confirm === 'delete'}
         title="Mailing verwijderen?"
-        message="Het concept verdwijnt."
+        message={
+          existing.data?.status === 'Sending'
+            ? 'Deze mailing wordt nog verstuurd. Verwijderen stopt het versturen: wie hem nog niet heeft gekregen, krijgt hem niet meer.'
+            : existing.data?.status === 'Sent'
+              ? 'De mailing en de lijst van ontvangers verdwijnen uit het portal. Mails die al zijn verstuurd, blijven bij de ontvangers; afmeldingen blijven staan.'
+              : 'Het concept verdwijnt.'
+        }
         confirmLabel="Verwijderen"
         busy={remove.isPending}
         onCancel={() => setConfirm(null)}

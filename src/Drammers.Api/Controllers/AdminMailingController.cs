@@ -133,6 +133,13 @@ public sealed class AdminMailingController(
         return NoContent();
     }
 
+    /// <summary>Meerdere mailings tegelijk verwijderen (bijv. testmails), ook verstuurde.</summary>
+    [HttpPost("mailings/delete")]
+    [ProducesResponseType<MailingsDeletedResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<MailingsDeletedResponse> DeleteMailings(MailingsDeleteRequest request, CancellationToken cancellationToken) =>
+        new(await mailings.DeleteManyAsync(request.Ids, cancellationToken));
+
     [HttpPost("mailings/{id:guid}/duplicate")]
     [ProducesResponseType<CreatedResponse>(StatusCodes.Status201Created)]
     public async Task<ActionResult<CreatedResponse>> DuplicateMailing(Guid id, CancellationToken cancellationToken)
@@ -298,3 +305,7 @@ public sealed record MailingTestResponse(string SentTo);
 public sealed record MailingSendResponse(int Recipients, DateTime LastAt);
 
 public sealed record MailingUnsubscribeResponse(string Email, DateTime UnsubscribedAt);
+
+public sealed record MailingsDeleteRequest([param: Required, MinLength(1), MaxLength(500)] IReadOnlyList<Guid> Ids);
+
+public sealed record MailingsDeletedResponse(int Deleted);

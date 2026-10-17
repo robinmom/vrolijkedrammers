@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { components } from '@drammers/api-client';
 import { api, unwrap } from '../api/client';
+import { storageKeys } from '../lib/storageKeys';
 
 export type Criterion = components['schemas']['JudgingCriterion'];
 export type JurorSession = components['schemas']['JurorSessionResponse'];
@@ -28,20 +29,21 @@ export interface LocalScore {
 
 export const scoreKey = (registrationId: string, pass: number, criterion: Criterion) => `${registrationId}|${pass}|${criterion}`;
 
-const storageKey = (paradeId: string) => `jury:scores:${paradeId}`;
+/** Per gebruiker: een volgende gebruiker van de telefoon ziet ze niet (en bij uitloggen worden ze gewist). */
+const storageKey = (userId: string, paradeId: string) => `${storageKeys.paradeJuryPrefix}${userId}:${paradeId}`;
 
 /** Scores van deze optocht op de telefoon (overleeft afsluiten en een optocht zonder netwerk). */
-export async function loadLocalScores(paradeId: string): Promise<LocalScore[]> {
+export async function loadLocalScores(userId: string, paradeId: string): Promise<LocalScore[]> {
   try {
-    const raw = await AsyncStorage.getItem(storageKey(paradeId));
+    const raw = await AsyncStorage.getItem(storageKey(userId, paradeId));
     return raw ? (JSON.parse(raw) as LocalScore[]) : [];
   } catch {
     return [];
   }
 }
 
-export async function saveLocalScores(paradeId: string, scores: LocalScore[]) {
-  await AsyncStorage.setItem(storageKey(paradeId), JSON.stringify(scores));
+export async function saveLocalScores(userId: string, paradeId: string, scores: LocalScore[]) {
+  await AsyncStorage.setItem(storageKey(userId, paradeId), JSON.stringify(scores));
 }
 
 /** Server en telefoon samenvoegen: per score wint de nieuwste invulling (net als op de server). */

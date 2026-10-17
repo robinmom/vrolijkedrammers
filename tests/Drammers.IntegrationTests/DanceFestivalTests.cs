@@ -245,16 +245,33 @@ public class DanceFestivalTests(SqlServerFixture sql) : IAsyncLifetime
         var mollieId = _mollie.Payments.Single().Key;
         Assert.Equal(paymentId, _mollie.Payments[mollieId].OrderId);
 
-        // De webhook haalt de status bij Mollie op.
-        _mollie.SetStatus(mollieId, "paid");
-        Assert.Equal(HttpStatusCode.OK, (await _guest.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new("id", mollieId)]))).StatusCode);
+        // Nog een keer op de link terwijl de betaling open staat: dezelfde betaalpagina, geen tweede betaling.
+        Assert.Equal(pay.Headers.Location, (await _guest.GetAsync(new Uri(link).PathAndQuery)).Headers.Location);
+        Assert.Single(_mollie.Created);
+
+        // Verlopen bij Mollie: een nieuwe betaling. Die wordt betaald; de webhook haalt de status bij Mollie op.
+        _mollie.SetStatus(mollieId, "expired");
+        Assert.Equal(HttpStatusCode.Redirect, (await _guest.GetAsync(new Uri(link).PathAndQuery)).StatusCode);
+        var secondId = _mollie.Payments.Keys.Single(k => k != mollieId);
+        _mollie.SetStatus(secondId, "paid");
+        Assert.Equal(HttpStatusCode.OK, (await _guest.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new("id", secondId)]))).StatusCode);
         var payment = await WithDbAsync(db => db.DanceFestivalPayments.SingleAsync());
         Assert.Equal(DanceFestivalPaymentStatus.Paid, payment.Status);
         Assert.Equal(0, (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/dance-festival/registrations/{registration.Id}"))).GetProperty("suggestedAmountCents").GetInt32());
 
-        // Nog een keer op de link: al betaald, terug naar de pagina met een melding.
+        // Nog een keer op de link: al betaald, terug naar de pagina met een vaste meldingscode (geen vrije tekst).
         var again = await _guest.GetAsync(new Uri(link).PathAndQuery);
-        Assert.Contains("/dansgardefestival/?melding=", again.Headers.Location!.ToString(), StringComparison.Ordinal);
+        Assert.EndsWith("/dansgardefestival/?melding=betaald", again.Headers.Location!.ToString(), StringComparison.Ordinal);
+
+        // De eerste (oude) betaling wordt toch nog betaald: herkend, niet nog eens geboekt, maar gemarkeerd om terug te betalen.
+        _mollie.SetStatus(mollieId, "paid");
+        Assert.Equal(HttpStatusCode.OK, (await _guest.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new("id", mollieId)]))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _guest.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new("id", mollieId)]))).StatusCode);
+        detail = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/dance-festival/registrations/{registration.Id}"));
+        Assert.Equal(1, detail.GetProperty("payments")[0].GetProperty("duplicatePaid").GetInt32());
+        var list = await JsonAsync(await _bestuur.GetAsync("/api/v1/admin/dance-festival/registrations"));
+        Assert.Equal("Dubbel betaald", list.GetProperty("registrations")[0].GetProperty("paymentStatus").GetString());
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "dance-festival.payment-paid-twice")));
     }
 
     [Fact]

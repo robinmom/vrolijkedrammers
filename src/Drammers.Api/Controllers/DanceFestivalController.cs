@@ -88,9 +88,10 @@ public sealed class DanceFestivalController(DanceFestivals festivals, IOptions<T
         {
             return Redirect(await festivals.PayAsync(id, t, BaseUrl, cancellationToken));
         }
-        catch (DomainException ex) when (ex.Code is ErrorCodes.OrderNotPayable or ErrorCodes.PaymentFailed or ErrorCodes.PaymentsNotConfigured)
+        catch (DomainException ex) when (PaymentNotices.Handles(ex))
         {
-            return Redirect($"{BaseUrl}/dansgardefestival/?melding={Uri.EscapeDataString(ex.Message)}");
+            // Alleen een vaste code; de webpagina kent de tekst.
+            return Redirect($"{BaseUrl}/dansgardefestival/?melding={PaymentNotices.Code(ex)}");
         }
     }
 }

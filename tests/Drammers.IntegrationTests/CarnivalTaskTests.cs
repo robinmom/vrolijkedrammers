@@ -201,6 +201,28 @@ public class CarnivalTaskTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Festivalorganisatie_zoekt_leden_alleen_op_naam_met_minimaal_drie_tekens()
+    {
+        await AddMemberAsync("1234", "Anna de Vries");
+        var (_, oid) = await _api.CreateUserAsync("chantal@example.com", DefaultRoles.Dansgardefestival);
+        var festival = _api.ClientFor(oid);
+
+        async Task<string[]> SearchAsync(HttpClient client, string list, string search) =>
+            [.. (await client.GetFromJsonAsync<JsonElement>($"/api/v1/admin/{list}/members?search={Uri.EscapeDataString(search)}"))
+                .EnumerateArray().Select(m => m.GetProperty("name").GetString()!)];
+
+        Assert.Equal(["Anna de Vries"], await SearchAsync(festival, "festival/tasks", "Anna"));
+        Assert.Empty(await SearchAsync(festival, "festival/tasks", "An"));
+        Assert.Empty(await SearchAsync(festival, "festival/tasks", "1234"));
+        var found = (await festival.GetFromJsonAsync<JsonElement>("/api/v1/admin/festival/tasks/members?search=Anna"))[0];
+        Assert.Equal(["memberId", "name"], found.EnumerateObject().Select(p => p.Name).Order().ToArray());
+
+        // De takenlijst van carnaval (task.manage) zoekt zoals voorheen, ook op lidnummer.
+        Assert.Equal(["Anna de Vries"], await SearchAsync(_bestuur, "tasks", "An"));
+        Assert.Equal(["Anna de Vries"], await SearchAsync(_bestuur, "tasks", "1234"));
+    }
+
+    [Fact]
     public async Task Alleen_met_het_recht_takenlijst()
     {
         var (_, oid) = await _api.CreateUserAsync("lid@example.com", DefaultRoles.Lid);

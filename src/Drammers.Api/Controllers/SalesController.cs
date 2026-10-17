@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Authentication;
 using Drammers.Api.Authorization;
+using Drammers.Infrastructure.Contact;
 using Drammers.Infrastructure.Payments;
 using Drammers.Infrastructure.Sales;
 using Drammers.Modules.Identity.Users;
@@ -21,7 +22,8 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/sales")]
-public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> authOptions) : ControllerBase
+public sealed class SalesController(
+    TicketSales sales, IOptions<AuthOptions> authOptions, IOptions<TurnstileOptions> turnstile, ITurnstileVerifier verifier) : ControllerBase
 {
     private string BaseUrl => Request.PublicBaseUrlFor();
 
@@ -37,7 +39,10 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
         return user is { Status: AccountStatus.Active } ? new SaleBuyer(user.UserId, user.MemberId) : SaleBuyer.Guest;
     }
 
-    /// <summary>Wat er nu te koop is, met de plaatsen die nog vrij zijn. Voor een ingelogd lid ook de groepskaarten.</summary>
+    /// <summary>
+    /// Wat er nu te koop is, met de plaatsen die nog vrij zijn. Voor een ingelogd lid ook de groepskaarten; voor de
+    /// webpagina de openbare Turnstile-sleutel als die aan staat.
+    /// </summary>
     [HttpGet("products")]
     [ProducesResponseType<SaleCatalogResponse>(StatusCodes.Status200OK)]
     public async Task<SaleCatalogResponse> Products(CancellationToken cancellationToken)
@@ -48,7 +53,7 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
         var group = await sales.GroupAllowanceAsync(buyer.MemberId, cancellationToken);
         return new SaleCatalogResponse(
             [.. products.Select(p => SaleProductResponse.From(p, stock[p.Id]))],
-            buyer.MemberId is not null, group);
+            buyer.MemberId is not null, group, turnstile.Value.Enabled ? turnstile.Value.SiteKey : null);
     }
 
     [HttpPost("orders")]
@@ -60,7 +65,17 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<OrderCreated>> Order(OrderRequest request, CancellationToken cancellationToken)
     {
-        var created = await sales.OrderAsync(request.ToInput(), await BuyerAsync(), request.Channel == SaleChannel.App ? SaleChannel.App : SaleChannel.Web,
+        var channel = request.Channel == SaleChannel.App ? SaleChannel.App : SaleChannel.Web;
+        // Bestellen op de webpagina: Cloudflare Turnstile (als die aan staat) tegen bots die de voorraad vasthouden. De
+        // app kan geen Turnstile tonen; daar beschermen de rate limit, het maximum aantal onbetaalde bestellingen per
+        // e-mailadres en de korte vasthoudtijd.
+        if (channel == SaleChannel.Web && turnstile.Value.Enabled
+            && !await verifier.VerifyAsync(request.TurnstileToken, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "De controle of je geen robot bent is mislukt. Probeer het opnieuw.");
+        }
+
+        var created = await sales.OrderAsync(request.ToInput(), await BuyerAsync(), channel,
             BaseUrl, cancellationToken, Request.Headers[DeviceCheck.HeaderName].ToString());
         return Created((string?)null, created);
     }
@@ -99,10 +114,10 @@ public sealed class SalesController(TicketSales sales, IOptions<AuthOptions> aut
         {
             return Redirect(await sales.PayAsync(id, t, BaseUrl, cancellationToken));
         }
-        catch (DomainException ex) when (ex.Code is ErrorCodes.OrderNotPayable or ErrorCodes.PaymentFailed or ErrorCodes.PaymentsNotConfigured)
+        catch (DomainException ex) when (PaymentNotices.Handles(ex))
         {
-            // Terug naar de bestelpagina, die de status en de reden toont.
-            return Redirect($"{TicketSales.OrderLink(BaseUrl, id, t)}&melding={Uri.EscapeDataString(ex.Message)}");
+            // Terug naar de bestelpagina, die de status en de reden toont (alleen een vaste code, geen vrije tekst).
+            return Redirect($"{TicketSales.OrderLink(BaseUrl, id, t)}&melding={PaymentNotices.Code(ex)}");
         }
     }
 
@@ -209,14 +224,33 @@ public sealed record OrderRequest(
     [StringLength(254), EmailAddress] string? BuyerEmail,
     [StringLength(40)] string? BuyerPhone,
     [StringLength(500)] string? Remark,
-    SaleChannel Channel = SaleChannel.Web)
+    SaleChannel Channel = SaleChannel.Web,
+    [StringLength(4096)] string? TurnstileToken = null)
 {
     public OrderInput ToInput() => new(ProductId, MemberQuantity, PaidQuantity, BuyerName, BuyerEmail, BuyerPhone, Remark);
 }
 
 public sealed record WaitlistJoinedResponse(Guid Id);
 
-public sealed record SaleCatalogResponse(IReadOnlyList<SaleProductResponse> Products, bool IsMember, GroupAllowance? Group);
+public sealed record SaleCatalogResponse(IReadOnlyList<SaleProductResponse> Products, bool IsMember, GroupAllowance? Group, string? TurnstileSiteKey);
+
+/// <summary>
+/// Waarom betalen via een link niet lukte, als vaste code in <c>?melding=</c>: de webpagina kent de bijbehorende tekst.
+/// Zo kan niemand een link met een eigen tekst op onze pagina laten zien.
+/// </summary>
+public static class PaymentNotices
+{
+    public static bool Handles(DomainException ex) =>
+        ex.Code is ErrorCodes.OrderNotPayable or ErrorCodes.OrderAlreadyPaid or ErrorCodes.PaymentFailed or ErrorCodes.PaymentsNotConfigured;
+
+    public static string Code(DomainException ex) => ex.Code switch
+    {
+        ErrorCodes.OrderAlreadyPaid => "betaald",
+        ErrorCodes.PaymentFailed => "mislukt",
+        ErrorCodes.PaymentsNotConfigured => "niet-ingesteld",
+        _ => "verlopen",
+    };
+}
 
 public sealed record SaleProductResponse(
     Guid Id, SaleProductKind Kind, string Name, string? Description, Guid? EventId, DateOnly? Date, int PriceCents, int? Capacity,

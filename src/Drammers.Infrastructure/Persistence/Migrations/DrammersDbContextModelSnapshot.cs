@@ -1044,6 +1044,54 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalMolliePayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("DuplicatePaid")
+                        .HasColumnType("bit")
+                        .HasColumnName("duplicate_paid");
+
+                    b.Property<string>("MolliePaymentId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("mollie_payment_id");
+
+                    b.Property<string>("MollieStatus")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("mollie_status");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("payment_id");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DanceFestivalMolliePayment");
+
+                    b.HasIndex("MolliePaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DanceFestivalMolliePayment_mollie_payment_id");
+
+                    b.HasIndex("PaymentId")
+                        .HasDatabaseName("IX_DanceFestivalMolliePayment_payment_id");
+
+                    b.ToTable("DanceFestivalMolliePayment", "payments");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalPayment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5356,6 +5404,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("verification_expires_at");
 
+                    b.Property<int>("VerificationResends")
+                        .HasColumnType("int")
+                        .HasColumnName("verification_resends");
+
                     b.HasKey("Id")
                         .HasName("PK_MembershipApplication");
 
@@ -8137,6 +8189,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("verification_expires_at");
 
+                    b.Property<int>("VerificationResends")
+                        .HasColumnType("int")
+                        .HasColumnName("verification_resends");
+
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("withdrawn_at");
@@ -8880,6 +8936,69 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.SaleOrderPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AmountCents")
+                        .HasColumnType("int")
+                        .HasColumnName("amount_cents");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("MolliePaymentId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("mollie_payment_id");
+
+                    b.Property<string>("MollieStatus")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("mollie_status");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("order_id");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("RefundReason")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("refund_reason");
+
+                    b.HasKey("Id")
+                        .HasName("PK_SaleOrderPayment");
+
+                    b.HasIndex("MolliePaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_SaleOrderPayment_mollie_payment_id");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("IX_SaleOrderPayment_order_id");
+
+                    b.HasIndex("RefundReason")
+                        .HasDatabaseName("IX_SaleOrderPayment_refund_reason")
+                        .HasFilter("[refund_reason] IS NOT NULL");
+
+                    b.ToTable("SaleOrderPayment", "payments", t =>
+                        {
+                            t.HasCheckConstraint("CK_SaleOrderPayment_amount", "[amount_cents] >= 0");
+
+                            t.HasCheckConstraint("CK_SaleOrderPayment_refund_reason", "[refund_reason] IN ('DuplicatePayment', 'NoPlace')");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.SaleOrderSequence", b =>
                 {
                     b.Property<int>("CarnivalYearId")
@@ -9485,6 +9604,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalRegistration", null)
                         .WithMany("Entries")
                         .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalMolliePayment", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Festival.DanceFestivalPayment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -10371,6 +10499,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.SaleOrderPayment", b =>
+                {
+                    b.HasOne("Drammers.Modules.Ticketing.Sales.SaleOrder", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

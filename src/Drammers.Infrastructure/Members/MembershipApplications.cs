@@ -66,10 +66,12 @@ public sealed class MembershipApplications(
 {
     public const string ProvisionMessageType = "membership.provision";
 
-    /// <summary>Geldigheid van de e-mailcode en het maximale aantal pogingen.</summary>
+    /// <summary>Geldigheid van de e-mailcode, het maximale aantal pogingen (over alle codes samen) en nieuwe codes.</summary>
     public static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(30);
 
     public const int MaxCodeAttempts = 5;
+
+    public const int MaxCodeResends = 3;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -98,6 +100,14 @@ public sealed class MembershipApplications(
     public async Task ResendCodeAsync(Guid id, CancellationToken cancellationToken)
     {
         var application = await FindDraftAsync(id, cancellationToken);
+        // Een rem op mail naar een (mogelijk vreemd) adres, en geen nieuwe pogingen door steeds een nieuwe code te vragen.
+        if (application.VerificationResends >= MaxCodeResends || application.VerificationAttempts >= MaxCodeAttempts)
+        {
+            throw new DomainException(ErrorCodes.VerificationResendLimit,
+                "Er kan geen nieuwe code meer worden gestuurd. Controleer je e-mailadres (en de map Ongewenst) of meld je opnieuw aan.", DomainErrorKind.Conflict);
+        }
+
+        application.VerificationResends++;
         var code = NewCode(application);
         await db.SaveChangesAsync(cancellationToken);
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
@@ -109,7 +119,12 @@ public sealed class MembershipApplications(
     {
         var application = await FindDraftAsync(id, cancellationToken);
         var now = clock.UtcNow.UtcDateTime;
-        if (application.VerificationAttempts >= MaxCodeAttempts || application.VerificationExpiresAt is not { } expires || expires < now)
+        if (application.VerificationAttempts >= MaxCodeAttempts)
+        {
+            throw new DomainException(ErrorCodes.VerificationCodeExpired, "Te vaak een verkeerde code ingevuld. Meld je opnieuw aan.", DomainErrorKind.Conflict);
+        }
+
+        if (application.VerificationExpiresAt is not { } expires || expires < now)
         {
             throw new DomainException(ErrorCodes.VerificationCodeExpired, "De code is verlopen. Vraag een nieuwe code aan.", DomainErrorKind.Conflict);
         }
@@ -648,7 +663,6 @@ public sealed class MembershipApplications(
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
         application.VerificationCodeHash = HashCode(application.Id, code);
         application.VerificationExpiresAt = clock.UtcNow.UtcDateTime + CodeLifetime;
-        application.VerificationAttempts = 0;
         return code;
     }
 
@@ -736,7 +750,7 @@ public sealed class MembershipApplications(
             <p>Dit e-mailadres hoort al bij een ander account. Wil je een eigen account met je eigen gegevens en ledenticket? Neem dan contact op met de ledenadministratie via <a href="https://www.vrolijkedrammers.nl/contact">www.vrolijkedrammers.nl/contact</a> en geef een eigen e-mailadres door.</p>
             <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
             """;
-        return new EmailMessage(to, Subject, text, html, MemberSplits.ReplyTo);
+        return new EmailMessage(to, Subject, text, html, MemberSplits.ReplyTo, MemberSplits.Sender);
     }
 
     public static EmailMessage GuardianWelcomeMail(string to, string guardianName, string childFirstName, bool passwordSignIn = false)

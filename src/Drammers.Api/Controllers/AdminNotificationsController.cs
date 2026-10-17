@@ -89,11 +89,14 @@ public sealed class AdminNotificationsController(
         return new NotificationAudienceOptionsResponse(full, user.Permissions.Contains(Permissions.NotificationSendUrgent), roles, groups);
     }
 
+    /// <summary>Aantal ontvangers vooraf; alleen voor een doelgroep die de afzender ook mag gebruiken.</summary>
     [HttpPost("preview-audience")]
     [ProducesResponseType<AudiencePreview>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<AudiencePreview> Preview(AudiencePreviewRequest request, CancellationToken cancellationToken)
     {
-        Sender();
+        await notifications.AuthorizeAsync(request.Category, request.Audience, Sender(), cancellationToken);
         return await resolver.PreviewAsync(request.Audience, request.Category, cancellationToken);
     }
 

@@ -91,6 +91,20 @@ internal sealed class DanceFestivalPaymentConfiguration : IEntityTypeConfigurati
     }
 }
 
+internal sealed class DanceFestivalMolliePaymentConfiguration : IEntityTypeConfiguration<DanceFestivalMolliePayment>
+{
+    public void Configure(EntityTypeBuilder<DanceFestivalMolliePayment> builder)
+    {
+        builder.ToTable("DanceFestivalMolliePayment", Schemas.Payments);
+        builder.Property(p => p.Id).ValueGeneratedNever();
+        builder.Property(p => p.MolliePaymentId).HasMaxLength(40).IsUnicode(false);
+        builder.Property(p => p.MollieStatus).HasMaxLength(20).IsUnicode(false);
+        builder.HasIndex(p => p.MolliePaymentId).IsUnique();
+        builder.HasIndex(p => p.PaymentId);
+        builder.HasOne<DanceFestivalPayment>().WithMany().HasForeignKey(p => p.PaymentId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 internal sealed class DanceFestivalProgramItemConfiguration : IEntityTypeConfiguration<DanceFestivalProgramItem>
 {
     public void Configure(EntityTypeBuilder<DanceFestivalProgramItem> builder)

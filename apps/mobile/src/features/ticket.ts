@@ -2,6 +2,8 @@ import type { components } from '@drammers/api-client';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceKey } from '../../modules/device-key';
 import { api } from '../api/client';
+import { forgetTicket } from '../auth/localData';
+import { storageKeys } from '../lib/storageKeys';
 import { base45, fromBase64, QR_VERSION, QR_VERSION_TOKENS, signedPayload, toBase64, unsignedPayload } from './deviceQr';
 
 export type MyTicket = components['schemas']['MyTicket'];
@@ -16,10 +18,10 @@ export const REFRESH_SECONDS = 30;
 const VALID_FOR = 45;
 
 const STORE: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY };
-const TICKET_CACHE = 'dvd.ticket.v1';
-const KEY_STATE = 'dvd.ticketkey.v1';
+const TICKET_CACHE = storageKeys.ticket;
+const KEY_STATE = storageKeys.ticketKeyState;
 /** Kinderen waarvan dit toestel een ticket bewaart (fase 17), zodat uitloggen ook die gegevens wist. */
-const CHILD_CACHES = 'dvd.ticket.children.v1';
+const CHILD_CACHES = storageKeys.ticketChildren;
 
 /** Eigen ticket, of dat van een kind waarvan de gebruiker ouder/verzorger is (fase 17). */
 const cacheKey = (childId?: string) => (childId ? `${TICKET_CACHE}.${childId}` : TICKET_CACHE);
@@ -70,16 +72,8 @@ export async function loadTicket(childId?: string): Promise<CachedTicket | null>
   return raw ? (JSON.parse(raw) as CachedTicket) : null;
 }
 
-/** Bij uitloggen: ticketgegevens en sleutelstatus van dit toestel vergeten. */
-export async function forgetTicket(): Promise<void> {
-  const children = await childCaches();
-  await Promise.all([
-    SecureStore.deleteItemAsync(TICKET_CACHE, STORE),
-    SecureStore.deleteItemAsync(KEY_STATE, STORE),
-    SecureStore.deleteItemAsync(CHILD_CACHES, STORE),
-    ...children.map((id) => SecureStore.deleteItemAsync(cacheKey(id), STORE)),
-  ]).catch(() => undefined);
-}
+/** Bij uitloggen: ticketgegevens en sleutelstatus van dit toestel vergeten (staat bij de andere opruimcode). */
+export { forgetTicket };
 
 /**
  * Zorgt dat dit toestel een hardwaresleutel heeft die de API kent. `false` zonder de native module (Expo Go, web):

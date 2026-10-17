@@ -7,6 +7,9 @@
     "preview": {
       "distribution": "internal",
       "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://app-dvd-api-dev.azurewebsites.net"
+      },
       "android": {
         "buildType": "apk"
       }
@@ -14,6 +17,9 @@
     "testflight": {
       "distribution": "store",
       "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://app-dvd-api-dev.azurewebsites.net"
+      },
       "autoIncrement": true,
       "ios": {
         "resourceClass": "default"

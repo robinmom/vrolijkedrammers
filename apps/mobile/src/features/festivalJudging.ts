@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { components } from '@drammers/api-client';
 import { api, unwrap } from '../api/client';
+import { storageKeys } from '../lib/storageKeys';
 
 export type FestivalCriterion = components['schemas']['FestivalCriterion'];
 export type FestivalSession = components['schemas']['FestivalJurySession'];
@@ -40,20 +41,21 @@ export interface FestivalStore {
 
 export const festivalScoreKey = (entryId: string, criterion: FestivalCriterion) => `${entryId}|${criterion}`;
 
-const storageKey = (festivalId: string) => `festival-jury:${festivalId}`;
+/** Per gebruiker: een volgende gebruiker van de telefoon ziet ze niet (en bij uitloggen worden ze gewist). */
+const storageKey = (userId: string, festivalId: string) => `${storageKeys.festivalJuryPrefix}${userId}:${festivalId}`;
 
 /** Punten en opmerkingen van dit festival op de telefoon (overleeft afsluiten en een zaal zonder netwerk). */
-export async function loadFestivalStore(festivalId: string): Promise<FestivalStore> {
+export async function loadFestivalStore(userId: string, festivalId: string): Promise<FestivalStore> {
   try {
-    const raw = await AsyncStorage.getItem(storageKey(festivalId));
+    const raw = await AsyncStorage.getItem(storageKey(userId, festivalId));
     return raw ? (JSON.parse(raw) as FestivalStore) : { scores: [], comments: [] };
   } catch {
     return { scores: [], comments: [] };
   }
 }
 
-export async function saveFestivalStore(festivalId: string, store: FestivalStore) {
-  await AsyncStorage.setItem(storageKey(festivalId), JSON.stringify(store));
+export async function saveFestivalStore(userId: string, festivalId: string, store: FestivalStore) {
+  await AsyncStorage.setItem(storageKey(userId, festivalId), JSON.stringify(store));
 }
 
 /** Server en telefoon samenvoegen: per onderdeel en per opmerking wint wat nog niet verstuurd en nieuwer is. */

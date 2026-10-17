@@ -41,6 +41,7 @@ public static class ErrorCodes
     public const string GroupNameTaken = "GROUP_NAME_TAKEN";
     public const string DeviceRevoked = "DEVICE_REVOKED";
     public const string DeviceNotFound = "DEVICE_NOT_FOUND";
+    public const string DeviceRequired = "DEVICE_REQUIRED";
     public const string AccountRequestNotFound = "ACCOUNT_REQUEST_NOT_FOUND";
     public const string AccountRequestDecided = "ACCOUNT_REQUEST_DECIDED";
     public const string MemberHasAccount = "MEMBER_HAS_ACCOUNT";
@@ -55,6 +56,7 @@ public static class ErrorCodes
     public const string ApplicationDecided = "APPLICATION_DECIDED";
     public const string VerificationCodeInvalid = "VERIFICATION_CODE_INVALID";
     public const string VerificationCodeExpired = "VERIFICATION_CODE_EXPIRED";
+    public const string VerificationResendLimit = "VERIFICATION_RESEND_LIMIT";
     public const string TestAccessUnavailable = "TEST_ACCESS_UNAVAILABLE";
     public const string NoSignIn = "NO_SIGN_IN";
     public const string NotificationNotFound = "NOTIFICATION_NOT_FOUND";
@@ -95,5 +97,7 @@ public static class ErrorCodes
     public const string OrderInvalid = "ORDER_INVALID";
     public const string OrderNotFound = "ORDER_NOT_FOUND";
     public const string OrderNotPayable = "ORDER_NOT_PAYABLE";
+    public const string OrderAlreadyPaid = "ORDER_ALREADY_PAID";
+    public const string TooManyOpenOrders = "TOO_MANY_OPEN_ORDERS";
     public const string WaitlistNotFound = "WAITLIST_NOT_FOUND";
 }

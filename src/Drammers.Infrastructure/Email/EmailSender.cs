@@ -8,8 +8,9 @@ namespace Drammers.Infrastructure.Email;
 
 /// <summary>
 /// Een e-mail met platte tekst en HTML (docs/06: geen persoonsgegevens in logs). <paramref name="ReplyTo"/>: antwoorden
-/// gaan naar dit adres. <paramref name="From"/>: afzendernaam vóór de @ (bijv. <c>secretaris</c>), alleen gebruikt als er
-/// een eigen domein is ingesteld (<see cref="EmailOptions.CustomSenderDomain"/>); anders blijft het DoNotReply.
+/// gaan naar dit adres; het bepaalt nooit de afzender (het kan door een bezoeker zijn ingevuld). <paramref name="From"/>:
+/// afzendernaam vóór de @ (bijv. <c>secretaris</c>), alleen gebruikt als er een eigen domein is ingesteld
+/// (<see cref="EmailOptions.CustomSenderDomain"/>); anders blijft het DoNotReply.
 /// <paramref name="UnsubscribeUrl"/>: afmelden met één klik (koppen List-Unsubscribe en List-Unsubscribe-Post, RFC 8058),
 /// alleen bij nieuwsbrieven en uitnodigingen; mailprogramma's tonen dan een eigen afmeldknop. <paramref name="ViaMailbox"/>:
 /// versturen via de echte mailbox in Microsoft 365 als die afzender daarvoor is ingesteld (<see cref="MailboxEmailSender"/>).
@@ -114,9 +115,9 @@ internal sealed partial class AcsEmailSender(IOptions<EmailOptions> options, Tok
 
 /// <summary>
 /// Het afzenderadres (fase 7, eigen maildomein). Met een gekoppeld eigen domein: de gevraagde afzender
-/// (<see cref="EmailMessage.From"/>), anders die van het antwoordadres als dat een eigen afzender is (een bericht met
-/// Reply-To secretaris@vrolijkedrammers.nl komt dan ook van secretaris@), anders DoNotReply@ het eigen domein. Zonder
-/// eigen domein altijd DoNotReply@ het Azure-domein. Alleen afzenders die in ACS bestaan, anders weigert ACS het bericht.
+/// (<see cref="EmailMessage.From"/>), anders DoNotReply@ het eigen domein. Zonder eigen domein altijd DoNotReply@ het
+/// Azure-domein. Alleen afzenders die in ACS bestaan, anders weigert ACS het bericht. Het antwoordadres telt bewust niet
+/// mee: dat vult bij het contactformulier een bezoeker in, die anders een echte mail "van voorzitter@" kon laten sturen.
 /// </summary>
 public static class EmailSenderAddress
 {
@@ -134,14 +135,16 @@ public static class EmailSenderAddress
             return $"{from.ToLowerInvariant()}@{domain}";
         }
 
-        if (message.ReplyTo is { Length: > 0 } replyTo && replyTo.Split('@') is [var local, var replyDomain]
-            && replyDomain.Equals(domain, StringComparison.OrdinalIgnoreCase) && allowed.Contains(local))
-        {
-            return $"{local.ToLowerInvariant()}@{domain}";
-        }
-
         return $"DoNotReply@{domain}";
     }
+
+    /// <summary>
+    /// Of een adres op het eigen maildomein valt. Openbare formulieren weigeren zo'n adres, want het wordt het
+    /// antwoordadres van een mail die van het eigen domein komt.
+    /// </summary>
+    public static bool IsOwnDomain(string? address, EmailOptions options) =>
+        options.CustomSenderDomain is { Length: > 0 } domain && address?.Trim().Split('@') is [_, var addressDomain]
+        && addressDomain.Equals(domain.Trim(), StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>Omleiden in Dev: naar één testadres, met de oorspronkelijke ontvanger in het onderwerp en bovenaan de tekst.</summary>

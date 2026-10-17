@@ -562,4 +562,170 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(9, group.GetProperty("activeMembers").GetInt32());
         Assert.Equal(14, group.GetProperty("persons").GetInt32());
     }
+
+    private HttpClient NoRedirect() => _api.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+    private async Task<int> ExpireAsync()
+    {
+        using var scope = _api.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Sales.TicketSales>().ExpireAsync("https://localhost", CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Opnieuw_betalen_hergebruikt_de_open_betaling_en_een_tweede_betaling_wordt_terugbetaald()
+    {
+        var product = await ProductAsync("DayTicket", "Dagkaart dinsdag", 500, capacity: 50, date: "2027-02-09");
+        var created = await JsonAsync(await _bestuur.PostAsJsonAsync("/api/v1/admin/sales/orders", new
+        {
+            productId = product,
+            groupName = (string?)null,
+            memberQuantity = 0,
+            paidQuantity = 2,
+            buyerName = "Kees",
+            buyerEmail = "kees@example.com",
+            buyerPhone = (string?)null,
+            remark = (string?)null,
+            payment = "PaymentLink",
+        }), HttpStatusCode.Created);
+        var orderId = created.GetProperty("id").GetGuid();
+        var link = new Uri(_api.Emails.Sent.Last(m => m.To == "kees@example.com").PlainText.Split(' ', '\n')
+            .Single(w => w.Contains("/pay?t=", StringComparison.Ordinal)).Trim()).PathAndQuery;
+        var client = NoRedirect();
+
+        // Twee keer op "Betalen" terwijl de eerste betaling nog open staat: dezelfde betaalpagina, één betaling bij Mollie.
+        var first = await client.GetAsync(link);
+        Assert.Equal(first.Headers.Location, (await client.GetAsync(link)).Headers.Location);
+        var firstId = Assert.Single(_mollie.Payments.Keys);
+
+        // De eerste betaling verloopt bij Mollie: een nieuwe betaling, die wel betaald wordt.
+        _mollie.SetStatus(firstId, "expired");
+        Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync(link)).StatusCode);
+        var secondId = _mollie.Payments.Keys.Single(k => k != firstId);
+        _mollie.SetStatus(secondId, "paid");
+        await WebhookAsync(secondId);
+        Assert.Equal(SaleOrderStatus.Confirmed, (await WithDbAsync(db => db.SaleOrders.SingleAsync(o => o.Id == orderId))).Status);
+        Assert.EndsWith("&melding=betaald", (await client.GetAsync(link)).Headers.Location!.ToString(), StringComparison.Ordinal);
+
+        // De oude betaling wordt toch nog betaald: de webhook herkent hem, maar bevestigt niet nog eens.
+        _mollie.SetStatus(firstId, "paid");
+        await WebhookAsync(firstId);
+        await WebhookAsync(firstId);
+        Assert.Equal(1, await WithDbAsync(db => db.OrderTickets.CountAsync(t => t.OrderId == orderId)));
+        var row = (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/orders?productId={product}"))).GetProperty("items")[0];
+        Assert.Equal("Confirmed", row.GetProperty("status").GetString());
+        Assert.Equal(1000, row.GetProperty("refundDueCents").GetInt32());
+        Assert.Equal("DuplicatePayment", row.GetProperty("refundReason").GetString());
+        Assert.Equal(1, await WithDbAsync(db => db.AuditLog.CountAsync(a => a.Action == "sale-order.refund-due" && a.EntityId == orderId.ToString())));
+    }
+
+    [Fact]
+    public async Task Late_betaling_zonder_plaats_wordt_niet_bevestigd_en_contant_boeken_controleert_de_capaciteit()
+    {
+        var product = await ProductAsync("DayTicket", "Dagkaart zondag", 500, capacity: 1, date: "2027-02-07");
+        var jan = await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1)), HttpStatusCode.Created);
+        var janId = jan.GetProperty("orderId").GetGuid();
+        var janPayment = Assert.Single(_mollie.Payments.Keys);
+
+        // Na de vasthoudtijd (15 minuten) is de plaats weer vrij en koopt iemand anders hem.
+        _api.Clock.Advance(TimeSpan.FromMinutes(16));
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1, email: "piet@example.com")), HttpStatusCode.Created);
+
+        // Jan betaalt toch nog: geen plaats, dus niet bevestigd maar gemarkeerd om terug te betalen.
+        _mollie.SetStatus(janPayment, "paid");
+        await WebhookAsync(janPayment);
+        var order = await WithDbAsync(db => db.SaleOrders.SingleAsync(o => o.Id == janId));
+        Assert.Equal(SaleOrderStatus.Expired, order.Status);
+        Assert.Equal(0, await WithDbAsync(db => db.OrderTickets.CountAsync(t => t.OrderId == janId)));
+        Assert.Equal(SaleRefundReason.NoPlace, (await WithDbAsync(db => db.SaleOrderPayments.SingleAsync(p => p.MolliePaymentId == janPayment))).RefundReason);
+
+        // Contant boeken mag het product ook niet overboeken.
+        var cash = await _bestuur.PostAsync($"/api/v1/admin/sales/orders/{janId}/paid-cash", null);
+        Assert.Equal(HttpStatusCode.Conflict, cash.StatusCode);
+        Assert.Contains("vol", await cash.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Opruimen_wacht_op_open_betalingen_en_een_late_betaling_met_plaats_wordt_bevestigd()
+    {
+        var product = await ProductAsync("DayTicket", "Dagkaart woensdag", 500, capacity: 10, date: "2027-02-10");
+        var a = (await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1)), HttpStatusCode.Created)).GetProperty("orderId").GetGuid();
+        var b = (await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1, email: "piet@example.com")), HttpStatusCode.Created))
+            .GetProperty("orderId").GetGuid();
+        var paymentA = _mollie.Payments.Single(p => p.Value.OrderId == a).Key;
+        var paymentB = _mollie.Payments.Single(p => p.Value.OrderId == b).Key;
+        _api.Clock.Advance(TimeSpan.FromMinutes(20));
+
+        // De betalingen staan bij Mollie nog open: niets laten verlopen.
+        Assert.Equal(0, await ExpireAsync());
+        // De betaling van A is verlopen: A verloopt (de plaats is vrij), B heeft nog een open betaling en blijft staan.
+        _mollie.SetStatus(paymentA, "expired");
+        await ExpireAsync();
+        Assert.Equal(SaleOrderStatus.Expired, (await WithDbAsync(db => db.SaleOrders.SingleAsync(o => o.Id == a))).Status);
+        Assert.Equal(SaleOrderStatus.AwaitingPayment, (await WithDbAsync(db => db.SaleOrders.SingleAsync(o => o.Id == b))).Status);
+
+        // B betaalt na de vasthoudtijd, er is nog plaats: bevestigd.
+        _mollie.SetStatus(paymentB, "paid");
+        await WebhookAsync(paymentB);
+        Assert.Equal(SaleOrderStatus.Confirmed, (await WithDbAsync(db => db.SaleOrders.SingleAsync(o => o.Id == b))).Status);
+        Assert.Null((await WithDbAsync(db => db.SaleOrderPayments.SingleAsync(p => p.MolliePaymentId == paymentB))).RefundReason);
+    }
+
+    [Fact]
+    public async Task Hooguit_twee_onbetaalde_bestellingen_per_e_mailadres_per_product()
+    {
+        var product = await ProductAsync("DayTicket", "Dagkaart donderdag", 500, capacity: 100, date: "2027-02-11");
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1)), HttpStatusCode.Created);
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1, email: "JAN@example.com")), HttpStatusCode.Created);
+        var third = await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1));
+        Assert.Equal(HttpStatusCode.Conflict, third.StatusCode);
+        Assert.Equal("TOO_MANY_OPEN_ORDERS", (await third.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
+
+        // Een ander e-mailadres wel; en na de vasthoudtijd ook weer hetzelfde adres.
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1, email: "piet@example.com")), HttpStatusCode.Created);
+        _api.Clock.Advance(TimeSpan.FromMinutes(16));
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1)), HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task Turnstile_op_bestellen_via_de_website_niet_in_de_app()
+    {
+        var turnstile = new FakeTurnstile();
+        await using var api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), configure: services =>
+        {
+            services.AddSingleton<Drammers.Infrastructure.Payments.IMollieClient>(new FakeMollie());
+            services.Configure<Drammers.Infrastructure.Contact.TurnstileOptions>(o => o.SiteKey = "site-key-test");
+            services.AddSingleton<Drammers.Infrastructure.Contact.ITurnstileVerifier>(turnstile);
+        });
+        var bestuur = api.ClientFor((await api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
+        var product = (await JsonAsync(await bestuur.PostAsJsonAsync("/api/v1/admin/sales/products", new
+        {
+            kind = "DayTicket",
+            name = "Dagkaart vrijdag",
+            description = (string?)null,
+            eventId = (Guid?)null,
+            date = "2027-02-12",
+            priceCents = 500,
+            capacity = 10,
+            maxPerOrder = 10,
+            saleOpensAt = (DateTime?)null,
+            saleClosesAt = (DateTime?)null,
+            onSale = true,
+            sortOrder = 0,
+        }), HttpStatusCode.Created)).GetGuid();
+        var guest = api.CreateClient();
+        Assert.Equal("site-key-test", (await JsonAsync(await guest.GetAsync("/api/v1/sales/products"))).GetProperty("turnstileSiteKey").GetString());
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1))).StatusCode);
+        var web = new { productId = product, memberQuantity = 0, paidQuantity = 1, buyerName = "Jan", buyerEmail = "jan@example.com", channel = "Web", turnstileToken = FakeTurnstile.Valid };
+        await JsonAsync(await guest.PostAsJsonAsync("/api/v1/sales/orders", web), HttpStatusCode.Created);
+        // De app kan geen Turnstile tonen.
+        await JsonAsync(await guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1, email: "piet@example.com", channel: "App")), HttpStatusCode.Created);
+    }
+
+    private sealed class FakeTurnstile : Drammers.Infrastructure.Contact.ITurnstileVerifier
+    {
+        public const string Valid = "turnstile-ok";
+
+        public Task<bool> VerifyAsync(string? token, string? remoteIp, CancellationToken cancellationToken) => Task.FromResult(token == Valid);
+    }
 }

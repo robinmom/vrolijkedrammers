@@ -19,9 +19,10 @@ const SYNC_DELAY_MS = 1500;
  * Punten en opmerkingen van een jurylid op het Dansgardefestival (2026-10-15): direct op de telefoon bewaard en daarna in
  * de achtergrond verstuurd, ook als de verbinding pas later terugkomt (zoals bij de optocht).
  */
-export function useFestivalJudging(session: FestivalSession | undefined) {
+export function useFestivalJudging(session: FestivalSession | undefined, userId: string | undefined) {
   const [store, setStore] = useState<FestivalStore>({ scores: [], comments: [] });
-  const [loaded, setLoaded] = useState(false);
+  // Voor welke gebruiker en welk festival de gegevens zijn ingelezen; pas dan worden ze (onder die sleutel) bewaard.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
   const latest = useRef(store);
@@ -29,23 +30,25 @@ export function useFestivalJudging(session: FestivalSession | undefined) {
     latest.current = store;
   }, [store]);
   const festivalId = session?.festivalId;
+  const owner = userId && festivalId ? `${userId}:${festivalId}` : null;
+  const loaded = owner !== null && loadedFor === owner;
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !userId) return;
     let active = true;
-    void loadFestivalStore(session.festivalId).then((local) => {
+    void loadFestivalStore(userId, session.festivalId).then((local) => {
       if (!active) return;
       setStore(mergeFestival(session, local));
-      setLoaded(true);
+      setLoadedFor(`${userId}:${session.festivalId}`);
     });
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session, userId]);
 
   useEffect(() => {
-    if (loaded && festivalId) void saveFestivalStore(festivalId, store).catch(() => undefined);
-  }, [loaded, festivalId, store]);
+    if (loaded && userId && festivalId) void saveFestivalStore(userId, festivalId, store).catch(() => undefined);
+  }, [loaded, userId, festivalId, store]);
 
   const sync = useCallback(async () => {
     const current = latest.current;

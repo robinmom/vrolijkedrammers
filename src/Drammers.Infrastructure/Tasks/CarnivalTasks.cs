@@ -195,16 +195,21 @@ public sealed partial class CarnivalTasks(DrammersDbContext db, IClock clock, IA
         return new TaskReport(year.YearId, year.YearName, year.Summary, perCategory, perPerson);
     }
 
-    /// <summary>Actieve leden om aan een taak te koppelen (zonder het recht om leden in te zien).</summary>
-    public async Task<IReadOnlyList<TaskPerson>> SearchMembersAsync(string search, CancellationToken cancellationToken)
+    /// <summary>
+    /// Actieve leden om aan een taak te koppelen (zonder het recht om leden in te zien): alleen id en naam. De organisatie
+    /// van het festival (alleen <c>festival.manage</c>, vaak geen bestuur) zoekt alleen op naam en met minimaal 3 tekens,
+    /// zodat het ledenbestand niet met korte zoektermen of lidnummers is af te lopen.
+    /// </summary>
+    public async Task<IReadOnlyList<TaskPerson>> SearchMembersAsync(TaskList list, string search, CancellationToken cancellationToken)
     {
         var term = search.Trim();
-        if (term.Length < 2)
+        var festival = list == TaskList.Festival;
+        if (term.Length < (festival ? 3 : 2))
         {
             return [];
         }
 
-        return (await db.Members.AsNoTracking().Where(m => m.FullName.Contains(term) || m.MemberNumber == term)
+        return (await db.Members.AsNoTracking().Where(m => m.FullName.Contains(term) || (!festival && m.MemberNumber == term))
                 .OrderBy(m => m.FullName).Take(40).ToListAsync(cancellationToken))
             .Where(m => m.EffectiveStatus == MembershipStatus.Active).Take(15).Select(m => new TaskPerson(m.Id, m.FullName)).ToList();
     }

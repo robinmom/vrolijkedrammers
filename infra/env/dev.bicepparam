@@ -41,3 +41,5 @@ param boundHostNames = filter(split(readEnvironmentVariable('DVD_BOUND_HOSTNAMES
 param emailRedirectTo = 'app@vrolijkedrammers.nl'
 // Inloggen met wachtwoord (runbook accounts-wachtwoord): na infra/entra/wachtwoord-inloggen.sh DVD_PASSWORD_SIGN_IN=true.
 param passwordSignIn = readEnvironmentVariable('DVD_PASSWORD_SIGN_IN', 'false') == 'true'
+// 2026-10-17: Dev heeft testgegevens (infra/dev/anonimiseer-dev.sh); de koppeling met de echte administratie staat uit.
+param eBoekhoudenEnabled = false

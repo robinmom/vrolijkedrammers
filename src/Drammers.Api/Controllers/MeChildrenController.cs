@@ -40,6 +40,7 @@ public sealed class MeChildrenController(Guardians guardians, MemberTickets tick
 
     /// <summary>Koppelt het ticket van het kind aan dit toestel van de ouder (telt mee voor het maximum per carnavalsjaar).</summary>
     [HttpPost("ticket/bind-device")]
+    [RequireDevice]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
@@ -50,6 +51,7 @@ public sealed class MeChildrenController(Guardians guardians, MemberTickets tick
     }
 
     [HttpGet("ticket/code")]
+    [RequireDevice]
     [ProducesResponseType<ServerCode>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public Task<ServerCode> Code(Guid memberId, CancellationToken cancellationToken) =>

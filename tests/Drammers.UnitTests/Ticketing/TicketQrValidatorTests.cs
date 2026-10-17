@@ -24,9 +24,11 @@ public sealed class TicketQrValidatorTests : IDisposable
         _ref, cv, status, active, Now.AddDays(-1), Now.AddDays(2), QrPayload.ShortDeviceId(device ?? _deviceId),
         _device.ExportSubjectPublicKeyInfo(), "Piet Lid");
 
-    private string Code(ECDsa key, byte version = QrPayload.DeviceSigned, int cv = 1, DateTimeOffset? issued = null, Guid? device = null)
+    private string Code(
+        ECDsa key, byte version = QrPayload.DeviceSigned, int cv = 1, DateTimeOffset? issued = null, Guid? device = null,
+        int validFor = QrPayload.DefaultValidFor)
     {
-        var unsigned = QrPayload.Unsigned(version, _ref, cv, QrPayload.ShortDeviceId(device ?? _deviceId), (issued ?? Now).ToUnixTimeSeconds(), QrPayload.DefaultValidFor);
+        var unsigned = QrPayload.Unsigned(version, _ref, cv, QrPayload.ShortDeviceId(device ?? _deviceId), (issued ?? Now).ToUnixTimeSeconds(), validFor);
         var signature = key.SignData(unsigned, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
         return Base45.Encode([.. unsigned, .. signature]);
     }
@@ -69,6 +71,17 @@ public sealed class TicketQrValidatorTests : IDisposable
     {
         Assert.Equal(QrCheck.Valid, Check(Code(_device, issued: Now.AddSeconds(-120))).Result);
         Assert.Equal(QrCheck.Expired, Check(Code(_device, issued: Now.AddSeconds(-140))).Result);
+    }
+
+    [Fact]
+    public void Geldigheid_boven_het_maximum_is_verlopen_ook_met_een_geldige_handtekening()
+    {
+        // Het toestel kiest exp zelf: een code die een dag geldig zou zijn, mag niet als screenshot blijven werken.
+        Assert.Equal(QrCheck.Valid, Check(Code(_device, validFor: QrPayload.MaxValidFor)).Result);
+        Assert.Equal(QrCheck.Expired, Check(Code(_device, validFor: QrPayload.MaxValidFor + 1)).Result);
+        Assert.Equal(QrCheck.Expired, Check(Code(_device, validFor: ushort.MaxValue)).Result);
+        Assert.Equal(QrCheck.Expired, Check(Code(_server, QrPayload.ServerSigned, validFor: ushort.MaxValue)).Result);
+        Assert.Equal(QrCheck.Expired, Check(Code(_device, issued: Now.AddHours(-1), validFor: 7200)).Result);
     }
 
     [Fact]

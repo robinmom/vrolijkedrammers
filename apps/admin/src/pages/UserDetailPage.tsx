@@ -176,7 +176,10 @@ export function UserDetailPage() {
       {canBlock ? (
         <section className="card" aria-labelledby="apparaten">
           <h2 id="apparaten">Apparaten</h2>
-          <p className="muted">Waar deze gebruiker in de app is ingelogd. Intrekken logt dat apparaat direct uit.</p>
+          <p className="muted">
+            Waar deze gebruiker in de app is ingelogd. Intrekken logt dat apparaat direct uit; daarna moet de gebruiker
+            ook op zijn andere apparaten en in het portal opnieuw inloggen.
+          </p>
           <ProblemAlert error={devices.error ?? revokeDevice.error} />
           {devices.data && devices.data.length === 0 ? <p className="muted">Nog niet ingelogd in de app.</p> : null}
           {devices.data && devices.data.length > 0 ? (
@@ -214,7 +217,14 @@ export function UserDetailPage() {
                             className="button secondary small"
                             aria-label={`${d.name} intrekken`}
                             disabled={revokeDevice.isPending}
-                            onClick={() => revokeDevice.mutate(d.id, { onSuccess: () => setMessage(`${d.name} is ingetrokken.`) })}
+                            onClick={() =>
+                              revokeDevice.mutate(d.id, {
+                                onSuccess: () =>
+                                  setMessage(
+                                    `${d.name} is ingetrokken. De gebruiker moet op andere apparaten opnieuw inloggen.`,
+                                  ),
+                              })
+                            }
                           >
                             Intrekken
                           </button>

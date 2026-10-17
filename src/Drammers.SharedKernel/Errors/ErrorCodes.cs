@@ -40,6 +40,7 @@ public static class ErrorCodes
     public const string GroupNameTaken = "GROUP_NAME_TAKEN";
     public const string DeviceRevoked = "DEVICE_REVOKED";
     public const string DeviceNotFound = "DEVICE_NOT_FOUND";
+    public const string DeviceRequired = "DEVICE_REQUIRED";
     public const string AccountRequestNotFound = "ACCOUNT_REQUEST_NOT_FOUND";
     public const string AccountRequestDecided = "ACCOUNT_REQUEST_DECIDED";
     public const string MemberHasAccount = "MEMBER_HAS_ACCOUNT";

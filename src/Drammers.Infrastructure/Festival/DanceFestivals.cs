@@ -4,6 +4,7 @@ using System.Text.Json;
 using Drammers.Infrastructure.Contact;
 using Drammers.Infrastructure.Content;
 using Drammers.Infrastructure.Email;
+using Drammers.Infrastructure.Exports;
 using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Payments;
 using Drammers.Infrastructure.Persistence;
@@ -703,7 +704,7 @@ public sealed partial class DanceFestivals(
                     e.LeaderName, e.Title ?? "", e.ShowStyle is { } style ? FestivalMails.StyleLabel(style) : "", FestivalMails.StatusLabel(e.Status),
                     e.WaitlistPosition?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                 ];
-                csv.AppendLine(string.Join(';', cells.Select(CsvCell)));
+                csv.AppendLine(Csv.Row(cells));
             }
         }
 
@@ -1037,9 +1038,6 @@ public sealed partial class DanceFestivals(
     }
 
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private static string CsvCell(string value) =>
-        value.IndexOfAny([';', '"', '\n', '\r']) >= 0 ? $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"" : value;
 
     public static string EditLink(string baseUrl, Guid id, string token) => $"{baseUrl}/dansgardefestival/?inschrijving={id}&t={token}";
 

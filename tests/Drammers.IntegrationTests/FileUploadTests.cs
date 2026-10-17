@@ -106,11 +106,14 @@ public class FileUploadTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("FILE_TYPE_NOT_ALLOWED", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
     }
 
-    [Fact]
-    public async Task Besmet_bestand_wordt_verwijderd_en_geaudit()
+    [Theory]
+    [InlineData(ScanResult.Infected, HttpStatusCode.UnprocessableEntity, "FILE_INFECTED", "file.rejected-malware")]
+    [InlineData(ScanResult.Failed, HttpStatusCode.UnprocessableEntity, "FILE_INFECTED", "file.rejected-malware")]
+    [InlineData(ScanResult.Pending, HttpStatusCode.Conflict, "FILE_SCAN_PENDING", "file.scan-pending")]
+    public async Task Niet_schoon_bestand_wordt_verwijderd_en_geaudit(ScanResult scan, HttpStatusCode status, string code, string auditAction)
     {
         await using var api = new AuthenticatedApiFactory(
-            await sql.CreateMigratedDatabaseAsync(), await sql.CreateBlobStorageAsync(), s => s.AddSingleton<IMalwareScanner, AlwaysInfected>());
+            await sql.CreateMigratedDatabaseAsync(), await sql.CreateBlobStorageAsync(), s => s.AddSingleton<IMalwareScanner>(new FixedScanner(scan)));
         var admin = api.ClientFor((await api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
         var created = await admin.PostAsJsonAsync("/api/v1/admin/events", new
         {
@@ -126,11 +129,11 @@ public class FileUploadTests(SqlServerFixture sql) : IAsyncLifetime
 
         var response = await admin.PutAsync($"/api/v1/admin/events/{eventId}/image", ContentTests.Multipart("file", "poster.jpg", TestImages.JpegWithGps()));
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Equal("FILE_INFECTED", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
+        Assert.Equal(status, response.StatusCode);
+        Assert.Equal(code, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
         Assert.Equal(quarantineBefore, await CountBlobsAsync(FileContainers.Quarantine));
         using var scope = api.Services.CreateScope();
-        Assert.True(await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().AuditLog.AnyAsync(a => a.Action == "file.rejected-malware"));
+        Assert.True(await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().AuditLog.AnyAsync(a => a.Action == auditAction));
     }
 
     [Fact]
@@ -166,8 +169,8 @@ public class FileUploadTests(SqlServerFixture sql) : IAsyncLifetime
         return count;
     }
 
-    private sealed class AlwaysInfected : IMalwareScanner
+    private sealed class FixedScanner(ScanResult result) : IMalwareScanner
     {
-        public Task<ScanResult> ScanAsync(string container, string path, CancellationToken cancellationToken) => Task.FromResult(ScanResult.Infected);
+        public Task<ScanResult> ScanAsync(string container, string path, CancellationToken cancellationToken) => Task.FromResult(result);
     }
 }

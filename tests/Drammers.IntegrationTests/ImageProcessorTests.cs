@@ -1,5 +1,8 @@
+using System.Buffers.Binary;
+using System.Text;
 using Drammers.Infrastructure.Files;
 using Drammers.IntegrationTests.Infrastructure;
+using Drammers.SharedKernel.Errors;
 using SkiaSharp;
 
 namespace Drammers.IntegrationTests;
@@ -60,5 +63,67 @@ public class ImageProcessorTests
         await ImageProcessor.SanitizeAsync(new MemoryStream(png.ToArray()), output, 1600, CancellationToken.None);
         using var result = SKBitmap.Decode(output.ToArray());
         Assert.True(result.GetPixel(5, 5).Red > 240 && result.GetPixel(5, 5).Green > 240);
+    }
+
+    [Fact]
+    public async Task Weigert_meer_dan_40_megapixel_voor_het_decoderen()
+    {
+        // L13: een PNG van een paar honderd bytes die 50.000 × 50.000 pixels (± 10 GB geheugen) belooft.
+        var bomb = PngHeader(50_000, 50_000);
+        var direct = Assert.Throws<DomainException>(() => ImageProcessor.EnsureWithinPixelLimit(bomb));
+        Assert.Equal(ErrorCodes.FileTooLarge, direct.Code);
+
+        using var output = new MemoryStream();
+        var sanitize = await Assert.ThrowsAsync<DomainException>(() => ImageProcessor.SanitizeAsync(new MemoryStream(bomb), output, 1600, CancellationToken.None));
+        Assert.Equal(ErrorCodes.FileTooLarge, sanitize.Code);
+        using var display = new MemoryStream();
+        using var thumbnail = new MemoryStream();
+        await Assert.ThrowsAsync<DomainException>(() => ImageProcessor.CreateDerivativesAsync(new MemoryStream(bomb), display, thumbnail, CancellationToken.None));
+    }
+
+    [Fact]
+    public void Staat_een_gewone_foto_toe() => ImageProcessor.EnsureWithinPixelLimit(PngHeader(8000, 5000));
+
+    /// <summary>Een geldige PNG-header (IHDR + een lege IDAT + IEND) met de opgegeven afmetingen; de beelddata ontbreekt.</summary>
+    private static byte[] PngHeader(int width, int height)
+    {
+        using var png = new MemoryStream();
+        png.Write([0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+        var ihdr = new byte[13];
+        BinaryPrimitives.WriteInt32BigEndian(ihdr, width);
+        BinaryPrimitives.WriteInt32BigEndian(ihdr.AsSpan(4), height);
+        ihdr[8] = 8; // bitdiepte
+        ihdr[9] = 6; // RGBA
+        Chunk(png, "IHDR", ihdr);
+        Chunk(png, "IDAT", [0x78, 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01]);
+        Chunk(png, "IEND", []);
+        return png.ToArray();
+    }
+
+    private static void Chunk(Stream png, string type, byte[] data)
+    {
+        Span<byte> length = stackalloc byte[4];
+        BinaryPrimitives.WriteInt32BigEndian(length, data.Length);
+        png.Write(length);
+        var typeAndData = Encoding.ASCII.GetBytes(type).Concat(data).ToArray();
+        png.Write(typeAndData);
+        Span<byte> crc = stackalloc byte[4];
+        BinaryPrimitives.WriteUInt32BigEndian(crc, Crc32(typeAndData));
+        png.Write(crc);
+    }
+
+    private static uint Crc32(byte[] bytes)
+    {
+        var crc = 0xFFFFFFFFu;
+        foreach (var b in bytes)
+        {
+            crc ^= b;
+            for (var i = 0; i < 8; i++)
+            {
+                crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320u : crc >> 1;
+            }
+        }
+
+        return ~crc;
     }
 }

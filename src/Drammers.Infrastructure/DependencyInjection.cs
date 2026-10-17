@@ -179,7 +179,17 @@ public static class DependencyInjection
             services.AddSingleton(new BlobServiceClient(options.BlobEndpoint, credential));
             services.AddSingleton<IFileStore, BlobFileStore>();
             healthChecks.AddCheck<BlobStorageHealthCheck>("blob", HealthStatus.Unhealthy, [ReadyTag], timeout);
+
+            // Malwarescan (OQ-65): alleen waar Defender for Storage aan staat (Bicep: MalwareScanning__DefenderEnabled).
+            if (configuration.GetValue<bool>($"{MalwareScanningOptions.SectionName}:{nameof(MalwareScanningOptions.DefenderEnabled)}"))
+            {
+                services.TryAddSingleton(TimeProvider.System);
+                services.AddSingleton<IBlobTagReader, BlobTagReader>();
+                services.AddSingleton<IMalwareScanner, DefenderMalwareScanner>();
+            }
         }
+
+        services.Configure<MalwareScanningOptions>(configuration.GetSection(MalwareScanningOptions.SectionName));
 
         // Lokaal/tests: Azurite via connection string (met account-key; SAS dan als service-SAS).
         var blobConnectionString = configuration.GetConnectionString("Blob");

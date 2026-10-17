@@ -11144,6 +11144,7 @@
         "tags": [
           "AdminNotifications"
         ],
+        "summary": "Aantal ontvangers vooraf; alleen voor een doelgroep die de afzender ook mag gebruiken.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -11181,6 +11182,46 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AudiencePreview"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -16651,7 +16692,7 @@
         "tags": [
           "AdminTasks"
         ],
-        "summary": "Actieve leden zoeken om aan een taak te koppelen.",
+        "summary": "Actieve leden zoeken om aan een taak te koppelen (alleen naam; bij het festival minimaal 3 tekens, geen lidnummer).",
         "parameters": [
           {
             "name": "search",
@@ -17357,7 +17398,7 @@
         "tags": [
           "AdminFestivalTasks"
         ],
-        "summary": "Actieve leden zoeken om aan een taak te koppelen.",
+        "summary": "Actieve leden zoeken om aan een taak te koppelen (alleen naam; bij het festival minimaal 3 tekens, geen lidnummer).",
         "parameters": [
           {
             "name": "search",
@@ -21884,6 +21925,26 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SaveScoresResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }

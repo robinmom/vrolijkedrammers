@@ -220,6 +220,17 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var added = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Single(a => a.GetProperty("companyName").GetString() == "Nieuwe Zaak");
         Assert.Equal((3, true, true, "Alfred Voorbeeld"), (added.GetProperty("number").GetInt32(), added.GetProperty("addedViaApp").GetBoolean(),
             added.GetProperty("hasIban").GetBoolean(), added.GetProperty("collectorName").GetString()));
+
+        // Niet meer in het kader: de adverteerders blijven aan hem gekoppeld, maar wijzigen mag hij niet meer.
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await db.CommitteeMembers.Where(c => c.MemberId == alfredId).ExecuteDeleteAsync();
+        }
+
+        Assert.Equal(HttpStatusCode.NotFound, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{bakkerij}/status",
+            new { status = "Stopped", amount = (decimal?)null, note = (string?)null })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{bakkerij}/note", new { note = "Toch niet" })).StatusCode);
     }
 
     private static readonly System.Xml.Linq.XNamespace Ns = "urn:iso:std:iso:20022:tech:xsd:pain.008.001.08";

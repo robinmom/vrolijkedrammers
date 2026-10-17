@@ -515,26 +515,26 @@ public sealed class ParadeRegistrations(
             .ToListAsync(cancellationToken)).Select(m => (m.UserId, m.DisplayName, m.Role))];
     }
 
-    /// <summary>Mede-beheerder toevoegen op e-mailadres; alleen een actief account (lid) en alleen door de eigenaar.</summary>
+    /// <summary>
+    /// Mede-beheerder toevoegen op e-mailadres; alleen een actief account dat groepsverantwoordelijke is, en alleen door de
+    /// eigenaar. Geen account en geen groepsverantwoordelijke geven dezelfde melding: zo is niet af te leiden welke
+    /// e-mailadressen een account hebben.
+    /// </summary>
     public async Task AddManagerAsync(Guid userId, Guid id, string email, CancellationToken cancellationToken)
     {
         await EnsureOwnerAsync(userId, id, cancellationToken);
         var normalized = email.Trim().ToLowerInvariant();
-        var other = await db.Users.Where(u => u.Email == normalized && u.AccountStatus == AccountStatus.Active).Select(u => u.Id).SingleOrDefaultAsync(cancellationToken);
-        if (other == Guid.Empty)
-        {
-            throw new DomainException(ErrorCodes.UserNotFound, "Er is geen app-account met dit e-mailadres. Een mede-beheerder moet zelf lid zijn met een account.", DomainErrorKind.NotFound);
-        }
-
         var today = DateOnly.FromDateTime(Now);
-        var leader = await db.Users.Where(u => u.Id == other)
+        var other = await db.Users.Where(u => u.Email == normalized && u.AccountStatus == AccountStatus.Active).Select(u => u.Id).SingleOrDefaultAsync(cancellationToken);
+        var leader = other != Guid.Empty && await db.Users.Where(u => u.Id == other)
             .SelectMany(u => u.Roles).Where(r => (r.ValidFrom == null || r.ValidFrom <= today) && (r.ValidTo == null || r.ValidTo >= today))
             .Join(db.Roles, r => r.RoleId, role => role.Id, (r, role) => role.Code)
             .AnyAsync(code => code == DefaultRoles.Groepsverantwoordelijke, cancellationToken);
         if (!leader)
         {
-            throw new DomainException(ErrorCodes.Forbidden,
-                "Deze persoon is (nog) geen groepsverantwoordelijke. Vraag het bestuur om dat in het portal aan te vinken.", DomainErrorKind.Forbidden);
+            throw new DomainException(ErrorCodes.UserNotFound,
+                "Deze persoon kan geen mede-beheerder worden. Een mede-beheerder heeft een app-account met dit e-mailadres en is door het bestuur als groepsverantwoordelijke aangevinkt.",
+                DomainErrorKind.NotFound);
         }
 
         if (!await db.ParadeRegistrationManagers.AnyAsync(m => m.RegistrationId == id && m.UserId == other, cancellationToken))

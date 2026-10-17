@@ -25,6 +25,8 @@ interface QueuedScan {
 
 const QUEUE_KEY = 'dvd.offline-scans.v1';
 const CLOCK_SKEW = 90;
+/** Maximale geldigheid van een code in seconden (zoals `QrPayload.MaxValidFor` op de server); de app gebruikt 45. */
+export const MAX_VALID_FOR = 60;
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
 
 /** Base45 (RFC 9285); `null` als het geen geldige base45 is. Geen trim: de spatie is een geldig teken. */
@@ -110,7 +112,7 @@ export function checkOffline(pack: OfflinePack, code: string, now: Date, seenHer
       : pack.serverKeys.some((k) => verifySignature(k, unsigned, signature));
   if (!signed) return refuse('Ongeldige handtekening: de code is nagemaakt of gewijzigd.', ticket.holderName);
   const seconds = now.getTime() / 1000;
-  if (seconds < iat - CLOCK_SKEW || seconds > iat + exp + CLOCK_SKEW) {
+  if (exp > MAX_VALID_FOR || seconds < iat - CLOCK_SKEW || seconds > iat + exp + CLOCK_SKEW) {
     return refuse('Verlopen code (bijvoorbeeld een screenshot). Vraag om de live code.', ticket.holderName);
   }
   const earlier = seenHere.get(ticket.ref);

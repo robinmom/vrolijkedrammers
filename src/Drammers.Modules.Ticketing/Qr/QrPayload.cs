@@ -24,6 +24,12 @@ public sealed record QrPayload(byte Version, byte[] Ref, int CredentialVersion, 
     /// <summary>Standaardgeldigheid van één code; de app ververst elke 30 seconden.</summary>
     public const int DefaultValidFor = 45;
 
+    /// <summary>
+    /// Bovengrens voor de geldigheid in de payload. Het toestel kiest <c>exp</c> zelf (tot 65535 seconden); een langere
+    /// geldigheid wordt geweigerd, zodat een screenshot niet urenlang bruikbaar blijft.
+    /// </summary>
+    public const int MaxValidFor = 60;
+
     public static byte[] Unsigned(byte version, byte[] reference, int credentialVersion, byte[] deviceId, long issuedAt, int validFor)
     {
         if (reference.Length != 16 || deviceId.Length != 8)

@@ -29,6 +29,7 @@ public sealed class AccessController(DoorAccess access) : ControllerBase
     public Task<AccessStatus> Status(CancellationToken cancellationToken) => access.StatusAsync(cancellationToken);
 
     [HttpPost("api/v1/access/scan")]
+    [RequireDevice]
     [EnableRateLimiting(AuthorizationSetup.ScannerPolicy)]
     [ProducesResponseType<AccessResult>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
@@ -37,11 +38,13 @@ public sealed class AccessController(DoorAccess access) : ControllerBase
 
     /// <summary>Controlelijst voor offline scannen (fase 15, lichte variant); de app houdt die alleen in het geheugen.</summary>
     [HttpGet("api/v1/access/offline-pack")]
+    [RequireDevice]
     [ProducesResponseType<OfflinePack>(StatusCodes.Status200OK)]
     public Task<OfflinePack> OfflinePack(CancellationToken cancellationToken) => access.OfflinePackAsync(cancellationToken);
 
     /// <summary>Offline scans uit de wachtrij (idempotent op <c>clientScanId</c>).</summary>
     [HttpPost("api/v1/access/offline-scans")]
+    [RequireDevice]
     [ProducesResponseType<OfflineSyncResult>(StatusCodes.Status200OK)]
     public Task<OfflineSyncResult> SyncOffline(OfflineScansRequest request, CancellationToken cancellationToken) =>
         access.SyncOfflineAsync(UserId, Request.Headers[DeviceCheck.HeaderName].ToString(), request.Scans, cancellationToken);

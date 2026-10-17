@@ -291,6 +291,37 @@ public sealed class DoorAccessTests(SqlServerFixture sql) : IAsyncLifetime, IDis
         Assert.Equal(HttpStatusCode.Conflict, (await deur.PostAsJsonAsync("/api/v1/access/scan", new { code })).StatusCode);
     }
 
+    [Fact]
+    public async Task Zonder_X_Device_Id_geen_QR_geen_koppeling_en_geen_scannen()
+    {
+        await EventAsync();
+        ToEvening();
+        var (_, oid) = await MemberAsync("zonder@example.com");
+        var (_, deurOid) = await _api.CreateUserAsync("deur@example.com", DefaultRoles.Lid, DefaultRoles.Scanner);
+        var deur = await DeviceAsync(deurOid, "installatie-deur-een-0001");
+
+        // Een afgemeld toestel kan de apparaatcheck niet omzeilen door de header weg te laten.
+        var lid = _api.ClientFor(oid);
+        var scanner = _api.ClientFor(deurOid);
+        foreach (var response in new[]
+        {
+            await lid.GetAsync("/api/v1/me/ticket/code"),
+            await lid.PostAsJsonAsync("/api/v1/me/ticket/bind-device", new { challenge = (string?)null, signature = (string?)null }),
+            await lid.PutAsJsonAsync("/api/v1/me/devices/current/key", new { publicKey = "x", securityLevel = "Software" }),
+            await scanner.PostAsJsonAsync("/api/v1/access/scan", new { code = "X" }),
+            await scanner.GetAsync("/api/v1/access/offline-pack"),
+            await scanner.PostAsJsonAsync("/api/v1/access/offline-scans", new { scans = Array.Empty<object>() }),
+        })
+        {
+            var problem = await JsonAsync(response, HttpStatusCode.BadRequest);
+            Assert.Equal("DEVICE_REQUIRED", problem.GetProperty("code").GetString());
+        }
+
+        // Met de header van het aangemelde toestel werkt het wel; zonder recht blijft het 403.
+        Assert.Equal(HttpStatusCode.OK, (await deur.GetAsync("/api/v1/access/offline-pack")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await lid.PostAsJsonAsync("/api/v1/access/scan", new { code = "X" })).StatusCode);
+    }
+
     // ----- Fase 15: offline scannen (lichte variant) --------------------------------------------------------------
 
     private static async Task<JsonElement> SyncAsync(HttpClient door, params object[] scans) =>

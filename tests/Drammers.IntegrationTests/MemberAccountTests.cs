@@ -272,6 +272,8 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NoContent, (await phone.PatchAsJsonAsync($"/api/v1/me/devices/{tabletId}", new { name = "Tablet thuis" })).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await phone.DeleteAsync($"/api/v1/me/devices/{tabletId}")).StatusCode);
 
+        // Ook de refresh-tokens in Entra zijn ingetrokken: alle toestellen moeten opnieuw inloggen.
+        Assert.Contains(oid, _api.Entra.RevokedSessions);
         var denied = await tablet.GetAsync("/api/v1/me");
         Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
         Assert.Equal("DEVICE_REVOKED", (await denied.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
@@ -293,6 +295,7 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal("iPhone", Assert.Single(devices).GetProperty("name").GetString());
         Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/devices/{devices[0].GetProperty("id").GetGuid()}/revoke", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await phone.GetAsync("/api/v1/me")).StatusCode);
+        Assert.Contains(oid, _api.Entra.RevokedSessions);
 
         var redactie = _api.ClientFor((await _api.CreateUserAsync("redactie@example.com", DefaultRoles.Redactie)).ObjectId);
         Assert.Equal(HttpStatusCode.Forbidden, (await redactie.GetAsync($"/api/v1/admin/users/{userId}/devices")).StatusCode);

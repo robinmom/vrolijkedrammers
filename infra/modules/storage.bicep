@@ -4,6 +4,17 @@ param environmentName string
 param tags object
 param workspaceId string
 
+// Herstel (docs/08 §8, 2026-10-17): soft delete en, in Prod, de hele opslag terug naar een tijdstip.
+@description('Verwijderde bestanden en containers zoveel dagen terug te halen.')
+@minValue(1)
+@maxValue(365)
+param softDeleteDays int = 14
+
+@description('Alle block blobs terug naar een tijdstip in de laatste N dagen (0 = uit); moet kleiner zijn dan softDeleteDays.')
+@minValue(0)
+@maxValue(364)
+param restoreDays int = 0
+
 @description('Blob-containers die de API gebruikt (docs/08 §3); content = afbeeldingen en bijlagen van events en nieuws.')
 param containerNames array = [
   'parade-documents'
@@ -14,6 +25,12 @@ param containerNames array = [
   'dataprotection'
   'content'
 ]
+
+@description('Microsoft Defender for Storage met malwarescan bij upload (OQ-65); kost geld, dus alleen in Prod aan.')
+param malwareScanning bool = false
+
+@description('Maximaal aantal GB dat Defender per maand scant (kostenplafond); daarboven krijgen uploads geen uitslag en worden ze niet vrijgegeven.')
+param malwareScanningCapGbPerMonth int = 10
 
 resource account 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: 'stdvd${environmentName}'
@@ -42,8 +59,11 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2025-01-01'
   name: 'default'
   properties: {
     isVersioningEnabled: true
-    deleteRetentionPolicy: { enabled: true, days: 14 }
-    containerDeleteRetentionPolicy: { enabled: true, days: 14 }
+    deleteRetentionPolicy: { enabled: true, days: softDeleteDays }
+    containerDeleteRetentionPolicy: { enabled: true, days: softDeleteDays }
+    // Point-in-time restore heeft de change feed en versioning nodig.
+    changeFeed: { enabled: restoreDays > 0 }
+    restorePolicy: restoreDays > 0 ? { enabled: true, days: max(restoreDays, 1) } : { enabled: false }
   }
 }
 
@@ -54,6 +74,26 @@ resource containers 'Microsoft.Storage/storageAccounts/blobServices/containers@2
     properties: { publicAccess: 'None' }
   }
 ]
+
+// Defender for Storage (plan DefenderForStorageV2) alleen op dit account: elke upload wordt gescand en de uitslag komt
+// als blob index tag "Malware Scanning scan result" op de blob ("No threats found" / "Malicious"). De API leest die tag
+// in quarantaine (DefenderMalwareScanner) en geeft alleen schone bestanden vrij. Uit = Defender op dit account uit.
+resource defender 'Microsoft.Security/defenderForStorageSettings@2025-06-01' = {
+  name: 'current'
+  scope: account
+  properties: {
+    isEnabled: malwareScanning
+    overrideSubscriptionLevelSettings: true
+    malwareScanning: {
+      onUpload: {
+        isEnabled: malwareScanning
+        capGBPerMonth: malwareScanningCapGbPerMonth
+      }
+      blobScanResultsOptions: 'BlobIndexTags'
+    }
+    sensitiveDataDiscovery: { isEnabled: false }
+  }
+}
 
 // AVG-exports (fase 9) zijn 24 uur via de API te downloaden; daarna ruimt deze regel ze (en oude versies) op.
 resource lifecycle 'Microsoft.Storage/storageAccounts/managementPolicies@2025-01-01' = {

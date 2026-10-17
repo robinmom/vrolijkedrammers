@@ -17,6 +17,7 @@ var delegatableRoles = [
   'e147488a-f6f5-4113-8e2d-b22465e65bf6' // Key Vault Crypto Service Encryption User (Data Protection, fase 10)
   'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
   'db58b8e5-c6ad-4a2a-8342-4190687cbf4a' // Storage Blob Delegator
+  'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' // Storage Blob Data Owner (alleen container quarantine: scanuitslag lezen uit blob index tags)
   '09976791-48a7-449e-bb21-39d1a415f350' // Communication and Email Service Owner
 ]
 var roleList = join(delegatableRoles, ', ')

@@ -3,7 +3,7 @@
 # en in Dev/Acc GroupMember.ReadWrite.All voor de knop "Toegang tot testomgeving" in het portal (groep Testers).
 # Aanmelden met een certificaat uit Key Vault (provisioning-certificate.sh). Federatie met de managed identity van de
 # API werkt niet naar een external tenant (AADSTS700236).
-#   az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
+#   az login --tenant <tenant-id> --allow-no-subscriptions   (prod: 260db5a1-…; dev: zie docs/runbooks/dev-tenant.md)
 #   infra/entra/register-provisioning-app.sh dev
 # Idempotent.
 set -euo pipefail
@@ -13,7 +13,7 @@ source "$HERE/lib.sh"
 
 ENV="${1:?Gebruik: register-provisioning-app.sh dev|prod}"
 [[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
-use_ciam_tenant
+use_ciam_tenant "$ENV"
 
 USER_READWRITE_ALL="741f803b-c850-494e-b5df-cde7c675a1ca" # Microsoft Graph application permission
 GRAPH_SP_ID="$(graph --method get --url "$GRAPH/servicePrincipals(appId='$GRAPH_APP_ID')" --query id -o tsv)"

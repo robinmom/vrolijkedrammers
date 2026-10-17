@@ -9,7 +9,7 @@
 #   3. geeft de provisioning-app de Graph-rechten User-PasswordProfile.ReadWrite.All en User.ManageIdentities.All (wachtwoordinlog toevoegen aan
 #      bestaande inlogs met e-mail + code, zodat ook die leden met "Wachtwoord vergeten?" verder kunnen).
 # Daarna in GitHub (environment): DVD_PASSWORD_SIGN_IN=true en Deploy.
-#   az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
+#   az login --tenant <tenant-id> --allow-no-subscriptions   (prod: 260db5a1-…; dev: zie docs/runbooks/dev-tenant.md)
 #   infra/entra/wachtwoord-inloggen.sh dev|prod
 # Idempotent. Terugdraaien: --terug (apps terug naar "DVD aanmelden"; zet daarna DVD_PASSWORD_SIGN_IN weer uit).
 set -euo pipefail
@@ -20,7 +20,7 @@ source "$HERE/lib.sh"
 ENV="${1:?Gebruik: wachtwoord-inloggen.sh dev|prod [--terug]}"
 [[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 BACK="${2:-}"
-use_ciam_tenant
+use_ciam_tenant "$ENV"
 
 flow_id() { # <displayName>
   graph --method get --url "$GRAPH/identity/authenticationEventsFlows" --query "value[?displayName=='$1'].id | [0]" -o tsv

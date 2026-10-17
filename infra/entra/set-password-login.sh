@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Maakt een inlog met e-mail + wachtwoord, bijvoorbeeld voor het testaccount van de App Store-review (Apple kan geen
 # code per mail ontvangen). Uitzondering op ADR-014 (inloggen met e-mail + code): alleen voor losse accounts.
-#   infra/entra/set-password-login.sh <e-mailadres>
+#   infra/entra/set-password-login.sh <e-mailadres> [dev|prod]   (standaard prod)
 #
 # Het wachtwoord is willekeurig en wordt nergens getoond of opgeslagen. De eigenaar van de mailbox kiest het echte
 # wachtwoord via "Wachtwoord vergeten" op het inlogscherm. Het account bij de vereniging (lid + account in het portal)
@@ -14,8 +14,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 source "$HERE/lib.sh"
 
 EMAIL="${1:?Gebruik: set-password-login.sh <e-mailadres>}"
-DOMAIN="vrolijkedrammersapp.onmicrosoft.com"
-use_ciam_tenant
+use_ciam_tenant "${2:-prod}"
+DOMAIN="$CIAM_ISSUER_DOMAIN"
 
 find_login() { # <issuer>
   graph --method get --url "$GRAPH/users" \

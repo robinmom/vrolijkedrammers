@@ -24,6 +24,20 @@ param sqlSkuName string = 'GP_S_Gen5'
 
 @description('SQL-server-auditing naar Log Analytics (modules/sql.bicep); aan in Prod.')
 param sqlAuditingEnabled bool = false
+@description('Back-ups (modules/sql.bicep en storage.bicep): point-in-time restore van de database in dagen.')
+param sqlPitrDays int = 7
+
+@description('Langetermijnback-ups van de database: maanden bewaren (0 = uit).')
+param sqlLtrMonths int = 0
+
+@description('Back-ups van de database ook in een tweede regio.')
+param sqlGeoBackup bool = false
+
+@description('Soft delete van bestanden in dagen.')
+param storageSoftDeleteDays int = 14
+
+@description('Hele opslag terug naar een tijdstip in de laatste N dagen (0 = uit).')
+param storageRestoreDays int = 0
 
 param keyVaultPurgeProtection bool
 param logDailyQuotaGb int
@@ -82,6 +96,9 @@ param emailMailboxSenders string = ''
 
 @description('Inloggen met e-mail + wachtwoord (infra/entra/wachtwoord-inloggen.sh, runbook accounts-wachtwoord): de API maakt de inlog bij elk account.')
 param passwordSignIn bool = false
+
+@description('Defender for Storage met malwarescan bij upload (OQ-65; ± € 10 per maand + scan per GB): alleen Prod. De API geeft een upload pas vrij na een schone uitslag (blob index tag).')
+param malwareScanning bool = false
 
 // Afzenders op het eigen domein, gelijk aan de contactadressen (besluit 2026-09-30); DoNotReply maakt ACS zelf aan.
 var emailSenders = {
@@ -149,10 +166,13 @@ module storage 'modules/storage.bicep' = {
     environmentName: environmentName
     tags: tags
     workspaceId: monitoring.outputs.workspaceId
+    malwareScanning: malwareScanning
+    softDeleteDays: storageSoftDeleteDays
+    restoreDays: storageRestoreDays
   }
 }
 
-module sql 'modules/sql.bicep' = {
+module sql'modules/sql.bicep' = {
   name: 'sql'
   params: {
     location: location
@@ -165,6 +185,9 @@ module sql 'modules/sql.bicep' = {
     skuName: sqlSkuName
     auditingEnabled: sqlAuditingEnabled
     workspaceId: monitoring.outputs.workspaceId
+    pitrDays: sqlPitrDays
+    ltrMonths: sqlLtrMonths
+    geoBackup: sqlGeoBackup
   }
 }
 
@@ -227,6 +250,7 @@ module api 'modules/appservice.bicep' = {
       Graph__EnvironmentAccessAttribute: environmentAccessAttribute
       Turnstile__SiteKey: turnstileSiteKey
       EBoekhouden__Enabled: string(eBoekhoudenEnabled)
+      MalwareScanning__DefenderEnabled: string(malwareScanning)
     }
   }
 }
@@ -254,6 +278,7 @@ module apiRoles 'modules/role-assignments.bicep' = {
     keyVaultName: keyVault.outputs.name
     storageAccountName: storage.outputs.name
     communicationServiceName: email.outputs.communicationServiceName
+    readScanResults: malwareScanning
   }
 }
 

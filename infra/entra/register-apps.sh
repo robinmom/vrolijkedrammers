@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # App-registraties per omgeving in de Entra External ID-tenant (B-02, docs/runbooks/entra-external-id.md §4).
-#   az login --tenant 260db5a1-e5b6-4388-9f6c-d9b02cb5578b --allow-no-subscriptions
+#   az login --tenant <tenant-id> --allow-no-subscriptions   (prod: 260db5a1-…; dev: zie docs/runbooks/dev-tenant.md)
 #   DVD_PORTAL_URL=https://app-dvd-api-dev.azurewebsites.net/beheer/ infra/entra/register-apps.sh dev
 # Meerdere adressen met komma's, bijv. Prod vóór en na het koppelen van het domein:
 #   DVD_PORTAL_URL=https://www.vrolijkedrammers.nl/beheer/,https://app-dvd-api-prod.azurewebsites.net/beheer/
@@ -15,7 +15,7 @@ ENV="${1:?Gebruik: register-apps.sh dev|prod}"
 [[ "$ENV" =~ ^(dev|prod)$ ]] || { echo "Onbekende omgeving: $ENV" >&2; exit 1; }
 PORTAL_URL="${DVD_PORTAL_URL:-}"
 RESTRICTED=$([[ "$ENV" == prod ]] && echo false || echo true)
-use_ciam_tenant
+use_ciam_tenant "$ENV"
 
 # ---------------------------------------------------------------------------------------------
 # Tenant-breed (eenmalig): custom attribuut, claims-mapping, groep Testers, user flow (e-mail + code, zelf een inlog maken toegestaan).

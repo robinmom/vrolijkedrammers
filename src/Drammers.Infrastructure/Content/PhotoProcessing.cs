@@ -29,7 +29,14 @@ public sealed class PhotoProcessingHandler(DrammersDbContext db, IFileStore file
         }
 
         var quarantinePath = photo.OriginalBlobPath;
-        if (await scanner.ScanAsync(FileContainers.Quarantine, quarantinePath, cancellationToken) != ScanResult.Clean)
+        var scan = await scanner.ScanAsync(FileContainers.Quarantine, quarantinePath, cancellationToken);
+        if (scan == ScanResult.Pending && message.Attempts < OutboxProcessor.MaxAttempts)
+        {
+            // Nog geen uitslag: de outbox probeert het later opnieuw; de foto blijft tot dan onzichtbaar (Pending).
+            throw new InvalidOperationException($"De virusscan van foto {photo.Id} is nog niet klaar.");
+        }
+
+        if (scan != ScanResult.Clean)
         {
             await files.DeleteAsync(FileContainers.Quarantine, quarantinePath, cancellationToken);
             photo.ProcessingStatus = PhotoProcessingStatus.Rejected;

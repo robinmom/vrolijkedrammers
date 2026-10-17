@@ -14,6 +14,13 @@ param sqlFreeLimitExhaustionBehavior = 'BillOverUsage'
 param sqlSkuName = 'S1'
 // Auditing van de SQL-server (aanmeldingen en wijzigingen aan rechten) naar Log Analytics.
 param sqlAuditingEnabled = true
+// Back-ups (docs/08 §8, 2026-10-17): 14 dagen terugzetten, maandelijks een jaar bewaren, ook in een tweede regio;
+// bestanden 30 dagen terug te halen en de hele opslag 14 dagen terug naar een tijdstip.
+param sqlPitrDays = 14
+param sqlLtrMonths = 12
+param sqlGeoBackup = true
+param storageSoftDeleteDays = 30
+param storageRestoreDays = 14
 param keyVaultPurgeProtection = true
 param logDailyQuotaGb = 1
 param externalIdAuthority = 'https://vrolijkedrammersapp.ciamlogin.com/260db5a1-e5b6-4388-9f6c-d9b02cb5578b/v2.0'
@@ -45,3 +52,7 @@ param budgetStartDate = '2026-10-01'
 param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))
 // Inloggen met wachtwoord (runbook accounts-wachtwoord): na infra/entra/wachtwoord-inloggen.sh DVD_PASSWORD_SIGN_IN=true.
 param passwordSignIn = readEnvironmentVariable('DVD_PASSWORD_SIGN_IN', 'false') == 'true'
+// Malwarescan met Defender for Storage (OQ-65, alleen Prod; Dev/Acc blijven zonder vanwege de kosten). Pas aan
+// (DVD_MALWARE_SCANNING=true) nadat de bootstrap opnieuw is gedraaid: de pipeline moet dan ook Storage Blob Data Owner
+// mogen toewijzen (infra/bootstrap/environment-access.bicep), anders faalt de deploy op die roltoewijzing.
+param malwareScanning = readEnvironmentVariable('DVD_MALWARE_SCANNING', 'false') == 'true'

@@ -41,7 +41,7 @@ for version in $(az keyvault certificate list-versions --vault-name "$VAULT" -n 
 done
 
 echo "==> Sleutels op de app zetten"
-use_ciam_tenant
+use_ciam_tenant "$ENV"
 APP_ID="$(find_by_name "$GRAPH/applications" "DVD Provisioning ($ENV)" appId)"
 [[ -n "$APP_ID" ]] || { echo "App 'DVD Provisioning ($ENV)' niet gevonden; draai eerst register-provisioning-app.sh" >&2; exit 1; }
 graph --method patch --url "$GRAPH/applications(appId='$APP_ID')" --body "{\"keyCredentials\": $KEYS}" -o none

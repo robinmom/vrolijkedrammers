@@ -15,16 +15,20 @@ param sqlFreeLimitExhaustionBehavior = 'BillOverUsage'
 param sqlSkuName = 'Basic'
 param keyVaultPurgeProtection = false
 param logDailyQuotaGb = 1
-param externalIdAuthority = 'https://vrolijkedrammersapp.ciamlogin.com/260db5a1-e5b6-4388-9f6c-d9b02cb5578b/v2.0'
+// Eigen External ID-tenant voor Dev (beveiligingsonderzoek H1, 2026-10-17; docs/runbooks/dev-tenant.md). Zolang de
+// GitHub-variabelen leeg zijn, blijft Dev op de gedeelde tenant.
+var externalIdTenantName = readEnvironmentVariable('DVD_EXTERNAL_ID_TENANT_NAME', 'vrolijkedrammersapp')
+var externalIdTenant = readEnvironmentVariable('DVD_EXTERNAL_ID_TENANT_ID', '260db5a1-e5b6-4388-9f6c-d9b02cb5578b')
+param externalIdAuthority = 'https://${externalIdTenantName}.ciamlogin.com/${externalIdTenant}/v2.0'
+param externalIdTenantId = externalIdTenant
+param externalIdIssuerDomain = '${externalIdTenantName}.onmicrosoft.com'
 param apiClientId = readEnvironmentVariable('DVD_API_CLIENT_ID', '')
 param environmentAccessClaim = readEnvironmentVariable('DVD_ENVIRONMENT_ACCESS_CLAIM', '')
-param externalIdTenantId = '260db5a1-e5b6-4388-9f6c-d9b02cb5578b'
 param graphClientId = readEnvironmentVariable('DVD_GRAPH_CLIENT_ID', '')
 param testersGroupId = readEnvironmentVariable('DVD_TESTERS_GROUP_ID', '')
 param pushProvider = readEnvironmentVariable('DVD_PUSH_PROVIDER', 'Simulated')
 param turnstileSiteKey = readEnvironmentVariable('DVD_TURNSTILE_SITE_KEY', '')
 param environmentAccessAttribute = readEnvironmentVariable('DVD_ENVIRONMENT_ACCESS_ATTRIBUTE', '')
-param externalIdIssuerDomain = 'vrolijkedrammersapp.onmicrosoft.com'
 param graphCertificateName = readEnvironmentVariable('DVD_GRAPH_CERTIFICATE_NAME', '')
 param portalClientId = readEnvironmentVariable('DVD_PORTAL_CLIENT_ID', '')
 param mobileClientId = readEnvironmentVariable('DVD_MOBILE_CLIENT_ID', '')

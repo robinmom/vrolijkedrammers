@@ -18,6 +18,7 @@ public sealed class KassaController(TokenCollection kassa) : ControllerBase
     private Guid UserId => CurrentUser.Get(HttpContext)!.UserId;
 
     [HttpPost("scan")]
+    [RequireDevice]
     [EnableRateLimiting(AuthorizationSetup.ScannerPolicy)]
     [ProducesResponseType<KassaResult>(StatusCodes.Status200OK)]
     public Task<KassaResult> Scan(ScanRequest request, CancellationToken cancellationToken) =>

@@ -63,7 +63,8 @@ public class ContactLinksTests
     {
         var recorder = new Recorder { TurnstileResult = true };
         var options = Options.Create(turnstile ? new TurnstileOptions { SiteKey = "site", SecretKey = "secret" } : new TurnstileOptions());
-        return (new ContactForm(Options.Create(new ContactOptions()), options, recorder, recorder, recorder), recorder);
+        var email = Options.Create(new EmailOptions { SenderDomain = "abc.azurecomm.net", CustomSenderDomain = "vrolijkedrammers.nl" });
+        return (new ContactForm(Options.Create(new ContactOptions()), options, recorder, recorder, recorder, email), recorder);
     }
 
     private static ContactMessageInput Input(string? website = null, int? elapsed = 8000, string? token = null) =>
@@ -85,6 +86,18 @@ public class ContactLinksTests
         Assert.Equal(["contact.message-sent", "contact.message-dropped", "contact.message-dropped", "contact.message-dropped"], recorder.Audit);
 
         await Assert.ThrowsAsync<DomainException>(() => form.SendAsync(Input() with { Recipient = "voorzitter" }, null, default));
+    }
+
+    /// <summary>M1: een adres van de vereniging als afzender invullen kan niet (het wordt het antwoordadres).</summary>
+    [Theory]
+    [InlineData("voorzitter@vrolijkedrammers.nl")]
+    [InlineData(" Secretaris@VrolijkeDrammers.NL")]
+    public async Task Eigen_domein_als_afzender_geeft_een_validatiefout(string address)
+    {
+        var (form, recorder) = Form(turnstile: false);
+        var error = await Assert.ThrowsAsync<DomainException>(() => form.SendAsync(Input() with { Email = address }, null, default));
+        Assert.Equal(ErrorCodes.Validation, error.Code);
+        Assert.Empty(recorder.Sent);
     }
 
     [Fact]

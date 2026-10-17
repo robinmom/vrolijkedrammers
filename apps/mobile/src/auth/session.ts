@@ -6,6 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { apiBaseUrl } from '../api/config';
+import { clearLocalUserData } from './localData';
 
 /**
  * Aanmelden voor leden (fase 9, ADR-014): OIDC + PKCE via de systeembrowser met een e-mailcode van Entra External ID.
@@ -288,15 +289,20 @@ async function refresh(): Promise<string | null> {
 }
 
 /**
- * Wist de tokens op dit toestel. De installatie-id blijft staan, zodat opnieuw inloggen hetzelfde toestel is (munten
- * zitten vast aan het toestel van de aankoop). Alleen na afmelden van dit toestel of verwijderen van het account
- * (`newInstallation`) komt er een nieuwe id: een afgemeld toestel kan niet opnieuw aanmelden.
+ * Uitloggen op dit toestel, de centrale opruimfunctie voor elke manier van uitloggen (zelf, verlopen of geweigerd
+ * token, afgemeld toestel, verwijderd account): wist de tokens, een achtergebleven lopende aanmelding en alle gegevens
+ * van de gebruiker (ticket, jurypunten, offline scans, persistente querycache; zie auth/localData). De installatie-id
+ * blijft staan, zodat opnieuw inloggen hetzelfde toestel is (munten zitten vast aan het toestel van de aankoop). Alleen
+ * na afmelden van dit toestel of verwijderen van het account (`newInstallation`) komt er een nieuwe id: een afgemeld
+ * toestel kan niet opnieuw aanmelden.
  */
 export async function clearLocalSession({
   newInstallation = false,
 }: { newInstallation?: boolean } = {}): Promise<void> {
   accessToken = null;
   await SecureStore.deleteItemAsync(KEYS.refreshToken, STORE_OPTIONS).catch(() => undefined);
+  await SecureStore.deleteItemAsync(KEYS.pendingSignIn, STORE_OPTIONS).catch(() => undefined);
+  await clearLocalUserData();
   if (newInstallation) {
     await SecureStore.deleteItemAsync(KEYS.installationId, STORE_OPTIONS).catch(() => undefined);
   }

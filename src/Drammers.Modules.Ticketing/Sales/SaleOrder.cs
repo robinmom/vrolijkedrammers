@@ -84,7 +84,7 @@ public sealed class SaleOrder
     /// </summary>
     public required string AccessTokenProtected { get; set; }
 
-    /// <summary>De laatste Mollie-betaling (<c>tr_…</c>).</summary>
+    /// <summary>De laatste Mollie-betaling (<c>tr_…</c>); alle betalingen staan in <see cref="SaleOrderPayment"/>.</summary>
     public string? MolliePaymentId { get; set; }
 
     /// <summary>Tot wanneer de plaatsen voor een onbetaalde bestelling vastgehouden worden.</summary>
@@ -167,6 +167,42 @@ public sealed class OrderTicket
     public DateTime CreatedAt { get; set; }
 
     public byte[] RowVersion { get; set; } = [];
+}
+
+/// <summary>Waarom de penningmeester een Mollie-betaling moet terugbetalen.</summary>
+public enum SaleRefundReason
+{
+    /// <summary>De bestelling was al betaald (een tweede betaling, of contant en daarna toch online).</summary>
+    DuplicatePayment,
+
+    /// <summary>Betaald nadat de bestelling verlopen of geannuleerd was en er geen plaats meer is: niet bevestigd.</summary>
+    NoPlace,
+}
+
+/// <summary>
+/// Eén Mollie-betaling (<c>tr_…</c>) voor een bestelling. Een koper kan meerdere keren op "Betalen" drukken; elke
+/// betaling blijft bekend, zodat de webhook en het opruimen ook een oudere betaling herkennen. Komt er geld binnen dat
+/// niet (meer) tot kaarten kan leiden, dan staat hier <see cref="RefundReason"/> voor de penningmeester.
+/// </summary>
+public sealed class SaleOrderPayment
+{
+    public Guid Id { get; set; }
+
+    public Guid OrderId { get; set; }
+
+    public required string MolliePaymentId { get; set; }
+
+    public int AmountCents { get; set; }
+
+    /// <summary>Laatst bekende status bij Mollie (open, pending, paid, failed, canceled, expired).</summary>
+    public string? MollieStatus { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>Wanneer de betaling als betaald is verwerkt (bevestigd of gemarkeerd om terug te betalen).</summary>
+    public DateTime? PaidAt { get; set; }
+
+    public SaleRefundReason? RefundReason { get; set; }
 }
 
 /// <summary>Volgnummer van bestellingen per carnavalsjaar (zoals het opgavenummer van de optocht).</summary>

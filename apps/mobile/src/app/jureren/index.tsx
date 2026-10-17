@@ -18,7 +18,7 @@ export default function JurerenScreen() {
   const me = useMe();
   const canJudge = me.data?.permissions.includes('parade.judge') ?? false;
   const session = useJurySession(canJudge);
-  const judging = useJudging(session.data);
+  const judging = useJudging(session.data, me.data?.id);
   const refresh = useRefresh([queryKeys.jury]);
   const s = session.data;
   const mine = (s?.entries ?? []).filter((e) => e.assigned);

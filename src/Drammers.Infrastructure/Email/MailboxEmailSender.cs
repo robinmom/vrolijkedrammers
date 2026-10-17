@@ -75,14 +75,15 @@ public sealed partial class MailboxEmailSender(
 
 /// <summary>
 /// Een e-mail als MIME-tekst (RFC 5322/2045): platte tekst en HTML als alternatieven, bijlagen erbij, kopteksten met
-/// UTF-8 (RFC 2047) en de afmeldkoppen. Message-ID en de afzendernaam vult Exchange zelf in.
+/// UTF-8 (RFC 2047) en de afmeldkoppen. Message-ID en de afzendernaam vult Exchange zelf in. Een kopregel met CR, LF of NUL
+/// wordt geweigerd: daarmee zou een ingevuld adres extra kopregels (bijv. Bcc) kunnen toevoegen.
 /// </summary>
 public static class MimeMessage
 {
     public static string Build(string from, EmailMessage message, DateTimeOffset date)
     {
         var mime = new StringBuilder();
-        void Header(string name, string value) => mime.Append(name).Append(": ").Append(value).Append("\r\n");
+        void Header(string name, string value) => mime.Append(name).Append(": ").Append(HeaderValue(value)).Append("\r\n");
 
         Header("From", from);
         Header("To", message.To);
@@ -119,7 +120,7 @@ public static class MimeMessage
         {
             foreach (var file in attachments)
             {
-                var name = EncodeWord(file.Name);
+                var name = QuotedString(EncodeWord(file.Name));
                 Part(mime, mixed, $"{file.ContentType}; name=\"{name}\"", file.Content, $"attachment; filename=\"{name}\"");
             }
 
@@ -132,15 +133,24 @@ public static class MimeMessage
     private static void Part(StringBuilder mime, string boundary, string contentType, byte[] content, string? disposition = null)
     {
         mime.Append("--").Append(boundary).Append("\r\n")
-            .Append("Content-Type: ").Append(contentType).Append("\r\n")
+            .Append("Content-Type: ").Append(HeaderValue(contentType)).Append("\r\n")
             .Append("Content-Transfer-Encoding: base64\r\n");
         if (disposition is not null)
         {
-            mime.Append("Content-Disposition: ").Append(disposition).Append("\r\n");
+            mime.Append("Content-Disposition: ").Append(HeaderValue(disposition)).Append("\r\n");
         }
 
         mime.Append("\r\n").Append(Convert.ToBase64String(content, Base64FormattingOptions.InsertLineBreaks)).Append("\r\n");
     }
+
+    /// <summary>Een kopregel mag geen regeleinde of NUL bevatten (header injection); dan liever niet versturen.</summary>
+    private static string HeaderValue(string value) =>
+        value.AsSpan().IndexOfAny('\r', '\n', '\0') >= 0
+            ? throw new ArgumentException("Een kopregel van de e-mail bevat een regeleinde of NUL-teken.", nameof(value))
+            : value;
+
+    /// <summary>Inhoud van een quoted-string (RFC 5322 3.2.4): <c>\</c> en <c>"</c> krijgen een backslash ervoor.</summary>
+    private static string QuotedString(string value) => value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
 
     /// <summary>Alleen ASCII blijft leesbaar; anders een UTF-8 encoded-word (RFC 2047).</summary>
     private static string EncodeWord(string value) =>

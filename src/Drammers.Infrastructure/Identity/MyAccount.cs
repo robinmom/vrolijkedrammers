@@ -101,7 +101,9 @@ public sealed class MyAccount(
 
     /// <summary>
     /// Meldt een apparaat af: de API weigert daarna elke aanroep met die installatie-id (401 <c>DEVICE_REVOKED</c>),
-    /// waarop de app de tokens wist. <paramref name="userId"/> is <c>null</c> voor een beheerder.
+    /// waarop de app de tokens wist. Daarnaast worden alle sessies in Entra ingetrokken: een refresh-token dat al van
+    /// het toestel is gekopieerd, werkt dan niet meer, en alle toestellen (ook het portal) moeten opnieuw inloggen.
+    /// <paramref name="userId"/> is <c>null</c> voor een beheerder.
     /// </summary>
     public async Task RevokeDeviceAsync(Guid? userId, Guid deviceId, CancellationToken cancellationToken)
     {
@@ -120,6 +122,14 @@ public sealed class MyAccount(
         await db.PushDevices.Where(p => p.DeviceId == device.Id).ExecuteDeleteAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("device.revoked", "Device", device.Id.ToString(), null, JsonSerializer.Serialize(new { byAdministrator = userId is null }, Json)), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        // Na de commit, zoals bij blokkeren: de API weigert het toestel nu al; Entra trekt de refresh-tokens in. Zonder
+        // gekoppelde inlog is er in Entra niets te doen.
+        var objectId = await db.Users.Where(u => u.Id == device.UserId).Select(u => u.ExternalObjectId).SingleAsync(cancellationToken);
+        if (!PendingObjectId.IsPending(objectId))
+        {
+            await entra.RevokeSessionsAsync(objectId, cancellationToken);
+        }
     }
 
     /// <summary>

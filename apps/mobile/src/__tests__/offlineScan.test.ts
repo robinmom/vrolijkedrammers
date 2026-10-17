@@ -5,6 +5,7 @@ import {
   base45Decode,
   checkOffline,
   enqueue,
+  MAX_VALID_FOR,
   queueLength,
   verifySignature,
   type OfflinePack,
@@ -49,13 +50,16 @@ const pack: OfflinePack = {
   ],
 };
 
-function code(secretKey: Uint8Array, opts: { version?: number; at?: Date; cv?: number; highS?: boolean } = {}) {
+function code(
+  secretKey: Uint8Array,
+  opts: { version?: number; at?: Date; cv?: number; highS?: boolean; validFor?: number } = {},
+) {
   const unsigned = unsignedPayload({
     ref,
     credentialVersion: opts.cv ?? 1,
     deviceId,
     issuedAt: Math.floor((opts.at ?? now).getTime() / 1000),
-    validFor: 45,
+    validFor: opts.validFor ?? 45,
   });
   unsigned[0] = opts.version ?? 1;
   let signature = p256.sign(unsigned, secretKey);
@@ -100,6 +104,15 @@ describe('Offline scannen (fase 15, lichte variant)', () => {
       check(code(device.secretKey, { at: new Date('2027-02-14T08:00:00Z') }), pack, new Date('2027-02-14T08:00:00Z')),
     ).toMatch(/geen toegangsmoment/);
     expect(check('GEEN CODE')).toBe('Geen geldige QR-code van De Vrolijke Drammers.');
+  });
+
+  it('code met een langere geldigheid dan het maximum is verlopen, ook met een geldige handtekening', () => {
+    const check = (text: string) => checkOffline(pack, text, now, new Map());
+    expect(check(code(device.secretKey, { validFor: MAX_VALID_FOR })).outcome).toBe('Admitted');
+    expect(check(code(device.secretKey, { validFor: MAX_VALID_FOR + 1 })).message).toMatch(/^Verlopen code/);
+    expect(
+      check(code(device.secretKey, { at: new Date(now.getTime() - 3_600_000), validFor: 0xffff })).message,
+    ).toMatch(/^Verlopen code/);
   });
 
   it('wachtrij bewaart alleen code, tijd en uitkomst', async () => {

@@ -565,6 +565,17 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         var code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "gast@example.com").PlainText, @"\b\d{6}\b").Value;
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code = code == "000000" ? "111111" : "000000" })).StatusCode);
+
+        // L2: hoogstens drie keer een nieuwe code, en de mislukte poging blijft meetellen.
+        for (var i = 0; i < ParadePublicRegistrations.MaxResends; i++)
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await guest.PostAsync($"/api/v1/parade/public-registrations/{id}/resend-code", null)).StatusCode);
+        }
+
+        Assert.Equal(HttpStatusCode.Conflict, (await guest.PostAsync($"/api/v1/parade/public-registrations/{id}/resend-code", null)).StatusCode);
+        Assert.Equal(1 + ParadePublicRegistrations.MaxResends, _api.Emails.Sent.Count(m => m.To == "gast@example.com"));
+        Assert.Equal(1, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.VerificationAttempts).SingleAsync()));
+        code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "gast@example.com").PlainText, @"\b\d{6}\b").Value;
         var verified = await JsonAsync(await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code }));
         Assert.Equal(1, verified.GetProperty("registrationNumber").GetInt32());
         var token = verified.GetProperty("statusToken").GetString();
@@ -621,7 +632,11 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         var id = (await DraftAsync(eigenaar)).GetProperty("id").GetGuid();
 
         var response = await eigenaar.PostAsJsonAsync($"/api/v1/parade/registrations/{id}/managers", new { email = "gewoon@example.com" });
+        var unknown = await eigenaar.PostAsJsonAsync($"/api/v1/parade/registrations/{id}/managers", new { email = "onbekend@example.com" });
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Geen account of geen groepsverantwoordelijke: dezelfde status en melding (niet af te leiden wie een account heeft).
+        Assert.Equal((HttpStatusCode.NotFound, HttpStatusCode.NotFound), (response.StatusCode, unknown.StatusCode));
+        Assert.Equal((await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString(),
+            (await unknown.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString());
     }
 }

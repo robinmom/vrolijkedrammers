@@ -89,7 +89,7 @@ public sealed class ParadeJury(
             throw new DomainException(ErrorCodes.Validation, "Vul een naam (hooguit 100 tekens) en een geldig e-mailadres in.");
         }
 
-        var userId = await accounts.EnsureAccountAsync(address, cleanName, null, DefaultRoles.Jury, cancellationToken);
+        var userId = await accounts.EnsureInvitedAccountAsync(address, cleanName, DefaultRoles.Jury, cancellationToken);
         await audit.WriteAsync(new AuditEntry("jury.invited", "User", userId.ToString(), null, JsonSerializer.Serialize(new { name = cleanName, email = address }, Json)), cancellationToken);
         await email.SendAsync(InviteMail(address, cleanName), cancellationToken);
         return userId;

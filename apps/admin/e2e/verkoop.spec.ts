@@ -128,6 +128,8 @@ test('fase 19: activiteiten en munten hebben een eigen pagina', async ({ page })
   await expect(page.getByRole('heading', { name: 'Munten', level: 1 })).toBeVisible();
   await expect(page.getByRole('row', { name: /Mendy Mom .* 20 .* Betaald · af te halen/ })).toBeVisible();
   await expect(page.getByText('Af te halen', { exact: true })).toBeVisible();
+  // Dubbel betaald: zichtbaar voor de penningmeester.
+  await expect(page.getByText(/Terugbetalen €\s50,00 · dubbel betaald/)).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });
 

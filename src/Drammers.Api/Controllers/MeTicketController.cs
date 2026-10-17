@@ -26,6 +26,7 @@ public sealed class MeTicketController(MemberTickets tickets) : ControllerBase
 
     /// <summary>Publieke sleutel uit de Secure Enclave/Keystore van dit toestel (SubjectPublicKeyInfo, base64).</summary>
     [HttpPut("devices/current/key")]
+    [RequireDevice]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> RegisterKey(DeviceKeyRequest request, CancellationToken cancellationToken)
@@ -42,6 +43,7 @@ public sealed class MeTicketController(MemberTickets tickets) : ControllerBase
 
     /// <summary>Koppelt het ticket aan dit toestel; met een hardwaresleutel alleen met de handtekening over de challenge.</summary>
     [HttpPost("ticket/bind-device")]
+    [RequireDevice]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
@@ -56,6 +58,7 @@ public sealed class MeTicketController(MemberTickets tickets) : ControllerBase
     /// munten-QR voor de kassa (fase 19b), per muntenbestelling (<c>orderTicketId</c>).
     /// </summary>
     [HttpGet("ticket/code")]
+    [RequireDevice]
     [ProducesResponseType<ServerCode>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public Task<ServerCode> Code([FromQuery] QrPurpose purpose, [FromQuery] Guid? orderTicketId, CancellationToken cancellationToken) =>

@@ -482,6 +482,8 @@ export class MockApi {
       holdUntil: '2026-10-14T18:00:00Z',
       paidAt: null,
       collected: false,
+      refundDueCents: 0,
+      refundReason: null,
     },
     {
       id: 'so-2',
@@ -504,6 +506,9 @@ export class MockApi {
       holdUntil: null,
       paidAt: '2026-10-10T18:01:00Z',
       collected: false,
+      // Twee keer betaald (bijv. twee keer op Betalen gedrukt): de penningmeester betaalt terug.
+      refundDueCents: 5000,
+      refundReason: 'DuplicatePayment',
     },
   ];
   // Fase 17: ouders/verzorgers en dansgarde.

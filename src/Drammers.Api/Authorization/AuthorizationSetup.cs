@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Drammers.SharedKernel.Auditing;
@@ -8,7 +10,7 @@ namespace Drammers.Api.Authorization;
 
 public static class AuthorizationSetup
 {
-    /// <summary>Strenge limiet voor anonieme formulieren (accountverzoek, later lid worden): 5 per 10 minuten per IP.</summary>
+    /// <summary>Strenge limiet voor anonieme formulieren (accountverzoek, later lid worden): 5 per 10 minuten per IP (IPv6: per /64).</summary>
     public const string AnonymousFormsPolicy = "anonymous-forms";
 
     /// <summary>Alleen lezen via een statuslink (256-bits token, niet te raden): ruimer, los van de formulierlimiet.</summary>
@@ -53,10 +55,10 @@ public static class AuthorizationSetup
                 var objectId = context.User.FindFirstValue("oid");
                 return objectId is not null
                     ? RateLimitPartition.GetFixedWindowLimiter($"user:{objectId}", _ => Window(300))
-                    : RateLimitPartition.GetFixedWindowLimiter($"ip:{context.Connection.RemoteIpAddress}", _ => Window(120));
+                    : RateLimitPartition.GetFixedWindowLimiter($"ip:{ClientKey(context.Connection.RemoteIpAddress)}", _ => Window(120));
             });
             options.AddPolicy(AnonymousFormsPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
-                $"form:{context.Connection.RemoteIpAddress}",
+                $"form:{ClientKey(context.Connection.RemoteIpAddress)}",
                 _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("RateLimits:AnonymousForms", 5),
@@ -64,14 +66,40 @@ public static class AuthorizationSetup
                     QueueLimit = 0,
                 }));
             options.AddPolicy(ScannerPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
-                $"scan:{context.User.FindFirst("oid")?.Value ?? context.Connection.RemoteIpAddress?.ToString()}",
+                $"scan:{context.User.FindFirst("oid")?.Value ?? ClientKey(context.Connection.RemoteIpAddress)}",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
             options.AddPolicy(AnonymousStatusPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
-                $"status:{context.Connection.RemoteIpAddress}",
+                $"status:{ClientKey(context.Connection.RemoteIpAddress)}",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
         });
 
         return services;
+    }
+
+    /// <summary>
+    /// Sleutel voor een limiet per IP. Bij IPv6 het /64-prefix: één aansluiting krijgt een heel /64 en zou anders per
+    /// verzoek van adres kunnen wisselen. IPv4 (ook als IPv6 geschreven) per volledig adres.
+    /// </summary>
+    public static string ClientKey(IPAddress? address)
+    {
+        if (address is null)
+        {
+            return "onbekend";
+        }
+
+        if (address.IsIPv4MappedToIPv6)
+        {
+            address = address.MapToIPv4();
+        }
+
+        if (address.AddressFamily != AddressFamily.InterNetworkV6)
+        {
+            return address.ToString();
+        }
+
+        var bytes = address.GetAddressBytes();
+        Array.Clear(bytes, 8, 8);
+        return $"{new IPAddress(bytes)}/64";
     }
 
     private static FixedWindowRateLimiterOptions Window(int permitsPerMinute) =>

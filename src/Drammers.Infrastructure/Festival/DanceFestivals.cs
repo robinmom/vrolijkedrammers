@@ -57,8 +57,9 @@ public sealed record FestivalEntryView(
     Guid Id, int SortOrder, DanceType DanceType, DanceFormat Format, string Names, decimal AverageAge, int DancerCount, string LeaderName, string? Title,
     ShowStyle? ShowStyle, DanceCategory Category, DanceEntryStatus Status, bool HoldsPlace, int? WaitlistPosition, DateTime? RemovedAt);
 
+/// <summary><see cref="DuplicatePaid"/>: zo vaak is dit bedrag extra betaald (terugbetalen).</summary>
 public sealed record FestivalPaymentView(
-    Guid Id, int AmountCents, DanceFestivalPaymentStatus Status, string? MollieStatus, DateTime CreatedAt, DateTime? PaidAt);
+    Guid Id, int AmountCents, DanceFestivalPaymentStatus Status, string? MollieStatus, DateTime CreatedAt, DateTime? PaidAt, int DuplicatePaid);
 
 /// <summary>Wat de vereniging via de link in de mail ziet en kan wijzigen.</summary>
 public sealed record FestivalOwnRegistrationView(
@@ -103,6 +104,7 @@ public sealed partial class DanceFestivals(
     IOptions<TurnstileOptions> turnstile,
     ITurnstileVerifier verifier,
     IDataProtectionProvider protection,
+    IOptions<EmailOptions> emailOptions,
     ILogger<DanceFestivals> logger)
 {
     public const int MaxEntries = 40;
@@ -312,21 +314,29 @@ public sealed partial class DanceFestivals(
         await SendAsync(FestivalMails.NewRegistration(festival, registration, changed: true), cancellationToken);
     }
 
-    /// <summary>De betaallink uit de mail: maakt een nieuwe Mollie-betaling en geeft de betaalpagina.</summary>
+    /// <summary>
+    /// De betaallink uit de mail: staat de vorige Mollie-betaling nog open, dan dezelfde betaalpagina (geen tweede
+    /// betaling); anders een nieuwe betaling.
+    /// </summary>
     public async Task<string> PayAsync(Guid paymentId, string token, string baseUrl, CancellationToken cancellationToken)
     {
         var payment = await db.DanceFestivalPayments.SingleOrDefaultAsync(p => p.Id == paymentId, cancellationToken)
             ?? throw new DomainException(ErrorCodes.NotFound, "Betaling niet gevonden.", DomainErrorKind.NotFound);
         var (registration, festival) = await ByTokenAsync(payment.RegistrationId, token, cancellationToken);
-        if (payment.MolliePaymentId is { } previous)
+        var existing = payment.MolliePaymentId is { } previous ? await SyncAsync(payment, previous, cancellationToken) : null;
+        if (payment.Status == DanceFestivalPaymentStatus.Paid)
         {
-            await SyncAsync(payment, previous, cancellationToken);
+            throw new DomainException(ErrorCodes.OrderAlreadyPaid, "Dit bedrag is al betaald.", DomainErrorKind.Conflict);
         }
 
         if (payment.Status != DanceFestivalPaymentStatus.Open)
         {
-            throw new DomainException(ErrorCodes.OrderNotPayable,
-                payment.Status == DanceFestivalPaymentStatus.Paid ? "Dit bedrag is al betaald." : "Deze betaallink is niet meer geldig.", DomainErrorKind.Conflict);
+            throw new DomainException(ErrorCodes.OrderNotPayable, "Deze betaallink is niet meer geldig.", DomainErrorKind.Conflict);
+        }
+
+        if (existing is { Status: "open", CheckoutUrl: { } checkout })
+        {
+            return checkout;
         }
 
         try
@@ -336,6 +346,14 @@ public sealed partial class DanceFestivals(
                 WebhookUrl(baseUrl), payment.Id, $"{payment.Id:N}-{Now.Ticks}"), cancellationToken);
             payment.MolliePaymentId = created.Id;
             payment.MollieStatus = created.Status;
+            db.DanceFestivalMolliePayments.Add(new DanceFestivalMolliePayment
+            {
+                Id = IdGenerator.NewId(),
+                PaymentId = payment.Id,
+                MolliePaymentId = created.Id,
+                MollieStatus = created.Status,
+                CreatedAt = Now,
+            });
             await db.SaveChangesAsync(cancellationToken);
             return created.CheckoutUrl ?? throw new MollieException("Geen betaalpagina van Mollie.");
         }
@@ -346,10 +364,15 @@ public sealed partial class DanceFestivals(
         }
     }
 
-    /// <summary>Webhook van Mollie; geeft <c>false</c> als de betaling niet bij het festival hoort.</summary>
+    /// <summary>
+    /// Webhook van Mollie; geeft <c>false</c> als de betaling niet bij het festival hoort. Elke Mollie-betaling die ooit
+    /// voor een betaalverzoek gestart is telt mee, niet alleen de laatste.
+    /// </summary>
     public async Task<bool> HandleWebhookAsync(string molliePaymentId, CancellationToken cancellationToken)
     {
-        var payment = await db.DanceFestivalPayments.SingleOrDefaultAsync(p => p.MolliePaymentId == molliePaymentId, cancellationToken);
+        var paymentId = await db.DanceFestivalMolliePayments.Where(p => p.MolliePaymentId == molliePaymentId)
+            .Select(p => (Guid?)p.PaymentId).SingleOrDefaultAsync(cancellationToken);
+        var payment = paymentId is null ? null : await db.DanceFestivalPayments.SingleOrDefaultAsync(p => p.Id == paymentId, cancellationToken);
         if (payment is null)
         {
             return false;
@@ -447,6 +470,9 @@ public sealed partial class DanceFestivals(
         var ids = registrations.Select(r => r.Id).ToList();
         var payments = (await db.DanceFestivalPayments.AsNoTracking().Where(p => ids.Contains(p.RegistrationId)).ToListAsync(cancellationToken))
             .ToLookup(p => p.RegistrationId);
+        var paymentIds = payments.SelectMany(g => g).Select(p => p.Id).ToList();
+        var duplicates = (await db.DanceFestivalMolliePayments.AsNoTracking().Where(m => m.DuplicatePaid && paymentIds.Contains(m.PaymentId))
+            .Select(m => m.PaymentId).ToListAsync(cancellationToken)).ToHashSet();
         var summaries = registrations.Select(r =>
         {
             var entries = r.Entries.Where(e => e.RemovedAt is null).ToList();
@@ -454,7 +480,7 @@ public sealed partial class DanceFestivals(
             var waitlist = entries.Where(e => e.Status == DanceEntryStatus.Waitlisted).ToList();
             return new FestivalRegistrationSummary(
                 r.Id, r.Number, r.ClubName, r.ContactName, entries.Count, entries.Count(e => e.Status == DanceEntryStatus.Approved), toReview, waitlist.Count,
-                waitlist.Min(e => e.WaitlistPosition), SummaryStatus(entries), PaymentSummary(payments[r.Id].ToList()), r.SubmittedAt, r.ChangedAt);
+                waitlist.Min(e => e.WaitlistPosition), SummaryStatus(entries), PaymentSummary(payments[r.Id].ToList(), duplicates), r.SubmittedAt, r.ChangedAt);
         }).ToList();
         var allEntries = registrations.SelectMany(r => r.Entries).Where(e => e.RemovedAt is null).ToList();
         var allPayments = payments.SelectMany(g => g).Where(p => p.Status != DanceFestivalPaymentStatus.Canceled).ToList();
@@ -785,32 +811,67 @@ public sealed partial class DanceFestivals(
 
     private async Task<IReadOnlyList<FestivalPaymentView>> PaymentsAsync(Guid registrationId, CancellationToken cancellationToken) =>
         await db.DanceFestivalPayments.AsNoTracking().Where(p => p.RegistrationId == registrationId).OrderBy(p => p.CreatedAt)
-            .Select(p => new FestivalPaymentView(p.Id, p.AmountCents, p.Status, p.MollieStatus, p.CreatedAt, p.PaidAt)).ToListAsync(cancellationToken);
+            .Select(p => new FestivalPaymentView(p.Id, p.AmountCents, p.Status, p.MollieStatus, p.CreatedAt, p.PaidAt,
+                db.DanceFestivalMolliePayments.Count(m => m.PaymentId == p.Id && m.DuplicatePaid)))
+            .ToListAsync(cancellationToken);
 
-    private async Task SyncAsync(DanceFestivalPayment payment, string molliePaymentId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Haalt een Mollie-betaling op en werkt het betaalverzoek bij (idempotent). Een tweede betaalde Mollie-betaling voor
+    /// hetzelfde verzoek wordt niet nog eens geboekt, maar gemarkeerd om terug te betalen.
+    /// </summary>
+    private async Task<MolliePayment?> SyncAsync(DanceFestivalPayment payment, string molliePaymentId, CancellationToken cancellationToken)
     {
         var mollieResult = await mollie.GetPaymentAsync(molliePaymentId, cancellationToken);
         if (mollieResult.OrderId != payment.Id)
         {
-            return;
+            return null;
         }
 
-        payment.MollieStatus = mollieResult.Status;
-        if (mollieResult.IsPaid && payment.Status != DanceFestivalPaymentStatus.Paid && mollieResult.AmountCents == payment.AmountCents)
+        var attempt = await db.DanceFestivalMolliePayments.SingleOrDefaultAsync(m => m.MolliePaymentId == molliePaymentId, cancellationToken);
+        if (attempt is not null)
         {
+            attempt.MollieStatus = mollieResult.Status;
+        }
+
+        if (payment.MolliePaymentId == molliePaymentId || mollieResult.IsPaid)
+        {
+            payment.MollieStatus = mollieResult.Status;
+        }
+
+        // Zonder eigen regel (betaling van vóór 2026-10-17) telt alleen de status van het verzoek.
+        var handled = attempt is null ? payment.Status == DanceFestivalPaymentStatus.Paid : attempt.PaidAt is not null;
+        if (mollieResult.IsPaid && !handled && mollieResult.AmountCents == payment.AmountCents)
+        {
+            if (attempt is not null)
+            {
+                attempt.PaidAt = mollieResult.PaidAt ?? Now;
+            }
+
+            if (payment.Status == DanceFestivalPaymentStatus.Paid && attempt is not null)
+            {
+                attempt.DuplicatePaid = true;
+
+                await db.SaveChangesAsync(cancellationToken);
+                await audit.WriteAsync(new AuditEntry("dance-festival.payment-paid-twice", "DanceFestivalPayment", payment.Id.ToString(), null,
+                    JsonSerializer.Serialize(new { molliePaymentId, payment.AmountCents }, Json)), cancellationToken);
+                LogPaidTwice(logger, payment.Id, molliePaymentId);
+                return mollieResult;
+            }
+
             // Ook een ingetrokken verzoek dat toch betaald is, telt als betaald.
             payment.Status = DanceFestivalPaymentStatus.Paid;
             payment.PaidAt = mollieResult.PaidAt ?? Now;
             await db.SaveChangesAsync(cancellationToken);
             await audit.WriteAsync(new AuditEntry("dance-festival.payment-paid", "DanceFestivalPayment", payment.Id.ToString(), null,
                 JsonSerializer.Serialize(new { molliePaymentId, payment.AmountCents }, Json)), cancellationToken);
-            return;
+            return mollieResult;
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        return mollieResult;
     }
 
-    private static void Validate(FestivalRegistrationInput input, bool requireConsents)
+    private void Validate(FestivalRegistrationInput input, bool requireConsents)
     {
         var issues = new List<string>();
         void Required(string? value, string label, int max)
@@ -830,6 +891,12 @@ public sealed partial class DanceFestivals(
         if (!System.Net.Mail.MailAddress.TryCreate(input.Email?.Trim(), out _) || input.Email.Trim().Length > 254)
         {
             issues.Add("e-mailadres");
+        }
+        else if (EmailSenderAddress.IsOwnDomain(input.Email, emailOptions.Value))
+        {
+            // Het adres wordt het antwoordadres van de melding aan de organisatie; een eigen adres zou die laten lijken
+            // op een mail van de vereniging zelf.
+            issues.Add("e-mailadres (gebruik het adres van je eigen vereniging, niet een adres van De Vrolijke Drammers)");
         }
 
         if (input.Remarks?.Trim().Length > 2000)
@@ -959,8 +1026,13 @@ public sealed partial class DanceFestivals(
         : entries.Any(e => e.Status == DanceEntryStatus.Approved) ? "Goedgekeurd"
         : "Wachtlijst";
 
-    private static string PaymentSummary(List<DanceFestivalPayment> payments)
+    private static string PaymentSummary(List<DanceFestivalPayment> payments, HashSet<Guid> duplicates)
     {
+        if (payments.Any(p => duplicates.Contains(p.Id)))
+        {
+            return "Dubbel betaald";
+        }
+
         var active = payments.Where(p => p.Status != DanceFestivalPaymentStatus.Canceled).ToList();
         return active.Count == 0 ? "—" : active.All(p => p.Status == DanceFestivalPaymentStatus.Paid) ? "Betaald" : "Link verstuurd";
     }
@@ -993,6 +1065,9 @@ public sealed partial class DanceFestivals(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Mollie-betaling voor festivalinschrijving {Number} mislukt")]
     private static partial void LogMollieFailed(ILogger logger, int number, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Betaalverzoek {PaymentId} van het Dansgardefestival is dubbel betaald ({MolliePaymentId}); terugbetalen")]
+    private static partial void LogPaidTwice(ILogger logger, Guid paymentId, string molliePaymentId);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Mail van het Dansgardefestival niet verstuurd: {Subject}")]
     private static partial void LogMailFailed(ILogger logger, string subject, Exception exception);

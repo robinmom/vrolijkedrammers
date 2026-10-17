@@ -675,11 +675,15 @@ public sealed class AdvertiserAdministration(
             })], info.Text, info.StartDate, info.EndDate);
     }
 
-    /// <summary>De collectant zet de stand van een van zijn eigen adverteerders, in het lopende campagnejaar.</summary>
+    /// <summary>
+    /// De collectant zet de stand van een van zijn eigen adverteerders, in het lopende campagnejaar. Alleen zolang hij
+    /// collectant is: wie geen kaderlid of collectant meer is, houdt de koppeling maar mag niets meer wijzigen.
+    /// </summary>
     public async Task SetMyStatusAsync(
         Guid memberId, Guid advertiserId, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken, bool? cashReceived = null)
     {
-        if (!await db.Advertisers.AnyAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken))
+        if (!await IsCollectorAsync(memberId, cancellationToken)
+            || !await db.Advertisers.AnyAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken))
         {
             throw NotFound();
         }
@@ -690,6 +694,11 @@ public sealed class AdvertiserAdministration(
     /// <summary>De collectant zet alleen de opmerking van dit jaar (fase 27g), zonder de stand te wijzigen.</summary>
     public async Task SetMyNoteAsync(Guid memberId, Guid advertiserId, string? note, CancellationToken cancellationToken)
     {
+        if (!await IsCollectorAsync(memberId, cancellationToken))
+        {
+            throw NotFound();
+        }
+
         var advertiser = await db.Advertisers.Include(a => a.Years)
             .SingleOrDefaultAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken) ?? throw NotFound();
         var year = await CampaignYearAsync(cancellationToken);

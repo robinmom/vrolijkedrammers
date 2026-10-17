@@ -40,7 +40,7 @@ public sealed class NotificationAdministration(DrammersDbContext db, IOutbox out
     public async Task<Notification> CreateAsync(NotificationDraft draft, UserAccess sender, CancellationToken cancellationToken)
     {
         Validate(draft.Title, draft.Body, draft.DeepLink, draft.Audience);
-        await AuthorizeAsync(draft, sender, cancellationToken);
+        await AuthorizeAsync(draft.Category, draft.Audience, sender, cancellationToken);
         var now = clock.UtcNow.UtcDateTime;
         if (draft.ScheduledAt is { } at && at < now.AddMinutes(1))
         {
@@ -138,17 +138,26 @@ public sealed class NotificationAdministration(DrammersDbContext db, IOutbox out
         }
     }
 
-    private async Task AuthorizeAsync(NotificationDraft draft, UserAccess sender, CancellationToken cancellationToken)
+    /// <summary>
+    /// Mag deze afzender deze categorie en doelgroep gebruiken? Voor versturen én voor het aantal ontvangers vooraf
+    /// (preview), zodat een afzender met alleen het groepsrecht ook geen aantallen van andere doelgroepen kan opvragen.
+    /// </summary>
+    public async Task AuthorizeAsync(NotificationCategory category, NotificationAudience audience, UserAccess sender, CancellationToken cancellationToken)
     {
         var permissions = sender.Permissions;
-        if ((draft.Category == NotificationCategory.Urgent || draft.Audience.Everyone) && !permissions.Contains(Permissions.NotificationSendUrgent))
+        if ((category == NotificationCategory.Urgent || audience.Everyone) && !permissions.Contains(Permissions.NotificationSendUrgent))
         {
             throw new DomainException(ErrorCodes.Forbidden, "Dringende meldingen en meldingen aan iedereen vragen het recht notification.send.urgent.", DomainErrorKind.Forbidden);
         }
 
-        if (draft.Category == NotificationCategory.System)
+        if (category == NotificationCategory.System)
         {
             throw new DomainException(ErrorCodes.Validation, "De categorie Systeem is alleen voor meldingen van de app zelf.");
+        }
+
+        if ((audience.UserIds?.Count ?? 0) > 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Losse accounts zijn alleen voor meldingen van de app zelf.");
         }
 
         if (permissions.Contains(Permissions.NotificationSend))
@@ -157,7 +166,6 @@ public sealed class NotificationAdministration(DrammersDbContext db, IOutbox out
         }
 
         // Alleen notification.send.group: uitsluitend groepen waar de afzender zelf (als actief lid) in zit.
-        var audience = draft.Audience;
         if (audience.Everyone || audience.Members || audience.Dansgarde || (audience.Roles?.Count ?? 0) > 0 || (audience.MemberIds?.Count ?? 0) > 0
             || (audience.Groups?.Count ?? 0) == 0 || sender.MemberId is not { } memberId)
         {

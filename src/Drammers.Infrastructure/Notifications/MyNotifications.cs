@@ -46,6 +46,14 @@ public sealed class MyNotifications(DrammersDbContext db, PushTokenProtector tok
             throw new DomainException(ErrorCodes.Validation, "Ongeldige installatie.");
         }
 
+        // Een token dat aan een account gekoppeld is, wordt nooit anoniem overgenomen of verwijderd (dan zou iedereen met
+        // het token de push van dat account kunnen stilleggen). Wel gewoon 204, zodat het geen orakel is voor tokens.
+        var hash = PushTokenProtector.IsValid(token) ? PushTokenProtector.Hash(token) : null;
+        if (hash is not null && await db.PushDevices.AnyAsync(p => p.TokenHash == hash && (p.UserId != null || p.DeviceId != null), cancellationToken))
+        {
+            return;
+        }
+
         var row = await UpsertAsync(token, db.PushDevices.Where(p => p.AnonymousInstallId == installId), platform, cancellationToken);
         row.AnonymousInstallId = installId;
         row.DeviceId = null;

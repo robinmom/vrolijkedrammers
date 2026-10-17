@@ -11,7 +11,8 @@ import { AppText, BackLink, Button, Card, LargeTitleHeader, QueryState, Screen }
 
 /**
  * Mijn apparaten (fase 9): waar je bent ingelogd. Een ander apparaat afmelden logt dat apparaat direct uit
- * (de API weigert daarna elke aanroep ervan). Dit apparaat meld je af met Uitloggen.
+ * (de API weigert daarna elke aanroep ervan) en trekt alle sessies in: ook op dit toestel en in het portal moet je
+ * daarna opnieuw inloggen. Dit apparaat meld je af met Uitloggen.
  */
 export default function ApparatenScreen() {
   const status = useSessionStatus();
@@ -27,7 +28,7 @@ export default function ApparatenScreen() {
   function confirmRevoke(id: string, name: string) {
     Alert.alert(
       `${name} afmelden?`,
-      'Je wordt op dat apparaat uitgelogd. Munten die op dat apparaat zijn gekocht, zijn daarna niet meer af te halen.',
+      'Je wordt op dat apparaat uitgelogd. Voor de veiligheid moet je daarna ook op je andere apparaten (en hier) opnieuw inloggen. Munten die op dat apparaat zijn gekocht, zijn daarna niet meer af te halen.',
       [
         { text: 'Annuleren', style: 'cancel' },
         {

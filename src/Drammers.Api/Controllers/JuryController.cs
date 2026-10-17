@@ -32,6 +32,7 @@ public sealed class JuryController(ParadeJudging judging) : ControllerBase
 
     [HttpPut("parades/{paradeId:guid}/scores")]
     [ProducesResponseType<SaveScoresResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<SaveScoresResponse> SaveScores(Guid paradeId, SaveScoresRequest request, CancellationToken cancellationToken) =>

@@ -135,7 +135,8 @@ public sealed record ContactMessageInput(
 /// niets opgeslagen; de audit bevat alleen de ontvanger.
 /// </summary>
 public sealed class ContactForm(
-    IOptions<ContactOptions> options, IOptions<TurnstileOptions> turnstile, ITurnstileVerifier verifier, IEmailSender email, IAuditLogger audit)
+    IOptions<ContactOptions> options, IOptions<TurnstileOptions> turnstile, ITurnstileVerifier verifier, IEmailSender email, IAuditLogger audit,
+    IOptions<EmailOptions> emailOptions)
 {
     /// <summary>Verstuurt het bericht. Geeft <c>false</c> als het als spam is weggegooid (de bezoeker merkt daar niets van).</summary>
     public async Task<bool> SendAsync(ContactMessageInput input, string? remoteIp, CancellationToken cancellationToken)
@@ -143,6 +144,13 @@ public sealed class ContactForm(
         if (!options.Value.Recipients.TryGetValue(input.Recipient, out var recipient))
         {
             throw new DomainException(ErrorCodes.Validation, "Kies naar wie je bericht moet.");
+        }
+
+        // Het adres wordt het antwoordadres van een mail die van ons eigen domein komt: een eigen adres invullen zou die
+        // mail laten lijken op een bericht van het bestuur.
+        if (EmailSenderAddress.IsOwnDomain(input.Email, emailOptions.Value))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul je eigen e-mailadres in; een adres van De Vrolijke Drammers kan hier niet.");
         }
 
         if (turnstile.Value.Enabled && !await verifier.VerifyAsync(input.TurnstileToken, remoteIp, cancellationToken))

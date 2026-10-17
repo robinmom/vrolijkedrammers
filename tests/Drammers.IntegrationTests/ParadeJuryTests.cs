@@ -114,6 +114,27 @@ public class ParadeJuryTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Uitnodigen_van_een_bestaand_beheeraccount_wordt_geweigerd_een_lid_krijgt_alleen_de_rol_erbij()
+    {
+        var (_, secretarisOid) = await _api.CreateUserAsync("secretaris@example.com", DefaultRoles.Bestuur);
+        var (lidId, lidOid) = await _api.CreateUserAsync("lid@example.com", DefaultRoles.Lid);
+
+        var refused = await _bestuur.PostAsJsonAsync("/api/v1/admin/jury/jurors", new { name = "Secretaris", email = "secretaris@example.com" });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        Assert.Contains("laat het bestuur de rol toekennen", (await refused.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString(), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.Created, (await _bestuur.PostAsJsonAsync("/api/v1/admin/jury/jurors", new { name = "Lid", email = "lid@example.com" })).StatusCode);
+
+        var overview = await OverviewAsync(_bestuur);
+        Assert.DoesNotContain(overview.GetProperty("jurors").EnumerateArray(), j => j.GetProperty("email").GetString() == "secretaris@example.com");
+        Assert.Equal(lidId, Juror(overview, "lid@example.com").GetProperty("userId").GetGuid());
+        using var scope = _api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+        Assert.Equal([lidOid, secretarisOid], await db.Users.AsNoTracking().Where(u => u.Email == "lid@example.com" || u.Email == "secretaris@example.com")
+            .OrderBy(u => u.Email).Select(u => u.ExternalObjectId).ToListAsync());
+        Assert.Empty(_api.Entra.Deleted);
+    }
+
+    [Fact]
     public async Task Hoofdjury_mag_indelen_maar_niet_uitnodigen_of_wegen_en_een_lid_mag_niets()
     {
         var (_, headOid) = await _api.CreateUserAsync("hoofd@example.com", DefaultRoles.Jury, DefaultRoles.Hoofdjury);

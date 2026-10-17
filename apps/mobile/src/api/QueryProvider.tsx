@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { getStatus, subscribe, type SessionStatus } from '../auth/session';
+import { storageKeys } from '../lib/storageKeys';
 import { ApiError } from './client';
 
 const WEEK = 7 * 24 * 60 * 60 * 1000;
@@ -48,12 +49,13 @@ onlineManager.setEventListener((setOnline) =>
 /**
  * Querycache die tussen app-starts bewaard blijft: zonder netwerk toont de app de laatst geladen content
  * (fase 6). Persoonlijke gegevens (sleutel `me`) worden niet bewaard en tokens staan er nooit in; bij in- en
- * uitloggen wordt de cache geleegd, omdat ledencontent anders zichtbaar blijft na uitloggen (fase 9).
+ * uitloggen wordt de cache geleegd, omdat ledencontent anders zichtbaar blijft na uitloggen (fase 9). Bij uitloggen
+ * wist clearLocalSession ook de bewaarde kopie op het toestel (o.a. jury- en hoofdjurygegevens).
  */
 export function QueryProvider({ children, client }: { children: ReactNode; client?: QueryClient }) {
   const [queryClient] = useState(() => client ?? createQueryClient());
   const [persister] = useState(() =>
-    createAsyncStoragePersister({ storage: AsyncStorage, key: 'drammers-query-cache' }),
+    createAsyncStoragePersister({ storage: AsyncStorage, key: storageKeys.queryCache }),
   );
 
   useEffect(() => {

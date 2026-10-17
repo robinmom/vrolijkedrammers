@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Drammers.Api.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -31,8 +33,9 @@ public sealed class AppAuthController(IOptions<AuthOptions> auth) : ControllerBa
 
     /// <summary>
     /// Doorstuurpagina voor Expo Go (alleen Dev/Acc): Entra stuurt de code hierheen en deze pagina geeft hem door aan
-    /// het adres dat de app in de <c>state</c> meegaf. Alleen <c>exp://</c>, <c>exps://</c> en <c>drammers://</c> zijn
-    /// toegestaan (geen open redirect naar het web); de code is zonder de PKCE-verifier van de app waardeloos.
+    /// het adres dat de app in de <c>state</c> meegaf. Alleen <c>drammers://</c> en <c>exp://</c>/<c>exps://</c> naar de
+    /// eigen computer of een privé-LAN-adres (de Expo-ontwikkelserver) zijn toegestaan: geen open redirect naar het web of
+    /// naar een Expo-server van een ander. De code is zonder de PKCE-verifier van de app waardeloos.
     /// </summary>
     [HttpGet(BridgePath)]
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -61,12 +64,53 @@ public sealed class AppAuthController(IOptions<AuthOptions> auth) : ControllerBa
             var encoded = state[(dot + 1)..].Replace('-', '+').Replace('_', '/');
             encoded = encoded.PadRight(encoded.Length + ((4 - (encoded.Length % 4)) % 4), '=');
             var url = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
-            return Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "exp" or "exps" or "drammers" ? url : null;
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri) && IsAllowed(uri) ? url : null;
         }
         catch (FormatException)
         {
             return null;
         }
+    }
+
+    private static bool IsAllowed(Uri uri) => uri.Scheme switch
+    {
+        "drammers" => true,
+        "exp" or "exps" => IsLocalDevelopmentHost(uri),
+        _ => false,
+    };
+
+    /// <summary>Localhost of een IP-adres (geen hostnaam) op de eigen computer of in een privé-LAN (10/8, 172.16/12, 192.168/16).</summary>
+    private static bool IsLocalDevelopmentHost(Uri uri)
+    {
+        if (string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (uri.HostNameType is not (UriHostNameType.IPv4 or UriHostNameType.IPv6) || !IPAddress.TryParse(uri.DnsSafeHost, out var address))
+        {
+            return false;
+        }
+
+        if (address.IsIPv4MappedToIPv6)
+        {
+            address = address.MapToIPv4();
+        }
+
+        if (IPAddress.IsLoopback(address))
+        {
+            return true;
+        }
+
+        if (address.AddressFamily != AddressFamily.InterNetwork)
+        {
+            return false;
+        }
+
+        var bytes = address.GetAddressBytes();
+        return bytes[0] == 10
+            || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31)
+            || (bytes[0] == 192 && bytes[1] == 168);
     }
 }
 

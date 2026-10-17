@@ -28,10 +28,15 @@ public sealed record TokenDevice(
 
 public sealed record SalesSummary(int RevenueCents, int Sold, int OpenPaymentLinks, int OpenAmountCents, int TokensToCollect, int TokensSold);
 
+/// <summary>
+/// <see cref="RefundDueCents"/>: online betaald geld dat de penningmeester moet terugbetalen (dubbel betaald, of betaald
+/// zonder plaats), met de reden van de eerste zo'n betaling.
+/// </summary>
 public sealed record SaleOrderRow(
     Guid Id, string Number, Guid ProductId, string ProductName, SaleOrderStatus Status, SalePaymentMethod PaymentMethod, SaleChannel Channel,
     string? GroupName, int MemberQuantity, int PaidQuantity, int AmountCents, string BuyerName, string BuyerEmail, string? BuyerPhone,
-    string? Remark, bool BuyerIsMember, DateTime CreatedAt, DateTime? HoldUntil, DateTime? PaidAt, bool Collected);
+    string? Remark, bool BuyerIsMember, DateTime CreatedAt, DateTime? HoldUntil, DateTime? PaidAt, bool Collected, int RefundDueCents,
+    SaleRefundReason? RefundReason);
 
 public sealed record WaitlistRow(
     Guid Id, int Position, WaitlistStatus Status, string? GroupName, int MemberQuantity, int PaidQuantity, string BuyerName, string BuyerEmail,
@@ -216,11 +221,14 @@ public sealed class SaleAdministration(DrammersDbContext db, TicketSales sales, 
         var ids = rows.Select(r => r.Order.Id).ToList();
         var collected = await db.OrderTickets.AsNoTracking().Where(t => ids.Contains(t.OrderId) && t.Status == OrderTicketStatus.Used)
             .Select(t => t.OrderId).Distinct().ToListAsync(cancellationToken);
+        var refunds = (await db.SaleOrderPayments.AsNoTracking().Where(p => ids.Contains(p.OrderId) && p.RefundReason != null)
+            .OrderBy(p => p.PaidAt).Select(p => new { p.OrderId, p.AmountCents, p.RefundReason }).ToListAsync(cancellationToken)).ToLookup(p => p.OrderId);
         return rows.Select(r => new SaleOrderRow(
             r.Order.Id, r.Order.Number, r.Order.ProductId, r.ProductName, r.Order.Status, r.Order.PaymentMethod, r.Order.Channel, r.Order.GroupName,
             r.Order.MemberQuantity, r.Order.PaidQuantity, r.Order.AmountCents, r.Order.BuyerName, r.Order.BuyerEmail, r.Order.BuyerPhone, r.Order.Remark,
             r.Order.BuyerMemberId is not null || r.Order.GroupName is not null, r.Order.CreatedAt,
-            r.Order.Status == SaleOrderStatus.AwaitingPayment ? r.Order.HoldUntil : null, r.Order.PaidAt, collected.Contains(r.Order.Id)));
+            r.Order.Status == SaleOrderStatus.AwaitingPayment ? r.Order.HoldUntil : null, r.Order.PaidAt, collected.Contains(r.Order.Id),
+            refunds[r.Order.Id].Sum(p => p.AmountCents), refunds[r.Order.Id].FirstOrDefault()?.RefundReason));
     }
 
     public async Task<IReadOnlyList<WaitlistRow>> WaitlistAsync(Guid productId, CancellationToken cancellationToken)

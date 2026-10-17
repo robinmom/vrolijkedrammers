@@ -64,6 +64,22 @@ internal sealed class SaleOrderConfiguration : IEntityTypeConfiguration<SaleOrde
     }
 }
 
+internal sealed class SaleOrderPaymentConfiguration : IEntityTypeConfiguration<SaleOrderPayment>
+{
+    public void Configure(EntityTypeBuilder<SaleOrderPayment> builder)
+    {
+        builder.ToTable("SaleOrderPayment", Schemas.Payments, t => t.HasCheckConstraint("CK_SaleOrderPayment_amount", "[amount_cents] >= 0"));
+        builder.Property(p => p.Id).ValueGeneratedNever();
+        builder.Property(p => p.MolliePaymentId).HasMaxLength(40).IsUnicode(false);
+        builder.Property(p => p.MollieStatus).HasMaxLength(20).IsUnicode(false);
+        builder.HasIndex(p => p.MolliePaymentId).IsUnique();
+        builder.HasIndex(p => p.OrderId);
+        // Terug te betalen betalingen snel vinden voor de penningmeester.
+        builder.HasIndex(p => p.RefundReason).HasFilter("[refund_reason] IS NOT NULL");
+        builder.HasOne<SaleOrder>().WithMany().HasForeignKey(p => p.OrderId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 internal sealed class SaleOrderSequenceConfiguration : IEntityTypeConfiguration<SaleOrderSequence>
 {
     public void Configure(EntityTypeBuilder<SaleOrderSequence> builder)

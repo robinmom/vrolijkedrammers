@@ -105,7 +105,9 @@ public static class TicketQrValidator
         }
 
         var issued = DateTimeOffset.FromUnixTimeSeconds(payload.IssuedAt);
-        if (now < issued - ClockSkew || now > issued.AddSeconds(payload.ValidFor) + ClockSkew)
+        // De geldigheid komt uit de (door het toestel ondertekende) payload: boven het maximum telt de code als verlopen.
+        if (payload.ValidFor > QrPayload.MaxValidFor
+            || now < issued - ClockSkew || now > issued.AddSeconds(payload.ValidFor) + ClockSkew)
         {
             return new(QrCheck.Expired, "Verlopen code (bijvoorbeeld een screenshot). Vraag om de live code.", ticket);
         }

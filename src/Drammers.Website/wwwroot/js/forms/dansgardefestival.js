@@ -368,7 +368,14 @@
 
   // ---- Start -----------------------------------------------------------------------------------------------------
 
-  if (params.get('melding')) notice(params.get('melding'));
+  // Alleen vaste meldingen (code in de link van de API); nooit vrije tekst uit de link tonen.
+  const notices = {
+    betaald: 'Dit bedrag is al betaald.',
+    verlopen: 'Deze betaallink is niet meer geldig.',
+    mislukt: 'Betalen lukt nu niet. Probeer het over een paar minuten opnieuw.',
+    'niet-ingesteld': 'Online betalen is nog niet beschikbaar.',
+  };
+  if (Object.hasOwn(notices, params.get('melding') ?? '')) notice(notices[params.get('melding')]);
 
   fetch(api)
     .then((response) => (response.ok ? response.json() : null))

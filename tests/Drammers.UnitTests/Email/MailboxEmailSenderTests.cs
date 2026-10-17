@@ -28,6 +28,35 @@ public class MailboxEmailSenderTests
         Assert.Null(MailboxEmailSender.Mailbox(Mailing("penningmeester"), Options));
         Assert.Null(MailboxEmailSender.Mailbox(Mailing(viaMailbox: false), Options));
         Assert.Null(MailboxEmailSender.Mailbox(Mailing(), new EmailOptions { MailboxSenders = "voorzitter" }));
+        // M1: net als bij ACS bepaalt het antwoordadres nooit de mailbox, alleen een expliciete afzender.
+        Assert.Null(MailboxEmailSender.Mailbox(Mailing() with { From = null }, Options));
+    }
+
+    [Theory]
+    [InlineData("piet@example.com\r\nBcc: iedereen@example.com", null)]
+    [InlineData("piet@example.com", "jan@example.com\nBcc: iedereen@example.com")]
+    [InlineData("piet@example.com\0", null)]
+    public void Kopregels_met_regeleinde_of_nul_worden_geweigerd(string to, string? replyTo)
+    {
+        var message = Mailing() with { To = to, ReplyTo = replyTo ?? "voorzitter@vrolijkedrammers.nl" };
+        Assert.Throws<ArgumentException>(() => MimeMessage.Build("voorzitter@vrolijkedrammers.nl", message, DateTimeOffset.UnixEpoch));
+    }
+
+    [Fact]
+    public void Bijlagenaam_met_aanhalingsteken_of_backslash_wordt_ge_escaped_en_regeleinde_in_onderwerp_gecodeerd()
+    {
+        var message = Mailing() with
+        {
+            Subject = "Hallo\r\nBcc: iedereen@example.com",
+            Attachments = [new EmailFile("fac\"tuur\\1.pdf", "application/pdf", [1])],
+        };
+        var mime = MimeMessage.Build("voorzitter@vrolijkedrammers.nl", message, DateTimeOffset.UnixEpoch);
+
+        Assert.Contains("Content-Disposition: attachment; filename=\"fac\\\"tuur\\\\1.pdf\"\r\n", mime, StringComparison.Ordinal);
+        Assert.Contains("Content-Type: application/pdf; name=\"fac\\\"tuur\\\\1.pdf\"\r\n", mime, StringComparison.Ordinal);
+        Assert.DoesNotContain("\r\nBcc:", mime, StringComparison.Ordinal);
+        Assert.Throws<ArgumentException>(() => MimeMessage.Build("voorzitter@vrolijkedrammers.nl",
+            Mailing() with { Attachments = [new EmailFile("a.pdf", "application/pdf\r\nX-Extra: 1", [1])] }, DateTimeOffset.UnixEpoch));
     }
 
     [Fact]

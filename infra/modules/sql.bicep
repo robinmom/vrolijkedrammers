@@ -22,6 +22,22 @@ param skuName string = 'GP_S_Gen5'
 
 var serverless = skuName == 'GP_S_Gen5'
 
+// Back-ups (docs/08 §8, 2026-10-17).
+@description('Terugzetten naar elk moment in de laatste N dagen (point-in-time restore); Basic kan hooguit 7.')
+@minValue(1)
+@maxValue(35)
+param pitrDays int = 7
+
+@description('Langetermijnback-ups: elke maand één, zoveel maanden bewaren (0 = uit). Blijven ook bestaan als de server wordt verwijderd.')
+@minValue(0)
+@maxValue(120)
+param ltrMonths int = 0
+
+@description('Back-ups ook in een tweede regio (geo-redundant), voor terugzetten bij uitval van de regio.')
+param geoBackup bool = false
+
+var backupRedundancy = geoBackup ? 'Geo' : 'Local'
+
 resource server 'Microsoft.Sql/servers@2025-01-01' = {
   name: 'sql-dvd-${environmentName}'
   location: location
@@ -63,16 +79,37 @@ resource database 'Microsoft.Sql/servers/databases@2025-01-01' = {
         freeLimitExhaustionBehavior: useFreeOffer ? freeLimitExhaustionBehavior : null
         autoPauseDelay: 60
         minCapacity: json('0.5')
-        requestedBackupStorageRedundancy: 'Local'
+        requestedBackupStorageRedundancy: backupRedundancy
         zoneRedundant: false
       }
     : {
         // Basic kan hooguit 2 GB; Standard houdt de huidige 32 GB. Het gratis aanbod geldt alleen voor serverless.
         useFreeLimit: false
         maxSizeBytes: skuName == 'Basic' ? 2147483648 : 34359738368
-        requestedBackupStorageRedundancy: 'Local'
+        requestedBackupStorageRedundancy: backupRedundancy
         zoneRedundant: false
       }
+}
+
+resource shortTerm 'Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies@2025-01-01' = {
+  parent: database
+  name: 'default'
+  properties: {
+    retentionDays: pitrDays
+    diffBackupIntervalInHours: 12
+  }
+}
+
+resource longTerm 'Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies@2025-01-01' = if (ltrMonths > 0) {
+  parent: database
+  name: 'default'
+  properties: {
+    // Wekelijks 4 weken en maandelijks een jaar (de eerste back-up van de week/maand).
+    weeklyRetention: 'P4W'
+    monthlyRetention: 'P${ltrMonths}M'
+    yearlyRetention: 'PT0S'
+    weekOfYear: 1
+  }
 }
 
 output serverName string = server.name

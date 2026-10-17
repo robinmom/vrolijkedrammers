@@ -97,6 +97,7 @@ jobs:
       DVD_EMAIL_DOMAIN_VERIFIED: ${{ vars.DVD_EMAIL_DOMAIN_VERIFIED }}
       DVD_EMAIL_MAILBOX_SENDERS: ${{ vars.DVD_EMAIL_MAILBOX_SENDERS }}
       DVD_PASSWORD_SIGN_IN: ${{ vars.DVD_PASSWORD_SIGN_IN }}
+      DVD_MALWARE_SCANNING: ${{ vars.DVD_MALWARE_SCANNING }}
     steps:
       - uses: actions/checkout@v7
       - uses: azure/login@v3

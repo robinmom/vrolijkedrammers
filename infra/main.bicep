@@ -80,6 +80,9 @@ param emailMailboxSenders string = ''
 @description('Inloggen met e-mail + wachtwoord (infra/entra/wachtwoord-inloggen.sh, runbook accounts-wachtwoord): de API maakt de inlog bij elk account.')
 param passwordSignIn bool = false
 
+@description('Defender for Storage met malwarescan bij upload (OQ-65; ± € 10 per maand + scan per GB): alleen Prod. De API geeft een upload pas vrij na een schone uitslag (blob index tag).')
+param malwareScanning bool = false
+
 // Afzenders op het eigen domein, gelijk aan de contactadressen (besluit 2026-09-30); DoNotReply maakt ACS zelf aan.
 var emailSenders = {
   secretaris: 'De Vrolijke Drammers – Secretariaat'
@@ -138,10 +141,11 @@ module storage 'modules/storage.bicep' = {
     environmentName: environmentName
     tags: tags
     workspaceId: monitoring.outputs.workspaceId
+    malwareScanning: malwareScanning
   }
 }
 
-module sql 'modules/sql.bicep' = {
+module sql'modules/sql.bicep' = {
   name: 'sql'
   params: {
     location: location
@@ -213,6 +217,7 @@ module api 'modules/appservice.bicep' = {
       Graph__EnvironmentAccessAttribute: environmentAccessAttribute
       Turnstile__SiteKey: turnstileSiteKey
       EBoekhouden__Enabled: string(eBoekhoudenEnabled)
+      MalwareScanning__DefenderEnabled: string(malwareScanning)
     }
   }
 }
@@ -240,6 +245,7 @@ module apiRoles 'modules/role-assignments.bicep' = {
     keyVaultName: keyVault.outputs.name
     storageAccountName: storage.outputs.name
     communicationServiceName: email.outputs.communicationServiceName
+    readScanResults: malwareScanning
   }
 }
 

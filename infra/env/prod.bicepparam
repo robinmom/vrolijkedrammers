@@ -43,3 +43,7 @@ param budgetStartDate = '2026-10-01'
 param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))
 // Inloggen met wachtwoord (runbook accounts-wachtwoord): na infra/entra/wachtwoord-inloggen.sh DVD_PASSWORD_SIGN_IN=true.
 param passwordSignIn = readEnvironmentVariable('DVD_PASSWORD_SIGN_IN', 'false') == 'true'
+// Malwarescan met Defender for Storage (OQ-65, alleen Prod; Dev/Acc blijven zonder vanwege de kosten). Pas aan
+// (DVD_MALWARE_SCANNING=true) nadat de bootstrap opnieuw is gedraaid: de pipeline moet dan ook Storage Blob Data Owner
+// mogen toewijzen (infra/bootstrap/environment-access.bicep), anders faalt de deploy op die roltoewijzing.
+param malwareScanning = readEnvironmentVariable('DVD_MALWARE_SCANNING', 'false') == 'true'

@@ -42,20 +42,39 @@ public sealed class ContentFiles(IFileStore files, IMalwareScanner scanner, IAud
                 $"Dit bestandstype is niet toegestaan. Toegestaan: {string.Join(", ", allowed.Select(k => k.ToString().ToUpperInvariant()))}.");
         }
 
+        // Afbeeldingen met te veel pixels (decompressiebom) meteen weigeren, vóór quarantaine en verwerking.
+        if (FileTypeInspector.Images.Contains(kind))
+        {
+            ImageProcessor.EnsureWithinPixelLimit(buffer.GetBuffer().AsSpan(0, (int)buffer.Length));
+            buffer.Position = 0;
+        }
+
         var path = $"{IdGenerator.NewId():N}{FileTypeInspector.Extension(kind)}";
         await files.UploadAsync(FileContainers.Quarantine, path, buffer, FileTypeInspector.ContentType(kind), cancellationToken);
         return (path, kind);
     }
 
-    /// <summary>Scant een quarantainebestand; bij malware wordt het verwijderd, geaudit en geweigerd.</summary>
+    /// <summary>
+    /// Scant een quarantainebestand; alleen een schoon bestand gaat door. Bij malware of een mislukte scan wordt het
+    /// verwijderd, geaudit en geweigerd. Is de scan binnen de wachttijd niet klaar, dan wordt het bestand ook verwijderd
+    /// (nooit vrijgegeven zonder schone uitslag) en kan de gebruiker het later opnieuw proberen.
+    /// </summary>
     public async Task EnsureCleanAsync(string quarantinePath, CancellationToken cancellationToken)
     {
-        if (await scanner.ScanAsync(FileContainers.Quarantine, quarantinePath, cancellationToken) == ScanResult.Clean)
+        var result = await scanner.ScanAsync(FileContainers.Quarantine, quarantinePath, cancellationToken);
+        if (result == ScanResult.Clean)
         {
             return;
         }
 
         await files.DeleteAsync(FileContainers.Quarantine, quarantinePath, cancellationToken);
+        if (result == ScanResult.Pending)
+        {
+            await audit.WriteAsync(new AuditEntry("file.scan-pending", "File", quarantinePath), cancellationToken);
+            throw new DomainException(ErrorCodes.FileScanPending,
+                "De virusscan van het bestand is nog niet klaar. Probeer het over een paar minuten opnieuw.", DomainErrorKind.Conflict);
+        }
+
         await audit.WriteAsync(new AuditEntry("file.rejected-malware", "File", quarantinePath), cancellationToken);
         throw new DomainException(ErrorCodes.FileInfected, "Het bestand is geweigerd door de virusscan.");
     }

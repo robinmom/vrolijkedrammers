@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Text;
+using Drammers.SharedKernel.Errors;
 using SkiaSharp;
 
 namespace Drammers.Infrastructure.Files;
@@ -18,6 +19,9 @@ public static class ImageProcessor
     public const int DisplaySize = 1600;
     public const int ThumbnailSize = 400;
 
+    /// <summary>Maximaal aantal pixels (40 megapixel; ruim boven een telefooncamera) vóór er gedecodeerd wordt.</summary>
+    public const long MaxPixels = 40_000_000;
+
     private const int Quality = 85;
 
     private static readonly SKSamplingOptions Sampling = new(SKCubicResampler.Mitchell);
@@ -25,7 +29,7 @@ public static class ImageProcessor
     public static async Task<ProcessedImage> CreateDerivativesAsync(Stream original, Stream display, Stream thumbnail, CancellationToken cancellationToken)
     {
         var bytes = await ReadAllAsync(original, cancellationToken);
-        using var image = DecodeOriented(bytes);
+        using var image = DecodeOriented(bytes, DisplaySize);
         var size = await SaveResizedAsync(image, DisplaySize, display, cancellationToken);
         await SaveResizedAsync(image, ThumbnailSize, thumbnail, cancellationToken);
         return new ProcessedImage(size.Width, size.Height, ExifDate.TakenAt(bytes));
@@ -35,7 +39,7 @@ public static class ImageProcessor
     public static async Task<ProcessedImage> SanitizeAsync(Stream original, Stream output, int maxSize, CancellationToken cancellationToken)
     {
         var bytes = await ReadAllAsync(original, cancellationToken);
-        using var image = DecodeOriented(bytes);
+        using var image = DecodeOriented(bytes, maxSize);
         var size = await SaveResizedAsync(image, maxSize, output, cancellationToken);
         return new ProcessedImage(size.Width, size.Height, null);
     }
@@ -47,12 +51,40 @@ public static class ImageProcessor
         return copy.ToArray();
     }
 
-    /// <summary>Decodeert en draait volgens de EXIF-oriëntatie (zoals het toestel de foto bedoelde).</summary>
-    private static SKBitmap DecodeOriented(byte[] bytes)
+    /// <summary>
+    /// Weigert een afbeelding met meer dan <see cref="MaxPixels"/> pixels op basis van de header, vóór het decoderen
+    /// (een klein bestand kan anders gigabytes geheugen vragen: decompressiebom). Onleesbare data laat dit ongemoeid;
+    /// die valt later bij het decoderen af.
+    /// </summary>
+    public static void EnsureWithinPixelLimit(ReadOnlySpan<byte> image)
+    {
+        using var data = SKData.CreateCopy(image);
+        using var codec = SKCodec.Create(data);
+        if (codec is not null)
+        {
+            EnsureWithinPixelLimit(codec.Info);
+        }
+    }
+
+    private static void EnsureWithinPixelLimit(SKImageInfo info)
+    {
+        if (info.Width <= 0 || info.Height <= 0 || (long)info.Width * info.Height > MaxPixels)
+        {
+            throw new DomainException(ErrorCodes.FileTooLarge,
+                $"De afbeelding is te groot ({info.Width} × {info.Height} pixels); maximaal {MaxPixels / 1_000_000} megapixel.");
+        }
+    }
+
+    /// <summary>
+    /// Decodeert (binnen de pixellimiet) en draait volgens de EXIF-oriëntatie (zoals het toestel de foto bedoelde). Waar
+    /// het formaat dat kan (JPEG) wordt direct op een kleinere schaal gedecodeerd, nooit kleiner dan <paramref name="maxSize"/>.
+    /// </summary>
+    private static SKBitmap DecodeOriented(byte[] bytes, int maxSize)
     {
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data) ?? throw new InvalidDataException("Geen geldige afbeelding.");
-        var decoded = SKBitmap.Decode(codec) ?? throw new InvalidDataException("De afbeelding kan niet worden gelezen.");
+        EnsureWithinPixelLimit(codec.Info);
+        var decoded = Decode(codec, maxSize) ?? throw new InvalidDataException("De afbeelding kan niet worden gelezen.");
         var origin = codec.EncodedOrigin;
         if (origin == SKEncodedOrigin.TopLeft)
         {
@@ -70,6 +102,38 @@ public static class ImageProcessor
             canvas.DrawImage(source, 0, 0, Sampling);
             return rotated;
         }
+    }
+
+    /// <summary>Zoals <see cref="SKBitmap.Decode(SKCodec)"/>, maar op de kleinste ondersteunde schaal ≥ <paramref name="maxSize"/>.</summary>
+    private static SKBitmap? Decode(SKCodec codec, int maxSize)
+    {
+        // Skia rondt de gevraagde schaal af op wat de decoder kan (JPEG: 1/8, 2/8, …); kies de kleinste die groot genoeg is.
+        var info = codec.Info;
+        for (var eighths = 1; eighths < 8; eighths++)
+        {
+            var scaled = codec.GetScaledDimensions(eighths / 8f);
+            if (Math.Max(scaled.Width, scaled.Height) >= maxSize && scaled.Width > 0 && scaled.Height > 0)
+            {
+                info = info.WithSize(scaled);
+                break;
+            }
+        }
+
+        if (info.AlphaType == SKAlphaType.Unpremul)
+        {
+            info.AlphaType = SKAlphaType.Premul;
+        }
+
+        info.ColorSpace = null;
+        var bitmap = new SKBitmap(info);
+        var result = codec.GetPixels(info, bitmap.GetPixels());
+        if (result is SKCodecResult.Success or SKCodecResult.IncompleteInput)
+        {
+            return bitmap;
+        }
+
+        bitmap.Dispose();
+        return null;
     }
 
     /// <summary>Transformatie van de opgeslagen pixels naar de bedoelde stand (EXIF-oriëntatie 2–8).</summary>

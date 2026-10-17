@@ -15,6 +15,12 @@ param containerNames array = [
   'content'
 ]
 
+@description('Microsoft Defender for Storage met malwarescan bij upload (OQ-65); kost geld, dus alleen in Prod aan.')
+param malwareScanning bool = false
+
+@description('Maximaal aantal GB dat Defender per maand scant (kostenplafond); daarboven krijgen uploads geen uitslag en worden ze niet vrijgegeven.')
+param malwareScanningCapGbPerMonth int = 10
+
 resource account 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: 'stdvd${environmentName}'
   location: location
@@ -54,6 +60,26 @@ resource containers 'Microsoft.Storage/storageAccounts/blobServices/containers@2
     properties: { publicAccess: 'None' }
   }
 ]
+
+// Defender for Storage (plan DefenderForStorageV2) alleen op dit account: elke upload wordt gescand en de uitslag komt
+// als blob index tag "Malware Scanning scan result" op de blob ("No threats found" / "Malicious"). De API leest die tag
+// in quarantaine (DefenderMalwareScanner) en geeft alleen schone bestanden vrij. Uit = Defender op dit account uit.
+resource defender 'Microsoft.Security/defenderForStorageSettings@2025-06-01' = {
+  name: 'current'
+  scope: account
+  properties: {
+    isEnabled: malwareScanning
+    overrideSubscriptionLevelSettings: true
+    malwareScanning: {
+      onUpload: {
+        isEnabled: malwareScanning
+        capGBPerMonth: malwareScanningCapGbPerMonth
+      }
+      blobScanResultsOptions: 'BlobIndexTags'
+    }
+    sensitiveDataDiscovery: { isEnabled: false }
+  }
+}
 
 // AVG-exports (fase 9) zijn 24 uur via de API te downloaden; daarna ruimt deze regel ze (en oude versies) op.
 resource lifecycle 'Microsoft.Storage/storageAccounts/managementPolicies@2025-01-01' = {

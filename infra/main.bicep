@@ -18,6 +18,10 @@ param sqlUseFreeOffer bool
 @allowed(['AutoPause', 'BillOverUsage'])
 param sqlFreeLimitExhaustionBehavior string = 'AutoPause'
 
+@description('Grootte van de SQL-database (modules/sql.bicep): GP_S_Gen5 = serverless, anders een vaste grootte.')
+@allowed(['GP_S_Gen5', 'Basic', 'S0', 'S1', 'S2'])
+param sqlSkuName string = 'GP_S_Gen5'
+
 param keyVaultPurgeProtection bool
 param logDailyQuotaGb int
 
@@ -147,6 +151,7 @@ module sql 'modules/sql.bicep' = {
     adminGroupObjectId: sqlAdminGroupObjectId
     useFreeOffer: sqlUseFreeOffer
     freeLimitExhaustionBehavior: sqlFreeLimitExhaustionBehavior
+    skuName: sqlSkuName
   }
 }
 

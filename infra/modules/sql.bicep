@@ -14,6 +14,14 @@ param useFreeOffer bool
 @allowed(['AutoPause', 'BillOverUsage'])
 param freeLimitExhaustionBehavior string = 'AutoPause'
 
+// 2026-10-17: GP_S_Gen5 = serverless (betalen per seconde dat hij wakker is); Basic/S0/S1/S2 = vaste prijs per maand.
+// Prod is door de achtergrondtaken altijd wakker, dus daar is een vaste grootte veel goedkoper.
+@description('Grootte van de database: GP_S_Gen5 (serverless) of een vaste grootte (Basic, S0, S1, S2).')
+@allowed(['GP_S_Gen5', 'Basic', 'S0', 'S1', 'S2'])
+param skuName string = 'GP_S_Gen5'
+
+var serverless = skuName == 'GP_S_Gen5'
+
 resource server 'Microsoft.Sql/servers@2025-01-01' = {
   name: 'sql-dvd-${environmentName}'
   location: location
@@ -38,20 +46,33 @@ resource database 'Microsoft.Sql/servers/databases@2025-01-01' = {
   name: 'sqldb-dvd'
   location: location
   tags: tags
-  sku: {
-    name: 'GP_S_Gen5'
-    tier: 'GeneralPurpose'
-    family: 'Gen5'
-    capacity: 2
-  }
-  properties: {
-    useFreeLimit: useFreeOffer
-    freeLimitExhaustionBehavior: useFreeOffer ? freeLimitExhaustionBehavior : null
-    autoPauseDelay: 60
-    minCapacity: json('0.5')
-    requestedBackupStorageRedundancy: 'Local'
-    zoneRedundant: false
-  }
+  sku: serverless
+    ? {
+        name: 'GP_S_Gen5'
+        tier: 'GeneralPurpose'
+        family: 'Gen5'
+        capacity: 2
+      }
+    : {
+        name: skuName
+        tier: skuName == 'Basic' ? 'Basic' : 'Standard'
+      }
+  properties: serverless
+    ? {
+        useFreeLimit: useFreeOffer
+        freeLimitExhaustionBehavior: useFreeOffer ? freeLimitExhaustionBehavior : null
+        autoPauseDelay: 60
+        minCapacity: json('0.5')
+        requestedBackupStorageRedundancy: 'Local'
+        zoneRedundant: false
+      }
+    : {
+        // Basic kan hooguit 2 GB; Standard houdt de huidige 32 GB. Het gratis aanbod geldt alleen voor serverless.
+        useFreeLimit: false
+        maxSizeBytes: skuName == 'Basic' ? 2147483648 : 34359738368
+        requestedBackupStorageRedundancy: 'Local'
+        zoneRedundant: false
+      }
 }
 
 output serverName string = server.name

@@ -11,6 +11,8 @@ param sqlUseFreeOffer = true
 // anders tot de 1e onbereikbaar). Sinds de worker de database bij rust met rust laat, pauzeert hij zelf en zijn de
 // kosten beperkt tot echt gebruik boven het gratis tegoed.
 param sqlFreeLimitExhaustionBehavior = 'BillOverUsage'
+// 2026-10-17: Basic (5 DTU, tot 2 GB, ± € 4 per maand) in plaats van serverless (± € 55 per maand); Dev is 80 MB.
+param sqlSkuName = 'Basic'
 param keyVaultPurgeProtection = false
 param logDailyQuotaGb = 1
 param externalIdAuthority = 'https://vrolijkedrammersapp.ciamlogin.com/260db5a1-e5b6-4388-9f6c-d9b02cb5578b/v2.0'

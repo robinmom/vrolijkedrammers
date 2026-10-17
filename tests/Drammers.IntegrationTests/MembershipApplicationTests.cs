@@ -234,8 +234,35 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         }
 
         Assert.Equal(HttpStatusCode.Conflict, (await _anonymous.PostAsJsonAsync(url, new { code = fresh })).StatusCode);
+        // L2: een nieuwe code geeft geen nieuwe pogingen; na te veel pogingen ook geen nieuwe code meer.
+        Assert.Equal(HttpStatusCode.Conflict, (await _anonymous.PostAsync($"/api/v1/membership-applications/{id}/resend-code", null)).StatusCode);
         // Een onbevestigde aanmelding staat niet in de wachtrij.
         Assert.Equal(0, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/membership-applications")).GetProperty("totalCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task Hoogstens_drie_keer_een_nieuwe_code_en_de_pogingen_lopen_door()
+    {
+        var start = await _anonymous.PostAsJsonAsync("/api/v1/membership-applications", Form("opnieuw@example.com", 30));
+        var id = (await start.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        var resend = $"/api/v1/membership-applications/{id}/resend-code";
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _anonymous.PostAsJsonAsync($"/api/v1/membership-applications/{id}/verify-email",
+            new { code = LastCodeFor("opnieuw@example.com") == "000000" ? "111111" : "000000" })).StatusCode);
+
+        for (var i = 0; i < MembershipApplications.MaxCodeResends; i++)
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await _anonymous.PostAsync(resend, null)).StatusCode);
+        }
+
+        var limited = await _anonymous.PostAsync(resend, null);
+        Assert.Equal(HttpStatusCode.Conflict, limited.StatusCode);
+        Assert.Equal("VERIFICATION_RESEND_LIMIT", (await limited.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
+        Assert.Equal(1 + MembershipApplications.MaxCodeResends, _api.Emails.Sent.Count(m => m.To == "opnieuw@example.com"));
+        var application = await WithDbAsync(db => db.MembershipApplications.AsNoTracking().SingleAsync(a => a.Id == id));
+        Assert.Equal((1, MembershipApplications.MaxCodeResends), (application.VerificationAttempts, application.VerificationResends));
+
+        // De laatste code werkt gewoon.
+        Assert.Equal(HttpStatusCode.NoContent, (await _anonymous.PostAsJsonAsync($"/api/v1/membership-applications/{id}/verify-email", new { code = LastCodeFor("opnieuw@example.com") })).StatusCode);
     }
 
     [Fact]

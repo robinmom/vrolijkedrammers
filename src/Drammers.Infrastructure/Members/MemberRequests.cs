@@ -466,5 +466,5 @@ public sealed class MemberRequests(
     private static EmailMessage Mail(string to, string firstName, string subject, string body) =>
         new(to, subject, $"Beste {firstName},\n\n{body}\n\nMet vriendelijke groet,\nDe ledenadministratie van CV De Vrolijke Drammers",
             $"<p>Beste {WebUtility.HtmlEncode(firstName)},</p><p>{WebUtility.HtmlEncode(body)}</p><p>Met vriendelijke groet,<br>De ledenadministratie van CV De Vrolijke Drammers</p>",
-            ReplyTo);
+            ReplyTo, MemberSplits.Sender);
 }

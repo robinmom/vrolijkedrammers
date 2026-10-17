@@ -99,7 +99,11 @@ public sealed class MembershipApplication
 
     public DateTime? VerificationExpiresAt { get; set; }
 
+    /// <summary>Pogingen over alle codes samen; een nieuwe code zet dit niet terug op 0.</summary>
     public int VerificationAttempts { get; set; }
+
+    /// <summary>Hoe vaak er een nieuwe code is gestuurd (maximaal drie keer, tegen mail naar een willekeurig adres).</summary>
+    public int VerificationResends { get; set; }
 
     public DateTime? EmailVerifiedAt { get; set; }
 

@@ -31,6 +31,9 @@ public sealed class ParadePublicRegistrations(
     public static readonly TimeSpan UnverifiedLifetime = TimeSpan.FromHours(48);
     public const int MaxAttempts = 5;
 
+    /// <summary>Hoe vaak een nieuwe code kan worden gestuurd; de pogingen tellen over alle codes samen.</summary>
+    public const int MaxResends = 3;
+
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
     public async Task<Guid> StartAsync(RegistrationInput input, bool rulesAccepted, CancellationToken cancellationToken)
@@ -87,6 +90,14 @@ public sealed class ParadePublicRegistrations(
     public async Task ResendCodeAsync(Guid id, CancellationToken cancellationToken)
     {
         var registration = await PendingAsync(id, cancellationToken);
+        // Een rem op mail naar een (mogelijk vreemd) adres, en geen nieuwe pogingen door steeds een nieuwe code te vragen.
+        if (registration.VerificationResends >= MaxResends || registration.VerificationAttempts >= MaxAttempts)
+        {
+            throw new DomainException(ErrorCodes.VerificationResendLimit,
+                "Er kan geen nieuwe code meer worden gestuurd. Controleer het e-mailadres (en de map Ongewenst) of schrijf opnieuw in.", DomainErrorKind.Conflict);
+        }
+
+        registration.VerificationResends++;
         var code = NewCode(registration);
         await db.SaveChangesAsync(cancellationToken);
         await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code), cancellationToken);
@@ -101,7 +112,12 @@ public sealed class ParadePublicRegistrations(
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         var registration = await PendingAsync(id, cancellationToken);
-        if (registration.VerificationAttempts >= MaxAttempts || registration.VerificationExpiresAt is not { } expires || expires < Now)
+        if (registration.VerificationAttempts >= MaxAttempts)
+        {
+            throw new DomainException(ErrorCodes.VerificationCodeExpired, "Te vaak een verkeerde code ingevuld. Schrijf opnieuw in.", DomainErrorKind.Conflict);
+        }
+
+        if (registration.VerificationExpiresAt is not { } expires || expires < Now)
         {
             throw new DomainException(ErrorCodes.VerificationCodeExpired, "De code is verlopen. Vraag een nieuwe code aan.", DomainErrorKind.Conflict);
         }
@@ -171,7 +187,6 @@ public sealed class ParadePublicRegistrations(
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
         registration.VerificationCodeHash = Hash($"{registration.Id:N}:{code}");
         registration.VerificationExpiresAt = Now + CodeLifetime;
-        registration.VerificationAttempts = 0;
         return code;
     }
 

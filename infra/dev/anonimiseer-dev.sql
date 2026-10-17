@@ -45,6 +45,15 @@ UPDATE [membership].[Member] SET
     iban_protected = NULL, account_holder = NULL, jubilee_note = NULL, eb_status_raw = NULL;
 PRINT CONCAT('Leden geanonimiseerd:        ', @@ROWCOUNT);
 
+-- Accounts: wie een handmatig toegekende rol heeft (bestuur, beheer, testers) houdt zijn eigen adres om op Dev te
+-- kunnen inloggen; alle andere accounts krijgen een testadres.
+WITH u AS (
+    SELECT display_name, email, ROW_NUMBER() OVER (ORDER BY id) AS n FROM [identity].[User] AS x
+    WHERE NOT EXISTS (SELECT 1 FROM [identity].[UserRole] AS ur JOIN [identity].[Role] AS r ON r.id = ur.role_id
+                      WHERE ur.user_id = x.id AND r.is_assignable_by_sync = 0))
+UPDATE u SET display_name = CONCAT('Test Account ', n), email = CONCAT('account-', n, '@example.com');
+PRINT CONCAT('Accounts geanonimiseerd:     ', @@ROWCOUNT);
+
 UPDATE [membership].[GuardianRelation] SET guardian_name = 'Test Ouder', guardian_phone = NULL;
 PRINT CONCAT('Ouders:                      ', @@ROWCOUNT);
 

@@ -113,7 +113,8 @@ var publicBaseUrl = empty(customHostNames) ? 'https://${defaultHostName}' : 'htt
 // krijgen 400. Het azurewebsites-adres moet erin blijven: de App Service health check pingt het standaarddomein en de
 // deploy-workflow test daarop. localhost voor interne opwarmverzoeken van het platform. Een nieuw eigen domein komt via
 // customHostNames (DVD_CUSTOM_HOSTNAMES) vanzelf in deze lijst; zonder dat geeft het domein 400.
-var allowedHosts = join(union(customHostNames, [defaultHostName, 'localhost']), ';')
+// Ook domeinen die al een certificaat hebben (boundHostNames), zodat een gekoppeld domein nooit per ongeluk 400 geeft.
+var allowedHosts = join(union(customHostNames, boundHostNames, [defaultHostName, 'localhost']), ';')
 
 var aspnetEnvironment = {
   dev: 'Dev'

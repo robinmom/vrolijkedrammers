@@ -94,7 +94,7 @@ public sealed class FestivalJudgingService(
         }
 
         var festival = await program.ActiveFestivalAsync(cancellationToken);
-        var userId = await accounts.EnsureAccountAsync(address, cleanName, null, DefaultRoles.JuryDansgardefestival, cancellationToken);
+        var userId = await accounts.EnsureInvitedAccountAsync(address, cleanName, DefaultRoles.JuryDansgardefestival, cancellationToken);
         if (headJury)
         {
             await SetHeadJuryAsync(userId, true, cancellationToken);

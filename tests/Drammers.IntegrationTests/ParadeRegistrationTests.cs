@@ -621,7 +621,11 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         var id = (await DraftAsync(eigenaar)).GetProperty("id").GetGuid();
 
         var response = await eigenaar.PostAsJsonAsync($"/api/v1/parade/registrations/{id}/managers", new { email = "gewoon@example.com" });
+        var unknown = await eigenaar.PostAsJsonAsync($"/api/v1/parade/registrations/{id}/managers", new { email = "onbekend@example.com" });
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Geen account of geen groepsverantwoordelijke: dezelfde status en melding (niet af te leiden wie een account heeft).
+        Assert.Equal((HttpStatusCode.NotFound, HttpStatusCode.NotFound), (response.StatusCode, unknown.StatusCode));
+        Assert.Equal((await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString(),
+            (await unknown.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString());
     }
 }

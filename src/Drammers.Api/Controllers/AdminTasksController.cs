@@ -134,11 +134,11 @@ public abstract class TaskListControllerBase(CarnivalTasks tasks) : ControllerBa
         return NoContent();
     }
 
-    /// <summary>Actieve leden zoeken om aan een taak te koppelen.</summary>
+    /// <summary>Actieve leden zoeken om aan een taak te koppelen (alleen naam; bij het festival minimaal 3 tekens, geen lidnummer).</summary>
     [HttpGet("members")]
     [ProducesResponseType<IReadOnlyList<TaskPerson>>(StatusCodes.Status200OK)]
     public Task<IReadOnlyList<TaskPerson>> Members([FromQuery, Required, StringLength(100)] string search, CancellationToken cancellationToken) =>
-        tasks.SearchMembersAsync(search, cancellationToken);
+        tasks.SearchMembersAsync(List, search, cancellationToken);
 }
 
 public sealed record TaskRequest(

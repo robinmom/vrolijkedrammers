@@ -55,6 +55,19 @@ public sealed class MemberAccounts(
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
+    /// <summary>Permissions die een account mag hebben om via een uitnodiging (jury) een rol erbij te krijgen: geen beheerrechten.</summary>
+    private static readonly HashSet<int> InviteSafePermissionIds =
+    [
+        .. new[]
+        {
+            SharedKernel.Authorization.Permissions.MemberReadOwn, SharedKernel.Authorization.Permissions.EventRead,
+            SharedKernel.Authorization.Permissions.NewsRead, SharedKernel.Authorization.Permissions.PhotoRead,
+            SharedKernel.Authorization.Permissions.NotificationReadOwn, SharedKernel.Authorization.Permissions.TicketReadOwn,
+            SharedKernel.Authorization.Permissions.GuardianReadOwn, SharedKernel.Authorization.Permissions.ParadeJudge,
+            SharedKernel.Authorization.Permissions.FestivalJudge, SharedKernel.Authorization.Permissions.FestivalHeadJury,
+        }.Select(DefaultRoles.PermissionId),
+    ];
+
     public sealed record ProvisionMessage(ProvisioningSourceType SourceType, string SourceId);
 
     public sealed record ReminderMessage(Guid MemberId);
@@ -499,6 +512,51 @@ public sealed class MemberAccounts(
         var objectId = await logins.ResolveAsync(email, displayName, cancellationToken);
         return await CreateOrLinkUserAsync(objectId, email, displayName, memberId, roleCode, cancellationToken);
     }
+
+    /// <summary>
+    /// Een uitnodiging door een organisator (jury van de optocht of het festival). Een nieuw adres krijgt een account zoals
+    /// bij <see cref="EnsureAccountAsync"/>. Een bestaand account wordt nooit in zijn inlog aangepast (geen nieuwe
+    /// wachtwoordinlog, geen reset) en krijgt alleen de rol erbij als het geen beheerrechten heeft; anders kent het bestuur
+    /// de rol toe. Zo kan wie juryleden uitnodigt niet de inlog van bijv. een bestuurder laten vervangen.
+    /// </summary>
+    public async Task<Guid> EnsureInvitedAccountAsync(string loginEmail, string displayName, string roleCode, CancellationToken cancellationToken)
+    {
+        var email = loginEmail.Trim().ToLowerInvariant();
+        var existing = await db.Users.AsNoTracking()
+            .Where(u => u.Email == email && u.AccountStatus != AccountStatus.Deleted)
+            .Select(u => new ExistingAccount(u.Id, u.ExternalObjectId))
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existing is null || PendingObjectId.IsPending(existing.ExternalObjectId))
+        {
+            // Een inlog met dit adres die al bij een (ander) account hoort, telt ook als bestaand account.
+            if (await entra.FindByEmailAsync(email, cancellationToken) is { } objectId
+                && await db.Users.AsNoTracking().Where(u => u.ExternalObjectId == objectId)
+                    .Select(u => new ExistingAccount(u.Id, u.ExternalObjectId)).FirstOrDefaultAsync(cancellationToken) is { } linked)
+            {
+                existing = linked;
+            }
+        }
+
+        if (existing is null)
+        {
+            return await EnsureAccountAsync(email, displayName, null, roleCode, cancellationToken);
+        }
+
+        var permissionIds = await db.UserRoles.AsNoTracking().Where(ur => ur.UserId == existing.Id)
+            .Join(db.RolePermissions, ur => ur.RoleId, rp => rp.RoleId, (_, rp) => rp.PermissionId)
+            .Distinct().ToListAsync(cancellationToken);
+        if (permissionIds.Any(id => !InviteSafePermissionIds.Contains(id)))
+        {
+            throw new DomainException(ErrorCodes.EmailInUse, "Dit e-mailadres hoort bij een bestaand account; laat het bestuur de rol toekennen.");
+        }
+
+        // Nog geen inlog: er is niets te resetten, dus de gewone route (inlog maken of koppelen bij de eerste aanmelding).
+        return PendingObjectId.IsPending(existing.ExternalObjectId)
+            ? await EnsureAccountAsync(email, displayName, null, roleCode, cancellationToken)
+            : await CreateOrLinkUserAsync(existing.ExternalObjectId, email, displayName, null, roleCode, cancellationToken);
+    }
+
+    private sealed record ExistingAccount(Guid Id, string ExternalObjectId);
 
     private async Task<Guid> CreateOrLinkUserAsync(
         string objectId, string loginEmail, string displayName, Guid? memberId, string roleCode, CancellationToken cancellationToken)

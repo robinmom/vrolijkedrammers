@@ -9457,6 +9457,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Aantal ontvangers vooraf; alleen voor een doelgroep die de afzender ook mag gebruiken. */
         post: {
             parameters: {
                 query?: never;
@@ -9481,6 +9482,28 @@ export interface paths {
                         "text/plain": components["schemas"]["AudiencePreview"];
                         "application/json": components["schemas"]["AudiencePreview"];
                         "text/json": components["schemas"]["AudiencePreview"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -13891,7 +13914,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Actieve leden zoeken om aan een taak te koppelen. */
+        /** Actieve leden zoeken om aan een taak te koppelen (alleen naam; bij het festival minimaal 3 tekens, geen lidnummer). */
         get: {
             parameters: {
                 query: {
@@ -14426,7 +14449,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Actieve leden zoeken om aan een taak te koppelen. */
+        /** Actieve leden zoeken om aan een taak te koppelen (alleen naam; bij het festival minimaal 3 tekens, geen lidnummer). */
         get: {
             parameters: {
                 query: {
@@ -18342,6 +18365,17 @@ export interface paths {
                         "text/plain": components["schemas"]["SaveScoresResponse"];
                         "application/json": components["schemas"]["SaveScoresResponse"];
                         "text/json": components["schemas"]["SaveScoresResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
                     };
                 };
                 /** @description Conflict */

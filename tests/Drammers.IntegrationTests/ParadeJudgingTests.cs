@@ -135,6 +135,23 @@ public class ParadeJudgingTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Jurylid_slaat_alleen_scores_op_voor_een_optocht_waarin_hij_is_ingedeeld()
+    {
+        var (wagons, _, a, _, _) = await SeedAsync();
+        var (ingedeeldId, ingedeeldOid) = await _api.CreateUserAsync("ingedeeld@example.com", DefaultRoles.Jury);
+        var (_, losOid) = await _api.CreateUserAsync("niet-ingedeeld@example.com", DefaultRoles.Jury);
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/jurors/{ingedeeldId}/categories", new { categoryIds = new[] { wagons } });
+        var t = _api.Clock.UtcNow;
+        var scores = new[] { Score(a, 1, "Originality", 70, t) };
+
+        Assert.Equal(HttpStatusCode.NotFound, (await _api.ClientFor(losOid).PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new { scores })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _api.ClientFor(ingedeeldOid).PutAsJsonAsync($"/api/v1/jury/parades/{Guid.NewGuid()}/scores", new { scores })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _api.ClientFor(ingedeeldOid).PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new { scores })).StatusCode);
+        using var scope = _api.Services.CreateScope();
+        Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().JudgingScores.CountAsync(s => s.UserId != ingedeeldId));
+    }
+
+    [Fact]
     public async Task Alleen_juryleden_jureren()
     {
         await SeedAsync();

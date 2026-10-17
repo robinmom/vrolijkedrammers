@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Drammers.Infrastructure.Festival;
+using Drammers.Infrastructure.Identity.Entra;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
@@ -228,5 +229,62 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
 
         var (_, lid) = await _api.CreateUserAsync("lid@example.com", DefaultRoles.Lid);
         Assert.Equal(HttpStatusCode.Forbidden, (await _api.ClientFor(lid).GetAsync("/api/v1/festival-jury")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Uitnodigen_wijzigt_nooit_de_inlog_van_een_bestaand_account_en_geeft_beheerders_geen_jurirol()
+    {
+        // Met inloggen met wachtwoord zou een bestaande inlog met alleen e-mail + code vervangen worden: dat mag hier nooit.
+        await using var api = new AuthenticatedApiFactory(
+            await sql.CreateMigratedDatabaseAsync(), configure: services => services.Configure<AccountOptions>(o => o.PasswordSignIn = true));
+        using (var scope = api.Services.CreateScope())
+        {
+            await SeedAsync(scope.ServiceProvider.GetRequiredService<DrammersDbContext>(),
+                new Dance("De Vrolijke Drammers", DanceCategory.Minioren, DanceType.Garde, DanceFormat.Group, "Mini Drammers"));
+        }
+
+        var (bestuurId, bestuurOid) = await api.CreateUserAsync("voorzitter@example.com", DefaultRoles.Bestuur);
+        var (_, orgOid) = await api.CreateUserAsync("organisatie@example.com", DefaultRoles.Dansgardefestival);
+        var (lidId, lidOid) = await api.CreateUserAsync("lid@example.com", DefaultRoles.Lid);
+        var (_, aliasOid) = await api.CreateUserAsync("penningmeester@example.com", DefaultRoles.Bestuur);
+        api.Entra.AccountsByEmail["alias@example.com"] = aliasOid; // inlog met een ander adres dan het account
+        foreach (var oid in new[] { bestuurOid, orgOid, lidOid, aliasOid })
+        {
+            api.Entra.CodeOnly[oid] = true;
+        }
+
+        var org = api.ClientFor(orgOid);
+        async Task<HttpResponseMessage> InviteAsync(string email) =>
+            await org.PostAsJsonAsync("/api/v1/admin/dance-festival/jury", new { name = "Jurylid", email, headJury = true });
+
+        // Bestuurder, de organisator zelf en een inlog die bij een bestuurder hoort: geweigerd, niets gewijzigd.
+        foreach (var email in new[] { "Voorzitter@Example.com", "organisatie@example.com", "alias@example.com" })
+        {
+            var refused = await InviteAsync(email);
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+            Assert.Equal("Dit e-mailadres hoort bij een bestaand account; laat het bestuur de rol toekennen.",
+                (await refused.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString());
+        }
+
+        // Een gewoon lid krijgt de jurirol erbij, met dezelfde inlog.
+        Assert.Equal(HttpStatusCode.Created, (await InviteAsync("lid@example.com")).StatusCode);
+        // Een nieuw adres krijgt zoals voorheen een eigen account met wachtwoordinlog.
+        Assert.Equal(HttpStatusCode.Created, (await InviteAsync("nieuw@example.com")).StatusCode);
+
+        Assert.Empty(api.Entra.Deleted);
+        using (var scope = api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var users = await db.Users.AsNoTracking().Include(u => u.Roles).ToDictionaryAsync(u => u.Email);
+            var jury = await db.Roles.Where(r => r.Code == DefaultRoles.JuryDansgardefestival).Select(r => r.Id).SingleAsync();
+            Assert.Equal((bestuurId, bestuurOid), (users["voorzitter@example.com"].Id, users["voorzitter@example.com"].ExternalObjectId));
+            Assert.Equal(aliasOid, users["penningmeester@example.com"].ExternalObjectId);
+            Assert.DoesNotContain(users["voorzitter@example.com"].Roles, r => r.RoleId == jury);
+            Assert.DoesNotContain(users["organisatie@example.com"].Roles, r => r.RoleId == jury);
+            Assert.DoesNotContain(users["penningmeester@example.com"].Roles, r => r.RoleId == jury);
+            Assert.Equal((lidId, lidOid), (users["lid@example.com"].Id, users["lid@example.com"].ExternalObjectId));
+            Assert.Contains(users["lid@example.com"].Roles, r => r.RoleId == jury);
+            Assert.True(api.Entra.PasswordSignIn.ContainsKey(users["nieuw@example.com"].ExternalObjectId));
+        }
     }
 }

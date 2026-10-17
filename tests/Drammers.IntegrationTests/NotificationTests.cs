@@ -173,6 +173,30 @@ public class NotificationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Anonieme_registratie_met_het_token_van_een_account_verandert_niets()
+    {
+        var lid = await UserAsync("lid@example.com", true, DefaultRoles.Lid);
+        var guest = _api.CreateClient();
+        var hash = PushTokenProtector.Hash(lid.Token!);
+        var before = await WithDbAsync(db => db.PushDevices.AsNoTracking().SingleAsync(p => p.TokenHash == hash));
+
+        // Geen orakel: dezelfde 204 als bij een onbekend token, maar de gekoppelde rij blijft van het lid.
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await guest.PostAsJsonAsync("/api/v1/push-devices/anonymous", new { installId = "install-aanvaller", platform = "Ios", token = lid.Token })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await guest.PostAsJsonAsync("/api/v1/push-devices/anonymous", new { installId = "install-aanvaller-2", platform = "Ios", token = NewToken() })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await guest.PostAsJsonAsync("/api/v1/push-devices/anonymous", new { installId = "install-aanvaller-2", platform = "Ios", token = lid.Token })).StatusCode);
+
+        var after = await WithDbAsync(db => db.PushDevices.AsNoTracking().SingleAsync(p => p.TokenHash == hash));
+        Assert.Equal((before.Id, lid.UserId, before.DeviceId, (string?)null), (after.Id, after.UserId!.Value, after.DeviceId, after.AnonymousInstallId));
+
+        await IdAsync(await SendAsync(_bestuur, "Alleen leden", Audience(members: true)));
+        await RunOutboxAsync();
+        Assert.Equal(["Alleen leden"], PushedTitlesTo(lid.Token));
+    }
+
+    [Fact]
     public async Task Geplande_melding_gaat_op_tijd_uit_en_een_geannuleerde_niet()
     {
         var lid = await UserAsync("lid@example.com", true, DefaultRoles.Lid);
@@ -212,6 +236,16 @@ public class NotificationTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Forbidden, (await SendAsync(leaderClient, "Rol", Audience(roles: [DefaultRoles.Lid]), "DanceGuard")).StatusCode);
         var visible = await leaderClient.GetFromJsonAsync<JsonElement>("/api/v1/admin/notifications");
         Assert.Equal(["Eigen groep"], visible.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
+
+        // Het aantal ontvangers vooraf volgt dezelfde rechten als versturen.
+        Task<HttpResponseMessage> PreviewAsync(HttpClient client, object audience, string category = "DanceGuard") =>
+            client.PostAsJsonAsync("/api/v1/admin/notifications/preview-audience", new { audience, category });
+        Assert.Equal(HttpStatusCode.OK, (await PreviewAsync(leaderClient, Audience(groups: [own]))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await PreviewAsync(leaderClient, Audience(groups: [other]))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await PreviewAsync(leaderClient, Audience(roles: [DefaultRoles.Lid]))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await PreviewAsync(leaderClient, Audience(members: true))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await PreviewAsync(redactie.Client, Audience(everyone: true), "News")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PreviewAsync(redactie.Client, Audience(members: true), "News")).StatusCode);
 
         var lid = await UserAsync("lid@example.com", false, DefaultRoles.Lid);
         Assert.Equal(HttpStatusCode.Forbidden, (await SendAsync(lid.Client, "Mag niet", Audience(members: true))).StatusCode);

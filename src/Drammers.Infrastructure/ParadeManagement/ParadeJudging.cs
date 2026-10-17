@@ -74,7 +74,10 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
             select new JudgingEntry(r.Id, r.StartNumber, r.GroupName ?? "", r.Subject, c.Id, c.Name, false))
         .ToListAsync(cancellationToken);
 
-    /// <summary>Scores opslaan of bijwerken; per score wint de nieuwste invulling. Geeft het aantal gewijzigde scores.</summary>
+    /// <summary>
+    /// Scores opslaan of bijwerken; per score wint de nieuwste invulling. Geeft het aantal gewijzigde scores. Alleen voor
+    /// een optocht waarin het jurylid in minstens één categorie is ingedeeld.
+    /// </summary>
     public async Task<int> SaveScoresAsync(Guid userId, Guid paradeId, IReadOnlyList<ScoreInput> scores, CancellationToken cancellationToken)
     {
         if (scores.Count > MaxBatch)
@@ -85,6 +88,12 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
         if (scores.Any(s => s.Value is < 0 or > 100 || s.Pass is < 1 or > JudgingScore.Passes || !Enum.IsDefined(s.Criterion)))
         {
             throw new DomainException(ErrorCodes.Validation, "Een score is 0 tot en met 100, voor passage 1, 2 of 3.");
+        }
+
+        // Alleen voor een optocht waarin het jurylid is ingedeeld (buiten de eigen categorieën jureren kan daarbinnen wel).
+        if (!await db.ParadeJurorAssignments.AnyAsync(a => a.ParadeId == paradeId && a.UserId == userId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.ParadeNotFound, "Je bent niet ingedeeld als jurylid voor deze optocht.", DomainErrorKind.NotFound);
         }
 
         await EnsureNotSubmittedAsync(paradeId, userId, cancellationToken);

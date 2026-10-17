@@ -19,7 +19,7 @@ export default function FestivalJuryScreen() {
   const permissions = me.data?.permissions ?? [];
   const canJudge = permissions.includes('festival.judge');
   const session = useFestivalJurySession(canJudge);
-  const judging = useFestivalJudging(session.data);
+  const judging = useFestivalJudging(session.data, me.data?.id);
   const refresh = useRefresh([queryKeys.festivalJury]);
   const s = session.data;
   const current = s?.current ?? null;

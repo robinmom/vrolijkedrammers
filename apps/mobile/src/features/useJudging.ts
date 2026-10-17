@@ -18,9 +18,10 @@ const SYNC_DELAY_MS = 1500;
  * Scores van het jurylid (fase 22b): direct op de telefoon bewaard en daarna in de achtergrond verstuurd, ook als de
  * verbinding pas later terugkomt. Na indienen (409) is niets meer te wijzigen.
  */
-export function useJudging(session: JurorSession | undefined) {
+export function useJudging(session: JurorSession | undefined, userId: string | undefined) {
   const [scores, setScores] = useState<LocalScore[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  // Voor welke gebruiker en optocht de scores zijn ingelezen; pas dan worden ze (onder die sleutel) bewaard.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
   const latest = useRef<LocalScore[]>([]);
@@ -28,23 +29,25 @@ export function useJudging(session: JurorSession | undefined) {
     latest.current = scores;
   }, [scores]);
   const paradeId = session?.paradeId;
+  const owner = userId && paradeId ? `${userId}:${paradeId}` : null;
+  const loaded = owner !== null && loadedFor === owner;
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !userId) return;
     let active = true;
-    void loadLocalScores(session.paradeId).then((local) => {
+    void loadLocalScores(userId, session.paradeId).then((local) => {
       if (!active) return;
       setScores(mergeScores(session.scores, local));
-      setLoaded(true);
+      setLoadedFor(`${userId}:${session.paradeId}`);
     });
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session, userId]);
 
   useEffect(() => {
-    if (loaded && paradeId) void saveLocalScores(paradeId, scores).catch(() => undefined);
-  }, [loaded, paradeId, scores]);
+    if (loaded && userId && paradeId) void saveLocalScores(userId, paradeId, scores).catch(() => undefined);
+  }, [loaded, userId, paradeId, scores]);
 
   const sync = useCallback(async () => {
     if (!paradeId || !latest.current.some((s) => !s.synced)) return true;

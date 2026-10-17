@@ -1,12 +1,12 @@
 import { Redirect, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
 import { queryKeys, useMe, useMyChildren, useMyMember, useMyMemberRequests } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { useSessionStatus } from '../../auth/useSession';
-import { groupFunctionLabels, signOut, statusLabels } from '../../features/account';
+import { groupFunctionLabels, signOut, statusLabels, unsentBeforeSignOut } from '../../features/account';
 import { formatDateOnly } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Badge, Button, Card, LargeTitleHeader, QueryState, Screen, SettingsList } from '../../ui';
@@ -44,6 +44,24 @@ export default function MijnGegevensScreen() {
     } else {
       setExportMessage('Het downloaden lukt nu niet. Probeer het later opnieuw.');
     }
+  }
+
+  /** Uitloggen wist alles op dit toestel; staan er nog onverstuurde scans of jurypunten, dan eerst waarschuwen. */
+  async function confirmSignOut() {
+    const unsent = await unsentBeforeSignOut();
+    const leave = () => void signOut().then(() => router.replace('/meer'));
+    if (unsent === 0) {
+      leave();
+      return;
+    }
+    Alert.alert(
+      'Nog niet verstuurd',
+      `Op deze telefoon staan nog ${unsent} ${unsent === 1 ? 'scan of jurypunt' : 'scans of jurypunten'} die nog niet zijn verstuurd. Uitloggen wist ze. Open eerst met internet het scan- of jureerscherm, zodat ze worden verstuurd.`,
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        { text: 'Toch uitloggen', style: 'destructive', onPress: leave },
+      ],
+    );
   }
 
   const m = member.data;
@@ -191,7 +209,7 @@ export default function MijnGegevensScreen() {
               type: 'link',
               key: 'uitloggen',
               label: 'Uitloggen',
-              onPress: () => void signOut().then(() => router.replace('/meer')),
+              onPress: () => void confirmSignOut(),
             },
             {
               type: 'link',

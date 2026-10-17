@@ -25,7 +25,7 @@ export default function FestivalBeoordelenScreen() {
   const params = useLocalSearchParams<{ dans?: string }>();
   const me = useMe();
   const session = useFestivalJurySession(me.data?.permissions.includes('festival.judge') ?? false);
-  const judging = useFestivalJudging(session.data);
+  const judging = useFestivalJudging(session.data, me.data?.id);
   const client = useQueryClient();
   const [chosen, setChosen] = useState<number | null>(null);
   const [sliding, setSliding] = useState(false);

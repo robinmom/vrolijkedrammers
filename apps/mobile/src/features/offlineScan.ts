@@ -3,6 +3,7 @@ import type { components } from '@drammers/api-client';
 import { p256 } from '@noble/curves/nist.js';
 import { randomUUID } from 'expo-crypto';
 import { api } from '../api/client';
+import { storageKeys } from '../lib/storageKeys';
 import { fromBase64 } from './deviceQr';
 
 export type OfflinePack = components['schemas']['OfflinePack'];
@@ -23,7 +24,7 @@ interface QueuedScan {
   localOutcome: Outcome;
 }
 
-const QUEUE_KEY = 'dvd.offline-scans.v1';
+const QUEUE_KEY = storageKeys.offlineScans;
 const CLOCK_SKEW = 90;
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
 

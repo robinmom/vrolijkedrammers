@@ -1,5 +1,7 @@
 import { brand } from '@drammers/design-tokens';
 import { router } from 'expo-router';
+import { usePreventScreenCapture } from 'expo-screen-capture';
+import { useId } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useTheme } from '../theme/ThemeProvider';
@@ -82,6 +84,19 @@ export function SaleStepperRow({
 }
 
 /**
+ * De QR van verkochte kaarten. Zolang hij op het scherm staat, zijn schermafdrukken en schermopnames geblokkeerd (net als
+ * bij Mijn QR); een eigen sleutel per QR, zodat het sluiten van de ene QR de blokkade van een andere niet opheft.
+ */
+function SaleQr({ code, label }: { code: string; label: string }) {
+  usePreventScreenCapture(`verkoop-qr-${useId()}`);
+  return (
+    <View accessible accessibilityLabel={label}>
+      <QRCode value={code} size={220} ecl="M" color={brand.navy} backgroundColor="#FFFFFF" quietZone={0} />
+    </View>
+  );
+}
+
+/**
  * Een bestelling in Mijn kaarten (Figma scherm 5): één QR voor alle kaarten. Bij het scannen gaan alle personen
  * tegelijk naar binnen; kaarten die met een groepslid zijn gedeeld staan niet meer in deze QR.
  */
@@ -122,9 +137,7 @@ export function OrderCard({ order }: { order: OrderView }) {
           active.map((t) => (
             <View key={t.id} style={styles.ticket}>
               {t.code ? (
-                <View accessible accessibilityLabel={`QR-code voor ${persons(t.quantity)}. Laat deze scannen bij de ingang.`}>
-                  <QRCode value={t.code} size={220} ecl="M" color={brand.navy} backgroundColor="#FFFFFF" quietZone={0} />
-                </View>
+                <SaleQr code={t.code} label={`QR-code voor ${persons(t.quantity)}. Laat deze scannen bij de ingang.`} />
               ) : null}
               <AppText variant="bodyStrong" style={styles.center}>
                 Geldig voor {persons(t.quantity)}

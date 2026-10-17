@@ -25,7 +25,7 @@ export default function BeoordelenScreen() {
   const params = useLocalSearchParams<{ start?: string; passage?: string; einde?: string }>();
   const me = useMe();
   const session = useJurySession(me.data?.permissions.includes('parade.judge') ?? false);
-  const judging = useJudging(session.data);
+  const judging = useJudging(session.data, me.data?.id);
   const client = useQueryClient();
   const [whole, setWhole] = useState(false);
   const [pass, setPass] = useState(Number(params.passage) || 1);

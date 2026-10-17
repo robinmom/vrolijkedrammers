@@ -102,6 +102,7 @@ public sealed partial class DanceFestivals(
     IOptions<TurnstileOptions> turnstile,
     ITurnstileVerifier verifier,
     IDataProtectionProvider protection,
+    IOptions<EmailOptions> emailOptions,
     ILogger<DanceFestivals> logger)
 {
     public const int MaxEntries = 40;
@@ -809,7 +810,7 @@ public sealed partial class DanceFestivals(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static void Validate(FestivalRegistrationInput input, bool requireConsents)
+    private void Validate(FestivalRegistrationInput input, bool requireConsents)
     {
         var issues = new List<string>();
         void Required(string? value, string label, int max)
@@ -829,6 +830,12 @@ public sealed partial class DanceFestivals(
         if (!System.Net.Mail.MailAddress.TryCreate(input.Email?.Trim(), out _) || input.Email.Trim().Length > 254)
         {
             issues.Add("e-mailadres");
+        }
+        else if (EmailSenderAddress.IsOwnDomain(input.Email, emailOptions.Value))
+        {
+            // Het adres wordt het antwoordadres van de melding aan de organisatie; een eigen adres zou die laten lijken
+            // op een mail van de vereniging zelf.
+            issues.Add("e-mailadres (gebruik het adres van je eigen vereniging, niet een adres van De Vrolijke Drammers)");
         }
 
         if (input.Remarks?.Trim().Length > 2000)

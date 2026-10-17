@@ -116,7 +116,11 @@ public sealed class ParadeRegistration : IAuditable
 
     public DateTime? VerificationExpiresAt { get; set; }
 
+    /// <summary>Pogingen over alle codes samen; een nieuwe code zet dit niet terug op 0.</summary>
     public int VerificationAttempts { get; set; }
+
+    /// <summary>Webformulier/gast: hoe vaak er een nieuwe code is gestuurd (maximaal drie keer).</summary>
+    public int VerificationResends { get; set; }
 
     /// <summary>Webformulier/gast: SHA-256 (hex) van het token van de statuslink (alleen lezen).</summary>
     public string? StatusTokenHash { get; set; }

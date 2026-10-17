@@ -565,6 +565,17 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         var code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "gast@example.com").PlainText, @"\b\d{6}\b").Value;
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code = code == "000000" ? "111111" : "000000" })).StatusCode);
+
+        // L2: hoogstens drie keer een nieuwe code, en de mislukte poging blijft meetellen.
+        for (var i = 0; i < ParadePublicRegistrations.MaxResends; i++)
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await guest.PostAsync($"/api/v1/parade/public-registrations/{id}/resend-code", null)).StatusCode);
+        }
+
+        Assert.Equal(HttpStatusCode.Conflict, (await guest.PostAsync($"/api/v1/parade/public-registrations/{id}/resend-code", null)).StatusCode);
+        Assert.Equal(1 + ParadePublicRegistrations.MaxResends, _api.Emails.Sent.Count(m => m.To == "gast@example.com"));
+        Assert.Equal(1, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.VerificationAttempts).SingleAsync()));
+        code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "gast@example.com").PlainText, @"\b\d{6}\b").Value;
         var verified = await JsonAsync(await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code }));
         Assert.Equal(1, verified.GetProperty("registrationNumber").GetInt32());
         var token = verified.GetProperty("statusToken").GetString();

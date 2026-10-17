@@ -53,6 +53,9 @@ public sealed class MemberAccounts(
     /// </summary>
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromHours(24);
 
+    /// <summary>Hoogstens één herinnering ("je hebt al een account") per lid binnen deze tijd, hoe vaak er ook wordt aangevraagd.</summary>
+    public static readonly TimeSpan ReminderInterval = TimeSpan.FromHours(24);
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public sealed record ProvisionMessage(ProvisioningSourceType SourceType, string SourceId);
@@ -101,6 +104,9 @@ public sealed class MemberAccounts(
         };
 
         var (member, status, reason) = await EvaluateAsync(number, normalizedEmail, cancellationToken);
+        var reminderSince = now - ReminderInterval;
+        var remindedRecently = status == AccountRequestStatus.Duplicate && await db.AccountRequests.AnyAsync(
+            r => r.MemberId == member!.Id && r.Status == AccountRequestStatus.Duplicate && r.RequestedAt >= reminderSince, cancellationToken);
         request.Status = status;
         request.MismatchReason = reason;
         request.MemberId = member?.Id;
@@ -115,9 +121,10 @@ public sealed class MemberAccounts(
         {
             outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(ProvisioningSourceType.AccountRequest, request.Id.ToString()));
         }
-        else if (status == AccountRequestStatus.Duplicate)
+        else if (status == AccountRequestStatus.Duplicate && !remindedRecently)
         {
-            // Het lid heeft al een account: een herinnering naar het adres uit e-Boekhouden (dus alleen naar de eigenaar).
+            // Het lid heeft al een account: een herinnering naar het adres uit e-Boekhouden (dus alleen naar de eigenaar),
+            // hoogstens één per dag, zodat herhaald aanvragen de mailbox van het lid niet volstopt.
             outbox.Enqueue(ReminderMessageType, new ReminderMessage(member!.Id));
         }
 

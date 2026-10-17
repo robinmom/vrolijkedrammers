@@ -184,6 +184,17 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         var mails = _api.Emails.Sent.Where(m => m.To == "dubbel@example.com").ToList();
         Assert.Equal(2, mails.Count);
         Assert.Contains("al een account", mails[1].Subject, StringComparison.Ordinal);
+
+        // L2: herhaald aanvragen geeft hoogstens één herinnering per 24 uur.
+        await RequestAccountAsync("0401", "dubbel@example.com");
+        await RequestAccountAsync("0401", "dubbel@example.com");
+        await RunProvisioningAsync();
+        Assert.Equal(2, _api.Emails.Sent.Count(m => m.To == "dubbel@example.com"));
+
+        _api.Clock.Advance(MemberAccounts.ReminderInterval + TimeSpan.FromMinutes(1));
+        await RequestAccountAsync("0401", "dubbel@example.com");
+        await RunProvisioningAsync();
+        Assert.Equal(3, _api.Emails.Sent.Count(m => m.To == "dubbel@example.com"));
     }
 
     [Fact]

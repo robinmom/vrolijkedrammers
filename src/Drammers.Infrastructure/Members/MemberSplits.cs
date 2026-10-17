@@ -43,12 +43,15 @@ public sealed record SplitPrefill(string MainMemberName, string? SecondFirstName
 /// Tweepersoonslidmaatschappen splitsen (fase 25). Het bestuur mailt het hoofdlid een persoonlijke link naar het
 /// aanmeldformulier op de website ("Ik ben al lid: lid splitsen"), met het e-mailadres en waar bekend de naam van het
 /// tweede lid en het adres al ingevuld. Na de e-mailcode en goedkeuring door het bestuur wordt het tweede lid een eigen
-/// lid en de partner van het hoofdlid (combinatie; het hoofdlid betaalt). De mail komt van het systeemadres; antwoorden
-/// gaan naar het secretariaat.
+/// lid en de partner van het hoofdlid (combinatie; het hoofdlid betaalt). De mail komt van het secretariaat (als dat een
+/// afzender op het eigen domein is, anders van het systeemadres); antwoorden gaan naar het secretariaat.
 /// </summary>
 public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAuditLogger audit, IClock clock, ICurrentActor actor)
 {
     public const string ReplyTo = "secretaris@vrolijkedrammers.nl";
+
+    /// <summary>Afzender vóór de @; het antwoordadres bepaalt de afzender niet meer (<see cref="EmailSenderAddress"/>).</summary>
+    public const string Sender = "secretaris";
 
     /// <summary>Hoe lang een link geldig is.</summary>
     public static readonly TimeSpan LinkLifetime = TimeSpan.FromDays(90);
@@ -193,6 +196,6 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
             <p>De link is 90 dagen geldig.</p>
             <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
             """;
-        return new EmailMessage(to, Subject, text, html, ReplyTo);
+        return new EmailMessage(to, Subject, text, html, ReplyTo, Sender);
     }
 }

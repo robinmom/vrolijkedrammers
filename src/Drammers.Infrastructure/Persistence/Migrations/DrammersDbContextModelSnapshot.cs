@@ -5356,6 +5356,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("verification_expires_at");
 
+                    b.Property<int>("VerificationResends")
+                        .HasColumnType("int")
+                        .HasColumnName("verification_resends");
+
                     b.HasKey("Id")
                         .HasName("PK_MembershipApplication");
 
@@ -8136,6 +8140,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("VerificationExpiresAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("verification_expires_at");
+
+                    b.Property<int>("VerificationResends")
+                        .HasColumnType("int")
+                        .HasColumnName("verification_resends");
 
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasColumnType("datetime2(3)")

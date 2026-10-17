@@ -153,6 +153,8 @@ flowchart LR
 3. *Regio-uitval*: geo-restore SQL in een andere regio + infra via Bicep uitrollen (RTO ~4–8 uur).
 4. *Gecompromitteerde secret*: rotatie in Key Vault (Mollie, e-Boekhouden, Expo), herstart van de API-app.
 
+**Stand 2026-10-17:** PITR 14 dagen, LTR wekelijks 4 weken en maandelijks 12 maanden, geo-redundante back-ups, blob soft delete 30 dagen en point-in-time restore 14 dagen, sloten tegen verwijderen. Zie runbook backup-en-herstel.
+
 **Restore-tests**: elk kwartaal een PITR-restore naar Acc (geanonimiseerd) + een blob-restore; jaarlijks (oktober) een volledige DR-oefening vóór het seizoen. Resultaten vastgelegd.
 
 ## 9. Observability en alerts (§69)

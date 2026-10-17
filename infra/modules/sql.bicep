@@ -20,6 +20,12 @@ param freeLimitExhaustionBehavior string = 'AutoPause'
 @allowed(['GP_S_Gen5', 'Basic', 'S0', 'S1', 'S2'])
 param skuName string = 'GP_S_Gen5'
 
+@description('Server-auditing naar Log Analytics (SQLSecurityAuditEvents op de master-database). Aan in Prod.')
+param auditingEnabled bool = false
+
+@description('Log Analytics-workspace voor de auditlogs.')
+param workspaceId string
+
 var serverless = skuName == 'GP_S_Gen5'
 
 resource server 'Microsoft.Sql/servers@2025-01-01' = {
@@ -73,6 +79,45 @@ resource database 'Microsoft.Sql/servers/databases@2025-01-01' = {
         requestedBackupStorageRedundancy: 'Local'
         zoneRedundant: false
       }
+}
+
+// Auditing (L6): wie logt in (gelukt en mislukt) en wijzigingen aan gebruikers, rollen, rechten en schema. Geen
+// BATCH_COMPLETED_GROUP: elke query loggen past niet binnen de dagelijkse ingest-limiet van de workspace en zet
+// persoonsgegevens uit queryparameters in de logs. Azure Monitor als doel vraagt een diagnostic setting op master.
+resource master 'Microsoft.Sql/servers/databases@2025-01-01' existing = {
+  parent: server
+  name: 'master'
+}
+
+// Dezelfde versie als de andere diagnostic settings.
+#disable-next-line use-recent-api-versions
+resource auditDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (auditingEnabled) {
+  name: 'sql-audit-to-log-analytics'
+  scope: master
+  properties: {
+    workspaceId: workspaceId
+    logs: [{ category: 'SQLSecurityAuditEvents', enabled: true }]
+  }
+}
+
+resource auditing 'Microsoft.Sql/servers/auditingSettings@2025-01-01' = if (auditingEnabled) {
+  parent: server
+  name: 'default'
+  properties: {
+    state: 'Enabled'
+    isAzureMonitorTargetEnabled: true
+    auditActionsAndGroups: [
+      'SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP'
+      'FAILED_DATABASE_AUTHENTICATION_GROUP'
+      'DATABASE_PRINCIPAL_CHANGE_GROUP'
+      'DATABASE_ROLE_MEMBER_CHANGE_GROUP'
+      'DATABASE_PERMISSION_CHANGE_GROUP'
+      'DATABASE_OBJECT_PERMISSION_CHANGE_GROUP'
+      'SCHEMA_OBJECT_PERMISSION_CHANGE_GROUP'
+      'DATABASE_CHANGE_GROUP'
+    ]
+  }
+  dependsOn: [auditDiagnostics]
 }
 
 output serverName string = server.name

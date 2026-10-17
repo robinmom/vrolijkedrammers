@@ -34,8 +34,8 @@ jobs:
     if: vars.DVD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
       - name: Publish API
@@ -46,8 +46,8 @@ jobs:
           dotnet ef migrations script --idempotent -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure \
             -o publish/db/migrations.sql
           dotnet publish tools/Drammers.DbSetup -c Release -o publish/db/tool
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: pnpm
@@ -58,11 +58,11 @@ jobs:
           rm -rf publish/api/wwwroot/beheer
           mkdir -p publish/api/wwwroot
           cp -r apps/admin/dist publish/api/wwwroot/beheer
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: api
           path: publish/api
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: db
           path: publish/db
@@ -98,8 +98,14 @@ jobs:
       DVD_EMAIL_MAILBOX_SENDERS: ${{ vars.DVD_EMAIL_MAILBOX_SENDERS }}
       DVD_PASSWORD_SIGN_IN: ${{ vars.DVD_PASSWORD_SIGN_IN }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/login@v3
+      # Prod alleen vanaf main; aanvullend op de deployment branch policy van de GitHub environment "prod".
+      - name: Prod alleen vanaf main
+        if: ${{ (inputs.environment || 'dev') == 'prod' && github.ref != 'refs/heads/main' }}
+        run: |
+          echo "::error::Uitrol naar prod mag alleen vanaf refs/heads/main (nu: $GITHUB_REF)"
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID || secrets.AZURE_TENANT_ID }}
@@ -144,18 +150,18 @@ jobs:
 
       # Opnieuw inloggen: het OIDC-token van GitHub is maar 5 minuten bruikbaar om nieuwe Azure-tokens te halen, en de
       # infra-uitrol kan langer duren (beheerde certificaten). Zonder dit faalt de databasestap met AADSTS700024.
-      - uses: azure/login@v3
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         if: ${{ !inputs.infraOnly }}
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID || secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID || secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         if: ${{ !inputs.infraOnly }}
         with:
           dotnet-version: 10.0.x
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: ${{ !inputs.infraOnly }}
         with:
           name: db
@@ -193,14 +199,14 @@ jobs:
             sleep 15
           done
           echo "::error::Kudu niet bereikbaar na infra-uitrol"; exit 1
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: ${{ !inputs.infraOnly }}
         with:
           name: api
           path: publish/api
       - name: API + portal – uitrol
         if: ${{ !inputs.infraOnly }}
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         with:
           app-name: ${{ steps.infra.outputs.api-app }}
           package: publish/api

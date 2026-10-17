@@ -27,11 +27,6 @@ resource prodGroup 'Microsoft.Resources/resourceGroups@2024-11-01' = {
   tags: tags
 }
 
-// De what-if-identiteit en -rol bestaan al (bootstrap-nonprod); productie gebruikt ze ook voor what-if in PR's.
-resource whatIfIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' existing = {
-  scope: resourceGroup('rg-dvd-nonprod-shared')
-  name: 'id-dvd-github-whatif'
-}
 
 module identity 'prod-identity.bicep' = {
   name: 'dvd-prod-identity'
@@ -57,8 +52,9 @@ module access 'environment-access.bicep' = {
   scope: prodGroup
   params: {
     deployPrincipalId: identity.outputs.principalId
-    whatIfPrincipalId: whatIfIdentity.properties.principalId
-    whatIfRoleId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', guid(subscription().id, 'dvd-bicep-what-if'))
+    // Geen what-if-identiteit op Productie (L7): de what-if in pull requests draait alleen tegen Dev, en een identiteit
+    // die elke pull request kan gebruiken hoort niets van Productie te kunnen lezen. Op main doet de deploy-identiteit
+    // van de environment "prod" zelf de what-if.
   }
 }
 

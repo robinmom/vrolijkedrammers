@@ -46,6 +46,23 @@ public class CanonicalHostTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("www.vrolijkedrammers.nl", HttpStatusCode.OK)]
+    [InlineData("app-dvd-api-prod.azurewebsites.net", HttpStatusCode.OK)]
+    [InlineData("localhost", HttpStatusCode.OK)]
+    [InlineData("aanvaller.example", HttpStatusCode.BadRequest)]
+    public async Task Alleen_bekende_hostnames_met_AllowedHosts_zoals_Bicep_dat_zet(string host, HttpStatusCode expected)
+    {
+        var client = factory.WithWebHostBuilder(b => b.UseSetting("AllowedHosts", "www.vrolijkedrammers.nl;app-dvd-api-prod.azurewebsites.net;localhost"))
+            .CreateClient(new() { AllowAutoRedirect = false });
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/health/live");
+        request.Headers.Host = host;
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(expected, response.StatusCode);
+    }
+
     [Fact]
     public async Task Buiten_productie_geen_zoekmachines()
     {

@@ -3,7 +3,7 @@
 # Uitvoeren door een beheerder met Owner op de subscription, ingelogd in de tenant van de subscription:
 #   az login --tenant <tenant-id-vereniging>
 #   AZURE_SUBSCRIPTION_ID=<id> infra/bootstrap/bootstrap-prod.sh [--what-if]
-# Voorwaarde: bootstrap-nonprod.sh is eerder uitgevoerd (what-if-identiteit en -rol). Idempotent.
+# Voorwaarde: bootstrap-nonprod.sh is eerder uitgevoerd. De what-if-identiteit krijgt geen rechten op Productie. Idempotent.
 set -euo pipefail
 
 : "${AZURE_SUBSCRIPTION_ID:?Zet AZURE_SUBSCRIPTION_ID}"

@@ -1,8 +1,10 @@
 // Rechten van de pipeline op één omgeving (docs/08 §4): Contributor op de eigen resource group en
 // roltoewijzingen uitsluitend voor de rollen die main.bicep aan de API-identiteit geeft.
 param deployPrincipalId string
-param whatIfPrincipalId string
-param whatIfRoleId string
+
+@description('Alleen-lezen what-if-identiteit (pull requests); leeg = geen toewijzing (Productie, L7).')
+param whatIfPrincipalId string = ''
+param whatIfRoleId string = ''
 
 var roles = {
   contributor: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
@@ -41,7 +43,7 @@ resource constrainedRbacAdmin 'Microsoft.Authorization/roleAssignments@2022-04-0
   }
 }
 
-resource whatIf 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource whatIf 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(whatIfPrincipalId)) {
   name: guid(resourceGroup().id, whatIfPrincipalId, whatIfRoleId)
   properties: {
     principalId: whatIfPrincipalId

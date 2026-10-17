@@ -73,6 +73,13 @@ echo "    (wachten tot de rollen actief zijn)"
 sleep 90
 
 token() { az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv; }
+# Het SQL-token nooit als procesargument (dan staat het in de proceslijst, ps): sqlpackage leest het uit een
+# responsbestand (@bestand) in de eigen tijdelijke map, alleen leesbaar voor jou; de tools via DVD_SQL_ACCESS_TOKEN.
+token_file() { # <naam> → pad van het responsbestand met /AccessToken
+  local file="$WORK/$1.rsp"
+  (umask 077 && printf '/AccessToken:%s\n' "$(token)" >"$file")
+  echo "$file"
+}
 step() { (( FROM <= $1 )); }
 
 if step 1; then
@@ -80,9 +87,10 @@ echo "==> 1. Database: export Dev → import Prod"
 dotnet tool update --global microsoft.sqlpackage >/dev/null
 SQLPACKAGE="$HOME/.dotnet/tools/sqlpackage"
 "$SQLPACKAGE" /Action:Export /SourceServerName:"tcp:sql-dvd-dev.database.windows.net,1433" /SourceDatabaseName:"$DB" \
-  /AccessToken:"$(token)" /TargetFile:"$WORK/dvd.bacpac"
+  "@$(token_file export)" /TargetFile:"$WORK/dvd.bacpac"
 "$SQLPACKAGE" /Action:Import /TargetServerName:"tcp:sql-dvd-prod.database.windows.net,1433" /TargetDatabaseName:"$DB" \
-  /AccessToken:"$(token)" /SourceFile:"$WORK/dvd.bacpac"
+  "@$(token_file import)" /SourceFile:"$WORK/dvd.bacpac"
+rm -f "$WORK"/*.rsp
 fi
 
 if step 2; then

@@ -72,4 +72,28 @@ public class FoundationEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
         using var body = JsonDocument.Parse(content);
         Assert.Equal("UNEXPECTED_ERROR", body.RootElement.GetProperty("code").GetString());
     }
+
+    [Fact]
+    public async Task Ook_een_500_heeft_de_security_headers_en_HSTS_van_een_jaar()
+    {
+        // De exception handler wist eerder gezette headers; ze worden daarom pas bij het starten van de response gezet.
+        var https = factory.CreateClient(new() { BaseAddress = new Uri("https://dvd.test") });
+
+        var response = await https.GetAsync("/test/throw");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+        Assert.Contains("frame-ancestors 'none'", Assert.Single(response.Headers.GetValues("Content-Security-Policy")), StringComparison.Ordinal);
+        Assert.Equal("strict-origin-when-cross-origin", Assert.Single(response.Headers.GetValues("Referrer-Policy")));
+        Assert.Equal("max-age=31536000; includeSubDomains", Assert.Single(response.Headers.GetValues("Strict-Transport-Security")));
+    }
+
+    [Fact]
+    public async Task Geen_HSTS_over_http()
+    {
+        var response = await _client.GetAsync("/health/live");
+
+        Assert.False(response.Headers.Contains("Strict-Transport-Security"));
+        Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+    }
 }

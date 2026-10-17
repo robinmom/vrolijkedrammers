@@ -200,6 +200,13 @@ public partial class MailingTests(SqlServerFixture sql) : IAsyncLifetime
         var guest = _api.CreateClient();
         var page = await guest.GetStringAsync(link);
         Assert.Contains("g***@example.com", page);
+        // Nooit uit de output cache: het antiforgery-token hoort bij de cookie van één bezoeker (L21). De tweede keer
+        // heeft de gast de cookie al (geen Set-Cookie); zonder no-store zou een ander dan diens token krijgen.
+        var again = await guest.GetAsync(link);
+        Assert.True(again.Headers.CacheControl?.NoStore);
+        var other = await _api.CreateClient().GetStringAsync(link);
+        Assert.NotEqual(AntiforgeryToken().Match(await again.Content.ReadAsStringAsync()).Groups[1].Value,
+            AntiforgeryToken().Match(other).Groups[1].Value);
         var form = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["t"] = Uri.UnescapeDataString(link[(link.IndexOf("t=", StringComparison.Ordinal) + 2)..]),

@@ -98,7 +98,7 @@ public sealed class ParadeController(ParadeAdministration parades, ParadePublicR
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<PublicRegistrationSubmittedResponse> VerifyPublic(Guid id, VerifyCodeRequest request, CancellationToken cancellationToken)
     {
-        var result = await publicRegistrations.VerifyAsync(id, request.Code, $"{Request.Scheme}://{Request.Host}", cancellationToken);
+        var result = await publicRegistrations.VerifyAsync(id, request.Code, Request.PublicBaseUrlFor(), cancellationToken);
         return new PublicRegistrationSubmittedResponse(result.RegistrationNumber, result.StatusToken);
     }
 

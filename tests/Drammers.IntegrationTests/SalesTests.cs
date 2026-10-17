@@ -699,8 +699,18 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         var bestuur = api.ClientFor((await api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
         var product = (await JsonAsync(await bestuur.PostAsJsonAsync("/api/v1/admin/sales/products", new
         {
-            kind = "DayTicket", name = "Dagkaart vrijdag", description = (string?)null, eventId = (Guid?)null, date = "2027-02-12", priceCents = 500,
-            capacity = 10, maxPerOrder = 10, saleOpensAt = (DateTime?)null, saleClosesAt = (DateTime?)null, onSale = true, sortOrder = 0,
+            kind = "DayTicket",
+            name = "Dagkaart vrijdag",
+            description = (string?)null,
+            eventId = (Guid?)null,
+            date = "2027-02-12",
+            priceCents = 500,
+            capacity = 10,
+            maxPerOrder = 10,
+            saleOpensAt = (DateTime?)null,
+            saleClosesAt = (DateTime?)null,
+            onSale = true,
+            sortOrder = 0,
         }), HttpStatusCode.Created)).GetGuid();
         var guest = api.CreateClient();
         Assert.Equal("site-key-test", (await JsonAsync(await guest.GetAsync("/api/v1/sales/products"))).GetProperty("turnstileSiteKey").GetString());

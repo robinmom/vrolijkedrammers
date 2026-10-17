@@ -112,6 +112,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Content.Festival.DanceFestivalPayment> DanceFestivalPayments => Set<Modules.Content.Festival.DanceFestivalPayment>();
 
+    public DbSet<Modules.Content.Festival.DanceFestivalMolliePayment> DanceFestivalMolliePayments => Set<Modules.Content.Festival.DanceFestivalMolliePayment>();
+
     public DbSet<Modules.Content.Festival.DanceFestivalProgramItem> DanceFestivalProgramItems => Set<Modules.Content.Festival.DanceFestivalProgramItem>();
 
     public DbSet<Modules.Content.Festival.FestivalJuror> FestivalJurors => Set<Modules.Content.Festival.FestivalJuror>();
@@ -131,6 +133,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<Modules.Ticketing.Sales.SaleProduct> SaleProducts => Set<Modules.Ticketing.Sales.SaleProduct>();
 
     public DbSet<Modules.Ticketing.Sales.SaleOrder> SaleOrders => Set<Modules.Ticketing.Sales.SaleOrder>();
+
+    public DbSet<Modules.Ticketing.Sales.SaleOrderPayment> SaleOrderPayments => Set<Modules.Ticketing.Sales.SaleOrderPayment>();
 
     public DbSet<Modules.Ticketing.Sales.SaleOrderSequence> SaleOrderSequences => Set<Modules.Ticketing.Sales.SaleOrderSequence>();
 

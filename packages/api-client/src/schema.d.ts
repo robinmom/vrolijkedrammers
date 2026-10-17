@@ -22334,7 +22334,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Wat er nu te koop is, met de plaatsen die nog vrij zijn. Voor een ingelogd lid ook de groepskaarten. */
+        /**
+         * Wat er nu te koop is, met de plaatsen die nog vrij zijn. Voor een ingelogd lid ook de groepskaarten; voor de
+         *     webpagina de openbare Turnstile-sleutel als die aan staat.
+         */
         get: {
             parameters: {
                 query?: never;
@@ -24775,6 +24778,7 @@ export interface components {
             entries: components["schemas"]["FestivalEntryView"][];
             payments: components["schemas"]["FestivalPaymentView"][];
         };
+        /** @description int FestivalPaymentView.DuplicatePaid: zo vaak is dit bedrag extra betaald (terugbetalen). */
         FestivalPaymentView: {
             /** Format: uuid */
             id: string;
@@ -24786,6 +24790,8 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             paidAt: null | string;
+            /** Format: int32 */
+            duplicatePaid: number;
         };
         /** @enum {unknown} */
         FestivalProgramItemKind: "Category" | "Block";
@@ -26495,6 +26501,7 @@ export interface components {
             buyerPhone: null | string;
             remark: null | string;
             channel?: components["schemas"]["SaleChannel"];
+            turnstileToken?: null | string;
         };
         /** @enum {unknown} */
         OrderTicketStatus: "Active" | "Used" | "Cancelled";
@@ -27526,9 +27533,14 @@ export interface components {
             products: components["schemas"]["SaleProductResponse"][];
             isMember: boolean;
             group: null | components["schemas"]["GroupAllowance"];
+            turnstileSiteKey: null | string;
         };
         /** @enum {unknown} */
         SaleChannel: "App" | "Web" | "Portal";
+        /**
+         * @description int SaleOrderRow.RefundDueCents: online betaald geld dat de penningmeester moet terugbetalen (dubbel betaald, of betaald
+         *             zonder plaats), met de reden van de eerste zo'n betaling.
+         */
         SaleOrderRow: {
             /** Format: uuid */
             id: string;
@@ -27558,6 +27570,9 @@ export interface components {
             /** Format: date-time */
             paidAt: null | string;
             collected: boolean;
+            /** Format: int32 */
+            refundDueCents: number;
+            refundReason: null | components["schemas"]["SaleRefundReason"];
         };
         /** @enum {unknown} */
         SaleOrderStatus: "AwaitingPayment" | "Confirmed" | "Cancelled" | "Expired";
@@ -27611,6 +27626,8 @@ export interface components {
             membersOnly: boolean;
             groupOrders: boolean;
         };
+        /** @enum {unknown} */
+        SaleRefundReason: "DuplicatePayment" | "NoPlace" | null;
         SalesSummary: {
             /** Format: int32 */
             revenueCents: number;

@@ -1,4 +1,5 @@
 // Kaarten (fase 19b): producten, bestellen en betalen via Mollie; vol → wachtlijst. Zelfde API als de app.
+// Bestellen op de webpagina met Cloudflare Turnstile, alleen als de API een sleutel teruggeeft.
 (() => {
   'use strict';
   const api = '/api/v1/sales';
@@ -7,6 +8,7 @@
   const form = document.getElementById('formulier');
   const error = document.getElementById('fout');
   let product = null;
+  let turnstileToken = null;
 
   const show = (id) => {
     for (const section of ['producten', 'bestellen', 'wachtlijst-klaar']) {
@@ -40,6 +42,7 @@
       const response = await fetch(`${api}/products`);
       if (!response.ok) throw new Error();
       const catalog = await response.json();
+      if (catalog.turnstileSiteKey) startTurnstile(catalog.turnstileSiteKey);
       // Munten zijn alleen voor leden (app); de rest kan iedereen hier kopen.
       const products = catalog.products.filter((p) => !p.membersOnly);
       document.getElementById('laden').hidden = products.length > 0;
@@ -59,6 +62,21 @@
     } catch {
       document.getElementById('laden').textContent = 'De kaartverkoop laden lukt nu niet. Probeer het later opnieuw.';
     }
+  }
+
+  function startTurnstile(siteKey) {
+    window.drammersTurnstile = (token) => {
+      turnstileToken = token;
+    };
+    const widget = document.getElementById('turnstile-widget');
+    widget.className = 'cf-turnstile';
+    widget.dataset.sitekey = siteKey;
+    widget.dataset.callback = 'drammersTurnstile';
+    widget.dataset.language = 'nl';
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async = true;
+    document.head.appendChild(script);
   }
 
   function choose(p) {
@@ -89,6 +107,7 @@
     return {
       productId: product.id, memberQuantity: 0, paidQuantity: Number(f.quantity.value), buyerName: f.buyerName.value.trim(),
       buyerEmail: f.buyerEmail.value.trim(), buyerPhone: f.buyerPhone.value.trim() || null, remark: f.remark.value.trim() || null, channel: 'Web',
+      turnstileToken,
     };
   }
 
@@ -111,6 +130,9 @@
       if (!response.ok) {
         const p = await problem(response);
         if (p.code === 'SOLD_OUT') setSoldOut(true);
+        // Een Turnstile-token is maar één keer geldig.
+        turnstileToken = null;
+        window.turnstile?.reset();
         return fail(p.message);
       }
       const created = await response.json();

@@ -86,8 +86,20 @@ public sealed partial class TicketSales(
 {
     private readonly IDataProtector _tokens = protection.CreateProtector("Drammers.SaleOrderToken.v1");
 
-    /// <summary>Zo lang houdt een bestelling in de app of op de webpagina de plaatsen vast tijdens het betalen.</summary>
-    public static readonly TimeSpan CheckoutHold = TimeSpan.FromMinutes(30);
+    /// <summary>
+    /// Zo lang houdt een bestelling in de app of op de webpagina de plaatsen vast tijdens het betalen. Kort, zodat
+    /// niet-afgeronde bestellingen de voorraad niet lang blokkeren (iDEAL-betalingen verlopen bij Mollie ook na een kwartier).
+    /// </summary>
+    public static readonly TimeSpan CheckoutHold = TimeSpan.FromMinutes(15);
+
+    /// <summary>Zoveel onbetaalde bestellingen (app/webpagina) mag één e-mailadres tegelijk per product open hebben.</summary>
+    public const int MaxOpenOrdersPerEmail = 2;
+
+    /// <summary>Mollie-statussen waarbij de betaling nog kan lukken.</summary>
+    private static readonly string[] PendingStatuses = ["open", "pending", "authorized"];
+
+    /// <summary>Mollie-statussen die niet meer veranderen.</summary>
+    private static readonly string[] FinalStatuses = ["paid", "failed", "canceled", "expired"];
 
     /// <summary>Zo lang is een betaallink (portal, uitnodiging van de wachtlijst) geldig.</summary>
     public static readonly TimeSpan LinkHold = TimeSpan.FromHours(WaitlistEntry.InviteHours);
@@ -313,6 +325,21 @@ public sealed partial class TicketSales(
             }
         }
 
+        // Tegen het vasthouden van de voorraad met nepbestellingen: per e-mailadres maar een paar onbetaalde tegelijk.
+        if (!portal && draft.WaitlistEntryId is null)
+        {
+            var now = Now;
+            var buyerEmail = draft.BuyerEmail.Trim();
+            var open = await db.SaleOrders.AsNoTracking().CountAsync(o => o.ProductId == product.Id && o.BuyerEmail == buyerEmail
+                && o.Status == SaleOrderStatus.AwaitingPayment && o.HoldUntil > now, cancellationToken);
+            if (open >= MaxOpenOrdersPerEmail)
+            {
+                throw new DomainException(ErrorCodes.TooManyOpenOrders,
+                    $"Er staan al {open} onbetaalde bestellingen voor {product.Name} op dit e-mailadres. Rond eerst een betaling af (zie je e-mail) of probeer het over een kwartier opnieuw.",
+                    DomainErrorKind.Conflict);
+            }
+        }
+
         var quantity = draft.MemberQuantity + draft.PaidQuantity;
         if (product.Capacity is { } capacity)
         {
@@ -406,9 +433,13 @@ public sealed partial class TicketSales(
         return token;
     }
 
-    /// <summary>Nieuwe Mollie-betaling voor een openstaande bestelling; geeft de link naar de betaalpagina.</summary>
+    /// <summary>
+    /// Nieuwe Mollie-betaling voor een openstaande bestelling; geeft de link naar de betaalpagina. Elke betaling wordt
+    /// bewaard (<see cref="SaleOrderPayment"/>), zodat ook een oudere betaling die later toch lukt herkend wordt.
+    /// </summary>
     private async Task<string> StartPaymentAsync(SaleOrder order, SaleProduct product, string token, string baseUrl, CancellationToken cancellationToken)
     {
+        var first = order.MolliePaymentId is null;
         try
         {
             var payment = await mollie.CreatePaymentAsync(new MollieNewPayment(
@@ -416,6 +447,16 @@ public sealed partial class TicketSales(
                 // Vanuit de app: de bestelpagina toont na betalen een knop terug naar de app.
                 OrderLink(baseUrl, order.Id, token) + (order.Channel == SaleChannel.App ? "&app=1" : ""), WebhookUrl(baseUrl), order.Id,
                 $"{order.Id:N}-{Now.Ticks}"), cancellationToken);
+            db.SaleOrderPayments.Add(new SaleOrderPayment
+            {
+                Id = IdGenerator.NewId(),
+                OrderId = order.Id,
+                MolliePaymentId = payment.Id,
+                AmountCents = order.AmountCents,
+                MollieStatus = payment.Status,
+                CreatedAt = Now,
+            });
+            await db.SaveChangesAsync(cancellationToken);
             await db.SaleOrders.Where(o => o.Id == order.Id).ExecuteUpdateAsync(s => s.SetProperty(o => o.MolliePaymentId, payment.Id), cancellationToken);
             order.MolliePaymentId = payment.Id;
             return payment.CheckoutUrl ?? throw new MollieException("Geen betaalpagina van Mollie.");
@@ -423,8 +464,9 @@ public sealed partial class TicketSales(
         catch (Exception ex) when (ex is MollieException or HttpRequestException or TaskCanceledException && !cancellationToken.IsCancellationRequested)
         {
             LogMollieFailed(logger, order.Number, ex);
-            // De plaatsen direct weer vrijgeven als dit een nieuwe bestelling uit de app of van de webpagina was.
-            if (order.Channel != SaleChannel.Portal && order.WaitlistEntryId is null)
+            // De plaatsen direct weer vrijgeven als dit een nieuwe bestelling uit de app of van de webpagina was (en er
+            // dus nog geen eerdere betaling loopt).
+            if (first && order.Channel != SaleChannel.Portal && order.WaitlistEntryId is null)
             {
                 await db.SaleOrders.Where(o => o.Id == order.Id && o.Status == SaleOrderStatus.AwaitingPayment)
                     .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, SaleOrderStatus.Expired), cancellationToken);
@@ -434,35 +476,58 @@ public sealed partial class TicketSales(
         }
     }
 
-    /// <summary>De betaallink uit de e-mail: maakt een nieuwe betaling en stuurt door naar Mollie.</summary>
+    /// <summary>
+    /// De betaallink uit de e-mail of "Betalen" op de bestelpagina: staat de vorige betaling bij Mollie nog open, dan
+    /// dezelfde betaalpagina (geen tweede betaling); anders een nieuwe betaling.
+    /// </summary>
     public async Task<string> PayAsync(Guid orderId, string token, string baseUrl, CancellationToken cancellationToken)
     {
         var order = await OrderByTokenAsync(orderId, token, cancellationToken);
-        if (order.Status != SaleOrderStatus.AwaitingPayment || order.HoldUntil <= Now)
-        {
-            throw new DomainException(ErrorCodes.OrderNotPayable,
-                order.Status == SaleOrderStatus.Confirmed ? "Deze bestelling is al betaald." : "Deze betaallink is verlopen.", DomainErrorKind.Conflict);
-        }
+        EnsurePayable(order);
 
         // Een betaling die al loopt of net gelukt is, eerst bij Mollie nakijken.
-        if (order.MolliePaymentId is { } previous && await SyncPaymentAsync(previous, cancellationToken, baseUrl) is { IsPaid: true })
+        if (order.MolliePaymentId is { } previous)
         {
-            throw new DomainException(ErrorCodes.OrderNotPayable, "Deze bestelling is al betaald.", DomainErrorKind.Conflict);
+            var existing = await SyncPaymentAsync(previous, cancellationToken, baseUrl);
+            order = await db.SaleOrders.AsNoTracking().SingleAsync(o => o.Id == orderId, cancellationToken);
+            EnsurePayable(order);
+            if (existing is { IsPaid: true })
+            {
+                throw new DomainException(ErrorCodes.OrderAlreadyPaid, "Deze bestelling is al betaald.", DomainErrorKind.Conflict);
+            }
+
+            if (existing is { Status: "open", CheckoutUrl: { } checkout })
+            {
+                return checkout;
+            }
         }
 
         var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
         return await StartPaymentAsync(order, product, token, baseUrl, cancellationToken);
     }
 
+    private void EnsurePayable(SaleOrder order)
+    {
+        if (order.Status == SaleOrderStatus.Confirmed)
+        {
+            throw new DomainException(ErrorCodes.OrderAlreadyPaid, "Deze bestelling is al betaald.", DomainErrorKind.Conflict);
+        }
+
+        if (order.Status != SaleOrderStatus.AwaitingPayment || order.HoldUntil <= Now)
+        {
+            throw new DomainException(ErrorCodes.OrderNotPayable, "Deze betaallink is verlopen.", DomainErrorKind.Conflict);
+        }
+    }
+
     // ---- Betalingen ------------------------------------------------------------------------------------------------
 
     /// <summary>
     /// Webhook van Mollie: bevat alleen het id; de status komt altijd van Mollie zelf (een vervalste "paid" geeft niets).
-    /// Onbekende ids worden genegeerd.
+    /// Elke betaling die ooit voor een bestelling is gestart telt mee; onbekende ids worden genegeerd.
     /// </summary>
     public async Task HandleWebhookAsync(string paymentId, string baseUrl, CancellationToken cancellationToken)
     {
-        if (!await db.SaleOrders.AnyAsync(o => o.MolliePaymentId == paymentId, cancellationToken))
+        if (!await db.SaleOrderPayments.AnyAsync(p => p.MolliePaymentId == paymentId, cancellationToken))
         {
             return;
         }
@@ -474,42 +539,126 @@ public sealed partial class TicketSales(
     private async Task<MolliePayment?> SyncPaymentAsync(string paymentId, CancellationToken cancellationToken, string? baseUrl = null)
     {
         var payment = await mollie.GetPaymentAsync(paymentId, cancellationToken);
-        var order = await db.SaleOrders.SingleOrDefaultAsync(o => o.MolliePaymentId == paymentId, cancellationToken);
-        if (order is null || payment.OrderId != order.Id)
+        var attempt = await db.SaleOrderPayments.SingleOrDefaultAsync(p => p.MolliePaymentId == paymentId, cancellationToken);
+        var order = attempt is null ? null : await db.SaleOrders.SingleOrDefaultAsync(o => o.Id == attempt.OrderId, cancellationToken);
+        // De bestelling in de metadata van Mollie moet dezelfde zijn als die waarvoor de betaling gestart is.
+        if (attempt is null || order is null || payment.OrderId != order.Id)
         {
             return payment;
         }
 
-        if (payment.IsPaid && order.Status is SaleOrderStatus.AwaitingPayment or SaleOrderStatus.Expired)
+        attempt.MollieStatus = payment.Status;
+        if (payment.IsPaid && attempt.PaidAt is null)
         {
             if (payment.AmountCents != order.AmountCents)
             {
                 LogAmountMismatch(logger, order.Number);
+                await db.SaveChangesAsync(cancellationToken);
                 return payment;
             }
 
-            var late = order.Status == SaleOrderStatus.Expired;
-            order.Status = SaleOrderStatus.Confirmed;
-            order.PaidAt = payment.PaidAt ?? Now;
-            await IssueTicketAsync(order, cancellationToken);
-            await MarkWaitlistAsync(order, WaitlistStatus.Granted, cancellationToken);
-            await db.SaveChangesAsync(cancellationToken);
-            await audit.WriteAsync(new AuditEntry("sale-order.paid", "SaleOrder", order.Id.ToString(), null,
-                JsonSerializer.Serialize(new { order.Number, paymentId, order.AmountCents, afterExpiry = late })), cancellationToken);
-            var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
-            if (baseUrl is not null)
-            {
-                await SendConfirmationAsync(order, product, baseUrl, cancellationToken);
-            }
-        }
-        else if (payment.IsFinallyUnpaid && order.Status == SaleOrderStatus.AwaitingPayment && order.WaitlistEntryId is null && order.Channel != SaleChannel.Portal)
-        {
-            // Mislukt of afgebroken in de app/op de webpagina: plaatsen direct vrij. Betaallinks blijven geldig tot ze verlopen.
-            order.Status = SaleOrderStatus.Expired;
-            await db.SaveChangesAsync(cancellationToken);
+            await ProcessPaidAsync(order, attempt, payment, baseUrl, cancellationToken);
+            return payment;
         }
 
+        // Mislukt of afgebroken in de app/op de webpagina: plaatsen direct vrij, maar alleen als dit de laatste betaling
+        // is (een nieuwere kan nog lopen). Betaallinks blijven geldig tot ze verlopen.
+        if (payment.IsFinallyUnpaid && order.Status == SaleOrderStatus.AwaitingPayment && order.WaitlistEntryId is null
+            && order.Channel != SaleChannel.Portal && order.MolliePaymentId == paymentId)
+        {
+            order.Status = SaleOrderStatus.Expired;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
         return payment;
+    }
+
+    /// <summary>
+    /// Een betaalde Mollie-betaling verwerken. Houdt de bestelling de plaatsen nog vast, dan bevestigen. Is hij verlopen
+    /// (of de vasthoudtijd voorbij), dan eerst opnieuw de capaciteit controleren met dezelfde vergrendeling als bij
+    /// bestellen. Was de bestelling al betaald, of is er geen plaats meer, dan niet (nog eens) bevestigen maar de betaling
+    /// markeren om terug te betalen.
+    /// </summary>
+    private async Task ProcessPaidAsync(SaleOrder order, SaleOrderPayment attempt, MolliePayment payment, string? baseUrl, CancellationToken cancellationToken)
+    {
+        attempt.PaidAt = payment.PaidAt ?? Now;
+        if (order.Status is SaleOrderStatus.Confirmed or SaleOrderStatus.Cancelled)
+        {
+            await FlagRefundAsync(order, attempt,
+                order.Status == SaleOrderStatus.Confirmed ? SaleRefundReason.DuplicatePayment : SaleRefundReason.NoPlace, null, cancellationToken);
+            return;
+        }
+
+        var late = order.Status == SaleOrderStatus.Expired || order.HoldUntil <= Now;
+        await using var transaction = late ? await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken) : null;
+        if (transaction is not null && await NoRoomAsync(order, cancellationToken) is { } reason)
+        {
+            order.Status = SaleOrderStatus.Expired;
+            await MarkWaitlistAsync(order, WaitlistStatus.Expired, cancellationToken);
+            await FlagRefundAsync(order, attempt, SaleRefundReason.NoPlace, reason, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return;
+        }
+
+        order.Status = SaleOrderStatus.Confirmed;
+        order.PaidAt = attempt.PaidAt;
+        await IssueTicketAsync(order, cancellationToken);
+        await MarkWaitlistAsync(order, WaitlistStatus.Granted, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("sale-order.paid", "SaleOrder", order.Id.ToString(), null,
+            JsonSerializer.Serialize(new { order.Number, paymentId = attempt.MolliePaymentId, order.AmountCents, afterExpiry = late })), cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
+        if (baseUrl is not null)
+        {
+            await SendConfirmationAsync(order, product, baseUrl, cancellationToken);
+        }
+    }
+
+    /// <summary>Betaald geld dat niet tot (extra) kaarten leidt: zichtbaar in het portal en in de audit, voor de penningmeester.</summary>
+    private async Task FlagRefundAsync(SaleOrder order, SaleOrderPayment attempt, SaleRefundReason reason, string? detail, CancellationToken cancellationToken)
+    {
+        attempt.RefundReason = reason;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("sale-order.refund-due", "SaleOrder", order.Id.ToString(), null,
+            JsonSerializer.Serialize(new { order.Number, paymentId = attempt.MolliePaymentId, attempt.AmountCents, reason = reason.ToString(), detail })), cancellationToken);
+        LogRefundDue(logger, order.Number, attempt.MolliePaymentId, reason);
+    }
+
+    /// <summary>
+    /// Past een bestelling die geen plaatsen (meer) vasthoudt nog? Alleen binnen een transactie: vergrendelt het product
+    /// (en de groep) zoals bij bestellen. Geeft de reden als hij niet past, anders <c>null</c>.
+    /// </summary>
+    private async Task<string?> NoRoomAsync(SaleOrder order, CancellationToken cancellationToken)
+    {
+        await LockProductAsync(order.ProductId, cancellationToken);
+        var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
+        if (order.MemberQuantity > 0 && order.GroupName is { } group)
+        {
+            await LockGroupAsync(product.CarnivalYearId, group, cancellationToken);
+            var allowance = await AllowanceForGroupAsync(group, cancellationToken);
+            if (allowance is null || order.MemberQuantity > allowance.Remaining)
+            {
+                return $"De {group} kan nog {allowance?.Remaining ?? 0} gratis kaart(en) bestellen; deze bestelling heeft er {order.MemberQuantity}.";
+            }
+        }
+
+        if (product.Capacity is not null)
+        {
+            var stock = (await StockAsync([product], cancellationToken))[product.Id];
+            if (stock.Remaining < order.Quantity)
+            {
+                return stock.Remaining == 0
+                    ? $"{product.Name} is vol."
+                    : $"Er zijn nog {stock.Remaining} plaats(en) voor {product.Name}; deze bestelling is voor {order.Quantity}.";
+            }
+        }
+
+        return null;
     }
 
     private async Task SendConfirmationAsync(SaleOrder order, SaleProduct product, string baseUrl, CancellationToken cancellationToken)
@@ -523,28 +672,32 @@ public sealed partial class TicketSales(
         }
     }
 
-    /// <summary>Onbetaalde bestellingen na de vasthoudtijd: eerst bij Mollie nakijken, dan de plaatsen vrijgeven.</summary>
+    /// <summary>
+    /// Onbetaalde bestellingen na de vasthoudtijd: eerst alle betalingen bij Mollie nakijken (gemiste webhook), dan de
+    /// plaatsen vrijgeven. Zolang een van de betalingen nog open of betaald is, verloopt de bestelling niet.
+    /// </summary>
     public async Task<int> ExpireAsync(string? baseUrl, CancellationToken cancellationToken)
     {
         var now = Now;
         var due = await db.SaleOrders.AsNoTracking()
             .Where(o => o.Status == SaleOrderStatus.AwaitingPayment && o.HoldUntil <= now)
-            .Select(o => new { o.Id, o.MolliePaymentId, o.HoldUntil }).Take(200).ToListAsync(cancellationToken);
+            .Select(o => o.Id).Take(200).ToListAsync(cancellationToken);
         var expired = 0;
-        foreach (var item in due)
+        foreach (var id in due)
         {
-            if (item.MolliePaymentId is { } paymentId)
+            var paymentIds = await db.SaleOrderPayments.AsNoTracking()
+                .Where(p => p.OrderId == id && p.PaidAt == null && (p.MollieStatus == null || !FinalStatuses.Contains(p.MollieStatus)))
+                .Select(p => p.MolliePaymentId).ToListAsync(cancellationToken);
+            var busy = false;
+            foreach (var paymentId in paymentIds)
             {
                 var payment = await SyncPaymentAsync(paymentId, cancellationToken, baseUrl);
-                // Nog bezig bij de bank: een kwartier respijt na de vasthoudtijd.
-                if (payment is { Status: "open" or "pending" or "authorized" } && item.HoldUntil > now - TimeSpan.FromMinutes(15))
-                {
-                    continue;
-                }
+                // Nog bezig bij de bank, of betaald maar niet te verwerken (bedrag klopt niet): niet laten verlopen.
+                busy |= payment is not null && (payment.IsPaid || PendingStatuses.Contains(payment.Status));
             }
 
-            var order = await db.SaleOrders.SingleAsync(o => o.Id == item.Id, cancellationToken);
-            if (order.Status != SaleOrderStatus.AwaitingPayment)
+            var order = await db.SaleOrders.SingleAsync(o => o.Id == id, cancellationToken);
+            if (busy || order.Status != SaleOrderStatus.AwaitingPayment)
             {
                 continue;
             }
@@ -782,14 +935,24 @@ public sealed partial class TicketSales(
 
     // ---- Beheer ----------------------------------------------------------------------------------------------------
 
-    /// <summary>Contant ontvangen (alleen in het portal): de kaarten worden direct geldig.</summary>
+    /// <summary>
+    /// Contant ontvangen (alleen in het portal): de kaarten worden direct geldig. Houdt de bestelling de plaatsen niet meer
+    /// vast (verlopen), dan eerst de capaciteit controleren, net als bij bestellen.
+    /// </summary>
     public async Task MarkPaidCashAsync(Guid orderId, string baseUrl, CancellationToken cancellationToken)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         var order = await db.SaleOrders.SingleOrDefaultAsync(o => o.Id == orderId, cancellationToken)
             ?? throw new DomainException(ErrorCodes.OrderNotFound, "Bestelling niet gevonden.", DomainErrorKind.NotFound);
         if (order.Status is not (SaleOrderStatus.AwaitingPayment or SaleOrderStatus.Expired))
         {
             throw new DomainException(ErrorCodes.OrderNotPayable, "Alleen een openstaande of verlopen bestelling kan contant betaald worden.", DomainErrorKind.Conflict);
+        }
+
+        if ((order.Status == SaleOrderStatus.Expired || order.HoldUntil <= Now) && await NoRoomAsync(order, cancellationToken) is { } reason)
+        {
+            throw new DomainException(ErrorCodes.SoldOut,
+                $"Contant boeken kan niet: {reason} Annuleer eerst een andere bestelling of verhoog de capaciteit.", DomainErrorKind.Conflict);
         }
 
         order.Status = SaleOrderStatus.Confirmed;
@@ -800,6 +963,7 @@ public sealed partial class TicketSales(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("sale-order.paid-cash", "SaleOrder", order.Id.ToString(), null,
             JsonSerializer.Serialize(new { order.Number, order.AmountCents })), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         var product = await db.SaleProducts.AsNoTracking().SingleAsync(p => p.Id == order.ProductId, cancellationToken);
         await SendConfirmationAsync(order, product, baseUrl, cancellationToken);
     }
@@ -1036,12 +1200,19 @@ public sealed partial class TicketSales(
     private async Task LockGroupAsync(int yearId, string group, CancellationToken cancellationToken)
     {
         var resource = $"sale-group:{yearId}:{group.ToUpperInvariant()}";
-        await db.Database.SqlQuery<int>(
+        var result = (await db.Database.SqlQuery<int>(
             $"""
             DECLARE @result int;
             EXEC @result = sp_getapplock @Resource = {resource}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 10000;
             SELECT @result AS [Value];
-            """).ToListAsync(cancellationToken);
+            """).ToListAsync(cancellationToken)).Single();
+        // 0 of 1: vergrendeld. Negatief (time-out, deadlock, fout): niet doorgaan, anders telt de groep niet betrouwbaar.
+        if (result < 0)
+        {
+            LogGroupLockFailed(logger, group, result);
+            throw new DomainException(ErrorCodes.GroupLimit,
+                "Er wordt net voor dezelfde groep besteld. Probeer het over een paar seconden opnieuw.", DomainErrorKind.Conflict);
+        }
     }
 
     private async Task<int> NextNumberAsync(int yearId, CancellationToken cancellationToken)
@@ -1114,6 +1285,12 @@ public sealed partial class TicketSales(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Bedrag van de Mollie-betaling klopt niet bij bestelling {Number}; niet bevestigd")]
     private static partial void LogAmountMismatch(ILogger logger, string number);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Betaling {PaymentId} van bestelling {Number} moet terugbetaald worden ({Reason})")]
+    private static partial void LogRefundDue(ILogger logger, string number, string paymentId, SaleRefundReason reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Groepsvergrendeling voor {Group} niet verkregen (sp_getapplock {Result})")]
+    private static partial void LogGroupLockFailed(ILogger logger, string group, int result);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "E-mail niet verstuurd: {Subject}")]
     private static partial void LogMailFailed(ILogger logger, string subject, Exception exception);

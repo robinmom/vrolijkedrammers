@@ -9,16 +9,16 @@ source "$HERE/lib.sh"
 USER_ID="${1:?Gebruik: set-tester.sh <user-object-id of e-mailadres> [dev]}"
 ACCESS="${2:-}"
 [[ -z "$ACCESS" || "$ACCESS" == dev ]] || { echo "Toegestaan: dev (Acc is opgeheven)" >&2; exit 1; }
-use_ciam_tenant
+use_ciam_tenant dev
 
-# Een UPN (…@vrolijkedrammersapp.onmicrosoft.com) of e-mailadres omzetten naar de object-id. Een eigen inlog met
+# Een UPN (…@<tenant>.onmicrosoft.com) of e-mailadres omzetten naar de object-id. Een eigen inlog met
 # e-mail + code staat als identity "federated" met issuer "mail"; een account met wachtwoord onder het eigen domein.
-if [[ "$USER_ID" == *@vrolijkedrammersapp.onmicrosoft.com ]]; then
+if [[ "$USER_ID" == *@"$CIAM_ISSUER_DOMAIN" ]]; then
   USER_ID="$(graph --method get --url "$GRAPH/users/$USER_ID" --url-parameters "\$select=id" --query id -o tsv)"
 elif [[ "$USER_ID" == *@* ]]; then
   EMAIL="$USER_ID"
   USER_ID=""
-  for ISSUER in mail vrolijkedrammersapp.onmicrosoft.com; do
+  for ISSUER in mail "$CIAM_ISSUER_DOMAIN"; do
     USER_ID="$(graph --method get --url "$GRAPH/users" \
       --url-parameters "\$filter=identities/any(i:i/issuerAssignedId eq '$EMAIL' and i/issuer eq '$ISSUER')" "\$select=id" \
       --query "value[0].id" -o tsv)"

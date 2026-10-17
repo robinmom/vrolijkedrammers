@@ -17,6 +17,8 @@
 | Azure-resource | `Microsoft.AzureActiveDirectory/ciamDirectories/vrolijkedrammersapp` in resource group `rg-dvd-identity` (West Europe) |
 | Aangemaakt | 2026-09-24, door robin.mom@vrolijkedrammers.nl |
 
+Sinds oktober 2026 is dit de tenant van **prod**. Dev krijgt een eigen tenant, zie [dev-tenant.md](dev-tenant.md).
+
 De gewone (workforce) tenant van de vereniging, "Vrolijke Drammers" (`vrolijkedrammers.nl`), blijft los hiervan bestaan voor e-mail en interne zaken.
 
 ## 2. Beheerders

@@ -16,7 +16,7 @@ if [[ "${1:-}" == "--entra" ]]; then
   HERE="$(cd "$(dirname "$0")" && pwd)"
   # shellcheck source=infra/entra/lib.sh
   source "$HERE/../entra/lib.sh"
-  use_ciam_tenant
+  use_ciam_tenant prod
   for NAME in "DVD API (acc)" "DVD Beheerportal (acc)" "DVD App (acc)" "DVD Provisioning (acc)"; do
     ID="$(find_by_name "$GRAPH/applications" "$NAME" id)"
     if [[ -n "$ID" ]]; then

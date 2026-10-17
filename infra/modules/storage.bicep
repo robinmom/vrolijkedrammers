@@ -57,7 +57,7 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2025-01-01'
     containerDeleteRetentionPolicy: { enabled: true, days: softDeleteDays }
     // Point-in-time restore heeft de change feed en versioning nodig.
     changeFeed: { enabled: restoreDays > 0 }
-    restorePolicy: restoreDays > 0 ? { enabled: true, days: restoreDays } : { enabled: false }
+    restorePolicy: restoreDays > 0 ? { enabled: true, days: max(restoreDays, 1) } : { enabled: false }
   }
 }
 

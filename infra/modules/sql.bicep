@@ -91,7 +91,7 @@ resource database 'Microsoft.Sql/servers/databases@2025-01-01' = {
       }
 }
 
-resource shortTerm 'Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies@2023-08-01' = {
+resource shortTerm 'Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies@2025-01-01' = {
   parent: database
   name: 'default'
   properties: {
@@ -100,7 +100,7 @@ resource shortTerm 'Microsoft.Sql/servers/databases/backupShortTermRetentionPoli
   }
 }
 
-resource longTerm 'Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies@2023-08-01' = if (ltrMonths > 0) {
+resource longTerm 'Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies@2025-01-01' = if (ltrMonths > 0) {
   parent: database
   name: 'default'
   properties: {

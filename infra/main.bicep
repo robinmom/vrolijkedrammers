@@ -22,6 +22,21 @@ param sqlFreeLimitExhaustionBehavior string = 'AutoPause'
 @allowed(['GP_S_Gen5', 'Basic', 'S0', 'S1', 'S2'])
 param sqlSkuName string = 'GP_S_Gen5'
 
+@description('Back-ups (modules/sql.bicep en storage.bicep): point-in-time restore van de database in dagen.')
+param sqlPitrDays int = 7
+
+@description('Langetermijnback-ups van de database: maanden bewaren (0 = uit).')
+param sqlLtrMonths int = 0
+
+@description('Back-ups van de database ook in een tweede regio.')
+param sqlGeoBackup bool = false
+
+@description('Soft delete van bestanden in dagen.')
+param storageSoftDeleteDays int = 14
+
+@description('Hele opslag terug naar een tijdstip in de laatste N dagen (0 = uit).')
+param storageRestoreDays int = 0
+
 param keyVaultPurgeProtection bool
 param logDailyQuotaGb int
 
@@ -142,6 +157,8 @@ module storage 'modules/storage.bicep' = {
     tags: tags
     workspaceId: monitoring.outputs.workspaceId
     malwareScanning: malwareScanning
+    softDeleteDays: storageSoftDeleteDays
+    restoreDays: storageRestoreDays
   }
 }
 
@@ -156,6 +173,9 @@ module sql'modules/sql.bicep' = {
     useFreeOffer: sqlUseFreeOffer
     freeLimitExhaustionBehavior: sqlFreeLimitExhaustionBehavior
     skuName: sqlSkuName
+    pitrDays: sqlPitrDays
+    ltrMonths: sqlLtrMonths
+    geoBackup: sqlGeoBackup
   }
 }
 

@@ -4,6 +4,17 @@ param environmentName string
 param tags object
 param workspaceId string
 
+// Herstel (docs/08 §8, 2026-10-17): soft delete en, in Prod, de hele opslag terug naar een tijdstip.
+@description('Verwijderde bestanden en containers zoveel dagen terug te halen.')
+@minValue(1)
+@maxValue(365)
+param softDeleteDays int = 14
+
+@description('Alle block blobs terug naar een tijdstip in de laatste N dagen (0 = uit); moet kleiner zijn dan softDeleteDays.')
+@minValue(0)
+@maxValue(364)
+param restoreDays int = 0
+
 @description('Blob-containers die de API gebruikt (docs/08 §3); content = afbeeldingen en bijlagen van events en nieuws.')
 param containerNames array = [
   'parade-documents'
@@ -48,8 +59,11 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2025-01-01'
   name: 'default'
   properties: {
     isVersioningEnabled: true
-    deleteRetentionPolicy: { enabled: true, days: 14 }
-    containerDeleteRetentionPolicy: { enabled: true, days: 14 }
+    deleteRetentionPolicy: { enabled: true, days: softDeleteDays }
+    containerDeleteRetentionPolicy: { enabled: true, days: softDeleteDays }
+    // Point-in-time restore heeft de change feed en versioning nodig.
+    changeFeed: { enabled: restoreDays > 0 }
+    restorePolicy: restoreDays > 0 ? { enabled: true, days: max(restoreDays, 1) } : { enabled: false }
   }
 }
 

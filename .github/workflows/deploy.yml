@@ -98,6 +98,8 @@ jobs:
       DVD_EMAIL_MAILBOX_SENDERS: ${{ vars.DVD_EMAIL_MAILBOX_SENDERS }}
       DVD_PASSWORD_SIGN_IN: ${{ vars.DVD_PASSWORD_SIGN_IN }}
       DVD_MALWARE_SCANNING: ${{ vars.DVD_MALWARE_SCANNING }}
+      DVD_EXTERNAL_ID_TENANT_ID: ${{ vars.DVD_EXTERNAL_ID_TENANT_ID }}
+      DVD_EXTERNAL_ID_TENANT_NAME: ${{ vars.DVD_EXTERNAL_ID_TENANT_NAME }}
     steps:
       - uses: actions/checkout@v7
       - uses: azure/login@v3

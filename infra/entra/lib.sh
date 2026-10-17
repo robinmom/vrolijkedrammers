@@ -1,7 +1,15 @@
 # Gedeelde helpers voor Microsoft Graph in de External ID-tenant (B-02).
 # De constanten worden gebruikt door de scripts die dit bestand sourcen.
 # shellcheck shell=bash disable=SC2034
-CIAM_TENANT_ID="260db5a1-e5b6-4388-9f6c-d9b02cb5578b"
+# Prod (en de leden) staan in de oorspronkelijke tenant. Dev krijgt een eigen tenant (beveiligingsonderzoek H1,
+# 2026-10-17), zodat een gelekt Dev-certificaat nooit bij echte accounts kan. Zolang die er nog niet is
+# (DVD_DEV_CIAM_TENANT_ID leeg), wijst dev nog naar de gedeelde tenant. use_ciam_tenant zet de variabelen hieronder.
+PROD_CIAM_TENANT_ID="260db5a1-e5b6-4388-9f6c-d9b02cb5578b"
+PROD_CIAM_NAME="vrolijkedrammersapp"
+DEV_CIAM_TENANT_ID="${DVD_DEV_CIAM_TENANT_ID:-}"
+DEV_CIAM_NAME="${DVD_DEV_CIAM_NAME:-vrolijkedrammersdev}"
+CIAM_TENANT_ID="$PROD_CIAM_TENANT_ID"
+CIAM_ISSUER_DOMAIN="$PROD_CIAM_NAME.onmicrosoft.com"
 GRAPH="https://graph.microsoft.com/v1.0"
 GRAPH_APP_ID="00000003-0000-0000-c000-000000000000"
 DEFAULT_ACCESS_ROLE="00000000-0000-0000-0000-000000000000"
@@ -16,7 +24,14 @@ find_by_name() { # <collectie-url> <displayName> <veld>
     --query "value[?displayName=='$2'].$3 | [0]" -o tsv
 }
 
-use_ciam_tenant() {
+use_ciam_tenant() { # [dev|prod] (standaard prod)
+  if [[ "${1:-prod}" == dev && -n "$DEV_CIAM_TENANT_ID" ]]; then
+    CIAM_TENANT_ID="$DEV_CIAM_TENANT_ID"
+    CIAM_ISSUER_DOMAIN="$DEV_CIAM_NAME.onmicrosoft.com"
+  elif [[ "${1:-prod}" == dev ]]; then
+    echo "Let op: DVD_DEV_CIAM_TENANT_ID is leeg, dev gebruikt nog de gedeelde tenant." >&2
+  fi
+  echo "Tenant: $CIAM_ISSUER_DOMAIN ($CIAM_TENANT_ID)" >&2
   if ! az account set --subscription "$CIAM_TENANT_ID" 2>/dev/null; then
     echo "Log eerst in op de External ID-tenant: az login --tenant $CIAM_TENANT_ID --allow-no-subscriptions" >&2
     exit 1

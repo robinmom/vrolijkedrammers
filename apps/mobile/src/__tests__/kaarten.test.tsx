@@ -159,6 +159,20 @@ describe('Kaarten (fase 19b)', () => {
     expect(await screen.findByText('We wachten op de betaling. Dat duurt meestal een paar seconden.')).toBeTruthy();
   });
 
+  it('een bestelling via een link komt pas na bevestiging onder Mijn kaarten', async () => {
+    setSessionForTest('signedOut', null);
+    const linked = { ...order(), id: '22222222-0000-0000-0000-000000000099', number: '2027-0199' };
+    mockApi({ ...api, [`/api/v1/sales/orders/${linked.id}`]: linked });
+    await renderApp(routes, `/kaarten/bestelling?id=${linked.id}&t=link-token`);
+    expect(await screen.findByText('Deze bestelling toevoegen?')).toBeTruthy();
+    expect(screen.queryByTestId('qr-code')).toBeNull();
+    expect(await loadGuestOrders()).not.toContainEqual({ id: linked.id, token: 'link-token' });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Toevoegen aan Mijn kaarten' }));
+    expect(await screen.findByTestId('qr-code')).toBeTruthy();
+    expect(await loadGuestOrders()).toContainEqual({ id: linked.id, token: 'link-token' });
+  });
+
   it('Mijn kaarten: één groeps-QR, gedeeld met Ruby, en delen met een groepslid', async () => {
     setSessionForTest('signedIn');
     const ticketId = order().tickets[0]!.id;

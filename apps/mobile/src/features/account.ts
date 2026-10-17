@@ -1,5 +1,7 @@
 import { api } from '../api/client';
+import { countUnsentLocalData } from '../auth/localData';
 import { clearLocalSession, getInstallationId } from '../auth/session';
+import { flushQueue } from './offlineScan';
 
 export const statusLabels: Record<string, string> = {
   Active: 'Actief lid',
@@ -32,4 +34,13 @@ export async function signOut(): Promise<void> {
     clearTimeout(timer);
   }
   await clearLocalSession();
+}
+
+/**
+ * Voor het uitloggen: hoeveel offline scans en jurypunten de server nog niet heeft (uitloggen wist ze). Scans worden
+ * eerst nog verstuurd als dat lukt; jurypunten verstuurt het jureerscherm zelf zodra er netwerk is.
+ */
+export async function unsentBeforeSignOut(): Promise<number> {
+  await flushQueue().catch(() => undefined);
+  return countUnsentLocalData();
 }

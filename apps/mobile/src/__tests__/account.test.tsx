@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
@@ -14,7 +15,7 @@ import LidWordenScreen from '../app/meer/lid-worden';
 import { shouldPersistQuery } from '../api/QueryProvider';
 import { api as client } from '../api/client';
 import { getStatus, NoAccountError, restoreSession, setSessionForTest, signIn } from '../auth/session';
-import { signOut } from '../features/account';
+import { signOut, unsentBeforeSignOut } from '../features/account';
 import { api } from '../test/api-fixture';
 import { mockApi, renderApp } from '../test/render';
 
@@ -391,5 +392,42 @@ describe('Uitloggen (munten zitten vast aan dit toestel)', () => {
     await client.GET('/api/v1/me');
     expect(getStatus()).toBe('signedOut');
     expect(store.has('dvd.installationId')).toBe(false);
+  });
+
+  it('uitloggen wist alle gegevens van de gebruiker op dit toestel, behalve de themakeuze', async () => {
+    setSessionForTest('signedIn');
+    await AsyncStorage.clear();
+    await AsyncStorage.multiSet([
+      ['drammers-query-cache', '{"clientState":{}}'],
+      ['dvd.offline-scans.v1', '[]'],
+      ['jury:scores:user-1:parade-1', '[]'],
+      ['jury:scores:parade-oud', '[]'],
+      ['festival-jury:user-1:festival-1', '{"scores":[],"comments":[]}'],
+      ['drammers-theme', 'dark'],
+    ]);
+    store.set('dvd.ticket.v1', '{}');
+    store.set('dvd.ticket.children.v1', '["kind-1"]');
+    store.set('dvd.ticket.v1.kind-1', '{}');
+    store.set('dvd.ticketkey.v1', '{}');
+    store.set('dvd.pendingSignIn', '{}');
+    store.set('dvd.refreshToken', 'refresh-1');
+    mockApi({ '/api/v1/me/devices/current/sign-out': { status: 204 } });
+
+    await signOut();
+
+    expect(await AsyncStorage.getAllKeys()).toEqual(['drammers-theme']);
+    for (const key of ['dvd.ticket.v1', 'dvd.ticket.children.v1', 'dvd.ticket.v1.kind-1', 'dvd.ticketkey.v1', 'dvd.pendingSignIn', 'dvd.refreshToken']) {
+      expect(store.has(key)).toBe(false);
+    }
+  });
+
+  it('telt onverstuurde scans en jurypunten, zodat het scherm eerst kan waarschuwen', async () => {
+    setSessionForTest('signedIn');
+    await AsyncStorage.clear();
+    await AsyncStorage.multiSet([
+      ['jury:scores:user-1:parade-1', JSON.stringify([{ synced: true }, { synced: false }])],
+      ['festival-jury:user-1:festival-1', JSON.stringify({ scores: [{ synced: false }], comments: [{ synced: false }] })],
+    ]);
+    expect(await unsentBeforeSignOut()).toBe(3);
   });
 });

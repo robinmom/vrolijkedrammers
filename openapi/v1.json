@@ -26619,7 +26619,7 @@
         "tags": [
           "Sales"
         ],
-        "summary": "Wat er nu te koop is, met de plaatsen die nog vrij zijn. Voor een ingelogd lid ook de groepskaarten.",
+        "summary": "Wat er nu te koop is, met de plaatsen die nog vrij zijn. Voor een ingelogd lid ook de groepskaarten; voor de\nwebpagina de openbare Turnstile-sleutel als die aan staat.",
         "responses": {
           "200": {
             "description": "OK",
@@ -34302,7 +34302,8 @@
           "status",
           "mollieStatus",
           "createdAt",
-          "paidAt"
+          "paidAt",
+          "duplicatePaid"
         ],
         "type": "object",
         "properties": {
@@ -34333,8 +34334,13 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "duplicatePaid": {
+            "type": "integer",
+            "format": "int32"
           }
-        }
+        },
+        "description": "int FestivalPaymentView.DuplicatePaid: zo vaak is dit bedrag extra betaald (terugbetalen)."
       },
       "FestivalProgramItemKind": {
         "enum": [
@@ -40754,6 +40760,12 @@
           },
           "channel": {
             "$ref": "#/components/schemas/SaleChannel"
+          },
+          "turnstileToken": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -44371,7 +44383,8 @@
         "required": [
           "products",
           "isMember",
-          "group"
+          "group",
+          "turnstileSiteKey"
         ],
         "type": "object",
         "properties": {
@@ -44392,6 +44405,12 @@
               {
                 "$ref": "#/components/schemas/GroupAllowance"
               }
+            ]
+          },
+          "turnstileSiteKey": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -44424,7 +44443,9 @@
           "createdAt",
           "holdUntil",
           "paidAt",
-          "collected"
+          "collected",
+          "refundDueCents",
+          "refundReason"
         ],
         "type": "object",
         "properties": {
@@ -44510,8 +44531,23 @@
           },
           "collected": {
             "type": "boolean"
+          },
+          "refundDueCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refundReason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SaleRefundReason"
+              }
+            ]
           }
-        }
+        },
+        "description": "int SaleOrderRow.RefundDueCents: online betaald geld dat de penningmeester moet terugbetalen (dubbel betaald, of betaald\n        zonder plaats), met de reden van de eerste zo'n betaling."
       },
       "SaleOrderStatus": {
         "enum": [
@@ -44706,6 +44742,13 @@
             "type": "boolean"
           }
         }
+      },
+      "SaleRefundReason": {
+        "enum": [
+          "DuplicatePayment",
+          "NoPlace",
+          null
+        ]
       },
       "SalesSummary": {
         "required": [

@@ -209,6 +209,19 @@ function orderBadge(o: SaleOrderRow, kind: SaleProductKind) {
   return <span className={className}>{statusLabels[o.status]}</span>;
 }
 
+/** Online betaald geld dat terug moet (dubbel betaald, of betaald toen er geen plaats meer was): voor de penningmeester. */
+function refundBadge(o: SaleOrderRow) {
+  if (!o.refundDueCents) return null;
+  const why = o.refundReason === 'DuplicatePayment' ? 'dubbel betaald' : 'betaald, geen plaats';
+  return (
+    <div>
+      <span className="badge error" title="Terugbetalen via Mollie; zie het auditlog voor de betaling.">
+        Terugbetalen {formatEuro(o.refundDueCents)} · {why}
+      </span>
+    </div>
+  );
+}
+
 /** Bestellingen van deze soort met contant ontvangen, betaallink opnieuw en annuleren (nooit terugbetalen). */
 export function OrdersCard({ kind, onMessage }: { kind: SaleProductKind; onMessage: (message: string) => void }) {
   const api = useApi();
@@ -297,6 +310,7 @@ export function OrdersCard({ kind, onMessage }: { kind: SaleProductKind; onMessa
       cell: (info) => (
         <>
           {orderBadge(info.row.original, kind)}
+          {refundBadge(info.row.original)}
           {info.row.original.holdUntil ? (
             <div className="muted small-text">tot {formatDateTime(info.row.original.holdUntil)}</div>
           ) : null}

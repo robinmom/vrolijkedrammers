@@ -95,5 +95,7 @@ public static class ErrorCodes
     public const string OrderInvalid = "ORDER_INVALID";
     public const string OrderNotFound = "ORDER_NOT_FOUND";
     public const string OrderNotPayable = "ORDER_NOT_PAYABLE";
+    public const string OrderAlreadyPaid = "ORDER_ALREADY_PAID";
+    public const string TooManyOpenOrders = "TOO_MANY_OPEN_ORDERS";
     public const string WaitlistNotFound = "WAITLIST_NOT_FOUND";
 }

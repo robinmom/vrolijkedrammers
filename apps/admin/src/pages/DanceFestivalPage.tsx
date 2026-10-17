@@ -287,7 +287,7 @@ function RegistrationsTab({ data }: { data: Schemas['FestivalAdminList'] }) {
                     </td>
                     <td>
                       <span
-                        className={`badge ${r.paymentStatus === 'Betaald' ? 'ok' : r.paymentStatus === 'Link verstuurd' ? 'warn' : 'neutral'}`}
+                        className={`badge ${r.paymentStatus === 'Betaald' ? 'ok' : r.paymentStatus === 'Link verstuurd' ? 'warn' : r.paymentStatus === 'Dubbel betaald' ? 'error' : 'neutral'}`}
                       >
                         {r.paymentStatus}
                       </span>
@@ -554,6 +554,11 @@ function RegistrationDetail({ id, paymentsEnabled }: { id: string; paymentsEnabl
                   ? `Open${p.mollieStatus ? ` (${p.mollieStatus})` : ''}`
                   : 'Ingetrokken'}
             </span>
+            {p.duplicatePaid ? (
+              <span className="badge error">
+                {p.duplicatePaid}× extra betaald · terugbetalen {formatEuro(p.amountCents * p.duplicatePaid)}
+              </span>
+            ) : null}
             {p.status === 'Open' ? (
               <>
                 <button type="button" className="link-button" onClick={() => refresh.mutate(p.id)}>

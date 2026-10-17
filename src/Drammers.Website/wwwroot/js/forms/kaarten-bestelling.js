@@ -10,8 +10,16 @@
   const $ = (x) => document.getElementById(x);
   let tries = 0;
 
-  if (params.get('melding')) {
-    $('melding').textContent = params.get('melding');
+  // Alleen vaste meldingen (code in de link van de API); nooit vrije tekst uit de link tonen.
+  const notices = {
+    betaald: 'Deze bestelling is al betaald.',
+    verlopen: 'Deze betaallink is verlopen.',
+    mislukt: 'Betalen lukt nu niet. Probeer het over een paar minuten opnieuw.',
+    'niet-ingesteld': 'Online betalen is nog niet beschikbaar.',
+  };
+  const notice = Object.hasOwn(notices, params.get('melding') ?? '') ? notices[params.get('melding')] : null;
+  if (notice) {
+    $('melding').textContent = notice;
     $('melding').hidden = false;
   }
   if (params.get('app') === '1' && id && token) {

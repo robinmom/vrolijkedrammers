@@ -259,8 +259,9 @@ public enum DanceFestivalPaymentStatus
 }
 
 /// <summary>
-/// Betaalverzoek na goedkeuring: het bedrag vult de organisatie in. De link in de mail maakt bij elke klik een nieuwe
-/// Mollie-betaling; de status komt altijd van Mollie (webhook of "status vernieuwen").
+/// Betaalverzoek na goedkeuring: het bedrag vult de organisatie in. De link in de mail hergebruikt een Mollie-betaling
+/// die nog open staat en maakt anders een nieuwe (<see cref="DanceFestivalMolliePayment"/>); de status komt altijd van
+/// Mollie (webhook of "status vernieuwen").
 /// </summary>
 public sealed class DanceFestivalPayment
 {
@@ -283,4 +284,27 @@ public sealed class DanceFestivalPayment
     public Guid? CreatedBy { get; set; }
 
     public DateTime? PaidAt { get; set; }
+}
+
+/// <summary>
+/// Eén Mollie-betaling (<c>tr_…</c>) voor een betaalverzoek. Alle betalingen blijven bekend, zodat de webhook ook een
+/// oudere betaling herkent; wordt een verzoek twee keer betaald, dan staat <see cref="DuplicatePaid"/> aan voor de
+/// penningmeester (terugbetalen).
+/// </summary>
+public sealed class DanceFestivalMolliePayment
+{
+    public Guid Id { get; set; }
+
+    public Guid PaymentId { get; set; }
+
+    public required string MolliePaymentId { get; set; }
+
+    /// <summary>Laatst bekende status bij Mollie.</summary>
+    public string? MollieStatus { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? PaidAt { get; set; }
+
+    public bool DuplicatePaid { get; set; }
 }

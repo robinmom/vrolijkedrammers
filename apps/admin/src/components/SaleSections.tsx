@@ -82,16 +82,56 @@ export function SalesKpis({ kind }: { kind: SaleProductKind }) {
 }
 
 function productStatus(p: SaleProduct) {
-  if (!p.onSale) return <span className="badge">Niet te koop</span>;
+  // Munten kunnen te koop zijn terwijl het afhalen bij de kassa (tijdelijk) is stilgelegd door het bestuur.
+  const paused = p.kind === 'Tokens' && p.collectionPaused ? <span className="badge warn">Afhalen gepauzeerd</span> : null;
+  if (!p.onSale)
+    return (
+      <>
+        <span className="badge">Niet te koop</span>
+        {paused}
+      </>
+    );
   if (p.remaining === 0)
     return (
       <>
         <span className="badge error">Vol</span>
         {p.waiting > 0 ? <span className="badge warn">{p.waiting} wachtlijst</span> : null}
+        {paused}
       </>
     );
-  return <span className="badge ok">Open</span>;
+  return (
+    <>
+      <span className="badge ok">Open</span>
+      {paused}
+    </>
+  );
 }
+
+/** De noodstopacties bij een product: de verkoop stoppen/openstellen en (bij munten) het afhalen pauzeren/hervatten. */
+type NoodstopAction = 'stop' | 'open' | 'pause' | 'resume';
+
+const noodstopTexts: Record<NoodstopAction, { button: string; title: (name: string) => string; body: string }> = {
+  stop: {
+    button: 'Verkoop stoppen',
+    title: (name) => `Verkoop van ${name} stoppen`,
+    body: 'Leden en gasten kunnen dan niets meer kopen. Je kunt de verkoop later weer openstellen.',
+  },
+  open: {
+    button: 'Verkoop openstellen',
+    title: (name) => `Verkoop van ${name} openstellen`,
+    body: 'Kopen kan dan weer, binnen de ingestelde verkoopperiode.',
+  },
+  pause: {
+    button: 'Afhalen pauzeren',
+    title: (name) => `Afhalen van ${name} pauzeren`,
+    body: 'Leden kunnen dan tijdelijk geen munten afhalen bij de kassa. De verkoop blijft gewoon doorgaan.',
+  },
+  resume: {
+    button: 'Afhalen hervatten',
+    title: (name) => `Afhalen van ${name} hervatten`,
+    body: 'De kassa kan dan weer munten uitgeven.',
+  },
+};
 
 /** De producten van deze soort (bijv. de pronkzittingavonden) met instellen, toevoegen en de wachtlijst. */
 export function ProductsCard({
@@ -103,11 +143,48 @@ export function ProductsCard({
   title: string;
   onMessage: (message: string) => void;
 }) {
+  const api = useApi();
   const products = useSaleProducts();
   const [editing, setEditing] = useState<SaleProduct | 'new' | null>(null);
   const [waitlistFor, setWaitlistFor] = useState<SaleProduct | null>(null);
+  const [confirming, setConfirming] = useState<{ product: SaleProduct; action: NoodstopAction } | null>(null);
   const rows = (products.data ?? []).filter((p) => p.kind === kind);
   const unit = kind === 'Tokens' ? 'munt' : 'kaart';
+
+  const setOnSale = useApiMutation(
+    (v: { id: string; onSale: boolean }) =>
+      api.POST('/api/v1/admin/sales/products/{id}/on-sale', { params: { path: { id: v.id } }, body: { onSale: v.onSale } }),
+    SALES_KEYS,
+  );
+  const setCollectionPaused = useApiMutation(
+    (v: { id: string; paused: boolean }) =>
+      api.POST('/api/v1/admin/sales/products/{id}/collection-paused', { params: { path: { id: v.id } }, body: { paused: v.paused } }),
+    SALES_KEYS,
+  );
+  const startConfirm = (product: SaleProduct, action: NoodstopAction) => {
+    setOnSale.reset();
+    setCollectionPaused.reset();
+    setConfirming({ product, action });
+  };
+  const runConfirm = () => {
+    if (!confirming) return;
+    const { product: p, action } = confirming;
+    const done = (message: string) => () => {
+      onMessage(message);
+      setConfirming(null);
+    };
+    if (action === 'stop' || action === 'open') {
+      setOnSale.mutate(
+        { id: p.id, onSale: action === 'open' },
+        { onSuccess: done(action === 'open' ? `De verkoop van ${p.name} is weer open.` : `De verkoop van ${p.name} is gestopt.`) },
+      );
+    } else {
+      setCollectionPaused.mutate(
+        { id: p.id, paused: action === 'pause' },
+        { onSuccess: done(action === 'pause' ? 'Het afhalen van munten is gepauzeerd.' : 'Het afhalen van munten is hervat.') },
+      );
+    }
+  };
 
   const helper = columnHelper<SaleProduct>();
   const columns = [
@@ -145,18 +222,37 @@ export function ProductsCard({
     helper.display({
       id: 'acties',
       header: 'Acties',
-      cell: (info) => (
-        <div className="actions">
-          <button type="button" className="button secondary small" onClick={() => setEditing(info.row.original)}>
-            Instellen <span className="visually-hidden">{info.row.original.name}</span>
-          </button>
-          {kind !== 'Pronkzitting' && info.row.original.waiting > 0 ? (
-            <button type="button" className="button ghost small" onClick={() => setWaitlistFor(info.row.original)}>
-              Wachtlijst <span className="visually-hidden">{info.row.original.name}</span>
+      cell: (info) => {
+        const p = info.row.original;
+        return (
+          <div className="actions">
+            <button
+              type="button"
+              className={p.onSale ? 'button danger small' : 'button small'}
+              onClick={() => startConfirm(p, p.onSale ? 'stop' : 'open')}
+            >
+              {p.onSale ? 'Verkoop stoppen' : 'Verkoop openstellen'} <span className="visually-hidden">{p.name}</span>
             </button>
-          ) : null}
-        </div>
-      ),
+            {kind === 'Tokens' ? (
+              <button
+                type="button"
+                className={p.collectionPaused ? 'button small' : 'button danger small'}
+                onClick={() => startConfirm(p, p.collectionPaused ? 'resume' : 'pause')}
+              >
+                {p.collectionPaused ? 'Afhalen hervatten' : 'Afhalen pauzeren'} <span className="visually-hidden">{p.name}</span>
+              </button>
+            ) : null}
+            <button type="button" className="button secondary small" onClick={() => setEditing(p)}>
+              Instellen <span className="visually-hidden">{p.name}</span>
+            </button>
+            {kind !== 'Pronkzitting' && p.waiting > 0 ? (
+              <button type="button" className="button ghost small" onClick={() => setWaitlistFor(p)}>
+                Wachtlijst <span className="visually-hidden">{p.name}</span>
+              </button>
+            ) : null}
+          </div>
+        );
+      },
     }),
   ];
 
@@ -196,6 +292,31 @@ export function ProductsCard({
             Sluiten
           </button>
         </div>
+      </Dialog>
+      <Dialog
+        open={confirming !== null}
+        title={confirming ? noodstopTexts[confirming.action].title(confirming.product.name) : ''}
+        onClose={() => setConfirming(null)}
+      >
+        {confirming ? (
+          <>
+            <p>{noodstopTexts[confirming.action].body}</p>
+            <ProblemAlert error={setOnSale.error ?? setCollectionPaused.error} />
+            <div className="actions">
+              <button type="button" className="button secondary" onClick={() => setConfirming(null)}>
+                Terug
+              </button>
+              <button
+                type="button"
+                className={confirming.action === 'stop' || confirming.action === 'pause' ? 'button danger' : 'button'}
+                disabled={setOnSale.isPending || setCollectionPaused.isPending}
+                onClick={runConfirm}
+              >
+                {noodstopTexts[confirming.action].button}
+              </button>
+            </div>
+          </>
+        ) : null}
       </Dialog>
     </section>
   );

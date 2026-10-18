@@ -122,6 +122,51 @@ public sealed class SaleAdministration(DrammersDbContext db, TicketSales sales, 
         return product;
     }
 
+    /// <summary>
+    /// Eén-klik noodstop: alleen de vlag <see cref="SaleProduct.OnSale"/> omzetten zonder de hele productdialoog, atomair
+    /// (de rowversion botst als iemand tegelijk opslaat). Niets te doen als de vlag al zo staat.
+    /// </summary>
+    public async Task SetOnSaleAsync(Guid id, bool onSale, CancellationToken cancellationToken)
+    {
+        var product = await db.SaleProducts.SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.ProductNotFound, "Product niet gevonden.", DomainErrorKind.NotFound);
+        if (product.OnSale == onSale)
+        {
+            return;
+        }
+
+        product.OnSale = onSale;
+        product.UpdatedAt = Now;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry(onSale ? "sale-product.sale-resumed" : "sale-product.sale-stopped",
+            "SaleProduct", product.Id.ToString(), null, JsonSerializer.Serialize(new { product.Name, onSale })), cancellationToken);
+    }
+
+    /// <summary>
+    /// Noodstop voor de kassa: het afhalen van munten pauzeren of hervatten (los van de verkoop), atomair. Alleen voor
+    /// het muntenproduct; het afhalen zelf wordt in <c>TokenCollection</c> geweigerd.
+    /// </summary>
+    public async Task SetCollectionPausedAsync(Guid id, bool paused, CancellationToken cancellationToken)
+    {
+        var product = await db.SaleProducts.SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.ProductNotFound, "Product niet gevonden.", DomainErrorKind.NotFound);
+        if (product.Kind != SaleProductKind.Tokens)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Afhalen pauzeren kan alleen bij munten.");
+        }
+
+        if (product.CollectionPaused == paused)
+        {
+            return;
+        }
+
+        product.CollectionPaused = paused;
+        product.UpdatedAt = Now;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry(paused ? "sale-product.collection-paused" : "sale-product.collection-resumed",
+            "SaleProduct", product.Id.ToString(), null, JsonSerializer.Serialize(new { product.Name, paused })), cancellationToken);
+    }
+
     private async Task ApplyAsync(SaleProduct product, SaleProductInput input, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(input.Name) || input.Name.Length > 120)

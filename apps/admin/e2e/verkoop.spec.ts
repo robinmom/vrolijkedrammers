@@ -152,6 +152,38 @@ test('munten: het bestuur verplaatst ze één keer naar een ander toestel van he
   await expect(page.getByRole('dialog').getByRole('button', { name: 'Verplaatsen' })).toHaveCount(0);
 });
 
+test('noodstop: verkoop stoppen en het afhalen van munten pauzeren, met bevestiging', async ({ page }) => {
+  const api = new MockApi(['sale.manage']);
+  await open(page, api, 'verkoop/munten');
+  const munten = page.getByRole('region', { name: 'Munten' });
+  await expect(munten.getByRole('button', { name: 'Verkoop stoppen Consumptiemunten' })).toBeVisible();
+  await expect(munten.getByRole('button', { name: 'Afhalen pauzeren Consumptiemunten' })).toBeVisible();
+
+  // Verkoop stoppen vraagt eerst om een bevestiging.
+  await munten.getByRole('button', { name: 'Verkoop stoppen Consumptiemunten' }).click();
+  const stoppen = page.getByRole('dialog', { name: 'Verkoop van Consumptiemunten stoppen' });
+  await expect(stoppen.getByText('Leden en gasten kunnen dan niets meer kopen.')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+  await stoppen.getByRole('button', { name: 'Verkoop stoppen', exact: true }).click();
+  await expect(page.getByText('De verkoop van Consumptiemunten is gestopt.')).toBeVisible();
+  expect(api.salesCalls.at(-1)).toMatchObject({ path: '/admin/sales/products/sp-mu/on-sale', body: { onSale: false } });
+  // De status verandert en de knop stelt de verkoop nu weer open.
+  await expect(munten.getByRole('button', { name: 'Verkoop openstellen Consumptiemunten' })).toBeVisible();
+  await expect(munten.getByText('Niet te koop')).toBeVisible();
+
+  // Afhalen pauzeren, los van de verkoop.
+  await munten.getByRole('button', { name: 'Afhalen pauzeren Consumptiemunten' }).click();
+  const pauzeren = page.getByRole('dialog', { name: 'Afhalen van Consumptiemunten pauzeren' });
+  await pauzeren.getByRole('button', { name: 'Afhalen pauzeren', exact: true }).click();
+  await expect(page.getByText('Het afhalen van munten is gepauzeerd.')).toBeVisible();
+  expect(api.salesCalls.at(-1)).toMatchObject({
+    path: '/admin/sales/products/sp-mu/collection-paused',
+    body: { paused: true },
+  });
+  await expect(munten.getByRole('button', { name: 'Afhalen hervatten Consumptiemunten' })).toBeVisible();
+  await expect(munten.getByText('Afhalen gepauzeerd')).toBeVisible();
+});
+
 test('leden: bij een lid staat de groep uit e-Boekhouden', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'leden/m-1');

@@ -89,9 +89,10 @@ resource database 'Microsoft.Sql/servers/databases@2025-01-01' = {
         zoneRedundant: false
       }
     : {
-        // Basic kan hooguit 2 GB; Standard houdt de huidige 32 GB. Het gratis aanbod geldt alleen voor serverless.
+        // Basic kan hooguit 2 GB. Standard kent alleen vaste groottes (o.a. 30, 40, 250 GB; 32 GB is ongeldig:
+        // InvalidMaxSizeTierCombination); 250 GB zit bij S0–S2 in de prijs. Het gratis aanbod geldt alleen voor serverless.
         useFreeLimit: false
-        maxSizeBytes: skuName == 'Basic' ? 2147483648 : 34359738368
+        maxSizeBytes: skuName == 'Basic' ? 2147483648 : 268435456000
         requestedBackupStorageRedundancy: backupRedundancy
         zoneRedundant: false
       }

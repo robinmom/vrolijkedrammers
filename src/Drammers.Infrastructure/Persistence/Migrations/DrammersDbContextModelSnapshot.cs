@@ -9029,6 +9029,12 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("int")
                         .HasColumnName("carnival_year_id");
 
+                    b.Property<bool>("CollectionPaused")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("collection_paused");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("created_at");

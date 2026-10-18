@@ -22,6 +22,7 @@ internal sealed class SaleProductConfiguration : IEntityTypeConfiguration<SalePr
         builder.Property(p => p.Name).HasMaxLength(120);
         builder.Property(p => p.Description).HasMaxLength(1000);
         builder.Property(p => p.RowVersion).IsRowVersion();
+        builder.Property(p => p.CollectionPaused).HasDefaultValue(false);
         builder.Ignore(p => p.GroupOrders);
         builder.Ignore(p => p.MembersOnly);
         builder.Ignore(p => p.GuestsOnly);

@@ -12660,6 +12660,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/sales/products/{id}/on-sale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eén-klik noodstop: alleen de verkoop van een product stoppen of weer openstellen (zonder de productdialoog). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetOnSaleRequest"];
+                    "text/json": components["schemas"]["SetOnSaleRequest"];
+                    "application/*+json": components["schemas"]["SetOnSaleRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sales/products/{id}/collection-paused": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Noodstop voor de kassa: het afhalen van munten pauzeren of hervatten (los van de verkoop). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetCollectionPausedRequest"];
+                    "text/json": components["schemas"]["SetCollectionPausedRequest"];
+                    "application/*+json": components["schemas"]["SetCollectionPausedRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sales/orders": {
         parameters: {
             query?: never;
@@ -23361,6 +23489,7 @@ export interface components {
             /** Format: date-time */
             saleClosesAt: null | string;
             onSale: boolean;
+            collectionPaused: boolean;
             /** Format: int32 */
             sortOrder: number;
             /** Format: int32 */
@@ -27756,6 +27885,12 @@ export interface components {
         SetArrivalRequest: {
             /** Format: time */
             arrivalTime: null | string;
+        };
+        SetCollectionPausedRequest: {
+            paused: boolean;
+        };
+        SetOnSaleRequest: {
+            onSale: boolean;
         };
         SetPreferencesRequest: {
             preferences: components["schemas"]["PreferenceChange"][];

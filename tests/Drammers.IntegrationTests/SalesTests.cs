@@ -722,6 +722,26 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         await JsonAsync(await guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1, email: "piet@example.com", channel: "App")), HttpStatusCode.Created);
     }
 
+    [Fact]
+    public async Task Verkoop_stoppen_blokkeert_kopen_en_openstellen_laat_het_weer_toe()
+    {
+        var product = await ProductAsync("DayTicket", "Dagkaart zondag", 750, capacity: 100, date: "2027-02-07");
+
+        // Noodstop: met één klik de verkoop stoppen (alleen de vlag, zonder de hele productdialoog).
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/products/{product}/on-sale", new { onSale = false }), HttpStatusCode.NoContent);
+        Assert.False(await WithDbAsync(db => db.SaleProducts.Where(p => p.Id == product).Select(p => p.OnSale).SingleAsync()));
+        var blocked = await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1));
+        Assert.Equal(HttpStatusCode.Conflict, blocked.StatusCode);
+        Assert.Contains("niet te koop", await blocked.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // Weer openstellen: kopen kan weer.
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/products/{product}/on-sale", new { onSale = true }), HttpStatusCode.NoContent);
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/sales/orders", Order(product, paid: 1)), HttpStatusCode.Created);
+
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "sale-product.sale-stopped")));
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "sale-product.sale-resumed")));
+    }
+
     private sealed class FakeTurnstile : Drammers.Infrastructure.Contact.ITurnstileVerifier
     {
         public const string Valid = "turnstile-ok";

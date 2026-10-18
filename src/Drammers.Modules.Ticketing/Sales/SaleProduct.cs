@@ -53,6 +53,12 @@ public sealed class SaleProduct
     /// <summary>Aan = te koop (binnen de verkoopperiode).</summary>
     public bool OnSale { get; set; }
 
+    /// <summary>
+    /// Noodstop voor de kassa (munten): aan = het afhalen van munten is tijdelijk stilgelegd door het bestuur, los van
+    /// de verkoop. Alleen van toepassing op <see cref="SaleProductKind.Tokens"/>.
+    /// </summary>
+    public bool CollectionPaused { get; set; }
+
     public int SortOrder { get; set; }
 
     public byte[] RowVersion { get; set; } = [];

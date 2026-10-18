@@ -53,6 +53,28 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
         return NoContent();
     }
 
+    /// <summary>Eén-klik noodstop: alleen de verkoop van een product stoppen of weer openstellen (zonder de productdialoog).</summary>
+    [HttpPost("products/{id:guid}/on-sale")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetOnSale(Guid id, SetOnSaleRequest request, CancellationToken cancellationToken)
+    {
+        await administration.SetOnSaleAsync(id, request.OnSale, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Noodstop voor de kassa: het afhalen van munten pauzeren of hervatten (los van de verkoop).</summary>
+    [HttpPost("products/{id:guid}/collection-paused")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetCollectionPaused(Guid id, SetCollectionPausedRequest request, CancellationToken cancellationToken)
+    {
+        await administration.SetCollectionPausedAsync(id, request.Paused, cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("orders")]
     [ProducesResponseType<PagedResult<SaleOrderRow>>(StatusCodes.Status200OK)]
     public async Task<PagedResult<SaleOrderRow>> Orders(
@@ -272,13 +294,17 @@ public sealed record SaleProductRequest(
 
 public sealed record AdminSaleProductResponse(
     Guid Id, SaleProductKind Kind, string Name, string? Description, Guid? EventId, DateOnly? Date, int PriceCents, int? Capacity, int MaxPerOrder,
-    DateTime? SaleOpensAt, DateTime? SaleClosesAt, bool OnSale, int SortOrder, int Sold, int Held, int? Remaining, int RevenueCents, int Waiting)
+    DateTime? SaleOpensAt, DateTime? SaleClosesAt, bool OnSale, bool CollectionPaused, int SortOrder, int Sold, int Held, int? Remaining, int RevenueCents, int Waiting)
 {
     public static AdminSaleProductResponse From(SaleProductRow r) => new(
         r.Product.Id, r.Product.Kind, r.Product.Name, r.Product.Description, r.Product.EventId, r.Product.Date, r.Product.PriceCents, r.Product.Capacity,
-        r.Product.MaxPerOrder, r.Product.SaleOpensAt, r.Product.SaleClosesAt, r.Product.OnSale, r.Product.SortOrder, r.Stock.Sold, r.Stock.Held,
-        r.Stock.Remaining, r.RevenueCents, r.Waiting);
+        r.Product.MaxPerOrder, r.Product.SaleOpensAt, r.Product.SaleClosesAt, r.Product.OnSale, r.Product.CollectionPaused, r.Product.SortOrder, r.Stock.Sold,
+        r.Stock.Held, r.Stock.Remaining, r.RevenueCents, r.Waiting);
 }
+
+public sealed record SetOnSaleRequest(bool OnSale);
+
+public sealed record SetCollectionPausedRequest(bool Paused);
 
 public sealed record PortalOrderRequest(
     Guid ProductId,

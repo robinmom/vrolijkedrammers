@@ -450,6 +450,7 @@ export class MockApi {
       saleOpensAt: null,
       saleClosesAt: null,
       onSale: true,
+      collectionPaused: false,
       sortOrder: 5,
       sold: 1120,
       held: 0,
@@ -2543,6 +2544,16 @@ export class MockApi {
       if (path === '/admin/sales/products' && method === 'GET') return json(this.saleProducts);
       if (path === '/admin/sales/products' && method === 'POST') return json('sp-new', 201);
       if ((m = path.match(/^\/admin\/sales\/products\/([^/]+)$/)) && method === 'PUT') return noContent();
+      if ((m = path.match(/^\/admin\/sales\/products\/([^/]+)\/on-sale$/)) && method === 'POST') {
+        const product = this.saleProducts.find((p) => p.id === m![1]);
+        if (product) product.onSale = (body as { onSale: boolean }).onSale;
+        return noContent();
+      }
+      if ((m = path.match(/^\/admin\/sales\/products\/([^/]+)\/collection-paused$/)) && method === 'POST') {
+        const product = this.saleProducts.find((p) => p.id === m![1]);
+        if (product) product.collectionPaused = (body as { paused: boolean }).paused;
+        return noContent();
+      }
       if ((m = path.match(/^\/admin\/sales\/products\/([^/]+)\/waitlist$/))) {
         return json(
           m[1] === 'sp-vr'

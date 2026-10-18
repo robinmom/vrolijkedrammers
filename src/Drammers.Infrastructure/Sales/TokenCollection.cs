@@ -61,7 +61,7 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
                 from t in db.OrderTickets.AsNoTracking()
                 where t.PublicRef == payload.Ref
                 join o in db.SaleOrders.AsNoTracking() on t.OrderId equals o.Id
-                select new { Ticket = t, o.Id, o.Number, o.PaymentMethod, o.Status }).SingleOrDefaultAsync(cancellationToken)
+                select new { Ticket = t, o.Id, o.Number, o.PaymentMethod, o.Status, o.ProductId }).SingleOrDefaultAsync(cancellationToken)
             : null;
         if (order is not null)
         {
@@ -70,6 +70,10 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
             scan.MemberId = order.Ticket.HolderMemberId;
             scan.Quantity = order.Ticket.Quantity;
         }
+
+        // Noodstop: het bestuur kan het afhalen van munten tijdelijk pauzeren (los van de verkoop).
+        var collectionPaused = order is not null
+            && await db.SaleProducts.AsNoTracking().AnyAsync(p => p.Id == order.ProductId && p.CollectionPaused, cancellationToken);
 
         KassaResult result;
         if (!check.IsValid)
@@ -87,6 +91,13 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
                     ? $"Bestelling {order.Number} is geannuleerd of niet betaald."
                     : check.Message;
             result = new KassaResult(null, scan.Outcome, "Niet uitgeven", message, check.Ticket?.HolderName, scan.Quantity, order?.Number, null);
+        }
+        else if (collectionPaused)
+        {
+            scan.Outcome = TokenScanOutcome.Refused;
+            scan.Reason = "CollectionPaused";
+            result = new KassaResult(null, scan.Outcome, "Niet uitgeven", "Afhalen van munten is tijdelijk gepauzeerd door het bestuur.",
+                check.Ticket!.HolderName, scan.Quantity, order!.Number, null);
         }
         else
         {
@@ -113,6 +124,17 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
         if (Now - scan.ScannedAt > IssueWithin)
         {
             throw new DomainException(ErrorCodes.InvalidStatusTransition, "Deze scan is te oud. Scan de munten-QR opnieuw.", DomainErrorKind.Conflict);
+        }
+
+        // Noodstop: opnieuw controleren, zodat een al klaargezette uitgifte die tijdens de pauze wordt bevestigd ook weigert.
+        var collectionPaused = await (
+            from o in db.SaleOrders.AsNoTracking()
+            join p in db.SaleProducts.AsNoTracking() on o.ProductId equals p.Id
+            where o.Id == scan.OrderId
+            select p.CollectionPaused).FirstOrDefaultAsync(cancellationToken);
+        if (collectionPaused)
+        {
+            throw new DomainException(ErrorCodes.InvalidStatusTransition, "Afhalen van munten is tijdelijk gepauzeerd door het bestuur.", DomainErrorKind.Conflict);
         }
 
         var claimed = await db.OrderTickets.Where(t => t.Id == ticketId && t.Status == OrderTicketStatus.Active)

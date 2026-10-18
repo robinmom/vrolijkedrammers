@@ -132,6 +132,77 @@ public sealed class ScannerKassaTests(SqlServerFixture sql) : IAsyncLifetime
 
     private Task<List<string?>> ReasonsAsync() => WithDbAsync(db => db.AccessScans.Select(s => s.Reason).ToListAsync());
 
+    /// <summary>Een lid koopt en betaalt munten; geeft het toestel, de bestelling en het muntenproduct terug (klok op de avond).</summary>
+    private async Task<(HttpClient Phone, Guid TicketId, Guid Product)> PaidTokensAsync(int quantity)
+    {
+        var munten = await ProductAsync("Tokens", "Consumptiemunten", null, maxPerOrder: 100);
+        var (userId, oid) = await _api.CreateUserAsync("mendy@example.com", DefaultRoles.Lid);
+        await WithDbAsync(async db =>
+        {
+            var memberId = IdGenerator.NewId();
+            db.Members.Add(new Member { Id = memberId, MemberNumber = "M1", FullName = "Mendy Mom", Email = "mendy@example.com", ParadeGroupName = "Kruumels", MembershipStatus = MembershipStatus.Active });
+            await db.SaveChangesAsync();
+            return await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(x => x.SetProperty(u => u.MemberId, memberId));
+        });
+        var phone = _api.ClientFor(oid);
+        phone.DefaultRequestHeaders.Add("X-Device-Id", "installatie-mendy-0001");
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/devices", new { installationId = "installatie-mendy-0001", platform = "Ios", model = "iPhone 15", appVersion = "1.0.0" }));
+        await JsonAsync(await phone.GetAsync("/api/v1/me/ticket"));
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/me/ticket/bind-device", new { challenge = (string?)null, signature = (string?)null }), HttpStatusCode.NoContent);
+        await JsonAsync(await phone.PostAsJsonAsync("/api/v1/sales/orders", new
+        {
+            productId = munten,
+            memberQuantity = 0,
+            paidQuantity = quantity,
+            buyerName = (string?)null,
+            buyerEmail = (string?)null,
+            buyerPhone = (string?)null,
+            remark = (string?)null,
+            channel = "App",
+        }), HttpStatusCode.Created);
+        var paymentId = _mollie.Payments.Keys.Single();
+        _mollie.SetStatus(paymentId, "paid");
+        await _guest.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new("id", paymentId)]));
+        var ticketId = (await JsonAsync(await phone.GetAsync("/api/v1/me/orders")))[0].GetProperty("tickets")[0].GetProperty("id").GetGuid();
+        _api.Clock.Advance(Evening - _api.Clock.UtcNow);
+        return (phone, ticketId, munten);
+    }
+
+    [Fact]
+    public async Task Afhalen_pauzeren_weigert_scan_en_uitgifte_en_hervatten_laat_het_weer_toe()
+    {
+        var (phone, ticketId, munten) = await PaidTokensAsync(20);
+        Task<string> CodeAsync() => CodeFor(phone, ticketId);
+        var kassa = await OperatorAsync("kassa@example.com", DefaultRoles.Kassa, "installatie-kassa-0001");
+
+        // Een al als "Ready" gescande uitgifte die tijdens de pauze wordt bevestigd, wordt alsnog geweigerd.
+        var ready = await JsonAsync(await kassa.PostAsJsonAsync("/api/v1/kassa/scan", new { code = await CodeAsync() }));
+        Assert.Equal("Ready", ready.GetProperty("outcome").GetString());
+        var scanId = ready.GetProperty("scanId").GetGuid();
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/products/{munten}/collection-paused", new { paused = true }), HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.Conflict, (await kassa.PostAsync($"/api/v1/kassa/scans/{scanId}/issue", null)).StatusCode);
+
+        // Opnieuw scannen tijdens de pauze: rood, met een nette melding.
+        var paused = await JsonAsync(await kassa.PostAsJsonAsync("/api/v1/kassa/scan", new { code = await CodeAsync() }));
+        Assert.Equal("Refused", paused.GetProperty("outcome").GetString());
+        Assert.Equal("Afhalen van munten is tijdelijk gepauzeerd door het bestuur.", paused.GetProperty("message").GetString());
+        Assert.Equal(JsonValueKind.Null, paused.GetProperty("scanId").ValueKind);
+        Assert.Contains("CollectionPaused", await WithDbAsync(db => db.TokenScans.Select(s => s.Reason).ToListAsync()));
+
+        // Hervatten: scannen en uitgeven kan weer.
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/sales/products/{munten}/collection-paused", new { paused = false }), HttpStatusCode.NoContent);
+        var again = await JsonAsync(await kassa.PostAsJsonAsync("/api/v1/kassa/scan", new { code = await CodeAsync() }));
+        Assert.Equal("Ready", again.GetProperty("outcome").GetString());
+        var issued = await JsonAsync(await kassa.PostAsync($"/api/v1/kassa/scans/{again.GetProperty("scanId").GetGuid()}/issue", null));
+        Assert.Equal("Issued", issued.GetProperty("outcome").GetString());
+
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "sale-product.collection-paused")));
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "sale-product.collection-resumed")));
+    }
+
+    private async Task<string> CodeFor(HttpClient phone, Guid ticketId) =>
+        (await JsonAsync(await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={ticketId}"))).GetProperty("code").GetString()!;
+
     [Fact]
     public async Task Kassa_scant_munten_QR_toont_bestelling_en_geeft_een_keer_uit()
     {

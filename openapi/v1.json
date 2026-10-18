@@ -15117,6 +15117,174 @@
         }
       }
     },
+    "/api/v1/admin/sales/products/{id}/on-sale": {
+      "post": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Eén-klik noodstop: alleen de verkoop van een product stoppen of weer openstellen (zonder de productdialoog).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOnSaleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOnSaleRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOnSaleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sales/products/{id}/collection-paused": {
+      "post": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Noodstop voor de kassa: het afhalen van munten pauzeren of hervatten (los van de verkoop).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCollectionPausedRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCollectionPausedRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCollectionPausedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/sales/orders": {
       "get": {
         "tags": [
@@ -28864,6 +29032,7 @@
           "saleOpensAt",
           "saleClosesAt",
           "onSale",
+          "collectionPaused",
           "sortOrder",
           "sold",
           "held",
@@ -28933,6 +29102,9 @@
             "format": "date-time"
           },
           "onSale": {
+            "type": "boolean"
+          },
+          "collectionPaused": {
             "type": "boolean"
           },
           "sortOrder": {
@@ -45129,6 +45301,28 @@
               "string"
             ],
             "format": "time"
+          }
+        }
+      },
+      "SetCollectionPausedRequest": {
+        "required": [
+          "paused"
+        ],
+        "type": "object",
+        "properties": {
+          "paused": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetOnSaleRequest": {
+        "required": [
+          "onSale"
+        ],
+        "type": "object",
+        "properties": {
+          "onSale": {
+            "type": "boolean"
           }
         }
       },

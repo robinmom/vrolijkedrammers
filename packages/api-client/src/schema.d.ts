@@ -18563,6 +18563,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/kassa/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["KassaRecentRow"][];
+                        "application/json": components["schemas"]["KassaRecentRow"][];
+                        "text/json": components["schemas"]["KassaRecentRow"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/children/{memberId}": {
         parameters: {
             query?: never;
@@ -25583,7 +25620,19 @@ export interface components {
             operatorName: string;
             deviceName: null | string;
         };
-        /** @description Wat de kassa na een scan ziet (Figma "iOS / 9 Kassa – munten uitgeven"). */
+        /** @description Eén uitgifte van vanavond op dit toestel (Figma "C — Recent"). */
+        KassaRecentRow: {
+            holderName: null | string;
+            /** Format: int32 */
+            quantity: null | number;
+            time: string;
+            paidWith: null | string;
+        };
+        /**
+         * @description Wat de kassa na een scan ziet (Figma "iOS / 9 Kassa – munten uitgeven"). string? KassaResult.IssuedAt is het tijdstip
+         *     (HH:mm) van een eerdere uitgifte bij een weigering wegens "al uitgegeven"; string? KassaResult.RecentOtherDeviceAt is
+         *     gevuld als dezelfde bestelling net ook op een andere kassa is gescand (dubbelscan-advies, geen blokkade).
+         */
         KassaResult: {
             /** Format: uuid */
             scanId: null | string;
@@ -25595,6 +25644,8 @@ export interface components {
             quantity: null | number;
             orderNumber: null | string;
             paidWith: null | string;
+            issuedAt?: null | string;
+            recentOtherDeviceAt?: null | string;
         };
         /** @description Totalen voor het overzicht: aantallen per status en per categorie, deelnemers en lengte van de optocht. */
         LineupSummary: {

@@ -29,4 +29,10 @@ public sealed class KassaController(TokenCollection kassa) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public Task<KassaResult> Issue(Guid id, CancellationToken cancellationToken) => kassa.IssueAsync(UserId, id, cancellationToken);
+
+    [HttpGet("recent")]
+    [RequireDevice]
+    [ProducesResponseType<IReadOnlyList<KassaRecentRow>>(StatusCodes.Status200OK)]
+    public Task<IReadOnlyList<KassaRecentRow>> Recent(CancellationToken cancellationToken) =>
+        kassa.RecentAsync(UserId, Request.Headers[DeviceCheck.HeaderName].ToString(), cancellationToken);
 }

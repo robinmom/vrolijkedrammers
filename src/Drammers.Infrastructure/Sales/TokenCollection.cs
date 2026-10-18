@@ -13,9 +13,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Infrastructure.Sales;
 
-/// <summary>Wat de kassa na een scan ziet (Figma "iOS / 9 Kassa – munten uitgeven").</summary>
+/// <summary>
+/// Wat de kassa na een scan ziet (Figma "iOS / 9 Kassa – munten uitgeven"). <see cref="IssuedAt"/> is het tijdstip
+/// (HH:mm) van een eerdere uitgifte bij een weigering wegens "al uitgegeven"; <see cref="RecentOtherDeviceAt"/> is
+/// gevuld als dezelfde bestelling net ook op een andere kassa is gescand (dubbelscan-advies, geen blokkade).
+/// </summary>
 public sealed record KassaResult(
-    Guid? ScanId, TokenScanOutcome Outcome, string Title, string Message, string? HolderName, int? Quantity, string? OrderNumber, string? PaidWith);
+    Guid? ScanId, TokenScanOutcome Outcome, string Title, string Message, string? HolderName, int? Quantity, string? OrderNumber, string? PaidWith,
+    string? IssuedAt = null, string? RecentOtherDeviceAt = null);
+
+/// <summary>Eén uitgifte van vanavond op dit toestel (Figma "C — Recent").</summary>
+public sealed record KassaRecentRow(string? HolderName, int? Quantity, string Time, string? PaidWith);
 
 /// <summary>Eén regel in de Kassalog van het portal.</summary>
 public sealed record KassaLogRow(
@@ -36,6 +44,9 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
 
     /// <summary>Na zo lang moet de kassa opnieuw scannen voordat hij kan uitgeven.</summary>
     public static readonly TimeSpan IssueWithin = TimeSpan.FromMinutes(10);
+
+    /// <summary>Binnen deze tijd telt een scan van dezelfde bestelling op een ander toestel als mogelijke dubbelscan (advies, geen blokkade).</summary>
+    public static readonly TimeSpan RecentOtherDeviceWindow = TimeSpan.FromMinutes(5);
 
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
@@ -86,13 +97,21 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
                 : check.Result == QrCheck.Blocked && order is not null
                     ? $"Bestelling {order.Number} is geannuleerd of niet betaald."
                     : check.Message;
-            result = new KassaResult(null, scan.Outcome, "Niet uitgeven", message, check.Ticket?.HolderName, scan.Quantity, order?.Number, null);
+            result = new KassaResult(null, scan.Outcome, issued ? "Al uitgegeven" : "Niet uitgeven", message, check.Ticket?.HolderName,
+                scan.Quantity, order?.Number, null, IssuedAt: lastIssue is { } issuedAtUtc ? Time(issuedAtUtc) : null);
         }
         else
         {
             scan.Outcome = TokenScanOutcome.Ready;
+            // Dubbelscan-advies: is deze bestelling net (binnen RecentOtherDeviceWindow) op een ANDER toestel gescand en nog niet uitgegeven?
+            var recentOther = device is null
+                ? null
+                : await db.TokenScans.AsNoTracking()
+                    .Where(s => s.OrderTicketId == order!.Ticket.Id && s.OperatorDeviceId != null && s.OperatorDeviceId != device.Id
+                        && s.Outcome != TokenScanOutcome.Issued && s.ScannedAt >= Now - RecentOtherDeviceWindow)
+                    .OrderByDescending(s => s.ScannedAt).Select(s => (DateTime?)s.ScannedAt).FirstOrDefaultAsync(cancellationToken);
             result = new KassaResult(scan.Id, scan.Outcome, "Munten uitgeven", "Persoonsgebonden · nog niet afgehaald", check.Ticket!.HolderName,
-                scan.Quantity, order!.Number, PaidWith(order.PaymentMethod));
+                scan.Quantity, order!.Number, PaidWith(order.PaymentMethod), RecentOtherDeviceAt: recentOther is { } otherAt ? Time(otherAt) : null);
         }
 
         db.TokenScans.Add(scan);
@@ -134,6 +153,42 @@ public sealed class TokenCollection(DrammersDbContext db, TicketValidation valid
         var holder = await db.Members.AsNoTracking().Where(m => m.Id == scan.MemberId).Select(m => m.FullName).SingleOrDefaultAsync(cancellationToken);
         return new KassaResult(scan.Id, TokenScanOutcome.Issued, "Uitgegeven", $"{scan.Quantity} munten uitgegeven om {Time(scan.IssuedAt.Value)}.", holder,
             scan.Quantity, order.Number, PaidWith(order.PaymentMethod));
+    }
+
+    /// <summary>
+    /// "Recent" in de kassa (Figma "C — Recent"): de uitgiftes van vanavond (dezelfde 06:00-grens als de Kassalog) op
+    /// het eigen toestel van de operator, nieuwste bovenaan. 's Ochtends na 06:00 dus weer leeg.
+    /// </summary>
+    public async Task<IReadOnlyList<KassaRecentRow>> RecentAsync(Guid operatorId, string? installationId, CancellationToken cancellationToken)
+    {
+        var device = string.IsNullOrWhiteSpace(installationId)
+            ? null
+            : await db.Devices.AsNoTracking().SingleOrDefaultAsync(d => d.UserId == operatorId && d.InstallationId == installationId && d.Status == DeviceStatus.Active, cancellationToken);
+        if (device is null)
+        {
+            return [];
+        }
+
+        var local = TimeZoneInfo.ConvertTimeFromUtc(Now, Loil) - AccessWindows.DayBoundary;
+        var date = DateOnly.FromDateTime(local);
+        var start = TimeZoneInfo.ConvertTimeToUtc(date.ToDateTime(TimeOnly.FromTimeSpan(AccessWindows.DayBoundary)), Loil);
+        var end = start.AddDays(1);
+        var rows = await (
+            from s in db.TokenScans.AsNoTracking()
+            where s.OperatorDeviceId == device.Id && s.Outcome == TokenScanOutcome.Issued && s.IssuedAt >= start && s.IssuedAt < end
+            join m in db.Members.AsNoTracking() on s.MemberId equals m.Id into ms
+            from m in ms.DefaultIfEmpty()
+            join o in db.SaleOrders.AsNoTracking() on s.OrderId equals o.Id into os
+            from o in os.DefaultIfEmpty()
+            orderby s.IssuedAt descending
+            select new
+            {
+                s.IssuedAt,
+                s.Quantity,
+                MemberName = m == null ? null : m.FullName,
+                Method = o == null ? (SalePaymentMethod?)null : o.PaymentMethod,
+            }).Take(500).ToListAsync(cancellationToken);
+        return rows.Select(r => new KassaRecentRow(r.MemberName, r.Quantity, Time(r.IssuedAt!.Value), r.Method is { } method ? PaidWith(method) : null)).ToList();
     }
 
     /// <summary>Kassalog van één dag (Loil, tot 06:00 de volgende ochtend), nieuwste bovenaan.</summary>

@@ -173,22 +173,39 @@ public sealed class ScannerKassaTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Forbidden, (await door.PostAsJsonAsync("/api/v1/kassa/scan", new { code = await CodeAsync() })).StatusCode);
 
         var kassa = await OperatorAsync("kassa@example.com", DefaultRoles.Kassa, "installatie-kassa-0001");
+        var kassa2 = await OperatorAsync("kassa2@example.com", DefaultRoles.Kassa, "installatie-kassa-0002");
         var code = await CodeAsync();
+
+        // Dubbelscan (scherm B): kassa 2 scant de bestelling als eerste (nog geen waarschuwing), daarna ziet kassa 1 het signaal.
+        var other = await JsonAsync(await kassa2.PostAsJsonAsync("/api/v1/kassa/scan", new { code }));
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("recentOtherDeviceAt").ValueKind);
+
         var scan = await JsonAsync(await kassa.PostAsJsonAsync("/api/v1/kassa/scan", new { code }));
         Assert.Equal(("Ready", "Mendy Mom", 20, "iDEAL"),
             (scan.GetProperty("outcome").GetString(), scan.GetProperty("holderName").GetString(), scan.GetProperty("quantity").GetInt32(), scan.GetProperty("paidWith").GetString()));
+        Assert.Equal("21:00", scan.GetProperty("recentOtherDeviceAt").GetString());
         var scanId = scan.GetProperty("scanId").GetGuid();
 
         var issued = await JsonAsync(await kassa.PostAsync($"/api/v1/kassa/scans/{scanId}/issue", null));
         Assert.Equal("Issued", issued.GetProperty("outcome").GetString());
         Assert.Equal(HttpStatusCode.Conflict, (await kassa.PostAsync($"/api/v1/kassa/scans/{scanId}/issue", null)).StatusCode);
 
-        // Na uitgeven maakt de app geen munten-QR meer voor deze bestelling; dezelfde code nog een keer scannen: rood.
+        // Na uitgeven maakt de app geen munten-QR meer voor deze bestelling; dezelfde code nog een keer scannen: rood (scherm A).
         Assert.Equal(HttpStatusCode.Conflict, (await phone.GetAsync($"/api/v1/me/ticket/code?purpose=Tokens&orderTicketId={ticketId}")).StatusCode);
         var twice = await JsonAsync(await kassa.PostAsJsonAsync("/api/v1/kassa/scan", new { code }));
         Assert.Equal("Refused", twice.GetProperty("outcome").GetString());
         Assert.StartsWith("Deze munten zijn al uitgegeven om", twice.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(JsonValueKind.Null, twice.GetProperty("scanId").ValueKind);
+        // Scherm A toont apart aan wie en wanneer: lidnaam groot en "Afgehaald om HH:mm".
+        Assert.Equal(("Al uitgegeven", "Mendy Mom", "21:00"),
+            (twice.GetProperty("title").GetString(), twice.GetProperty("holderName").GetString(), twice.GetProperty("issuedAt").GetString()));
+
+        // Recent (scherm C): de uitgiftes van vanavond op dit toestel; een ander toestel ziet ze niet.
+        var recent = await JsonAsync(await kassa.GetAsync("/api/v1/kassa/recent"));
+        Assert.Equal(1, recent.GetArrayLength());
+        Assert.Equal(("Mendy Mom", 20, "21:00", "iDEAL"),
+            (recent[0].GetProperty("holderName").GetString(), recent[0].GetProperty("quantity").GetInt32(), recent[0].GetProperty("time").GetString(), recent[0].GetProperty("paidWith").GetString()));
+        Assert.Equal(0, (await JsonAsync(await kassa2.GetAsync("/api/v1/kassa/recent"))).GetArrayLength());
 
         var log = await JsonAsync(await _bestuur.GetAsync("/api/v1/admin/sales/kassalog?day=2027-02-07"));
         Assert.Equal((1, 20, 1), (log.GetProperty("issued").GetInt32(), log.GetProperty("tokensIssued").GetInt32(), log.GetProperty("refused").GetInt32()));
@@ -198,5 +215,9 @@ public sealed class ScannerKassaTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Contains(rows, r => r.GetProperty("reason").GetString() == "AlreadyIssued");
         Assert.Equal(HttpStatusCode.Forbidden, (await kassa.GetAsync("/api/v1/admin/sales/kassalog")).StatusCode);
         Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "tokens.issued")));
+
+        // Na de dag-grens van 06:00 (de volgende ochtend) is Recent weer leeg.
+        _api.Clock.Advance(new DateTimeOffset(2027, 2, 8, 7, 0, 0, TimeSpan.Zero) - _api.Clock.UtcNow);
+        Assert.Equal(0, (await JsonAsync(await kassa.GetAsync("/api/v1/kassa/recent"))).GetArrayLength());
     }
 }

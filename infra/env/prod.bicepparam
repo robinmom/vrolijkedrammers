@@ -12,6 +12,8 @@ param sqlFreeLimitExhaustionBehavior = 'BillOverUsage'
 // 2026-10-17: Standard S1 (20 DTU, ± € 25 per maand) in plaats van serverless, dat door de achtergrondtaken de hele dag
 // wakker is (± € 200 per maand). Bij drukte (11-11, kaartverkoop) kan S2 met één regel.
 param sqlSkuName = 'S1'
+// Auditing van de SQL-server (aanmeldingen en wijzigingen aan rechten) naar Log Analytics.
+param sqlAuditingEnabled = true
 // Back-ups (docs/08 §8, 2026-10-17): 14 dagen terugzetten, maandelijks een jaar bewaren, ook in een tweede regio;
 // bestanden 30 dagen terug te halen en de hele opslag 14 dagen terug naar een tijdstip.
 param sqlPitrDays = 14

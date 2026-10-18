@@ -22,6 +22,8 @@ param sqlFreeLimitExhaustionBehavior string = 'AutoPause'
 @allowed(['GP_S_Gen5', 'Basic', 'S0', 'S1', 'S2'])
 param sqlSkuName string = 'GP_S_Gen5'
 
+@description('SQL-server-auditing naar Log Analytics (modules/sql.bicep); aan in Prod.')
+param sqlAuditingEnabled bool = false
 @description('Back-ups (modules/sql.bicep en storage.bicep): point-in-time restore van de database in dagen.')
 param sqlPitrDays int = 7
 
@@ -121,7 +123,15 @@ var tags = {
 }
 
 // Openbaar adres: het eigen domein zodra dat gekoppeld is, anders het azurewebsites-adres.
-var publicBaseUrl = empty(customHostNames) ? 'https://app-dvd-api-${environmentName}.azurewebsites.net' : 'https://${customHostNames[0]}'
+var defaultHostName = 'app-dvd-api-${environmentName}.azurewebsites.net'
+var publicBaseUrl = empty(customHostNames) ? 'https://${defaultHostName}' : 'https://${customHostNames[0]}'
+
+// Host-filtering (ASP.NET Core AllowedHosts): alleen de eigen domeinen en het azurewebsites-adres; andere Host-headers
+// krijgen 400. Het azurewebsites-adres moet erin blijven: de App Service health check pingt het standaarddomein en de
+// deploy-workflow test daarop. localhost voor interne opwarmverzoeken van het platform. Een nieuw eigen domein komt via
+// customHostNames (DVD_CUSTOM_HOSTNAMES) vanzelf in deze lijst; zonder dat geeft het domein 400.
+// Ook domeinen die al een certificaat hebben (boundHostNames), zodat een gekoppeld domein nooit per ongeluk 400 geeft.
+var allowedHosts = join(union(customHostNames, boundHostNames, [defaultHostName, 'localhost']), ';')
 
 var aspnetEnvironment = {
   dev: 'Dev'
@@ -173,6 +183,8 @@ module sql'modules/sql.bicep' = {
     useFreeOffer: sqlUseFreeOffer
     freeLimitExhaustionBehavior: sqlFreeLimitExhaustionBehavior
     skuName: sqlSkuName
+    auditingEnabled: sqlAuditingEnabled
+    workspaceId: monitoring.outputs.workspaceId
     pitrDays: sqlPitrDays
     ltrMonths: sqlLtrMonths
     geoBackup: sqlGeoBackup
@@ -219,6 +231,7 @@ module api 'modules/appservice.bicep' = {
       Email__MailboxSenders: emailMailboxSenders
       // Kaartverkoop (fase 19): links in e-mails van de nachtelijke job; de Mollie-sleutel staat in Key Vault (mollie-api-key).
       Sales__PublicBaseUrl: publicBaseUrl
+      AllowedHosts: allowedHosts
       // Andere eigen domeinen (bijv. zonder www) sturen door naar het hoofdadres.
       Website__CanonicalHost: empty(customHostNames) ? '' : customHostNames[0]
       Accounts__PasswordSignIn: passwordSignIn ? 'true' : 'false'

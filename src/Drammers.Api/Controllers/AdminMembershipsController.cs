@@ -46,7 +46,7 @@ public sealed class AdminMembershipsController(Contributions contributions, Memb
     [ProducesResponseType<SplitInviteResult>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public Task<SplitInviteResult> Invite(SplitInviteRequest request, CancellationToken cancellationToken) =>
-        splits.InviteAsync(request.MemberIds, $"{Request.Scheme}://{Request.Host}", cancellationToken);
+        splits.InviteAsync(request.MemberIds, Request.PublicBaseUrlFor(), cancellationToken);
 }
 
 public sealed record MembershipCountResponse(string Label, int Count);

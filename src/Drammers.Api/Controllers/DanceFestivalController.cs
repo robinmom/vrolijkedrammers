@@ -22,7 +22,7 @@ namespace Drammers.Api.Controllers;
 [Route("api/v1/dance-festival")]
 public sealed class DanceFestivalController(DanceFestivals festivals, IOptions<TurnstileOptions> turnstile) : ControllerBase
 {
-    private string BaseUrl => $"{Request.Scheme}://{Request.Host}";
+    private string BaseUrl => Request.PublicBaseUrlFor();
 
     [HttpGet]
     [ProducesResponseType<DanceFestivalPublicResponse>(StatusCodes.Status200OK)]
@@ -102,7 +102,7 @@ public sealed class DanceFestivalController(DanceFestivals festivals, IOptions<T
 [RequirePermission(Permissions.FestivalManage)]
 public sealed class AdminDanceFestivalController(DanceFestivals festivals) : ControllerBase
 {
-    private string BaseUrl => $"{Request.Scheme}://{Request.Host}";
+    private string BaseUrl => Request.PublicBaseUrlFor();
 
     [HttpGet("settings")]
     [ProducesResponseType<FestivalSettingsView>(StatusCodes.Status200OK)]

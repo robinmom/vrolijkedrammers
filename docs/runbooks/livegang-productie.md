@@ -117,7 +117,8 @@ stap.
 2. Wacht tot `nslookup www.vrolijkedrammers.nl` naar Azure wijst (meestal < 15 min bij TTL 300).
 3. Variabele in `prod`: `DVD_CUSTOM_HOSTNAMES=www.vrolijkedrammers.nl,vrolijkedrammers.nl` en opnieuw **Deploy** `prod`.
    Bicep koppelt beide namen, vraagt de certificaten aan en zet `Sales:PublicBaseUrl` (links in e-mails, afmeldlinks)
-   en de doorverwijzing naar www.
+   en de doorverwijzing naar www. Ook `AllowedHosts` volgt deze lijst (plus `app-dvd-api-prod.azurewebsites.net` en
+   `localhost`): een domein dat níet in `DVD_CUSTOM_HOSTNAMES` staat, krijgt van de app 400 Bad Request.
 4. Controleren: `https://www.vrolijkedrammers.nl` (slot in de browser), `https://vrolijkedrammers.nl/nieuws` → 301 naar
    www, inloggen op `/beheer`, contactformulier (Turnstile), optocht-inschrijven (inloggen).
 

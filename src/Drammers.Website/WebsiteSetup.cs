@@ -41,7 +41,8 @@ public static class WebsiteSetup
         services.AddMemoryCache();
         services.AddHttpClient<FacebookFeed>(http => http.Timeout = TimeSpan.FromSeconds(10));
         services.AddOutputCache(options =>
-            options.AddPolicy(CachePolicy, policy => policy.Expire(TimeSpan.FromSeconds(60)).SetVaryByQuery("*").Tag(CachePolicy)));
+            options.AddPolicy(CachePolicy, policy => policy.Expire(TimeSpan.FromSeconds(60)).SetVaryByQuery("*").Tag(CachePolicy)
+                .AddPolicy<RespectNoStorePolicy>()));
         return services;
     }
 
@@ -157,6 +158,31 @@ public static class WebsiteSetup
         }
 
         return Results.Text(xml.Append("</urlset>\n").ToString(), "application/xml");
+    }
+}
+
+/// <summary>
+/// Bewaar geen pagina die zelf zegt niet gecachet te mogen worden (<c>Cache-Control: no-store</c> of <c>private</c>),
+/// bijvoorbeeld een formulier met een antiforgery-token (dat hoort bij de cookie van één bezoeker) of /afmelden.
+/// De output cache kijkt zelf niet naar Cache-Control.
+/// </summary>
+internal sealed class RespectNoStorePolicy : Microsoft.AspNetCore.OutputCaching.IOutputCachePolicy
+{
+    public ValueTask CacheRequestAsync(Microsoft.AspNetCore.OutputCaching.OutputCacheContext context, CancellationToken cancellation) =>
+        ValueTask.CompletedTask;
+
+    public ValueTask ServeFromCacheAsync(Microsoft.AspNetCore.OutputCaching.OutputCacheContext context, CancellationToken cancellation) =>
+        ValueTask.CompletedTask;
+
+    public ValueTask ServeResponseAsync(Microsoft.AspNetCore.OutputCaching.OutputCacheContext context, CancellationToken cancellation)
+    {
+        var cacheControl = context.HttpContext.Response.Headers.CacheControl.ToString();
+        if (cacheControl.Contains("no-store", StringComparison.OrdinalIgnoreCase) || cacheControl.Contains("private", StringComparison.OrdinalIgnoreCase))
+        {
+            context.AllowCacheStorage = false;
+        }
+
+        return ValueTask.CompletedTask;
     }
 }
 

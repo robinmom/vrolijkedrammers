@@ -24,7 +24,7 @@ namespace Drammers.Api.Controllers;
 [RequirePermission(Permissions.SaleManage)]
 public sealed class AdminSalesController(SaleAdministration administration, TicketSales sales, IAuditLogger audit, IClock clock) : ControllerBase
 {
-    private string BaseUrl => $"{Request.Scheme}://{Request.Host}";
+    private string BaseUrl => Request.PublicBaseUrlFor();
 
     [HttpGet("summary")]
     [ProducesResponseType<SalesSummary>(StatusCodes.Status200OK)]

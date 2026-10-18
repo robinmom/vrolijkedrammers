@@ -5,6 +5,7 @@ using Drammers.Api.Authentication;
 using Drammers.Api.Authorization;
 using Drammers.Api.Content;
 using Drammers.Api.ErrorHandling;
+using Drammers.Api.Logging;
 using Drammers.Api.Portal;
 using Drammers.Infrastructure;
 using Drammers.SharedKernel.Time;
@@ -24,7 +25,9 @@ try
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
-        .Enrich.FromLogContext());
+        .Enrich.FromLogContext()
+        // Geen geheime tokens uit het pad in de logs (L20).
+        .Enrich.With<SensitivePathEnricher>());
 
     builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = ProblemDetailsDefaults.Customize);
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -54,6 +57,7 @@ try
     if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
     {
         builder.Services.AddOpenTelemetry().UseAzureMonitor();
+        builder.Services.AddSensitivePathRedaction();
     }
 
     var app = builder.Build();
@@ -61,7 +65,8 @@ try
     app.UseForwardedHeaders();
     app.UseCanonicalHost(app.Configuration);
     app.UseNoIndexOutsideProduction(app.Environment);
-    app.UseSecurityHeaders();
+    // Via OnStarting, dus ook op een 500 van de exception handler; HSTS (1 jaar, includeSubDomains) buiten Development.
+    app.UseSecurityHeaders(hsts: !app.Environment.IsDevelopment());
     app.UseExceptionHandler();
     app.UseStatusCodePagesWithWebsite();
     app.UseSerilogRequestLogging();
@@ -69,10 +74,6 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi().AllowAnonymous();
-    }
-    else
-    {
-        app.UseHsts();
     }
 
     // Het portal (statische bestanden) vóór de authenticatie: het is publiek en logt zelf in via MSAL.

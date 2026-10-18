@@ -25,7 +25,7 @@ namespace Drammers.Api.Controllers;
 public sealed class SalesController(
     TicketSales sales, IOptions<AuthOptions> authOptions, IOptions<TurnstileOptions> turnstile, ITurnstileVerifier verifier) : ControllerBase
 {
-    private string BaseUrl => $"{Request.Scheme}://{Request.Host}";
+    private string BaseUrl => Request.PublicBaseUrlFor();
 
     private async Task<SaleBuyer> BuyerAsync()
     {
@@ -161,7 +161,7 @@ public sealed class MollieWebhookController(TicketSales sales, Infrastructure.Fe
             // Betalingen van het Dansgardefestival eerst; anders een bestelling uit de kaartverkoop.
             if (!await festivals.HandleWebhookAsync(id, cancellationToken))
             {
-                await sales.HandleWebhookAsync(id, $"{Request.Scheme}://{Request.Host}", cancellationToken);
+                await sales.HandleWebhookAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
             }
 
             return Ok();

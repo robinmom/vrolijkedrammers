@@ -54,6 +54,13 @@ resource whatIfRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
           'Microsoft.Resources/deployments/validate/action'
           'Microsoft.Resources/deployments/whatIf/action'
         ]
+        // */read omvat ook het opvragen van logs (Log Analytics, Application Insights); what-if heeft alleen de
+        // resourcedefinities nodig, en de logs bevatten persoonsgegevens en tokens (L7).
+        notActions: [
+          'Microsoft.OperationalInsights/workspaces/query/*/read'
+          'Microsoft.Insights/components/query/read'
+          'Microsoft.Insights/logs/*/read'
+        ]
       }
     ]
   }

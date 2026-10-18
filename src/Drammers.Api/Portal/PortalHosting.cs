@@ -26,40 +26,64 @@ public static class PortalHosting
         "script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; " +
         "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
-    /// <summary>Headers voor alle responses; de portal-CSP alleen onder <see cref="BasePath"/>.</summary>
-    public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app) =>
+    /// <summary>HSTS: één jaar, ook voor subdomeinen; geen preload (dat is lastig terug te draaien).</summary>
+    public const string StrictTransportSecurity = "max-age=31536000; includeSubDomains";
+
+    /// <summary>
+    /// Headers voor alle responses; de portal-CSP alleen onder <see cref="BasePath"/>. Gezet bij het starten van de
+    /// response (<c>OnStarting</c>): de exception handler wist eerder gezette headers, en dan ging een 500 zonder CSP,
+    /// nosniff en HSTS de deur uit. Het pad wordt bij binnenkomst vastgelegd (de statuspagina's voeren opnieuw uit).
+    /// </summary>
+    /// <param name="app">De pipeline.</param>
+    /// <param name="hsts">HSTS meesturen bij HTTPS (niet in Development).</param>
+    public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app, bool hsts) =>
         app.Use((context, next) =>
         {
-            var headers = context.Response.Headers;
-            headers.XContentTypeOptions = "nosniff";
-            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            if (context.Request.Path.StartsWithSegments(Content.MailingPreviewDocuments.BasePath))
+            var path = context.Request.Path;
+            context.Response.OnStarting(() =>
             {
-                // Voorbeeld van een mailing in het portal: alleen in een iframe op de eigen origin (fase 27a).
-                headers.ContentSecurityPolicy = Content.MailingPreviewDocuments.ContentSecurityPolicy;
-                headers.XFrameOptions = "SAMEORIGIN";
-            }
-            else if (context.Request.Path.StartsWithSegments(BasePath))
-            {
-                headers.ContentSecurityPolicy = ContentSecurityPolicy;
-                headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
-                headers.XFrameOptions = "DENY";
-            }
-            else if (Website.WebsiteSetup.IsWebsitePath(context.Request.Path))
-            {
-                var turnstile = context.RequestServices
-                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Contact.TurnstileOptions>>().Value.Enabled;
-                headers.ContentSecurityPolicy = turnstile ? WebsiteWithTurnstileContentSecurityPolicy : WebsiteContentSecurityPolicy;
-                headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
-                headers.XFrameOptions = "DENY";
-            }
-            else
-            {
-                headers.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
-            }
-
+                ApplySecurityHeaders(context, path, hsts);
+                return Task.CompletedTask;
+            });
             return next(context);
         });
+
+    private static void ApplySecurityHeaders(HttpContext context, PathString path, bool hsts)
+    {
+        var headers = context.Response.Headers;
+        headers.XContentTypeOptions = "nosniff";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        // Zoals de standaard-HSTS-middleware: alleen over HTTPS en niet voor localhost.
+        if (hsts && context.Request.IsHttps && context.Request.Host.Host is not ("localhost" or "127.0.0.1" or "[::1]"))
+        {
+            headers.StrictTransportSecurity = StrictTransportSecurity;
+        }
+
+        if (path.StartsWithSegments(Content.MailingPreviewDocuments.BasePath))
+        {
+            // Voorbeeld van een mailing in het portal: alleen in een iframe op de eigen origin (fase 27a).
+            headers.ContentSecurityPolicy = Content.MailingPreviewDocuments.ContentSecurityPolicy;
+            headers.XFrameOptions = "SAMEORIGIN";
+        }
+        else if (path.StartsWithSegments(BasePath))
+        {
+            headers.ContentSecurityPolicy = ContentSecurityPolicy;
+            headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            headers.XFrameOptions = "DENY";
+        }
+        else if (Website.WebsiteSetup.IsWebsitePath(path))
+        {
+            var turnstile = context.RequestServices
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.Contact.TurnstileOptions>>().Value.Enabled;
+            headers.ContentSecurityPolicy = turnstile ? WebsiteWithTurnstileContentSecurityPolicy : WebsiteContentSecurityPolicy;
+            headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            headers.XFrameOptions = "DENY";
+        }
+        else
+        {
+            headers.ContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
+        }
+    }
 
     /// <summary>Redirect <c>/beheer</c> → <c>/beheer/</c> en statische bestanden; vóór authenticatie en autorisatie.</summary>
     public static WebApplication UsePortalStaticFiles(this WebApplication app)

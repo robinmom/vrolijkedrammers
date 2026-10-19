@@ -12,7 +12,7 @@ import { carnivalMidnight, fullDate } from '../../lib/dates';
 import { openInMaps } from '../../lib/calendar';
 import { useTheme } from '../../theme/ThemeProvider';
 import { useHeroStatusBar } from '../../theme/useHeroStatusBar';
-import { AppText, Badge, Button, Card, HeroButton, Screen } from '../../ui';
+import { AppText, Badge, Button, Card, HeroButton, RemoteImage, Screen } from '../../ui';
 
 const hero = require('../../../assets/images/optocht-hero.jpg');
 
@@ -83,7 +83,12 @@ export default function OptochtScreen() {
   return (
     <Screen hero {...refresh}>
       <View style={styles.hero}>
-        <Image source={hero} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+        {/* De foto uit het portal (Website → Instellingen → Optocht-afbeelding); zonder ingestelde foto de meegeleverde foto. */}
+        {p?.heroImageUrl ? (
+          <RemoteImage uri={p.heroImageUrl} cacheKey="optocht-hero" style={StyleSheet.absoluteFill} testID="optocht-hero-remote" />
+        ) : (
+          <Image source={hero} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors testID="optocht-hero-fallback" />
+        )}
         <LinearGradient
           colors={['rgba(18,48,71,0.6)', 'rgba(18,48,71,0)', 'rgba(18,48,71,0.92)']}
           locations={[0, 0.4, 1]}

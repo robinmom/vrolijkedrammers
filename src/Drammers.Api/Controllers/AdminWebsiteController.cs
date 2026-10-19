@@ -40,7 +40,8 @@ public sealed class AdminWebsiteController(DrammersDbContext db, WebsiteAdminist
     {
         var s = await website.GetSettingsAsync(cancellationToken);
         return new WebsiteSettingsResponse(s.HeroEyebrow, s.HeroTitle, s.HeroSubtitle, s.HeroPrimaryLabel, s.HeroPrimaryLink,
-            s.HeroSecondaryLabel, s.HeroSecondaryLink, await ImageUrl(s.HeroImageBlobPath, cancellationToken), s.FacebookPageUrl, s.InstagramUrl,
+            s.HeroSecondaryLabel, s.HeroSecondaryLink, await ImageUrl(s.HeroImageBlobPath, cancellationToken),
+            await ImageUrl(s.OptochtHeroImageBlobPath, cancellationToken), s.FacebookPageUrl, s.InstagramUrl,
             s.ShowYouthPrinces, await db.Princes.CountAsync(p => p.Kind == PrinceKind.YouthPrince, cancellationToken));
     }
 
@@ -51,7 +52,7 @@ public sealed class AdminWebsiteController(DrammersDbContext db, WebsiteAdminist
     {
         await website.UpdateSettingsAsync(new WebsiteSettingsInput(request.HeroEyebrow, request.HeroTitle, request.HeroSubtitle,
             request.HeroPrimaryLabel, request.HeroPrimaryLink, request.HeroSecondaryLabel, request.HeroSecondaryLink, request.HeroImage,
-            request.FacebookPageUrl, request.InstagramUrl, request.ShowYouthPrinces), cancellationToken);
+            request.OptochtHeroImage, request.FacebookPageUrl, request.InstagramUrl, request.ShowYouthPrinces), cancellationToken);
         return NoContent();
     }
 
@@ -357,13 +358,14 @@ public sealed record WebsiteSettingsRequest(
     [StringLength(40)] string? HeroSecondaryLabel,
     WebsiteLink? HeroSecondaryLink,
     [StringLength(300)] string? HeroImage,
+    [StringLength(300)] string? OptochtHeroImage,
     [StringLength(300)] string? FacebookPageUrl,
     [StringLength(300)] string? InstagramUrl,
     bool ShowYouthPrinces);
 
 public sealed record WebsiteSettingsResponse(
     string? HeroEyebrow, string HeroTitle, string? HeroSubtitle, string? HeroPrimaryLabel, WebsiteLink? HeroPrimaryLink,
-    string? HeroSecondaryLabel, WebsiteLink? HeroSecondaryLink, string? HeroImageUrl, string? FacebookPageUrl, string? InstagramUrl,
+    string? HeroSecondaryLabel, WebsiteLink? HeroSecondaryLink, string? HeroImageUrl, string? OptochtHeroImageUrl, string? FacebookPageUrl, string? InstagramUrl,
     bool ShowYouthPrinces, int YouthPrinceCount);
 
 public sealed record WebsitePageRequest(

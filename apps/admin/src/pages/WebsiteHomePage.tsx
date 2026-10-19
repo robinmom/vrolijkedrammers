@@ -137,6 +137,18 @@ export function WebsiteSettingsPage() {
             />
             {youth === 0 ? <p className="muted">Vul eerst de jeugdprinsen in onder Website → Prinsen.</p> : null}
           </fieldset>
+          <fieldset>
+            <legend>Optocht</legend>
+            <ImagePicker
+              label="Optocht-afbeelding"
+              uploadPath="/api/v1/admin/website/images"
+              currentUrl={settings.data?.optochtHeroImageUrl}
+              onChange={(optochtHeroImage) => set({ optochtHeroImage })}
+            />
+            <p className="muted">
+              De grote foto bovenaan het optochtscherm in de app. Liggende foto, minstens 2000 px breed. Zonder foto toont de app de meegeleverde afbeelding.
+            </p>
+          </fieldset>
           <ProblemAlert error={save.error} />
           <div className="actions">
             <button type="submit" className="button" disabled={save.isPending}>

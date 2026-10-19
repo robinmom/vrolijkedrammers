@@ -2,11 +2,13 @@ using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Content;
 using Drammers.Infrastructure.Content;
 using Drammers.Infrastructure.ParadeManagement;
+using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Parade.Categories;
 using Drammers.SharedKernel.Errors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Api.Controllers;
 
@@ -17,7 +19,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/parade")]
-public sealed class ParadeController(ParadeAdministration parades, ParadePublicRegistrations publicRegistrations, ParadeResults results, ContentUrls urls) : ControllerBase
+public sealed class ParadeController(DrammersDbContext db, ParadeAdministration parades, ParadePublicRegistrations publicRegistrations, ParadeResults results, ContentUrls urls) : ControllerBase
 {
     [HttpGet("current")]
     [ProducesResponseType<ParadeInfoResponse>(StatusCodes.Status200OK)]
@@ -26,9 +28,11 @@ public sealed class ParadeController(ParadeAdministration parades, ParadePublicR
     {
         var p = await parades.CurrentAsync(cancellationToken)
             ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Er is nog geen optocht bekend.", DomainErrorKind.NotFound);
+        // De grote foto bovenaan het optochtscherm komt uit de website-instellingen (portal); leeg = de meegeleverde foto in de app.
+        var heroImagePath = await db.WebsiteSettings.AsNoTracking().Select(s => s.OptochtHeroImageBlobPath).SingleOrDefaultAsync(cancellationToken);
         return new ParadeInfoResponse(p.Id, p.Name, p.ParadeDate, p.StartTime, p.StartLocation, p.RouteDescription, p.RouteLengthKm,
             p.RegistrationOpensAt, p.RegistrationClosesAt, p.IsRegistrationOpen(parades.Now), p.SubjectRequired, p.MaxDocumentsPerRegistration, p.MaxDocumentSizeMb,
-            MarkdownRenderer.ToSafeHtml(p.InfoText));
+            MarkdownRenderer.ToSafeHtml(p.InfoText), await urls.ForAsync(Infrastructure.Files.FileContainers.Content, heroImagePath, cancellationToken));
     }
 
     /// <summary>Openbare aanrijtijdenlijst (fase 16, zoals op de website): alleen wagens, pas na publiceren.</summary>
@@ -132,7 +136,7 @@ public sealed record VerifyCodeRequest([Required, StringLength(6, MinimumLength 
 public sealed record ParadeInfoResponse(
     Guid Id, string Name, DateOnly ParadeDate, TimeOnly StartTime, string? StartLocation, string? RouteDescription, decimal? RouteLengthKm,
     DateTime RegistrationOpensAt, DateTime RegistrationClosesAt, bool RegistrationOpen, bool SubjectRequired, int MaxDocumentsPerRegistration, int MaxDocumentSizeMb,
-    string? InfoHtml);
+    string? InfoHtml, string? HeroImageUrl);
 
 public sealed record ParadeCategoryResponse(
     int Id, string Code, string Name, AgeGroup AgeGroup, CategoryType Type, int? MinimumParticipants, int? MaximumParticipants,

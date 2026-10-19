@@ -41960,7 +41960,8 @@
           "subjectRequired",
           "maxDocumentsPerRegistration",
           "maxDocumentSizeMb",
-          "infoHtml"
+          "infoHtml",
+          "heroImageUrl"
         ],
         "type": "object",
         "properties": {
@@ -42021,6 +42022,12 @@
             "format": "int32"
           },
           "infoHtml": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "heroImageUrl": {
             "type": [
               "null",
               "string"
@@ -47711,6 +47718,7 @@
           "heroSecondaryLabel",
           "heroSecondaryLink",
           "heroImage",
+          "optochtHeroImage",
           "facebookPageUrl",
           "instagramUrl",
           "showYouthPrinces"
@@ -47770,6 +47778,12 @@
               "string"
             ]
           },
+          "optochtHeroImage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "facebookPageUrl": {
             "type": [
               "null",
@@ -47797,6 +47811,7 @@
           "heroSecondaryLabel",
           "heroSecondaryLink",
           "heroImageUrl",
+          "optochtHeroImageUrl",
           "facebookPageUrl",
           "instagramUrl",
           "showYouthPrinces",
@@ -47852,6 +47867,12 @@
             ]
           },
           "heroImageUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "optochtHeroImageUrl": {
             "type": [
               "null",
               "string"

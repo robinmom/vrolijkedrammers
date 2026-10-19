@@ -72,6 +72,7 @@ export function settingsRequest(s: WebsiteSettings): WebsiteSettingsRequest {
     heroSecondaryLabel: s.heroSecondaryLabel,
     heroSecondaryLink: s.heroSecondaryLink,
     heroImage: null,
+    optochtHeroImage: null,
     facebookPageUrl: s.facebookPageUrl,
     instagramUrl: s.instagramUrl,
     showYouthPrinces: s.showYouthPrinces,

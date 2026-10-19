@@ -2534,6 +2534,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(300)")
                         .HasColumnName("instagram_url");
 
+                    b.Property<string>("OptochtHeroImageBlobPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("optocht_hero_image_blob_path");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()

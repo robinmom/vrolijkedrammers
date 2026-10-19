@@ -27009,6 +27009,7 @@ export interface components {
             /** Format: int32 */
             maxDocumentSizeMb: number;
             infoHtml: null | string;
+            heroImageUrl: null | string;
         };
         ParadeRequest: {
             /** Format: int32 */
@@ -28564,6 +28565,7 @@ export interface components {
             heroSecondaryLabel: null | string;
             heroSecondaryLink: null | components["schemas"]["WebsiteLink"];
             heroImage: null | string;
+            optochtHeroImage: null | string;
             facebookPageUrl: null | string;
             instagramUrl: null | string;
             showYouthPrinces: boolean;
@@ -28577,6 +28579,7 @@ export interface components {
             heroSecondaryLabel: null | string;
             heroSecondaryLink: null | components["schemas"]["WebsiteLink"];
             heroImageUrl: null | string;
+            optochtHeroImageUrl: null | string;
             facebookPageUrl: null | string;
             instagramUrl: null | string;
             showYouthPrinces: boolean;

@@ -108,6 +108,28 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Optocht_hero_foto_uit_de_website_instellingen_komt_mee_in_het_optochtscherm()
+    {
+        var guest = _api.CreateClient();
+
+        // Zonder ingestelde foto: geen URL, de app valt terug op de meegeleverde foto.
+        var before = await JsonAsync(await guest.GetAsync("/api/v1/parade/current"));
+        Assert.Equal(JsonValueKind.Null, before.GetProperty("heroImageUrl").ValueKind);
+
+        // Foto uploaden en bij de website-instellingen opslaan (zoals in het portal, Website → Instellingen).
+        var upload = await _bestuur.PostAsync("/api/v1/admin/website/images", ContentTests.Multipart("file", "optocht.jpg", TestImages.JpegWithGps()));
+        var image = (await JsonAsync(upload)).GetProperty("path").GetString()!;
+        var settings = JsonSerializer.Deserialize<Dictionary<string, object?>>(
+            (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/website/settings")).GetRawText())!;
+        settings["optochtHeroImage"] = image;
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PutAsJsonAsync("/api/v1/admin/website/settings", settings)).StatusCode);
+
+        // De app leest het optochtscherm van /api/v1/parade/current; daar komt nu de ingestelde foto in terug.
+        var after = await JsonAsync(await guest.GetAsync("/api/v1/parade/current"));
+        Assert.Contains(image, after.GetProperty("heroImageUrl").GetString());
+    }
+
+    [Fact]
     public async Task Lid_slaat_concept_op_gaat_later_verder_en_dient_in_met_opgavenummer()
     {
         var (userId, lid) = await LidAsync("piet@example.com");

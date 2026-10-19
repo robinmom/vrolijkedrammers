@@ -13,10 +13,11 @@ interface RemoteImageProps {
   style: StyleProp<ImageStyle>;
   /** Alleen invullen als de afbeelding inhoud toevoegt; anders is ze decoratief. */
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 /** Afbeelding uit de API met schijfcache; zonder afbeelding een rustig vlak in plaats van een gat. */
-export function RemoteImage({ uri, cacheKey, style, accessibilityLabel }: RemoteImageProps) {
+export function RemoteImage({ uri, cacheKey, style, accessibilityLabel, testID }: RemoteImageProps) {
   const { colors } = useTheme();
   return (
     <Image
@@ -27,6 +28,7 @@ export function RemoteImage({ uri, cacheKey, style, accessibilityLabel }: Remote
       style={[{ backgroundColor: colors.tintBlue }, style]}
       accessible={Boolean(accessibilityLabel)}
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     />
   );
 }

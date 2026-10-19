@@ -274,6 +274,26 @@ describe('Optocht inschrijven (fase 11)', () => {
     expect(screen.queryByText('Deelnemers')).toBeNull();
   });
 
+  it('hero: toont de ingestelde foto uit het portal', async () => {
+    setSessionForTest('signedOut', null);
+    const heroImageUrl = 'https://example.blob.core.windows.net/content/uploads/abc.jpg?sig=x';
+    mockApi({ ...paradeApi, '/api/v1/parade/current': { ...parade, heroImageUrl } });
+    await renderApp(routes, '/optocht');
+    await screen.findByText('Optocht Loil 2027');
+    expect(screen.getByTestId('optocht-hero-remote')).toBeTruthy();
+    expect(JSON.stringify(screen.getByTestId('optocht-hero-remote').props.source)).toContain(heroImageUrl);
+    expect(screen.queryByTestId('optocht-hero-fallback')).toBeNull();
+  });
+
+  it('hero: valt zonder ingestelde foto terug op de meegeleverde afbeelding', async () => {
+    setSessionForTest('signedOut', null);
+    mockApi(paradeApi);
+    await renderApp(routes, '/optocht');
+    await screen.findByText('Optocht Loil 2027');
+    expect(screen.getByTestId('optocht-hero-fallback')).toBeTruthy();
+    expect(screen.queryByTestId('optocht-hero-remote')).toBeNull();
+  });
+
   it('met een inschrijving wordt de knop Mijn inschrijving; een concept is te verwijderen', async () => {
     setSessionForTest('signedIn');
     const calls = mockApi({

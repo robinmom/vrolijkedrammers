@@ -18,6 +18,7 @@ internal sealed class WebsiteSettingsConfiguration : IEntityTypeConfiguration<We
         builder.Property(s => s.HeroPrimaryLabel).HasMaxLength(40);
         builder.Property(s => s.HeroSecondaryLabel).HasMaxLength(40);
         builder.Property(s => s.HeroImageBlobPath).HasMaxLength(300);
+        builder.Property(s => s.OptochtHeroImageBlobPath).HasMaxLength(300);
         builder.Property(s => s.FacebookPageUrl).HasMaxLength(300);
         builder.Property(s => s.InstagramUrl).HasMaxLength(300);
         builder.Property(s => s.RowVersion).IsRowVersion();

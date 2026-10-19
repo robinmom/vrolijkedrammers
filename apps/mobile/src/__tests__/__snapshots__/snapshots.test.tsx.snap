@@ -5952,6 +5952,7 @@ exports[`snapshot dark 04 Optocht 1`] = `
                 "top": 0,
               }
             }
+            testID="optocht-hero-fallback"
           />
           <ViewManagerAdapter_ExpoLinearGradient
             colors={
@@ -17521,6 +17522,7 @@ exports[`snapshot light 04 Optocht 1`] = `
                 "top": 0,
               }
             }
+            testID="optocht-hero-fallback"
           />
           <ViewManagerAdapter_ExpoLinearGradient
             colors={

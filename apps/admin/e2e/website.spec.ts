@@ -50,6 +50,20 @@ test('fase 21a: hero aanpassen met een nieuwe foto', async ({ page }) => {
   await expectNoSeriousA11yIssues(page);
 });
 
+test('optocht: hero-afbeelding voor de app instellen bij Website → Instellingen', async ({ page }) => {
+  const api = new MockApi(['website.manage']);
+  await open(page, api, 'website/instellingen');
+  const optocht = page.getByRole('group', { name: 'Optocht' });
+  await optocht
+    .getByLabel(/^Optocht-afbeelding/)
+    .setInputFiles({ name: 'optocht.png', mimeType: 'image/png', buffer: tinyPng });
+  await expect(optocht.locator('.image-picker img')).toBeVisible();
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Opgeslagen.')).toBeVisible();
+  expect(api.websiteSettings.optochtHeroImageUrl).toContain('data:image/png');
+  await expectNoSeriousA11yIssues(page);
+});
+
 test('fase 21a: kaderlid uit de ledenlijst toevoegen en de volgorde wijzigen', async ({ page }) => {
   const api = new MockApi(['website.manage']);
   await open(page, api, 'website/kader');

@@ -11,7 +11,7 @@ namespace Drammers.Infrastructure.Content;
 
 public sealed record WebsiteSettingsInput(
     string? HeroEyebrow, string HeroTitle, string? HeroSubtitle, string? HeroPrimaryLabel, WebsiteLink? HeroPrimaryLink,
-    string? HeroSecondaryLabel, WebsiteLink? HeroSecondaryLink, string? HeroImage, string? FacebookPageUrl, string? InstagramUrl,
+    string? HeroSecondaryLabel, WebsiteLink? HeroSecondaryLink, string? HeroImage, string? OptochtHeroImage, string? FacebookPageUrl, string? InstagramUrl,
     bool ShowYouthPrinces);
 
 public sealed record WebsitePageInput(
@@ -58,8 +58,11 @@ public sealed class WebsiteAdministration(DrammersDbContext db, ContentFiles con
         s.ShowYouthPrinces = input.ShowYouthPrinces;
         var (image, obsolete) = UploadedImages.Resolve(s.HeroImageBlobPath, input.HeroImage);
         s.HeroImageBlobPath = image;
-        await SaveAsync("website.settings-updated", "WebsiteSettings", WebsiteSettings.SingletonId.ToString(), input with { HeroImage = null }, cancellationToken);
+        var (optochtImage, optochtObsolete) = UploadedImages.Resolve(s.OptochtHeroImageBlobPath, input.OptochtHeroImage);
+        s.OptochtHeroImageBlobPath = optochtImage;
+        await SaveAsync("website.settings-updated", "WebsiteSettings", WebsiteSettings.SingletonId.ToString(), input with { HeroImage = null, OptochtHeroImage = null }, cancellationToken);
         await DeleteAsync(obsolete, cancellationToken);
+        await DeleteAsync(optochtObsolete, cancellationToken);
     }
 
     // ----- Pagina's ------------------------------------------------------------------------------------------------

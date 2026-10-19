@@ -28,6 +28,9 @@ public sealed class WebsiteSettings : IAuditable
 
     public string? HeroImageBlobPath { get; set; }
 
+    /// <summary>De grote foto bovenaan het optochtscherm in de app; leeg = de meegeleverde foto in de app.</summary>
+    public string? OptochtHeroImageBlobPath { get; set; }
+
     /// <summary>Adres van de Facebookpagina (voor de knop "Naar onze pagina" en de feed op de homepage).</summary>
     public string? FacebookPageUrl { get; set; }
 

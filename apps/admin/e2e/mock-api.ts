@@ -862,6 +862,7 @@ export class MockApi {
     heroSecondaryLabel: 'Word lid' as string | null,
     heroSecondaryLink: 'Membership' as string | null,
     heroImageUrl: null as string | null,
+    optochtHeroImageUrl: null as string | null,
     facebookPageUrl: 'https://www.facebook.com/vrolijkedrammers' as string | null,
     instagramUrl: null as string | null,
     showYouthPrinces: false,
@@ -2104,9 +2105,10 @@ export class MockApi {
     }
     if (path === '/admin/website/settings') {
       if (method === 'PUT') {
-        const { heroImage, ...rest } = body as Record<string, never>;
+        const { heroImage, optochtHeroImage, ...rest } = body as Record<string, never>;
         Object.assign(this.websiteSettings, rest, {
           heroImageUrl: photo(heroImage, this.websiteSettings.heroImageUrl),
+          optochtHeroImageUrl: photo(optochtHeroImage, this.websiteSettings.optochtHeroImageUrl),
         });
         this.record('website.settings-updated', 'WebsiteSettings', '1', rest);
         return noContent();

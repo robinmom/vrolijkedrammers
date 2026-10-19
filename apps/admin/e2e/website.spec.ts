@@ -54,7 +54,9 @@ test('optocht: hero-afbeelding voor de app instellen bij Website → Instellinge
   const api = new MockApi(['website.manage']);
   await open(page, api, 'website/instellingen');
   const optocht = page.getByRole('group', { name: 'Optocht' });
-  await optocht.getByLabel(/^Optocht-afbeelding/).setInputFiles({ name: 'optocht.png', mimeType: 'image/png', buffer: tinyPng });
+  await optocht
+    .getByLabel(/^Optocht-afbeelding/)
+    .setInputFiles({ name: 'optocht.png', mimeType: 'image/png', buffer: tinyPng });
   await expect(optocht.locator('.image-picker img')).toBeVisible();
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Opgeslagen.')).toBeVisible();

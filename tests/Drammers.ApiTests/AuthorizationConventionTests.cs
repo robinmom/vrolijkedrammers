@@ -22,6 +22,7 @@ public class AuthorizationConventionTests
         $"{nameof(EventsController)}.{nameof(EventsController.GetCategories)}",
         $"{nameof(EventsController)}.{nameof(EventsController.Search)}",
         $"{nameof(EventsController)}.{nameof(EventsController.Get)}",
+        $"{nameof(EventsController)}.{nameof(EventsController.AgendaFeed)}",
         $"{nameof(EventsController)}.{nameof(EventsController.Ical)}",
         $"{nameof(NewsController)}.{nameof(NewsController.Search)}",
         $"{nameof(NewsController)}.{nameof(NewsController.Get)}",

@@ -188,6 +188,16 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Agenda_toont_een_abonneer_link_naar_de_hele_agenda()
+    {
+        // Fase agenda-abonnement: naast "In mijn agenda" per activiteit een webcal-link op de hele feed.
+        var html = await HtmlAsync("/agenda");
+        Assert.Contains("Abonneer op de hele agenda", html);
+        Assert.Contains("webcal://", html);
+        Assert.Contains("/api/v1/events/agenda.ics", html);
+    }
+
+    [Fact]
     public async Task Jeugdprinsen_pas_zichtbaar_als_het_bestuur_de_pagina_aanzet()
     {
         await _bestuur.PostAsJsonAsync("/api/v1/admin/website/princes",

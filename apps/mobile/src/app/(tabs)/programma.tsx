@@ -4,10 +4,11 @@ import { StyleSheet, View } from 'react-native';
 import type { EventSummary } from '../../api/client';
 import { queryKeys, useCarnivalYear, useEventCategories, useEvents } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { subscribeToAgenda } from '../../lib/calendar';
 import { dateBlockParts, monthSection, seasonLabel, timeRange } from '../../lib/dates';
 import { eventBadge } from '../../lib/events';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, EmptyState, EventCard, FilterChips, LargeTitleHeader, QueryState, Screen, SearchField } from '../../ui';
+import { AppText, Button, EmptyState, EventCard, FilterChips, LargeTitleHeader, QueryState, Screen, SearchField } from '../../ui';
 
 const ALL = 'alle';
 
@@ -53,6 +54,9 @@ export default function ProgrammaScreen() {
         actions={[{ icon: 'zoeken', accessibilityLabel: searching ? 'Zoeken sluiten' : 'Zoeken', onPress: toggleSearch }]}
       />
       {searching ? <SearchField value={search} onChangeText={setSearch} placeholder="Zoek een activiteit" /> : null}
+      <View style={styles.subscribe}>
+        <Button label="Zet de agenda in je telefoon" icon="programma" variant="secondary" onPress={() => void subscribeToAgenda()} />
+      </View>
       <View style={styles.filters}>
         <FilterChips options={options} selected={category} onChange={setCategory} accessibilityLabel="Filter op categorie" />
       </View>
@@ -92,6 +96,7 @@ export default function ProgrammaScreen() {
 }
 
 const styles = StyleSheet.create({
+  subscribe: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   filters: { paddingBottom: 4 },
   content: { paddingHorizontal: 20, paddingTop: 12, gap: 10 },
   section: { gap: 10 },

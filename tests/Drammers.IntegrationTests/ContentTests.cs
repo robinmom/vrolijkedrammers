@@ -116,6 +116,41 @@ public class ContentTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Agenda_feed_geeft_alleen_openbare_activiteiten_met_kalendermetadata()
+    {
+        await CreateEventAsync("Pronkzitting", "Public");
+        await CreateEventAsync("Grote optocht", "Public");
+        await CreateEventAsync("Ledenvergadering", "Members");
+        await CreateEventAsync("Redactieoverleg", "Restricted", roles: [DefaultRoles.Redactie]);
+
+        // De feed is zonder inloggen; ook een ingelogd lid krijgt daar niet méér dan de openbare agenda.
+        var response = await _api.CreateClient().GetAsync("/api/v1/events/agenda.ics");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/calendar", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("public", response.Headers.CacheControl!.ToString());
+        var ics = await response.Content.ReadAsStringAsync();
+
+        // Geldige VCALENDAR met kalender-metadata zodat agenda-apps periodiek verversen.
+        Assert.StartsWith("BEGIN:VCALENDAR", ics);
+        Assert.Contains("END:VCALENDAR", ics);
+        Assert.Contains("X-WR-CALNAME:De Vrolijke Drammers", ics);
+        Assert.Contains("X-WR-TIMEZONE:Europe/Amsterdam", ics);
+        Assert.Contains("REFRESH-INTERVAL;VALUE=DURATION:PT12H", ics);
+        Assert.Contains("X-PUBLISHED-TTL:PT12H", ics);
+
+        // Meerdere openbare activiteiten, elk als VEVENT met een stabiele UID en een link naar de activiteit.
+        Assert.Equal(2, ics.Split("BEGIN:VEVENT").Length - 1);
+        Assert.Contains("SUMMARY:Pronkzitting", ics);
+        Assert.Contains("SUMMARY:Grote optocht", ics);
+        Assert.Contains("@vrolijkedrammers.nl", ics);
+        Assert.Contains("URL:", ics);
+
+        // Geen leden-only of beperkte activiteiten in de onauthenticated feed.
+        Assert.DoesNotContain("Ledenvergadering", ics);
+        Assert.DoesNotContain("Redactieoverleg", ics);
+    }
+
+    [Fact]
     public async Task Gepland_nieuws_verschijnt_op_het_publicatiemoment_en_de_worker_legt_het_dan_vast()
     {
         var created = await _admin.PostAsJsonAsync("/api/v1/admin/news", new

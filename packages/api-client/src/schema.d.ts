@@ -17575,6 +17575,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/agenda.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agenda-abonnement (iCalendar-feed): alle openbare, (bijna) aankomende activiteiten als één VCALENDAR met meerdere
+         *     VEVENTs. Publiek en zonder inloggen; daarom expliciet de gast-weergave (ContentViewer ContentViewer.Guest), nooit
+         *     leden- of beperkte content. Venster: alles waarvan het einde nog niet langer dan 30 dagen geleden is, zodat net
+         *     voorbije activiteiten nog even in geabonneerde agenda's blijven staan. Korte cache; agenda-apps verversen zelf
+         *     periodiek (REFRESH-INTERVAL/X-PUBLISHED-TTL in de feed).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/calendar": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{id}/ical": {
         parameters: {
             query?: never;

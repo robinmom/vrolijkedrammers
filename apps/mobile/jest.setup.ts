@@ -12,6 +12,7 @@ jest.mock('@react-native-community/slider', () => {
   return { __esModule: true, default: NativeSlider };
 });
 jest.mock('expo-calendar/legacy', () => ({ createEventInCalendarAsync: jest.fn(async () => ({ action: 'saved' })) }));
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 
 // De API-client leest `fetch` bij het aanmaken; tests geven per geval antwoorden via `mockApi` (src/test/render.tsx).
 globalThis.fetch = jest.fn(async () => {

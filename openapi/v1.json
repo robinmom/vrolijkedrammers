@@ -21189,6 +21189,22 @@
         }
       }
     },
+    "/api/v1/events/agenda.ics": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Agenda-abonnement (iCalendar-feed): alle openbare, (bijna) aankomende activiteiten als één VCALENDAR met meerdere\nVEVENTs. Publiek en zonder inloggen; daarom expliciet de gast-weergave (ContentViewer ContentViewer.Guest), nooit\nleden- of beperkte content. Venster: alles waarvan het einde nog niet langer dan 30 dagen geleden is, zodat net\nvoorbije activiteiten nog even in geabonneerde agenda's blijven staan. Korte cache; agenda-apps verversen zelf\nperiodiek (REFRESH-INTERVAL/X-PUBLISHED-TTL in de feed).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/calendar": { }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events/{id}/ical": {
       "get": {
         "tags": [

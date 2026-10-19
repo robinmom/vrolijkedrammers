@@ -89,6 +89,32 @@ public sealed class EventsController(DrammersDbContext db, ContentViewerResolver
             e.IsHighlight, e.BadgeText, await urls.ForAsync(FileContainers.Content, e.ImageBlobPath, cancellationToken), attachments);
     }
 
+    /// <summary>
+    /// Agenda-abonnement (iCalendar-feed): alle openbare, (bijna) aankomende activiteiten als één VCALENDAR met meerdere
+    /// VEVENTs. Publiek en zonder inloggen; daarom expliciet de gast-weergave (<see cref="ContentViewer.Guest"/>), nooit
+    /// leden- of beperkte content. Venster: alles waarvan het einde nog niet langer dan 30 dagen geleden is, zodat net
+    /// voorbije activiteiten nog even in geabonneerde agenda's blijven staan. Korte cache; agenda-apps verversen zelf
+    /// periodiek (REFRESH-INTERVAL/X-PUBLISHED-TTL in de feed).
+    /// </summary>
+    [HttpGet("events/agenda.ics")]
+    [Produces("text/calendar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> AgendaFeed(CancellationToken cancellationToken)
+    {
+        var now = clock.UtcNow.UtcDateTime;
+        var windowStart = now.Date.AddDays(-30);
+        var events = await db.Events.AsNoTracking().VisibleTo(ContentViewer.Guest, now)
+            .Where(e => (e.EndAt ?? e.StartAt) >= windowStart).OrderBy(e => e.StartAt).ToListAsync(cancellationToken);
+        var baseUrl = Request.PublicBaseUrlFor();
+        var items = events.Select(e => new IcsEvent(
+            e.Id, e.Title, e.Summary,
+            string.Join(", ", new[] { e.LocationName, e.LocationAddress }.Where(s => !string.IsNullOrWhiteSpace(s))),
+            $"{baseUrl}/agenda#activiteit-{e.Id:N}", e.StartAt, e.EndAt, e.AllDay));
+        var ics = IcsWriter.WriteCalendar("De Vrolijke Drammers", "Europe/Amsterdam", items, now);
+        Response.Headers.CacheControl = "public, max-age=3600";
+        return File(System.Text.Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", "drammers-agenda.ics");
+    }
+
     [HttpGet("events/{id:guid}/ical")]
     [Produces("text/calendar")]
     [ProducesResponseType(StatusCodes.Status200OK)]

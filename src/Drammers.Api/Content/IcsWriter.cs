@@ -3,16 +3,53 @@ using System.Text;
 
 namespace Drammers.Api.Content;
 
-/// <summary>Minimale iCalendar-export (RFC 5545) van één event, voor "Zet in agenda".</summary>
+/// <summary>Minimale iCalendar-export (RFC 5545): één activiteit ("Zet in agenda") of de hele agenda als abonnement-feed.</summary>
 public static class IcsWriter
 {
+    /// <summary>Eén activiteit, voor de losse "Zet in agenda"-export.</summary>
     public static string Write(Guid id, string title, string? description, string? location, DateTime startUtc, DateTime? endUtc, bool allDay, DateTime stampUtc)
     {
         var sb = new StringBuilder();
+        BeginCalendar(sb);
+        WriteEvent(sb, id, title, description, location, url: null, startUtc, endUtc, allDay, stampUtc);
+        EndCalendar(sb);
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// De hele openbare agenda als abonnement-feed: meerdere VEVENTs plus kalender-metadata zodat agenda-apps periodiek
+    /// verversen (<c>REFRESH-INTERVAL</c>/<c>X-PUBLISHED-TTL</c>). Tijdzone- en hele-dag-afhandeling gelijk aan de losse export.
+    /// </summary>
+    public static string WriteCalendar(string calendarName, string timeZone, IEnumerable<IcsEvent> events, DateTime stampUtc)
+    {
+        var sb = new StringBuilder();
+        BeginCalendar(sb);
+        Line(sb, $"X-WR-CALNAME:{Escape(calendarName)}");
+        Line(sb, $"X-WR-TIMEZONE:{Escape(timeZone)}");
+        Line(sb, "REFRESH-INTERVAL;VALUE=DURATION:PT12H");
+        Line(sb, "X-PUBLISHED-TTL:PT12H");
+        foreach (var e in events)
+        {
+            WriteEvent(sb, e.Id, e.Title, e.Description, e.Location, e.Url, e.StartUtc, e.EndUtc, e.AllDay, stampUtc);
+        }
+
+        EndCalendar(sb);
+        return sb.ToString();
+    }
+
+    private static void BeginCalendar(StringBuilder sb)
+    {
         Line(sb, "BEGIN:VCALENDAR");
         Line(sb, "VERSION:2.0");
         Line(sb, "PRODID:-//De Vrolijke Drammers//App//NL");
         Line(sb, "CALSCALE:GREGORIAN");
+    }
+
+    private static void EndCalendar(StringBuilder sb) => Line(sb, "END:VCALENDAR");
+
+    private static void WriteEvent(
+        StringBuilder sb, Guid id, string title, string? description, string? location, string? url, DateTime startUtc, DateTime? endUtc, bool allDay, DateTime stampUtc)
+    {
         Line(sb, "BEGIN:VEVENT");
         Line(sb, $"UID:{id}@vrolijkedrammers.nl");
         Line(sb, $"DTSTAMP:{Utc(stampUtc)}");
@@ -40,9 +77,12 @@ public static class IcsWriter
             Line(sb, $"LOCATION:{Escape(location)}");
         }
 
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            Line(sb, $"URL:{Escape(url)}");
+        }
+
         Line(sb, "END:VEVENT");
-        Line(sb, "END:VCALENDAR");
-        return sb.ToString();
     }
 
     private static string Utc(DateTime value) => value.ToUniversalTime().ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
@@ -77,3 +117,6 @@ public static class IcsWriter
         }
     }
 }
+
+/// <summary>Eén activiteit voor de agenda-feed; tijden in UTC, net als de losse export.</summary>
+public sealed record IcsEvent(Guid Id, string Title, string? Description, string? Location, string? Url, DateTime StartUtc, DateTime? EndUtc, bool AllDay);

@@ -1,6 +1,38 @@
+import * as Clipboard from 'expo-clipboard';
 import { createEventInCalendarAsync } from 'expo-calendar/legacy';
-import { Linking, Platform } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import { apiBaseUrl, type EventDetail } from '../api/client';
+
+/** De iCalendar-feed met alle openbare activiteiten (het agenda-abonnement), op dezelfde host als de API. */
+export const agendaFeedUrl = `${apiBaseUrl}/api/v1/events/agenda.ics`;
+
+/**
+ * "Zet de agenda in je telefoon": abonneren op de hele verenigingsagenda, zodat nieuwe en gewijzigde activiteiten
+ * vanzelf meekomen. iOS opent de webcal-link; het systeem vraagt dan om het agenda-abonnement toe te voegen.
+ * Op Android is webcal-abonneren op het toestel onbetrouwbaar: lukt het openen niet, dan tonen we de https-link met
+ * uitleg (Google Agenda → "Andere agenda's → Via URL") en een knop om de link te kopiëren. Zo blokkeren we niemand.
+ */
+export async function subscribeToAgenda(): Promise<void> {
+  const https = agendaFeedUrl;
+  const webcal = https.replace(/^https?:\/\//, 'webcal://');
+  if (Platform.OS === 'ios') {
+    await Linking.openURL(webcal);
+    return;
+  }
+
+  try {
+    await Linking.openURL(webcal);
+  } catch {
+    Alert.alert(
+      'Agenda toevoegen',
+      `Voeg deze link toe in Google Agenda via "Andere agenda's → Via URL":\n\n${https}`,
+      [
+        { text: 'Kopieer link', onPress: () => void Clipboard.setStringAsync(https) },
+        { text: 'Sluiten', style: 'cancel' },
+      ],
+    );
+  }
+}
 
 /**
  * "Toevoegen aan agenda" (Figma 06). Opent het systeemformulier van de agenda, zonder agendatoestemming:

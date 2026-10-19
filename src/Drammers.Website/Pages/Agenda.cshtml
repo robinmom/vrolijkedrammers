@@ -9,6 +9,10 @@
             <a class="chip" href="/agenda?categorie=@c.Code" aria-current="@(Model.Category == c.Code ? "true" : "false")">@c.Name</a>
         }
     </nav>
+    <p class="agenda-subscribe">
+        <a class="button outline" href="webcal://@Request.Host/api/v1/events/agenda.ics">Abonneer op de hele agenda</a>
+        <span class="muted">Eén keer instellen en nieuwe of gewijzigde activiteiten komen daarna vanzelf in je eigen agenda.</span>
+    </p>
     @if (Model.Events.Count == 0)
     {
         <p class="muted">Er staan geen activiteiten in de agenda@(Model.Category is null ? "" : " van deze soort").</p>

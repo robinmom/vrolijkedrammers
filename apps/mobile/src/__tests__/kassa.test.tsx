@@ -95,6 +95,63 @@ describe('Kassa (fase 19c)', () => {
     expect(screen.getByText('Deze munten zijn al uitgegeven om 20:57 (bestelling 2027-0311).')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Bestelling uitgegeven' })).toBeNull();
   });
+
+  it('scherm A: al uitgegeven toont het lid groot en "Afgehaald om"', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['sale.collect']),
+      '/api/v1/kassa/scan': {
+        ...ready,
+        scanId: null,
+        outcome: 'Refused',
+        title: 'Al uitgegeven',
+        message: 'Deze munten zijn al uitgegeven om 20:57 (bestelling 2027-0311).',
+        issuedAt: '20:57',
+      },
+    });
+    await renderApp(routes, '/kassa');
+    await fireEvent.press(await screen.findByTestId('camera'));
+    expect(await screen.findByText('Al uitgegeven')).toBeTruthy();
+    expect(screen.getByText('Mendy Mom')).toBeTruthy();
+    expect(screen.getByText('Afgehaald om 20:57 · bestelling 2027-0311')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Bestelling uitgegeven' })).toBeNull();
+  });
+
+  it('scherm B: dubbelscan-waarschuwing verschijnt vóór het uitgeven; pas "Toch uitgeven" geeft uit', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['sale.collect']),
+      '/api/v1/kassa/scan': { ...ready, recentOtherDeviceAt: '21:03' },
+      '/api/v1/kassa/scans/ks-1/issue': { ...ready, outcome: 'Issued', title: 'Uitgegeven', message: '20 munten uitgegeven om 21:14.' },
+    });
+    await renderApp(routes, '/kassa');
+    await fireEvent.press(await screen.findByTestId('camera'));
+    expect(await screen.findByText('Let op')).toBeTruthy();
+    expect(screen.getByText(/op een andere kassa gescand om 21:03/)).toBeTruthy();
+    // De veilige keuze staat als eerste; er wordt nog niets uitgegeven.
+    expect(screen.getByRole('button', { name: 'Annuleren — niets uitgeven' })).toBeTruthy();
+    expect(posts('/api/v1/kassa/scans/ks-1/issue')).toHaveLength(0);
+    await fireEvent.press(screen.getByRole('button', { name: 'Toch uitgeven' }));
+    expect(await screen.findByText('Uitgegeven')).toBeTruthy();
+    expect(posts('/api/v1/kassa/scans/ks-1/issue')).toHaveLength(1);
+  });
+
+  it('scherm C + D: "Recent" opent de lijst met de uitgiftes van vanavond', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['sale.collect']),
+      '/api/v1/kassa/recent': [
+        { holderName: 'Mendy Mom', quantity: 20, time: '21:03', paidWith: 'iDEAL' },
+        { holderName: 'Jan Jansen', quantity: 6, time: '20:40', paidWith: 'contant' },
+      ],
+    });
+    await renderApp(routes, '/kassa');
+    await fireEvent.press(await screen.findByRole('button', { name: 'Recent uitgegeven' }));
+    expect(await screen.findByText('Vanavond uitgegeven')).toBeTruthy();
+    expect(await screen.findByText('Mendy Mom')).toBeTruthy();
+    expect(screen.getByText('20 munten · 21:03 · iDEAL')).toBeTruthy();
+    expect(screen.getByText('Jan Jansen')).toBeTruthy();
+  });
 });
 
 describe('Gekochte kaarten bij de deur (fase 19c)', () => {

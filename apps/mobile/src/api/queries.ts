@@ -51,6 +51,8 @@ export const queryKeys = {
   myRegistrationDocuments: (id: string) => ['me', 'parade-registrations', id, 'documents'] as const,
   myTicket: ['me', 'ticket'] as const,
   accessStatus: ['me', 'access-status'] as const,
+  /** Recent uitgegeven bij de kassa (fase 19c, scherm "Recent"): toestelgebonden, alleen in het geheugen. */
+  kassaRecent: ['me', 'kassa-recent'] as const,
   /** Alleen in het geheugen (sleutels onder 'me' worden niet bewaard, zie QueryProvider). */
   offlinePack: ['me', 'offline-pack'] as const,
 };
@@ -331,6 +333,18 @@ export const useOfflinePack = (enabled: boolean) => {
     queryFn: () => unwrap(api.GET('/api/v1/access/offline-pack')),
     enabled: status === 'signedIn' && enabled,
     refetchInterval: 5 * 60_000,
+    gcTime: 0,
+  });
+};
+
+/** Recent uitgegeven bij de kassa (fase 19c, scherm "Recent"): de uitgiftes van vanavond op dit toestel, vers bij elke keer openen. */
+export const useKassaRecent = (enabled: boolean) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.kassaRecent,
+    queryFn: () => unwrap(api.GET('/api/v1/kassa/recent')),
+    enabled: status === 'signedIn' && enabled,
+    staleTime: 0,
     gcTime: 0,
   });
 };

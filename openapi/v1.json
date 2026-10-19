@@ -22349,6 +22349,44 @@
         }
       }
     },
+    "/api/v1/kassa/recent": {
+      "get": {
+        "tags": [
+          "Kassa"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KassaRecentRow"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KassaRecentRow"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KassaRecentRow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/children/{memberId}": {
       "get": {
         "tags": [
@@ -37229,6 +37267,40 @@
         },
         "description": "Eén regel in de Kassalog van het portal."
       },
+      "KassaRecentRow": {
+        "required": [
+          "holderName",
+          "quantity",
+          "time",
+          "paidWith"
+        ],
+        "type": "object",
+        "properties": {
+          "holderName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "quantity": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "time": {
+            "type": "string"
+          },
+          "paidWith": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Eén uitgifte van vanavond op dit toestel (Figma \"C — Recent\")."
+      },
       "KassaResult": {
         "required": [
           "scanId",
@@ -37282,9 +37354,21 @@
               "null",
               "string"
             ]
+          },
+          "issuedAt": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recentOtherDeviceAt": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "Wat de kassa na een scan ziet (Figma \"iOS / 9 Kassa – munten uitgeven\")."
+        "description": "Wat de kassa na een scan ziet (Figma \"iOS / 9 Kassa – munten uitgeven\"). string? KassaResult.IssuedAt is het tijdstip\n(HH:mm) van een eerdere uitgifte bij een weigering wegens \"al uitgegeven\"; string? KassaResult.RecentOtherDeviceAt is\ngevuld als dezelfde bestelling net ook op een andere kassa is gescand (dubbelscan-advies, geen blokkade)."
       },
       "LineupSummary": {
         "required": [

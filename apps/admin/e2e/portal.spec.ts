@@ -45,6 +45,31 @@ test('bestuurder kent een rol toe en ziet die in de auditlog', async ({ page }) 
   expect(api.userRoles['u-jan']!.map((r) => r.code)).toEqual(['lid', 'redactie']);
 });
 
+test('bestuurder voegt vanaf de rollenpagina een gebruiker aan een rol toe en haalt die er weer af', async ({
+  page,
+}) => {
+  const api = new MockApi();
+  await open(page, api, 'rollen');
+  // Rol Redactie (id 10) heeft nog geen gebruikers.
+  await page.getByRole('button', { name: 'Redactie' }).click();
+  const leden = page.getByRole('region', { name: 'Gebruikers met deze rol' });
+  await expect(leden.getByText('Nog niemand heeft deze rol.')).toBeVisible();
+
+  // Zoeken en toevoegen.
+  await page.getByLabel('Gebruiker toevoegen').fill('Jan');
+  await page.getByRole('listitem').filter({ hasText: 'Jan Lid' }).getByRole('button', { name: 'Toevoegen' }).click();
+  await expect(page.getByRole('status')).toHaveText('Jan Lid heeft nu de rol Redactie.');
+  await expect(leden.getByText('Jan Lid')).toBeVisible();
+  expect(api.roleMembers[10]).toEqual(['u-jan']);
+
+  // Verwijderen met bevestiging.
+  await leden.getByRole('button', { name: 'Verwijderen' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Verwijderen' }).click();
+  await expect(page.getByRole('status')).toHaveText('Jan Lid is uit Redactie gehaald.');
+  await expect(leden.getByText('Nog niemand heeft deze rol.')).toBeVisible();
+  expect(api.roleMembers[10]).toEqual([]);
+});
+
 test('gebruiker zonder beheerrechten ziet "Geen beheerrechten"', async ({ page }) => {
   await open(page, new MockApi(['news.read']));
   await expect(page.getByRole('heading', { name: 'Geen beheerrechten' })).toBeVisible();

@@ -106,6 +106,64 @@ public class RoleAdministrationTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Gebruiker_aan_een_rol_toevoegen_laat_zijn_andere_rollen_staan_en_staat_in_de_ledenlijst()
+    {
+        var (userId, objectId) = await _api.CreateUserAsync("jan@example.com", DefaultRoles.Lid);
+        var user = _api.ClientFor(objectId);
+
+        // Redactie (rol-id 10) toevoegen; idempotent: een tweede keer verandert niets.
+        Assert.Equal(HttpStatusCode.NoContent, (await _admin.PostAsJsonAsync("/api/v1/admin/roles/10/members", new { userId })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _admin.PostAsJsonAsync("/api/v1/admin/roles/10/members", new { userId })).StatusCode);
+
+        // Verschijnt precies één keer in de ledenlijst van de rol, met e-mail en naam.
+        var members = await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/roles/10/members");
+        Assert.Equal(1, members.EnumerateArray().Count(m => m.GetProperty("userId").GetGuid() == userId));
+        Assert.Contains(members.EnumerateArray(), m => m.GetProperty("email").GetString() == "jan@example.com");
+
+        // Rol Lid blijft staan, Redactie komt erbij (news.manage is nu actief).
+        Assert.Contains(Permissions.NewsManage, await PermissionsOfAsync(user));
+        var roles = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/users/{userId}/roles");
+        var codes = roles.EnumerateArray().Select(r => r.GetProperty("code").GetString()).ToList();
+        Assert.Contains(DefaultRoles.Lid, codes);
+        Assert.Contains(DefaultRoles.Redactie, codes);
+
+        // Geaudit.
+        using var scope = _api.Services.CreateScope();
+        Assert.True(await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().AuditLog
+            .AnyAsync(a => a.Action == "user.roles.changed" && a.EntityId == userId.ToString() && a.ActorUserId == _adminId));
+    }
+
+    [Fact]
+    public async Task Gebruiker_uit_een_rol_halen_laat_zijn_andere_rollen_staan()
+    {
+        var (userId, objectId) = await _api.CreateUserAsync("piet@example.com", DefaultRoles.Lid, DefaultRoles.Redactie);
+        var user = _api.ClientFor(objectId);
+        Assert.Contains(Permissions.NewsManage, await PermissionsOfAsync(user));
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _admin.DeleteAsync($"/api/v1/admin/roles/10/members/{userId}")).StatusCode);
+
+        Assert.DoesNotContain(Permissions.NewsManage, await PermissionsOfAsync(user));
+        var roles = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/users/{userId}/roles");
+        var codes = roles.EnumerateArray().Select(r => r.GetProperty("code").GetString()).ToList();
+        Assert.Contains(DefaultRoles.Lid, codes);
+        Assert.DoesNotContain(DefaultRoles.Redactie, codes);
+        var members = await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/roles/10/members");
+        Assert.DoesNotContain(members.EnumerateArray(), m => m.GetProperty("userId").GetGuid() == userId);
+    }
+
+    [Fact]
+    public async Task Laatste_beheerder_met_rolbeheer_kan_niet_uit_de_beheerrol_worden_gehaald()
+    {
+        // _adminId heeft Beheerder (IT) (rol-id 12, met role.manage); eruit halen zou niemand met role.manage overlaten.
+        var response = await _admin.DeleteAsync($"/api/v1/admin/roles/12/members/{_adminId}");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("LOCKOUT_PREVENTED", body.RootElement.GetProperty("code").GetString());
+        Assert.Contains(Permissions.RoleManage, await PermissionsOfAsync(_admin));
+    }
+
+    [Fact]
     public async Task Provisioning_van_een_beheerder_is_idempotent()
     {
         var request = new { email = "Nieuwe.Beheerder@Example.com", displayName = "Nieuwe beheerder", roles = new[] { DefaultRoles.BeheerderIt } };

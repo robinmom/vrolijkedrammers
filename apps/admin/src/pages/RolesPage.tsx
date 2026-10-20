@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation, usePermissions, useRoles, type Role } from '../api/hooks';
+import { useApiMutation, usePermissions, useRoleMembers, useRoles, useUsers, type Role, type RoleMember } from '../api/hooks';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
+
+/** Queries die opnieuw moeten laden na een rolmutatie op een gebruiker. */
+const memberInvalidate: string[][] = [['role-members'], ['roles'], ['users'], ['me']];
 
 export function RolesPage() {
   const roles = useRoles();
@@ -39,7 +42,12 @@ export function RolesPage() {
             ))}
           </ul>
         </nav>
-        {selected ? <RoleEditor key={selected.code} role={selected} onMessage={setMessage} /> : null}
+        {selected ? (
+          <div className="stack">
+            <RoleEditor key={selected.code} role={selected} onMessage={setMessage} />
+            <RoleMembers key={`${selected.code}-leden`} role={selected} onMessage={setMessage} />
+          </div>
+        ) : null}
       </div>
       <CreateRoleDialog
         open={creating}
@@ -124,6 +132,142 @@ function RoleEditor({ role, onMessage }: { role: Role; onMessage: (message: stri
         onConfirm={() => remove.mutate(undefined, { onSettled: () => setConfirmDelete(false), onSuccess: () => onMessage('Rol verwijderd.') })}
       />
     </section>
+  );
+}
+
+/**
+ * Gebruikers van een rol: huidige leden met "Verwijderen", en een zoekveld om iemand toe te voegen. Toevoegen en
+ * verwijderen raken de andere rollen van de gebruiker niet; de laatste rolbeheerder kan niet worden weggehaald (409).
+ */
+function RoleMembers({ role, onMessage }: { role: Role; onMessage: (message: string) => void }) {
+  const api = useApi();
+  const members = useRoleMembers(role.id);
+  const [confirmRemove, setConfirmRemove] = useState<RoleMember | null>(null);
+
+  const remove = useApiMutation(
+    (userId: string) =>
+      api.DELETE('/api/v1/admin/roles/{id}/members/{userId}', { params: { path: { id: role.id, userId } } }),
+    memberInvalidate,
+  );
+
+  const list = members.data ?? [];
+
+  return (
+    <section className="card" aria-labelledby="rol-leden">
+      <div className="card-header">
+        <h2 id="rol-leden">Gebruikers met deze rol</h2>
+        <span className="badge">{list.length}</span>
+      </div>
+      <ProblemAlert error={members.error ?? remove.error} />
+      {list.length === 0 ? <p className="muted">Nog niemand heeft deze rol.</p> : null}
+      <ul className="list">
+        {list.map((member) => (
+          <li key={member.userId} className="list-row">
+            <div className="grow">
+              <strong>{member.displayName}</strong>
+              <div className="muted small-text">
+                {member.email}
+                {member.isTemporary ? ' · tijdelijk' : ''}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="button ghost small"
+              disabled={remove.isPending}
+              onClick={() => setConfirmRemove(member)}
+            >
+              Verwijderen
+            </button>
+          </li>
+        ))}
+      </ul>
+      <AddRoleMember role={role} members={list} onMessage={onMessage} />
+      <ConfirmDialog
+        open={confirmRemove !== null}
+        title={confirmRemove ? `${confirmRemove.displayName} uit ${role.name} halen?` : ''}
+        message={
+          confirmRemove
+            ? `${confirmRemove.displayName} verliest de rechten van ${role.name}. De andere rollen blijven staan.`
+            : ''
+        }
+        confirmLabel="Verwijderen"
+        busy={remove.isPending}
+        onCancel={() => setConfirmRemove(null)}
+        onConfirm={() => {
+          const member = confirmRemove;
+          if (!member) {
+            return;
+          }
+          remove.mutate(member.userId, {
+            onSettled: () => setConfirmRemove(null),
+            onSuccess: () => onMessage(`${member.displayName} is uit ${role.name} gehaald.`),
+          });
+        }}
+      />
+    </section>
+  );
+}
+
+/** Zoekveld om een bestaande gebruiker te vinden en aan de rol toe te voegen (hergebruikt de gebruikerszoekopdracht). */
+function AddRoleMember({
+  role,
+  members,
+  onMessage,
+}: {
+  role: Role;
+  members: RoleMember[];
+  onMessage: (message: string) => void;
+}) {
+  const api = useApi();
+  const [search, setSearch] = useState('');
+  const users = useUsers(search, 1);
+  const add = useApiMutation(
+    (userId: string) =>
+      api.POST('/api/v1/admin/roles/{id}/members', { params: { path: { id: role.id } }, body: { userId } }),
+    memberInvalidate,
+  );
+
+  const query = search.trim();
+  const current = new Set(members.map((m) => m.userId));
+  const results = (users.data?.items ?? []).filter((u) => !current.has(u.id));
+
+  return (
+    <div className="nested-add">
+      <Field
+        label="Gebruiker toevoegen"
+        hint="Zoek op naam of e-mailadres"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <ProblemAlert error={add.error} />
+      {query.length >= 2 ? (
+        <>
+          <ul className="list">
+            {results.map((user) => (
+              <li key={user.id} className="list-row">
+                <div className="grow">
+                  <strong>{user.displayName}</strong>
+                  <div className="muted small-text">{user.email}</div>
+                </div>
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={add.isPending}
+                  onClick={() =>
+                    add.mutate(user.id, { onSuccess: () => onMessage(`${user.displayName} heeft nu de rol ${role.name}.`) })
+                  }
+                >
+                  Toevoegen
+                </button>
+              </li>
+            ))}
+          </ul>
+          {results.length === 0 ? (
+            <p className="muted">{users.isLoading ? 'Zoeken…' : 'Geen gebruiker gevonden die deze rol nog niet heeft.'}</p>
+          ) : null}
+        </>
+      ) : null}
+    </div>
   );
 }
 

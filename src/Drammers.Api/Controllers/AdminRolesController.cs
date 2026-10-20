@@ -2,7 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Authorization;
 using Drammers.Infrastructure.Identity;
 using Drammers.Infrastructure.Persistence;
+using Drammers.Modules.Identity.Users;
 using Drammers.SharedKernel.Authorization;
+using Drammers.SharedKernel.Errors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,6 +71,47 @@ public sealed class AdminRolesController(DrammersDbContext db, AccountAdministra
         await administration.SetRolePermissionsAsync(id, request.Permissions, cancellationToken);
         return NoContent();
     }
+
+    /// <summary>De gebruikers die deze rol hebben (geen verwijderde accounts), met of hun toewijzing tijdelijk is.</summary>
+    [HttpGet("roles/{id:int}/members")]
+    [ProducesResponseType<IReadOnlyList<RoleMemberResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IReadOnlyList<RoleMemberResponse>> GetRoleMembers(int id, CancellationToken cancellationToken)
+    {
+        if (!await db.Roles.AnyAsync(r => r.Id == id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.RoleNotFound, "Rol niet gevonden.", DomainErrorKind.NotFound);
+        }
+
+        return await db.UserRoles.AsNoTracking().Where(ur => ur.RoleId == id)
+            .Join(db.Users.Where(u => u.AccountStatus != AccountStatus.Deleted), ur => ur.UserId, u => u.Id,
+                (ur, u) => new { u.Id, u.DisplayName, u.Email, ur.ValidTo })
+            .OrderBy(x => x.DisplayName)
+            .Select(x => new RoleMemberResponse(x.Id, x.DisplayName, x.Email, x.ValidTo != null))
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Voegt de rol toe aan een gebruiker zonder zijn andere rollen te raken (no-op als hij de rol al heeft).</summary>
+    [HttpPost("roles/{id:int}/members")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AddRoleMember(int id, AddRoleMemberRequest request, CancellationToken cancellationToken)
+    {
+        await administration.AddUserToRoleAsync(request.UserId, id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Haalt de rol bij een gebruiker weg; weigert (409) als dit de laatste rolbeheerder zou wegnemen.</summary>
+    [HttpDelete("roles/{id:int}/members/{userId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RemoveRoleMember(int id, Guid userId, CancellationToken cancellationToken)
+    {
+        await administration.RemoveUserFromRoleAsync(userId, id, cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed record PermissionResponse(string Code, string Description, string Category);
@@ -86,3 +129,7 @@ public sealed record UpdateRoleRequest(
     [StringLength(500)] string? Description);
 
 public sealed record SetRolePermissionsRequest([Required] IReadOnlyList<string> Permissions);
+
+public sealed record RoleMemberResponse(Guid UserId, string DisplayName, string Email, bool IsTemporary);
+
+public sealed record AddRoleMemberRequest([Required] Guid UserId);

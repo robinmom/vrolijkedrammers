@@ -62,6 +62,18 @@ export function useRoles() {
   return useQuery({ queryKey: ['roles'], queryFn: async () => required((await api.GET('/api/v1/admin/roles')).data) });
 }
 
+export type RoleMember = Schemas['RoleMemberResponse'];
+
+/** De gebruikers die een rol hebben (voor het toevoegen/verwijderen vanaf de rol). */
+export function useRoleMembers(roleId: number) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['role-members', roleId],
+    queryFn: async () =>
+      required((await api.GET('/api/v1/admin/roles/{id}/members', { params: { path: { id: roleId } } })).data),
+  });
+}
+
 export function usePermissions() {
   const api = useApi();
   return useQuery({

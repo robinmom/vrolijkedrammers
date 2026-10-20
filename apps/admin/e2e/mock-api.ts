@@ -83,6 +83,8 @@ export class MockApi {
     'u-admin': [{ code: 'bestuur', name: 'Bestuur', validFrom: null, validTo: null }],
     'u-jan': [{ code: 'lid', name: 'Carnavalist', validFrom: null, validTo: null }],
   };
+  /** Gebruikers per rol-id (voor toevoegen/verwijderen vanaf de rollenpagina). */
+  roleMembers: Record<number, string[]> = { 1: ['u-jan'], 11: ['u-admin'] };
   audit: {
     id: number;
     occurredAt: string;
@@ -2501,6 +2503,28 @@ export class MockApi {
         return noContent();
       }
       return json(this.userRoles[m[1]!] ?? []);
+    }
+    if ((m = path.match(/^\/admin\/roles\/(\d+)\/members\/([^/]+)$/)) && method === 'DELETE') {
+      const roleId = Number(m[1]);
+      const userId = m[2]!;
+      this.roleMembers[roleId] = (this.roleMembers[roleId] ?? []).filter((x) => x !== userId);
+      this.record('user.roles.changed', 'User', userId, { removedRole: roleId });
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/roles\/(\d+)\/members$/))) {
+      const roleId = Number(m[1]);
+      if (method === 'POST') {
+        const userId = String(body.userId);
+        if (!(this.roleMembers[roleId] ?? []).includes(userId)) {
+          this.roleMembers[roleId] = [...(this.roleMembers[roleId] ?? []), userId];
+        }
+        this.record('user.roles.changed', 'User', userId, { addedRole: roleId });
+        return noContent();
+      }
+      const found = (this.roleMembers[roleId] ?? [])
+        .map((uid) => this.users.find((u) => u.id === uid))
+        .filter((u): u is (typeof this.users)[number] => Boolean(u));
+      return json(found.map((u) => ({ userId: u.id, displayName: u.displayName, email: u.email, isTemporary: false })));
     }
     if (path === '/admin/roles') {
       return json(this.roles);

@@ -79,6 +79,60 @@ public sealed class AccountAdministration(
     }
 
     /// <summary>
+    /// Voegt één rol toe aan een gebruiker zonder zijn andere rollen te raken (append). No-op als hij de rol al heeft.
+    /// Geaudit, verhoogt <c>permissions_version</c> en maakt de cache ongeldig; respecteert het maximum aantal houders.
+    /// </summary>
+    public async Task AddUserToRoleAsync(Guid userId, int roleId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var user = await db.Users.Include(u => u.Roles).SingleOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.UserNotFound, "Gebruiker niet gevonden.", DomainErrorKind.NotFound);
+        var role = await FindRoleAsync(roleId, cancellationToken);
+        if (user.Roles.Any(r => r.RoleId == roleId))
+        {
+            return; // heeft de rol al: niets te doen
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        await EnsureMaxHoldersAsync(user.Id, [new RoleAssignment(role.Code)], [role], DateOnly.FromDateTime(now), cancellationToken);
+        var before = await DescribeRolesAsync(user.Roles, cancellationToken);
+        user.Roles.Add(new UserRole { UserId = user.Id, RoleId = roleId, AssignedAt = now, AssignedBy = actor.UserId });
+        user.PermissionsVersion++;
+        await db.SaveChangesAsync(cancellationToken);
+        var after = await DescribeRolesAsync(user.Roles, cancellationToken);
+        await audit.WriteAsync(new AuditEntry("user.roles.changed", "User", user.Id.ToString(), before, after), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        userAccess.Invalidate(user.ExternalObjectId);
+    }
+
+    /// <summary>
+    /// Haalt één rol bij een gebruiker weg zonder zijn andere rollen te raken. No-op als hij de rol niet heeft. Faalt
+    /// (409) als dit de laatste beheerder met <c>role.manage</c> zou wegnemen. Geaudit, verhoogt <c>permissions_version</c>.
+    /// </summary>
+    public async Task RemoveUserFromRoleAsync(Guid userId, int roleId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var user = await db.Users.Include(u => u.Roles).SingleOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.UserNotFound, "Gebruiker niet gevonden.", DomainErrorKind.NotFound);
+        _ = await FindRoleAsync(roleId, cancellationToken);
+        var existing = user.Roles.SingleOrDefault(r => r.RoleId == roleId);
+        if (existing is null)
+        {
+            return; // heeft de rol niet: niets te doen
+        }
+
+        var before = await DescribeRolesAsync(user.Roles, cancellationToken);
+        user.Roles.Remove(existing);
+        user.PermissionsVersion++;
+        await db.SaveChangesAsync(cancellationToken);
+        await EnsureRoleManagerRemainsAsync(cancellationToken);
+        var after = await DescribeRolesAsync(user.Roles, cancellationToken);
+        await audit.WriteAsync(new AuditEntry("user.roles.changed", "User", user.Id.ToString(), before, after), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        userAccess.Invalidate(user.ExternalObjectId);
+    }
+
+    /// <summary>
     /// Prins(es) maximaal één, adjudanten maximaal twee (<see cref="DefaultRoles.MaxHolders"/>): telt de anderen met de rol
     /// die vandaag of later nog geldt. Haal de rol eerst weg bij de vorige (of zet een einddatum in het verleden).
     /// </summary>

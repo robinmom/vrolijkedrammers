@@ -233,6 +233,7 @@ ul.chips { list-style: none; margin: 0; padding: 0; }
 .album-card img, .album-card .img-empty { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; background: var(--grijs); }
 .album-card .album-text { padding: 14px 18px 18px; display: grid; gap: 4px; }
 .album-card h3 { margin: 0; }
+.fotos-divider { margin: 36px 0 16px; padding-top: 24px; border-top: 1px solid var(--rand); }
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .photo-grid a { display: block; border-radius: 12px; overflow: hidden; background: var(--grijs); }
 .photo-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform 0.2s; }

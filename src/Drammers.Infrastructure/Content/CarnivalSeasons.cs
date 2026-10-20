@@ -147,6 +147,9 @@ public static class SeasonFilters
     /// <summary>Het actuele nieuws toont altijd minstens zoveel berichten, desnoods uit het vorige carnavalsjaar.</summary>
     public const int MinimumCurrentNews = 5;
 
+    /// <summary>De fotopagina toont standaard minstens zoveel albums, desnoods aangevuld uit oudere carnavalsjaren.</summary>
+    public const int MinimumPhotoAlbums = 6;
+
     /// <summary>
     /// Nieuws van het actieve carnavalsjaar, aangevuld met de nieuwste oudere berichten tot er minstens
     /// <see cref="MinimumCurrentNews"/> zijn. Komt er in het actieve jaar een bericht bij, dan valt het oudste aangevulde weg.

@@ -2628,6 +2628,96 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/reassign-collector": {
+      "post": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "Meerdere adverteerders in één keer aan een andere collectant toewijzen (fase 27k); `null` = geen collectant.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignCollectorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignCollectorRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignCollectorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignCollectorResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignCollectorResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReassignCollectorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/campaign-year": {
       "get": {
         "tags": [
@@ -43923,6 +44013,41 @@
             "type": "string"
           },
           "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ReassignCollectorRequest": {
+        "required": [
+          "advertiserIds",
+          "toCollectorMemberId"
+        ],
+        "type": "object",
+        "properties": {
+          "advertiserIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "toCollectorMemberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ReassignCollectorResponse": {
+        "required": [
+          "reassigned"
+        ],
+        "type": "object",
+        "properties": {
+          "reassigned": {
             "type": "integer",
             "format": "int32"
           }

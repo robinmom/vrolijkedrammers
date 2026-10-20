@@ -646,6 +646,51 @@ public sealed class AdvertiserAdministration(
         return linked;
     }
 
+    /// <summary>
+    /// Meerdere adverteerders in één keer aan een andere collectant toewijzen (fase 27k), of de koppeling weghalen met
+    /// <c>null</c> (geen collectant). Valideert dat het doel een kaderlid of collectant is, zet <c>CollectorMemberId</c>
+    /// voor alle opgegeven adverteerders in één transactie en geeft het aantal gewijzigde terug. Een naam uit Excel die
+    /// nog niet gekoppeld was, vervalt bij een nieuwe koppeling (zoals in de editor).
+    /// </summary>
+    public async Task<int> ReassignCollectorAsync(IReadOnlyList<Guid>? advertiserIds, Guid? toCollectorMemberId, CancellationToken cancellationToken)
+    {
+        var ids = advertiserIds?.Distinct().ToList() ?? [];
+        if (ids.Count == 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Kies ten minste één adverteerder.");
+        }
+
+        if (toCollectorMemberId is { } target && !await IsCollectorAsync(target, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "De collectant moet een kaderlid zijn of de rol Collectant hebben.");
+        }
+
+        var toUpdate = await db.Advertisers.Where(a => ids.Contains(a.Id)).ToListAsync(cancellationToken);
+        if (toUpdate.Count != ids.Count)
+        {
+            throw NotFound();
+        }
+
+        // Van wie ze nu zijn (voor de auditregel): de verschillende huidige collectanten op naam.
+        var names = await CollectorNamesAsync(toUpdate.Select(a => a.CollectorMemberId), cancellationToken);
+        var from = toUpdate
+            .Select(a => a.CollectorMemberId is { } c ? names.GetValueOrDefault(c, c.ToString()) : a.ImportedCollectorName ?? "geen collectant")
+            .Distinct(StringComparer.Ordinal).OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase).ToList();
+        var to = toCollectorMemberId is { } id
+            ? (await CollectorNamesAsync([id], cancellationToken)).GetValueOrDefault(id, id.ToString())
+            : "geen collectant";
+
+        foreach (var advertiser in toUpdate)
+        {
+            (advertiser.CollectorMemberId, advertiser.ImportedCollectorName) = (toCollectorMemberId, null);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.collector-reassigned", "AdvertiserCampaign", toCollectorMemberId?.ToString() ?? "none",
+            string.Join(", ", from), $"{to} ({toUpdate.Count})"), cancellationToken);
+        return toUpdate.Count;
+    }
+
     /// <summary>Of het lid collectant kan zijn: kaderlid of het recht <c>advertiser.collect</c> via een rol.</summary>
     public Task<bool> IsCollectorAsync(Guid memberId, CancellationToken cancellationToken) =>
         CollectorMemberIds().AnyAsync(id => id == memberId, cancellationToken);

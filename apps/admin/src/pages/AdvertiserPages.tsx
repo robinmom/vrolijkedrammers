@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
 import {
@@ -80,7 +80,7 @@ export function AdvertisersPage() {
           <Link to="/adverteerders/import" className="button secondary">
             Excel inlezen
           </Link>
-          <Link to="/adverteerders/$id" params={{ id: 'nieuw' }} className="button">
+          <Link to="/adverteerders/$id" params={{ id: 'nieuw' }} search={{ from: 'overzicht' }} className="button">
             Adverteerder toevoegen
           </Link>
         </div>
@@ -154,7 +154,7 @@ export function AdvertisersPage() {
               <tr key={a.id} className={a.active ? undefined : 'muted'}>
                 <td>{a.number}</td>
                 <td>
-                  <Link to="/adverteerders/$id" params={{ id: a.id }}>
+                  <Link to="/adverteerders/$id" params={{ id: a.id }} search={{ from: 'overzicht' }}>
                     {a.companyName}
                   </Link>
                   {a.city ? <span className="muted"> · {a.city}</span> : null}
@@ -234,6 +234,8 @@ const empty: AdvertiserRequest = {
 /** Een adverteerder toevoegen of wijzigen; de IBAN is alleen op verzoek voluit te zien. */
 export function AdvertiserEditorPage() {
   const { id } = useParams({ from: '/adverteerders/$id' });
+  // Context-bewuste terug-knop: terug naar de pagina waar je vandaan kwam (Campagne of Overzicht), anders Overzicht.
+  const { from } = useSearch({ from: '/adverteerders/$id' });
   const isNew = id === 'nieuw';
   const api = useApi();
   const navigate = useNavigate();
@@ -288,7 +290,8 @@ export function AdvertiserEditorPage() {
       onSuccess: (newId) => {
         setMessage('Adverteerder opgeslagen.');
         setForm({ ...form, iban: null });
-        if (isNew && typeof newId === 'string') void navigate({ to: '/adverteerders/$id', params: { id: newId } });
+        if (isNew && typeof newId === 'string')
+          void navigate({ to: '/adverteerders/$id', params: { id: newId }, search: { from } });
       },
     });
   }
@@ -297,7 +300,11 @@ export function AdvertiserEditorPage() {
   return (
     <>
       <p>
-        <Link to="/adverteerders">← Adverteerders</Link>
+        {from === 'campagne' ? (
+          <Link to="/adverteerders/campagne">← Campagne</Link>
+        ) : (
+          <Link to="/adverteerders">← Adverteerders</Link>
+        )}
       </p>
       <h1>{isNew ? 'Adverteerder toevoegen' : form.companyName || 'Adverteerder'}</h1>
       <SuccessMessage message={message} />
@@ -685,8 +692,30 @@ export function AdvertiserStatusPage() {
   const [statusFilter, setStatusFilter] = useState<AdvertiserYearStatus | ''>('');
   const [roundFilter, setRoundFilter] = useState('');
   const [sort, setSort] = useState<CampaignSort | null>(null);
+  // Selecteren en in één keer aan een andere collectant toewijzen (fase 27k).
+  const collectors = useAdvertiserCollectors();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [reassignTo, setReassignTo] = useState('');
+  const [confirmReassign, setConfirmReassign] = useState(false);
+  const [reassignDone, setReassignDone] = useState<string | null>(null);
   const shownYear = year ?? campaign.data?.year ?? null;
   const status = useAdvertiserStatus(shownYear, collector);
+  const reassign = useApiMutation(
+    async (advertiserIds: string[]) =>
+      (
+        await api.POST('/api/v1/admin/advertisers/reassign-collector', {
+          body: { advertiserIds, toCollectorMemberId: reassignTo || null },
+        })
+      ).data,
+    ADVERTISER_KEYS,
+  );
+  const toggleOne = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   const [confirmAll, setConfirmAll] = useState(false);
   const [reminded, setReminded] = useState<string | null>(null);
   const remind = useApiMutation(
@@ -786,6 +815,23 @@ export function AdvertiserStatusPage() {
   const sortedRows = sortCampaignRows(rows, sort);
   const handled = totals ? totals.collected + totals.stopped : 0;
   const percent = totals && totals.total > 0 ? Math.round((100 * handled) / totals.total) : 0;
+
+  // "Alles selecteren" werkt op de nu zichtbare (gefilterde) rijen.
+  const visibleIds = sortedRows.map((r) => r.id);
+  const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+  const someSelected = visibleIds.some((id) => selected.has(id));
+  const toggleAll = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      visibleIds.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  const selectedRows = (report?.rows ?? []).filter((r) => selected.has(r.id));
+  const reassignToName = reassignTo
+    ? (collectors.data?.find((c) => c.memberId === reassignTo)?.name ?? 'de collectant')
+    : 'geen collectant';
+  const reassignFrom = [...new Set(selectedRows.map((r) => r.collectorName ?? 'geen collectant'))];
+  const reassignFromText = reassignFrom.length === 1 ? ` (nu van ${reassignFrom[0]})` : '';
 
   return (
     <>
@@ -1055,6 +1101,51 @@ export function AdvertiserStatusPage() {
         </section>
       ) : null}
 
+      <SuccessMessage message={reassignDone} />
+      {selected.size > 0 ? (
+        <section className="card" aria-label="Geselecteerde adverteerders toewijzen">
+          <p>
+            <strong>{selected.size}</strong> {selected.size === 1 ? 'bedrijf' : 'bedrijven'} geselecteerd
+            {reassignFromText}.
+          </p>
+          <div className="toolbar">
+            <CollectorSelect
+              id="toewijzen-collectant"
+              label="Toewijzen aan"
+              value={reassignTo}
+              onChange={setReassignTo}
+            />
+            <button type="button" className="button" onClick={() => setConfirmReassign(true)}>
+              Wijs toe aan…
+            </button>
+            <button type="button" className="button secondary" onClick={() => setSelected(new Set())}>
+              Selectie wissen
+            </button>
+          </div>
+          <ProblemAlert error={reassign.error} />
+        </section>
+      ) : null}
+      <ConfirmDialog
+        open={confirmReassign}
+        title="Adverteerders toewijzen"
+        message={`${selected.size} ${selected.size === 1 ? 'bedrijf' : 'bedrijven'} overzetten naar ${reassignToName}${reassignFromText}?`}
+        confirmLabel="Toewijzen"
+        busy={reassign.isPending}
+        onCancel={() => setConfirmReassign(false)}
+        onConfirm={() =>
+          reassign.mutate([...selected], {
+            onSuccess: (data) => {
+              setConfirmReassign(false);
+              const count = (data as { reassigned?: number } | undefined)?.reassigned ?? 0;
+              setReassignDone(
+                `${count} ${count === 1 ? 'bedrijf' : 'bedrijven'} toegewezen aan ${reassignToName}.`,
+              );
+              setSelected(new Set());
+            },
+          })
+        }
+      />
+
       {report ? (
         <div
           className="table-scroll table-wrapper"
@@ -1066,6 +1157,20 @@ export function AdvertiserStatusPage() {
             <caption className="visually-hidden">Adverteerders in de campagne {report.year}</caption>
             <thead>
               <tr>
+                <th scope="col">
+                  <label className="visually-hidden" htmlFor="selecteer-alles">
+                    Alles selecteren
+                  </label>
+                  <input
+                    id="selecteer-alles"
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected && !allSelected;
+                    }}
+                    onChange={toggleAll}
+                  />
+                </th>
                 {CAMPAIGN_COLUMNS.map(([key, label]) => (
                   <SortHeader key={key} column={key} label={label} sort={sort} onSort={setSort} />
                 ))}
@@ -1075,7 +1180,18 @@ export function AdvertiserStatusPage() {
               {sortedRows.map((r) => (
                 <tr key={r.id} style={rowColor(r) ? { background: rowColor(r) } : undefined}>
                   <td>
-                    <Link to="/adverteerders/$id" params={{ id: r.id }}>
+                    <label className="visually-hidden" htmlFor={`selecteer-${r.id}`}>
+                      Selecteer {r.companyName}
+                    </label>
+                    <input
+                      id={`selecteer-${r.id}`}
+                      type="checkbox"
+                      checked={selected.has(r.id)}
+                      onChange={() => toggleOne(r.id)}
+                    />
+                  </td>
+                  <td>
+                    <Link to="/adverteerders/$id" params={{ id: r.id }} search={{ from: 'campagne' }}>
                       {r.number}. {r.companyName}
                     </Link>
                     {r.city ? <span className="muted"> · {r.city}</span> : null}
@@ -1146,7 +1262,7 @@ export function AdvertiserStatusPage() {
               ))}
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="muted">
+                  <td colSpan={9} className="muted">
                     {report.rows.length === 0 ? 'Geen adverteerders.' : 'Geen adverteerders met deze filters.'}
                   </td>
                 </tr>

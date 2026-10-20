@@ -14,6 +14,7 @@ import {
   CheckboxRow,
   FilterChips,
   LargeTitleHeader,
+  LinkText,
   QueryState,
   Screen,
   SearchField,
@@ -104,9 +105,15 @@ export default function AdverteerdersScreen() {
             {showInfo ? (
               <Card style={styles.card}>
                 <AppText variant="bodyStrong">Informatie {season(mine.data.year)}</AppText>
-                <AppText variant="body" color={mine.data.info ? colors.textPrimary : colors.textSecondary}>
-                  {mine.data.info ?? 'Er is nog geen informatie voor deze campagne.'}
-                </AppText>
+                {mine.data.info ? (
+                  <LinkText variant="body" color={colors.textPrimary}>
+                    {mine.data.info}
+                  </LinkText>
+                ) : (
+                  <AppText variant="body" color={colors.textSecondary}>
+                    Er is nog geen informatie voor deze campagne.
+                  </AppText>
+                )}
               </Card>
             ) : null}
             <Button label="Nieuwe adverteerder" icon="plus" variant="secondary" onPress={() => router.push('/adverteerders/nieuw')} />

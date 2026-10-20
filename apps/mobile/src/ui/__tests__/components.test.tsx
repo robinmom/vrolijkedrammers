@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { Linking } from 'react-native';
 import { ThemeProvider, type ThemeMode } from '../../theme/ThemeProvider';
-import { Button, EventCard, FilterChips, SettingsList, ShortcutTile, tintSvg } from '../index';
+import { Button, EventCard, FilterChips, LinkText, SettingsList, ShortcutTile, tintSvg } from '../index';
 import { icons } from '../icons.generated';
 
 async function renderIn(mode: ThemeMode, ui: ReactElement) {
@@ -86,6 +87,38 @@ describe('SettingsList', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Over de app' }));
     expect(onToggle).toHaveBeenCalledWith(false);
     expect(onPress).toHaveBeenCalled();
+  });
+});
+
+describe('LinkText', () => {
+  let openURL: jest.SpyInstance;
+
+  beforeEach(() => {
+    openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+  });
+  afterEach(() => {
+    openURL.mockRestore();
+  });
+
+  it('maakt een webadres in de tekst aantikbaar en opent het', async () => {
+    await renderIn('light', <LinkText>De krant staat online: https://www.vrolijkedrammers.nl/nieuws/drammerskrant-2026</LinkText>);
+    const link = screen.getByRole('link', { name: 'Open webadres https://www.vrolijkedrammers.nl/nieuws/drammerskrant-2026' });
+    await fireEvent.press(link);
+    expect(openURL).toHaveBeenCalledWith('https://www.vrolijkedrammers.nl/nieuws/drammerskrant-2026');
+  });
+
+  it('tekst zonder webadres blijft gewone tekst', async () => {
+    await renderIn('light', <LinkText>Er is nog geen informatie voor deze campagne.</LinkText>);
+    expect(screen.getByText('Er is nog geen informatie voor deze campagne.')).toBeTruthy();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('neemt een afsluitende punt niet mee in de link', async () => {
+    await renderIn('light', <LinkText>Kijk op https://vrolijkedrammers.nl/nieuws. Tot snel!</LinkText>);
+    const link = screen.getByRole('link', { name: 'Open webadres https://vrolijkedrammers.nl/nieuws' });
+    await fireEvent.press(link);
+    expect(openURL).toHaveBeenCalledWith('https://vrolijkedrammers.nl/nieuws');
+    expect(screen.queryByRole('link', { name: /nieuws\./ })).toBeNull();
   });
 });
 

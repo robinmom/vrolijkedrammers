@@ -2251,6 +2251,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/reassign-collector": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Meerdere adverteerders in één keer aan een andere collectant toewijzen (fase 27k); `null` = geen collectant. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReassignCollectorRequest"];
+                    "text/json": components["schemas"]["ReassignCollectorRequest"];
+                    "application/*+json": components["schemas"]["ReassignCollectorRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ReassignCollectorResponse"];
+                        "application/json": components["schemas"]["ReassignCollectorResponse"];
+                        "text/json": components["schemas"]["ReassignCollectorResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/campaign-year": {
         parameters: {
             query?: never;
@@ -27680,6 +27746,15 @@ export interface components {
             reason: string;
             /** Format: int32 */
             count: number;
+        };
+        ReassignCollectorRequest: {
+            advertiserIds: string[];
+            /** Format: uuid */
+            toCollectorMemberId: null | string;
+        };
+        ReassignCollectorResponse: {
+            /** Format: int32 */
+            reassigned: number;
         };
         /** @description Uitkomst van opnieuw controleren: nu goedgekeurd (account wordt gemaakt), al een account, nog open. */
         RecheckResult: {

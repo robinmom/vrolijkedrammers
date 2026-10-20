@@ -902,7 +902,10 @@ export class MockApi {
   }[] = [];
   mailingTests = 0;
   // Fase 27b: adverteerders.
-  advertiserCollectors = [{ memberId: 'm-1', name: 'Piet van der Berg' }];
+  advertiserCollectors = [
+    { memberId: 'm-1', name: 'Piet van der Berg' },
+    { memberId: 'm-2', name: 'Karin Kader' },
+  ];
   advertiserInfo: Record<number, { text: string | null; startDate: string | null; endDate: string | null }> = {};
   advertiserReminders: (string[] | null)[] = [];
   royalInfo: Record<string, string> = { prins: '', adjudant: 'Haal de prinses op' };
@@ -1616,6 +1619,17 @@ export class MockApi {
   ) {
     let m: RegExpMatchArray | null;
     const collectorName = (id: string | null) => this.advertiserCollectors.find((c) => c.memberId === id)?.name ?? null;
+    if (path === '/admin/advertisers/reassign-collector') {
+      const ids = (body.advertiserIds as string[] | undefined) ?? [];
+      const to = (body.toCollectorMemberId as string | null) ?? null;
+      const toUpdate = this.advertisers.filter((a) => ids.includes(a.id));
+      toUpdate.forEach((a) => {
+        a.collectorMemberId = to;
+        a.importedCollectorName = null;
+      });
+      this.record('advertiser.collector-reassigned', 'AdvertiserCampaign', to ?? 'none', body);
+      return json({ reassigned: toUpdate.length });
+    }
     if (path === '/admin/advertisers/invoices/settings') {
       if (method === 'PUT') {
         this.invoiceSettings = body as typeof this.invoiceSettings;

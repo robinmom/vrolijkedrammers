@@ -578,6 +578,46 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Meerdere_adverteerders_in_een_keer_aan_een_andere_collectant_toewijzen()
+    {
+        var alfred = await KaderlidAsync("Alfred Voorbeeld");
+        var carla = await KaderlidAsync("Carla Collectant");
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "C", null, null, 35, 35),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "A", "C", null, null, 70, 70),
+            Row("Alfred Voorbeeld", 3, "Kapsalon Stop", "A", "C", null, null, 50, 50)));
+        var list = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
+        Assert.Equal(alfred, list.Single(a => a.GetProperty("number").GetInt32() == 1).GetProperty("collectorMemberId").GetGuid());
+
+        // Een ongeldig doel (een gewoon lid of een onbekend lid) wordt geweigerd.
+        var (gewoon, _) = await LidMetAccountAsync("Gewoon Lid", "gewoon@example.com", kader: false);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/reassign-collector",
+            new { advertiserIds = new[] { Id(1), Id(2) }, toCollectorMemberId = gewoon })).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/reassign-collector",
+            new { advertiserIds = new[] { Id(1) }, toCollectorMemberId = Guid.NewGuid() })).StatusCode);
+
+        // Twee bedrijven in één keer naar Carla; het derde blijft bij Alfred.
+        var moved = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/reassign-collector",
+            new { advertiserIds = new[] { Id(1), Id(2) }, toCollectorMemberId = carla })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, moved.GetProperty("reassigned").GetInt32());
+        var after = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        string? Collector(int number) => after.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("collectorName").GetString();
+        Assert.Equal(("Carla Collectant", "Carla Collectant", "Alfred Voorbeeld"), (Collector(1), Collector(2), Collector(3)));
+
+        // Toewijzen aan "geen collectant" (null) haalt de koppeling weg.
+        var cleared = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/reassign-collector",
+            new { advertiserIds = new[] { Id(3) }, toCollectorMemberId = (Guid?)null })).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, cleared.GetProperty("reassigned").GetInt32());
+        Assert.Equal(JsonValueKind.Null, (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!
+            .Single(a => a.GetProperty("number").GetInt32() == 3).GetProperty("collectorName").ValueKind);
+
+        // Eén auditregel met van/naar en aantal.
+        Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a =>
+            a.Action == "advertiser.collector-reassigned" && a.OldValues == "Alfred Voorbeeld" && a.NewValues == "Carla Collectant (2)")));
+    }
+
+    [Fact]
     public async Task Adverteerder_toevoegen_met_collectant_uit_het_kader_en_alleen_met_het_recht()
     {
         var kader = await KaderlidAsync("Karin Kader");

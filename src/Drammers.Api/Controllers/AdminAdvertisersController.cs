@@ -126,6 +126,14 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     public async Task<CollectorLinkedResponse> LinkCollector(CollectorLinkRequest request, CancellationToken cancellationToken) =>
         new(await advertisers.LinkImportedCollectorAsync(request.ImportedName, request.MemberId, cancellationToken));
 
+    /// <summary>Meerdere adverteerders in één keer aan een andere collectant toewijzen (fase 27k); <c>null</c> = geen collectant.</summary>
+    [HttpPost("reassign-collector")]
+    [ProducesResponseType<ReassignCollectorResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ReassignCollectorResponse> ReassignCollector(ReassignCollectorRequest request, CancellationToken cancellationToken) =>
+        new(await advertisers.ReassignCollectorAsync(request.AdvertiserIds, request.ToCollectorMemberId, cancellationToken));
+
     // ----- Campagne ------------------------------------------------------------------------------------------------
 
     [HttpGet("campaign-year")]
@@ -469,3 +477,7 @@ public sealed record CampaignResetResponse(int Year, int Reset);
 public sealed record CollectorLinkRequest([param: System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.StringLength(150)] string ImportedName, Guid MemberId);
 
 public sealed record CollectorLinkedResponse(int Linked);
+
+public sealed record ReassignCollectorRequest([param: Required, MinLength(1)] IReadOnlyList<Guid> AdvertiserIds, Guid? ToCollectorMemberId);
+
+public sealed record ReassignCollectorResponse(int Reassigned);

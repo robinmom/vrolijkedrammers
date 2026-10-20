@@ -228,3 +228,51 @@ test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
   await expect(page.getByText('Gegevens op de factuur opgeslagen.')).toBeVisible();
   expect(api.invoiceSettings.address).toBe('Postbus 123\n6940 AC Loil');
 });
+
+test('fase 27k: context-bewuste terug-knop vanaf Campagne', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/campagne');
+
+  // Vanaf Campagne op een bedrijf klikken en teruggaan komt terug op Campagne (niet op Overzicht).
+  await page.getByRole('link', { name: '1. Bakkerij De Test' }).click();
+  await expect(page).toHaveURL(/\/adverteerders\/adv-1\?from=campagne$/);
+  await expect(page.getByRole('heading', { name: 'Bakkerij De Test', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: '← Campagne' }).click();
+  await expect(page.getByRole('heading', { name: 'Campagne 2026/2027', level: 1 })).toBeVisible();
+
+  // Vanaf Overzicht gaat de terug-knop naar Overzicht.
+  await page.goto('/beheer/adverteerders');
+  await page.getByRole('link', { name: 'Bakkerij De Test' }).click();
+  await expect(page.getByRole('link', { name: '← Adverteerders' })).toBeVisible();
+});
+
+test('fase 27k: selecteren en in één keer toewijzen aan een andere collectant', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/campagne');
+
+  // Filter op één collectant; alleen zijn bedrijf blijft over.
+  await page.getByLabel('Collectant', { exact: true }).selectOption({ label: 'Piet van der Berg' });
+  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toHaveCount(0);
+
+  // Alles selecteren: de actiebalk verschijnt met wie ze nu zijn.
+  await page.getByLabel('Alles selecteren').check();
+  await expect(page.getByLabel('Selecteer Bakkerij De Test')).toBeChecked();
+  await expect(page.getByText('1 bedrijf geselecteerd (nu van Piet van der Berg).')).toBeVisible();
+  await expectNoSeriousA11yIssues(page);
+
+  // Toewijzen aan een ander en bevestigen.
+  await page.getByLabel('Toewijzen aan').selectOption({ label: 'Karin Kader' });
+  await page.getByRole('button', { name: 'Wijs toe aan…' }).click();
+  await expect(page.getByRole('dialog')).toContainText(
+    '1 bedrijf overzetten naar Karin Kader (nu van Piet van der Berg)?',
+  );
+  await page.getByRole('dialog').getByRole('button', { name: 'Toewijzen' }).click();
+
+  await expect(page.getByText('1 bedrijf toegewezen aan Karin Kader.')).toBeVisible();
+  expect(api.advertisers[0]!.collectorMemberId).toBe('m-2');
+  // De lijst (nog gefilterd op Piet van der Berg) is nu leeg.
+  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toHaveCount(0);
+});

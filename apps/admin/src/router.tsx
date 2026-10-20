@@ -93,7 +93,15 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/import', component: guarded('advertiser.manage', AdvertiserImportPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/incasso', component: guarded('advertiser.manage', AdvertiserCollectionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/facturen', component: guarded('advertiser.manage', AdvertiserInvoicesPage) }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/$id', component: guarded('advertiser.manage', AdvertiserEditorPage) }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/adverteerders/$id',
+    component: guarded('advertiser.manage', AdvertiserEditorPage),
+    // Context-bewuste terug-knop: vanaf welke lijst de editor is geopend (Campagne of Overzicht).
+    validateSearch: (search: Record<string, unknown>): { from?: 'campagne' | 'overzicht' } => ({
+      from: search.from === 'campagne' || search.from === 'overzicht' ? search.from : undefined,
+    }),
+  }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/kader', component: guarded('website.manage', KaderPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/prinsen', component: guarded('website.manage', PrincesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/website/onderscheidingen', component: guarded('website.manage', AwardsPage) }),

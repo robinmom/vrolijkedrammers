@@ -9,6 +9,25 @@
     var band = Model.Seasons.IsArchive
         ? new PageBand(Model.PageTitle, $"Foto's van carnavalsjaar {Model.Seasons.Shown.Slug}.", ("/fotos", "Foto's"), (null, Model.Seasons.Shown.Slug))
         : new PageBand("Foto's", "De mooiste momenten van de pronkzitting, de optocht, carnaval en meer.", (null, "Foto's"));
+
+    // Eén albumkaart; hergebruikt voor het gekozen jaar én voor elke groep op de standaardpagina.
+    Func<AlbumCard, Microsoft.AspNetCore.Mvc.Razor.HelperResult> albumCard = @<li>
+        <a class="card album-card" href="/fotos/@item.Id.ToString("N")">
+            @if (item.CoverUrl is not null)
+            {
+                <img src="@item.CoverUrl" alt="" loading="lazy" width="400" height="267">
+            }
+            else
+            {
+                <span class="img-empty"></span>
+            }
+            <span class="album-text">
+                <h2 class="h3">@item.Title</h2>
+                <span class="muted">@(item.Date is { } d ? Nl.Date(d) + " · " : "")@item.PhotoCount foto's</span>
+                <span><span class="badge blue">@IndexModel.Name(item.Category)</span></span>
+            </span>
+        </a>
+    </li>;
 }
 <partial name="_PageBand" model="band" />
 <div class="wrap content">
@@ -19,31 +38,39 @@
             <a class="chip" href="@Model.CategoryHref(c.Slug)" aria-current="@(Model.Filter == c.Slug ? "true" : "false")">@c.Name</a>
         }
     </nav>
-    @if (Model.Albums.Count == 0)
+    @if (Model.Seasons.IsArchive)
     {
-        <p class="muted">@(Model.Seasons.IsArchive ? "Geen foto's" : "Nog geen foto's dit carnavalsjaar")@(Model.Filter is null ? "" : " van deze soort").</p>
-    }
-    <ul class="grid-3" role="list">
-        @foreach (var a in Model.Albums)
+        @if (Model.Albums.Count == 0)
         {
-            <li>
-                <a class="card album-card" href="/fotos/@a.Id.ToString("N")">
-                    @if (a.CoverUrl is not null)
-                    {
-                        <img src="@a.CoverUrl" alt="" loading="lazy" width="400" height="267">
-                    }
-                    else
-                    {
-                        <span class="img-empty"></span>
-                    }
-                    <span class="album-text">
-                        <h2 class="h3">@a.Title</h2>
-                        <span class="muted">@(a.Date is { } d ? Nl.Date(d) + " · " : "")@a.PhotoCount foto's</span>
-                        <span><span class="badge blue">@IndexModel.Name(a.Category)</span></span>
-                    </span>
-                </a>
-            </li>
+            <p class="muted">Geen foto's@(Model.Filter is null ? "" : " van deze soort").</p>
         }
-    </ul>
+        <ul class="grid-3" role="list">
+            @foreach (var a in Model.Albums)
+            {
+                @albumCard(a)
+            }
+        </ul>
+    }
+    else
+    {
+        @if (Model.Groups.Sum(g => g.Albums.Count) == 0)
+        {
+            <p class="muted">Nog geen foto's dit carnavalsjaar@(Model.Filter is null ? "" : " van deze soort").</p>
+        }
+        @foreach (var group in Model.Groups)
+        {
+            @* Oudere jaren krijgen een scheidingskop met het carnavalsjaar; het actieve jaar (eerste groep) niet. *@
+            @if (group.Season is not null)
+            {
+                <h2 class="fotos-divider h3">@group.Season.Slug</h2>
+            }
+            <ul class="grid-3" role="list">
+                @foreach (var a in group.Albums)
+                {
+                    @albumCard(a)
+                }
+            </ul>
+        }
+    }
     <partial name="_SeasonNav" model="Model.Seasons" />
 </div>

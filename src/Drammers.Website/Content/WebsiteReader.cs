@@ -36,6 +36,9 @@ public sealed record AwardCard(AwardType Type, int Year, string Recipient, strin
 
 public sealed record AlbumCard(Guid Id, string Title, DateOnly? Date, PhotoCategory Category, int PhotoCount, string? CoverUrl, string? Description);
 
+/// <summary>Een rij albums op de standaard fotopagina: het actieve seizoen (<see cref="Season"/> is <c>null</c>) of een ouder jaar.</summary>
+public sealed record AlbumSeasonGroup(CarnivalSeason? Season, IReadOnlyList<AlbumCard> Albums);
+
 public sealed record PhotoView(Guid Id, string ThumbnailUrl, string DisplayUrl, int? Width, int? Height, string? Caption, string? Photographer);
 
 public sealed record ParadeView(
@@ -212,6 +215,45 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
             .ToListAsync(cancellationToken);
         return [.. albums.Where(a => a.Count > 0).Select(a => new AlbumCard(a.Id, a.Title, a.AlbumDate, a.Category, a.Count,
             a.Cover is null ? null : MediaUrls.For("photo-thumb", a.Cover.Id, a.Cover.ThumbnailBlobPath), a.Description))];
+    }
+
+    /// <summary>
+    /// De standaardweergave van de fotopagina: de albums van het actieve carnavalsjaar, zo nodig aangevuld met de
+    /// nieuwste albums uit oudere jaren tot er minstens <see cref="SeasonFilters.MinimumPhotoAlbums"/> staan. De oudere
+    /// albums staan per carnavalsjaar gegroepeerd (nieuwste jaar eerst), zodat de pagina een duidelijke scheiding toont.
+    /// Heeft het actieve jaar zelf al genoeg albums, dan wordt er niet aangevuld; is het leeg, dan is er geen scheiding.
+    /// </summary>
+    public async Task<IReadOnlyList<AlbumSeasonGroup>> AlbumsFilledAsync(
+        PhotoCategory? category, SeasonCalendar calendar, IReadOnlyList<CarnivalSeason> archive, CancellationToken cancellationToken)
+    {
+        var current = await AlbumsAsync(category, calendar.Current, cancellationToken);
+        var groups = new List<AlbumSeasonGroup>();
+        if (current.Count > 0)
+        {
+            groups.Add(new AlbumSeasonGroup(null, current));
+        }
+
+        // Minder dan het minimum in het actieve jaar? Vul aan met de nieuwste oudere albums (vorig jaar eerst).
+        var need = SeasonFilters.MinimumPhotoAlbums - current.Count;
+        foreach (var season in archive)
+        {
+            if (need <= 0)
+            {
+                break;
+            }
+
+            var older = await AlbumsAsync(category, season, cancellationToken);
+            if (older.Count == 0)
+            {
+                continue;
+            }
+
+            IReadOnlyList<AlbumCard> take = older.Count <= need ? older : [.. older.Take(need)];
+            groups.Add(new AlbumSeasonGroup(season, take));
+            need -= take.Count;
+        }
+
+        return groups;
     }
 
     public async Task<(AlbumCard Album, IReadOnlyList<PhotoView> Photos)?> AlbumAsync(Guid id, CancellationToken cancellationToken)

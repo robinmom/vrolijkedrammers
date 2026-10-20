@@ -21,6 +21,9 @@ public sealed class IndexModel(WebsiteReader reader) : SitePage
 
     public IReadOnlyList<AlbumCard> Albums { get; private set; } = [];
 
+    /// <summary>De standaardweergave: het actieve jaar (eerste groep) plus zo nodig aanvulling uit oudere jaren.</summary>
+    public IReadOnlyList<AlbumSeasonGroup> Groups { get; private set; } = [];
+
     public string? Filter { get; private set; }
 
     public SeasonNav Seasons { get; private set; } = null!;
@@ -37,11 +40,21 @@ public sealed class IndexModel(WebsiteReader reader) : SitePage
 
         var category = Categories.Where(c => c.Slug == soort).Select(c => (PhotoCategory?)c.Category).FirstOrDefault();
         Filter = category is null ? null : soort;
-        Seasons = new SeasonNav("/fotos", Filter is null ? null : $"soort={Filter}", calendar.Current, season,
-            await reader.AlbumArchiveAsync(calendar, category, cancellationToken));
+        var archive = await reader.AlbumArchiveAsync(calendar, category, cancellationToken);
+        Seasons = new SeasonNav("/fotos", Filter is null ? null : $"soort={Filter}", calendar.Current, season, archive);
         (ActiveMenu, PageTitle) = ("fotos", Seasons.IsArchive ? $"Foto's {season.Slug}" : "Foto's");
         MetaDescription = "Foto's van de pronkzitting, de optocht, carnaval en andere activiteiten van De Vrolijke Drammers.";
-        Albums = await reader.AlbumsAsync(category, season, cancellationToken);
+
+        // Een gekozen jaar toont dat hele jaar; de standaardpagina vult het actieve jaar zo nodig aan tot minstens zes albums.
+        if (Seasons.IsArchive)
+        {
+            Albums = await reader.AlbumsAsync(category, season, cancellationToken);
+        }
+        else
+        {
+            Groups = await reader.AlbumsFilledAsync(category, calendar, archive, cancellationToken);
+        }
+
         return Page();
     }
 

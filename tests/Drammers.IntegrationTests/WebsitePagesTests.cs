@@ -151,9 +151,12 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
             await db.PhotoAlbums.Where(a => a.Id == old).ExecuteUpdateAsync(u => u.SetProperty(a => a.AlbumDate, new DateOnly(2024, 1, 20)));
         }
 
+        // Standaard is maar één actueel album; de pagina vult aan met het oudere album onder een scheiding per jaar.
         var current = await HtmlAsync("/fotos?soort=pronkzitting");
         Assert.Contains("Pronkzitting 2027", current);
-        Assert.DoesNotContain("Pronkzitting 2024", current);
+        Assert.Contains("Pronkzitting 2024", current);
+        Assert.Contains("<h2 class=\"fotos-divider h3\">2023-2024</h2>", current);
+        Assert.True(current.IndexOf("Pronkzitting 2027", StringComparison.Ordinal) < current.IndexOf("Pronkzitting 2024", StringComparison.Ordinal));
         Assert.Contains("href=\"/fotos?soort=pronkzitting&amp;seizoen=2023-2024\"", current);
         Assert.Contains("Pronkzitting 2024", await HtmlAsync("/fotos?seizoen=2023-2024"));
 
@@ -161,6 +164,96 @@ public class WebsitePagesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(["2023-2024"], seasons.GetProperty("archive").EnumerateArray().Select(i => i.GetProperty("slug").GetString()));
         var older = await _guest.GetFromJsonAsync<JsonElement>("/api/v1/photo-albums?season=2023-2024");
         Assert.Equal(["Pronkzitting 2024"], older.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("title").GetString()));
+    }
+
+    [Fact]
+    public async Task Fotopagina_is_standaard_altijd_gevuld_met_minstens_zes_albums()
+    {
+        // Actief jaar 2026/2027 (seed, start 19 feb 2026). Eén actueel album; verder albums in twee oudere jaren.
+        var actueel = await AlbumWithPhotoAsync("Actueel album", new DateOnly(2027, 1, 8));
+        await AlbumWithPhotoAsync("Vorig nieuw", new DateOnly(2026, 1, 12));
+        await AlbumWithPhotoAsync("Vorig midden", new DateOnly(2026, 1, 11));
+        await AlbumWithPhotoAsync("Vorig oud", new DateOnly(2026, 1, 10));
+        await AlbumWithPhotoAsync("Ouder nieuw", new DateOnly(2025, 1, 12));
+        await AlbumWithPhotoAsync("Ouder midden", new DateOnly(2025, 1, 11));
+        await AlbumWithPhotoAsync("Ouder oud", new DateOnly(2025, 1, 10));
+        await AlbumWithPhotoAsync("Besloten album", new DateOnly(2027, 1, 7), "Members");
+
+        // Standaardpagina: het actuele album bovenaan, aangevuld tot zes met de nieuwste oudere albums, met een scheiding per jaar.
+        var html = await HtmlAsync("/fotos");
+        Assert.Contains("Actueel album", html);
+        foreach (var titel in new[] { "Vorig nieuw", "Vorig midden", "Vorig oud", "Ouder nieuw", "Ouder midden" })
+        {
+            Assert.Contains(titel, html);
+        }
+
+        Assert.DoesNotContain("Ouder oud", html); // Zesde album is gehaald; het zevende valt weg.
+        Assert.DoesNotContain("Besloten album", html); // Niet-openbare albums komen nergens mee.
+        Assert.Contains("<h2 class=\"fotos-divider h3\">2025-2026</h2>", html);
+        Assert.Contains("<h2 class=\"fotos-divider h3\">2024-2025</h2>", html);
+        Assert.True(html.IndexOf("Actueel album", StringComparison.Ordinal) < html.IndexOf("Vorig nieuw", StringComparison.Ordinal));
+        Assert.True(html.IndexOf("Vorig nieuw", StringComparison.Ordinal) < html.IndexOf("Ouder nieuw", StringComparison.Ordinal));
+
+        // Een gekozen ouder jaar toont dat hele jaar, dus ook het album dat op de standaardpagina wegviel.
+        var seizoen = await HtmlAsync("/fotos?seizoen=2024-2025");
+        Assert.Contains("Ouder oud", seizoen);
+        Assert.Contains("Ouder nieuw", seizoen);
+        Assert.DoesNotContain("Actueel album", seizoen);
+
+        // Geen actuele albums: gewoon de zes nieuwste oudere albums, zonder dat er een actueel album bovenaan staat.
+        // De foto verbergen maakt het actieve album leeg; de cache van de websitepagina's legen we zoals het portal dat doet.
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            await db.Photos.Where(p => p.AlbumId == actueel).ExecuteUpdateAsync(u => u.SetProperty(p => p.Hidden, true));
+        }
+
+        await _api.Services.GetRequiredService<Microsoft.AspNetCore.OutputCaching.IOutputCacheStore>()
+            .EvictByTagAsync(Drammers.Website.WebsiteSetup.CachePolicy, default);
+
+        var leeg = await HtmlAsync("/fotos");
+        Assert.DoesNotContain("Actueel album", leeg);
+        Assert.Contains("Ouder oud", leeg); // Nu is er plek voor alle zes oudere albums.
+        Assert.Contains("Ouder midden", leeg);
+
+        // Zodra het actieve jaar zelf minstens zes albums heeft, wordt er niet aangevuld en is er geen scheiding.
+        for (var i = 1; i <= 6; i++)
+        {
+            await AlbumWithPhotoAsync($"Actief {i}", new DateOnly(2027, 2, i));
+        }
+
+        var vol = await HtmlAsync("/fotos");
+        Assert.Contains("Actief 6", vol);
+        Assert.DoesNotContain("fotos-divider", vol);
+        Assert.DoesNotContain("Ouder nieuw", vol);
+    }
+
+    private async Task<Guid> AlbumWithPhotoAsync(string title, DateOnly date, string visibility = "Public")
+    {
+        var response = await _bestuur.PostAsJsonAsync("/api/v1/admin/photo-albums", new
+        {
+            title,
+            albumDate = date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            description = (string?)null,
+            eventId = (Guid?)null,
+            category = "Pronkzitting",
+            publication = new { visibility, audienceRoles = Array.Empty<string>(), status = "Published" },
+        });
+        var id = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+
+        // Een albumkaart verschijnt alleen met minstens één verwerkte, zichtbare foto; die zetten we rechtstreeks klaar.
+        using var scope = _api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+        db.Photos.Add(new Drammers.Modules.Content.Photos.Photo
+        {
+            Id = Guid.NewGuid(),
+            AlbumId = id,
+            OriginalBlobPath = "orig/" + id.ToString("N"),
+            ProcessingStatus = Drammers.Modules.Content.Photos.PhotoProcessingStatus.Ready,
+            UploadedAt = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        return id;
     }
 
     [Theory]

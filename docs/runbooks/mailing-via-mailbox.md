@@ -46,7 +46,7 @@ stopt dan. Wacht tot een uur en draai het script opnieuw.
 ## 2. Aanzetten
 
 1. Ga in GitHub naar Settings → Secrets and variables → Actions → Variables.
-2. Zet `DVD_EMAIL_MAILBOX_SENDERS` op `voorzitter,secretaris`.
+2. Zet `DVD_EMAIL_MAILBOX_SENDERS` (environment prod) op `voorzitter,secretaris,dansgardefestival`.
 3. Draai **Actions → Deploy → prod**. *Alleen infrastructuur* mag aan.
 
 Testen:

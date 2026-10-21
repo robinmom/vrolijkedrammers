@@ -1700,6 +1700,14 @@ export function AdvertiserInvoicesPage() {
       (await api.POST('/api/v1/admin/advertisers/invoices', { body: { date, year: year ?? null } })).data?.count,
     ADVERTISER_KEYS,
   );
+  const createOne = useApiMutation(
+    (advertiserId: string) =>
+      api.POST('/api/v1/admin/advertisers/invoices/advertiser/{advertiserId}', {
+        params: { path: { advertiserId } },
+        body: { date, year: year ?? null },
+      }),
+    ADVERTISER_KEYS,
+  );
   const send = useApiMutation(
     async () =>
       (await api.POST('/api/v1/admin/advertisers/invoices/send', { params: { query: { year } } })).data?.count,
@@ -1739,7 +1747,17 @@ export function AdvertiserInvoicesPage() {
           </p>
         </div>
       </div>
-      <ProblemAlert error={overview.error ?? create.error ?? send.error ?? saveSettings.error ?? refreshPayment.error ?? downloadError} />
+      <ProblemAlert
+        error={
+          overview.error ??
+          create.error ??
+          createOne.error ??
+          send.error ??
+          saveSettings.error ??
+          refreshPayment.error ??
+          downloadError
+        }
+      />
       <SuccessMessage message={message} />
 
       {o ? (
@@ -1815,7 +1833,14 @@ export function AdvertiserInvoicesPage() {
                           {r.invoiceNumber}
                         </button>
                       ) : (
-                        <span className="muted">nog niet gemaakt</span>
+                        <button
+                          type="button"
+                          className="link-button"
+                          disabled={createOne.isPending}
+                          onClick={() => createOne.mutate(r.advertiserId)}
+                        >
+                          Factuur maken
+                        </button>
                       )}
                     </td>
                     <td>

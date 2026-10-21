@@ -1652,6 +1652,21 @@ export class MockApi {
       }
       return json(this.invoiceSettings);
     }
+    if ((m = path.match(/^\/admin\/advertisers\/invoices\/advertiser\/([^/]+)$/)) && method === 'POST') {
+      const a = this.advertisers.find((x) => x.id === m![1]);
+      if (a && a.status2027 === 'Collected' && !this.invoices.some((i) => i.advertiserId === a.id)) {
+        const seq = this.invoices.length + 1;
+        this.invoices.push({
+          advertiserId: a.id,
+          invoiceId: `inv-${seq}`,
+          invoiceNumber: `ADV-2027-000${seq}`,
+          sentAt: null,
+          status: 'Concept',
+          paymentMethod: a.payment === 'Cash' ? 'Cash' : 'Mollie',
+        });
+      }
+      return noContent();
+    }
     if (path === '/admin/advertisers/invoices' && method === 'POST') {
       const due = this.advertisers.filter(
         (a) => a.status2027 === 'Collected' && !this.invoices.some((i) => i.advertiserId === a.id),

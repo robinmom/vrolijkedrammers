@@ -175,54 +175,80 @@ public sealed class AdvertiserInvoices(
         var now = clock.UtcNow.UtcDateTime;
         foreach (var a in advertisers)
         {
-            var row = a.Years.Single();
-            sequence++;
-
-            // Bedragen zijn exclusief btw: 21% op advertenties, 0% op giften (geen prestatie). Servicekosten (iDEAL) alleen
-            // bij online betalen en met 21% btw. Afronden per regel, zodat de btw op de factuur optelt.
-            var net = row.Amount!.Value;
-            var vatRate = a.Kind == AdvertiserKind.Advertisement ? Vat21 : 0m;
-            var vat = Math.Round(net * vatRate, 2, MidpointRounding.AwayFromZero);
-            var method = a.Payment == AdvertiserPayment.Cash ? InvoicePaymentMethod.Cash : InvoicePaymentMethod.Mollie;
-            var feeNet = settings.ServiceFeeOn && method == InvoicePaymentMethod.Mollie ? settings.ServiceFeeCents / 100m : 0m;
-            var feeVat = Math.Round(feeNet * Vat21, 2, MidpointRounding.AwayFromZero);
-
-            db.AdvertiserInvoices.Add(new AdvertiserInvoice
-            {
-                Id = IdGenerator.NewId(),
-                AdvertiserId = a.Id,
-                Year = year,
-                Sequence = sequence,
-                Number = $"ADV-{year}-{sequence.ToString("0000", CultureInfo.InvariantCulture)}",
-                InvoiceDate = date,
-                Amount = net,
-                VatRate = vatRate,
-                VatAmount = vat,
-                ServiceFeeNet = feeNet,
-                ServiceFeeVat = feeVat,
-                TotalInclVat = net + vat + feeNet + feeVat,
-                Description = InvoicePdf.Description(a.Kind, year),
-                Payment = a.Payment,
-                PaymentMethod = method,
-                Status = row.PaidAt is not null ? InvoiceStatus.Paid : InvoiceStatus.Concept,
-                CompanyName = a.CompanyName,
-                ContactName = a.ContactName,
-                AddressLine = a.AddressLine,
-                PostalCode = a.PostalCode,
-                City = a.City,
-                Email = a.Email,
-                MandateReference = a.Payment == AdvertiserPayment.Mandate ? a.MandateReference : null,
-                IbanLast4 = a.Payment == AdvertiserPayment.Mandate ? a.IbanLast4 : null,
-                PaidAt = row.PaidAt,
-                CreatedAt = now,
-                CreatedBy = actor.UserId,
-            });
+            db.AdvertiserInvoices.Add(BuildInvoice(a, a.Years.Single(), year, date, ++sequence, settings, now));
         }
 
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("advertiser.invoices-created", "AdvertiserInvoice", year.ToString(CultureInfo.InvariantCulture), null,
             $"{advertisers.Count} facturen"), cancellationToken);
         return advertisers.Count;
+    }
+
+    /// <summary>Maakt de factuur voor één adverteerder (als die nog ontbreekt en de bijdrage in dit jaar is opgehaald).</summary>
+    public async Task<bool> CreateOneAsync(Guid advertiserId, int year, DateOnly date, CancellationToken cancellationToken)
+    {
+        if (await db.AdvertiserInvoices.AnyAsync(i => i.AdvertiserId == advertiserId && i.Year == year, cancellationToken))
+        {
+            return false;
+        }
+
+        var advertiser = await db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year == year))
+            .SingleOrDefaultAsync(a => a.Id == advertiserId && a.Active, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.NotFound, "Adverteerder niet gevonden.", DomainErrorKind.NotFound);
+        var row = advertiser.Years.SingleOrDefault();
+        if (row is null || row.Status != AdvertiserYearStatus.Collected || row.IsFree || row.Amount is not > 0)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Voor deze adverteerder is er dit jaar geen opgehaalde bijdrage om te factureren.");
+        }
+
+        var sequence = (await db.AdvertiserInvoices.Where(i => i.Year == year).MaxAsync(i => (int?)i.Sequence, cancellationToken) ?? 0) + 1;
+        var settings = await GetSettingsAsync(cancellationToken);
+        db.AdvertiserInvoices.Add(BuildInvoice(advertiser, row, year, date, sequence, settings, clock.UtcNow.UtcDateTime));
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.invoice-created", "AdvertiserInvoice", advertiserId.ToString(), null,
+            $"ADV-{year}-{sequence.ToString("0000", CultureInfo.InvariantCulture)}"), cancellationToken);
+        return true;
+    }
+
+    /// <summary>Bouwt één factuur: bedragen excl. btw, 21% op advertenties, 0% op giften, servicekosten (21%) alleen online.</summary>
+    private AdvertiserInvoice BuildInvoice(Advertiser a, AdvertiserYear row, int year, DateOnly date, int sequence, InvoiceSettings settings, DateTime now)
+    {
+        var net = row.Amount!.Value;
+        var vatRate = a.Kind == AdvertiserKind.Advertisement ? Vat21 : 0m;
+        var vat = Math.Round(net * vatRate, 2, MidpointRounding.AwayFromZero);
+        var method = a.Payment == AdvertiserPayment.Cash ? InvoicePaymentMethod.Cash : InvoicePaymentMethod.Mollie;
+        var feeNet = settings.ServiceFeeOn && method == InvoicePaymentMethod.Mollie ? settings.ServiceFeeCents / 100m : 0m;
+        var feeVat = Math.Round(feeNet * Vat21, 2, MidpointRounding.AwayFromZero);
+        return new AdvertiserInvoice
+        {
+            Id = IdGenerator.NewId(),
+            AdvertiserId = a.Id,
+            Year = year,
+            Sequence = sequence,
+            Number = $"ADV-{year}-{sequence.ToString("0000", CultureInfo.InvariantCulture)}",
+            InvoiceDate = date,
+            Amount = net,
+            VatRate = vatRate,
+            VatAmount = vat,
+            ServiceFeeNet = feeNet,
+            ServiceFeeVat = feeVat,
+            TotalInclVat = net + vat + feeNet + feeVat,
+            Description = InvoicePdf.Description(a.Kind, year),
+            Payment = a.Payment,
+            PaymentMethod = method,
+            Status = row.PaidAt is not null ? InvoiceStatus.Paid : InvoiceStatus.Concept,
+            CompanyName = a.CompanyName,
+            ContactName = a.ContactName,
+            AddressLine = a.AddressLine,
+            PostalCode = a.PostalCode,
+            City = a.City,
+            Email = a.Email,
+            MandateReference = a.Payment == AdvertiserPayment.Mandate ? a.MandateReference : null,
+            IbanLast4 = a.Payment == AdvertiserPayment.Mandate ? a.IbanLast4 : null,
+            PaidAt = row.PaidAt,
+            CreatedAt = now,
+            CreatedBy = actor.UserId,
+        };
     }
 
     /// <summary>Verstuurt de nog niet verzonden facturen met een e-mailadres, verdeeld over de tijd (zoals mailings).</summary>

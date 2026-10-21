@@ -64,6 +64,9 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Membership.Advertisers.AdvertiserInvoice> AdvertiserInvoices => Set<Modules.Membership.Advertisers.AdvertiserInvoice>();
 
+    public DbSet<Modules.Membership.Advertisers.AdvertiserInvoiceMolliePayment> AdvertiserInvoiceMolliePayments =>
+        Set<Modules.Membership.Advertisers.AdvertiserInvoiceMolliePayment>();
+
     public DbSet<JubileeInvitation> JubileeInvitations => Set<JubileeInvitation>();
 
     public DbSet<ContributionRate> ContributionRates => Set<ContributionRate>();

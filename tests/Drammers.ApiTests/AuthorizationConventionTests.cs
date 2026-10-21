@@ -71,6 +71,7 @@ public class AuthorizationConventionTests
         $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Own)}",
         $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Update)}",
         $"{nameof(DanceFestivalController)}.{nameof(DanceFestivalController.Pay)}",
+        $"{nameof(AdvertiserInvoicePaymentController)}.{nameof(AdvertiserInvoicePaymentController.Pay)}",
     ];
 
     public static TheoryData<string> Endpoints() => new(ApiEndpoints().Select(e => e.Name));

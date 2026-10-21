@@ -74,3 +74,17 @@ internal sealed class AdvertiserInvoiceConfiguration : IEntityTypeConfiguration<
         builder.HasOne<Advertiser>().WithMany().HasForeignKey(i => i.AdvertiserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+internal sealed class AdvertiserInvoiceMolliePaymentConfiguration : IEntityTypeConfiguration<AdvertiserInvoiceMolliePayment>
+{
+    public void Configure(EntityTypeBuilder<AdvertiserInvoiceMolliePayment> builder)
+    {
+        builder.ToTable("AdvertiserInvoiceMolliePayment", Schemas.Payments);
+        builder.Property(p => p.Id).ValueGeneratedNever();
+        builder.Property(p => p.MolliePaymentId).HasMaxLength(40).IsUnicode(false);
+        builder.Property(p => p.MollieStatus).HasMaxLength(20).IsUnicode(false);
+        builder.HasIndex(p => p.MolliePaymentId).IsUnique();
+        builder.HasIndex(p => p.InvoiceId);
+        builder.HasOne<AdvertiserInvoice>().WithMany().HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

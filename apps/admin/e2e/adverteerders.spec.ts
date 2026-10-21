@@ -235,6 +235,11 @@ test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'Versturen' }).click();
   await expect(page.getByText('1 facturen worden verstuurd.')).toBeVisible();
 
+  // Fase 27o: de betaalstatus staat in de lijst en kan vernieuwd worden (Mollie → betaald).
+  await expect(page.getByRole('button', { name: '↻ status vernieuwen' }).first()).toBeVisible();
+  await page.getByRole('button', { name: '↻ status vernieuwen' }).first().click();
+  await expect(page.getByText('Betaald').first()).toBeVisible();
+
   // De garage heeft geen e-mailadres: die factuur gaat mee in de PDF om te printen.
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'PDF zonder e-mailadres' }).click();

@@ -2215,6 +2215,145 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/invoices/{id}/refresh-payment": {
+      "post": {
+        "tags": [
+          "AdminAdvertiserInvoices"
+        ],
+        "summary": "De betaalstatus bij Mollie opnieuw ophalen (fase 27o).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/invoices/{id}/cancel": {
+      "post": {
+        "tags": [
+          "AdminAdvertiserInvoices"
+        ],
+        "summary": "Een factuur intrekken (de betaallink werkt dan niet meer).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/advertisers/invoices/{id}/pay": {
+      "get": {
+        "tags": [
+          "AdvertiserInvoicePayment"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Found"
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers": {
       "get": {
         "tags": [
@@ -36769,9 +36908,56 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InvoiceStatus"
+              }
+            ]
+          },
+          "paymentMethod": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InvoicePaymentMethod"
+              }
+            ]
+          },
+          "totalInclVat": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "mollieStatus": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         },
         "description": "Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur."
+      },
+      "InvoicePaymentMethod": {
+        "enum": [
+          "Cash",
+          "Mollie",
+          null
+        ]
       },
       "InvoiceSettings": {
         "required": [
@@ -36868,6 +37054,16 @@
             "default": 0
           }
         }
+      },
+      "InvoiceStatus": {
+        "enum": [
+          "Concept",
+          "Sent",
+          "Paid",
+          "Overdue",
+          "Cancelled",
+          null
+        ]
       },
       "IssueTicketsResponse": {
         "required": [
@@ -48559,6 +48755,9 @@
     },
     {
       "name": "AdminAdvertiserInvoices"
+    },
+    {
+      "name": "AdvertiserInvoicePayment"
     },
     {
       "name": "AdminAdvertisers"

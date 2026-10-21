@@ -5204,6 +5204,54 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Advertisers.AdvertiserInvoiceMolliePayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("DuplicatePaid")
+                        .HasColumnType("bit")
+                        .HasColumnName("duplicate_paid");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<string>("MolliePaymentId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("mollie_payment_id");
+
+                    b.Property<string>("MollieStatus")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("mollie_status");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("paid_at");
+
+                    b.HasKey("Id")
+                        .HasName("PK_AdvertiserInvoiceMolliePayment");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("IX_AdvertiserInvoiceMolliePayment_invoice_id");
+
+                    b.HasIndex("MolliePaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AdvertiserInvoiceMolliePayment_mollie_payment_id");
+
+                    b.ToTable("AdvertiserInvoiceMolliePayment", "payments");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Advertisers.AdvertiserYear", b =>
                 {
                     b.Property<Guid>("AdvertiserId")
@@ -9927,6 +9975,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("AdvertiserId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Advertisers.AdvertiserInvoiceMolliePayment", b =>
+                {
+                    b.HasOne("Drammers.Modules.Membership.Advertisers.AdvertiserInvoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

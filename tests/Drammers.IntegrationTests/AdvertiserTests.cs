@@ -20,10 +20,12 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
 {
     private AuthenticatedApiFactory _api = null!;
     private HttpClient _bestuur = null!;
+    private readonly FakeMollie _mollie = new();
 
     public async Task InitializeAsync()
     {
-        _api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync());
+        _api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(),
+            configure: services => services.AddSingleton<Drammers.Infrastructure.Payments.IMollieClient>(_mollie));
         _bestuur = _api.ClientFor((await _api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
     }
 
@@ -523,6 +525,30 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var print = await _bestuur.GetAsync("/api/v1/admin/advertisers/invoices/pdf?withoutEmail=true");
         Assert.Equal(HttpStatusCode.OK, print.StatusCode);
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString((await print.Content.ReadAsByteArrayAsync())[..4]));
+
+        // Fase 27o: online betalen via Mollie; de webhook zet de factuur op "betaald".
+        var invoiceId = rows[0].GetProperty("invoiceId").GetGuid();
+        string checkout;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Advertisers.Invoices.AdvertiserInvoices>();
+            var link = svc.PayLink("https://drammers.test", invoiceId);
+            var token = Uri.UnescapeDataString(new Uri(link).Query["?t=".Length..]);
+            checkout = await svc.PayAsync(invoiceId, token, "https://drammers.test", CancellationToken.None);
+        }
+
+        Assert.StartsWith("https://mollie.test/checkout/", checkout, StringComparison.Ordinal);
+        var mollieId = _mollie.Payments.Single().Key;
+        _mollie.SetStatus(mollieId, "paid");
+        Assert.Equal(HttpStatusCode.OK,
+            (await _bestuur.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new KeyValuePair<string, string>("id", mollieId)]))).StatusCode);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var paid = await db.AdvertiserInvoices.AsNoTracking().SingleAsync(i => i.Id == invoiceId);
+            Assert.Equal(InvoiceStatus.Paid, paid.Status);
+            Assert.NotNull(paid.PaidAt);
+        }
     }
 
     private static object NewAdvertiser(string payment, string? iban, bool consent) => new

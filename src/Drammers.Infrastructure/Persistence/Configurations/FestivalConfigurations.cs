@@ -14,6 +14,7 @@ internal sealed class DanceFestivalConfiguration : IEntityTypeConfiguration<Danc
             t.HasCheckConstraint("CK_DanceFestival_prices", "[price_solo_duo_cents] >= 0 AND [price_group_one_dance_cents] >= 0 AND [price_group_two_dances_cents] >= 0");
         });
         builder.Property(f => f.Id).ValueGeneratedNever();
+        builder.Property(f => f.VatRate).HasPrecision(4, 2);
         builder.Property(f => f.Name).HasMaxLength(100);
         builder.Property(f => f.Location).HasMaxLength(200);
         builder.Property(f => f.NotificationEmail).HasMaxLength(254);
@@ -85,6 +86,7 @@ internal sealed class DanceFestivalPaymentConfiguration : IEntityTypeConfigurati
         builder.Property(p => p.Id).ValueGeneratedNever();
         builder.Property(p => p.MolliePaymentId).HasMaxLength(40).IsUnicode(false);
         builder.Property(p => p.MollieStatus).HasMaxLength(20).IsUnicode(false);
+        builder.Property(p => p.InvoiceNumber).HasMaxLength(20);
         builder.HasIndex(p => p.MolliePaymentId).HasFilter("[mollie_payment_id] IS NOT NULL");
         builder.HasIndex(p => p.RegistrationId);
         builder.HasOne<DanceFestivalRegistration>().WithMany().HasForeignKey(p => p.RegistrationId).OnDelete(DeleteBehavior.Cascade);

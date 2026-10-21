@@ -33801,6 +33801,20 @@
           },
           "notificationEmail": {
             "type": "string"
+          },
+          "vatPercent": {
+            "type": "integer",
+            "format": "int32",
+            "default": 21
+          },
+          "serviceFeeOn": {
+            "type": "boolean",
+            "default": false
+          },
+          "serviceFeeCents": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -35766,7 +35780,10 @@
           "notificationEmail",
           "hasRules",
           "hasPrivacy",
-          "state"
+          "state",
+          "vatPercent",
+          "serviceFeeOn",
+          "serviceFeeCents"
         ],
         "type": "object",
         "properties": {
@@ -35831,6 +35848,17 @@
           },
           "state": {
             "$ref": "#/components/schemas/FestivalState"
+          },
+          "vatPercent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "serviceFeeOn": {
+            "type": "boolean"
+          },
+          "serviceFeeCents": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

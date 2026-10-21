@@ -25135,6 +25135,18 @@ export interface components {
             /** Format: int32 */
             priceGroupTwoDancesCents: number;
             notificationEmail: string;
+            /**
+             * Format: int32
+             * @default 21
+             */
+            vatPercent: number;
+            /** @default false */
+            serviceFeeOn: boolean;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            serviceFeeCents: number;
         };
         DanceFestivalSubmittedResponse: {
             /** Format: int32 */
@@ -25691,6 +25703,11 @@ export interface components {
             hasRules: boolean;
             hasPrivacy: boolean;
             state: components["schemas"]["FestivalState"];
+            /** Format: int32 */
+            vatPercent: number;
+            serviceFeeOn: boolean;
+            /** Format: int32 */
+            serviceFeeCents: number;
         };
         /** @enum {unknown} */
         FestivalState: "Hidden" | "NotYetOpen" | "Open" | "Closed";

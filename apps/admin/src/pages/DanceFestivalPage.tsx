@@ -586,11 +586,11 @@ function RegistrationDetail({ id, paymentsEnabled }: { id: string; paymentsEnabl
             }}
           >
             <Field
-              label="Bedrag (€)"
+              label="Bedrag (€, excl. btw)"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              hint="Voorstel uit de tarieven; aan te passen."
+              hint="Voorstel uit de tarieven (excl. btw); btw en servicekosten komen erbij."
             />
             <button type="submit" className="button small" disabled={!(cents > 0) || requestPayment.isPending}>
               Betaallink versturen
@@ -699,6 +699,9 @@ function SettingsTab() {
         priceSoloDuo: toEuroInput(s?.priceSoloDuoCents ?? 1000),
         priceGroupOne: toEuroInput(s?.priceGroupOneDanceCents ?? 1750),
         priceGroupTwo: toEuroInput(s?.priceGroupTwoDancesCents ?? 2750),
+        vatPercent: String(s?.vatPercent ?? 21),
+        serviceFeeOn: s?.serviceFeeOn ?? false,
+        serviceFee: toEuroInput(s?.serviceFeeCents ?? 0),
         notificationEmail: s?.notificationEmail ?? 'secretaris@vrolijkedrammers.nl',
       });
     }
@@ -719,6 +722,9 @@ function SettingsTab() {
           priceSoloDuoCents: fromEuroInput(String(form!.priceSoloDuo)),
           priceGroupOneDanceCents: fromEuroInput(String(form!.priceGroupOne)),
           priceGroupTwoDancesCents: fromEuroInput(String(form!.priceGroupTwo)),
+          vatPercent: Number(form!.vatPercent),
+          serviceFeeOn: Boolean(form!.serviceFeeOn),
+          serviceFeeCents: fromEuroInput(String(form!.serviceFee)),
           notificationEmail: String(form!.notificationEmail),
         },
       }),
@@ -831,6 +837,32 @@ function SettingsTab() {
           onChange={(e) => set('priceGroupTwo', e.target.value)}
         />
       </div>
+      <p className="card-hint">De tarieven en het betaalbedrag zijn exclusief btw; de btw komt er bij het betaalverzoek bij.</p>
+      <div className="form-grid">
+        <div className="field">
+          <label htmlFor="festival-btw">Btw-tarief</label>
+          <select id="festival-btw" value={String(form.vatPercent)} onChange={(e) => set('vatPercent', e.target.value)}>
+            <option value="21">21%</option>
+            <option value="9">9%</option>
+            <option value="0">Geen btw</option>
+          </select>
+        </div>
+      </div>
+      <Checkbox
+        label="Servicekosten (iDEAL) doorberekenen"
+        checked={Boolean(form.serviceFeeOn)}
+        onChange={(e) => set('serviceFeeOn', e.target.checked)}
+      />
+      {form.serviceFeeOn ? (
+        <div className="form-grid">
+          <Field
+            label="Servicekosten (€, excl. btw)"
+            inputMode="decimal"
+            value={String(form.serviceFee)}
+            onChange={(e) => set('serviceFee', e.target.value)}
+          />
+        </div>
+      ) : null}
       <h2>Meldingen</h2>
       <Field
         label="E-mailadres voor meldingen"

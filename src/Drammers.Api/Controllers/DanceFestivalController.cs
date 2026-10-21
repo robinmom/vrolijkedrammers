@@ -246,11 +246,14 @@ public sealed record DanceFestivalSettingsRequest(
     [param: Range(0, 100_000)] int PriceSoloDuoCents,
     [param: Range(0, 100_000)] int PriceGroupOneDanceCents,
     [param: Range(0, 100_000)] int PriceGroupTwoDancesCents,
-    [param: Required, EmailAddress, StringLength(254)] string NotificationEmail)
+    [param: Required, EmailAddress, StringLength(254)] string NotificationEmail,
+    [param: Range(0, 21)] int VatPercent = 21,
+    bool ServiceFeeOn = false,
+    [param: Range(0, 100_000)] int ServiceFeeCents = 0)
 {
     public FestivalSettingsInput ToInput() => new(
         Name, FestivalDate, Location, PageEnabled, RegistrationOpensAt, RegistrationClosesAt, Capacity, PaymentsEnabled, PriceSoloDuoCents,
-        PriceGroupOneDanceCents, PriceGroupTwoDancesCents, NotificationEmail);
+        PriceGroupOneDanceCents, PriceGroupTwoDancesCents, NotificationEmail, VatPercent, ServiceFeeOn, ServiceFeeCents);
 }
 
 public sealed record DanceFestivalDecisionRequest(

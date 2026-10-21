@@ -6,6 +6,7 @@ using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Content.Website;
+using Drammers.Modules.Membership.Advertisers;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Identifiers;
 using Microsoft.EntityFrameworkCore;
@@ -480,6 +481,20 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(["ADV-2027-0001", "ADV-2027-0002"], rows.Select(r => r.GetProperty("invoiceNumber").GetString()));
         Assert.Equal(75m, rows.Single(r => r.GetProperty("companyName").GetString() == "Garage Proef").GetProperty("amount").GetDecimal());
 
+        // Bedragen zijn exclusief btw: 21% op advertenties, 0% op giften (geen prestatie), totaal = bedrag + btw.
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var gift = await db.AdvertiserInvoices.AsNoTracking().SingleAsync(i => i.CompanyName == "Garage Proef");
+            Assert.Equal((0m, 0m, 75m), (gift.VatRate, gift.VatAmount, gift.TotalInclVat));
+            var advertentie = await db.AdvertiserInvoices.AsNoTracking().FirstAsync(i => i.VatRate > 0);
+            Assert.Equal(0.21m, advertentie.VatRate);
+            Assert.Equal(Math.Round(advertentie.Amount * 0.21m, 2, MidpointRounding.AwayFromZero), advertentie.VatAmount);
+            Assert.Equal(advertentie.Amount + advertentie.VatAmount, advertentie.TotalInclVat);
+            Assert.Equal(InvoicePaymentMethod.Mollie, advertentie.PaymentMethod);
+            Assert.Equal(InvoiceStatus.Concept, advertentie.Status);
+        }
+
         // Versturen: alleen wie een e-mailadres heeft, als PDF-bijlage namens de penningmeester.
         Assert.Equal(1, (await (await _bestuur.PostAsync("/api/v1/admin/advertisers/invoices/send", null)).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
         using (var scope = _api.Services.CreateScope())
@@ -495,7 +510,7 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
 
         var mail = _api.Emails.Sent.Single(m => m.To == "info1@example.com");
         Assert.Equal(("Factuur ADV-2027-0001 – Advertentie Drammerskrant 2027", "penningmeester@vrolijkedrammers.nl", "penningmeester"), (mail.Subject, mail.ReplyTo, mail.From));
-        Assert.Contains("automatische incasso", mail.PlainText);
+        Assert.Contains("onder vermelding van ADV-2027-0001", mail.PlainText);
         var pdf = Assert.Single(mail.Attachments!);
         Assert.Equal(("Factuur ADV-2027-0001.pdf", "application/pdf"), (pdf.Name, pdf.ContentType));
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf.Content, 0, 4));

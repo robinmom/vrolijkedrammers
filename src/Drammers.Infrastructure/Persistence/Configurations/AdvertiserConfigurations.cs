@@ -55,6 +55,13 @@ internal sealed class AdvertiserInvoiceConfiguration : IEntityTypeConfiguration<
         builder.HasIndex(i => new { i.AdvertiserId, i.Year }).IsUnique();
         builder.HasIndex(i => new { i.Year, i.Sequence }).IsUnique();
         builder.Property(i => i.Amount).HasPrecision(9, 2);
+        builder.Property(i => i.VatRate).HasPrecision(4, 2);
+        builder.Property(i => i.VatAmount).HasPrecision(9, 2);
+        builder.Property(i => i.ServiceFeeNet).HasPrecision(9, 2);
+        builder.Property(i => i.ServiceFeeVat).HasPrecision(9, 2);
+        builder.Property(i => i.TotalInclVat).HasPrecision(9, 2);
+        builder.Property(i => i.MolliePaymentId).HasMaxLength(40);
+        builder.Property(i => i.MollieStatus).HasMaxLength(10);
         builder.Property(i => i.Description).HasMaxLength(140);
         builder.Property(i => i.CompanyName).HasMaxLength(200);
         builder.Property(i => i.ContactName).HasMaxLength(150);

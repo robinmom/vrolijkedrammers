@@ -143,9 +143,39 @@ public sealed class AdvertiserYear
     public Guid? PaidBy { get; set; }
 }
 
+/// <summary>Hoe de factuur betaald wordt (fase 27n): contant bij de collectant, of online via een Mollie-betaallink (iDEAL).</summary>
+public enum InvoicePaymentMethod
+{
+    /// <summary>Contant, al ontvangen bij de collectant.</summary>
+    Cash,
+
+    /// <summary>Online betalen via een Mollie-betaallink (iDEAL).</summary>
+    Mollie,
+}
+
+/// <summary>Stand van een factuur (fase 27n).</summary>
+public enum InvoiceStatus
+{
+    /// <summary>Aangemaakt, nog niet verstuurd.</summary>
+    Concept,
+
+    /// <summary>Verstuurd (of klaargezet om te printen), wacht op betaling.</summary>
+    Sent,
+
+    /// <summary>Betaald (contant ontvangen of via Mollie voldaan).</summary>
+    Paid,
+
+    /// <summary>De betaaltermijn is verstreken zonder betaling.</summary>
+    Overdue,
+
+    /// <summary>Ingetrokken door het bestuur.</summary>
+    Cancelled,
+}
+
 /// <summary>
 /// Factuur aan een adverteerder voor een campagnejaar (fase 27e): één per adverteerder per jaar, met een vast nummer
 /// (ADV-jaar-volgnummer). De gegevens van de adverteerder worden vastgelegd, zodat de PDF later precies hetzelfde is.
+/// Bedragen zijn exclusief btw; <see cref="VatAmount"/> is 21% op advertenties en 0% op giften (geen prestatie).
 /// </summary>
 public sealed class AdvertiserInvoice
 {
@@ -162,11 +192,39 @@ public sealed class AdvertiserInvoice
 
     public DateOnly InvoiceDate { get; set; }
 
+    /// <summary>De bijdrage exclusief btw (de "regel" van de advertentie of gift).</summary>
     public decimal Amount { get; set; }
+
+    /// <summary>Het btw-tarief op de bijdrage: 0,21 voor advertenties, 0 voor giften.</summary>
+    public decimal VatRate { get; set; }
+
+    /// <summary>De btw over de bijdrage (<see cref="Amount"/> × <see cref="VatRate"/>).</summary>
+    public decimal VatAmount { get; set; }
+
+    /// <summary>Doorberekende servicekosten exclusief btw (0 als de switch uitstaat).</summary>
+    public decimal ServiceFeeNet { get; set; }
+
+    /// <summary>De btw (21%) over de servicekosten.</summary>
+    public decimal ServiceFeeVat { get; set; }
+
+    /// <summary>Het totaal inclusief btw: bijdrage + btw + servicekosten + btw over servicekosten.</summary>
+    public decimal TotalInclVat { get; set; }
 
     public required string Description { get; set; }
 
     public AdvertiserPayment Payment { get; set; }
+
+    /// <summary>Hoe deze factuur betaald wordt: contant of via een Mollie-betaallink.</summary>
+    public InvoicePaymentMethod PaymentMethod { get; set; }
+
+    /// <summary>Stand van de factuur (concept/verstuurd/betaald/vervallen/geannuleerd).</summary>
+    public InvoiceStatus Status { get; set; }
+
+    /// <summary>De laatste Mollie-betaling (<c>tr_…</c>) voor deze factuur, als er online betaald wordt.</summary>
+    public string? MolliePaymentId { get; set; }
+
+    /// <summary>De laatste status bij Mollie (open, paid, expired, canceled, failed).</summary>
+    public string? MollieStatus { get; set; }
 
     public required string CompanyName { get; set; }
 

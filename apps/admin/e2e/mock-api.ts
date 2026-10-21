@@ -973,7 +973,15 @@ export class MockApi {
     },
   ];
   advertiserCampaignYear = 2027;
-  invoiceSettings = { address: null as string | null, kvk: '40122564' as string | null };
+  invoiceSettings = {
+    address: null as string | null,
+    kvk: '40122564' as string | null,
+    vatNumber: null as string | null,
+    phone: null as string | null,
+    website: null as string | null,
+    serviceFeeOn: false,
+    serviceFeeCents: 0,
+  };
   invoices: { advertiserId: string; invoiceId: string; invoiceNumber: string; sentAt: string | null }[] = [];
   advertiserRuns: {
     id: string;

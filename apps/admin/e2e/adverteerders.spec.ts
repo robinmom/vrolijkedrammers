@@ -241,9 +241,17 @@ test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
   expect((await download).suggestedFilename()).toBe('Facturen 2027 zonder e-mail.pdf');
 
   await page.getByLabel('Adres (één regel per regel)').fill('Postbus 123\n6940 AC Loil');
+
+  // Fase 27n: btw-nummer en de servicekosten-switch.
+  await page.getByLabel('Btw-nummer').fill('NL005844824B01');
+  await page.getByLabel('Servicekosten doorberekenen').check();
+  await page.getByLabel('Servicekosten (€, excl. btw)').fill('0.35');
   await page.getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Gegevens op de factuur opgeslagen.')).toBeVisible();
   expect(api.invoiceSettings.address).toBe('Postbus 123\n6940 AC Loil');
+  expect(api.invoiceSettings.vatNumber).toBe('NL005844824B01');
+  expect(api.invoiceSettings.serviceFeeOn).toBe(true);
+  expect(api.invoiceSettings.serviceFeeCents).toBe(35);
 });
 
 test('fase 27k: context-bewuste terug-knop vanaf Campagne', async ({ page }) => {

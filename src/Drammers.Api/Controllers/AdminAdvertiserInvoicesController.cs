@@ -25,7 +25,9 @@ public sealed class AdminAdvertiserInvoicesController(AdvertiserInvoices invoice
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> PutSettings(InvoiceSettingsRequest request, CancellationToken cancellationToken)
     {
-        await invoices.SetSettingsAsync(new InvoiceSettings(request.Address, request.Kvk), cancellationToken);
+        await invoices.SetSettingsAsync(
+            new InvoiceSettings(request.Address, request.Kvk, request.VatNumber, request.Phone, request.Website, request.ServiceFeeOn, request.ServiceFeeCents),
+            cancellationToken);
         return NoContent();
     }
 
@@ -71,7 +73,14 @@ public sealed class AdminAdvertiserInvoicesController(AdvertiserInvoices invoice
     }
 }
 
-public sealed record InvoiceSettingsRequest([StringLength(300)] string? Address, [StringLength(12)] string? Kvk);
+public sealed record InvoiceSettingsRequest(
+    [StringLength(300)] string? Address,
+    [StringLength(12)] string? Kvk,
+    [StringLength(14)] string? VatNumber = null,
+    [StringLength(40)] string? Phone = null,
+    [StringLength(100)] string? Website = null,
+    bool ServiceFeeOn = false,
+    [Range(0, 100000)] int ServiceFeeCents = 0);
 
 public sealed record CreateInvoicesRequest(DateOnly Date, [Range(2000, 2100)] int? Year);
 

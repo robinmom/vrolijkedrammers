@@ -17,7 +17,8 @@ using Microsoft.Extensions.Options;
 
 namespace Drammers.Infrastructure.Advertisers.Invoices;
 
-public sealed record InvoiceSettings(string? Address, string? Kvk);
+public sealed record InvoiceSettings(
+    string? Address, string? Kvk, string? VatNumber = null, string? Phone = null, string? Website = null, bool ServiceFeeOn = false, int ServiceFeeCents = 0);
 
 /// <summary>Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur.</summary>
 public sealed record InvoiceOverviewRow(
@@ -40,22 +41,39 @@ public sealed class AdvertiserInvoices(
     /// <summary>Het KvK-nummer uit de oude conceptfactuur, als er nog niets is ingesteld.</summary>
     public const string DefaultKvk = "40122564";
 
+    /// <summary>Btw-tarief op advertenties en servicekosten (21%).</summary>
+    public const decimal Vat21 = 0.21m;
+
     public static readonly MailingContact Treasurer = new("penningmeester@vrolijkedrammers.nl", "penningmeester");
 
     public sealed record InvoiceMail(Guid InvoiceId);
 
     public async Task<InvoiceSettings> GetSettingsAsync(CancellationToken cancellationToken)
     {
-        string[] keys = [AppConfigurationKeys.InvoiceAddress, AppConfigurationKeys.InvoiceKvk];
+        string[] keys =
+        [
+            AppConfigurationKeys.InvoiceAddress, AppConfigurationKeys.InvoiceKvk, AppConfigurationKeys.InvoiceVatNumber,
+            AppConfigurationKeys.InvoicePhone, AppConfigurationKeys.InvoiceWebsite,
+            AppConfigurationKeys.AdvertiserServiceFeeOn, AppConfigurationKeys.AdvertiserServiceFeeCents,
+        ];
         var values = await db.AppConfiguration.AsNoTracking().Where(s => keys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, s => s.Value, cancellationToken);
-        return new InvoiceSettings(values.GetValueOrDefault(AppConfigurationKeys.InvoiceAddress),
-            values.TryGetValue(AppConfigurationKeys.InvoiceKvk, out var kvk) ? kvk : DefaultKvk);
+        return new InvoiceSettings(
+            values.GetValueOrDefault(AppConfigurationKeys.InvoiceAddress),
+            values.TryGetValue(AppConfigurationKeys.InvoiceKvk, out var kvk) ? kvk : DefaultKvk,
+            values.GetValueOrDefault(AppConfigurationKeys.InvoiceVatNumber),
+            values.GetValueOrDefault(AppConfigurationKeys.InvoicePhone),
+            values.GetValueOrDefault(AppConfigurationKeys.InvoiceWebsite),
+            values.GetValueOrDefault(AppConfigurationKeys.AdvertiserServiceFeeOn) == "true",
+            int.TryParse(values.GetValueOrDefault(AppConfigurationKeys.AdvertiserServiceFeeCents), NumberStyles.Integer, CultureInfo.InvariantCulture, out var fee) ? fee : 0);
     }
 
     public async Task SetSettingsAsync(InvoiceSettings input, CancellationToken cancellationToken)
     {
         var address = input.Address?.Trim();
         var kvk = input.Kvk?.Replace(" ", string.Empty, StringComparison.Ordinal);
+        var vat = input.VatNumber?.Replace(" ", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
+        var phone = input.Phone?.Trim();
+        var website = input.Website?.Trim();
         if (address?.Length > 300)
         {
             throw new DomainException(ErrorCodes.Validation, "Het adres is hooguit 300 tekens.");
@@ -66,7 +84,26 @@ public sealed class AdvertiserInvoices(
             throw new DomainException(ErrorCodes.Validation, "Het KvK-nummer bestaat uit 8 cijfers.");
         }
 
-        var values = new Dictionary<string, string> { [AppConfigurationKeys.InvoiceAddress] = address ?? "", [AppConfigurationKeys.InvoiceKvk] = kvk ?? "" };
+        if (!string.IsNullOrEmpty(vat) && (vat.Length is < 12 or > 14 || !vat.StartsWith("NL", StringComparison.Ordinal)))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het btw-nummer begint met NL en is 12 tot 14 tekens (bijv. NL005844824B01).");
+        }
+
+        if (input.ServiceFeeCents is < 0 or > 100000)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De servicekosten zijn hooguit € 1000,00.");
+        }
+
+        var values = new Dictionary<string, string>
+        {
+            [AppConfigurationKeys.InvoiceAddress] = address ?? "",
+            [AppConfigurationKeys.InvoiceKvk] = kvk ?? "",
+            [AppConfigurationKeys.InvoiceVatNumber] = vat ?? "",
+            [AppConfigurationKeys.InvoicePhone] = phone ?? "",
+            [AppConfigurationKeys.InvoiceWebsite] = website ?? "",
+            [AppConfigurationKeys.AdvertiserServiceFeeOn] = input.ServiceFeeOn ? "true" : "false",
+            [AppConfigurationKeys.AdvertiserServiceFeeCents] = input.ServiceFeeCents.ToString(CultureInfo.InvariantCulture),
+        };
         var settings = await db.AppConfiguration.Where(s => values.Keys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, cancellationToken);
         foreach (var (key, value) in values)
         {
@@ -90,7 +127,8 @@ public sealed class AdvertiserInvoices(
         var creditor = await collections.GetCreditorAsync(cancellationToken);
         var settings = await GetSettingsAsync(cancellationToken);
         var lines = (settings.Address ?? "").Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return new InvoiceIssuer(creditor.Name ?? "Carnavalsvereniging De Vrolijke Drammers", creditor.Iban, lines, settings.Kvk, Treasurer.Email);
+        return new InvoiceIssuer(creditor.Name ?? "Carnavalsvereniging De Vrolijke Drammers", creditor.Iban, lines, settings.Kvk, Treasurer.Email,
+            settings.VatNumber, settings.Phone, settings.Website);
     }
 
     /// <summary>Wie in het jaar een factuur krijgt (opgehaald, met een bedrag, niet gratis) en wat er al is gemaakt en verstuurd.</summary>
@@ -125,11 +163,22 @@ public sealed class AdvertiserInvoices(
         var advertisers = await db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year == year)).Where(a => missing.Contains(a.Id))
             .OrderBy(a => a.Number).ToListAsync(cancellationToken);
         var sequence = await db.AdvertiserInvoices.Where(i => i.Year == year).MaxAsync(i => (int?)i.Sequence, cancellationToken) ?? 0;
+        var settings = await GetSettingsAsync(cancellationToken);
         var now = clock.UtcNow.UtcDateTime;
         foreach (var a in advertisers)
         {
             var row = a.Years.Single();
             sequence++;
+
+            // Bedragen zijn exclusief btw: 21% op advertenties, 0% op giften (geen prestatie). Servicekosten (iDEAL) alleen
+            // bij online betalen en met 21% btw. Afronden per regel, zodat de btw op de factuur optelt.
+            var net = row.Amount!.Value;
+            var vatRate = a.Kind == AdvertiserKind.Advertisement ? Vat21 : 0m;
+            var vat = Math.Round(net * vatRate, 2, MidpointRounding.AwayFromZero);
+            var method = a.Payment == AdvertiserPayment.Cash ? InvoicePaymentMethod.Cash : InvoicePaymentMethod.Mollie;
+            var feeNet = settings.ServiceFeeOn && method == InvoicePaymentMethod.Mollie ? settings.ServiceFeeCents / 100m : 0m;
+            var feeVat = Math.Round(feeNet * Vat21, 2, MidpointRounding.AwayFromZero);
+
             db.AdvertiserInvoices.Add(new AdvertiserInvoice
             {
                 Id = IdGenerator.NewId(),
@@ -138,9 +187,16 @@ public sealed class AdvertiserInvoices(
                 Sequence = sequence,
                 Number = $"ADV-{year}-{sequence.ToString("0000", CultureInfo.InvariantCulture)}",
                 InvoiceDate = date,
-                Amount = row.Amount!.Value,
+                Amount = net,
+                VatRate = vatRate,
+                VatAmount = vat,
+                ServiceFeeNet = feeNet,
+                ServiceFeeVat = feeVat,
+                TotalInclVat = net + vat + feeNet + feeVat,
                 Description = InvoicePdf.Description(a.Kind, year),
                 Payment = a.Payment,
+                PaymentMethod = method,
+                Status = row.PaidAt is not null ? InvoiceStatus.Paid : InvoiceStatus.Concept,
                 CompanyName = a.CompanyName,
                 ContactName = a.ContactName,
                 AddressLine = a.AddressLine,
@@ -223,13 +279,18 @@ public sealed class AdvertiserInvoiceMailHandler(
             [
                 new MailingBlock("heading", $"Factuur {invoice.Number}"),
                 new MailingBlock("text", $"Beste {{voornaam}},\n\nHartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}."),
-                new MailingBlock("highlight", InvoicePdf.Money(invoice.Amount), "Bedrag", Note: InvoicePdf.PaymentText(invoice, issuer)),
+                new MailingBlock("highlight", InvoicePdf.Money(invoice.TotalInclVat), "Bedrag", Note: InvoicePdf.PaymentText(invoice, issuer)),
                 new MailingBlock("closing", "Met vriendelijke groet,\nPenningmeester De Vrolijke Drammers"),
             ],
             person, emailOptions.Value.LogoUrl, _ => null, null, mailingOptions.Value.PublicBaseUrl, AdvertiserInvoices.Treasurer);
         await email.SendAsync(new EmailMessage(invoice.Email, rendered.Subject, rendered.PlainText, rendered.Html, AdvertiserInvoices.Treasurer.Email,
             AdvertiserInvoices.Treasurer.Role, [new EmailFile($"Factuur {invoice.Number}.pdf", "application/pdf", pdf)]), cancellationToken);
         invoice.SentAt = clock.UtcNow.UtcDateTime;
+        if (invoice.Status == InvoiceStatus.Concept)
+        {
+            invoice.Status = InvoiceStatus.Sent;
+        }
+
         await db.SaveChangesAsync(cancellationToken);
     }
 }

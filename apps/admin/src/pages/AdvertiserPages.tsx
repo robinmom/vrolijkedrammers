@@ -1640,7 +1640,15 @@ export function AdvertiserInvoicesPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [confirmSend, setConfirmSend] = useState(false);
   const [downloadError, setDownloadError] = useState<unknown>(null);
-  const [settingsForm, setSettingsForm] = useState<{ address: string; kvk: string } | null>(null);
+  const [settingsForm, setSettingsForm] = useState<{
+    address: string;
+    kvk: string;
+    vatNumber: string;
+    phone: string;
+    website: string;
+    serviceFeeOn: boolean;
+    serviceFeeCents: number;
+  } | null>(null);
 
   const overview = useQuery({
     queryKey: ['advertisers', 'invoices', year],
@@ -1652,13 +1660,30 @@ export function AdvertiserInvoicesPage() {
     queryFn: async () => (await api.GET('/api/v1/admin/advertisers/invoices/settings')).data!,
   });
   useEffect(() => {
-    if (settings.data) setSettingsForm({ address: settings.data.address ?? '', kvk: settings.data.kvk ?? '' });
+    if (settings.data)
+      setSettingsForm({
+        address: settings.data.address ?? '',
+        kvk: settings.data.kvk ?? '',
+        vatNumber: settings.data.vatNumber ?? '',
+        phone: settings.data.phone ?? '',
+        website: settings.data.website ?? '',
+        serviceFeeOn: settings.data.serviceFeeOn ?? false,
+        serviceFeeCents: settings.data.serviceFeeCents ?? 0,
+      });
   }, [settings.data]);
 
   const saveSettings = useApiMutation(
     () =>
       api.PUT('/api/v1/admin/advertisers/invoices/settings', {
-        body: { address: settingsForm?.address || null, kvk: settingsForm?.kvk || null },
+        body: {
+          address: settingsForm?.address || null,
+          kvk: settingsForm?.kvk || null,
+          vatNumber: settingsForm?.vatNumber || null,
+          phone: settingsForm?.phone || null,
+          website: settingsForm?.website || null,
+          serviceFeeOn: settingsForm?.serviceFeeOn ?? false,
+          serviceFeeCents: settingsForm?.serviceFeeCents ?? 0,
+        },
       }),
     ADVERTISER_KEYS,
   );
@@ -1832,7 +1857,54 @@ export function AdvertiserInvoicesPage() {
               value={settingsForm.kvk}
               onChange={(e) => setSettingsForm({ ...settingsForm, kvk: e.target.value })}
             />
+            <Field
+              label="Btw-nummer"
+              maxLength={14}
+              value={settingsForm.vatNumber}
+              onChange={(e) => setSettingsForm({ ...settingsForm, vatNumber: e.target.value })}
+            />
+            <Field
+              label="Telefoon"
+              maxLength={40}
+              value={settingsForm.phone}
+              onChange={(e) => setSettingsForm({ ...settingsForm, phone: e.target.value })}
+            />
+            <Field
+              label="Website"
+              maxLength={100}
+              value={settingsForm.website}
+              onChange={(e) => setSettingsForm({ ...settingsForm, website: e.target.value })}
+            />
           </div>
+          <h2 id="servicekosten-kop" style={{ marginTop: '1rem' }}>
+            Servicekosten
+          </h2>
+          <p className="card-hint">
+            Reken je de betaalkosten (iDEAL) door, dan komt dit bedrag met 21% btw als extra regel op elke factuur die via
+            een Mollie-betaallink betaald wordt.
+          </p>
+          <Checkbox
+            label="Servicekosten doorberekenen"
+            checked={settingsForm.serviceFeeOn}
+            onChange={(e) => setSettingsForm({ ...settingsForm, serviceFeeOn: e.target.checked })}
+          />
+          {settingsForm.serviceFeeOn ? (
+            <div className="form-grid">
+              <Field
+                label="Servicekosten (€, excl. btw)"
+                type="number"
+                min={0}
+                step={0.01}
+                value={(settingsForm.serviceFeeCents / 100).toString()}
+                onChange={(e) =>
+                  setSettingsForm({
+                    ...settingsForm,
+                    serviceFeeCents: Math.round((Number(e.target.value) || 0) * 100),
+                  })
+                }
+              />
+            </div>
+          ) : null}
           <div className="actions">
             <button type="submit" className="button secondary" disabled={saveSettings.isPending}>
               Opslaan

@@ -25825,10 +25825,30 @@ export interface components {
         InvoiceSettings: {
             address: null | string;
             kvk: null | string;
+            vatNumber?: null | string;
+            phone?: null | string;
+            website?: null | string;
+            /** @default false */
+            serviceFeeOn: boolean;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            serviceFeeCents: number;
         };
         InvoiceSettingsRequest: {
             address: null | string;
             kvk: null | string;
+            vatNumber?: null | string;
+            phone?: null | string;
+            website?: null | string;
+            /** @default false */
+            serviceFeeOn: boolean;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            serviceFeeCents: number;
         };
         IssueTicketsResponse: {
             /** Format: int32 */

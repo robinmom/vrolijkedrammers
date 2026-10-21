@@ -115,6 +115,15 @@ public static class AppConfigurationKeys
     public const string AdvertiserCampaignYear = "advertiser_campaign_year";
     public const string InvoiceAddress = "invoice_address";
     public const string InvoiceKvk = "invoice_kvk";
+    public const string InvoiceVatNumber = "invoice_vat_number";
+    public const string InvoicePhone = "invoice_phone";
+    public const string InvoiceWebsite = "invoice_website";
+
+    /// <summary>Servicekosten (betaling via iDEAL) doorberekenen op adverteerders-facturen (fase 27n): "true"/"false".</summary>
+    public const string AdvertiserServiceFeeOn = "advertiser_service_fee_on";
+
+    /// <summary>Het bedrag aan servicekosten in centen (excl. btw) dat per factuur wordt doorberekend als de switch aanstaat.</summary>
+    public const string AdvertiserServiceFeeCents = "advertiser_service_fee_cents";
 
     /// <summary>Informatie voor de collectanten van één campagnejaar (fase 27h), bijv. tarieven en de inleverdatum.</summary>
     public static string AdvertiserInfo(int year) => $"advertiser_info_{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}";

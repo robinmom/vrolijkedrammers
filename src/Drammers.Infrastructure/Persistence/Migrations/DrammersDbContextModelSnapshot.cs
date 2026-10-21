@@ -5096,6 +5096,16 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(35)")
                         .HasColumnName("mandate_reference");
 
+                    b.Property<string>("MolliePaymentId")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("mollie_payment_id");
+
+                    b.Property<string>("MollieStatus")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("mollie_status");
+
                     b.Property<string>("Number")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -5113,6 +5123,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(40)")
                         .HasColumnName("payment");
 
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("payment_method");
+
                     b.Property<string>("PostalCode")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)")
@@ -5125,6 +5142,38 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Property<int>("Sequence")
                         .HasColumnType("int")
                         .HasColumnName("sequence");
+
+                    b.Property<decimal>("ServiceFeeNet")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("service_fee_net");
+
+                    b.Property<decimal>("ServiceFeeVat")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("service_fee_vat");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalInclVat")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("total_incl_vat");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("vat_amount");
+
+                    b.Property<decimal>("VatRate")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)")
+                        .HasColumnName("vat_rate");
 
                     b.Property<int>("Year")
                         .HasColumnType("int")
@@ -5148,6 +5197,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.ToTable("AdvertiserInvoice", "membership", t =>
                         {
                             t.HasCheckConstraint("CK_AdvertiserInvoice_payment", "[payment] IN ('Mandate', 'Cash', 'Invoice')");
+
+                            t.HasCheckConstraint("CK_AdvertiserInvoice_payment_method", "[payment_method] IN ('Cash', 'Mollie')");
+
+                            t.HasCheckConstraint("CK_AdvertiserInvoice_status", "[status] IN ('Concept', 'Sent', 'Paid', 'Overdue', 'Cancelled')");
                         });
                 });
 

@@ -36791,6 +36791,33 @@
               "null",
               "string"
             ]
+          },
+          "vatNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "serviceFeeOn": {
+            "type": "boolean",
+            "default": false
+          },
+          "serviceFeeCents": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -36812,6 +36839,33 @@
               "null",
               "string"
             ]
+          },
+          "vatNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "serviceFeeOn": {
+            "type": "boolean",
+            "default": false
+          },
+          "serviceFeeCents": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },

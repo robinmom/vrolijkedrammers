@@ -6,8 +6,9 @@ using QuestPDF.Infrastructure;
 
 namespace Drammers.Infrastructure.Advertisers.Invoices;
 
-/// <summary>De gegevens van de vereniging op de factuur: naam en IBAN (zoals bij de incasso), adres en KvK-nummer.</summary>
-public sealed record InvoiceIssuer(string Name, string? Iban, IReadOnlyList<string> AddressLines, string? Kvk, string Email);
+/// <summary>De gegevens van de vereniging op de factuur: naam en IBAN (zoals bij de incasso), adres, KvK- en btw-nummer, telefoon en website.</summary>
+public sealed record InvoiceIssuer(
+    string Name, string? Iban, IReadOnlyList<string> AddressLines, string? Kvk, string Email, string? VatNumber = null, string? Phone = null, string? Website = null);
 
 /// <summary>
 /// De factuur als PDF (fase 27e) in de huisstijl: logo, "Factuur" in Drammers Rood (Poppins), tekst in Inter, de
@@ -68,27 +69,22 @@ public static class InvoicePdf
     /// <summary>Hoe er betaald wordt; ook gebruikt in de e-mail bij de factuur.</summary>
     public static string PaymentText(AdvertiserInvoice invoice, InvoiceIssuer issuer)
     {
-        if (invoice.Payment == AdvertiserPayment.Mandate)
+        if (invoice.PaymentMethod == InvoicePaymentMethod.Cash)
         {
-            var account = invoice.IbanLast4 is null ? "" : $" van de rekening eindigend op {invoice.IbanLast4}";
-            var mandate = invoice.MandateReference is null ? "" : $" (machtiging {invoice.MandateReference})";
-            return $"Dit bedrag wordt via automatische incasso afgeschreven{account}{mandate}. U hoeft niets te doen.";
+            if (invoice.PaidAt is { } paid)
+            {
+                return $"Contant voldaan op {paid.ToString("d MMMM yyyy", Dutch)}. Hartelijk dank voor uw steun!";
+            }
+
+            var transfer = issuer.Iban is null ? "" : $", of overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}";
+            return $"Graag binnen 14 dagen contant voldoen aan de collectant{transfer}.";
         }
 
-        if (invoice.Payment == AdvertiserPayment.Invoice)
-        {
-            return issuer.Iban is null
-                ? $"Graag binnen 14 dagen overmaken onder vermelding van {invoice.Number}."
-                : $"Graag binnen 14 dagen overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}.";
-        }
-
-        if (invoice.PaidAt is { } paid)
-        {
-            return $"Contant voldaan op {paid.ToString("d MMMM yyyy", Dutch)}. Hartelijk dank voor uw steun!";
-        }
-
-        var transfer = issuer.Iban is null ? "" : $", of overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}";
-        return $"Graag binnen 14 dagen voldoen aan de collectant{transfer}.";
+        // Online betalen (iDEAL via Mollie): de betaallink komt in een latere fase in de begeleidende e-mail; overmaken
+        // onder vermelding van het factuurnummer kan altijd en is zo op het bankafschrift herleidbaar.
+        return issuer.Iban is null
+            ? $"Graag binnen 14 dagen voldoen onder vermelding van {invoice.Number}."
+            : $"Graag binnen 14 dagen overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}.";
     }
 
     public static string Money(decimal amount) => amount.ToString("C", Dutch);
@@ -148,15 +144,30 @@ public static class InvoicePdf
                         from.Item().Text(line);
                     }
 
-                    from.Item().Text(issuer.Email);
-                    if (issuer.Kvk is { Length: > 0 } kvk)
+                    if (issuer.Phone is { Length: > 0 } phone)
                     {
-                        from.Item().Text($"KvK {kvk}");
+                        from.Item().Text(phone);
+                    }
+
+                    from.Item().Text(issuer.Email);
+                    if (issuer.Website is { Length: > 0 } website)
+                    {
+                        from.Item().Text(website);
                     }
 
                     if (issuer.Iban is { Length: > 0 } iban)
                     {
                         from.Item().Text($"IBAN {FormatIban(iban)}");
+                    }
+
+                    if (issuer.Kvk is { Length: > 0 } kvk)
+                    {
+                        from.Item().Text($"KvK {kvk}");
+                    }
+
+                    if (issuer.VatNumber is { Length: > 0 } vat)
+                    {
+                        from.Item().Text($"Btw-nr {vat}");
                     }
                 });
             });
@@ -175,23 +186,47 @@ public static class InvoicePdf
                 });
             });
 
+            var totalVat = invoice.VatAmount + invoice.ServiceFeeVat;
+            var subtotal = invoice.Amount + invoice.ServiceFeeNet;
             column.Item().Table(table =>
             {
                 table.ColumnsDefinition(c =>
                 {
                     c.RelativeColumn();
-                    c.ConstantColumn(110);
+                    c.ConstantColumn(120);
                 });
                 table.Header(h =>
                 {
                     h.Cell().Background(Grey).Padding(8).Text("Omschrijving").Bold();
                     h.Cell().Background(Grey).Padding(8).AlignRight().Text("Bedrag").Bold();
                 });
-                table.Cell().BorderBottom(1).BorderColor(Grey).Padding(8).Text(invoice.Description);
-                table.Cell().BorderBottom(1).BorderColor(Grey).Padding(8).AlignRight().Text(Money(invoice.Amount));
-                table.Cell().Padding(8).AlignRight().Text("Totaal").FontFamily("Poppins").SemiBold();
-                table.Cell().Padding(8).AlignRight().Text(Money(invoice.Amount)).FontFamily("Poppins").Bold().FontSize(12);
+
+                void Line(string label, decimal amount)
+                {
+                    table.Cell().BorderBottom(1).BorderColor(Grey).Padding(8).Text(label);
+                    table.Cell().BorderBottom(1).BorderColor(Grey).Padding(8).AlignRight().Text(Money(amount));
+                }
+
+                Line(invoice.Description, invoice.Amount);
+                if (invoice.ServiceFeeNet > 0)
+                {
+                    Line("Servicekosten (betaling via iDEAL)", invoice.ServiceFeeNet);
+                }
+
+                if (totalVat > 0)
+                {
+                    Line("Subtotaal (excl. btw)", subtotal);
+                    Line("Btw 21%", totalVat);
+                }
+
+                table.Cell().Padding(8).AlignRight().Text(totalVat > 0 ? "Totaal incl. btw" : "Totaal").FontFamily("Poppins").SemiBold();
+                table.Cell().Padding(8).AlignRight().Text(Money(invoice.TotalInclVat)).FontFamily("Poppins").Bold().FontSize(12);
             });
+
+            if (invoice.VatRate == 0)
+            {
+                column.Item().Text("Giften zijn vrijgesteld van btw (geen prestatie).").FontColor(Muted).FontSize(9);
+            }
 
             column.Item().Background(Grey).Padding(14).Text(PaymentText(invoice, issuer));
             column.Item().Text("Hartelijk dank voor uw bijdrage aan het carnaval in Loil. Alaaf!");

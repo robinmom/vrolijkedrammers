@@ -210,6 +210,22 @@ public class WebsiteTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Website_toont_de_titel_lid_niet_maar_een_formele_titel_wel()
+    {
+        // Raad van Elf (commissie 2): "Lid" is geen formele titel en moet op de website weg; een echte titel blijft staan.
+        await _bestuur.PostAsJsonAsync("/api/v1/admin/website/kader",
+            new { committeeId = 2, memberId = (Guid?)null, name = "Jan Lid", function = "Lid", photo = (string?)null });
+        await _bestuur.PostAsJsonAsync("/api/v1/admin/website/kader",
+            new { committeeId = 2, memberId = (Guid?)null, name = "Piet Voorzitter", function = "Voorzitter", photo = (string?)null });
+
+        using var scope = _api.Services.CreateScope();
+        var reader = scope.ServiceProvider.GetRequiredService<Drammers.Website.Content.WebsiteReader>();
+        var raad = (await reader.KaderAsync(CancellationToken.None)).Single(c => c.Name == "Raad van Elf");
+        Assert.Null(raad.Members.Single(m => m.Name == "Jan Lid").Function);
+        Assert.Equal("Voorzitter", raad.Members.Single(m => m.Name == "Piet Voorzitter").Function);
+    }
+
+    [Fact]
     public async Task Prinsen_en_jeugdprinsen_en_onderscheidingen_beheren()
     {
         var prince = await _bestuur.PostAsJsonAsync("/api/v1/admin/website/princes",

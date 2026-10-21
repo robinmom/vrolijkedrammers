@@ -160,10 +160,14 @@ public sealed class WebsiteReader(DrammersDbContext db, IClock clock, CarnivalSe
 
     public async Task<IReadOnlyList<CommitteeView>> KaderAsync(CancellationToken cancellationToken)
     {
+        // "Lid" is geen formele titel; zonder titel toont de website niets (bijv. Raad van Elf, convent, leiding dansgarde).
+        static string? Title(string? function) =>
+            string.IsNullOrWhiteSpace(function) || function.Trim().Equals("lid", StringComparison.OrdinalIgnoreCase) ? null : function.Trim();
+
         var committees = await db.Committees.AsNoTracking().OrderBy(c => c.SortOrder).ToListAsync(cancellationToken);
         var members = await db.CommitteeMembers.AsNoTracking().OrderBy(m => m.SortOrder).ToListAsync(cancellationToken);
         return [.. committees.Select(c => new CommitteeView(c.Name, c.Slug,
-            [.. members.Where(m => m.CommitteeId == c.Id).Select(m => new KaderPerson(m.Name, m.Function, MediaUrls.For("kader", m.Id, m.PhotoBlobPath)))]))
+            [.. members.Where(m => m.CommitteeId == c.Id).Select(m => new KaderPerson(m.Name, Title(m.Function), MediaUrls.For("kader", m.Id, m.PhotoBlobPath)))]))
             .Where(c => c.Members.Count > 0)];
     }
 

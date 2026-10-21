@@ -265,6 +265,7 @@ public static class DependencyInjection
         // Fase 27b: adverteerders.
         services.AddScoped<Advertisers.AdvertiserAdministration>();
         services.AddSingleton<Advertisers.AdvertiserIbanProtector>();
+        services.AddScoped<Advertisers.Invoices.InvoiceIssuers>();
         services.AddScoped<Advertisers.Invoices.AdvertiserInvoices>();
         services.AddScoped<IOutboxMessageHandler, Advertisers.Invoices.AdvertiserInvoiceMailHandler>();
         services.AddSingleton<Mailings.MailingUnsubscribeTokens>();

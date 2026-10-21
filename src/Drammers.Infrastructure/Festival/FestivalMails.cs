@@ -134,7 +134,8 @@ public static class FestivalMails
         return Message(festival, registration.Email, $"{festival.Name}: inschrijving {registration.Number} {subject}", text.ToString(), html);
     }
 
-    public static EmailMessage PaymentLink(DanceFestival festival, DanceFestivalRegistration registration, int amountCents, string payLink)
+    public static EmailMessage PaymentLink(
+        DanceFestival festival, DanceFestivalRegistration registration, int amountCents, string payLink, EmailFile? invoice = null)
     {
         var text = $"""
             Beste {registration.ContactName},
@@ -143,6 +144,8 @@ public static class FestivalMails
             U kunt betalen met iDEAL via deze link:
             {payLink}
 
+            In de bijlage vindt u de factuur.
+
             Met vriendelijke groet,
             De organisatie van het Dansgardefestival, De Vrolijke Drammers
             """;
@@ -150,13 +153,15 @@ public static class FestivalMails
             <p>Beste {E(registration.ContactName)},</p>
             <p>Het inschrijfgeld voor het {E(festival.Name)} (inschrijving {registration.Number}, {E(registration.ClubName)}) is <strong>{Euro(amountCents)}</strong>.</p>
             <p><a href="{E(payLink)}" style="display:inline-block;padding:10px 20px;background:#d4000f;color:#fff;border-radius:999px;text-decoration:none">Betalen met iDEAL</a></p>
+            <p>In de bijlage vindt u de factuur.</p>
             <p>Met vriendelijke groet,<br>De organisatie van het Dansgardefestival, De Vrolijke Drammers</p>
             """;
-        return Message(festival, registration.Email, $"{festival.Name}: betaallink inschrijving {registration.Number}", text, html);
+        return Message(festival, registration.Email, $"{festival.Name}: betaallink inschrijving {registration.Number}", text, html, invoice);
     }
 
-    private static EmailMessage Message(DanceFestival festival, string to, string subject, string text, string html) =>
-        new(to, subject, text, html, ReplyTo: festival.NotificationEmail, From: DanceFestivals.SenderLocalPart);
+    private static EmailMessage Message(DanceFestival festival, string to, string subject, string text, string html, EmailFile? attachment = null) =>
+        new(to, subject, text, html, ReplyTo: festival.NotificationEmail, From: DanceFestivals.SenderLocalPart,
+            Attachments: attachment is null ? null : [attachment]);
 
     private static string E(string value) => WebUtility.HtmlEncode(value);
 }

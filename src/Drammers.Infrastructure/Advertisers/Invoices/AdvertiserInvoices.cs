@@ -3,7 +3,6 @@ using System.Text.Json;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Email;
 using Drammers.Infrastructure.Mailings;
-using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Payments;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Membership.Advertisers;
@@ -37,8 +36,9 @@ public sealed record InvoiceOverview(int Year, int ToCreate, int ToSend, int Wit
 /// krijgt een PDF om te printen.
 /// </summary>
 public sealed class AdvertiserInvoices(
-    DrammersDbContext db, SepaCollections collections, IOutbox outbox, IAuditLogger audit, IClock clock, ICurrentActor actor,
-    IOptions<MailingOptions> mailingOptions, IMollieClient mollie, IDataProtectionProvider protection, ILogger<AdvertiserInvoices> logger)
+    DrammersDbContext db, IOutbox outbox, IAuditLogger audit, IClock clock, ICurrentActor actor,
+    IOptions<MailingOptions> mailingOptions, IMollieClient mollie, IDataProtectionProvider protection, ILogger<AdvertiserInvoices> logger,
+    InvoiceIssuers issuers)
 {
     public const string MailMessageType = "advertiser.invoice-mail";
 
@@ -128,14 +128,7 @@ public sealed class AdvertiserInvoices(
             JsonSerializer.Serialize(values, JsonSerializerOptions.Web)), cancellationToken);
     }
 
-    public async Task<InvoiceIssuer> IssuerAsync(CancellationToken cancellationToken)
-    {
-        var creditor = await collections.GetCreditorAsync(cancellationToken);
-        var settings = await GetSettingsAsync(cancellationToken);
-        var lines = (settings.Address ?? "").Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return new InvoiceIssuer(creditor.Name ?? "Carnavalsvereniging De Vrolijke Drammers", creditor.Iban, lines, settings.Kvk, Treasurer.Email,
-            settings.VatNumber, settings.Phone, settings.Website);
-    }
+    public Task<InvoiceIssuer> IssuerAsync(CancellationToken cancellationToken) => issuers.IssuerAsync(Treasurer.Email, cancellationToken);
 
     /// <summary>Wie in het jaar een factuur krijgt (opgehaald, met een bedrag, niet gratis) en wat er al is gemaakt en verstuurd.</summary>
     public async Task<InvoiceOverview> OverviewAsync(int year, CancellationToken cancellationToken)

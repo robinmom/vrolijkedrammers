@@ -106,6 +106,7 @@ public sealed partial class DanceFestivals(
     ITurnstileVerifier verifier,
     IDataProtectionProvider protection,
     IOptions<EmailOptions> emailOptions,
+    Advertisers.Invoices.InvoiceIssuers issuers,
     ILogger<DanceFestivals> logger)
 {
     public const int MaxEntries = 40;
@@ -114,6 +115,9 @@ public sealed partial class DanceFestivals(
     public const string SenderLocalPart = "secretaris";
 
     public const string DefaultNotificationEmail = "secretaris@vrolijkedrammers.nl";
+
+    /// <summary>Het financiële contact op de factuur-PDF (de betaalmail zelf komt van het secretariaat/meldingsadres).</summary>
+    private const string InvoiceTreasurerEmail = "penningmeester@vrolijkedrammers.nl";
 
     private static readonly TimeSpan MinimumFillTime = TimeSpan.FromSeconds(5);
 
@@ -671,7 +675,11 @@ public sealed partial class DanceFestivals(
         await audit.WriteAsync(new AuditEntry("dance-festival.payment-requested", "DanceFestivalPayment", payment.Id.ToString(), null,
             JsonSerializer.Serialize(new { registration.Number, net = amountCents, total }, Json)), cancellationToken);
         var token = _tokens.Unprotect(registration.AccessTokenProtected);
-        await SendAsync(FestivalMails.PaymentLink(festival, registration, total, PayLink(baseUrl, payment.Id, token)), cancellationToken);
+        var issuer = await issuers.IssuerAsync(InvoiceTreasurerEmail, cancellationToken);
+        var invoice = new FestivalInvoice(payment.InvoiceNumber, DateOnly.FromDateTime(Now), festival.Name, registration.ClubName,
+            registration.ContactName, amountCents, vat, feeNet, feeVat, total);
+        var pdf = new EmailFile($"Factuur {payment.InvoiceNumber}.pdf", "application/pdf", FestivalInvoicePdf.Generate(invoice, issuer));
+        await SendAsync(FestivalMails.PaymentLink(festival, registration, total, PayLink(baseUrl, payment.Id, token), pdf), cancellationToken);
         return payment.Id;
     }
 

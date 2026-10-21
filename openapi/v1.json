@@ -2220,6 +2220,56 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/invoices/remind": {
+      "post": {
+        "tags": [
+          "AdminAdvertiserInvoices"
+        ],
+        "summary": "Een herinnering sturen (factuur opnieuw) naar de gekozen, nog niet betaalde facturen (fase 27q).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceRemindRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceRemindRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceRemindRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceCountResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceCountResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceCountResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/invoices/{id}/pdf": {
       "get": {
         "tags": [
@@ -37060,6 +37110,17 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "dueDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "overdue": {
+            "type": "boolean",
+            "default": false
           }
         },
         "description": "Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur."
@@ -37070,6 +37131,21 @@
           "Mollie",
           null
         ]
+      },
+      "InvoiceRemindRequest": {
+        "required": [
+          "invoiceIds"
+        ],
+        "type": "object",
+        "properties": {
+          "invoiceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
       },
       "InvoiceSettings": {
         "required": [
@@ -37116,6 +37192,11 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "paymentTermDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": 14
           }
         }
       },
@@ -37164,6 +37245,11 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "paymentTermDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": 14
           }
         }
       },

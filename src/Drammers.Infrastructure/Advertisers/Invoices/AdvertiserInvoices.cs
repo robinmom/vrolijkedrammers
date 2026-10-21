@@ -21,13 +21,14 @@ using Microsoft.Extensions.Options;
 namespace Drammers.Infrastructure.Advertisers.Invoices;
 
 public sealed record InvoiceSettings(
-    string? Address, string? Kvk, string? VatNumber = null, string? Phone = null, string? Website = null, bool ServiceFeeOn = false, int ServiceFeeCents = 0);
+    string? Address, string? Kvk, string? VatNumber = null, string? Phone = null, string? Website = null, bool ServiceFeeOn = false, int ServiceFeeCents = 0,
+    int PaymentTermDays = 14);
 
 /// <summary>Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur.</summary>
 public sealed record InvoiceOverviewRow(
     Guid AdvertiserId, int AdvertiserNumber, string CompanyName, decimal Amount, AdvertiserPayment Payment, string? Email, Guid? InvoiceId,
     string? InvoiceNumber, DateOnly? InvoiceDate, DateTime? SentAt, InvoiceStatus? Status = null, InvoicePaymentMethod? PaymentMethod = null,
-    decimal? TotalInclVat = null, string? MollieStatus = null, DateTime? PaidAt = null);
+    decimal? TotalInclVat = null, string? MollieStatus = null, DateTime? PaidAt = null, DateOnly? DueDate = null, bool Overdue = false);
 
 public sealed record InvoiceOverview(int Year, int ToCreate, int ToSend, int WithoutEmail, IReadOnlyList<InvoiceOverviewRow> Rows);
 
@@ -52,7 +53,7 @@ public sealed class AdvertiserInvoices(
 
     public static readonly MailingContact Treasurer = new("penningmeester@vrolijkedrammers.nl", "penningmeester");
 
-    public sealed record InvoiceMail(Guid InvoiceId);
+    public sealed record InvoiceMail(Guid InvoiceId, bool Reminder = false);
 
     public async Task<InvoiceSettings> GetSettingsAsync(CancellationToken cancellationToken)
     {
@@ -60,7 +61,7 @@ public sealed class AdvertiserInvoices(
         [
             AppConfigurationKeys.InvoiceAddress, AppConfigurationKeys.InvoiceKvk, AppConfigurationKeys.InvoiceVatNumber,
             AppConfigurationKeys.InvoicePhone, AppConfigurationKeys.InvoiceWebsite,
-            AppConfigurationKeys.AdvertiserServiceFeeOn, AppConfigurationKeys.AdvertiserServiceFeeCents,
+            AppConfigurationKeys.AdvertiserServiceFeeOn, AppConfigurationKeys.AdvertiserServiceFeeCents, AppConfigurationKeys.InvoicePaymentTermDays,
         ];
         var values = await db.AppConfiguration.AsNoTracking().Where(s => keys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, s => s.Value, cancellationToken);
         return new InvoiceSettings(
@@ -70,7 +71,8 @@ public sealed class AdvertiserInvoices(
             values.GetValueOrDefault(AppConfigurationKeys.InvoicePhone),
             values.GetValueOrDefault(AppConfigurationKeys.InvoiceWebsite),
             values.GetValueOrDefault(AppConfigurationKeys.AdvertiserServiceFeeOn) == "true",
-            int.TryParse(values.GetValueOrDefault(AppConfigurationKeys.AdvertiserServiceFeeCents), NumberStyles.Integer, CultureInfo.InvariantCulture, out var fee) ? fee : 0);
+            int.TryParse(values.GetValueOrDefault(AppConfigurationKeys.AdvertiserServiceFeeCents), NumberStyles.Integer, CultureInfo.InvariantCulture, out var fee) ? fee : 0,
+            int.TryParse(values.GetValueOrDefault(AppConfigurationKeys.InvoicePaymentTermDays), NumberStyles.Integer, CultureInfo.InvariantCulture, out var term) && term > 0 ? term : 14);
     }
 
     public async Task SetSettingsAsync(InvoiceSettings input, CancellationToken cancellationToken)
@@ -100,6 +102,11 @@ public sealed class AdvertiserInvoices(
             throw new DomainException(ErrorCodes.Validation, "De servicekosten zijn hooguit € 1000,00.");
         }
 
+        if (input.PaymentTermDays is < 1 or > 365)
+        {
+            throw new DomainException(ErrorCodes.Validation, "De betalingstermijn is tussen 1 en 365 dagen.");
+        }
+
         var values = new Dictionary<string, string>
         {
             [AppConfigurationKeys.InvoiceAddress] = address ?? "",
@@ -109,6 +116,7 @@ public sealed class AdvertiserInvoices(
             [AppConfigurationKeys.InvoiceWebsite] = website ?? "",
             [AppConfigurationKeys.AdvertiserServiceFeeOn] = input.ServiceFeeOn ? "true" : "false",
             [AppConfigurationKeys.AdvertiserServiceFeeCents] = input.ServiceFeeCents.ToString(CultureInfo.InvariantCulture),
+            [AppConfigurationKeys.InvoicePaymentTermDays] = input.PaymentTermDays.ToString(CultureInfo.InvariantCulture),
         };
         var settings = await db.AppConfiguration.Where(s => values.Keys.Contains(s.Key)).ToDictionaryAsync(s => s.Key, cancellationToken);
         foreach (var (key, value) in values)
@@ -145,14 +153,18 @@ public sealed class AdvertiserInvoices(
             .Join(db.Advertisers.Where(a => a.Active), y => y.AdvertiserId, a => a.Id, (y, a) => new { a.Id, a.Number, a.CompanyName, y.Amount, a.Payment, a.Email })
             .ToListAsync(cancellationToken);
         var invoices = await db.AdvertiserInvoices.AsNoTracking().Where(i => i.Year == year).ToDictionaryAsync(i => i.AdvertiserId, cancellationToken);
+        var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+
+        // Vervallen = verstuurd, nog niet betaald of ingetrokken, en de uiterste betaaldatum is voorbij.
+        bool Overdue(AdvertiserInvoice i) => i.SentAt is not null && i.Status is not (InvoiceStatus.Paid or InvoiceStatus.Cancelled) && today > i.DueDate;
 
         var rows = due.Select(d => invoices.GetValueOrDefault(d.Id) is { } i
                 ? new InvoiceOverviewRow(d.Id, d.Number, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt,
-                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt)
+                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt, i.DueDate, Overdue(i))
                 : new InvoiceOverviewRow(d.Id, d.Number, d.CompanyName, d.Amount!.Value, d.Payment, d.Email, null, null, null, null))
             .Concat(invoices.Values.Where(i => due.All(d => d.Id != i.AdvertiserId))
                 .Select(i => new InvoiceOverviewRow(i.AdvertiserId, 0, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt,
-                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt)))
+                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt, i.DueDate, Overdue(i))))
             .OrderBy(r => r.InvoiceNumber ?? "~").ThenBy(r => r.CompanyName).ToList();
         return new InvoiceOverview(year, rows.Count(r => r.InvoiceId is null), rows.Count(r => r.InvoiceId is not null && r.SentAt is null && r.Email is not null),
             rows.Count(r => r.Email is null), rows);
@@ -227,6 +239,7 @@ public sealed class AdvertiserInvoices(
             Sequence = sequence,
             Number = $"ADV-{year}-{sequence.ToString("0000", CultureInfo.InvariantCulture)}",
             InvoiceDate = date,
+            DueDate = date.AddDays(settings.PaymentTermDays),
             Amount = net,
             VatRate = vatRate,
             VatAmount = vat,
@@ -266,6 +279,25 @@ public sealed class AdvertiserInvoices(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("advertiser.invoices-sent", "AdvertiserInvoice", year.ToString(CultureInfo.InvariantCulture), null,
             $"{ids.Count} facturen"), cancellationToken);
+        return ids.Count;
+    }
+
+    /// <summary>Verstuurt een herinnering (de factuur opnieuw, met herinneringstekst) naar de gekozen, nog niet betaalde facturen met e-mailadres.</summary>
+    public async Task<int> RemindAsync(IReadOnlyList<Guid> invoiceIds, CancellationToken cancellationToken)
+    {
+        var ids = await db.AdvertiserInvoices
+            .Where(i => invoiceIds.Contains(i.Id) && i.SentAt != null && i.Email != null
+                && i.Status != InvoiceStatus.Paid && i.Status != InvoiceStatus.Cancelled)
+            .OrderBy(i => i.Sequence).Select(i => i.Id).ToListAsync(cancellationToken);
+        var interval = TimeSpan.FromHours(1) / mailingOptions.Value.EffectiveMaxPerHour;
+        var now = clock.UtcNow.UtcDateTime;
+        for (var i = 0; i < ids.Count; i++)
+        {
+            outbox.Enqueue(MailMessageType, new InvoiceMail(ids[i], Reminder: true), i == 0 ? null : now + (interval * i));
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.invoices-reminded", "AdvertiserInvoice", "reminder", null, $"{ids.Count} herinneringen"), cancellationToken);
         return ids.Count;
     }
 
@@ -479,9 +511,18 @@ public sealed class AdvertiserInvoiceMailHandler(
 
     public async Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken)
     {
-        var id = JsonSerializer.Deserialize<AdvertiserInvoices.InvoiceMail>(message.Payload, JsonSerializerOptions.Web)!.InvoiceId;
-        var invoice = await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == id, cancellationToken);
-        if (invoice is null || invoice.SentAt is not null || invoice.Email is null)
+        var mail = JsonSerializer.Deserialize<AdvertiserInvoices.InvoiceMail>(message.Payload, JsonSerializerOptions.Web)!;
+        var invoice = await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == mail.InvoiceId, cancellationToken);
+        if (invoice is null || invoice.Email is null)
+        {
+            return;
+        }
+
+        // De eerste verzending slaat een al verstuurde factuur over; een herinnering juist alleen als de factuur verstuurd
+        // is en nog niet betaald/ingetrokken.
+        if (mail.Reminder
+            ? invoice.SentAt is null || invoice.Status is InvoiceStatus.Paid or InvoiceStatus.Cancelled
+            : invoice.SentAt is not null)
         {
             return;
         }
@@ -493,10 +534,13 @@ public sealed class AdvertiserInvoiceMailHandler(
         var payLink = baseUrl is not null && invoice.PaymentMethod == InvoicePaymentMethod.Mollie && invoice.Status != InvoiceStatus.Paid
             ? invoices.PayLink(baseUrl, invoice.Id)
             : null;
+        var intro = mail.Reminder
+            ? $"Beste {{voornaam}},\n\nEen vriendelijke herinnering: de factuur voor {{bedrijf}} ({invoice.Description}) staat nog open. In de bijlage vindt u de factuur opnieuw."
+            : $"Beste {{voornaam}},\n\nHartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}.";
         var blocks = new List<MailingBlock>
         {
-            new("heading", $"Factuur {invoice.Number}"),
-            new("text", $"Beste {{voornaam}},\n\nHartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}."),
+            new("heading", mail.Reminder ? $"Herinnering factuur {invoice.Number}" : $"Factuur {invoice.Number}"),
+            new("text", intro),
             new("highlight", InvoicePdf.Money(invoice.TotalInclVat), "Bedrag", Note: InvoicePdf.PaymentText(invoice, issuer)),
         };
 
@@ -507,16 +551,19 @@ public sealed class AdvertiserInvoiceMailHandler(
         }
 
         blocks.Add(new MailingBlock("closing", "Met vriendelijke groet,\nPenningmeester De Vrolijke Drammers"));
-        var rendered = MailingRenderer.Render($"Factuur {invoice.Number} – {invoice.Description}", null,
-            blocks, person, emailOptions.Value.LogoUrl, _ => null, null, baseUrl, AdvertiserInvoices.Treasurer);
+        var subject = mail.Reminder ? $"Herinnering: factuur {invoice.Number} – {invoice.Description}" : $"Factuur {invoice.Number} – {invoice.Description}";
+        var rendered = MailingRenderer.Render(subject, null, blocks, person, emailOptions.Value.LogoUrl, _ => null, null, baseUrl, AdvertiserInvoices.Treasurer);
         await email.SendAsync(new EmailMessage(invoice.Email, rendered.Subject, rendered.PlainText, rendered.Html, AdvertiserInvoices.Treasurer.Email,
             AdvertiserInvoices.Treasurer.Role, [new EmailFile($"Factuur {invoice.Number}.pdf", "application/pdf", pdf)]), cancellationToken);
-        invoice.SentAt = clock.UtcNow.UtcDateTime;
-        if (invoice.Status == InvoiceStatus.Concept)
+        if (!mail.Reminder)
         {
-            invoice.Status = InvoiceStatus.Sent;
-        }
+            invoice.SentAt = clock.UtcNow.UtcDateTime;
+            if (invoice.Status == InvoiceStatus.Concept)
+            {
+                invoice.Status = InvoiceStatus.Sent;
+            }
 
-        await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 }

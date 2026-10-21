@@ -125,6 +125,9 @@ public static class AppConfigurationKeys
     /// <summary>Het bedrag aan servicekosten in centen (excl. btw) dat per factuur wordt doorberekend als de switch aanstaat.</summary>
     public const string AdvertiserServiceFeeCents = "advertiser_service_fee_cents";
 
+    /// <summary>Betalingstermijn in dagen voor adverteerders-facturen (fase 27q), standaard 14.</summary>
+    public const string InvoicePaymentTermDays = "invoice_payment_term_days";
+
     /// <summary>Informatie voor de collectanten van één campagnejaar (fase 27h), bijv. tarieven en de inleverdatum.</summary>
     public static string AdvertiserInfo(int year) => $"advertiser_info_{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 

@@ -528,6 +528,33 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.NotNull((await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray()
             .Single(r => r.GetProperty("invoiceNumber").GetString() == "ADV-2027-0001").GetProperty("sentAt").GetString());
 
+        // Fase 27q: de betaaltermijn bepaalt de uiterste betaaldatum (factuurdatum + 14 dagen).
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var inv = await db.AdvertiserInvoices.AsNoTracking().SingleAsync(i => i.Number == "ADV-2027-0001");
+            Assert.Equal(inv.InvoiceDate.AddDays(14), inv.DueDate);
+        }
+
+        // Fase 27q: een herinnering stuurt de verstuurde, nog niet betaalde factuur opnieuw met herinneringstekst.
+        var remindId = rows.Single(r => r.GetProperty("invoiceNumber").GetString() == "ADV-2027-0001").GetProperty("invoiceId").GetGuid();
+        Assert.Equal(1, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices/remind", new { invoiceIds = new[] { remindId } }))
+            .Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            foreach (var message in await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == Drammers.Infrastructure.Advertisers.Invoices.AdvertiserInvoices.MailMessageType).ToListAsync())
+            {
+                using var handlerScope = _api.Services.CreateScope();
+                var handler = handlerScope.ServiceProvider.GetServices<Drammers.Worker.Outbox.IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+                await handler.HandleAsync(new Drammers.Worker.Outbox.OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            }
+        }
+
+        var reminder = _api.Emails.Sent.Last(m => m.To == "info1@example.com");
+        Assert.StartsWith("Herinnering:", reminder.Subject, StringComparison.Ordinal);
+        Assert.Contains("herinnering", reminder.PlainText, StringComparison.OrdinalIgnoreCase);
+
         // PDF's: per factuur en alles zonder e-mailadres in één bestand.
         var single = await _bestuur.GetAsync($"/api/v1/admin/advertisers/invoices/{rows[0].GetProperty("invoiceId").GetGuid()}/pdf");
         Assert.Equal("application/pdf", single.Content.Headers.ContentType?.MediaType);

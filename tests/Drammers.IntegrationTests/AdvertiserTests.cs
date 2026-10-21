@@ -483,6 +483,15 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(["ADV-2027-0001", "ADV-2027-0002"], rows.Select(r => r.GetProperty("invoiceNumber").GetString()));
         Assert.Equal(75m, rows.Single(r => r.GetProperty("companyName").GetString() == "Garage Proef").GetProperty("amount").GetDecimal());
 
+        // Fase 27p: per adverteerder factureren is idempotent (bestaat al) en valideert een onbekende adverteerder.
+        var anId = rows[0].GetProperty("advertiserId").GetGuid();
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/advertisers/invoices/advertiser/{anId}", new { date = "2026-11-02", year = (int?)null })).StatusCode);
+        Assert.Equal(2, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray()
+            .Count(r => r.GetProperty("invoiceNumber").ValueKind != JsonValueKind.Null));
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/advertisers/invoices/advertiser/{Guid.NewGuid()}", new { date = "2026-11-02", year = (int?)null })).StatusCode);
+
         // Bedragen zijn exclusief btw: 21% op advertenties, 0% op giften (geen prestatie), totaal = bedrag + btw.
         using (var scope = _api.Services.CreateScope())
         {

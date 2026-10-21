@@ -48,6 +48,18 @@ public sealed class AdminAdvertiserInvoicesController(AdvertiserInvoices invoice
         return new(await invoices.CreateAsync(year, request.Date, cancellationToken));
     }
 
+    /// <summary>De factuur voor één adverteerder maken (als die nog ontbreekt).</summary>
+    [HttpPost("advertiser/{advertiserId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> CreateOne(Guid advertiserId, CreateInvoicesRequest request, CancellationToken cancellationToken)
+    {
+        var year = request.Year ?? await advertisers.CampaignYearAsync(cancellationToken);
+        await invoices.CreateOneAsync(advertiserId, year, request.Date, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("send")]
     [ProducesResponseType<InvoiceCountResponse>(StatusCodes.Status200OK)]
     public async Task<InvoiceCountResponse> Send([FromQuery] int? year, CancellationToken cancellationToken) =>

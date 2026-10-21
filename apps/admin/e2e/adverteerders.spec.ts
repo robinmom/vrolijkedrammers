@@ -259,6 +259,22 @@ test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
   expect(api.invoiceSettings.serviceFeeCents).toBe(35);
 });
 
+test('fase 27p: factuur per adverteerder maken', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  api.advertisers.forEach((a) => (a.status2027 = 'Collected'));
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/facturen');
+
+  // Elke opgehaalde adverteerder zonder factuur heeft een eigen "Factuur maken"-knop.
+  const makeButtons = page.getByRole('button', { name: 'Factuur maken' });
+  await expect(makeButtons).toHaveCount(2);
+  await makeButtons.first().click();
+
+  // Eén factuur is nu gemaakt (nummer verschijnt), de andere rij houdt zijn knop.
+  await expect(page.getByRole('button', { name: /ADV-2027-/ })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Factuur maken' })).toHaveCount(1);
+});
+
 test('fase 27k: context-bewuste terug-knop vanaf Campagne', async ({ page }) => {
   const api = new MockApi(['advertiser.manage']);
   await api.install(page);

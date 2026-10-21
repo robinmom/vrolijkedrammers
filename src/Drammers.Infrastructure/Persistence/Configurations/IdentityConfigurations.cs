@@ -34,6 +34,7 @@ public static class DefaultRoles
     public const string Hoofdjury = "hoofdjury";
     public const string Uitslagcommissie = "uitslagcommissie";
     public const string Collectant = "collectant";
+    public const string Penningmeester = "penningmeester";
     public const string Regie = "regie";
     public const string Tekstgroepen = "tekstgroepen";
     public const string Prins = "prins";
@@ -98,6 +99,9 @@ public static class DefaultRoles
         // portal zijn gemaakt kregen een volgnummer vanaf 17, dus nieuwe vaste rollen krijgen een Id vanaf 101.
         new(101, Collectant, "Collectant", "Haalt in de app adverteerders op voor de Drammerskrant", false, false,
             [.. MemberBasics, P.AdvertiserCollect]),
+        // Fase 4b: de penningmeester; inkomsten en Mollie-afrekeningen, facturen en betalingen (beheerportal).
+        new(102, Penningmeester, "Penningmeester", "Inkomsten en Mollie-afrekeningen, facturen, betalingen en contributie", false, false,
+            [.. MemberBasics, P.MemberRead, P.FinanceRead, P.PaymentRead, P.AdvertiserManage, P.ContributionManage]),
         // Doelgroeprollen (2026-10-09): te kiezen bij "Zichtbaar voor" van activiteiten, nieuws en meldingen. Id's vanaf 201,
         // zodat ze niet botsen met rollen die in het portal zijn aangemaakt (die volgen na 101).
         new(201, Regie, "Regie", "Regie; doelgroep voor activiteiten, nieuws en meldingen", false, false, MemberBasics),

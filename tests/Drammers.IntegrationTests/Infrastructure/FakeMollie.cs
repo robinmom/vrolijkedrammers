@@ -12,6 +12,10 @@ public sealed class FakeMollie : IMollieClient
 
     public ConcurrentBag<MollieNewPayment> Created { get; } = [];
 
+    public ConcurrentDictionary<string, MollieSettlement> Settlements { get; } = new();
+
+    private readonly ConcurrentDictionary<string, List<string>> _settlementPayments = new();
+
     public Task<MolliePayment> CreatePaymentAsync(MollieNewPayment payment, CancellationToken cancellationToken)
     {
         Created.Add(payment);
@@ -26,4 +30,26 @@ public sealed class FakeMollie : IMollieClient
 
     public void SetStatus(string paymentId, string status) =>
         Payments[paymentId] = Payments[paymentId] with { Status = status, PaidAt = status == "paid" ? DateTime.UtcNow : null };
+
+    /// <summary>Een afrekening toevoegen met de betalingen (tr_…) die erin zitten.</summary>
+    public void AddSettlement(MollieSettlement settlement, params string[] paymentIds)
+    {
+        Settlements[settlement.Id] = settlement;
+        _settlementPayments[settlement.Id] = [.. paymentIds];
+    }
+
+    public Task<IReadOnlyList<MollieSettlement>> ListSettlementsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<MollieSettlement>>([.. Settlements.Values]);
+
+    public Task<MollieSettlement?> GetSettlementAsync(string settlementId, CancellationToken cancellationToken) =>
+        Task.FromResult(Settlements.GetValueOrDefault(settlementId));
+
+    public Task<IReadOnlyList<MollieSettlementPayment>> ListSettlementPaymentsAsync(string settlementId, CancellationToken cancellationToken)
+    {
+        var ids = _settlementPayments.GetValueOrDefault(settlementId) ?? [];
+        var payments = ids.Select(id => Payments.TryGetValue(id, out var p)
+            ? new MollieSettlementPayment(id, p.Status, p.AmountCents, null, p.PaidAt)
+            : new MollieSettlementPayment(id, "paid", 0, null, null)).ToList();
+        return Task.FromResult<IReadOnlyList<MollieSettlementPayment>>(payments);
+    }
 }

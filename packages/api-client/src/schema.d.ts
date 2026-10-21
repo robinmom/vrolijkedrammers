@@ -5268,6 +5268,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/finance/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettlementSummary"][];
+                        "application/json": components["schemas"]["SettlementSummary"][];
+                        "text/json": components["schemas"]["SettlementSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/settlements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettlementDetail"];
+                        "application/json": components["schemas"]["SettlementDetail"];
+                        "text/json": components["schemas"]["SettlementDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/settlements/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/csv": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/settlements/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SettlementSendRequest"];
+                    "text/json": components["schemas"]["SettlementSendRequest"];
+                    "application/*+json": components["schemas"]["SettlementSendRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/groups": {
         parameters: {
             query?: never;
@@ -28730,6 +28884,44 @@ export interface components {
         };
         SetTestAccessRequest: {
             granted: boolean;
+        };
+        /** @description Een afrekening met de herleide inkomsten en het deel dat niet aan een eigen post gekoppeld kon worden. */
+        SettlementDetail: {
+            settlement: components["schemas"]["SettlementSummary"];
+            /** Format: double */
+            matchedTotal: number;
+            /** Format: int32 */
+            unmatchedCount: number;
+            /** Format: double */
+            unmatchedTotal: number;
+            lines: components["schemas"]["SettlementLine"][];
+        };
+        /** @description Eén inkomst binnen een afrekening, herleid naar onze eigen administratie (factuur, festival of kaartverkoop). */
+        SettlementLine: {
+            source: string;
+            number: string;
+            party: string;
+            /** Format: double */
+            amount: number;
+            mollieId: string;
+        };
+        /** @description Naar welk e-mailadres de verzamelstaat gaat (standaard penningmeester@vrolijkedrammers.nl). */
+        SettlementSendRequest: {
+            recipient: string;
+        };
+        /** @description Eén Mollie-afrekening (bankuitbetaling): omzet min Mollie-kosten = wat op de bank is bijgeschreven. */
+        SettlementSummary: {
+            id: string;
+            reference: null | string;
+            status: string;
+            /** Format: date */
+            date: null | string;
+            /** Format: double */
+            gross: number;
+            /** Format: double */
+            costs: number;
+            /** Format: double */
+            net: number;
         };
         SetUserRolesRequest: {
             roles: components["schemas"]["RoleAssignmentRequest"][];

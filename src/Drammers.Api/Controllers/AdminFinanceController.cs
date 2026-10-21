@@ -31,8 +31,8 @@ public sealed class AdminFinanceController(IncomeReports income, MollieSettlemen
     }
 
     [HttpGet("settlements")]
-    [ProducesResponseType<IReadOnlyList<SettlementSummary>>(StatusCodes.Status200OK)]
-    public async Task<IReadOnlyList<SettlementSummary>> Settlements(CancellationToken cancellationToken) =>
+    [ProducesResponseType<SettlementOverview>(StatusCodes.Status200OK)]
+    public async Task<SettlementOverview> Settlements(CancellationToken cancellationToken) =>
         await settlements.ListAsync(cancellationToken);
 
     [HttpGet("settlements/{id}")]

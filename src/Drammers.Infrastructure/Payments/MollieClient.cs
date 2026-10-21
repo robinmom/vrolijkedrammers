@@ -23,6 +23,15 @@ public sealed class MollieOptions
     public string ApiKeySecretName { get; set; } = "mollie-api-key";
 
     public string? ApiKey { get; set; }
+
+    /// <summary>
+    /// Organisatie-token voor de Settlements-API (afrekeningen): dat endpoint werkt niet met een profiel-gebonden
+    /// API-sleutel. Maak in Mollie een Organization access token met recht <c>settlements.read</c> en zet het in Key Vault
+    /// onder <see cref="OrganizationTokenSecretName"/>. Zonder token zijn de afrekeningen simpelweg niet beschikbaar.
+    /// </summary>
+    public string OrganizationTokenSecretName { get; set; } = "mollie-organization-token";
+
+    public string? OrganizationToken { get; set; }
 }
 
 public sealed record MollieNewPayment(int AmountCents, string Description, string RedirectUrl, string? WebhookUrl, Guid OrderId, string IdempotencyKey);
@@ -66,6 +75,9 @@ public interface IMollieClient
 /// <summary>Fout richting Mollie; de gebruiker krijgt een algemene melding (geen details van Mollie).</summary>
 public sealed class MollieException(string message, Exception? inner = null) : Exception(message, inner);
 
+/// <summary>De Settlements-API (afrekeningen) is niet beschikbaar omdat er geen organisatie-token is ingesteld.</summary>
+public sealed class MollieSettlementsUnavailableException() : Exception("De Mollie-afrekeningen vereisen een organisatie-token dat nog niet is ingesteld.");
+
 /// <summary>
 /// Mollie Payments API v2 (docs/06 §6): de prijs komt van de server, de status wordt altijd bij Mollie opgehaald
 /// (een webhook bevat alleen het id) en nieuwe betalingen krijgen een <c>Idempotency-Key</c>. Betalen met iDEAL.
@@ -73,6 +85,7 @@ public sealed class MollieException(string message, Exception? inner = null) : E
 internal sealed class MollieClient(HttpClient http, IOptions<MollieOptions> options, IServiceProvider services, IMemoryCache cache) : IMollieClient
 {
     private const string KeyCacheKey = "mollie-api-key";
+    private const string OrgTokenCacheKey = "mollie-organization-token";
 
     public async Task<MolliePayment> CreatePaymentAsync(MollieNewPayment payment, CancellationToken cancellationToken)
     {
@@ -98,26 +111,29 @@ internal sealed class MollieClient(HttpClient http, IOptions<MollieOptions> opti
 
     public async Task<IReadOnlyList<MollieSettlement>> ListSettlementsAsync(CancellationToken cancellationToken)
     {
+        var token = await OrganizationTokenAsync(cancellationToken);
         // Eén pagina (max 250) is ruim voldoende: afrekeningen zijn hoogstens enkele per maand.
-        var body = await SendJsonAsync<SettlementListBody>(new Uri(options.Value.BaseUrl, "v2/settlements?limit=250"), cancellationToken);
+        var body = await SendJsonAsync<SettlementListBody>(new Uri(options.Value.BaseUrl, "v2/settlements?limit=250"), token, cancellationToken);
         return [.. (body?.Embedded?.Settlements ?? []).Select(Map)];
     }
 
     public async Task<MollieSettlement?> GetSettlementAsync(string settlementId, CancellationToken cancellationToken)
     {
-        var body = await SendJsonAsync<SettlementBody>(new Uri(options.Value.BaseUrl, $"v2/settlements/{ValidSettlementId(settlementId)}"), cancellationToken);
+        var token = await OrganizationTokenAsync(cancellationToken);
+        var body = await SendJsonAsync<SettlementBody>(new Uri(options.Value.BaseUrl, $"v2/settlements/{ValidSettlementId(settlementId)}"), token, cancellationToken);
         return body is null ? null : Map(body);
     }
 
     public async Task<IReadOnlyList<MollieSettlementPayment>> ListSettlementPaymentsAsync(string settlementId, CancellationToken cancellationToken)
     {
+        var token = await OrganizationTokenAsync(cancellationToken);
         var id = ValidSettlementId(settlementId);
         var payments = new List<MollieSettlementPayment>();
         Uri? next = new(options.Value.BaseUrl, $"v2/settlements/{id}/payments?limit=250");
         // Veiligheidsgrens: hoogstens 20 pagina's (5000 betalingen) om geen oneindige keten te volgen.
         for (var page = 0; next is not null && page < 20; page++)
         {
-            var body = await SendJsonAsync<PaymentListBody>(next, cancellationToken);
+            var body = await SendJsonAsync<PaymentListBody>(next, token, cancellationToken);
             foreach (var p in body?.Embedded?.Payments ?? [])
             {
                 payments.Add(new MollieSettlementPayment(p.Id, p.Status, Cents(p.Amount.Value), p.Description, p.PaidAt?.UtcDateTime));
@@ -157,10 +173,10 @@ internal sealed class MollieClient(HttpClient http, IOptions<MollieOptions> opti
         return settlementId;
     }
 
-    private async Task<T?> SendJsonAsync<T>(Uri uri, CancellationToken cancellationToken)
+    private async Task<T?> SendJsonAsync<T>(Uri uri, string bearer, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await ApiKeyAsync(cancellationToken));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
         using var response = await http.SendAsync(request, cancellationToken);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -212,6 +228,31 @@ internal sealed class MollieClient(HttpClient http, IOptions<MollieOptions> opti
         catch (Azure.RequestFailedException ex) when (ex.Status == 404)
         {
             throw new DomainException(ErrorCodes.PaymentsNotConfigured, "Online betalen is nog niet ingesteld (de Mollie-sleutel staat nog niet in Key Vault).", DomainErrorKind.Conflict);
+        }
+    }
+
+    private async Task<string> OrganizationTokenAsync(CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(options.Value.OrganizationToken))
+        {
+            return options.Value.OrganizationToken;
+        }
+
+        if (cache.TryGetValue(OrgTokenCacheKey, out string? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        // Zonder Key Vault of zonder dit secret zijn de afrekeningen simpelweg niet beschikbaar (geen harde fout).
+        var secrets = services.GetService<SecretClient>() ?? throw new MollieSettlementsUnavailableException();
+        try
+        {
+            var secret = await secrets.GetSecretAsync(options.Value.OrganizationTokenSecretName, cancellationToken: cancellationToken);
+            return cache.Set(OrgTokenCacheKey, secret.Value.Value, TimeSpan.FromMinutes(10));
+        }
+        catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+        {
+            throw new MollieSettlementsUnavailableException();
         }
     }
 

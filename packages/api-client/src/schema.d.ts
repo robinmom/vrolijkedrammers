@@ -5290,9 +5290,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["SettlementSummary"][];
-                        "application/json": components["schemas"]["SettlementSummary"][];
-                        "text/json": components["schemas"]["SettlementSummary"][];
+                        "text/plain": components["schemas"]["SettlementOverview"];
+                        "application/json": components["schemas"]["SettlementOverview"];
+                        "text/json": components["schemas"]["SettlementOverview"];
                     };
                 };
             };
@@ -28904,6 +28904,15 @@ export interface components {
             /** Format: double */
             amount: number;
             mollieId: string;
+        };
+        /**
+         * @description De afrekeningen, of een rustige uitleg waarom ze er (nog) niet zijn: de Settlements-API vereist een organisatie-token
+         *     dat los van de gewone Mollie-sleutel wordt ingesteld, en een tijdelijke storing bij Mollie mag geen harde fout geven.
+         */
+        SettlementOverview: {
+            available: boolean;
+            message: null | string;
+            settlements: components["schemas"]["SettlementSummary"][];
         };
         /** @description Naar welk e-mailadres de verzamelstaat gaat (standaard penningmeester@vrolijkedrammers.nl). */
         SettlementSendRequest: {

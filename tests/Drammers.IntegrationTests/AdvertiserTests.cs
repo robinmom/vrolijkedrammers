@@ -829,8 +829,9 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
                 new DateTime(2026, 11, 2, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 11, 3, 0, 0, 0, DateTimeKind.Utc), 12064, 12100, 36),
             mollieId);
 
-        var settlements = await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/finance/settlements");
-        var s = Assert.Single(settlements!);
+        var overview = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/finance/settlements");
+        Assert.True(overview.GetProperty("available").GetBoolean());
+        var s = Assert.Single(overview.GetProperty("settlements").EnumerateArray().ToList());
         Assert.Equal(("1234567.2026.10", "Uitbetaald", 121m, 0.36m, 120.64m),
             (s.GetProperty("reference").GetString(), s.GetProperty("status").GetString(), s.GetProperty("gross").GetDecimal(),
              s.GetProperty("costs").GetDecimal(), s.GetProperty("net").GetDecimal()));

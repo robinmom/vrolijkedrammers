@@ -8,6 +8,7 @@ import { PrivacyRequestsPage } from './pages/PrivacyRequestsPage';
 import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { IncomePage } from './pages/FinancePage';
 import { EventEditorPage, EventsPage } from './pages/EventsPage';
 import { GroupDetailPage, GroupsPage } from './pages/GroupsPage';
 import { MemberDetailPage } from './pages/MemberDetailPage';
@@ -93,6 +94,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/import', component: guarded('advertiser.manage', AdvertiserImportPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/incasso', component: guarded('advertiser.manage', AdvertiserCollectionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/facturen', component: guarded('advertiser.manage', AdvertiserInvoicesPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/inkomsten', component: guarded('finance.read', IncomePage) }),
   createRoute({
     getParentRoute: () => rootRoute,
     path: '/adverteerders/$id',

@@ -57,6 +57,7 @@ public static class Permissions
     public const string MailingManage = "mailing.manage";
     public const string AdvertiserManage = "advertiser.manage";
     public const string AdvertiserCollect = "advertiser.collect";
+    public const string FinanceRead = "finance.read";
     public const string FestivalManage = "festival.manage";
     public const string TaskManage = "task.manage";
 
@@ -129,6 +130,8 @@ public static class Permissions
         // 2026-10-15: jury van het Dansgardefestival (jureren in de app; hoofdjury ziet de uitslag en rondt de prijsuitreiking af).
         new(FestivalJudge, "Dansgardefestival: jureren in de app", "Content"),
         new(FestivalHeadJury, "Dansgardefestival: hoofdjury (uitslag voor de prijsuitreiking, prijsuitreiking afronden)", "Content"),
+        // Fase 4a: gezamenlijk inkomstenoverzicht (adverteerders + festival) met CSV-export voor de boekhouding.
+        new(FinanceRead, "Inkomsten bekijken en exporteren (adverteerders en festival)", "Financieel"),
     ];
 }
 

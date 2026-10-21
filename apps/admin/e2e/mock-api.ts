@@ -3406,6 +3406,30 @@ export class MockApi {
     if (path.startsWith('/admin/advertisers')) {
       return this.handleAdvertisers(path, method, body, url, json, noContent);
     }
+    if (path === '/admin/finance/income/export') {
+      return json({ csv: true });
+    }
+    if (path === '/admin/finance/income') {
+      const rows = this.invoices.map((i) => {
+        const a = this.advertisers.find((x) => x.id === i.advertiserId)!;
+        return {
+          source: 'Advertentie',
+          number: i.invoiceNumber,
+          party: a.companyName,
+          date: '2026-11-02',
+          netAmount: a.amount2026,
+          vatAmount: 0,
+          serviceFeeAmount: 0,
+          totalAmount: a.amount2026,
+          paymentMethod: i.paymentMethod === 'Cash' ? 'Contant' : 'iDEAL (Mollie)',
+          status: i.status === 'Paid' ? 'Betaald' : 'Verstuurd',
+          paidAt: null,
+          mollieId: null,
+        };
+      });
+      const total = rows.reduce((sum, r) => sum + r.totalAmount, 0);
+      return json({ year: 2027, totals: { net: total, vat: 0, serviceFee: 0, total, paid: 0 }, rows });
+    }
     if (path.startsWith('/admin/mailing/')) {
       return this.handleMailing(path, method, body, url, json, noContent);
     }

@@ -740,4 +740,59 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var lid = _api.ClientFor((await _api.CreateUserAsync("lid@example.com", DefaultRoles.Lid)).ObjectId);
         Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/advertisers")).StatusCode);
     }
+
+    /// <summary>Fase 4a: de facturen van het campagnejaar samen in het inkomstenoverzicht, met btw-uitsplitsing, stand en CSV-export.</summary>
+    [Fact]
+    public async Task Inkomstenoverzicht_bundelt_facturen_met_btw_en_exporteert_naar_csv()
+    {
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/invoices/settings", new { address = "Postbus 123\n6940 AC Loil", kvk = "40122564" });
+
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 100, 100),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "G", "C", null, null, 50, 50)));
+        var list = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(1)}/years/2027", new { status = "Collected", amount = 100m, note = (string?)null });
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(2)}/years/2027", new { status = "Collected", amount = 50m, note = (string?)null });
+        Assert.Equal(2, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = "2026-11-02", year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        Assert.Equal(2, (await (await _bestuur.PostAsync("/api/v1/admin/advertisers/invoices/send", null)).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            foreach (var message in await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == Drammers.Infrastructure.Advertisers.Invoices.AdvertiserInvoices.MailMessageType).ToListAsync())
+            {
+                using var handlerScope = _api.Services.CreateScope();
+                var handler = handlerScope.ServiceProvider.GetServices<Drammers.Worker.Outbox.IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+                await handler.HandleAsync(new Drammers.Worker.Outbox.OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            }
+        }
+
+        // Het inkomstenoverzicht van het campagnejaar: de advertentie met 21% btw, de gift btw-vrij, met totalen.
+        var income = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/finance/income");
+        Assert.Equal(2027, income.GetProperty("year").GetInt32());
+        var rows = income.GetProperty("rows").EnumerateArray().ToList();
+        var advertentie = rows.Single(r => r.GetProperty("party").GetString() == "Bakkerij De Test");
+        Assert.Equal(("Advertentie", "ADV-2027-0001", 100m, 21m, 121m, "Verstuurd"),
+            (advertentie.GetProperty("source").GetString(), advertentie.GetProperty("number").GetString(), advertentie.GetProperty("netAmount").GetDecimal(),
+             advertentie.GetProperty("vatAmount").GetDecimal(), advertentie.GetProperty("totalAmount").GetDecimal(), advertentie.GetProperty("status").GetString()));
+        var gift = rows.Single(r => r.GetProperty("party").GetString() == "Garage Proef");
+        Assert.Equal((0m, 50m), (gift.GetProperty("vatAmount").GetDecimal(), gift.GetProperty("totalAmount").GetDecimal()));
+        var totals = income.GetProperty("totals");
+        Assert.Equal((150m, 21m, 171m, 0m), (totals.GetProperty("net").GetDecimal(), totals.GetProperty("vat").GetDecimal(),
+            totals.GetProperty("total").GetDecimal(), totals.GetProperty("paid").GetDecimal()));
+
+        // De CSV voor de boekhouding: UTF-8 BOM, puntkomma's, Nederlandse komma-bedragen en een regel per factuur.
+        var export = await _bestuur.GetAsync("/api/v1/admin/finance/income/export");
+        Assert.Equal("text/csv", export.Content.Headers.ContentType?.MediaType);
+        var bytes = await export.Content.ReadAsByteArrayAsync();
+        Assert.Equal(new byte[] { 0xEF, 0xBB, 0xBF }, bytes[..3]);
+        var csv = System.Text.Encoding.UTF8.GetString(bytes[3..]);
+        Assert.StartsWith("Bron;Nummer;Partij;Datum;Bedrag excl. btw;Btw;Servicekosten;Totaal incl. btw;Betaalwijze;Status;Betaald op;Mollie-id", csv, StringComparison.Ordinal);
+        Assert.Contains("Advertentie;ADV-2027-0001;Bakkerij De Test;2026-11-02;100,00;21,00;0,00;121,00;iDEAL (Mollie);Verstuurd;;", csv, StringComparison.Ordinal);
+
+        // Alleen met het recht Inkomsten bekijken (de penningmeester binnen het bestuur): een gewoon lid mag er niet bij.
+        var lid = _api.ClientFor((await _api.CreateUserAsync("geen-recht@example.com", DefaultRoles.Lid)).ObjectId);
+        Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/finance/income")).StatusCode);
+    }
 }

@@ -1058,3 +1058,26 @@ test('dansgardefestival: jury uitnodigen en uitslag naar de hoofdjury, afdrukken
   await expect(page.getByText('Rapporten verstuurd: 14 van 14 inschrijvingen')).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });
+
+test('fase 4a: inkomstenoverzicht met CSV-export', async ({ page }) => {
+  const api = new MockApi(['finance.read']);
+  api.invoices.push({
+    advertiserId: api.advertisers[0]!.id,
+    invoiceId: 'inv-1',
+    invoiceNumber: 'ADV-2027-0001',
+    sentAt: '2026-11-02T10:00:00Z',
+    status: 'Sent',
+    paymentMethod: 'Mollie',
+    overdue: false,
+  });
+  await open(page, api, 'inkomsten');
+
+  await expect(page.getByRole('heading', { name: 'Inkomsten 2027' })).toBeVisible();
+  const table = page.getByRole('region', { name: 'Inkomsten' });
+  await expect(table.getByText('ADV-2027-0001')).toBeVisible();
+  await expect(table.getByText(api.advertisers[0]!.companyName)).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporteren (CSV)' }).click();
+  expect((await download).suggestedFilename()).toBe('Inkomsten 2027.csv');
+});

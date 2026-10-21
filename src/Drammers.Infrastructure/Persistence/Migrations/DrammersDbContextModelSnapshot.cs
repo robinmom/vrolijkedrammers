@@ -3314,6 +3314,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Content",
                             Code = "festival.head-jury",
                             Description = "Dansgardefestival: hoofdjury (uitslag voor de prijsuitreiking, prijsuitreiking afronden)"
+                        },
+                        new
+                        {
+                            Id = 56,
+                            Category = "Financieel",
+                            Code = "finance.read",
+                            Description = "Inkomsten bekijken en exporteren (adverteerders en festival)"
                         });
                 });
 
@@ -4211,6 +4218,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 11,
                             PermissionId = 53
+                        },
+                        new
+                        {
+                            RoleId = 11,
+                            PermissionId = 56
                         },
                         new
                         {

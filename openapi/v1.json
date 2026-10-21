@@ -6028,6 +6028,70 @@
         }
       }
     },
+    "/api/v1/admin/finance/income": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncomeReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/income/export": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": { }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/groups": {
       "get": {
         "tags": [
@@ -36925,6 +36989,136 @@
           }
         }
       },
+      "IncomeReport": {
+        "required": [
+          "year",
+          "totals",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/IncomeTotals"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncomeRow"
+            }
+          }
+        }
+      },
+      "IncomeRow": {
+        "required": [
+          "source",
+          "number",
+          "party",
+          "date",
+          "netAmount",
+          "vatAmount",
+          "serviceFeeAmount",
+          "totalAmount",
+          "paymentMethod",
+          "status",
+          "paidAt",
+          "mollieId"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/IncomeSource"
+          },
+          "number": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "netAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "vatAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "serviceFeeAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentMethod": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "paidAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "mollieId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Eén inkomstregel (een adverteerders-factuur of een festival-betaalverzoek), bedragen in euro's."
+      },
+      "IncomeSource": {
+        "enum": [
+          "Advertentie",
+          "Festival"
+        ],
+        "description": "Waar de inkomst vandaan komt."
+      },
+      "IncomeTotals": {
+        "required": [
+          "net",
+          "vat",
+          "serviceFee",
+          "total",
+          "paid"
+        ],
+        "type": "object",
+        "properties": {
+          "net": {
+            "type": "number",
+            "format": "double"
+          },
+          "vat": {
+            "type": "number",
+            "format": "double"
+          },
+          "serviceFee": {
+            "type": "number",
+            "format": "double"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "paid": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "InviteGuardianRequest": {
         "required": [
           "email",
@@ -48986,6 +49180,9 @@
     },
     {
       "name": "AdminFestivalProgram"
+    },
+    {
+      "name": "AdminFinance"
     },
     {
       "name": "AdminGroups"

@@ -5192,6 +5192,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/finance/income": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IncomeReport"];
+                        "application/json": components["schemas"]["IncomeReport"];
+                        "text/json": components["schemas"]["IncomeReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/income/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/csv": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/groups": {
         parameters: {
             query?: never;
@@ -26045,6 +26121,50 @@ export interface components {
             /** Format: int32 */
             unreadCount: number;
             hasMore: boolean;
+        };
+        IncomeReport: {
+            /** Format: int32 */
+            year: number;
+            totals: components["schemas"]["IncomeTotals"];
+            rows: components["schemas"]["IncomeRow"][];
+        };
+        /** @description Eén inkomstregel (een adverteerders-factuur of een festival-betaalverzoek), bedragen in euro's. */
+        IncomeRow: {
+            source: components["schemas"]["IncomeSource"];
+            number: string;
+            party: string;
+            /** Format: date */
+            date: string;
+            /** Format: double */
+            netAmount: number;
+            /** Format: double */
+            vatAmount: number;
+            /** Format: double */
+            serviceFeeAmount: number;
+            /** Format: double */
+            totalAmount: number;
+            paymentMethod: string;
+            status: string;
+            /** Format: date */
+            paidAt: null | string;
+            mollieId: null | string;
+        };
+        /**
+         * @description Waar de inkomst vandaan komt.
+         * @enum {unknown}
+         */
+        IncomeSource: "Advertentie" | "Festival";
+        IncomeTotals: {
+            /** Format: double */
+            net: number;
+            /** Format: double */
+            vat: number;
+            /** Format: double */
+            serviceFee: number;
+            /** Format: double */
+            total: number;
+            /** Format: double */
+            paid: number;
         };
         InviteGuardianRequest: {
             email: string;

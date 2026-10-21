@@ -267,6 +267,7 @@ public static class DependencyInjection
         services.AddSingleton<Advertisers.AdvertiserIbanProtector>();
         services.AddScoped<Advertisers.Invoices.InvoiceIssuers>();
         services.AddScoped<Advertisers.Invoices.AdvertiserInvoices>();
+        services.AddScoped<Finance.IncomeReports>();
         services.AddScoped<IOutboxMessageHandler, Advertisers.Invoices.AdvertiserInvoiceMailHandler>();
         services.AddSingleton<Mailings.MailingUnsubscribeTokens>();
         services.AddScoped<IOutboxMessageHandler, Mailings.MailingRecipientMailHandler>();

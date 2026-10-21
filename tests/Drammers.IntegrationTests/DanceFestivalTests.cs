@@ -314,7 +314,12 @@ public class DanceFestivalTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal((1750, 368, 35, 7, 2160),
             (payment.NetCents, payment.VatCents, payment.ServiceFeeNetCents, payment.ServiceFeeVatCents, payment.AmountCents));
         Assert.StartsWith("FEST-2027-", payment.InvoiceNumber, StringComparison.Ordinal);
-        Assert.Contains("21,60", _api.Emails.Sent.Last(m => m.Subject.Contains("betaallink", StringComparison.OrdinalIgnoreCase)).PlainText, StringComparison.Ordinal);
+        var payMail = _api.Emails.Sent.Last(m => m.Subject.Contains("betaallink", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("21,60", payMail.PlainText, StringComparison.Ordinal);
+        // Fase 2b: de factuur-PDF zit als bijlage bij de betaalmail.
+        var attachment = Assert.Single(payMail.Attachments!);
+        Assert.StartsWith("Factuur FEST-2027-", attachment.Name, StringComparison.Ordinal);
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(attachment.Content, 0, 4));
     }
 
     [Fact]

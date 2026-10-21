@@ -981,7 +981,9 @@ export class MockApi {
     website: null as string | null,
     serviceFeeOn: false,
     serviceFeeCents: 0,
+    paymentTermDays: 14,
   };
+  invoiceReminders: string[][] = [];
   invoices: {
     advertiserId: string;
     invoiceId: string;
@@ -989,6 +991,7 @@ export class MockApi {
     sentAt: string | null;
     status: string;
     paymentMethod: string;
+    overdue: boolean;
   }[] = [];
   advertiserRuns: {
     id: string;
@@ -1663,6 +1666,7 @@ export class MockApi {
           sentAt: null,
           status: 'Concept',
           paymentMethod: a.payment === 'Cash' ? 'Cash' : 'Mollie',
+          overdue: false,
         });
       }
       return noContent();
@@ -1680,6 +1684,7 @@ export class MockApi {
           sentAt: null,
           status: 'Concept',
           paymentMethod: a.payment === 'Cash' ? 'Cash' : 'Mollie',
+          overdue: false,
         });
       }
       return json({ count: due.length });
@@ -1693,6 +1698,11 @@ export class MockApi {
         i.status = 'Sent';
       });
       return json({ count: toSend.length });
+    }
+    if (path === '/admin/advertisers/invoices/remind' && method === 'POST') {
+      const invoiceIds = (body.invoiceIds as string[] | undefined) ?? [];
+      this.invoiceReminders.push(invoiceIds);
+      return json({ count: invoiceIds.length });
     }
     if ((m = path.match(/^\/admin\/advertisers\/invoices\/([^/]+)\/refresh-payment$/))) {
       const inv = this.invoices.find((i) => i.invoiceId === m![1]);
@@ -1722,6 +1732,8 @@ export class MockApi {
           totalInclVat: inv ? a.amount2026 : null,
           mollieStatus: null,
           paidAt: null,
+          dueDate: inv ? '2026-11-16' : null,
+          overdue: inv?.overdue ?? false,
         };
       });
       return json({

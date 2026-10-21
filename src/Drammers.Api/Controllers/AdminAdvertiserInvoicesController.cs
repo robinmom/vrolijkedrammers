@@ -28,7 +28,8 @@ public sealed class AdminAdvertiserInvoicesController(AdvertiserInvoices invoice
     public async Task<IActionResult> PutSettings(InvoiceSettingsRequest request, CancellationToken cancellationToken)
     {
         await invoices.SetSettingsAsync(
-            new InvoiceSettings(request.Address, request.Kvk, request.VatNumber, request.Phone, request.Website, request.ServiceFeeOn, request.ServiceFeeCents),
+            new InvoiceSettings(request.Address, request.Kvk, request.VatNumber, request.Phone, request.Website, request.ServiceFeeOn, request.ServiceFeeCents,
+                request.PaymentTermDays),
             cancellationToken);
         return NoContent();
     }
@@ -64,6 +65,12 @@ public sealed class AdminAdvertiserInvoicesController(AdvertiserInvoices invoice
     [ProducesResponseType<InvoiceCountResponse>(StatusCodes.Status200OK)]
     public async Task<InvoiceCountResponse> Send([FromQuery] int? year, CancellationToken cancellationToken) =>
         new(await invoices.SendAsync(year ?? await advertisers.CampaignYearAsync(cancellationToken), cancellationToken));
+
+    /// <summary>Een herinnering sturen (factuur opnieuw) naar de gekozen, nog niet betaalde facturen (fase 27q).</summary>
+    [HttpPost("remind")]
+    [ProducesResponseType<InvoiceCountResponse>(StatusCodes.Status200OK)]
+    public async Task<InvoiceCountResponse> Remind(InvoiceRemindRequest request, CancellationToken cancellationToken) =>
+        new(await invoices.RemindAsync(request.InvoiceIds, cancellationToken));
 
     [HttpGet("{id:guid}/pdf")]
     [Produces("application/pdf")]
@@ -139,7 +146,10 @@ public sealed record InvoiceSettingsRequest(
     [StringLength(40)] string? Phone = null,
     [StringLength(100)] string? Website = null,
     bool ServiceFeeOn = false,
-    [Range(0, 100000)] int ServiceFeeCents = 0);
+    [Range(0, 100000)] int ServiceFeeCents = 0,
+    [Range(1, 365)] int PaymentTermDays = 14);
+
+public sealed record InvoiceRemindRequest([Required, MinLength(1)] IReadOnlyList<Guid> InvoiceIds);
 
 public sealed record CreateInvoicesRequest(DateOnly Date, [Range(2000, 2100)] int? Year);
 

@@ -1656,6 +1656,7 @@ export function AdvertiserInvoicesPage() {
     website: string;
     serviceFeeOn: boolean;
     serviceFeeCents: number;
+    paymentTermDays: number;
   } | null>(null);
 
   const overview = useQuery({
@@ -1677,6 +1678,7 @@ export function AdvertiserInvoicesPage() {
         website: settings.data.website ?? '',
         serviceFeeOn: settings.data.serviceFeeOn ?? false,
         serviceFeeCents: settings.data.serviceFeeCents ?? 0,
+        paymentTermDays: settings.data.paymentTermDays ?? 14,
       });
   }, [settings.data]);
 
@@ -1691,6 +1693,7 @@ export function AdvertiserInvoicesPage() {
           website: settingsForm?.website || null,
           serviceFeeOn: settingsForm?.serviceFeeOn ?? false,
           serviceFeeCents: settingsForm?.serviceFeeCents ?? 0,
+          paymentTermDays: settingsForm?.paymentTermDays ?? 14,
         },
       }),
     ADVERTISER_KEYS,
@@ -1717,6 +1720,13 @@ export function AdvertiserInvoicesPage() {
     (id: string) => api.POST('/api/v1/admin/advertisers/invoices/{id}/refresh-payment', { params: { path: { id } } }),
     ADVERTISER_KEYS,
   );
+  const remind = useApiMutation(
+    async (invoiceIds: string[]) =>
+      (await api.POST('/api/v1/admin/advertisers/invoices/remind', { body: { invoiceIds } })).data?.count,
+    ADVERTISER_KEYS,
+  );
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'overdue' | 'paid'>('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   async function download(path: 'all' | 'print' | string, fileName: string) {
     setDownloadError(null);
@@ -1736,6 +1746,15 @@ export function AdvertiserInvoicesPage() {
   }
 
   const o = overview.data;
+  const shownRows = (o?.rows ?? []).filter((r) => {
+    if (statusFilter === 'all') return true;
+    if (!r.invoiceId) return false;
+    if (statusFilter === 'paid') return r.status === 'Paid';
+    if (statusFilter === 'overdue') return r.overdue;
+    return r.status !== 'Paid' && r.status !== 'Cancelled';
+  });
+  const remindable = (r: (typeof shownRows)[number]) =>
+    Boolean(r.invoiceId && r.sentAt && r.email && r.status !== 'Paid' && r.status !== 'Cancelled');
   return (
     <>
       <div className="page-header">
@@ -1755,6 +1774,7 @@ export function AdvertiserInvoicesPage() {
           send.error ??
           saveSettings.error ??
           refreshPayment.error ??
+          remind.error ??
           downloadError
         }
       />
@@ -1807,10 +1827,43 @@ export function AdvertiserInvoicesPage() {
               PDF zonder e-mailadres
             </button>
           </div>
+          <div className="filters" role="group" aria-label="Facturen filteren">
+            <label htmlFor="factuur-filter">Tonen</label>
+            <select
+              id="factuur-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            >
+              <option value="all">Alle</option>
+              <option value="open">Nog open</option>
+              <option value="overdue">Vervallen</option>
+              <option value="paid">Betaald</option>
+            </select>
+            {selected.size > 0 ? (
+              <button
+                type="button"
+                className="button small"
+                disabled={remind.isPending}
+                onClick={() =>
+                  remind.mutate([...selected], {
+                    onSuccess: (count) => {
+                      setSelected(new Set());
+                      setMessage(`${count ?? 0} herinneringen worden verstuurd.`);
+                    },
+                  })
+                }
+              >
+                Herinnering sturen ({selected.size})
+              </button>
+            ) : null}
+          </div>
           <div className="table-scroll" tabIndex={0} role="region" aria-label="Facturen">
             <table className="table compact">
               <thead>
                 <tr>
+                  <th scope="col">
+                    <span className="visually-hidden">Selecteren</span>
+                  </th>
                   <th scope="col">Factuur</th>
                   <th scope="col">Bedrijf</th>
                   <th scope="col">Bedrag</th>
@@ -1821,8 +1874,28 @@ export function AdvertiserInvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {o.rows.map((r) => (
-                  <tr key={r.advertiserId}>
+                {shownRows.map((r) => (
+                  <tr key={r.advertiserId} style={r.overdue ? { background: '#F4CCCC' } : undefined}>
+                    <td>
+                      {remindable(r) ? (
+                        <>
+                          <label className="visually-hidden" htmlFor={`sel-${r.invoiceId}`}>
+                            Selecteer factuur {r.invoiceNumber}
+                          </label>
+                          <input
+                            id={`sel-${r.invoiceId}`}
+                            type="checkbox"
+                            checked={selected.has(r.invoiceId!)}
+                            onChange={(e) => {
+                              const next = new Set(selected);
+                              if (e.target.checked) next.add(r.invoiceId!);
+                              else next.delete(r.invoiceId!);
+                              setSelected(next);
+                            }}
+                          />
+                        </>
+                      ) : null}
+                    </td>
                     <td>
                       {r.invoiceId && r.invoiceNumber ? (
                         <button
@@ -1855,9 +1928,13 @@ export function AdvertiserInvoicesPage() {
                     <td>
                       {r.status ? (
                         <span className="status-cell">
-                          <span className={INVOICE_STATUS[r.status]?.badge ? `badge ${INVOICE_STATUS[r.status]?.badge}` : ''}>
-                            {INVOICE_STATUS[r.status]?.label ?? r.status}
-                          </span>
+                          {r.overdue ? (
+                            <span className="badge warn">Vervallen</span>
+                          ) : (
+                            <span className={INVOICE_STATUS[r.status]?.badge ? `badge ${INVOICE_STATUS[r.status]?.badge}` : ''}>
+                              {INVOICE_STATUS[r.status]?.label ?? r.status}
+                            </span>
+                          )}
                           {r.paymentMethod === 'Mollie' && r.status !== 'Paid' && r.status !== 'Cancelled' ? (
                             <button
                               type="button"
@@ -1875,10 +1952,10 @@ export function AdvertiserInvoicesPage() {
                     </td>
                   </tr>
                 ))}
-                {o.rows.length === 0 ? (
+                {shownRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="muted">
-                      Nog geen opgehaalde bijdragen in {o.year}.
+                    <td colSpan={8} className="muted">
+                      Geen facturen met dit filter.
                     </td>
                   </tr>
                 ) : null}
@@ -1933,6 +2010,16 @@ export function AdvertiserInvoicesPage() {
               maxLength={100}
               value={settingsForm.website}
               onChange={(e) => setSettingsForm({ ...settingsForm, website: e.target.value })}
+            />
+            <Field
+              label="Betalingstermijn (dagen)"
+              type="number"
+              min={1}
+              max={365}
+              value={settingsForm.paymentTermDays.toString()}
+              onChange={(e) =>
+                setSettingsForm({ ...settingsForm, paymentTermDays: Math.max(1, Number(e.target.value) || 14) })
+              }
             />
           </div>
           <h2 id="servicekosten-kop" style={{ marginTop: '1rem' }}>

@@ -1922,6 +1922,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/invoices/remind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Een herinnering sturen (factuur opnieuw) naar de gekozen, nog niet betaalde facturen (fase 27q). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["InvoiceRemindRequest"];
+                    "text/json": components["schemas"]["InvoiceRemindRequest"];
+                    "application/*+json": components["schemas"]["InvoiceRemindRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvoiceCountResponse"];
+                        "application/json": components["schemas"]["InvoiceCountResponse"];
+                        "text/json": components["schemas"]["InvoiceCountResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/invoices/{id}/pdf": {
         parameters: {
             query?: never;
@@ -26051,9 +26095,16 @@ export interface components {
             mollieStatus?: null | string;
             /** Format: date-time */
             paidAt?: null | string;
+            /** Format: date */
+            dueDate?: null | string;
+            /** @default false */
+            overdue: boolean;
         };
         /** @enum {unknown} */
         InvoicePaymentMethod: "Cash" | "Mollie" | null;
+        InvoiceRemindRequest: {
+            invoiceIds: string[];
+        };
         InvoiceSettings: {
             address: null | string;
             kvk: null | string;
@@ -26067,6 +26118,11 @@ export interface components {
              * @default 0
              */
             serviceFeeCents: number;
+            /**
+             * Format: int32
+             * @default 14
+             */
+            paymentTermDays: number;
         };
         InvoiceSettingsRequest: {
             address: null | string;
@@ -26081,6 +26137,11 @@ export interface components {
              * @default 0
              */
             serviceFeeCents: number;
+            /**
+             * Format: int32
+             * @default 14
+             */
+            paymentTermDays: number;
         };
         /** @enum {unknown} */
         InvoiceStatus: "Concept" | "Sent" | "Paid" | "Overdue" | "Cancelled" | null;

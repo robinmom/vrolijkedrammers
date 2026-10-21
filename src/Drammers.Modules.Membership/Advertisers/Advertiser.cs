@@ -192,6 +192,9 @@ public sealed class AdvertiserInvoice
 
     public DateOnly InvoiceDate { get; set; }
 
+    /// <summary>Uiterste betaaldatum (factuurdatum + de ingestelde termijn, standaard 14 dagen); hierna is de factuur vervallen.</summary>
+    public DateOnly DueDate { get; set; }
+
     /// <summary>De bijdrage exclusief btw (de "regel" van de advertentie of gift).</summary>
     public decimal Amount { get; set; }
 

@@ -238,7 +238,7 @@ test('fase 27e: facturen maken, versturen en printen', async ({ page }) => {
   // Fase 27o: de betaalstatus staat in de lijst en kan vernieuwd worden (Mollie → betaald).
   await expect(page.getByRole('button', { name: '↻ status vernieuwen' }).first()).toBeVisible();
   await page.getByRole('button', { name: '↻ status vernieuwen' }).first().click();
-  await expect(page.getByText('Betaald').first()).toBeVisible();
+  await expect(page.locator('.badge', { hasText: 'Betaald' })).toBeVisible();
 
   // De garage heeft geen e-mailadres: die factuur gaat mee in de PDF om te printen.
   const download = page.waitForEvent('download');
@@ -273,6 +273,40 @@ test('fase 27p: factuur per adverteerder maken', async ({ page }) => {
   // Eén factuur is nu gemaakt (nummer verschijnt), de andere rij houdt zijn knop.
   await expect(page.getByRole('button', { name: /ADV-2027-/ })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Factuur maken' })).toHaveCount(1);
+});
+
+test('fase 27q: betaaltermijn, vervallen filteren en herinnering sturen', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  api.advertisers.forEach((a) => (a.status2027 = 'Collected'));
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/facturen');
+
+  // Betalingstermijn instellen.
+  await page.getByLabel('Betalingstermijn (dagen)').fill('21');
+  await page.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Gegevens op de factuur opgeslagen.')).toBeVisible();
+  expect(api.invoiceSettings.paymentTermDays).toBe(21);
+
+  // Facturen maken en versturen (alleen wie een e-mailadres heeft).
+  await page.getByRole('button', { name: /Facturen maken/ }).click();
+  await page.getByRole('button', { name: /Versturen per e-mail/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Versturen' }).click();
+  await expect(page.getByText(/facturen worden verstuurd/)).toBeVisible();
+
+  // Maak de verstuurde factuur vervallen en herlaad.
+  api.invoices.find((i) => i.status === 'Sent')!.overdue = true;
+  await page.reload();
+
+  // Filter op Vervallen: de factuur is zichtbaar met de badge "Vervallen" en selecteerbaar.
+  await page.getByLabel('Tonen').selectOption('overdue');
+  await expect(page.locator('.badge', { hasText: 'Vervallen' })).toBeVisible();
+  await page
+    .getByRole('checkbox', { name: /Selecteer factuur/ })
+    .first()
+    .check();
+  await page.getByRole('button', { name: /Herinnering sturen/ }).click();
+  await expect(page.getByText(/herinneringen worden verstuurd/)).toBeVisible();
+  expect(api.invoiceReminders.length).toBe(1);
 });
 
 test('fase 27k: context-bewuste terug-knop vanaf Campagne', async ({ page }) => {

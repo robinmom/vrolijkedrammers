@@ -69,6 +69,7 @@ public static class InvoicePdf
     /// <summary>Hoe er betaald wordt; ook gebruikt in de e-mail bij de factuur.</summary>
     public static string PaymentText(AdvertiserInvoice invoice, InvoiceIssuer issuer)
     {
+        var due = invoice.DueDate.ToString("d MMMM yyyy", Dutch);
         if (invoice.PaymentMethod == InvoicePaymentMethod.Cash)
         {
             if (invoice.PaidAt is { } paid)
@@ -77,14 +78,14 @@ public static class InvoicePdf
             }
 
             var transfer = issuer.Iban is null ? "" : $", of overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}";
-            return $"Graag binnen 14 dagen contant voldoen aan de collectant{transfer}.";
+            return $"Graag vóór {due} contant voldoen aan de collectant{transfer}.";
         }
 
         // Online betalen (iDEAL via Mollie): de betaallink staat in de begeleidende e-mail; overmaken onder vermelding
         // van het factuurnummer kan altijd en is zo op het bankafschrift herleidbaar.
         return issuer.Iban is null
-            ? $"Betaal met iDEAL via de betaallink in de e-mail, of maak binnen 14 dagen over onder vermelding van {invoice.Number}."
-            : $"Betaal met iDEAL via de betaallink in de e-mail, of maak binnen 14 dagen over op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}.";
+            ? $"Betaal met iDEAL via de betaallink in de e-mail, of maak vóór {due} over onder vermelding van {invoice.Number}."
+            : $"Betaal met iDEAL via de betaallink in de e-mail, of maak vóór {due} over op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}.";
     }
 
     public static string Money(decimal amount) => amount.ToString("C", Dutch);

@@ -38,6 +38,15 @@ public sealed class DanceFestival : IAuditable
 
     public int PriceGroupTwoDancesCents { get; set; }
 
+    /// <summary>Btw-tarief op het deelnamegeld (instelbaar in de portal, standaard 0,21). Het ingevulde bedrag is excl. btw.</summary>
+    public decimal VatRate { get; set; } = 0.21m;
+
+    /// <summary>Servicekosten (betaling via iDEAL) doorberekenen op het betaalverzoek.</summary>
+    public bool ServiceFeeOn { get; set; }
+
+    /// <summary>Servicekosten in centen (excl. btw) die erbij komen als de switch aanstaat.</summary>
+    public int ServiceFeeCents { get; set; }
+
     /// <summary>Hier komen meldingen van nieuwe en gewijzigde inschrijvingen binnen; ook het antwoordadres in mails.</summary>
     public required string NotificationEmail { get; set; }
 
@@ -269,7 +278,23 @@ public sealed class DanceFestivalPayment
 
     public Guid RegistrationId { get; set; }
 
+    /// <summary>Het totaal inclusief btw en servicekosten: dit bedrag wordt bij Mollie afgerekend.</summary>
     public int AmountCents { get; set; }
+
+    /// <summary>Het deelnamegeld exclusief btw (door de organisatie ingevuld).</summary>
+    public int NetCents { get; set; }
+
+    /// <summary>De btw over het deelnamegeld.</summary>
+    public int VatCents { get; set; }
+
+    /// <summary>Doorberekende servicekosten exclusief btw (0 als de switch uitstaat).</summary>
+    public int ServiceFeeNetCents { get; set; }
+
+    /// <summary>De btw over de servicekosten.</summary>
+    public int ServiceFeeVatCents { get; set; }
+
+    /// <summary>Vast factuurnummer (FEST-jaar-volgnr) voor de factuur-PDF; leeg bij betaalverzoeken van vóór fase 2.</summary>
+    public string? InvoiceNumber { get; set; }
 
     public DanceFestivalPaymentStatus Status { get; set; }
 

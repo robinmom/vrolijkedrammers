@@ -895,6 +895,14 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(300)")
                         .HasColumnName("rules_blob_path");
 
+                    b.Property<int>("ServiceFeeCents")
+                        .HasColumnType("int")
+                        .HasColumnName("service_fee_cents");
+
+                    b.Property<bool>("ServiceFeeOn")
+                        .HasColumnType("bit")
+                        .HasColumnName("service_fee_on");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("updated_at");
@@ -902,6 +910,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("updated_by");
+
+                    b.Property<decimal>("VatRate")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)")
+                        .HasColumnName("vat_rate");
 
                     b.HasKey("Id")
                         .HasName("PK_DanceFestival");
@@ -1110,6 +1123,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("invoice_number");
+
                     b.Property<string>("MolliePaymentId")
                         .HasMaxLength(40)
                         .IsUnicode(false)
@@ -1122,6 +1140,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(20)")
                         .HasColumnName("mollie_status");
 
+                    b.Property<int>("NetCents")
+                        .HasColumnType("int")
+                        .HasColumnName("net_cents");
+
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("paid_at");
@@ -1130,12 +1152,24 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("registration_id");
 
+                    b.Property<int>("ServiceFeeNetCents")
+                        .HasColumnType("int")
+                        .HasColumnName("service_fee_net_cents");
+
+                    b.Property<int>("ServiceFeeVatCents")
+                        .HasColumnType("int")
+                        .HasColumnName("service_fee_vat_cents");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
                         .IsUnicode(false)
                         .HasColumnType("varchar(40)")
                         .HasColumnName("status");
+
+                    b.Property<int>("VatCents")
+                        .HasColumnType("int")
+                        .HasColumnName("vat_cents");
 
                     b.HasKey("Id")
                         .HasName("PK_DanceFestivalPayment");

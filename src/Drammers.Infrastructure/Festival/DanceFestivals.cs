@@ -38,7 +38,8 @@ public sealed record FestivalRegistrationInput(
 
 public sealed record FestivalSettingsInput(
     string Name, DateOnly FestivalDate, string Location, bool PageEnabled, DateTime? RegistrationOpensAt, DateTime? RegistrationClosesAt, int Capacity,
-    bool PaymentsEnabled, int PriceSoloDuoCents, int PriceGroupOneDanceCents, int PriceGroupTwoDancesCents, string NotificationEmail);
+    bool PaymentsEnabled, int PriceSoloDuoCents, int PriceGroupOneDanceCents, int PriceGroupTwoDancesCents, string NotificationEmail,
+    int VatPercent = 21, bool ServiceFeeOn = false, int ServiceFeeCents = 0);
 
 public enum FestivalDecision
 {
@@ -86,7 +87,7 @@ public sealed record FestivalRegistrationDetail(
 public sealed record FestivalSettingsView(
     Guid Id, string Name, DateOnly FestivalDate, string Location, bool PageEnabled, DateTime? RegistrationOpensAt, DateTime? RegistrationClosesAt,
     int Capacity, bool PaymentsEnabled, int PriceSoloDuoCents, int PriceGroupOneDanceCents, int PriceGroupTwoDancesCents, string NotificationEmail,
-    bool HasRules, bool HasPrivacy, FestivalState State);
+    bool HasRules, bool HasPrivacy, FestivalState State, int VatPercent, bool ServiceFeeOn, int ServiceFeeCents);
 
 /// <summary>
 /// Dansgardefestival (2026-10-12): openbaar inschrijven per vereniging met meerdere dansen, wijzigen via de link in de
@@ -401,6 +402,11 @@ public sealed partial class DanceFestivals(
             throw new DomainException(ErrorCodes.Validation, "Vul een geldig e-mailadres in voor de meldingen.");
         }
 
+        if (input.VatPercent is not (0 or 9 or 21) || input.ServiceFeeCents is < 0 or > 100000)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Btw-tarief is 0, 9 of 21%, en servicekosten zijn hooguit € 1000,00.");
+        }
+
         var festival = await db.DanceFestivals.SingleOrDefaultAsync(f => f.Active, cancellationToken);
         if (festival is null)
         {
@@ -419,6 +425,9 @@ public sealed partial class DanceFestivals(
         festival.PriceSoloDuoCents = input.PriceSoloDuoCents;
         festival.PriceGroupOneDanceCents = input.PriceGroupOneDanceCents;
         festival.PriceGroupTwoDancesCents = input.PriceGroupTwoDancesCents;
+        festival.VatRate = input.VatPercent / 100m;
+        festival.ServiceFeeOn = input.ServiceFeeOn;
+        festival.ServiceFeeCents = input.ServiceFeeCents;
         festival.NotificationEmail = input.NotificationEmail.Trim().ToLowerInvariant();
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("dance-festival.settings-changed", "DanceFestival", festival.Id.ToString(), null,
@@ -635,20 +644,34 @@ public sealed partial class DanceFestivals(
             throw new DomainException(ErrorCodes.Validation, "Vul een bedrag in tussen € 0,01 en € 10.000.");
         }
 
+        // Het ingevulde bedrag is exclusief btw; btw (instelbaar tarief) en eventuele servicekosten (zelfde tarief) komen
+        // erbovenop. Het totaal is wat bij Mollie wordt afgerekend. Afronden per regel, zodat de btw op de factuur optelt.
+        var vat = (int)Math.Round(amountCents * festival.VatRate, MidpointRounding.AwayFromZero);
+        var feeNet = festival.ServiceFeeOn ? festival.ServiceFeeCents : 0;
+        var feeVat = (int)Math.Round(feeNet * festival.VatRate, MidpointRounding.AwayFromZero);
+        var total = amountCents + vat + feeNet + feeVat;
+        var year = festival.FestivalDate.Year;
+        var seq = await db.DanceFestivalPayments.CountAsync(p => p.InvoiceNumber != null && p.InvoiceNumber.StartsWith($"FEST-{year}-"), cancellationToken) + 1;
+
         var payment = new DanceFestivalPayment
         {
             Id = IdGenerator.NewId(),
             RegistrationId = registration.Id,
-            AmountCents = amountCents,
+            AmountCents = total,
+            NetCents = amountCents,
+            VatCents = vat,
+            ServiceFeeNetCents = feeNet,
+            ServiceFeeVatCents = feeVat,
+            InvoiceNumber = $"FEST-{year.ToString(System.Globalization.CultureInfo.InvariantCulture)}-{seq.ToString("0000", System.Globalization.CultureInfo.InvariantCulture)}",
             Status = DanceFestivalPaymentStatus.Open,
             CreatedAt = Now,
         };
         db.DanceFestivalPayments.Add(payment);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("dance-festival.payment-requested", "DanceFestivalPayment", payment.Id.ToString(), null,
-            JsonSerializer.Serialize(new { registration.Number, amountCents }, Json)), cancellationToken);
+            JsonSerializer.Serialize(new { registration.Number, net = amountCents, total }, Json)), cancellationToken);
         var token = _tokens.Unprotect(registration.AccessTokenProtected);
-        await SendAsync(FestivalMails.PaymentLink(festival, registration, amountCents, PayLink(baseUrl, payment.Id, token)), cancellationToken);
+        await SendAsync(FestivalMails.PaymentLink(festival, registration, total, PayLink(baseUrl, payment.Id, token)), cancellationToken);
         return payment.Id;
     }
 
@@ -745,7 +768,7 @@ public sealed partial class DanceFestivals(
     private FestivalSettingsView ToSettingsView(DanceFestival f) => new(
         f.Id, f.Name, f.FestivalDate, f.Location, f.PageEnabled, f.RegistrationOpensAt, f.RegistrationClosesAt, f.Capacity, f.PaymentsEnabled,
         f.PriceSoloDuoCents, f.PriceGroupOneDanceCents, f.PriceGroupTwoDancesCents, f.NotificationEmail, f.RulesBlobPath is not null,
-        f.PrivacyBlobPath is not null, StateOf(f));
+        f.PrivacyBlobPath is not null, StateOf(f), (int)Math.Round(f.VatRate * 100m), f.ServiceFeeOn, f.ServiceFeeCents);
 
     private Task<int> PlacesTakenAsync(Guid festivalId, CancellationToken cancellationToken) =>
         db.DanceFestivalEntries.Where(e => e.HoldsPlace && e.RemovedAt == null

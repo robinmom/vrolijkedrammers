@@ -56,6 +56,7 @@ public class DanceFestivalTests(SqlServerFixture sql) : IAsyncLifetime
             priceSoloDuoCents = 1000,
             priceGroupOneDanceCents = 1750,
             priceGroupTwoDancesCents = 2750,
+            vatPercent = 0,
             notificationEmail = "dansgarde@vrolijkedrammers.nl",
         });
 
@@ -272,6 +273,48 @@ public class DanceFestivalTests(SqlServerFixture sql) : IAsyncLifetime
         var list = await JsonAsync(await _bestuur.GetAsync("/api/v1/admin/dance-festival/registrations"));
         Assert.Equal("Dubbel betaald", list.GetProperty("registrations")[0].GetProperty("paymentStatus").GetString());
         Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "dance-festival.payment-paid-twice")));
+    }
+
+    [Fact]
+    public async Task Btw_en_servicekosten_op_het_festival_betaalverzoek()
+    {
+        // Btw 21% en servicekosten van € 0,35 (+21%); het ingevulde bedrag is exclusief btw.
+        var saved = await JsonAsync(await _bestuur.PutAsJsonAsync("/api/v1/admin/dance-festival/settings", new
+        {
+            name = "Dansgardefestival 2027",
+            festivalDate = "2027-02-21",
+            location = "’t Hart van Loil",
+            pageEnabled = true,
+            registrationOpensAt = DateTime.UtcNow.AddDays(-1),
+            registrationClosesAt = DateTime.UtcNow.AddDays(20),
+            capacity = 5,
+            paymentsEnabled = true,
+            priceSoloDuoCents = 1000,
+            priceGroupOneDanceCents = 1750,
+            priceGroupTwoDancesCents = 2750,
+            vatPercent = 21,
+            serviceFeeOn = true,
+            serviceFeeCents = 35,
+            notificationEmail = "dansgarde@vrolijkedrammers.nl",
+        }));
+        Assert.Equal((21, true, 35), (saved.GetProperty("vatPercent").GetInt32(), saved.GetProperty("serviceFeeOn").GetBoolean(),
+            saved.GetProperty("serviceFeeCents").GetInt32()));
+
+        await JsonAsync(await _guest.PostAsJsonAsync("/api/v1/dance-festival/registrations",
+            Registration("Btw", [Dance("Garde", "Group", "Garde Btw", 12m, 9)])), HttpStatusCode.Accepted);
+        var registration = await WithDbAsync(db => db.DanceFestivalRegistrations.Include(r => r.Entries).SingleAsync());
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/dance-festival/registrations/{registration.Id}/decisions",
+            new { entryIds = registration.Entries.Select(e => e.Id), decision = "Approve" }), HttpStatusCode.NoContent);
+
+        await JsonAsync(await _bestuur.PostAsJsonAsync($"/api/v1/admin/dance-festival/registrations/{registration.Id}/payments",
+            new { amountCents = 1750 }), HttpStatusCode.Created);
+
+        var payment = await WithDbAsync(db => db.DanceFestivalPayments.SingleAsync());
+        // netto 1750 + btw 368 (21%) + servicekosten 35 + btw 7 = 2160 totaal.
+        Assert.Equal((1750, 368, 35, 7, 2160),
+            (payment.NetCents, payment.VatCents, payment.ServiceFeeNetCents, payment.ServiceFeeVatCents, payment.AmountCents));
+        Assert.StartsWith("FEST-2027-", payment.InvoiceNumber, StringComparison.Ordinal);
+        Assert.Contains("21,60", _api.Emails.Sent.Last(m => m.Subject.Contains("betaallink", StringComparison.OrdinalIgnoreCase)).PlainText, StringComparison.Ordinal);
     }
 
     [Fact]

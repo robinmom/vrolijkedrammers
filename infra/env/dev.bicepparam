@@ -16,9 +16,13 @@ param sqlSkuName = 'Basic'
 param keyVaultPurgeProtection = false
 param logDailyQuotaGb = 1
 // Eigen External ID-tenant voor Dev (beveiligingsonderzoek H1, 2026-10-17; docs/runbooks/dev-tenant.md). Zolang de
-// GitHub-variabelen leeg zijn, blijft Dev op de gedeelde tenant.
-var externalIdTenantName = readEnvironmentVariable('DVD_EXTERNAL_ID_TENANT_NAME', 'vrolijkedrammersapp')
-var externalIdTenant = readEnvironmentVariable('DVD_EXTERNAL_ID_TENANT_ID', '260db5a1-e5b6-4388-9f6c-d9b02cb5578b')
+// GitHub-variabelen leeg zijn, blijft Dev op de gedeelde tenant. De workflow zet de variabelen altijd (ook leeg), dus een
+// lege waarde moet net als een ontbrekende variabele terugvallen op de gedeelde tenant — anders wordt de authority
+// 'https://.ciamlogin.com//v2.0' en kan niemand inloggen.
+var externalIdTenantNameRaw = readEnvironmentVariable('DVD_EXTERNAL_ID_TENANT_NAME', 'vrolijkedrammersapp')
+var externalIdTenantName = empty(externalIdTenantNameRaw) ? 'vrolijkedrammersapp' : externalIdTenantNameRaw
+var externalIdTenantRaw = readEnvironmentVariable('DVD_EXTERNAL_ID_TENANT_ID', '260db5a1-e5b6-4388-9f6c-d9b02cb5578b')
+var externalIdTenant = empty(externalIdTenantRaw) ? '260db5a1-e5b6-4388-9f6c-d9b02cb5578b' : externalIdTenantRaw
 param externalIdAuthority = 'https://${externalIdTenantName}.ciamlogin.com/${externalIdTenant}/v2.0'
 param externalIdTenantId = externalIdTenant
 param externalIdIssuerDomain = '${externalIdTenantName}.onmicrosoft.com'

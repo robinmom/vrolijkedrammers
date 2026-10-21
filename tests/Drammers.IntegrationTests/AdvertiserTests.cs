@@ -795,4 +795,78 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         var lid = _api.ClientFor((await _api.CreateUserAsync("geen-recht@example.com", DefaultRoles.Lid)).ObjectId);
         Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/finance/income")).StatusCode);
     }
+
+    /// <summary>Fase 4b: een Mollie-afrekening herleidt de betalingen naar onze facturen en verstuurt de verzamelstaat als CSV.</summary>
+    [Fact]
+    public async Task Mollie_afrekening_herleidt_de_betaling_en_verstuurt_de_verzamelstaat()
+    {
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/invoices/settings", new { address = "Postbus 123\n6940 AC Loil", kvk = "40122564" });
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 100, 100)));
+        var advertiserId = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))![0].GetProperty("id").GetGuid();
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{advertiserId}/years/2027", new { status = "Collected", amount = 100m, note = (string?)null });
+        await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = "2026-11-02", year = (int?)null });
+        var invoiceId = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray()
+            .Single().GetProperty("invoiceId").GetGuid();
+
+        // Online betalen: Mollie-betaling aanmaken en via de webhook op "betaald" zetten (koppelt tr_… aan de factuur).
+        using (var scope = _api.Services.CreateScope())
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<Drammers.Infrastructure.Advertisers.Invoices.AdvertiserInvoices>();
+            var link = svc.PayLink("https://drammers.test", invoiceId);
+            var token = Uri.UnescapeDataString(new Uri(link).Query["?t=".Length..]);
+            await svc.PayAsync(invoiceId, token, "https://drammers.test", CancellationToken.None);
+        }
+
+        var mollieId = _mollie.Payments.Single().Key;
+        _mollie.SetStatus(mollieId, "paid");
+        await _bestuur.PostAsync("/api/v1/payments/mollie/webhook", new FormUrlEncodedContent([new KeyValuePair<string, string>("id", mollieId)]));
+
+        // Mollie betaalt dit in een afrekening uit: omzet €121, kosten €0,36, netto €120,64 op de bank.
+        _mollie.AddSettlement(
+            new Drammers.Infrastructure.Payments.MollieSettlement("stl_test1", "1234567.2026.10", "paidout",
+                new DateTime(2026, 11, 2, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 11, 3, 0, 0, 0, DateTimeKind.Utc), 12064, 12100, 36),
+            mollieId);
+
+        var settlements = await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/finance/settlements");
+        var s = Assert.Single(settlements!);
+        Assert.Equal(("1234567.2026.10", "Uitbetaald", 121m, 0.36m, 120.64m),
+            (s.GetProperty("reference").GetString(), s.GetProperty("status").GetString(), s.GetProperty("gross").GetDecimal(),
+             s.GetProperty("costs").GetDecimal(), s.GetProperty("net").GetDecimal()));
+
+        // De afrekening herleidt de betaling naar onze factuur ADV-2027-0001 (€121 incl. btw).
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/finance/settlements/stl_test1");
+        var line = Assert.Single(detail.GetProperty("lines").EnumerateArray().ToList());
+        Assert.Equal(("Advertentie", "ADV-2027-0001", "Bakkerij De Test", 121m),
+            (line.GetProperty("source").GetString(), line.GetProperty("number").GetString(), line.GetProperty("party").GetString(), line.GetProperty("amount").GetDecimal()));
+        Assert.Equal(0, detail.GetProperty("unmatchedCount").GetInt32());
+
+        var exportCsv = await _bestuur.GetAsync("/api/v1/admin/finance/settlements/stl_test1/export");
+        Assert.Equal("text/csv", exportCsv.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("Advertentie;ADV-2027-0001;Bakkerij De Test;121,00;", System.Text.Encoding.UTF8.GetString(await exportCsv.Content.ReadAsByteArrayAsync()), StringComparison.Ordinal);
+
+        // Versturen namens de penningmeester, met de CSV als bijlage.
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PostAsJsonAsync("/api/v1/admin/finance/settlements/stl_test1/send", new { recipient = "boekhouder@example.com" })).StatusCode);
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            foreach (var message in await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == Drammers.Infrastructure.Finance.MollieSettlements.MailMessageType).ToListAsync())
+            {
+                using var handlerScope = _api.Services.CreateScope();
+                var handler = handlerScope.ServiceProvider.GetServices<Drammers.Worker.Outbox.IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+                await handler.HandleAsync(new Drammers.Worker.Outbox.OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            }
+        }
+
+        var mail = _api.Emails.Sent.Single(m => m.To == "boekhouder@example.com");
+        Assert.Equal(("penningmeester@vrolijkedrammers.nl", "penningmeester"), (mail.ReplyTo, mail.From));
+        var attachment = Assert.Single(mail.Attachments!);
+        Assert.Equal(("Afrekening 1234567.2026.10.csv", "text/csv"), (attachment.Name, attachment.ContentType));
+
+        // Alleen met het recht Inkomsten bekijken.
+        var lid = _api.ClientFor((await _api.CreateUserAsync("geen-recht-afrekening@example.com", DefaultRoles.Lid)).ObjectId);
+        Assert.Equal(HttpStatusCode.Forbidden, (await lid.GetAsync("/api/v1/admin/finance/settlements")).StatusCode);
+    }
 }

@@ -3430,6 +3430,45 @@ export class MockApi {
       const total = rows.reduce((sum, r) => sum + r.totalAmount, 0);
       return json({ year: 2027, totals: { net: total, vat: 0, serviceFee: 0, total, paid: 0 }, rows });
     }
+    if (path === '/admin/finance/settlements') {
+      return json([
+        {
+          id: 'stl_test1',
+          reference: '1234567.2026.10',
+          status: 'Uitbetaald',
+          date: '2026-11-03',
+          gross: 371,
+          costs: 2.5,
+          net: 368.5,
+        },
+      ]);
+    }
+    if ((m = path.match(/^\/admin\/finance\/settlements\/([^/]+)$/))) {
+      return json({
+        settlement: {
+          id: m[1],
+          reference: '1234567.2026.10',
+          status: 'Uitbetaald',
+          date: '2026-11-03',
+          gross: 371,
+          costs: 2.5,
+          net: 368.5,
+        },
+        matchedTotal: 371,
+        unmatchedCount: 1,
+        unmatchedTotal: -10,
+        lines: [
+          { source: 'Advertentie', number: 'ADV-2027-0001', party: 'Bakkerij De Test', amount: 121, mollieId: 'tr_a1' },
+          { source: 'Festival', number: 'FEST-2027-0001', party: 'DV Loil', amount: 250, mollieId: 'tr_f1' },
+        ],
+      });
+    }
+    if (path.match(/^\/admin\/finance\/settlements\/[^/]+\/export$/)) {
+      return json({ csv: true });
+    }
+    if (path.match(/^\/admin\/finance\/settlements\/[^/]+\/send$/) && method === 'POST') {
+      return noContent();
+    }
     if (path.startsWith('/admin/mailing/')) {
       return this.handleMailing(path, method, body, url, json, noContent);
     }

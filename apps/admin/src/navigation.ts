@@ -53,6 +53,7 @@ export const navItems: readonly NavItem[] = [
   // Fase 27e: facturen als PDF.
   { label: 'Facturen', to: '/adverteerders/facturen', permission: 'advertiser.manage', icon: 'download', section: 'Adverteerders' },
   { label: 'Inkomsten', to: '/inkomsten', permission: 'finance.read', icon: 'rapport', section: 'Adverteerders' },
+  { label: 'Afrekeningen', to: '/afrekeningen', permission: 'finance.read', icon: 'sync', section: 'Adverteerders' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.

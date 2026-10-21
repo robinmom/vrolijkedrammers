@@ -6092,6 +6092,150 @@
         }
       }
     },
+    "/api/v1/admin/finance/settlements": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettlementSummary"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettlementSummary"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettlementSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/settlements/{id}": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementDetail"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/settlements/{id}/export": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/settlements/{id}/send": {
+      "post": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlementSendRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlementSendRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlementSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/admin/groups": {
       "get": {
         "tags": [
@@ -46584,6 +46728,127 @@
             "type": "boolean"
           }
         }
+      },
+      "SettlementDetail": {
+        "required": [
+          "settlement",
+          "matchedTotal",
+          "unmatchedCount",
+          "unmatchedTotal",
+          "lines"
+        ],
+        "type": "object",
+        "properties": {
+          "settlement": {
+            "$ref": "#/components/schemas/SettlementSummary"
+          },
+          "matchedTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "unmatchedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unmatchedTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettlementLine"
+            }
+          }
+        },
+        "description": "Een afrekening met de herleide inkomsten en het deel dat niet aan een eigen post gekoppeld kon worden."
+      },
+      "SettlementLine": {
+        "required": [
+          "source",
+          "number",
+          "party",
+          "amount",
+          "mollieId"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "party": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "mollieId": {
+            "type": "string"
+          }
+        },
+        "description": "Eén inkomst binnen een afrekening, herleid naar onze eigen administratie (factuur, festival of kaartverkoop)."
+      },
+      "SettlementSendRequest": {
+        "required": [
+          "recipient"
+        ],
+        "type": "object",
+        "properties": {
+          "recipient": {
+            "type": "string"
+          }
+        },
+        "description": "Naar welk e-mailadres de verzamelstaat gaat (standaard penningmeester@vrolijkedrammers.nl)."
+      },
+      "SettlementSummary": {
+        "required": [
+          "id",
+          "reference",
+          "status",
+          "date",
+          "gross",
+          "costs",
+          "net"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "gross": {
+            "type": "number",
+            "format": "double"
+          },
+          "costs": {
+            "type": "number",
+            "format": "double"
+          },
+          "net": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Eén Mollie-afrekening (bankuitbetaling): omzet min Mollie-kosten = wat op de bank is bijgeschreven."
       },
       "SetUserRolesRequest": {
         "required": [

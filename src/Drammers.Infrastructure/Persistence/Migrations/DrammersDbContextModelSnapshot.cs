@@ -3545,13 +3545,23 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = 102,
+                            Code = "penningmeester",
+                            Description = "Inkomsten en Mollie-afrekeningen, facturen, betalingen en contributie",
+                            IsAssignableBySync = false,
+                            IsSystem = false,
+                            Name = "Penningmeester",
+                            SortOrder = 180
+                        },
+                        new
+                        {
                             Id = 201,
                             Code = "regie",
                             Description = "Regie; doelgroep voor activiteiten, nieuws en meldingen",
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Regie",
-                            SortOrder = 180
+                            SortOrder = 190
                         },
                         new
                         {
@@ -3561,7 +3571,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Tekstgroepen",
-                            SortOrder = 190
+                            SortOrder = 200
                         },
                         new
                         {
@@ -3571,7 +3581,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Prins(es)",
-                            SortOrder = 200
+                            SortOrder = 210
                         },
                         new
                         {
@@ -3581,7 +3591,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Adjudant",
-                            SortOrder = 210
+                            SortOrder = 220
                         },
                         new
                         {
@@ -3591,7 +3601,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Dansgardefestival",
-                            SortOrder = 220
+                            SortOrder = 230
                         },
                         new
                         {
@@ -3601,7 +3611,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Jury dansgardefestival",
-                            SortOrder = 230
+                            SortOrder = 240
                         },
                         new
                         {
@@ -3611,7 +3621,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             IsAssignableBySync = false,
                             IsSystem = false,
                             Name = "Hoofdjury dansgardefestival",
-                            SortOrder = 240
+                            SortOrder = 250
                         });
                 });
 
@@ -4378,6 +4388,61 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 101,
                             PermissionId = 51
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 1
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 9
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 11
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 13
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 15
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 28
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 2
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 56
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 33
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 50
+                        },
+                        new
+                        {
+                            RoleId = 102,
+                            PermissionId = 48
                         },
                         new
                         {

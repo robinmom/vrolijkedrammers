@@ -1081,3 +1081,26 @@ test('fase 4a: inkomstenoverzicht met CSV-export', async ({ page }) => {
   await page.getByRole('button', { name: 'Exporteren (CSV)' }).click();
   expect((await download).suggestedFilename()).toBe('Inkomsten 2027.csv');
 });
+
+test('fase 4b: Mollie-afrekening met verzamelstaat en versturen', async ({ page }) => {
+  const api = new MockApi(['finance.read']);
+  await open(page, api, 'afrekeningen');
+
+  await expect(page.getByRole('heading', { name: 'Afrekeningen' })).toBeVisible();
+  const list = page.getByRole('region', { name: 'Afrekeningen' });
+  await expect(list.getByText('1234567.2026.10')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Details' }).click();
+  await expect(page.getByRole('heading', { name: 'Afrekening 1234567.2026.10' })).toBeVisible();
+  const detail = page.getByRole('region', { name: 'Inkomsten in de afrekening' });
+  await expect(detail.getByText('ADV-2027-0001')).toBeVisible();
+  await expect(detail.getByText('FEST-2027-0001')).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporteren (CSV)' }).click();
+  expect((await download).suggestedFilename()).toBe('Afrekening 1234567.2026.10.csv');
+
+  await expect(page.getByLabel('Verzamelstaat mailen naar')).toHaveValue('penningmeester@vrolijkedrammers.nl');
+  await page.getByRole('button', { name: 'Versturen' }).click();
+  await expect(page.getByText(/onderweg naar penningmeester@vrolijkedrammers\.nl/)).toBeVisible();
+});

@@ -36,11 +36,31 @@ public sealed record MolliePayment(string Id, string Status, string? CheckoutUrl
     public bool IsFinallyUnpaid => Status is "failed" or "canceled" or "expired";
 }
 
+/// <summary>
+/// Een Mollie-afrekening (settlement): één uitbetaling naar de bankrekening. <see cref="NetCents"/> is wat op de bank
+/// binnenkomt (= <see cref="GrossCents"/> omzet min <see cref="CostsCents"/> Mollie-kosten). <see cref="Status"/> is
+/// <c>open</c>, <c>pending</c>, <c>paidout</c> of <c>failed</c>.
+/// </summary>
+public sealed record MollieSettlement(
+    string Id, string? Reference, string Status, DateTime? CreatedAt, DateTime? SettledAt, int NetCents, int GrossCents, int CostsCents);
+
+/// <summary>Een betaling binnen een afrekening; <see cref="Id"/> is <c>tr_…</c>, te herleiden naar onze eigen inkomst.</summary>
+public sealed record MollieSettlementPayment(string Id, string Status, int AmountCents, string? Description, DateTime? PaidAt);
+
 public interface IMollieClient
 {
     Task<MolliePayment> CreatePaymentAsync(MollieNewPayment payment, CancellationToken cancellationToken);
 
     Task<MolliePayment> GetPaymentAsync(string paymentId, CancellationToken cancellationToken);
+
+    /// <summary>De afrekeningen (uitbetalingen) van de organisatie, nieuwste eerst.</summary>
+    Task<IReadOnlyList<MollieSettlement>> ListSettlementsAsync(CancellationToken cancellationToken);
+
+    /// <summary>Eén afrekening, of <c>null</c> als die niet bestaat.</summary>
+    Task<MollieSettlement?> GetSettlementAsync(string settlementId, CancellationToken cancellationToken);
+
+    /// <summary>De betalingen die in een afrekening zitten (gepagineerd afgehandeld).</summary>
+    Task<IReadOnlyList<MollieSettlementPayment>> ListSettlementPaymentsAsync(string settlementId, CancellationToken cancellationToken);
 }
 
 /// <summary>Fout richting Mollie; de gebruiker krijgt een algemene melding (geen details van Mollie).</summary>
@@ -74,6 +94,85 @@ internal sealed class MollieClient(HttpClient http, IOptions<MollieOptions> opti
 
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(options.Value.BaseUrl, $"v2/payments/{paymentId}"));
         return await SendAsync(request, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<MollieSettlement>> ListSettlementsAsync(CancellationToken cancellationToken)
+    {
+        // Eén pagina (max 250) is ruim voldoende: afrekeningen zijn hoogstens enkele per maand.
+        var body = await SendJsonAsync<SettlementListBody>(new Uri(options.Value.BaseUrl, "v2/settlements?limit=250"), cancellationToken);
+        return [.. (body?.Embedded?.Settlements ?? []).Select(Map)];
+    }
+
+    public async Task<MollieSettlement?> GetSettlementAsync(string settlementId, CancellationToken cancellationToken)
+    {
+        var body = await SendJsonAsync<SettlementBody>(new Uri(options.Value.BaseUrl, $"v2/settlements/{ValidSettlementId(settlementId)}"), cancellationToken);
+        return body is null ? null : Map(body);
+    }
+
+    public async Task<IReadOnlyList<MollieSettlementPayment>> ListSettlementPaymentsAsync(string settlementId, CancellationToken cancellationToken)
+    {
+        var id = ValidSettlementId(settlementId);
+        var payments = new List<MollieSettlementPayment>();
+        Uri? next = new(options.Value.BaseUrl, $"v2/settlements/{id}/payments?limit=250");
+        // Veiligheidsgrens: hoogstens 20 pagina's (5000 betalingen) om geen oneindige keten te volgen.
+        for (var page = 0; next is not null && page < 20; page++)
+        {
+            var body = await SendJsonAsync<PaymentListBody>(next, cancellationToken);
+            foreach (var p in body?.Embedded?.Payments ?? [])
+            {
+                payments.Add(new MollieSettlementPayment(p.Id, p.Status, Cents(p.Amount.Value), p.Description, p.PaidAt?.UtcDateTime));
+            }
+
+            next = body?.Links?.Next?.Href is { } href ? new Uri(href) : null;
+        }
+
+        return payments;
+    }
+
+    private static MollieSettlement Map(SettlementBody s)
+    {
+        var gross = 0;
+        var costs = 0;
+        foreach (var year in s.Periods?.Values ?? [])
+        {
+            foreach (var month in year.Values)
+            {
+                gross += (month.Revenue ?? []).Sum(r => Cents(r.AmountGross.Value));
+                costs += (month.Costs ?? []).Sum(c => Cents(c.AmountGross.Value));
+            }
+        }
+
+        return new MollieSettlement(s.Id, s.Reference, s.Status, s.CreatedAt?.UtcDateTime, s.SettledAt?.UtcDateTime, Cents(s.Amount.Value), gross, costs);
+    }
+
+    private static int Cents(string value) => (int)Math.Round(decimal.Parse(value, CultureInfo.InvariantCulture) * 100m);
+
+    private static string ValidSettlementId(string settlementId)
+    {
+        if (!settlementId.StartsWith("stl_", StringComparison.Ordinal) || settlementId.Length > 40 || !settlementId.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
+        {
+            throw new MollieException("Ongeldig afrekening-id.");
+        }
+
+        return settlementId;
+    }
+
+    private async Task<T?> SendJsonAsync<T>(Uri uri, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await ApiKeyAsync(cancellationToken));
+        using var response = await http.SendAsync(request, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return default;
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new MollieException($"Mollie gaf status {(int)response.StatusCode}.");
+        }
+
+        return await response.Content.ReadFromJsonAsync<T>(cancellationToken);
     }
 
     private async Task<MolliePayment> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -130,4 +229,27 @@ internal sealed class MollieClient(HttpClient http, IOptions<MollieOptions> opti
 
     private sealed record PaymentBody(
         string Id, string Status, Amount Amount, Metadata? Metadata, DateTimeOffset? PaidAt, [property: JsonPropertyName("_links")] Links? Links);
+
+    private sealed record NextLink([property: JsonPropertyName("next")] Link? Next);
+
+    private sealed record SettlementRevenue(Amount AmountGross);
+
+    private sealed record SettlementPeriod(
+        [property: JsonPropertyName("revenue")] IReadOnlyList<SettlementRevenue>? Revenue,
+        [property: JsonPropertyName("costs")] IReadOnlyList<SettlementRevenue>? Costs);
+
+    private sealed record SettlementBody(
+        string Id, string? Reference, string Status, Amount Amount, DateTimeOffset? CreatedAt, DateTimeOffset? SettledAt,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, SettlementPeriod>>? Periods);
+
+    private sealed record SettlementList([property: JsonPropertyName("settlements")] IReadOnlyList<SettlementBody>? Settlements);
+
+    private sealed record SettlementListBody([property: JsonPropertyName("_embedded")] SettlementList? Embedded);
+
+    private sealed record SettlementPaymentBody(string Id, string Status, Amount Amount, string? Description, DateTimeOffset? PaidAt);
+
+    private sealed record PaymentList([property: JsonPropertyName("payments")] IReadOnlyList<SettlementPaymentBody>? Payments);
+
+    private sealed record PaymentListBody(
+        [property: JsonPropertyName("_embedded")] PaymentList? Embedded, [property: JsonPropertyName("_links")] NextLink? Links);
 }

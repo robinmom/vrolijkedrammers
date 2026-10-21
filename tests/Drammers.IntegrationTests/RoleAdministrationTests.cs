@@ -93,8 +93,8 @@ public class RoleAdministrationTests(SqlServerFixture sql) : IAsyncLifetime
     {
         var created = await _admin.PostAsJsonAsync("/api/v1/admin/roles", new
         {
-            code = "penningmeester",
-            name = "Penningmeester",
+            code = "financieel-beheer",
+            name = "Financieel beheer",
             description = (string?)null,
             permissions = new[] { Permissions.PaymentRead, Permissions.PaymentManage },
         });

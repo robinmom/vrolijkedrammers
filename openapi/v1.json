@@ -6103,26 +6103,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SettlementSummary"
-                  }
+                  "$ref": "#/components/schemas/SettlementOverview"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SettlementSummary"
-                  }
+                  "$ref": "#/components/schemas/SettlementOverview"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SettlementSummary"
-                  }
+                  "$ref": "#/components/schemas/SettlementOverview"
                 }
               }
             }
@@ -46791,6 +46782,32 @@
           }
         },
         "description": "Eén inkomst binnen een afrekening, herleid naar onze eigen administratie (factuur, festival of kaartverkoop)."
+      },
+      "SettlementOverview": {
+        "required": [
+          "available",
+          "message",
+          "settlements"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "settlements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettlementSummary"
+            }
+          }
+        },
+        "description": "De afrekeningen, of een rustige uitleg waarom ze er (nog) niet zijn: de Settlements-API vereist een organisatie-token\ndat los van de gewone Mollie-sleutel wordt ingesteld, en een tijdelijke storing bij Mollie mag geen harde fout geven."
       },
       "SettlementSendRequest": {
         "required": [

@@ -3431,17 +3431,21 @@ export class MockApi {
       return json({ year: 2027, totals: { net: total, vat: 0, serviceFee: 0, total, paid: 0 }, rows });
     }
     if (path === '/admin/finance/settlements') {
-      return json([
-        {
-          id: 'stl_test1',
-          reference: '1234567.2026.10',
-          status: 'Uitbetaald',
-          date: '2026-11-03',
-          gross: 371,
-          costs: 2.5,
-          net: 368.5,
-        },
-      ]);
+      return json({
+        available: true,
+        message: null,
+        settlements: [
+          {
+            id: 'stl_test1',
+            reference: '1234567.2026.10',
+            status: 'Uitbetaald',
+            date: '2026-11-03',
+            gross: 371,
+            costs: 2.5,
+            net: 368.5,
+          },
+        ],
+      });
     }
     if ((m = path.match(/^\/admin\/finance\/settlements\/([^/]+)$/))) {
       return json({

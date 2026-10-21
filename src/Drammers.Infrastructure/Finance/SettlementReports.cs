@@ -25,6 +25,12 @@ public sealed record SettlementLine(string Source, string Number, string Party, 
 public sealed record SettlementDetail(SettlementSummary Settlement, decimal MatchedTotal, int UnmatchedCount, decimal UnmatchedTotal, IReadOnlyList<SettlementLine> Lines);
 
 /// <summary>
+/// De afrekeningen, of een rustige uitleg waarom ze er (nog) niet zijn: de Settlements-API vereist een organisatie-token
+/// dat los van de gewone Mollie-sleutel wordt ingesteld, en een tijdelijke storing bij Mollie mag geen harde fout geven.
+/// </summary>
+public sealed record SettlementOverview(bool Available, string? Message, IReadOnlyList<SettlementSummary> Settlements);
+
+/// <summary>
 /// Mollie-afrekeningen/verzamelstaat (fase 4b): de uitbetalingen van Mollie naar de bankrekening, met per uitbetaling de
 /// omzet, de Mollie-kosten en het netto bedrag (= de bankregel), plus welke eigen inkomsten erin zitten (factuur ADV-…,
 /// festival FEST-… of kaartverkoop). Een CSV-verzamelstaat en een verstuur-knop (namens de penningmeester) voor de boekhouding.
@@ -38,17 +44,45 @@ public sealed class MollieSettlements(IMollieClient mollie, DrammersDbContext db
 
     private static readonly CultureInfo Nl = CultureInfo.GetCultureInfo("nl-NL");
 
-    public async Task<IReadOnlyList<SettlementSummary>> ListAsync(CancellationToken cancellationToken)
+    public async Task<SettlementOverview> ListAsync(CancellationToken cancellationToken)
     {
-        var settlements = await mollie.ListSettlementsAsync(cancellationToken);
-        return [.. settlements.Select(Summary).OrderByDescending(s => s.Date)];
+        try
+        {
+            var settlements = await mollie.ListSettlementsAsync(cancellationToken);
+            return new SettlementOverview(true, null, [.. settlements.Select(Summary).OrderByDescending(s => s.Date)]);
+        }
+        catch (MollieSettlementsUnavailableException)
+        {
+            return new SettlementOverview(false,
+                "De Mollie-afrekeningen zijn nog niet beschikbaar. Maak in Mollie (Developers → Organization access tokens) een token met het recht "
+                + "settlements.read en laat dat als sleutel 'mollie-organization-token' in de sleutelkluis zetten.", []);
+        }
+        catch (Exception ex) when (ex is MollieException or HttpRequestException or TaskCanceledException)
+        {
+            return new SettlementOverview(false, "De Mollie-afrekeningen konden nu niet worden opgehaald. Probeer het over een paar minuten opnieuw.", []);
+        }
     }
 
     public async Task<SettlementDetail> DetailAsync(string settlementId, CancellationToken cancellationToken)
     {
-        var settlement = await mollie.GetSettlementAsync(settlementId, cancellationToken)
-            ?? throw new DomainException(ErrorCodes.NotFound, "De afrekening bestaat niet.", DomainErrorKind.NotFound);
-        var payments = await mollie.ListSettlementPaymentsAsync(settlementId, cancellationToken);
+        MollieSettlement? settlement;
+        IReadOnlyList<MollieSettlementPayment> payments;
+        try
+        {
+            settlement = await mollie.GetSettlementAsync(settlementId, cancellationToken)
+                ?? throw new DomainException(ErrorCodes.NotFound, "De afrekening bestaat niet.", DomainErrorKind.NotFound);
+            payments = await mollie.ListSettlementPaymentsAsync(settlementId, cancellationToken);
+        }
+        catch (MollieSettlementsUnavailableException)
+        {
+            throw new DomainException(ErrorCodes.PaymentsNotConfigured,
+                "De Mollie-afrekeningen zijn nog niet beschikbaar (organisatie-token ontbreekt).", DomainErrorKind.Conflict);
+        }
+        catch (Exception ex) when (ex is MollieException or HttpRequestException or TaskCanceledException)
+        {
+            throw new DomainException(ErrorCodes.PaymentFailed, "De afrekening kon nu niet bij Mollie worden opgehaald. Probeer het later opnieuw.", DomainErrorKind.Conflict);
+        }
+
         var ids = payments.Select(p => p.Id).ToList();
 
         var adv = await db.AdvertiserInvoiceMolliePayments.AsNoTracking().Where(m => ids.Contains(m.MolliePaymentId))
@@ -127,9 +161,8 @@ public sealed class MollieSettlements(IMollieClient mollie, DrammersDbContext db
             throw new DomainException(ErrorCodes.Validation, "Vul een geldig e-mailadres in.", DomainErrorKind.Validation);
         }
 
-        // Controleer dat de afrekening bestaat voordat we de mail inplannen.
-        _ = await mollie.GetSettlementAsync(settlementId, cancellationToken)
-            ?? throw new DomainException(ErrorCodes.NotFound, "De afrekening bestaat niet.", DomainErrorKind.NotFound);
+        // Controleer dat de afrekening bestaat voordat we de mail inplannen (hergebruikt de afscherming in DetailAsync).
+        _ = await DetailAsync(settlementId, cancellationToken);
         outbox.Enqueue(MailMessageType, new SettlementMail(settlementId, to));
         await db.SaveChangesAsync(cancellationToken);
     }

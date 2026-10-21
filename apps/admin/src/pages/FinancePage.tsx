@@ -191,7 +191,9 @@ export function SettlementsPage() {
       <ProblemAlert error={settlements.error ?? detail.error ?? downloadError ?? send.error} />
 
       {list ? (
-        list.length === 0 ? (
+        !list.available ? (
+          <p className="muted">{list.message}</p>
+        ) : list.settlements.length === 0 ? (
           <p className="muted">Nog geen Mollie-afrekeningen. Zodra Mollie een bedrag naar de bank uitbetaalt, verschijnt het hier.</p>
         ) : (
           <section className="card">
@@ -211,7 +213,7 @@ export function SettlementsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {list.map((s) => (
+                  {list.settlements.map((s) => (
                     <tr key={s.id}>
                       <td>{formatDate(s.date)}</td>
                       <td>{s.reference ?? s.id}</td>

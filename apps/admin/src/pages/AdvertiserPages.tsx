@@ -601,13 +601,14 @@ function CollectorInfoCard({ year }: { year: number }) {
 }
 
 type CampaignRow = Schemas['AdvertiserStatusRow'];
-type CampaignColumn = 'company' | 'collector' | 'previous' | 'amount' | 'status' | 'round' | 'cash' | 'note';
+type CampaignColumn = 'page' | 'company' | 'collector' | 'previous' | 'amount' | 'status' | 'round' | 'cash' | 'note';
 interface CampaignSort {
   column: CampaignColumn;
   desc: boolean;
 }
 
 const CAMPAIGN_COLUMNS: [CampaignColumn, string][] = [
+  ['page', 'Pagina'],
   ['company', 'Bedrijf'],
   ['collector', 'Collectant'],
   ['previous', 'Vorig jaar'],
@@ -621,6 +622,7 @@ const CAMPAIGN_COLUMNS: [CampaignColumn, string][] = [
 const STATUS_ORDER: Record<AdvertiserYearStatus, number> = { Open: 0, Collected: 1, Stopped: 2 };
 
 const sortValue: Record<CampaignColumn, (r: CampaignRow) => string | number | null> = {
+  page: (r) => r.page || null,
   company: (r) => r.companyName,
   collector: (r) => r.collectorName ?? null,
   previous: (r) => r.previousAmount ?? null,
@@ -681,6 +683,38 @@ type StatusRow = NonNullable<ReturnType<typeof useAdvertiserStatus>['data']>['ro
 
 const rowColor = (r: StatusRow) =>
   r.status === 'Stopped' ? STOPPED_COLOR : r.round ? ROUND_COLORS[r.round] : undefined;
+
+/** Pagina in de krant, direct in de campagnelijst te wijzigen; slaat op zodra het veld de focus verliest. */
+function PageCell({
+  value,
+  label,
+  disabled,
+  onSave,
+}: {
+  value: string | null;
+  label: string;
+  disabled: boolean;
+  onSave: (page: string | null) => void;
+}) {
+  const [text, setText] = useState(value ?? '');
+  useEffect(() => setText(value ?? ''), [value]);
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      aria-label={`Pagina van ${label}`}
+      value={text}
+      disabled={disabled}
+      size={4}
+      maxLength={50}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        const next = text.trim() || null;
+        if (next !== (value ?? null)) onSave(next);
+      }}
+    />
+  );
+}
 
 /** Adverteerders → Campagne: wie is opgehaald, met een voortgangsbalk en een filter op collectant. */
 export function AdvertiserStatusPage() {
@@ -761,6 +795,14 @@ export function AdvertiserStatusPage() {
       }),
     ADVERTISER_KEYS,
   );
+  const setPage = useApiMutation(
+    (v: { id: string; page: string | null }) =>
+      api.PUT('/api/v1/admin/advertisers/{id}/page', {
+        params: { path: { id: v.id } },
+        body: { page: v.page },
+      }),
+    ADVERTISER_KEYS,
+  );
   const [exportError, setExportError] = useState<unknown>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [linking, setLinking] = useState<string | null>(null);
@@ -808,7 +850,7 @@ export function AdvertiserStatusPage() {
   const term = search.trim().toLowerCase();
   const rows = (report?.rows ?? []).filter(
     (r) =>
-      (!term || `${r.number} ${r.companyName} ${r.city ?? ''}`.toLowerCase().includes(term)) &&
+      (!term || `${r.number} ${r.page ?? ''} ${r.companyName} ${r.city ?? ''}`.toLowerCase().includes(term)) &&
       (!statusFilter || r.status === statusFilter) &&
       (!roundFilter || (roundFilter === 'none' ? !r.round : r.round === Number(roundFilter))),
   );
@@ -954,6 +996,7 @@ export function AdvertiserStatusPage() {
           setStatus.error ??
           setRound.error ??
           setCash.error ??
+          setPage.error ??
           makeCampaignYear.error ??
           resetCampaign.error ??
           exportError
@@ -1191,8 +1234,16 @@ export function AdvertiserStatusPage() {
                     />
                   </td>
                   <td>
+                    <PageCell
+                      value={r.page ?? null}
+                      label={r.companyName}
+                      disabled={setPage.isPending}
+                      onSave={(page) => setPage.mutate({ id: r.id, page })}
+                    />
+                  </td>
+                  <td>
                     <Link to="/adverteerders/$id" params={{ id: r.id }} search={{ from: 'campagne' }}>
-                      {r.number}. {r.companyName}
+                      {r.companyName}
                     </Link>
                     {r.city ? <span className="muted"> · {r.city}</span> : null}
                   </td>
@@ -1262,7 +1313,7 @@ export function AdvertiserStatusPage() {
               ))}
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="muted">
+                  <td colSpan={10} className="muted">
                     {report.rows.length === 0 ? 'Geen adverteerders.' : 'Geen adverteerders met deze filters.'}
                   </td>
                 </tr>

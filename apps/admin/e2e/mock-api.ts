@@ -1796,6 +1796,7 @@ export class MockApi {
           number: a.number,
           companyName: a.companyName,
           city: a.city,
+          page: a.page,
           kind: a.kind,
           payment: a.payment,
           collectorMemberId: a.collectorMemberId,
@@ -1847,6 +1848,11 @@ export class MockApi {
     if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/years\/(\d+)\/cash$/))) {
       const a = this.advertisers.find((x) => x.id === m![1])!;
       a.paid2027 = body.received ? '2026-10-04T18:00:00Z' : null;
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/page$/))) {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      a.page = (body.page as string | null) ?? null;
       return noContent();
     }
     if (path === '/admin/advertisers/export') {

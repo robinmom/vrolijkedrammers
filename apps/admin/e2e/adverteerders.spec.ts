@@ -78,21 +78,21 @@ test('fase 27b: campagne met voortgangsbalk, filter op collectant en stand wijzi
   await page.getByLabel('Stand van Bakkerij De Test').selectOption({ label: 'Stopt' });
   await expect(page.getByRole('row', { name: /Bakkerij De Test/ })).toHaveCSS('background-color', 'rgb(244, 204, 204)');
   await page.getByLabel('Zoeken').fill('garage');
-  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Bakkerij De Test' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Garage Proef' })).toBeVisible();
   await page.getByLabel('Zoeken').fill('');
   await page.getByLabel('Stand', { exact: true }).selectOption({ label: 'Stopt' });
-  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Garage Proef' })).toHaveCount(0);
   await page.getByLabel('Stand', { exact: true }).selectOption({ label: 'Alle standen' });
   await page.getByLabel('Ronde', { exact: true }).selectOption({ label: 'Ronde 2' });
-  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Bakkerij De Test' })).toHaveCount(0);
   await expect(page.getByRole('row', { name: /Garage Proef/ })).toHaveCSS('background-color', 'rgb(221, 235, 247)');
   await page.getByLabel('Ronde', { exact: true }).selectOption({ label: 'Alle rondes' });
 
   // Filteren op collectant via de tabel per collectant.
   await page.getByRole('button', { name: 'Piet van der Berg' }).click();
   await expect(page.getByLabel('Collectant', { exact: true })).toHaveValue('m-1');
-  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Garage Proef' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Voortgang: 100%' })).toBeVisible();
 });
 
@@ -139,20 +139,37 @@ test('fase 27j: campagne sorteren op een kolom', async ({ page }) => {
 
   const table = page.getByRole('region', { name: 'Adverteerders in de campagne' });
   const companies = table.getByRole('link');
-  await expect(companies).toHaveText(['1. Bakkerij De Test', '2. Garage Proef']);
+  await expect(companies).toHaveText(['Bakkerij De Test', 'Garage Proef']);
 
   // Vorig jaar: eerst oplopend, nog een klik aflopend.
   await table.getByRole('button', { name: 'Vorig jaar' }).click();
   await expect(table.getByRole('columnheader', { name: /Vorig jaar/ })).toHaveAttribute('aria-sort', 'ascending');
-  await expect(companies).toHaveText(['1. Bakkerij De Test', '2. Garage Proef']);
+  await expect(companies).toHaveText(['Bakkerij De Test', 'Garage Proef']);
   await table.getByRole('button', { name: /Vorig jaar/ }).click();
   await expect(table.getByRole('columnheader', { name: /Vorig jaar/ })).toHaveAttribute('aria-sort', 'descending');
-  await expect(companies).toHaveText(['2. Garage Proef', '1. Bakkerij De Test']);
+  await expect(companies).toHaveText(['Garage Proef', 'Bakkerij De Test']);
 
   // Bedrijf aflopend op naam.
   await table.getByRole('button', { name: 'Bedrijf' }).click();
   await table.getByRole('button', { name: /Bedrijf/ }).click();
-  await expect(companies).toHaveText(['2. Garage Proef', '1. Bakkerij De Test']);
+  await expect(companies).toHaveText(['Garage Proef', 'Bakkerij De Test']);
+});
+
+test('fase 27m: pagina als eigen kolom, direct aan te passen', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/campagne');
+
+  const table = page.getByRole('region', { name: 'Adverteerders in de campagne' });
+  // De pagina staat in een eigen kolom (niet meer vóór de naam), met de waarde van de adverteerder.
+  await expect(table.getByRole('columnheader', { name: 'Pagina' })).toBeVisible();
+  const pagina = table.getByLabel('Pagina van Bakkerij De Test');
+  await expect(pagina).toHaveValue('4');
+
+  // Inline wijzigen slaat op zodra het veld de focus verliest.
+  await pagina.fill('12');
+  await pagina.blur();
+  await expect.poll(() => api.advertisers.find((a) => a.id === 'adv-1')?.page).toBe('12');
 });
 
 test('fase 27b: Excel eerst controleren en dan inlezen', async ({ page }) => {
@@ -235,7 +252,7 @@ test('fase 27k: context-bewuste terug-knop vanaf Campagne', async ({ page }) => 
   await page.goto('/beheer/adverteerders/campagne');
 
   // Vanaf Campagne op een bedrijf klikken en teruggaan komt terug op Campagne (niet op Overzicht).
-  await page.getByRole('link', { name: '1. Bakkerij De Test' }).click();
+  await page.getByRole('link', { name: 'Bakkerij De Test' }).click();
   await expect(page).toHaveURL(/\/adverteerders\/adv-1\?from=campagne$/);
   await expect(page.getByRole('heading', { name: 'Bakkerij De Test', level: 1 })).toBeVisible();
   await page.getByRole('link', { name: '← Campagne' }).click();
@@ -254,8 +271,8 @@ test('fase 27k: selecteren en in één keer toewijzen aan een andere collectant'
 
   // Filter op één collectant; alleen zijn bedrijf blijft over.
   await page.getByLabel('Collectant', { exact: true }).selectOption({ label: 'Piet van der Berg' });
-  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '2. Garage Proef' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Bakkerij De Test' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Garage Proef' })).toHaveCount(0);
 
   // Alles selecteren: de actiebalk verschijnt met wie ze nu zijn.
   await page.getByLabel('Alles selecteren').check();
@@ -274,5 +291,5 @@ test('fase 27k: selecteren en in één keer toewijzen aan een andere collectant'
   await expect(page.getByText('1 bedrijf toegewezen aan Karin Kader.')).toBeVisible();
   expect(api.advertisers[0]!.collectorMemberId).toBe('m-2');
   // De lijst (nog gefilterd op Piet van der Berg) is nu leeg.
-  await expect(page.getByRole('link', { name: '1. Bakkerij De Test' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Bakkerij De Test' })).toHaveCount(0);
 });

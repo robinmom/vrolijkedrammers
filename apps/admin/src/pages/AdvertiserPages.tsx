@@ -1632,6 +1632,14 @@ async function downloadBlob(promise: Promise<{ data?: Blob }>, fileName: string)
  * Adverteerders → Facturen (fase 27e): per campagnejaar een factuur voor elke opgehaalde bijdrage, als PDF per e-mail
  * namens de penningmeester; wie geen e-mailadres heeft, krijgt een PDF om te printen.
  */
+const INVOICE_STATUS: Record<string, { label: string; badge: string }> = {
+  Concept: { label: 'Concept', badge: '' },
+  Sent: { label: 'Verstuurd', badge: 'warn' },
+  Paid: { label: 'Betaald', badge: 'ok' },
+  Overdue: { label: 'Vervallen', badge: 'warn' },
+  Cancelled: { label: 'Ingetrokken', badge: '' },
+};
+
 export function AdvertiserInvoicesPage() {
   const api = useApi();
   const campaign = useCampaignYear();
@@ -1697,6 +1705,10 @@ export function AdvertiserInvoicesPage() {
       (await api.POST('/api/v1/admin/advertisers/invoices/send', { params: { query: { year } } })).data?.count,
     ADVERTISER_KEYS,
   );
+  const refreshPayment = useApiMutation(
+    (id: string) => api.POST('/api/v1/admin/advertisers/invoices/{id}/refresh-payment', { params: { path: { id } } }),
+    ADVERTISER_KEYS,
+  );
 
   async function download(path: 'all' | 'print' | string, fileName: string) {
     setDownloadError(null);
@@ -1727,7 +1739,7 @@ export function AdvertiserInvoicesPage() {
           </p>
         </div>
       </div>
-      <ProblemAlert error={overview.error ?? create.error ?? send.error ?? saveSettings.error ?? downloadError} />
+      <ProblemAlert error={overview.error ?? create.error ?? send.error ?? saveSettings.error ?? refreshPayment.error ?? downloadError} />
       <SuccessMessage message={message} />
 
       {o ? (
@@ -1787,6 +1799,7 @@ export function AdvertiserInvoicesPage() {
                   <th scope="col">Betaling</th>
                   <th scope="col">E-mail</th>
                   <th scope="col">Verstuurd</th>
+                  <th scope="col">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -1811,14 +1824,35 @@ export function AdvertiserInvoicesPage() {
                       </Link>
                     </td>
                     <td>{euro(r.amount)}</td>
-                    <td>{PAYMENT_LABELS[r.payment]}</td>
+                    <td>{r.paymentMethod === 'Mollie' ? 'iDEAL (Mollie)' : PAYMENT_LABELS[r.payment]}</td>
                     <td>{r.email ?? <span className="badge warn">geen e-mail</span>}</td>
                     <td>{r.sentAt ? formatDateTime(r.sentAt) : r.invoiceId ? 'nog niet' : '—'}</td>
+                    <td>
+                      {r.status ? (
+                        <span className="status-cell">
+                          <span className={INVOICE_STATUS[r.status]?.badge ? `badge ${INVOICE_STATUS[r.status]?.badge}` : ''}>
+                            {INVOICE_STATUS[r.status]?.label ?? r.status}
+                          </span>
+                          {r.paymentMethod === 'Mollie' && r.status !== 'Paid' && r.status !== 'Cancelled' ? (
+                            <button
+                              type="button"
+                              className="link-button"
+                              disabled={refreshPayment.isPending}
+                              onClick={() => refreshPayment.mutate(r.invoiceId!)}
+                            >
+                              ↻ status vernieuwen
+                            </button>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {o.rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="muted">
+                    <td colSpan={7} className="muted">
                       Nog geen opgehaalde bijdragen in {o.year}.
                     </td>
                   </tr>

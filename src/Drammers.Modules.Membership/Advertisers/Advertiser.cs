@@ -251,3 +251,26 @@ public sealed class AdvertiserInvoice
 
     public Guid? CreatedBy { get; set; }
 }
+
+/// <summary>
+/// Eén Mollie-betaling (<c>tr_…</c>) voor een factuur (fase 27o). Alle betalingen blijven bekend, zodat de webhook ook een
+/// oudere betaling herkent; wordt een factuur twee keer betaald, dan staat <see cref="DuplicatePaid"/> aan voor de
+/// penningmeester (terugbetalen). Spiegelt <c>DanceFestivalMolliePayment</c>.
+/// </summary>
+public sealed class AdvertiserInvoiceMolliePayment
+{
+    public Guid Id { get; set; }
+
+    public Guid InvoiceId { get; set; }
+
+    public required string MolliePaymentId { get; set; }
+
+    /// <summary>Laatst bekende status bij Mollie.</summary>
+    public string? MollieStatus { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? PaidAt { get; set; }
+
+    public bool DuplicatePaid { get; set; }
+}

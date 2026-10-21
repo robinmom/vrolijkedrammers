@@ -4,6 +4,7 @@ using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Email;
 using Drammers.Infrastructure.Mailings;
 using Drammers.Infrastructure.Members;
+using Drammers.Infrastructure.Payments;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Membership.Advertisers;
 using Drammers.SharedKernel.Auditing;
@@ -12,7 +13,9 @@ using Drammers.SharedKernel.Identifiers;
 using Drammers.SharedKernel.Messaging;
 using Drammers.SharedKernel.Time;
 using Drammers.Worker.Outbox;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Drammers.Infrastructure.Advertisers.Invoices;
@@ -23,7 +26,8 @@ public sealed record InvoiceSettings(
 /// <summary>Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur.</summary>
 public sealed record InvoiceOverviewRow(
     Guid AdvertiserId, int AdvertiserNumber, string CompanyName, decimal Amount, AdvertiserPayment Payment, string? Email, Guid? InvoiceId,
-    string? InvoiceNumber, DateOnly? InvoiceDate, DateTime? SentAt);
+    string? InvoiceNumber, DateOnly? InvoiceDate, DateTime? SentAt, InvoiceStatus? Status = null, InvoicePaymentMethod? PaymentMethod = null,
+    decimal? TotalInclVat = null, string? MollieStatus = null, DateTime? PaidAt = null);
 
 public sealed record InvoiceOverview(int Year, int ToCreate, int ToSend, int WithoutEmail, IReadOnlyList<InvoiceOverviewRow> Rows);
 
@@ -34,9 +38,11 @@ public sealed record InvoiceOverview(int Year, int ToCreate, int ToSend, int Wit
 /// </summary>
 public sealed class AdvertiserInvoices(
     DrammersDbContext db, SepaCollections collections, IOutbox outbox, IAuditLogger audit, IClock clock, ICurrentActor actor,
-    IOptions<MailingOptions> mailingOptions)
+    IOptions<MailingOptions> mailingOptions, IMollieClient mollie, IDataProtectionProvider protection, ILogger<AdvertiserInvoices> logger)
 {
     public const string MailMessageType = "advertiser.invoice-mail";
+
+    private readonly IDataProtector _tokens = protection.CreateProtector("Drammers.AdvertiserInvoiceToken.v1");
 
     /// <summary>Het KvK-nummer uit de oude conceptfactuur, als er nog niets is ingesteld.</summary>
     public const string DefaultKvk = "40122564";
@@ -141,10 +147,12 @@ public sealed class AdvertiserInvoices(
         var invoices = await db.AdvertiserInvoices.AsNoTracking().Where(i => i.Year == year).ToDictionaryAsync(i => i.AdvertiserId, cancellationToken);
 
         var rows = due.Select(d => invoices.GetValueOrDefault(d.Id) is { } i
-                ? new InvoiceOverviewRow(d.Id, d.Number, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt)
+                ? new InvoiceOverviewRow(d.Id, d.Number, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt,
+                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt)
                 : new InvoiceOverviewRow(d.Id, d.Number, d.CompanyName, d.Amount!.Value, d.Payment, d.Email, null, null, null, null))
             .Concat(invoices.Values.Where(i => due.All(d => d.Id != i.AdvertiserId))
-                .Select(i => new InvoiceOverviewRow(i.AdvertiserId, 0, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt)))
+                .Select(i => new InvoiceOverviewRow(i.AdvertiserId, 0, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt,
+                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt)))
             .OrderBy(r => r.InvoiceNumber ?? "~").ThenBy(r => r.CompanyName).ToList();
         return new InvoiceOverview(year, rows.Count(r => r.InvoiceId is null), rows.Count(r => r.InvoiceId is not null && r.SentAt is null && r.Email is not null),
             rows.Count(r => r.Email is null), rows);
@@ -254,6 +262,186 @@ public sealed class AdvertiserInvoices(
 
         return ($"Facturen {year}{(withoutEmailOnly ? " zonder e-mail" : "")}.pdf", InvoicePdf.Generate(invoices, await IssuerAsync(cancellationToken)));
     }
+
+    // ---- Online betalen via Mollie (fase 27o) --------------------------------------------------------------------
+
+    /// <summary>De betaallink voor in de factuurmail; het token (DataProtector over het factuur-id) beveiligt de link.</summary>
+    public string PayLink(string baseUrl, Guid invoiceId) =>
+        $"{baseUrl}/api/v1/advertisers/invoices/{invoiceId}/pay?t={Uri.EscapeDataString(_tokens.Protect(invoiceId.ToString()))}";
+
+    /// <summary>
+    /// De betaallink uit de mail: staat de vorige Mollie-betaling nog open, dan dezelfde betaalpagina (geen tweede
+    /// betaling); anders een nieuwe. Geeft de Mollie-checkout-URL om naar door te sturen.
+    /// </summary>
+    public async Task<string> PayAsync(Guid invoiceId, string token, string baseUrl, CancellationToken cancellationToken)
+    {
+        if (!TokenMatches(token, invoiceId))
+        {
+            throw new DomainException(ErrorCodes.NotFound, "Factuur niet gevonden.", DomainErrorKind.NotFound);
+        }
+
+        var invoice = await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.NotFound, "Factuur niet gevonden.", DomainErrorKind.NotFound);
+        if (invoice.PaymentMethod != InvoicePaymentMethod.Mollie)
+        {
+            throw new DomainException(ErrorCodes.OrderNotPayable, "Deze factuur kan niet online worden betaald.", DomainErrorKind.Conflict);
+        }
+
+        var existing = invoice.MolliePaymentId is { } previous ? await SyncAsync(invoice, previous, cancellationToken) : null;
+        if (invoice.Status == InvoiceStatus.Paid)
+        {
+            throw new DomainException(ErrorCodes.OrderAlreadyPaid, "Deze factuur is al betaald.", DomainErrorKind.Conflict);
+        }
+
+        if (invoice.Status == InvoiceStatus.Cancelled)
+        {
+            throw new DomainException(ErrorCodes.OrderNotPayable, "Deze betaallink is niet meer geldig.", DomainErrorKind.Conflict);
+        }
+
+        if (existing is { Status: "open", CheckoutUrl: { } checkout })
+        {
+            return checkout;
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        try
+        {
+            var created = await mollie.CreatePaymentAsync(new MollieNewPayment(
+                (int)Math.Round(invoice.TotalInclVat * 100m, MidpointRounding.AwayFromZero), $"Factuur {invoice.Number}", $"{baseUrl}/",
+                WebhookUrl(baseUrl), invoice.Id, $"{invoice.Id:N}-{now.Ticks}"), cancellationToken);
+            invoice.MolliePaymentId = created.Id;
+            invoice.MollieStatus = created.Status;
+            db.AdvertiserInvoiceMolliePayments.Add(new AdvertiserInvoiceMolliePayment
+            {
+                Id = IdGenerator.NewId(),
+                InvoiceId = invoice.Id,
+                MolliePaymentId = created.Id,
+                MollieStatus = created.Status,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync(cancellationToken);
+            return created.CheckoutUrl ?? throw new MollieException("Geen betaalpagina van Mollie.");
+        }
+        catch (Exception ex) when (ex is MollieException or System.Net.Http.HttpRequestException or TaskCanceledException && !cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning(ex, "Mollie-betaling aanmaken mislukt voor factuur {Number}.", invoice.Number);
+            throw new DomainException(ErrorCodes.PaymentFailed, "Betalen lukt nu niet. Probeer het over een paar minuten opnieuw.", DomainErrorKind.Conflict);
+        }
+    }
+
+    /// <summary>Webhook van Mollie; geeft <c>false</c> als de betaling niet bij een factuur hoort.</summary>
+    public async Task<bool> HandleWebhookAsync(string molliePaymentId, CancellationToken cancellationToken)
+    {
+        var invoiceId = await db.AdvertiserInvoiceMolliePayments.Where(p => p.MolliePaymentId == molliePaymentId)
+            .Select(p => (Guid?)p.InvoiceId).SingleOrDefaultAsync(cancellationToken);
+        var invoice = invoiceId is null ? null : await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId, cancellationToken);
+        if (invoice is null)
+        {
+            return false;
+        }
+
+        await SyncAsync(invoice, molliePaymentId, cancellationToken);
+        return true;
+    }
+
+    /// <summary>Status bij Mollie opnieuw ophalen (de webhook doet dit ook vanzelf).</summary>
+    public async Task RefreshPaymentAsync(Guid invoiceId, CancellationToken cancellationToken)
+    {
+        var invoice = await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.NotFound, "Factuur niet gevonden.", DomainErrorKind.NotFound);
+        if (invoice.MolliePaymentId is { } molliePaymentId)
+        {
+            await SyncAsync(invoice, molliePaymentId, cancellationToken);
+        }
+    }
+
+    /// <summary>Een factuur intrekken (bijv. verkeerd bedrag): de betaallink werkt dan niet meer.</summary>
+    public async Task CancelAsync(Guid invoiceId, CancellationToken cancellationToken)
+    {
+        var invoice = await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.NotFound, "Factuur niet gevonden.", DomainErrorKind.NotFound);
+        if (invoice.MolliePaymentId is { } molliePaymentId)
+        {
+            await SyncAsync(invoice, molliePaymentId, cancellationToken);
+        }
+
+        if (invoice.Status == InvoiceStatus.Paid)
+        {
+            throw new DomainException(ErrorCodes.OrderAlreadyPaid, "Een betaalde factuur kan niet worden ingetrokken.", DomainErrorKind.Conflict);
+        }
+
+        invoice.Status = InvoiceStatus.Cancelled;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.invoice-cancelled", "AdvertiserInvoice", invoice.Id.ToString(), null, invoice.Number), cancellationToken);
+    }
+
+    private bool TokenMatches(string token, Guid invoiceId)
+    {
+        try
+        {
+            return Guid.TryParse(_tokens.Unprotect(token), out var id) && id == invoiceId;
+        }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Haalt een Mollie-betaling op en werkt de factuur bij (idempotent). Een tweede betaalde Mollie-betaling voor
+    /// dezelfde factuur wordt niet nog eens geboekt, maar gemarkeerd om terug te betalen.
+    /// </summary>
+    private async Task<MolliePayment?> SyncAsync(AdvertiserInvoice invoice, string molliePaymentId, CancellationToken cancellationToken)
+    {
+        var mollieResult = await mollie.GetPaymentAsync(molliePaymentId, cancellationToken);
+        if (mollieResult.OrderId != invoice.Id)
+        {
+            return null;
+        }
+
+        var attempt = await db.AdvertiserInvoiceMolliePayments.SingleOrDefaultAsync(m => m.MolliePaymentId == molliePaymentId, cancellationToken);
+        if (attempt is not null)
+        {
+            attempt.MollieStatus = mollieResult.Status;
+        }
+
+        if (invoice.MolliePaymentId == molliePaymentId || mollieResult.IsPaid)
+        {
+            invoice.MollieStatus = mollieResult.Status;
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        var expectedCents = (int)Math.Round(invoice.TotalInclVat * 100m, MidpointRounding.AwayFromZero);
+        if (mollieResult.IsPaid && attempt?.PaidAt is null && mollieResult.AmountCents == expectedCents)
+        {
+            if (attempt is not null)
+            {
+                attempt.PaidAt = mollieResult.PaidAt ?? now;
+            }
+
+            if (invoice.Status == InvoiceStatus.Paid && attempt is not null)
+            {
+                attempt.DuplicatePaid = true;
+                await db.SaveChangesAsync(cancellationToken);
+                await audit.WriteAsync(new AuditEntry("advertiser.invoice-paid-twice", "AdvertiserInvoice", invoice.Id.ToString(), null, molliePaymentId), cancellationToken);
+                return mollieResult;
+            }
+
+            invoice.Status = InvoiceStatus.Paid;
+            invoice.PaidAt = mollieResult.PaidAt ?? now;
+            await db.SaveChangesAsync(cancellationToken);
+            await audit.WriteAsync(new AuditEntry("advertiser.invoice-paid", "AdvertiserInvoice", invoice.Id.ToString(), null, molliePaymentId), cancellationToken);
+            return mollieResult;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return mollieResult;
+    }
+
+    private static string? WebhookUrl(string baseUrl) =>
+        Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) && !uri.IsLoopback && uri.Scheme == Uri.UriSchemeHttps
+            ? $"{baseUrl}/api/v1/payments/mollie/webhook"
+            : null;
 }
 
 /// <summary>Verstuurt één factuur als PDF per e-mail namens de penningmeester (outbox).</summary>
@@ -275,14 +463,26 @@ public sealed class AdvertiserInvoiceMailHandler(
         var issuer = await invoices.IssuerAsync(cancellationToken);
         var pdf = InvoicePdf.Generate(invoice, issuer);
         var person = new MailingPerson(invoice.ContactName is null ? invoice.CompanyName : null, invoice.ContactName ?? invoice.CompanyName, invoice.CompanyName);
+        var baseUrl = mailingOptions.Value.PublicBaseUrl;
+        var payLink = baseUrl is not null && invoice.PaymentMethod == InvoicePaymentMethod.Mollie && invoice.Status != InvoiceStatus.Paid
+            ? invoices.PayLink(baseUrl, invoice.Id)
+            : null;
+        var blocks = new List<MailingBlock>
+        {
+            new("heading", $"Factuur {invoice.Number}"),
+            new("text", $"Beste {{voornaam}},\n\nHartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}."),
+            new("highlight", InvoicePdf.Money(invoice.TotalInclVat), "Bedrag", Note: InvoicePdf.PaymentText(invoice, issuer)),
+        };
+
+        // Een betaalknop alleen bij een echte https-link (niet in dev/tests); anders staat het overmaken al in de bedrag-notitie.
+        if (payLink is { } link && Uri.TryCreate(link, UriKind.Absolute, out var linkUri) && linkUri.Scheme == Uri.UriSchemeHttps)
+        {
+            blocks.Add(new MailingBlock("button", Label: "Betaal met iDEAL", Url: link, Align: "center"));
+        }
+
+        blocks.Add(new MailingBlock("closing", "Met vriendelijke groet,\nPenningmeester De Vrolijke Drammers"));
         var rendered = MailingRenderer.Render($"Factuur {invoice.Number} – {invoice.Description}", null,
-            [
-                new MailingBlock("heading", $"Factuur {invoice.Number}"),
-                new MailingBlock("text", $"Beste {{voornaam}},\n\nHartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}."),
-                new MailingBlock("highlight", InvoicePdf.Money(invoice.TotalInclVat), "Bedrag", Note: InvoicePdf.PaymentText(invoice, issuer)),
-                new MailingBlock("closing", "Met vriendelijke groet,\nPenningmeester De Vrolijke Drammers"),
-            ],
-            person, emailOptions.Value.LogoUrl, _ => null, null, mailingOptions.Value.PublicBaseUrl, AdvertiserInvoices.Treasurer);
+            blocks, person, emailOptions.Value.LogoUrl, _ => null, null, baseUrl, AdvertiserInvoices.Treasurer);
         await email.SendAsync(new EmailMessage(invoice.Email, rendered.Subject, rendered.PlainText, rendered.Html, AdvertiserInvoices.Treasurer.Email,
             AdvertiserInvoices.Treasurer.Role, [new EmailFile($"Factuur {invoice.Number}.pdf", "application/pdf", pdf)]), cancellationToken);
         invoice.SentAt = clock.UtcNow.UtcDateTime;

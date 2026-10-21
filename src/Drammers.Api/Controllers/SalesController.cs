@@ -143,7 +143,8 @@ public sealed class SalesController(
 [ApiController]
 [AllowAnonymous]
 [Route("api/v1/payments/mollie")]
-public sealed class MollieWebhookController(TicketSales sales, Infrastructure.Festival.DanceFestivals festivals) : ControllerBase
+public sealed class MollieWebhookController(
+    TicketSales sales, Infrastructure.Festival.DanceFestivals festivals, Infrastructure.Advertisers.Invoices.AdvertiserInvoices invoices) : ControllerBase
 {
     [HttpPost("webhook")]
     [Consumes("application/x-www-form-urlencoded")]
@@ -158,8 +159,8 @@ public sealed class MollieWebhookController(TicketSales sales, Infrastructure.Fe
 
         try
         {
-            // Betalingen van het Dansgardefestival eerst; anders een bestelling uit de kaartverkoop.
-            if (!await festivals.HandleWebhookAsync(id, cancellationToken))
+            // Dansgardefestival eerst, dan een adverteerders-factuur, anders een bestelling uit de kaartverkoop.
+            if (!await festivals.HandleWebhookAsync(id, cancellationToken) && !await invoices.HandleWebhookAsync(id, cancellationToken))
             {
                 await sales.HandleWebhookAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
             }

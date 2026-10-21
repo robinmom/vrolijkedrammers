@@ -982,7 +982,14 @@ export class MockApi {
     serviceFeeOn: false,
     serviceFeeCents: 0,
   };
-  invoices: { advertiserId: string; invoiceId: string; invoiceNumber: string; sentAt: string | null }[] = [];
+  invoices: {
+    advertiserId: string;
+    invoiceId: string;
+    invoiceNumber: string;
+    sentAt: string | null;
+    status: string;
+    paymentMethod: string;
+  }[] = [];
   advertiserRuns: {
     id: string;
     collectionDate: string;
@@ -1656,6 +1663,8 @@ export class MockApi {
           invoiceId: `inv-${seq}`,
           invoiceNumber: `ADV-2027-000${seq}`,
           sentAt: null,
+          status: 'Concept',
+          paymentMethod: a.payment === 'Cash' ? 'Cash' : 'Mollie',
         });
       }
       return json({ count: due.length });
@@ -1664,8 +1673,16 @@ export class MockApi {
       const toSend = this.invoices.filter(
         (i) => !i.sentAt && this.advertisers.find((a) => a.id === i.advertiserId)?.email,
       );
-      toSend.forEach((i) => (i.sentAt = '2026-11-02T10:00:00Z'));
+      toSend.forEach((i) => {
+        i.sentAt = '2026-11-02T10:00:00Z';
+        i.status = 'Sent';
+      });
       return json({ count: toSend.length });
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/invoices\/([^/]+)\/refresh-payment$/))) {
+      const inv = this.invoices.find((i) => i.invoiceId === m![1]);
+      if (inv) inv.status = 'Paid';
+      return noContent();
     }
     if (path === '/admin/advertisers/invoices/pdf' || /^\/admin\/advertisers\/invoices\/[^/]+\/pdf$/.test(path)) {
       return json({ pdf: true });
@@ -1685,6 +1702,11 @@ export class MockApi {
           invoiceNumber: inv?.invoiceNumber ?? null,
           invoiceDate: inv ? '2026-11-02' : null,
           sentAt: inv?.sentAt ?? null,
+          status: inv?.status ?? null,
+          paymentMethod: inv?.paymentMethod ?? null,
+          totalInclVat: inv ? a.amount2026 : null,
+          mollieStatus: null,
+          paidAt: null,
         };
       });
       return json({

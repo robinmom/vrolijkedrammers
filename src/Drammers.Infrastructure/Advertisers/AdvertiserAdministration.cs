@@ -37,7 +37,7 @@ public sealed record AdvertiserInput(
 public sealed record AdvertiserCollector(Guid MemberId, string Name);
 
 public sealed record AdvertiserStatusRow(
-    Guid Id, int Number, string CompanyName, string? City, AdvertiserKind Kind, AdvertiserPayment Payment, Guid? CollectorMemberId, string? CollectorName,
+    Guid Id, int Number, string CompanyName, string? City, string? Page, AdvertiserKind Kind, AdvertiserPayment Payment, Guid? CollectorMemberId, string? CollectorName,
     AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note, DateTime? PaidAt = null,
     int? Round = null);
 
@@ -566,7 +566,7 @@ public sealed class AdvertiserAdministration(
         {
             var current = a.Years.SingleOrDefault(y => y.Year == year);
             var previous = a.Years.Where(y => y.Year < year && (y.Amount is > 0 || y.IsFree)).OrderByDescending(y => y.Year).FirstOrDefault();
-            return new AdvertiserStatusRow(a.Id, a.Number, a.CompanyName, a.City, a.Kind, a.Payment, a.CollectorMemberId,
+            return new AdvertiserStatusRow(a.Id, a.Number, a.CompanyName, a.City, a.Page, a.Kind, a.Payment, a.CollectorMemberId,
                 a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : a.ImportedCollectorName,
                 current?.Status ?? AdvertiserYearStatus.Open, current?.Amount, current?.IsFree ?? false, previous?.Amount, current?.StatusChangedAt, current?.Note,
                 current?.PaidAt, current?.Round);
@@ -876,6 +876,16 @@ public sealed class AdvertiserAdministration(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("advertiser.round-changed", "Advertiser", advertiserId.ToString(), before?.ToString(CultureInfo.InvariantCulture),
             $"{year}: {round?.ToString(CultureInfo.InvariantCulture) ?? "geen"}"), cancellationToken);
+    }
+
+    /// <summary>De pagina in de krant (vrije tekst, kolom PAGINA) rechtstreeks vanuit de campagnelijst aanpassen.</summary>
+    public async Task SetPageAsync(Guid advertiserId, string? page, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.SingleOrDefaultAsync(a => a.Id == advertiserId, cancellationToken) ?? throw NotFound();
+        var before = advertiser.Page;
+        advertiser.Page = Clean(page, 50);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.page-changed", "Advertiser", advertiserId.ToString(), before, advertiser.Page), cancellationToken);
     }
 
     public async Task SetCashReceivedAsync(Guid advertiserId, int year, bool received, CancellationToken cancellationToken)

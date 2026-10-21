@@ -3286,6 +3286,70 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/{id}/page": {
+      "put": {
+        "tags": [
+          "AdminAdvertisers"
+        ],
+        "summary": "De pagina in de krant rechtstreeks vanuit de campagnelijst aanpassen (fase 27m).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserPageRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserPageRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvertiserPageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/export": {
       "get": {
         "tags": [
@@ -29777,6 +29841,20 @@
           }
         }
       },
+      "AdvertiserPageRequest": {
+        "required": [
+          "page"
+        ],
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AdvertiserPayment": {
         "enum": [
           "Mandate",
@@ -30176,6 +30254,7 @@
           "number",
           "companyName",
           "city",
+          "page",
           "kind",
           "payment",
           "collectorMemberId",
@@ -30201,6 +30280,12 @@
             "type": "string"
           },
           "city": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "page": {
             "type": [
               "null",
               "string"

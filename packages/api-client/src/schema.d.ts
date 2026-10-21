@@ -2786,6 +2786,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/{id}/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** De pagina in de krant rechtstreeks vanuit de campagnelijst aanpassen (fase 27m). */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdvertiserPageRequest"];
+                    "text/json": components["schemas"]["AdvertiserPageRequest"];
+                    "application/*+json": components["schemas"]["AdvertiserPageRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/export": {
         parameters: {
             query?: never;
@@ -23882,6 +23935,9 @@ export interface components {
         AdvertiserNoteRequest: {
             note: null | string;
         };
+        AdvertiserPageRequest: {
+            page: null | string;
+        };
         /**
          * @description Hoe de adverteerder betaalt (kolom M/C/R/B).
          * @enum {unknown}
@@ -23972,6 +24028,7 @@ export interface components {
             number: number;
             companyName: string;
             city: null | string;
+            page: null | string;
             kind: components["schemas"]["AdvertiserKind"];
             payment: components["schemas"]["AdvertiserPayment"];
             /** Format: uuid */

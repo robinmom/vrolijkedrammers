@@ -216,6 +216,16 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return NoContent();
     }
 
+    /// <summary>De pagina in de krant rechtstreeks vanuit de campagnelijst aanpassen (fase 27m).</summary>
+    [HttpPut("{id:guid}/page")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetPage(Guid id, AdvertiserPageRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.SetPageAsync(id, request.Page, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>
     /// Het overzicht als Excel (fase 27g): per actieve adverteerder de pagina, het bedrijf, het bedrag van de campagne (in te
     /// vullen), de bijdragen van de twee jaren ervoor en de opmerking van de collectant. De hele regel krijgt een kleur:
@@ -441,6 +451,8 @@ public sealed record AdvertiserStatusRequest(
 public sealed record CashReceivedRequest(bool Received);
 
 public sealed record AdvertiserRoundRequest([Range(1, 3)] int? Round);
+
+public sealed record AdvertiserPageRequest([StringLength(50)] string? Page);
 
 public sealed record AdvertiserInfoRequest([StringLength(1000)] string? Text, DateOnly? StartDate = null, DateOnly? EndDate = null);
 

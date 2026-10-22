@@ -28052,6 +28052,7 @@ export interface components {
             clientId: string;
             authority: string;
             apiScope: string;
+            environment: string;
         };
         PortalOrderRequest: {
             /** Format: uuid */

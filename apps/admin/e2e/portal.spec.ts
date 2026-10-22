@@ -1104,3 +1104,25 @@ test('fase 4b: Mollie-afrekening met verzamelstaat en versturen', async ({ page 
   await page.getByRole('button', { name: 'Versturen' }).click();
   await expect(page.getByText(/onderweg naar penningmeester@vrolijkedrammers\.nl/)).toBeVisible();
 });
+
+test('omgevingsbanner: dev krijgt een gekleurde achtergrond en een banner', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'gebruikers');
+  // Zet de omgeving zoals main.tsx dat uit de portal-config doet (in mock-modus niet automatisch). De CSS-tint werkt meteen.
+  await page.evaluate(() => document.documentElement.setAttribute('data-environment', 'dev'));
+  const canvas = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--dvd-canvas').trim(),
+  );
+  expect(canvas.toLowerCase()).toBe('#fbe6c2');
+
+  // Client-side navigatie laat Layout opnieuw renderen, waarna de banner op basis van de omgeving verschijnt.
+  await openMenuIfMobile(page);
+  await page.getByRole('link', { name: 'Rollen en rechten' }).click();
+  await expect(page.getByText('Ontwikkelomgeving (dev) — dit is niet de productieomgeving.')).toBeVisible();
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+  await expectNoSeriousA11yIssues(page);
+});

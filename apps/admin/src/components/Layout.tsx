@@ -64,6 +64,8 @@ export function Layout() {
     });
   const name = me.data?.displayName ?? auth.user?.name;
   const role = me.data?.roles[0]?.name;
+  // Buiten productie (dev/acc) kleurt de achtergrond en toont een banner; de omgeving staat op <html> (zie config.applyEnvironment).
+  const environment = document.documentElement.dataset.environment ?? 'prod';
 
   return (
     <div className="layout">
@@ -141,6 +143,11 @@ export function Layout() {
         </div>
       </header>
       <main id="inhoud" tabIndex={-1}>
+        {environment !== 'prod' ? (
+          <p className="env-banner" role="status">
+            {environment === 'acc' ? 'Acceptatieomgeving' : 'Ontwikkelomgeving'} ({environment}) — dit is niet de productieomgeving.
+          </p>
+        ) : null}
         {me.isError ? <ProblemAlert error={me.error} /> : null}
         {me.isSuccess && sections.length === 0 ? <NoAccess /> : me.isSuccess ? <Outlet /> : <p>Laden…</p>}
       </main>

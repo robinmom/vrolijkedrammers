@@ -5192,6 +5192,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/finance/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    carnivalYearId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FinanceOverviewReport"];
+                        "application/json": components["schemas"]["FinanceOverviewReport"];
+                        "text/json": components["schemas"]["FinanceOverviewReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    carnivalYearId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FinanceStatisticsReport"];
+                        "application/json": components["schemas"]["FinanceStatisticsReport"];
+                        "text/json": components["schemas"]["FinanceStatisticsReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/festival-invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    carnivalYearId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalInvoiceRow"][];
+                        "application/json": components["schemas"]["FestivalInvoiceRow"][];
+                        "text/json": components["schemas"]["FestivalInvoiceRow"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/finance/income": {
         parameters: {
             query?: never;
@@ -25742,6 +25859,16 @@ export interface components {
         FestivalHeadRequest: {
             headJury: boolean;
         };
+        /** @description Eén festival-factuur (betaalverzoek) voor de facturen-pagina, bedragen in euro's. */
+        FestivalInvoiceRow: {
+            number: string;
+            club: string;
+            /** Format: date */
+            date: string;
+            /** Format: double */
+            total: number;
+            status: string;
+        };
         FestivalJurorRequest: {
             name: string;
             email: string;
@@ -26016,6 +26143,51 @@ export interface components {
             source: components["schemas"]["RegistrationSource"];
             /** Format: date-time */
             changedAt: string;
+        };
+        /** @description Totaaloverzicht van een carnavalsjaar: de inkomstenbronnen (adverteerders, festival, kaartverkoop) met hun stand. */
+        FinanceOverviewReport: {
+            /** Format: int32 */
+            carnivalYearId: number;
+            year: string;
+            /** Format: double */
+            total: number;
+            /** Format: double */
+            paid: number;
+            /** Format: double */
+            open: number;
+            sources: components["schemas"]["FinanceSourceAmount"][];
+        };
+        /** @description Eén inkomstenbron met het verwachte totaal en wat daarvan betaald is (euro's, incl. btw). */
+        FinanceSourceAmount: {
+            source: string;
+            /** Format: double */
+            total: number;
+            /** Format: double */
+            paid: number;
+        };
+        /** @description Statistieken: alles (incl. contributie) voor het gekozen jaar, de groei t.o.v. vorig jaar en de reeks per carnavalsjaar. */
+        FinanceStatisticsReport: {
+            /** Format: int32 */
+            carnivalYearId: number;
+            year: string;
+            /** Format: double */
+            total: number;
+            /** Format: double */
+            paid: number;
+            /** Format: double */
+            open: number;
+            /** Format: double */
+            growthPercent: null | number;
+            sources: components["schemas"]["FinanceSourceAmount"][];
+            perYear: components["schemas"]["FinanceYearTotal"][];
+        };
+        /** @description Het totaal van één carnavalsjaar (alle bronnen incl. contributie), voor de grafiek "per carnavalsjaar". */
+        FinanceYearTotal: {
+            /** Format: int32 */
+            carnivalYearId: number;
+            year: string;
+            /** Format: double */
+            total: number;
         };
         FixedEntriesRequest: {
             entries: components["schemas"]["FixedEntryDto"][];

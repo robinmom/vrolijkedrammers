@@ -3406,6 +3406,45 @@ export class MockApi {
     if (path.startsWith('/admin/advertisers')) {
       return this.handleAdvertisers(path, method, body, url, json, noContent);
     }
+    if (path === '/admin/finance/overview') {
+      const sources = [
+        { source: 'Adverteerders', total: 278.3, paid: 217.8 },
+        { source: 'Dansgardefestival', total: 460, paid: 460 },
+        { source: 'Kaartverkoop', total: 1240.5, paid: 1180 },
+      ];
+      const total = sources.reduce((s, r) => s + r.total, 0);
+      const paid = sources.reduce((s, r) => s + r.paid, 0);
+      return json({ carnivalYearId: 2, year: '2026/2027', total, paid, open: total - paid, sources });
+    }
+    if (path === '/admin/finance/statistics') {
+      const sources = [
+        { source: 'Adverteerders', total: 278.3, paid: 217.8 },
+        { source: 'Dansgardefestival', total: 460, paid: 460 },
+        { source: 'Kaartverkoop', total: 1240.5, paid: 1180 },
+        { source: 'Contributie', total: 3120, paid: 3120 },
+      ];
+      const total = sources.reduce((s, r) => s + r.total, 0);
+      const paid = sources.reduce((s, r) => s + r.paid, 0);
+      return json({
+        carnivalYearId: 2,
+        year: '2026/2027',
+        total,
+        paid,
+        open: total - paid,
+        growthPercent: 13.1,
+        sources,
+        perYear: [
+          { carnivalYearId: 1, year: '2026', total: 4510 },
+          { carnivalYearId: 2, year: '2027', total },
+        ],
+      });
+    }
+    if (path === '/admin/finance/festival-invoices') {
+      return json([
+        { number: 'FEST-2027-0001', club: 'DV Loil', date: '2026-01-15', total: 120, status: 'Betaald' },
+        { number: 'FEST-2027-0002', club: 'De Dansmariekes', date: '2026-01-18', total: 90, status: 'Open' },
+      ]);
+    }
     if (path === '/admin/finance/income/export') {
       return json({ csv: true });
     }

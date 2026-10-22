@@ -76,19 +76,24 @@ export function BarChart({
   title,
   primaryLabel,
   secondaryLabel,
+  format = (value) => String(value),
 }: {
   bars: Bar[];
   title: string;
   primaryLabel: string;
   secondaryLabel?: string;
+  /** Hoe de waarde als tekst wordt getoond (bijv. euro's); standaard het getal zelf. */
+  format?: (value: number) => string;
 }) {
   const max = Math.max(1, ...bars.map((b) => Math.max(b.value, b.secondary ?? 0)));
   return (
     <figure className="chart bar-chart">
       <div
         className="bars"
+        // De staafjes kunnen op smalle schermen horizontaal scrollen; dan moet de regio met het toetsenbord bereikbaar zijn (net als .table-scroll).
+        tabIndex={0}
         role="img"
-        aria-label={`${title}. ${bars.map((b) => `${b.label}: ${b.value} ${primaryLabel.toLowerCase()}`).join(', ')}`}
+        aria-label={`${title}. ${bars.map((b) => `${b.label}: ${format(b.value)} ${primaryLabel.toLowerCase()}`).join(', ')}`}
       >
         {bars.map((b) => (
           <div key={b.label} className="bar-column">
@@ -106,7 +111,7 @@ export function BarChart({
                 title={`${b.value} ${primaryLabel}`}
               />
             </div>
-            <span className="bar-value">{b.value}</span>
+            <span className="bar-value">{format(b.value)}</span>
             <span className="bar-label">{b.label}</span>
           </div>
         ))}

@@ -6028,6 +6028,132 @@
         }
       }
     },
+    "/api/v1/admin/finance/overview": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "carnivalYearId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceOverviewReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceOverviewReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceOverviewReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/statistics": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "carnivalYearId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceStatisticsReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceStatisticsReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinanceStatisticsReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/festival-invoices": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "carnivalYearId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalInvoiceRow"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalInvoiceRow"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalInvoiceRow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/finance/income": {
       "get": {
         "tags": [
@@ -35267,6 +35393,36 @@
           }
         }
       },
+      "FestivalInvoiceRow": {
+        "required": [
+          "number",
+          "club",
+          "date",
+          "total",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string"
+          },
+          "club": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "description": "Eén festival-factuur (betaalverzoek) voor de facturen-pagina, bedragen in euro's."
+      },
       "FestivalJurorRequest": {
         "required": [
           "name",
@@ -36224,6 +36380,143 @@
             "format": "date-time"
           }
         }
+      },
+      "FinanceOverviewReport": {
+        "required": [
+          "carnivalYearId",
+          "year",
+          "total",
+          "paid",
+          "open",
+          "sources"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "year": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "paid": {
+            "type": "number",
+            "format": "double"
+          },
+          "open": {
+            "type": "number",
+            "format": "double"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinanceSourceAmount"
+            }
+          }
+        },
+        "description": "Totaaloverzicht van een carnavalsjaar: de inkomstenbronnen (adverteerders, festival, kaartverkoop) met hun stand."
+      },
+      "FinanceSourceAmount": {
+        "required": [
+          "source",
+          "total",
+          "paid"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "paid": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Eén inkomstenbron met het verwachte totaal en wat daarvan betaald is (euro's, incl. btw)."
+      },
+      "FinanceStatisticsReport": {
+        "required": [
+          "carnivalYearId",
+          "year",
+          "total",
+          "paid",
+          "open",
+          "growthPercent",
+          "sources",
+          "perYear"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "year": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "paid": {
+            "type": "number",
+            "format": "double"
+          },
+          "open": {
+            "type": "number",
+            "format": "double"
+          },
+          "growthPercent": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinanceSourceAmount"
+            }
+          },
+          "perYear": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinanceYearTotal"
+            }
+          }
+        },
+        "description": "Statistieken: alles (incl. contributie) voor het gekozen jaar, de groei t.o.v. vorig jaar en de reeks per carnavalsjaar."
+      },
+      "FinanceYearTotal": {
+        "required": [
+          "carnivalYearId",
+          "year",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "year": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Het totaal van één carnavalsjaar (alle bronnen incl. contributie), voor de grafiek \"per carnavalsjaar\"."
       },
       "FixedEntriesRequest": {
         "required": [

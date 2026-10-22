@@ -14,8 +14,24 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/admin/finance")]
 [RequirePermission(Permissions.FinanceRead)]
-public sealed class AdminFinanceController(IncomeReports income, MollieSettlements settlements, AdvertiserAdministration advertisers) : ControllerBase
+public sealed class AdminFinanceController(
+    IncomeReports income, FinanceReports finance, MollieSettlements settlements, AdvertiserAdministration advertisers) : ControllerBase
 {
+    [HttpGet("overview")]
+    [ProducesResponseType<FinanceOverviewReport>(StatusCodes.Status200OK)]
+    public async Task<FinanceOverviewReport> Overview([FromQuery] int? carnivalYearId, CancellationToken cancellationToken) =>
+        await finance.OverviewAsync(carnivalYearId, cancellationToken);
+
+    [HttpGet("statistics")]
+    [ProducesResponseType<FinanceStatisticsReport>(StatusCodes.Status200OK)]
+    public async Task<FinanceStatisticsReport> Statistics([FromQuery] int? carnivalYearId, CancellationToken cancellationToken) =>
+        await finance.StatisticsAsync(carnivalYearId, cancellationToken);
+
+    [HttpGet("festival-invoices")]
+    [ProducesResponseType<IReadOnlyList<FestivalInvoiceRow>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<FestivalInvoiceRow>> FestivalInvoices([FromQuery] int? carnivalYearId, CancellationToken cancellationToken) =>
+        await finance.FestivalInvoicesAsync(carnivalYearId, cancellationToken);
+
     [HttpGet("income")]
     [ProducesResponseType<IncomeReport>(StatusCodes.Status200OK)]
     public async Task<IncomeReport> Income([FromQuery] int? year, CancellationToken cancellationToken) =>

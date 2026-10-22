@@ -830,6 +830,27 @@ ul.alert {
   padding: 8px 12px;
 }
 
+/* Afsluitende totaalregel (bijv. inkomsten per bron): nadruk met een lijn erboven. */
+.table .total-row th,
+.table .total-row td {
+  font-weight: 600;
+  border-top: 2px solid var(--dvd-border);
+}
+
+/* Twee grafieken naast elkaar (statistieken); minmax(0,…) houdt de kolom smaller dan de staafjes, zodat die zelf scrollen i.p.v. de pagina. */
+.finance-charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 720px) {
+  .finance-charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .table .cell-title {
   font-weight: 600;
 }

@@ -9,6 +9,8 @@ import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { IncomePage, SettlementsPage } from './pages/FinancePage';
+import { FinanceOverviewPage, FinanceStatisticsPage } from './pages/FinanceOverviewPage';
+import { FacturenPage } from './pages/FacturenPage';
 import { EventEditorPage, EventsPage } from './pages/EventsPage';
 import { GroupDetailPage, GroupsPage } from './pages/GroupsPage';
 import { MemberDetailPage } from './pages/MemberDetailPage';
@@ -94,6 +96,13 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/import', component: guarded('advertiser.manage', AdvertiserImportPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/incasso', component: guarded('advertiser.manage', AdvertiserCollectionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/facturen', component: guarded('advertiser.manage', AdvertiserInvoicesPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/financieel', component: guarded('finance.read', FinanceOverviewPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/financieel/statistieken', component: guarded('finance.read', FinanceStatisticsPage) }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/financieel/facturen',
+    component: guarded(['finance.read', 'advertiser.manage'], FacturenPage),
+  }),
   createRoute({ getParentRoute: () => rootRoute, path: '/inkomsten', component: guarded('finance.read', IncomePage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/afrekeningen', component: guarded('finance.read', SettlementsPage) }),
   createRoute({

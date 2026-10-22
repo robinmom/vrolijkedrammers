@@ -13,6 +13,7 @@ export interface NavItem {
     | 'Website'
     | 'Mailing'
     | 'Adverteerders'
+    | 'Financieel'
     | 'Leden'
     | 'Dansgarde'
     | 'Prins'
@@ -50,10 +51,19 @@ export const navItems: readonly NavItem[] = [
   { label: 'Campagne', to: '/adverteerders/campagne', permission: 'advertiser.manage', icon: 'jaar', section: 'Adverteerders' },
   // Fase 27c: incasso van de opgehaalde bijdragen.
   { label: 'Incasso', to: '/adverteerders/incasso', permission: 'advertiser.manage', icon: 'sync', section: 'Adverteerders' },
-  // Fase 27e: facturen als PDF.
-  { label: 'Facturen', to: '/adverteerders/facturen', permission: 'advertiser.manage', icon: 'download', section: 'Adverteerders' },
-  { label: 'Inkomsten', to: '/inkomsten', permission: 'finance.read', icon: 'rapport', section: 'Adverteerders' },
-  { label: 'Afrekeningen', to: '/afrekeningen', permission: 'finance.read', icon: 'sync', section: 'Adverteerders' },
+  // Fase 4c: Financieel — alle betalingen per carnavalsjaar bij elkaar.
+  { label: 'Totaaloverzicht', to: '/financieel', permission: 'finance.read', icon: 'rapport', section: 'Financieel' },
+  { label: 'Statistieken', to: '/financieel/statistieken', permission: 'finance.read', icon: 'rapport', section: 'Financieel' },
+  // Fase 27e: facturen (adverteerders + Dansgardefestival) als PDF.
+  {
+    label: 'Facturen',
+    to: '/financieel/facturen',
+    permission: ['finance.read', 'advertiser.manage'],
+    icon: 'download',
+    section: 'Financieel',
+  },
+  { label: 'Inkomsten', to: '/inkomsten', permission: 'finance.read', icon: 'rapport', section: 'Financieel' },
+  { label: 'Afrekeningen', to: '/afrekeningen', permission: 'finance.read', icon: 'sync', section: 'Financieel' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.

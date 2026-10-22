@@ -298,7 +298,7 @@ public sealed class AdvertiserInvoices(
     {
         var invoice = await db.AdvertiserInvoices.AsNoTracking().SingleOrDefaultAsync(i => i.Id == id, cancellationToken)
             ?? throw new DomainException(ErrorCodes.NotFound, "Factuur niet gevonden.", DomainErrorKind.NotFound);
-        return ($"Factuur {invoice.Number}.pdf", InvoicePdf.Generate(invoice, await IssuerAsync(cancellationToken)));
+        return ($"Factuur {invoice.Number}.pdf", InvoicePdf.Generate(invoice, await IssuerAsync(cancellationToken), PdfPayLink(invoice)));
     }
 
     /// <summary>Alle facturen van het jaar in één PDF; met <paramref name="withoutEmailOnly"/> alleen wie geen e-mailadres heeft (om te printen).</summary>
@@ -311,7 +311,19 @@ public sealed class AdvertiserInvoices(
             throw new DomainException(ErrorCodes.Validation, "Er zijn (nog) geen facturen om af te drukken.");
         }
 
-        return ($"Facturen {year}{(withoutEmailOnly ? " zonder e-mail" : "")}.pdf", InvoicePdf.Generate(invoices, await IssuerAsync(cancellationToken)));
+        return ($"Facturen {year}{(withoutEmailOnly ? " zonder e-mail" : "")}.pdf", InvoicePdf.Generate(invoices, await IssuerAsync(cancellationToken), PdfPayLink));
+    }
+
+    /// <summary>De Mollie-betaallink voor op de PDF: alleen bij een nog niet betaalde Mollie-factuur én een echte https-basis-URL (niet in dev/tests).</summary>
+    public string? PdfPayLink(AdvertiserInvoice invoice)
+    {
+        if (mailingOptions.Value.PublicBaseUrl is not { } baseUrl || invoice.PaymentMethod != InvoicePaymentMethod.Mollie || invoice.Status == InvoiceStatus.Paid)
+        {
+            return null;
+        }
+
+        var link = PayLink(baseUrl, invoice.Id);
+        return Uri.TryCreate(link, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps ? link : null;
     }
 
     // ---- Online betalen via Mollie (fase 27o) --------------------------------------------------------------------
@@ -521,7 +533,7 @@ public sealed class AdvertiserInvoiceMailHandler(
         }
 
         var issuer = await invoices.IssuerAsync(cancellationToken);
-        var pdf = InvoicePdf.Generate(invoice, issuer);
+        var pdf = InvoicePdf.Generate(invoice, issuer, invoices.PdfPayLink(invoice));
         var person = new MailingPerson(invoice.ContactName is null ? invoice.CompanyName : null, invoice.ContactName ?? invoice.CompanyName, invoice.CompanyName);
         var baseUrl = mailingOptions.Value.PublicBaseUrl;
         var payLink = baseUrl is not null && invoice.PaymentMethod == InvoicePaymentMethod.Mollie && invoice.Status != InvoiceStatus.Paid

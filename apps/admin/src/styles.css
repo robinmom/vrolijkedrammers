@@ -2353,6 +2353,40 @@ fieldset {
   min-width: 0;
 }
 
+/* Uitklapbare categorie: chevron + naam samen één duidelijke, grote klikknop (het kleine losse pijltje werd gemist). */
+.program-disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 6px 8px;
+  margin: -6px -4px -6px -8px;
+  border-radius: 8px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.program-disclosure:hover {
+  background: var(--dvd-surface-muted);
+}
+
+.program-disclosure:focus-visible {
+  outline: 2px solid var(--dvd-action-secondary);
+  outline-offset: 2px;
+}
+
+.program-chevron {
+  flex: none;
+  width: 1em;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+  color: var(--dvd-action-secondary);
+}
+
 .program-time {
   width: 7.5em;
 }

@@ -252,17 +252,6 @@ function ItemRow({
 
   return (
     <div className="program-row">
-      {category ? (
-        <button
-          type="button"
-          className="link-button program-toggle"
-          aria-expanded={expanded}
-          aria-label={`${expanded ? 'Verberg' : 'Toon'} dansen ${item.title}`}
-          onClick={onToggle}
-        >
-          {expanded ? '▾' : '▸'}
-        </button>
-      ) : null}
       <input
         className="program-time"
         type="time"
@@ -273,7 +262,22 @@ function ItemRow({
         onBlur={commit}
       />
       <span className="grow">
-        <strong>{item.title}</strong>
+        {category ? (
+          <button
+            type="button"
+            className="program-disclosure"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'Verberg' : 'Toon'} dansen ${item.title}`}
+            onClick={onToggle}
+          >
+            <span className="program-chevron" aria-hidden="true">
+              {expanded ? '▾' : '▸'}
+            </span>
+            <strong>{item.title}</strong>
+          </button>
+        ) : (
+          <strong>{item.title}</strong>
+        )}
         <span className="muted small-text">
           {' '}
           {category

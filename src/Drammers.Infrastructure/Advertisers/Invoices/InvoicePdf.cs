@@ -21,6 +21,13 @@ public static class InvoicePdf
     private const string Red = "#ED0012";
     private const string Muted = "#4A5B69";
     private const string Grey = "#F0F1F2";
+    private const string Link = "#066AA6";
+
+    /// <summary>De verenigingsnaam op de factuur; de SEPA-incassonaam (<see cref="InvoiceIssuer.Name"/>) is daarvoor niet bedoeld.</summary>
+    private const string AssociationName = "Carnavalsvereniging De Vrolijke Drammers";
+
+    /// <summary>Breedte van het rechterblok (verenigingsgegevens en factuurgegevens), zodat ze op dezelfde kolom uitlijnen.</summary>
+    private const float RightBlock = 224;
 
     private static readonly Lazy<byte[]> Logo = new(() => Read("logo.png"));
 
@@ -44,16 +51,16 @@ public static class InvoicePdf
     /// <summary>Andere documenten in de huisstijl (festival): zorgt dat Inter en Poppins zijn geregistreerd.</summary>
     public static void EnsureFonts() => _ = Logo;
 
-    /// <summary>Eén factuur.</summary>
-    public static byte[] Generate(AdvertiserInvoice invoice, InvoiceIssuer issuer) => Generate([invoice], issuer);
+    /// <summary>Eén factuur; <paramref name="payLink"/> is de Mollie-betaallink (of <c>null</c> als er niet online betaald wordt).</summary>
+    public static byte[] Generate(AdvertiserInvoice invoice, InvoiceIssuer issuer, string? payLink = null) => Generate([invoice], issuer, _ => payLink);
 
-    /// <summary>Meerdere facturen in één PDF, elk op een eigen pagina (om te printen).</summary>
-    public static byte[] Generate(IReadOnlyList<AdvertiserInvoice> invoices, InvoiceIssuer issuer) =>
+    /// <summary>Meerdere facturen in één PDF, elk op een eigen pagina (om te printen); <paramref name="payLink"/> geeft de betaallink per factuur.</summary>
+    public static byte[] Generate(IReadOnlyList<AdvertiserInvoice> invoices, InvoiceIssuer issuer, Func<AdvertiserInvoice, string?>? payLink = null) =>
         Document.Create(document =>
         {
             foreach (var invoice in invoices)
             {
-                document.Page(page => Page(page, invoice, issuer));
+                document.Page(page => Page(page, invoice, issuer, payLink?.Invoke(invoice)));
             }
         }).WithMetadata(new DocumentMetadata { Title = invoices.Count == 1 ? $"Factuur {invoices[0].Number}" : "Facturen", Author = issuer.Name, Creator = issuer.Name })
         .GeneratePdf();
@@ -77,49 +84,46 @@ public static class InvoicePdf
                 return $"Contant voldaan op {paid.ToString("d MMMM yyyy", Dutch)}. Hartelijk dank voor uw steun!";
             }
 
-            var transfer = issuer.Iban is null ? "" : $", of overmaken op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}";
+            var transfer = issuer.Iban is null ? "" : $", of overmaken op {FormatIban(issuer.Iban)} t.n.v. {AssociationName} onder vermelding van {invoice.Number}";
             return $"Graag vóór {due} contant voldoen aan de collectant{transfer}.";
         }
 
         // Online betalen (iDEAL via Mollie): de betaallink staat in de begeleidende e-mail; overmaken onder vermelding
         // van het factuurnummer kan altijd en is zo op het bankafschrift herleidbaar.
         return issuer.Iban is null
-            ? $"Betaal met iDEAL via de betaallink in de e-mail, of maak vóór {due} over onder vermelding van {invoice.Number}."
-            : $"Betaal met iDEAL via de betaallink in de e-mail, of maak vóór {due} over op {FormatIban(issuer.Iban)} t.n.v. {issuer.Name} onder vermelding van {invoice.Number}.";
+            ? $"U kunt online met iDEAL betalen via de betaallink in de e-mail of op de factuur, of het bedrag vóór {due} overmaken onder vermelding van {invoice.Number}."
+            : $"U kunt online met iDEAL betalen via de betaallink in de e-mail of op de factuur, of het bedrag vóór {due} overmaken op {FormatIban(issuer.Iban)} t.n.v. {AssociationName} onder vermelding van {invoice.Number}.";
     }
 
     public static string Money(decimal amount) => amount.ToString("C", Dutch);
 
-    private static void Page(PageDescriptor page, AdvertiserInvoice invoice, InvoiceIssuer issuer)
+    private static void Page(PageDescriptor page, AdvertiserInvoice invoice, InvoiceIssuer issuer, string? payLink)
     {
         page.Size(PageSizes.A4);
         page.Margin(48);
         page.PageColor(Colors.White);
         page.DefaultTextStyle(t => t.FontFamily("Inter").FontSize(10).FontColor(Navy).LineHeight(1.4f));
 
-        page.Header().Row(row =>
-        {
-            row.ConstantItem(72).Image(Logo.Value).FitArea();
-            row.RelativeItem().PaddingLeft(16).AlignMiddle().Column(column =>
-            {
-                column.Item().Text(issuer.Name).FontFamily("Poppins").SemiBold().FontSize(12);
-                column.Item().Text("Carnavalsvereniging Loil · sinds 1958").FontColor(Muted).FontSize(9);
-            });
-            row.ConstantItem(180).AlignRight().AlignMiddle().Column(column =>
-            {
-                column.Item().AlignRight().Text("Factuur").FontFamily("Poppins").Bold().FontSize(26).FontColor(Red);
-                column.Item().AlignRight().Text(invoice.Number).FontFamily("Poppins").SemiBold();
-            });
-        });
-
-        page.Content().PaddingTop(28).Column(column =>
+        page.Content().Column(column =>
         {
             column.Spacing(20);
+
+            // Boven: links het logo met de naam ernaast; rechts de gegevens van de vereniging (vaste kolombreedte).
+            column.Item().Row(row =>
+            {
+                row.RelativeItem().AlignTop().Row(lr =>
+                {
+                    lr.ConstantItem(72).Image(Logo.Value).FitWidth();
+                    lr.AutoItem().PaddingLeft(16).AlignMiddle().Text("De Vrolijke Drammers").FontFamily("Poppins").SemiBold().FontSize(12);
+                });
+                row.ConstantItem(RightBlock).AlignTop().Element(e => IssuerBlock(e, issuer));
+            });
+
+            // Links de ontvanger met "Factuur" en het nummer; rechts de factuurgegevens, op dezelfde kolom als KvK en ter hoogte van de bedrijfsnaam.
             column.Item().Row(row =>
             {
                 row.RelativeItem().Column(to =>
                 {
-                    to.Item().Text("Aan").FontColor(Muted).FontSize(9);
                     to.Item().Text(invoice.CompanyName).Bold();
                     if (invoice.ContactName is { Length: > 0 } contact)
                     {
@@ -135,60 +139,17 @@ public static class InvoicePdf
                     {
                         to.Item().Text(string.Join("  ", new[] { invoice.PostalCode, invoice.City }.OfType<string>()));
                     }
-                });
-                row.ConstantItem(200).Column(from =>
-                {
-                    from.Item().Text("Van").FontColor(Muted).FontSize(9);
-                    from.Item().Text(issuer.Name).Bold();
-                    foreach (var line in issuer.AddressLines)
-                    {
-                        from.Item().Text(line);
-                    }
 
-                    if (issuer.Phone is { Length: > 0 } phone)
+                    to.Item().PaddingTop(20).Text("Factuur").FontFamily("Poppins").Bold().FontSize(26).FontColor(Red);
+                    to.Item().Text(invoice.Number).FontFamily("Poppins").SemiBold();
+                    if (payLink is { Length: > 0 } link)
                     {
-                        from.Item().Text(phone);
-                    }
-
-                    from.Item().Text(issuer.Email);
-                    if (issuer.Website is { Length: > 0 } website)
-                    {
-                        from.Item().Text(website);
-                    }
-
-                    if (issuer.Iban is { Length: > 0 } iban)
-                    {
-                        from.Item().Text($"IBAN {FormatIban(iban)}");
-                    }
-
-                    if (issuer.Kvk is { Length: > 0 } kvk)
-                    {
-                        from.Item().Text($"KvK {kvk}");
-                    }
-
-                    if (issuer.VatNumber is { Length: > 0 } vat)
-                    {
-                        from.Item().Text($"Btw-nr {vat}");
+                        to.Item().PaddingTop(8).Hyperlink(link).Text("Betaal direct").FontColor(Link).Underline().FontSize(13).Bold();
                     }
                 });
+                row.ConstantItem(RightBlock).AlignTop().Element(e => InvoiceMeta(e, invoice));
             });
 
-            column.Item().Row(row =>
-            {
-                row.RelativeItem().Text(t =>
-                {
-                    t.Span("Factuurdatum: ").FontColor(Muted);
-                    t.Span(invoice.InvoiceDate.ToString("d MMMM yyyy", Dutch));
-                });
-                row.RelativeItem().AlignRight().Text(t =>
-                {
-                    t.Span("Factuurnummer: ").FontColor(Muted);
-                    t.Span(invoice.Number);
-                });
-            });
-
-            var totalVat = invoice.VatAmount + invoice.ServiceFeeVat;
-            var subtotal = invoice.Amount + invoice.ServiceFeeNet;
             column.Item().Table(table =>
             {
                 table.ColumnsDefinition(c =>
@@ -213,30 +174,138 @@ public static class InvoicePdf
                 {
                     Line("Servicekosten (betaling via iDEAL)", invoice.ServiceFeeNet);
                 }
-
-                if (totalVat > 0)
-                {
-                    Line("Subtotaal (excl. btw)", subtotal);
-                    Line("Btw 21%", totalVat);
-                }
-
-                table.Cell().Padding(8).AlignRight().Text(totalVat > 0 ? "Totaal incl. btw" : "Totaal").FontFamily("Poppins").SemiBold();
-                table.Cell().Padding(8).AlignRight().Text(Money(invoice.TotalInclVat)).FontFamily("Poppins").Bold().FontSize(12);
             });
 
             if (invoice.VatRate == 0)
             {
                 column.Item().Text("Giften zijn vrijgesteld van btw (geen prestatie).").FontColor(Muted).FontSize(9);
             }
-
-            column.Item().Background(Grey).Padding(14).Text(PaymentText(invoice, issuer));
-            column.Item().Text("Hartelijk dank voor uw bijdrage aan het carnaval in Loil. Alaaf!");
         });
 
-        page.Footer().AlignCenter().Text(t =>
+        // Onderaan (duwt vanzelf naar beneden zodat de A4 gevuld is): de totalen, de betaalgegevens en de voettekst.
+        page.Footer().Column(footer =>
         {
-            t.DefaultTextStyle(s => s.FontSize(8).FontColor(Muted));
-            t.Span($"Vragen over deze factuur? {issuer.Email} · www.vrolijkedrammers.nl");
+            footer.Item().AlignRight().Width(260).Element(e => Totals(e, invoice));
+
+            footer.Item().PaddingTop(16).Background(Grey).Padding(14).Text(PaymentText(invoice, issuer));
+
+            footer.Item().PaddingTop(16).AlignCenter().Text(t =>
+            {
+                t.DefaultTextStyle(s => s.FontSize(8).FontColor(Muted));
+                t.Span($"Vragen over deze factuur? {issuer.Email} · www.vrolijkedrammers.nl");
+            });
+        });
+    }
+
+    private static void Totals(IContainer container, AdvertiserInvoice invoice)
+    {
+        var totalVat = invoice.VatAmount + invoice.ServiceFeeVat;
+        var subtotal = invoice.Amount + invoice.ServiceFeeNet;
+        container.Column(col =>
+        {
+            // De eurotekens in een eigen kolom (links uitgelijnd), de bedragen rechts ernaast, zodat de € netjes onder elkaar staan.
+            void Line(string label, decimal amount)
+            {
+                col.Item().Row(row =>
+                {
+                    row.RelativeItem().Text(label).FontColor(Muted);
+                    row.ConstantItem(16).Text("€").FontColor(Muted);
+                    row.ConstantItem(72).AlignRight().Text(AmountOnly(amount)).FontColor(Muted);
+                });
+            }
+
+            if (totalVat > 0)
+            {
+                Line("Subtotaal (excl. btw)", subtotal);
+                Line("Btw 21%", totalVat);
+            }
+
+            col.Item().PaddingTop(6).BorderTop(1).BorderColor(Navy).PaddingTop(6).Row(row =>
+            {
+                row.RelativeItem().Text(totalVat > 0 ? "Totaal incl. btw" : "Totaal").FontFamily("Poppins").SemiBold();
+                row.ConstantItem(16).Text("€").FontFamily("Poppins").Bold().FontSize(13);
+                row.ConstantItem(72).AlignRight().Text(AmountOnly(invoice.TotalInclVat)).FontFamily("Poppins").Bold().FontSize(13);
+            });
+        });
+    }
+
+    private static string AmountOnly(decimal value) => value.ToString("#,##0.00", Dutch);
+
+    private static void InvoiceMeta(IContainer container, AdvertiserInvoice invoice)
+    {
+        container.Column(col =>
+        {
+            void LabelValue(string label, string value)
+            {
+                col.Item().Row(r =>
+                {
+                    r.ConstantItem(100).Text(label).SemiBold();
+                    r.AutoItem().Text(value);
+                });
+            }
+
+            LabelValue("Factuurdatum", invoice.InvoiceDate.ToString("dd-MM-yyyy", Dutch));
+            LabelValue("Betalingstermijn", $"{invoice.DueDate.DayNumber - invoice.InvoiceDate.DayNumber} dagen");
+        });
+    }
+
+    private static void IssuerBlock(IContainer container, InvoiceIssuer issuer)
+    {
+        container.Column(col =>
+        {
+            col.Item().Text(AssociationName).SemiBold();
+            foreach (var line in issuer.AddressLines)
+            {
+                col.Item().Text(line);
+            }
+
+            // t/e/i in een vaste letterkolom, zodat het telefoonnummer, de e-mail en de site netjes gelijk beginnen.
+            void Contact(string letter, string value)
+            {
+                col.Item().Row(r =>
+                {
+                    r.ConstantItem(16).Text(letter).SemiBold();
+                    r.AutoItem().Text(value);
+                });
+            }
+
+            if (issuer.Phone is { Length: > 0 } phone)
+            {
+                Contact("t", phone);
+            }
+
+            Contact("e", issuer.Email);
+            if (issuer.Website is { Length: > 0 } website)
+            {
+                Contact("i", website);
+            }
+
+            void LabelValue(bool first, string label, string value)
+            {
+                col.Item().PaddingTop(first ? 14 : 0).Row(r =>
+                {
+                    r.ConstantItem(62).Text(label).SemiBold();
+                    r.AutoItem().Text(value);
+                });
+            }
+
+            var firstFinancial = true;
+            if (issuer.Iban is { Length: > 0 } iban)
+            {
+                LabelValue(firstFinancial, "IBAN", FormatIban(iban));
+                firstFinancial = false;
+            }
+
+            if (issuer.VatNumber is { Length: > 0 } vat)
+            {
+                LabelValue(firstFinancial, "Btw-nr", vat);
+                firstFinancial = false;
+            }
+
+            if (issuer.Kvk is { Length: > 0 } kvk)
+            {
+                LabelValue(firstFinancial, "KvK", kvk);
+            }
         });
     }
 

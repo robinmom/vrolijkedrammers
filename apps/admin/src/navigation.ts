@@ -64,6 +64,10 @@ export const navItems: readonly NavItem[] = [
   },
   { label: 'Inkomsten', to: '/inkomsten', permission: 'finance.read', icon: 'rapport', section: 'Financieel' },
   { label: 'Afrekeningen', to: '/afrekeningen', permission: 'finance.read', icon: 'sync', section: 'Financieel' },
+  // Fase 23a: contributie zonder e-Boekhouden; onder Financieel.
+  { label: 'Contributie', to: '/contributie', permission: 'contribution.manage', icon: 'rollen', section: 'Financieel' },
+  // Fase 23c: SEPA-incasso (pain.008) van de contributie.
+  { label: 'Incasso', to: '/incasso', permission: 'contribution.manage', icon: 'sync', section: 'Financieel' },
   { label: 'Leden', to: '/leden', permission: 'member.read', icon: 'leden', section: 'Leden' },
   { label: 'Aanmeldingen', to: '/aanmeldingen', permission: 'member.approve', icon: 'plus', section: 'Leden' },
   // Fase 26: wijzigingen en het verbreken van combinaties vanuit de app.
@@ -75,10 +79,6 @@ export const navItems: readonly NavItem[] = [
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
   // Fase 25: lidmaatschappen (soorten, tarieven, splitsen); contributie is het overzicht per lid.
   { label: 'Lidmaatschappen', to: '/lidmaatschappen', permission: 'contribution.manage', icon: 'groepen', section: 'Leden' },
-  // Fase 23c: SEPA-incasso (pain.008).
-  { label: 'Incasso', to: '/incasso', permission: 'contribution.manage', icon: 'sync', section: 'Leden' },
-  // Fase 23a: contributie zonder e-Boekhouden.
-  { label: 'Contributie', to: '/contributie', permission: 'contribution.manage', icon: 'rollen', section: 'Leden' },
   // Fase 20: jubilarissen per carnavalsjaar.
   { label: 'Jubilarissen', to: '/jubilarissen', permission: 'member.read', icon: 'jaar', section: 'Leden' },
   { label: 'Overzicht', to: '/dansgarde', permission: 'member.read', icon: 'leden', section: 'Dansgarde' },

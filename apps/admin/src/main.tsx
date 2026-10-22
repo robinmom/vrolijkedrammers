@@ -12,7 +12,7 @@ import { ApiProvider } from './api/ApiContext';
 import { createAdminApi } from './api/client';
 import { createMockAuth, createMsalAuth, type AuthService } from './auth/auth';
 import { AuthProvider } from './auth/AuthContext';
-import { isE2eMock, loadPortalConfig } from './config';
+import { applyEnvironment, isE2eMock, loadPortalConfig } from './config';
 import { createAppRouter } from './router';
 import { SignIn } from './SignIn';
 import './theme.generated.css';
@@ -27,7 +27,13 @@ const root = createRoot(container);
 async function start() {
   let auth: AuthService;
   try {
-    auth = isE2eMock ? createMockAuth() : await createMsalAuth(await loadPortalConfig());
+    if (isE2eMock) {
+      auth = createMockAuth();
+    } else {
+      const config = await loadPortalConfig();
+      applyEnvironment(config.environment);
+      auth = await createMsalAuth(config);
+    }
   } catch (error) {
     root.render(<p role="alert">Het beheerportal kan niet starten: {error instanceof Error ? error.message : 'onbekende fout'}</p>);
     return;

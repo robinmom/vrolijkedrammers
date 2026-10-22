@@ -20,11 +20,15 @@ public sealed class PortalConfigController(IOptions<AuthOptions> auth, IConfigur
     {
         var options = auth.Value;
         var authority = options.Authority?.Replace("/v2.0", string.Empty, StringComparison.Ordinal).TrimEnd('/');
+        // De omgeving komt uit de vereiste environmentAccess (dev/acc); leeg = productie. Het portal kleurt op dev/acc de
+        // achtergrond zodat je meteen ziet dat je niet in productie werkt.
+        var environment = string.IsNullOrWhiteSpace(options.RequiredEnvironmentAccess) ? "prod" : options.RequiredEnvironmentAccess;
         return new PortalConfigResponse(
             configuration["Portal:ClientId"] ?? string.Empty,
             authority ?? string.Empty,
-            string.IsNullOrEmpty(options.Audience) ? string.Empty : $"api://{options.Audience}/access_as_user");
+            string.IsNullOrEmpty(options.Audience) ? string.Empty : $"api://{options.Audience}/access_as_user",
+            environment);
     }
 }
 
-public sealed record PortalConfigResponse(string ClientId, string Authority, string ApiScope);
+public sealed record PortalConfigResponse(string ClientId, string Authority, string ApiScope, string Environment);

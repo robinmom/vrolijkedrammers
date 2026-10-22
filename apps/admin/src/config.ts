@@ -3,6 +3,13 @@ export interface PortalConfig {
   clientId: string;
   authority: string;
   apiScope: string;
+  /** Omgeving: 'dev', 'acc' of 'prod'; bepaalt de achtergrondkleur van het portal. */
+  environment: string;
+}
+
+/** Zet de omgeving op <html> zodat de CSS buiten productie de achtergrond kleurt en een banner toont. */
+export function applyEnvironment(environment: string) {
+  document.documentElement.dataset.environment = environment || 'prod';
 }
 
 export async function loadPortalConfig(): Promise<PortalConfig> {

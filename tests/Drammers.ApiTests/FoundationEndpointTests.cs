@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Drammers.ApiTests.Infrastructure;
 
@@ -23,6 +24,19 @@ public class FoundationEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
         var response = await _client.GetAsync("/health/ready");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Portal_config_geeft_de_omgeving_mee()
+    {
+        // Zonder vereiste environmentAccess is dit productie: de portal kleurt de achtergrond niet.
+        var prod = await _client.GetFromJsonAsync<JsonElement>("/api/v1/portal-config");
+        Assert.Equal("prod", prod.GetProperty("environment").GetString());
+
+        // Met environmentAccess 'dev' kleurt de portal de achtergrond zodat je ziet dat je niet in productie werkt.
+        using var devClient = factory.WithWebHostBuilder(builder => builder.UseSetting("Auth:RequiredEnvironmentAccess", "dev")).CreateClient();
+        var dev = await devClient.GetFromJsonAsync<JsonElement>("/api/v1/portal-config");
+        Assert.Equal("dev", dev.GetProperty("environment").GetString());
     }
 
     [Fact]

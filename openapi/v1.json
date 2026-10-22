@@ -43662,7 +43662,8 @@
         "required": [
           "clientId",
           "authority",
-          "apiScope"
+          "apiScope",
+          "environment"
         ],
         "type": "object",
         "properties": {
@@ -43673,6 +43674,9 @@
             "type": "string"
           },
           "apiScope": {
+            "type": "string"
+          },
+          "environment": {
             "type": "string"
           }
         }

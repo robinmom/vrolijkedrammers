@@ -2430,3 +2430,38 @@ fieldset {
 .results-grid .link-button {
   color: var(--dvd-link-text);
 }
+
+/* Omgevingskleur (dev/acc): de achtergrond krijgt een duidelijke tint en bovenin het werkgebied staat een banner, zodat
+   meteen zichtbaar is dat dit niet de productieomgeving is. In productie (data-environment ontbreekt of 'prod') verandert
+   er niets. De selector html[data-environment=...] is specifieker dan :root, dus de --dvd-canvas-override wint. */
+html[data-environment='dev'] {
+  --dvd-canvas: #fbe6c2;
+}
+
+html[data-environment='acc'] {
+  --dvd-canvas: #dde9f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-environment='dev'] {
+    --dvd-canvas: #2c2410;
+  }
+
+  html[data-environment='acc'] {
+    --dvd-canvas: #0f2234;
+  }
+}
+
+.env-banner {
+  margin: 0 0 16px;
+  padding: 8px 14px;
+  border-radius: var(--dvd-radius-control);
+  font-weight: 600;
+  color: #432d00;
+  background: var(--dvd-feestgoud);
+}
+
+html[data-environment='acc'] .env-banner {
+  color: #ffffff;
+  background: var(--dvd-action-secondary);
+}

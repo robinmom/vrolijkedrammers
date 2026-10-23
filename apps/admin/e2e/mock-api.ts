@@ -3251,7 +3251,11 @@ export class MockApi {
         const b = body as { name: string; sortOrder: number };
         const created = {
           id: Math.max(0, ...this.eventCategories.map((c) => c.id)) + 1,
-          code: b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'categorie',
+          code:
+            b.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '') || 'categorie',
           name: b.name,
           sortOrder: b.sortOrder,
           eventCount: 0,

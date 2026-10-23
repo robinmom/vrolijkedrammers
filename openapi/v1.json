@@ -6237,6 +6237,205 @@
         }
       }
     },
+    "/api/v1/admin/finance/collective-invoices": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "carnivalYearId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CollectiveInvoiceSource"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectiveInvoiceOverview"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectiveInvoiceOverview"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectiveInvoiceOverview"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectiveInvoiceRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectiveInvoiceRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectiveInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/collective-invoices/{id}": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectiveInvoiceDetail"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectiveInvoiceDetail"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectiveInvoiceDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/collective-invoices/{id}/pdf": {
+      "get": {
+        "tags": [
+          "AdminFinance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/pdf": { }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/finance/overview": {
       "get": {
         "tags": [
@@ -33330,6 +33529,176 @@
             "type": "string"
           }
         }
+      },
+      "CollectiveInvoiceDetail": {
+        "required": [
+          "invoice",
+          "source",
+          "year",
+          "lines"
+        ],
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/CollectiveInvoiceSummary"
+          },
+          "source": {
+            "type": "string"
+          },
+          "year": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectiveInvoiceLineView"
+            }
+          }
+        },
+        "description": "Een verzamelfactuur met de regels."
+      },
+      "CollectiveInvoiceLineView": {
+        "required": [
+          "party",
+          "reference",
+          "paidOn",
+          "amount"
+        ],
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "paidOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Eén betaalde transactie op een verzamelfactuur, bedragen in euro's."
+      },
+      "CollectiveInvoiceOverview": {
+        "required": [
+          "carnivalYearId",
+          "year",
+          "source",
+          "invoices",
+          "preview"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "year": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectiveInvoiceSummary"
+            }
+          },
+          "preview": {
+            "$ref": "#/components/schemas/CollectiveInvoicePreview"
+          }
+        },
+        "description": "De verzamelfacturen van een onderdeel in een carnavalsjaar, met de delta die nog gemaakt kan worden."
+      },
+      "CollectiveInvoicePreview": {
+        "required": [
+          "total",
+          "alreadyInvoicedCount",
+          "newLines"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "alreadyInvoicedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "newLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectiveInvoiceLineView"
+            }
+          }
+        },
+        "description": "Wat er op een volgende (delta)factuur zou komen: de betaalde transacties die nog op geen enkele factuur staan."
+      },
+      "CollectiveInvoiceRequest": {
+        "required": [
+          "carnivalYearId",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "carnivalYearId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CollectiveInvoiceSource"
+          }
+        },
+        "description": "Voor welk onderdeel en carnavalsjaar de volgende (delta)verzamelfactuur wordt gemaakt."
+      },
+      "CollectiveInvoiceSource": {
+        "enum": [
+          "Advertisers",
+          "Festival",
+          "Contribution"
+        ],
+        "description": "Het onderdeel waarvan een verzamelfactuur de betaalde transacties bundelt."
+      },
+      "CollectiveInvoiceSummary": {
+        "required": [
+          "id",
+          "number",
+          "invoiceDate",
+          "lineCount",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "invoiceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "lineCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Een gemaakte verzamelfactuur in het kort."
       },
       "CollectorLinkedResponse": {
         "required": [

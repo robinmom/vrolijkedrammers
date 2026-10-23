@@ -269,6 +269,7 @@ public static class DependencyInjection
         services.AddScoped<Advertisers.Invoices.AdvertiserInvoices>();
         services.AddScoped<Finance.IncomeReports>();
         services.AddScoped<Finance.FinanceReports>();
+        services.AddScoped<Finance.FinanceCollectiveInvoices>();
         services.AddScoped<Finance.MollieSettlements>();
         services.AddScoped<IOutboxMessageHandler, Advertisers.Invoices.AdvertiserInvoiceMailHandler>();
         services.AddScoped<IOutboxMessageHandler, Finance.SettlementMailHandler>();

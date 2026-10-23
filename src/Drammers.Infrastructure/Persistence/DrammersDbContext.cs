@@ -10,6 +10,7 @@ using Drammers.Modules.Identity.Provisioning;
 using Drammers.Modules.Identity.Roles;
 using Drammers.Modules.Identity.Users;
 using Drammers.Modules.Import.Sync;
+using Drammers.Modules.Membership.Finance;
 using Drammers.Modules.Membership.Groups;
 using Drammers.Modules.Membership.Members;
 using Drammers.Modules.Membership.Privacy;
@@ -80,6 +81,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<CollectionRun> CollectionRuns => Set<CollectionRun>();
 
     public DbSet<CollectionRunLine> CollectionRunLines => Set<CollectionRunLine>();
+
+    public DbSet<CollectiveInvoice> CollectiveInvoices => Set<CollectiveInvoice>();
+
+    public DbSet<CollectiveInvoiceLine> CollectiveInvoiceLines => Set<CollectiveInvoiceLine>();
 
     public DbSet<ExcludedMember> ExcludedMembers => Set<ExcludedMember>();
 

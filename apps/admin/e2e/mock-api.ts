@@ -122,6 +122,38 @@ export class MockApi {
     { id: 2, code: 'jeugd', name: 'Jeugd', sortOrder: 20, eventCount: 0 },
   ];
 
+  collectivePaid: Record<string, { key: string; party: string; reference: string; paidOn: string; amount: number }[]> =
+    {
+      Advertisers: [
+        {
+          key: 'ADV:ADV-2027-0001',
+          party: 'Movement-IT B.V.',
+          reference: 'ADV-2027-0001',
+          paidOn: '2027-01-20',
+          amount: 217.8,
+        },
+        {
+          key: 'ADV:ADV-2027-0002',
+          party: 'Smashstudios',
+          reference: 'ADV-2027-0002',
+          paidOn: '2027-01-22',
+          amount: 70,
+        },
+      ],
+      Festival: [],
+      Contribution: [],
+    };
+
+  collectiveInvoices: {
+    id: string;
+    number: string;
+    source: string;
+    invoiceDate: string;
+    lineCount: number;
+    total: number;
+    lines: { key: string; party: string; reference: string; paidOn: string; amount: number }[];
+  }[] = [];
+
   events: {
     id: string;
     categoryId: number;
@@ -3481,6 +3513,75 @@ export class MockApi {
         { number: 'FEST-2027-0001', club: 'DV Loil', date: '2026-01-15', total: 120, status: 'Betaald' },
         { number: 'FEST-2027-0002', club: 'De Dansmariekes', date: '2026-01-18', total: 90, status: 'Open' },
       ]);
+    }
+    if (path === '/admin/finance/collective-invoices') {
+      if (method === 'POST') {
+        const src = (body as { source: string }).source;
+        const invoiced = new Set(
+          this.collectiveInvoices.filter((i) => i.source === src).flatMap((i) => i.lines.map((l) => l.key)),
+        );
+        const newLines = (this.collectivePaid[src] ?? []).filter((l) => !invoiced.has(l.key));
+        const seq = this.collectiveInvoices.filter((i) => i.source === src).length + 1;
+        const inv = {
+          id: `vf-${this.collectiveInvoices.length + 1}`,
+          number: `VF-2027-${src.slice(0, 4).toUpperCase()}-${String(seq).padStart(2, '0')}`,
+          source: src,
+          invoiceDate: '2027-02-01',
+          lineCount: newLines.length,
+          total: newLines.reduce((s, l) => s + l.amount, 0),
+          lines: newLines,
+        };
+        this.collectiveInvoices.push(inv);
+        return json({ id: inv.id }, 201);
+      }
+      const source = url.searchParams.get('source') ?? 'Advertisers';
+      const invoiced = new Set(
+        this.collectiveInvoices.filter((i) => i.source === source).flatMap((i) => i.lines.map((l) => l.key)),
+      );
+      const newLines = (this.collectivePaid[source] ?? []).filter((l) => !invoiced.has(l.key));
+      return json({
+        carnivalYearId: 2,
+        year: '2026/2027',
+        source,
+        invoices: this.collectiveInvoices
+          .filter((i) => i.source === source)
+          .map((i) => ({
+            id: i.id,
+            number: i.number,
+            invoiceDate: i.invoiceDate,
+            lineCount: i.lineCount,
+            total: i.total,
+          })),
+        preview: {
+          total: newLines.reduce((s, l) => s + l.amount, 0),
+          alreadyInvoicedCount: (this.collectivePaid[source] ?? []).length - newLines.length,
+          newLines: newLines.map((l) => ({
+            party: l.party,
+            reference: l.reference,
+            paidOn: l.paidOn,
+            amount: l.amount,
+          })),
+        },
+      });
+    }
+    if (path.match(/^\/admin\/finance\/collective-invoices\/[^/]+\/pdf$/)) {
+      return json({ pdf: true });
+    }
+    if ((m = path.match(/^\/admin\/finance\/collective-invoices\/([^/]+)$/))) {
+      const inv = this.collectiveInvoices.find((i) => i.id === m![1]);
+      if (!inv) return json({ title: 'Niet gevonden' }, 404);
+      return json({
+        invoice: {
+          id: inv.id,
+          number: inv.number,
+          invoiceDate: inv.invoiceDate,
+          lineCount: inv.lineCount,
+          total: inv.total,
+        },
+        source: inv.source,
+        year: '2026/2027',
+        lines: inv.lines.map((l) => ({ party: l.party, reference: l.reference, paidOn: l.paidOn, amount: l.amount })),
+      });
     }
     if (path === '/admin/finance/income/export') {
       return json({ csv: true });

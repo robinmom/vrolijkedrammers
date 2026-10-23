@@ -11,6 +11,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { IncomePage, SettlementsPage } from './pages/FinancePage';
 import { FinanceOverviewPage, FinanceStatisticsPage } from './pages/FinanceOverviewPage';
 import { FacturenPage } from './pages/FacturenPage';
+import { VerzamelfacturenPage } from './pages/VerzamelfacturenPage';
 import { EventEditorPage, EventsPage } from './pages/EventsPage';
 import { GroupDetailPage, GroupsPage } from './pages/GroupsPage';
 import { MemberDetailPage } from './pages/MemberDetailPage';
@@ -105,6 +106,7 @@ const routeTree = rootRoute.addChildren([
   }),
   createRoute({ getParentRoute: () => rootRoute, path: '/inkomsten', component: guarded('finance.read', IncomePage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/afrekeningen', component: guarded('finance.read', SettlementsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/financieel/verzamelfacturen', component: guarded('finance.read', VerzamelfacturenPage) }),
   createRoute({
     getParentRoute: () => rootRoute,
     path: '/adverteerders/$id',

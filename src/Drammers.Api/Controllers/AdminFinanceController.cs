@@ -1,6 +1,7 @@
 using Drammers.Api.Authorization;
 using Drammers.Infrastructure.Advertisers;
 using Drammers.Infrastructure.Finance;
+using Drammers.Modules.Membership.Finance;
 using Drammers.SharedKernel.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,8 +16,38 @@ namespace Drammers.Api.Controllers;
 [Route("api/v1/admin/finance")]
 [RequirePermission(Permissions.FinanceRead)]
 public sealed class AdminFinanceController(
-    IncomeReports income, FinanceReports finance, MollieSettlements settlements, AdvertiserAdministration advertisers) : ControllerBase
+    IncomeReports income, FinanceReports finance, FinanceCollectiveInvoices collectiveInvoices,
+    MollieSettlements settlements, AdvertiserAdministration advertisers) : ControllerBase
 {
+    [HttpGet("collective-invoices")]
+    [ProducesResponseType<CollectiveInvoiceOverview>(StatusCodes.Status200OK)]
+    public async Task<CollectiveInvoiceOverview> CollectiveInvoices(
+        [FromQuery] int? carnivalYearId, [FromQuery] CollectiveInvoiceSource source, CancellationToken cancellationToken) =>
+        await collectiveInvoices.OverviewAsync(carnivalYearId, source, cancellationToken);
+
+    [HttpGet("collective-invoices/{id:guid}")]
+    [ProducesResponseType<CollectiveInvoiceDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<CollectiveInvoiceDetail> CollectiveInvoice(Guid id, CancellationToken cancellationToken) =>
+        await collectiveInvoices.DetailAsync(id, cancellationToken);
+
+    [HttpPost("collective-invoices")]
+    [ProducesResponseType<CreatedResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CreatedResponse>> CreateCollectiveInvoice(CollectiveInvoiceRequest request, CancellationToken cancellationToken) =>
+        Created((string?)null, new CreatedResponse(await collectiveInvoices.GenerateAsync(request.CarnivalYearId, request.Source, cancellationToken)));
+
+    [HttpGet("collective-invoices/{id:guid}/pdf")]
+    [Produces("application/pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<FileContentResult> CollectiveInvoicePdfFile(Guid id, CancellationToken cancellationToken)
+    {
+        var detail = await collectiveInvoices.DetailAsync(id, cancellationToken);
+        var pdf = CollectiveInvoicePdf.Generate(
+            detail.Source, detail.Year, detail.Invoice.Number, detail.Invoice.InvoiceDate, detail.Lines, detail.Invoice.Total);
+        return File(pdf, "application/pdf", $"Verzamelfactuur {detail.Invoice.Number}.pdf");
+    }
+
     [HttpGet("overview")]
     [ProducesResponseType<FinanceOverviewReport>(StatusCodes.Status200OK)]
     public async Task<FinanceOverviewReport> Overview([FromQuery] int? carnivalYearId, CancellationToken cancellationToken) =>
@@ -76,3 +107,6 @@ public sealed class AdminFinanceController(
 
 /// <summary>Naar welk e-mailadres de verzamelstaat gaat (standaard penningmeester@vrolijkedrammers.nl).</summary>
 public sealed record SettlementSendRequest(string Recipient);
+
+/// <summary>Voor welk onderdeel en carnavalsjaar de volgende (delta)verzamelfactuur wordt gemaakt.</summary>
+public sealed record CollectiveInvoiceRequest(int? CarnivalYearId, CollectiveInvoiceSource Source);

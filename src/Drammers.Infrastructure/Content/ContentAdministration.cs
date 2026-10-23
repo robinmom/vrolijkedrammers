@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Drammers.Infrastructure.Files;
 using Drammers.Infrastructure.Persistence;
@@ -28,6 +29,9 @@ public sealed record EventInput(
     string? LocationName, string? LocationAddress, decimal? Latitude, decimal? Longitude, bool IsHighlight, string? BadgeText,
     PublicationInput Publication, bool AccessControl = false);
 
+/// <summary>Een agenda-categorie met het aantal activiteiten dat hem gebruikt (voor het zelf beheren).</summary>
+public sealed record EventCategoryAdmin(int Id, string Code, string Name, int SortOrder, int EventCount);
+
 /// <summary>Nieuws; <c>Image</c> is het pad van een vooraf geüploade afbeelding (<see cref="UploadedImages"/>): <c>null</c> = ongewijzigd, leeg = weghalen.</summary>
 public sealed record NewsInput(
     string Title, string? Summary, string Body, string? Category, DateTime? ExpireAt, PublicationInput Publication, bool PushOnPublish = false,
@@ -47,6 +51,82 @@ public sealed class ContentAdministration(
     Modules.Notification.Notifications.INotificationService notifications)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    // ----- Agenda-categorieën (zelf beheerd) -----------------------------------------------------------------------
+
+    public async Task<IReadOnlyList<EventCategoryAdmin>> EventCategoriesAsync(CancellationToken cancellationToken) =>
+        await db.EventCategories.AsNoTracking().OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
+            .Select(c => new EventCategoryAdmin(c.Id, c.Code, c.Name, c.SortOrder, db.Events.Count(e => e.CategoryId == c.Id)))
+            .ToListAsync(cancellationToken);
+
+    public async Task<int> SaveEventCategoryAsync(int? id, string name, int sortOrder, CancellationToken cancellationToken)
+    {
+        var clean = name.Trim();
+        if (clean.Length is 0 or > 80)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Geef de categorie een naam (maximaal 80 tekens).");
+        }
+
+        if (await db.EventCategories.AnyAsync(c => c.Name == clean && c.Id != id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"De categorie \"{clean}\" bestaat al.");
+        }
+
+        if (id is { } existing)
+        {
+            var category = await db.EventCategories.SingleOrDefaultAsync(c => c.Id == existing, cancellationToken)
+                ?? throw new DomainException(ErrorCodes.CategoryNotFound, "Categorie niet gevonden.", DomainErrorKind.NotFound);
+            // De code blijft vast: de website en links filteren erop.
+            (category.Name, category.SortOrder) = (clean, sortOrder);
+            await db.SaveChangesAsync(cancellationToken);
+            return category.Id;
+        }
+
+        var codes = await db.EventCategories.AsNoTracking().Select(c => c.Code).ToListAsync(cancellationToken);
+        var created = db.EventCategories.Add(new EventCategory { Code = UniqueCode(clean, codes), Name = clean, SortOrder = sortOrder }).Entity;
+        await db.SaveChangesAsync(cancellationToken);
+        return created.Id;
+    }
+
+    /// <summary>Alleen een categorie zonder activiteiten kan weg (de agenda en website filteren op de code).</summary>
+    public async Task DeleteEventCategoryAsync(int id, CancellationToken cancellationToken)
+    {
+        if (!await db.EventCategories.AnyAsync(c => c.Id == id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.CategoryNotFound, "Categorie niet gevonden.", DomainErrorKind.NotFound);
+        }
+
+        if (await db.Events.AnyAsync(e => e.CategoryId == id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation, "Deze categorie is nog in gebruik bij activiteiten; verplaats die eerst.", DomainErrorKind.Conflict);
+        }
+
+        await db.EventCategories.Where(c => c.Id == id).ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>Een stabiele, URL-vriendelijke code uit de naam (uniek t.o.v. de bestaande codes).</summary>
+    private static string UniqueCode(string name, IReadOnlyCollection<string> existing)
+    {
+        var slug = new string([.. name.ToLowerInvariant().Select(ch => char.IsLetterOrDigit(ch) ? ch : '-')]).Trim('-');
+        while (slug.Contains("--", StringComparison.Ordinal))
+        {
+            slug = slug.Replace("--", "-", StringComparison.Ordinal);
+        }
+
+        if (slug.Length == 0)
+        {
+            slug = "categorie";
+        }
+
+        var code = slug;
+        var n = 2;
+        while (existing.Contains(code, StringComparer.OrdinalIgnoreCase))
+        {
+            code = $"{slug}-{n++.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        return code;
+    }
 
     // ----- Events --------------------------------------------------------------------------------------------------
 

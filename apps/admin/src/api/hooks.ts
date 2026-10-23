@@ -158,6 +158,7 @@ export function useApiMutation<TVariables>(fn: (variables: TVariables) => Promis
 }
 
 export type AdminEvent = Schemas['AdminEventResponse'];
+export type AdminEventCategory = Schemas['EventCategoryAdmin'];
 export type EventRequest = Schemas['EventRequest'];
 export type NewsRequest = Schemas['NewsRequest'];
 export type AlbumRequest = Schemas['AlbumRequest'];
@@ -165,6 +166,15 @@ export type AlbumRequest = Schemas['AlbumRequest'];
 export function useEventCategories() {
   const api = useApi();
   return useQuery({ queryKey: ['event-categories'], queryFn: async () => required((await api.GET('/api/v1/event-categories')).data) });
+}
+
+/** Agenda-categorieën met hun volgorde en het aantal activiteiten (voor het zelf beheren). */
+export function useAdminEventCategories() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['admin-event-categories'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/events/categories')).data),
+  });
 }
 
 export function useAdminEvents(includePast: boolean, enabled = true) {

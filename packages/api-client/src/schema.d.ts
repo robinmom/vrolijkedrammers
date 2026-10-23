@@ -4660,6 +4660,163 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/events/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventCategoryAdmin"][];
+                        "application/json": components["schemas"]["EventCategoryAdmin"][];
+                        "text/json": components["schemas"]["EventCategoryAdmin"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["EventCategoryRequest"];
+                    "text/json": components["schemas"]["EventCategoryRequest"];
+                    "application/*+json": components["schemas"]["EventCategoryRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventCategoryCreatedResponse"];
+                        "application/json": components["schemas"]["EventCategoryCreatedResponse"];
+                        "text/json": components["schemas"]["EventCategoryCreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/events/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["EventCategoryRequest"];
+                    "text/json": components["schemas"]["EventCategoryRequest"];
+                    "application/*+json": components["schemas"]["EventCategoryRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/events/{id}/image": {
         parameters: {
             query?: never;
@@ -25722,6 +25879,26 @@ export interface components {
             paid: string;
             remarks: null | string;
             orderNumbers: string[];
+        };
+        /** @description Een agenda-categorie met het aantal activiteiten dat hem gebruikt (voor het zelf beheren). */
+        EventCategoryAdmin: {
+            /** Format: int32 */
+            id: number;
+            code: string;
+            name: string;
+            /** Format: int32 */
+            sortOrder: number;
+            /** Format: int32 */
+            eventCount: number;
+        };
+        EventCategoryCreatedResponse: {
+            /** Format: int32 */
+            id: number;
+        };
+        EventCategoryRequest: {
+            name: string;
+            /** Format: int32 */
+            sortOrder: number;
         };
         EventCategoryResponse: {
             /** Format: int32 */

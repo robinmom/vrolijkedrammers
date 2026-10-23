@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Authorization;
 using Drammers.Api.Content;
 using Drammers.Infrastructure.Content;
@@ -50,6 +51,35 @@ public sealed class AdminEventsController(DrammersDbContext db, ContentAdministr
             e.Latitude, e.Longitude, e.IsHighlight, e.BadgeText, e.AccessControl,
             PublicationResponse.From(e.Visibility, e.Audiences.Select(a => (a.AudienceType, a.AudienceRef)), e.Status, e.PublishAt),
             await urls.ForAsync(FileContainers.Content, e.ImageBlobPath, cancellationToken), attachments);
+    }
+
+    [HttpGet("categories")]
+    [ProducesResponseType<IReadOnlyList<EventCategoryAdmin>>(StatusCodes.Status200OK)]
+    public Task<IReadOnlyList<EventCategoryAdmin>> Categories(CancellationToken cancellationToken) =>
+        content.EventCategoriesAsync(cancellationToken);
+
+    [HttpPost("categories")]
+    [ProducesResponseType<EventCategoryCreatedResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<EventCategoryCreatedResponse>> CreateCategory(EventCategoryRequest request, CancellationToken cancellationToken) =>
+        Created((string?)null, new EventCategoryCreatedResponse(await content.SaveEventCategoryAsync(null, request.Name, request.SortOrder, cancellationToken)));
+
+    [HttpPut("categories/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> UpdateCategory(int id, EventCategoryRequest request, CancellationToken cancellationToken)
+    {
+        await content.SaveEventCategoryAsync(id, request.Name, request.SortOrder, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("categories/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteCategory(int id, CancellationToken cancellationToken)
+    {
+        await content.DeleteEventCategoryAsync(id, cancellationToken);
+        return NoContent();
     }
 
     [HttpPost]
@@ -106,6 +136,10 @@ public sealed class AdminEventsController(DrammersDbContext db, ContentAdministr
         return NoContent();
     }
 }
+
+public sealed record EventCategoryRequest([param: Required, StringLength(80)] string Name, int SortOrder);
+
+public sealed record EventCategoryCreatedResponse(int Id);
 
 public sealed record AdminEventSummaryResponse(
     Guid Id, string Title, DateTime StartAt, Modules.Content.Shared.ContentVisibility Visibility,

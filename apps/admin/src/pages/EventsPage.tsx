@@ -1,10 +1,18 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
-import { useAdminEvent, useAdminEvents, useApiMutation, useEventCategories, type EventRequest } from '../api/hooks';
+import {
+  useAdminEvent,
+  useAdminEventCategories,
+  useAdminEvents,
+  useApiMutation,
+  useEventCategories,
+  type AdminEventCategory,
+  type EventRequest,
+} from '../api/hooks';
 import { upload } from '../api/upload';
 import { useAuth } from '../auth/AuthContext';
-import { ConfirmDialog } from '../components/Dialog';
+import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { PublicationFields, defaultPublication } from '../components/PublicationFields';
@@ -12,14 +20,20 @@ import { formatDateTime, fromLocalInput, statusLabels, toLocalInput, visibilityL
 
 export function EventsPage() {
   const [includePast, setIncludePast] = useState(false);
+  const [managing, setManaging] = useState(false);
   const events = useAdminEvents(includePast);
   return (
     <>
       <div className="page-header">
         <h1>Agenda</h1>
-        <Link to="/agenda/$id" params={{ id: 'nieuw' }} className="button">
-          Event toevoegen
-        </Link>
+        <div className="actions">
+          <button type="button" className="button secondary" onClick={() => setManaging(true)}>
+            Categorieën
+          </button>
+          <Link to="/agenda/$id" params={{ id: 'nieuw' }} className="button">
+            Event toevoegen
+          </Link>
+        </div>
       </div>
       <Checkbox label="Ook afgelopen events tonen" checked={includePast} onChange={(e) => setIncludePast(e.target.checked)} />
       <ProblemAlert error={events.error} />
@@ -59,7 +73,109 @@ export function EventsPage() {
           </tbody>
         </table>
       </div>
+      {managing ? <EventCategoriesDialog onClose={() => setManaging(false)} /> : null}
     </>
+  );
+}
+
+/** De agenda-categorieën zelf beheren: toevoegen, hernoemen, volgorde, en verwijderen als er geen activiteiten op staan. */
+function EventCategoriesDialog({ onClose }: { onClose: () => void }) {
+  const api = useApi();
+  const categories = useAdminEventCategories();
+  const [name, setName] = useState('');
+  const add = useApiMutation(
+    () =>
+      api.POST('/api/v1/admin/events/categories', {
+        body: { name, sortOrder: (categories.data?.at(-1)?.sortOrder ?? 0) + 10 },
+      }),
+    [['admin-event-categories'], ['event-categories']],
+  );
+
+  return (
+    <Dialog open title="Agenda-categorieën" onClose={onClose}>
+      <p className="muted">
+        De categorieën van de agenda, bijvoorbeeld Carnaval, Jeugd of Vereniging. De website en de app filteren hierop.
+      </p>
+      <ul className="list">
+        {(categories.data ?? []).map((c) => (
+          <EventCategoryRow key={c.id} category={c} />
+        ))}
+        {categories.data?.length === 0 ? <li className="muted">Nog geen categorieën.</li> : null}
+      </ul>
+      <form
+        className="actions"
+        onSubmit={(e) => {
+          e.preventDefault();
+          add.mutate(undefined, { onSuccess: () => setName('') });
+        }}
+      >
+        <Field label="Nieuwe categorie" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+        <button type="submit" className="button" disabled={!name.trim() || add.isPending}>
+          Toevoegen
+        </button>
+      </form>
+      <ProblemAlert error={add.error} />
+      <div className="actions">
+        <button type="button" className="button secondary" onClick={onClose}>
+          Sluiten
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
+function EventCategoryRow({ category }: { category: AdminEventCategory }) {
+  const api = useApi();
+  const [name, setName] = useState(category.name);
+  const [sortOrder, setSortOrder] = useState(category.sortOrder);
+  const save = useApiMutation(
+    () =>
+      api.PUT('/api/v1/admin/events/categories/{id}', {
+        params: { path: { id: category.id } },
+        body: { name, sortOrder },
+      }),
+    [['admin-event-categories'], ['event-categories']],
+  );
+  const remove = useApiMutation(
+    () => api.DELETE('/api/v1/admin/events/categories/{id}', { params: { path: { id: category.id } } }),
+    [['admin-event-categories'], ['event-categories']],
+  );
+  const commit = () => {
+    if (name.trim() && (name.trim() !== category.name || sortOrder !== category.sortOrder)) save.mutate(undefined);
+  };
+
+  return (
+    <li className="list-row">
+      <input
+        className="grow"
+        aria-label={`Naam categorie ${category.name}`}
+        maxLength={80}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onBlur={commit}
+      />
+      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <span className="muted small-text">Volgorde</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          style={{ width: '4.5em' }}
+          aria-label={`Volgorde ${category.name}`}
+          value={sortOrder}
+          onChange={(e) => setSortOrder(Number(e.target.value))}
+          onBlur={commit}
+        />
+      </label>
+      <span className="muted small-text">
+        {category.eventCount} {category.eventCount === 1 ? 'activiteit' : 'activiteiten'}
+      </span>
+      {category.eventCount === 0 ? (
+        <button type="button" className="link-button" onClick={() => remove.mutate(undefined)}>
+          Verwijderen
+        </button>
+      ) : null}
+      <ProblemAlert error={save.error ?? remove.error} />
+    </li>
   );
 }
 

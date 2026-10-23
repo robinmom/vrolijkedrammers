@@ -117,6 +117,11 @@ export class MockApi {
     },
   ];
 
+  eventCategories = [
+    { id: 1, code: 'carnaval', name: 'Carnaval', sortOrder: 10, eventCount: 1 },
+    { id: 2, code: 'jeugd', name: 'Jeugd', sortOrder: 20, eventCount: 0 },
+  ];
+
   events: {
     id: string;
     categoryId: number;
@@ -3239,10 +3244,38 @@ export class MockApi {
       return noContent();
     }
     if (path === '/event-categories') {
-      return json([
-        { id: 1, code: 'carnaval', name: 'Carnaval' },
-        { id: 2, code: 'jeugd', name: 'Jeugd' },
-      ]);
+      return json(this.eventCategories.map((c) => ({ id: c.id, code: c.code, name: c.name })));
+    }
+    if (path === '/admin/events/categories') {
+      if (method === 'POST') {
+        const b = body as { name: string; sortOrder: number };
+        const created = {
+          id: Math.max(0, ...this.eventCategories.map((c) => c.id)) + 1,
+          code: b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'categorie',
+          name: b.name,
+          sortOrder: b.sortOrder,
+          eventCount: 0,
+        };
+        this.eventCategories.push(created);
+        return json({ id: created.id }, 201);
+      }
+      return json(this.eventCategories);
+    }
+    if ((m = path.match(/^\/admin\/events\/categories\/(\d+)$/))) {
+      const id = Number(m[1]);
+      const category = this.eventCategories.find((c) => c.id === id);
+      if (!category) return json({ title: 'Niet gevonden' }, 404);
+      if (method === 'PUT') {
+        const b = body as { name: string; sortOrder: number };
+        category.name = b.name;
+        category.sortOrder = b.sortOrder;
+        return noContent();
+      }
+      if (method === 'DELETE') {
+        if (category.eventCount > 0) return json({ title: 'In gebruik' }, 409);
+        this.eventCategories = this.eventCategories.filter((c) => c.id !== id);
+        return noContent();
+      }
     }
     if (path === '/admin/events') {
       if (method === 'POST') {

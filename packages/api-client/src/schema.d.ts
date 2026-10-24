@@ -5349,6 +5349,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/finance/collective-invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    carnivalYearId?: number;
+                    source?: components["schemas"]["CollectiveInvoiceSource"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectiveInvoiceOverview"];
+                        "application/json": components["schemas"]["CollectiveInvoiceOverview"];
+                        "text/json": components["schemas"]["CollectiveInvoiceOverview"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CollectiveInvoiceRequest"];
+                    "text/json": components["schemas"]["CollectiveInvoiceRequest"];
+                    "application/*+json": components["schemas"]["CollectiveInvoiceRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/collective-invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CollectiveInvoiceDetail"];
+                        "application/json": components["schemas"]["CollectiveInvoiceDetail"];
+                        "text/json": components["schemas"]["CollectiveInvoiceDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/collective-invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/finance/overview": {
         parameters: {
             query?: never;
@@ -25393,6 +25558,62 @@ export interface components {
             /** Format: double */
             amount: number;
             reason: string;
+        };
+        /** @description Een verzamelfactuur met de regels. */
+        CollectiveInvoiceDetail: {
+            invoice: components["schemas"]["CollectiveInvoiceSummary"];
+            source: string;
+            year: string;
+            lines: components["schemas"]["CollectiveInvoiceLineView"][];
+        };
+        /** @description Eén betaalde transactie op een verzamelfactuur, bedragen in euro's. */
+        CollectiveInvoiceLineView: {
+            party: string;
+            reference: string;
+            /** Format: date */
+            paidOn: string;
+            /** Format: double */
+            amount: number;
+        };
+        /** @description De verzamelfacturen van een onderdeel in een carnavalsjaar, met de delta die nog gemaakt kan worden. */
+        CollectiveInvoiceOverview: {
+            /** Format: int32 */
+            carnivalYearId: number;
+            year: string;
+            source: string;
+            invoices: components["schemas"]["CollectiveInvoiceSummary"][];
+            preview: components["schemas"]["CollectiveInvoicePreview"];
+        };
+        /** @description Wat er op een volgende (delta)factuur zou komen: de betaalde transacties die nog op geen enkele factuur staan. */
+        CollectiveInvoicePreview: {
+            /** Format: double */
+            total: number;
+            /** Format: int32 */
+            alreadyInvoicedCount: number;
+            newLines: components["schemas"]["CollectiveInvoiceLineView"][];
+        };
+        /** @description Voor welk onderdeel en carnavalsjaar de volgende (delta)verzamelfactuur wordt gemaakt. */
+        CollectiveInvoiceRequest: {
+            /** Format: int32 */
+            carnivalYearId: null | number;
+            source: components["schemas"]["CollectiveInvoiceSource"];
+        };
+        /**
+         * @description Het onderdeel waarvan een verzamelfactuur de betaalde transacties bundelt.
+         * @enum {unknown}
+         */
+        CollectiveInvoiceSource: "Advertisers" | "Festival" | "Contribution";
+        /** @description Een gemaakte verzamelfactuur in het kort. */
+        CollectiveInvoiceSummary: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: date */
+            invoiceDate: string;
+            /** Format: int32 */
+            lineCount: number;
+            /** Format: double */
+            total: number;
         };
         CollectorLinkedResponse: {
             /** Format: int32 */

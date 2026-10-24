@@ -64,6 +64,8 @@ export const navItems: readonly NavItem[] = [
   },
   { label: 'Inkomsten', to: '/inkomsten', permission: 'finance.read', icon: 'rapport', section: 'Financieel' },
   { label: 'Afrekeningen', to: '/afrekeningen', permission: 'finance.read', icon: 'sync', section: 'Financieel' },
+  // Fase 4d: verzamelfacturen per onderdeel en carnavalsjaar (met delta).
+  { label: 'Verzamelfacturen', to: '/financieel/verzamelfacturen', permission: 'finance.read', icon: 'download', section: 'Financieel' },
   // Fase 23a: contributie zonder e-Boekhouden; onder Financieel.
   { label: 'Contributie', to: '/contributie', permission: 'contribution.manage', icon: 'rollen', section: 'Financieel' },
   // Fase 23c: SEPA-incasso (pain.008) van de contributie.

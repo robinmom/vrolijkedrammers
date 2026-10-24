@@ -5652,6 +5652,123 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Finance.CollectiveInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CarnivalYearId")
+                        .HasColumnType("int")
+                        .HasColumnName("carnival_year_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("InvoiceDate")
+                        .HasColumnType("date")
+                        .HasColumnName("invoice_date");
+
+                    b.Property<int>("LineCount")
+                        .HasColumnType("int")
+                        .HasColumnName("line_count");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("number");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int")
+                        .HasColumnName("sequence");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("source");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(11, 2)
+                        .HasColumnType("decimal(11,2)")
+                        .HasColumnName("total");
+
+                    b.HasKey("Id")
+                        .HasName("PK_CollectiveInvoice");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CollectiveInvoice_number");
+
+                    b.HasIndex("CarnivalYearId", "Source", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CollectiveInvoice_carnival_year_id_source_sequence");
+
+                    b.ToTable("CollectiveInvoice", "payments", t =>
+                        {
+                            t.HasCheckConstraint("CK_CollectiveInvoice_source", "[source] IN ('Advertisers', 'Festival', 'Contribution')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Finance.CollectiveInvoiceLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("decimal(9,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<DateOnly>("PaidOn")
+                        .HasColumnType("date")
+                        .HasColumnName("paid_on");
+
+                    b.Property<string>("Party")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("party");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("reference");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("TransactionKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("transaction_key");
+
+                    b.HasKey("Id")
+                        .HasName("PK_CollectiveInvoiceLine");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("IX_CollectiveInvoiceLine_invoice_id");
+
+                    b.ToTable("CollectiveInvoiceLine", "payments");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Groups.Group", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10119,6 +10236,15 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Finance.CollectiveInvoiceLine", b =>
+                {
+                    b.HasOne("Drammers.Modules.Membership.Finance.CollectiveInvoice", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Groups.Group", b =>
                 {
                     b.HasOne("Drammers.Modules.Content.CarnivalYears.CarnivalYear", null)
@@ -10870,6 +10996,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Drammers.Modules.Membership.Advertisers.Advertiser", b =>
                 {
                     b.Navigation("Years");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Membership.Finance.CollectiveInvoice", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Drammers.Modules.Membership.Groups.Group", b =>

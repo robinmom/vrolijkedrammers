@@ -18,6 +18,8 @@ overrides:
   source-map-js: ^1.2.2
   # GHSA-pqg4-j6r4-53mv (2026-10-06): alleen via react-devtools-core (Expo-ontwikkeltools); 1.11.0 is gepatcht.
   shell-quote: ^1.11.0
+  # GHSA-xjj6-f33q-929c (2026-10-23): alleen via vitest/jsdom (testtooling); 8.12.2 is gepatcht.
+  undici: ^8.12.2
 
 # Bewuste uitzonderingen op `pnpm audit` (CI-stap "Kwetsbare npm-pakketten"). Alleen voor advisories zonder
 # gepatchte versie en buiten de geleverde app. De workflow "Dagelijkse audit" faalt zodra er een patch is.
@@ -27,3 +29,5 @@ auditConfig:
     - GHSA-86w9-cpqp-85rv
     # braces (2026-10-03): alleen via Metro (bundler van Expo), zit niet in de app-bundel.
     - GHSA-vfj7-8cjw-p6xm
+    # zod <4.6.6 (2026-10-23): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel; de patch is zod 4 (breaking major voor Expo).
+    - GHSA-mrhx-c7xc-m3w5

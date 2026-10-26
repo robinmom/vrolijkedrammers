@@ -29,5 +29,5 @@ auditConfig:
     - GHSA-86w9-cpqp-85rv
     # braces (2026-10-03): alleen via Metro (bundler van Expo), zit niet in de app-bundel.
     - GHSA-vfj7-8cjw-p6xm
-    # zod <4.6.6 (2026-10-23): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel; de patch is zod 4 (breaking major voor Expo).
+    # zod <4.6.6 (2026-10-23): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel. [geen-bruikbare-patch] de patch is zod 4, een breaking major die Expo niet gebruikt; vervalt zodra Expo naar zod 4 gaat.
     - GHSA-mrhx-c7xc-m3w5

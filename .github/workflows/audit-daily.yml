@@ -2,6 +2,8 @@
 # - er op main een nieuwe high/critical-kwetsbaarheid is (CI draait alleen bij een push of PR), of
 # - er voor een uitzondering in pnpm-workspace.yaml (auditConfig.ignoreGhsas) een gepatchte versie is: dan kan de
 #   uitzondering eruit en het pakket worden bijgewerkt.
+# Uitzondering: zet [geen-bruikbare-patch] in de comment boven een GHSA als er wél een patch bestaat maar wij die niet
+# kunnen nemen (bijv. een major-upgrade van een transitieve dep die Expo pint). Dan stopt de dagelijkse nag voor die ene.
 name: Dagelijkse audit
 
 on:
@@ -31,13 +33,32 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           status=0
-          for id in $(sed -n '/ignoreGhsas:/,/^[^ #]/p' pnpm-workspace.yaml | grep -oE 'GHSA-[a-z0-9-]+'); do
-            patched=$(gh api "/advisories/$id" --jq '[.vulnerabilities[] | select(.first_patched_version != null) | "\(.package.name) \(.first_patched_version)"] | join(", ")')
-            if [ -n "$patched" ]; then
-              echo "::error::$id heeft nu een patch ($patched): werk het pakket bij en haal de uitzondering uit pnpm-workspace.yaml."
-              status=1
-            else
-              echo "$id: nog geen patch, uitzondering blijft nodig."
-            fi
-          done
+          mark=0
+          # Loop door de ignoreGhsas-sectie; de comment boven een GHSA kan die als bewust-niet-patchbaar markeren.
+          while IFS= read -r line; do
+            case "$line" in
+              *GHSA-*)
+                id=$(printf '%s' "$line" | grep -oE 'GHSA-[a-z0-9-]+')
+                [ -z "$id" ] && continue
+                if [ "$mark" = 1 ]; then
+                  echo "$id: bewust genegeerd (geen bruikbare patch voor ons), geen actie."
+                else
+                  patched=$(gh api "/advisories/$id" --jq '[.vulnerabilities[] | select(.first_patched_version != null) | "\(.package.name) \(.first_patched_version)"] | join(", ")')
+                  if [ -n "$patched" ]; then
+                    echo "::error::$id heeft nu een patch ($patched): werk het pakket bij en haal de uitzondering uit pnpm-workspace.yaml."
+                    status=1
+                  else
+                    echo "$id: nog geen patch, uitzondering blijft nodig."
+                  fi
+                fi
+                mark=0
+                ;;
+              *"#"*)
+                case "$line" in
+                  *"[geen-bruikbare-patch]"*) mark=1 ;;
+                  *) mark=0 ;;
+                esac
+                ;;
+            esac
+          done < <(sed -n '/ignoreGhsas:/,/^[^ #]/p' pnpm-workspace.yaml)
           exit $status

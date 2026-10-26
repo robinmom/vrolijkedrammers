@@ -3479,7 +3479,10 @@ export class MockApi {
       const sources = [
         { source: 'Adverteerders', total: 278.3, paid: 217.8 },
         { source: 'Dansgardefestival', total: 460, paid: 460 },
-        { source: 'Kaartverkoop', total: 1240.5, paid: 1180 },
+        { source: 'Pronkzitting', total: 520, paid: 520 },
+        { source: 'Dagkaarten', total: 480.5, paid: 460 },
+        { source: 'Activiteiten', total: 140, paid: 120 },
+        { source: 'Munten', total: 100, paid: 80 },
       ];
       const total = sources.reduce((s, r) => s + r.total, 0);
       const paid = sources.reduce((s, r) => s + r.paid, 0);
@@ -3489,7 +3492,10 @@ export class MockApi {
       const sources = [
         { source: 'Adverteerders', total: 278.3, paid: 217.8 },
         { source: 'Dansgardefestival', total: 460, paid: 460 },
-        { source: 'Kaartverkoop', total: 1240.5, paid: 1180 },
+        { source: 'Pronkzitting', total: 520, paid: 520 },
+        { source: 'Dagkaarten', total: 480.5, paid: 460 },
+        { source: 'Activiteiten', total: 140, paid: 120 },
+        { source: 'Munten', total: 100, paid: 80 },
         { source: 'Contributie', total: 3120, paid: 3120 },
       ];
       const total = sources.reduce((s, r) => s + r.total, 0);

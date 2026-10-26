@@ -32,12 +32,12 @@ public class FinanceTests(SqlServerFixture sql) : IAsyncLifetime
         [.. report.GetProperty("sources").EnumerateArray().Select(s => s.GetProperty("source").GetString()!)];
 
     [Fact]
-    public async Task Totaaloverzicht_toont_de_drie_bronnen_zonder_contributie()
+    public async Task Totaaloverzicht_splitst_de_bronnen_zonder_contributie()
     {
         var overview = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/finance/overview");
 
         Assert.Equal("2026/2027", overview.GetProperty("year").GetString());
-        Assert.Equal(["Adverteerders", "Dansgardefestival", "Kaartverkoop"], SourceNames(overview));
+        Assert.Equal(["Adverteerders", "Dansgardefestival", "Pronkzitting", "Dagkaarten", "Activiteiten", "Munten"], SourceNames(overview));
         // Zonder gegevens is alles nul, maar belangrijker: alle onderliggende queries draaien echt tegen de database.
         Assert.Equal(0m, overview.GetProperty("total").GetDecimal());
     }
@@ -65,7 +65,7 @@ public class FinanceTests(SqlServerFixture sql) : IAsyncLifetime
         var stats = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/finance/statistics");
 
         Assert.Equal("2026/2027", stats.GetProperty("year").GetString());
-        Assert.Equal(["Adverteerders", "Dansgardefestival", "Kaartverkoop", "Contributie"], SourceNames(stats));
+        Assert.Equal(["Adverteerders", "Dansgardefestival", "Pronkzitting", "Dagkaarten", "Activiteiten", "Munten", "Contributie"], SourceNames(stats));
         Assert.Equal(250m, SourceTotal(stats, "Contributie"));
         Assert.Equal(250m, stats.GetProperty("total").GetDecimal());
         Assert.NotEmpty(stats.GetProperty("perYear").EnumerateArray());

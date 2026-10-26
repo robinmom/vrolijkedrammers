@@ -17,7 +17,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -5244,6 +5244,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(40)")
                         .HasColumnName("payment_method");
+
+                    b.Property<string>("PersonalMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("personal_message");
 
                     b.Property<string>("PostalCode")
                         .HasMaxLength(10)

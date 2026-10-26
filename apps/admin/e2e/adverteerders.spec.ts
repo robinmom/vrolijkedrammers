@@ -309,6 +309,42 @@ test('fase 27q: betaaltermijn, vervallen filteren en herinnering sturen', async 
   expect(api.invoiceReminders.length).toBe(1);
 });
 
+test('fase 27r: per adverteerder selecteren om te versturen en een persoonlijk bericht zetten', async ({ page }) => {
+  const api = new MockApi(['advertiser.manage']);
+  api.advertisers.forEach((a) => (a.status2027 = 'Collected'));
+  await api.install(page);
+  await page.goto('/beheer/adverteerders/facturen');
+
+  // Facturen maken; ze zijn nog niet verstuurd.
+  await page.getByRole('button', { name: /Facturen maken/ }).click();
+  await expect(page.getByRole('button', { name: /ADV-2027-/ }).first()).toBeVisible();
+
+  // Een persoonlijk bericht zetten op de eerste factuur; het voorbeeld toont de ingetikte tekst.
+  await page.getByRole('button', { name: '✎ persoonlijk bericht' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Persoonlijk bericht').fill('Bedankt voor jullie trouwe steun dit jaar!');
+  await expect(
+    dialog.getByLabel('Voorbeeld van de mail').getByText('Bedankt voor jullie trouwe steun dit jaar!'),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Opslaan' }).click();
+  await expect(page.getByText('Persoonlijk bericht opgeslagen.')).toBeVisible();
+  expect(api.invoices.find((i) => i.personalMessage)?.personalMessage).toBe(
+    'Bedankt voor jullie trouwe steun dit jaar!',
+  );
+
+  // De knop toont nu dat er een bericht staat.
+  await expect(page.getByRole('button', { name: '✉︎ persoonlijk bericht' })).toBeVisible();
+
+  // Eén factuur selecteren en alleen die versturen.
+  await page
+    .getByRole('checkbox', { name: /Selecteer factuur/ })
+    .first()
+    .check();
+  await page.getByRole('button', { name: /Verstuur geselecteerde \(1\)/ }).click();
+  await expect(page.getByText('1 facturen worden verstuurd.')).toBeVisible();
+  expect(api.invoices.filter((i) => i.sentAt).length).toBe(1);
+});
+
 test('fase 27k: context-bewuste terug-knop vanaf Campagne', async ({ page }) => {
   const api = new MockApi(['advertiser.manage']);
   await api.install(page);

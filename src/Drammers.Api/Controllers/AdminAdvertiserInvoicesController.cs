@@ -66,6 +66,23 @@ public sealed class AdminAdvertiserInvoicesController(AdvertiserInvoices invoice
     public async Task<InvoiceCountResponse> Send([FromQuery] int? year, CancellationToken cancellationToken) =>
         new(await invoices.SendAsync(year ?? await advertisers.CampaignYearAsync(cancellationToken), cancellationToken));
 
+    /// <summary>Alleen de gekozen (nog niet verstuurde) facturen versturen, per adverteerder selecteerbaar (fase 27r).</summary>
+    [HttpPost("send/selected")]
+    [ProducesResponseType<InvoiceCountResponse>(StatusCodes.Status200OK)]
+    public async Task<InvoiceCountResponse> SendSelected(InvoiceRemindRequest request, CancellationToken cancellationToken) =>
+        new(await invoices.SendAsync(request.InvoiceIds, cancellationToken));
+
+    /// <summary>Een persoonlijk bericht bij de factuurmail zetten of wissen (fase 27r); vervangt alleen de standaard-introtekst.</summary>
+    [HttpPut("{id:guid}/personal-message")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> PersonalMessage(Guid id, InvoicePersonalMessageRequest request, CancellationToken cancellationToken)
+    {
+        await invoices.SetPersonalMessageAsync(id, request.Message, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>Een herinnering sturen (factuur opnieuw) naar de gekozen, nog niet betaalde facturen (fase 27q).</summary>
     [HttpPost("remind")]
     [ProducesResponseType<InvoiceCountResponse>(StatusCodes.Status200OK)]
@@ -150,6 +167,8 @@ public sealed record InvoiceSettingsRequest(
     [Range(1, 365)] int PaymentTermDays = 14);
 
 public sealed record InvoiceRemindRequest([Required, MinLength(1)] IReadOnlyList<Guid> InvoiceIds);
+
+public sealed record InvoicePersonalMessageRequest([StringLength(2000)] string? Message);
 
 public sealed record CreateInvoicesRequest(DateOnly Date, [Range(2000, 2100)] int? Year);
 

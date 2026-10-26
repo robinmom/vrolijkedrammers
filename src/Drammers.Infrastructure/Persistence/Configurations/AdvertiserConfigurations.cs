@@ -63,6 +63,7 @@ internal sealed class AdvertiserInvoiceConfiguration : IEntityTypeConfiguration<
         builder.Property(i => i.MolliePaymentId).HasMaxLength(40);
         builder.Property(i => i.MollieStatus).HasMaxLength(10);
         builder.Property(i => i.Description).HasMaxLength(140);
+        builder.Property(i => i.PersonalMessage).HasMaxLength(2000);
         builder.Property(i => i.CompanyName).HasMaxLength(200);
         builder.Property(i => i.ContactName).HasMaxLength(150);
         builder.Property(i => i.AddressLine).HasMaxLength(200);

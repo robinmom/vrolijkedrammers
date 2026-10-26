@@ -587,6 +587,66 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task Fase27r_persoonlijk_bericht_en_per_adverteerder_selecteren_om_te_versturen()
+    {
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/collections/creditor",
+            new { name = "CV De Vrolijke Drammers", iban = "NL39 RABO 0300 0652 64", creditorId = "nl12zzz123456780000" });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/invoices/settings", new { address = "Postbus 123\n6940 AC Loil", kvk = "40122564" });
+
+        // Twee adverteerders met e-mailadres, allebei opgehaald.
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 35, 35),
+            Row("Alfred Voorbeeld", 2, "Kapsalon Stop", "A", "C", null, null, 50, 50)));
+        var list = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(1)}/years/2027", new { status = "Collected", amount = 35m, note = (string?)null });
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(2)}/years/2027", new { status = "Collected", amount = 50m, note = (string?)null });
+
+        Assert.Equal(2, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = "2026-11-02", year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        var rows = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray().ToList();
+        var bakkerij = rows.Single(r => r.GetProperty("companyName").GetString() == "Bakkerij De Test");
+        var kapsalon = rows.Single(r => r.GetProperty("companyName").GetString() == "Kapsalon Stop");
+        var bakkerijId = bakkerij.GetProperty("invoiceId").GetGuid();
+
+        // Een persoonlijk bericht op de factuur van de bakkerij; het overzicht toont het.
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/invoices/{bakkerijId}/personal-message", new { message = "Bedankt voor jullie trouwe steun, tot volgend jaar!" })).StatusCode);
+        var afterSet = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/invoices")).GetProperty("rows").EnumerateArray()
+            .Single(r => r.GetProperty("invoiceId").GetGuid() == bakkerijId);
+        Assert.Equal("Bedankt voor jullie trouwe steun, tot volgend jaar!", afterSet.GetProperty("personalMessage").GetString());
+
+        // Te lang bericht wordt geweigerd (model-validatie, max. 2000 tekens).
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/invoices/{bakkerijId}/personal-message", new { message = new string('x', 2001) })).StatusCode);
+
+        // Alleen de bakkerij selecteren om te versturen; de kapsalon blijft staan.
+        Assert.Equal(1, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices/send/selected", new { invoiceIds = new[] { bakkerijId } }))
+            .Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            foreach (var message in await db.Outbox.AsNoTracking().Where(m => m.ProcessedAt == null && m.Type == Drammers.Infrastructure.Advertisers.Invoices.AdvertiserInvoices.MailMessageType).ToListAsync())
+            {
+                using var handlerScope = _api.Services.CreateScope();
+                var handler = handlerScope.ServiceProvider.GetServices<Drammers.Worker.Outbox.IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+                await handler.HandleAsync(new Drammers.Worker.Outbox.OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            }
+        }
+
+        // De mail bevat het persoonlijke bericht en toch de vaste onderdelen (aanhef + betaalkenmerk).
+        var mail = _api.Emails.Sent.Single(m => m.To == "info1@example.com");
+        Assert.Contains("Bedankt voor jullie trouwe steun, tot volgend jaar!", mail.PlainText);
+        Assert.Contains("Beste", mail.PlainText);
+        Assert.Contains("onder vermelding van ADV-2027-0001", mail.PlainText);
+
+        // De kapsalon is niet verstuurd; de losse send-all-endpoint pakt daarna alleen die ene resterende factuur op.
+        Assert.Equal(JsonValueKind.Null, kapsalon.GetProperty("sentAt").ValueKind);
+        Assert.Equal(1, (await (await _bestuur.PostAsync("/api/v1/admin/advertisers/invoices/send", null)).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+    }
+
     private static object NewAdvertiser(string payment, string? iban, bool consent) => new
     {
         companyName = "Nieuwe Zaak",

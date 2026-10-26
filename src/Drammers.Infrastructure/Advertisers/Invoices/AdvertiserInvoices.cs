@@ -27,7 +27,8 @@ public sealed record InvoiceSettings(
 public sealed record InvoiceOverviewRow(
     Guid AdvertiserId, int AdvertiserNumber, string CompanyName, decimal Amount, AdvertiserPayment Payment, string? Email, Guid? InvoiceId,
     string? InvoiceNumber, DateOnly? InvoiceDate, DateTime? SentAt, InvoiceStatus? Status = null, InvoicePaymentMethod? PaymentMethod = null,
-    decimal? TotalInclVat = null, string? MollieStatus = null, DateTime? PaidAt = null, DateOnly? DueDate = null, bool Overdue = false);
+    decimal? TotalInclVat = null, string? MollieStatus = null, DateTime? PaidAt = null, DateOnly? DueDate = null, bool Overdue = false,
+    string? PersonalMessage = null);
 
 public sealed record InvoiceOverview(int Year, int ToCreate, int ToSend, int WithoutEmail, IReadOnlyList<InvoiceOverviewRow> Rows);
 
@@ -153,11 +154,11 @@ public sealed class AdvertiserInvoices(
 
         var rows = due.Select(d => invoices.GetValueOrDefault(d.Id) is { } i
                 ? new InvoiceOverviewRow(d.Id, d.Number, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt,
-                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt, i.DueDate, Overdue(i))
+                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt, i.DueDate, Overdue(i), i.PersonalMessage)
                 : new InvoiceOverviewRow(d.Id, d.Number, d.CompanyName, d.Amount!.Value, d.Payment, d.Email, null, null, null, null))
             .Concat(invoices.Values.Where(i => due.All(d => d.Id != i.AdvertiserId))
                 .Select(i => new InvoiceOverviewRow(i.AdvertiserId, 0, i.CompanyName, i.Amount, i.Payment, i.Email, i.Id, i.Number, i.InvoiceDate, i.SentAt,
-                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt, i.DueDate, Overdue(i))))
+                    i.Status, i.PaymentMethod, i.TotalInclVat, i.MollieStatus, i.PaidAt, i.DueDate, Overdue(i), i.PersonalMessage)))
             .OrderBy(r => r.InvoiceNumber ?? "~").ThenBy(r => r.CompanyName).ToList();
         return new InvoiceOverview(year, rows.Count(r => r.InvoiceId is null), rows.Count(r => r.InvoiceId is not null && r.SentAt is null && r.Email is not null),
             rows.Count(r => r.Email is null), rows);
@@ -273,6 +274,39 @@ public sealed class AdvertiserInvoices(
         await audit.WriteAsync(new AuditEntry("advertiser.invoices-sent", "AdvertiserInvoice", year.ToString(CultureInfo.InvariantCulture), null,
             $"{ids.Count} facturen"), cancellationToken);
         return ids.Count;
+    }
+
+    /// <summary>Verstuurt alleen de gekozen, nog niet verstuurde facturen met e-mailadres (fase 27r: 1-voor-1 selecteren).</summary>
+    public async Task<int> SendAsync(IReadOnlyList<Guid> invoiceIds, CancellationToken cancellationToken)
+    {
+        var ids = await db.AdvertiserInvoices.Where(i => invoiceIds.Contains(i.Id) && i.SentAt == null && i.Email != null)
+            .OrderBy(i => i.Sequence).Select(i => i.Id).ToListAsync(cancellationToken);
+        var interval = TimeSpan.FromHours(1) / mailingOptions.Value.EffectiveMaxPerHour;
+        var now = clock.UtcNow.UtcDateTime;
+        for (var i = 0; i < ids.Count; i++)
+        {
+            outbox.Enqueue(MailMessageType, new InvoiceMail(ids[i]), i == 0 ? null : now + (interval * i));
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.invoices-sent", "AdvertiserInvoice", "selectie", null, $"{ids.Count} facturen"), cancellationToken);
+        return ids.Count;
+    }
+
+    /// <summary>Zet (of wist) het persoonlijke bericht op een factuur; dat vervangt de standaard-introtekst in de mail (fase 27r).</summary>
+    public async Task SetPersonalMessageAsync(Guid invoiceId, string? message, CancellationToken cancellationToken)
+    {
+        var invoice = await db.AdvertiserInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId, cancellationToken)
+            ?? throw new DomainException(ErrorCodes.NotFound, "De factuur bestaat niet.", DomainErrorKind.NotFound);
+        var clean = string.IsNullOrWhiteSpace(message) ? null : message.Trim();
+        if (clean is { Length: > 2000 })
+        {
+            throw new DomainException(ErrorCodes.Validation, "Het persoonlijke bericht mag maximaal 2000 tekens zijn.", DomainErrorKind.Validation);
+        }
+
+        invoice.PersonalMessage = clean;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.invoice-message", "AdvertiserInvoice", invoice.Number, null, clean is null ? "gewist" : "ingesteld"), cancellationToken);
     }
 
     /// <summary>Verstuurt een herinnering (de factuur opnieuw, met herinneringstekst) naar de gekozen, nog niet betaalde facturen met e-mailadres.</summary>
@@ -539,9 +573,12 @@ public sealed class AdvertiserInvoiceMailHandler(
         var payLink = baseUrl is not null && invoice.PaymentMethod == InvoicePaymentMethod.Mollie && invoice.Status != InvoiceStatus.Paid
             ? invoices.PayLink(baseUrl, invoice.Id)
             : null;
-        var intro = mail.Reminder
-            ? $"Beste {{voornaam}},\n\nEen vriendelijke herinnering: de factuur voor {{bedrijf}} ({invoice.Description}) staat nog open. In de bijlage vindt u de factuur opnieuw."
-            : $"Beste {{voornaam}},\n\nHartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}.";
+        var standardBody = mail.Reminder
+            ? $"Een vriendelijke herinnering: de factuur voor {{bedrijf}} ({invoice.Description}) staat nog open. In de bijlage vindt u de factuur opnieuw."
+            : $"Hartelijk dank voor de steun van {{bedrijf}} aan De Vrolijke Drammers. In de bijlage vindt u de factuur voor: {invoice.Description}.";
+        // Persoonlijk bericht vervangt alleen bij de eerste verzending de standaard-introtekst; de vaste onderdelen (bedrag, betaallink, afsluiting) blijven.
+        var body = !mail.Reminder && !string.IsNullOrWhiteSpace(invoice.PersonalMessage) ? invoice.PersonalMessage!.Trim() : standardBody;
+        var intro = $"Beste {{voornaam}},\n\n{body}";
         var blocks = new List<MailingBlock>
         {
             new("heading", mail.Reminder ? $"Herinnering factuur {invoice.Number}" : $"Factuur {invoice.Number}"),

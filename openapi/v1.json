@@ -2220,6 +2220,140 @@
         }
       }
     },
+    "/api/v1/admin/advertisers/invoices/send/selected": {
+      "post": {
+        "tags": [
+          "AdminAdvertiserInvoices"
+        ],
+        "summary": "Alleen de gekozen (nog niet verstuurde) facturen versturen, per adverteerder selecteerbaar (fase 27r).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceRemindRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceRemindRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceRemindRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceCountResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceCountResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceCountResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/advertisers/invoices/{id}/personal-message": {
+      "put": {
+        "tags": [
+          "AdminAdvertiserInvoices"
+        ],
+        "summary": "Een persoonlijk bericht bij de factuurmail zetten of wissen (fase 27r); vervangt alleen de standaard-introtekst.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoicePersonalMessageRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoicePersonalMessageRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoicePersonalMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/advertisers/invoices/remind": {
       "post": {
         "tags": [
@@ -38380,6 +38514,12 @@
           "overdue": {
             "type": "boolean",
             "default": false
+          },
+          "personalMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "Een adverteerder in het factuuroverzicht van een jaar, met of zonder factuur."
@@ -38390,6 +38530,20 @@
           "Mollie",
           null
         ]
+      },
+      "InvoicePersonalMessageRequest": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
       },
       "InvoiceRemindRequest": {
         "required": [

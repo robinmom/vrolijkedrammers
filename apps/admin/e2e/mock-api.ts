@@ -1029,6 +1029,7 @@ export class MockApi {
     status: string;
     paymentMethod: string;
     overdue: boolean;
+    personalMessage?: string | null;
   }[] = [];
   advertiserRuns: {
     id: string;
@@ -1736,10 +1737,27 @@ export class MockApi {
       });
       return json({ count: toSend.length });
     }
+    if (path === '/admin/advertisers/invoices/send/selected' && method === 'POST') {
+      const invoiceIds = (body.invoiceIds as string[] | undefined) ?? [];
+      const toSend = this.invoices.filter(
+        (i) =>
+          invoiceIds.includes(i.invoiceId) && !i.sentAt && this.advertisers.find((a) => a.id === i.advertiserId)?.email,
+      );
+      toSend.forEach((i) => {
+        i.sentAt = '2026-11-02T10:00:00Z';
+        i.status = 'Sent';
+      });
+      return json({ count: toSend.length });
+    }
     if (path === '/admin/advertisers/invoices/remind' && method === 'POST') {
       const invoiceIds = (body.invoiceIds as string[] | undefined) ?? [];
       this.invoiceReminders.push(invoiceIds);
       return json({ count: invoiceIds.length });
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/invoices\/([^/]+)\/personal-message$/)) && method === 'PUT') {
+      const inv = this.invoices.find((i) => i.invoiceId === m![1]);
+      if (inv) inv.personalMessage = (body.message as string | null | undefined) ?? null;
+      return noContent();
     }
     if ((m = path.match(/^\/admin\/advertisers\/invoices\/([^/]+)\/refresh-payment$/))) {
       const inv = this.invoices.find((i) => i.invoiceId === m![1]);
@@ -1771,6 +1789,7 @@ export class MockApi {
           paidAt: null,
           dueDate: inv ? '2026-11-16' : null,
           overdue: inv?.overdue ?? false,
+          personalMessage: inv?.personalMessage ?? null,
         };
       });
       return json({

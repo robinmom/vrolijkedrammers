@@ -1922,6 +1922,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/advertisers/invoices/send/selected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Alleen de gekozen (nog niet verstuurde) facturen versturen, per adverteerder selecteerbaar (fase 27r). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["InvoiceRemindRequest"];
+                    "text/json": components["schemas"]["InvoiceRemindRequest"];
+                    "application/*+json": components["schemas"]["InvoiceRemindRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvoiceCountResponse"];
+                        "application/json": components["schemas"]["InvoiceCountResponse"];
+                        "text/json": components["schemas"]["InvoiceCountResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/advertisers/invoices/{id}/personal-message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Een persoonlijk bericht bij de factuurmail zetten of wissen (fase 27r); vervangt alleen de standaard-introtekst. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["InvoicePersonalMessageRequest"];
+                    "text/json": components["schemas"]["InvoicePersonalMessageRequest"];
+                    "application/*+json": components["schemas"]["InvoicePersonalMessageRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/advertisers/invoices/remind": {
         parameters: {
             query?: never;
@@ -26943,9 +27051,13 @@ export interface components {
             dueDate?: null | string;
             /** @default false */
             overdue: boolean;
+            personalMessage?: null | string;
         };
         /** @enum {unknown} */
         InvoicePaymentMethod: "Cash" | "Mollie" | null;
+        InvoicePersonalMessageRequest: {
+            message: null | string;
+        };
         InvoiceRemindRequest: {
             invoiceIds: string[];
         };

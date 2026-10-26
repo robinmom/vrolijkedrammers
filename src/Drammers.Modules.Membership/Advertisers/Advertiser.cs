@@ -250,6 +250,9 @@ public sealed class AdvertiserInvoice
 
     public DateTime? SentAt { get; set; }
 
+    /// <summary>Optioneel persoonlijk bericht in de factuurmail; vervangt de standaard-introtekst (fase 27r). De vaste onderdelen (bedrag, betaallink, afsluiting) blijven.</summary>
+    public string? PersonalMessage { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public Guid? CreatedBy { get; set; }

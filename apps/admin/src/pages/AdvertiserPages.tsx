@@ -1725,8 +1725,23 @@ export function AdvertiserInvoicesPage() {
       (await api.POST('/api/v1/admin/advertisers/invoices/remind', { body: { invoiceIds } })).data?.count,
     ADVERTISER_KEYS,
   );
+  const sendSelected = useApiMutation(
+    async (invoiceIds: string[]) =>
+      (await api.POST('/api/v1/admin/advertisers/invoices/send/selected', { body: { invoiceIds } })).data?.count,
+    ADVERTISER_KEYS,
+  );
+  const savePersonalMessage = useApiMutation(
+    ({ id, text }: { id: string; text: string }) =>
+      api.PUT('/api/v1/admin/advertisers/invoices/{id}/personal-message', {
+        params: { path: { id } },
+        body: { message: text.trim() || null },
+      }),
+    ADVERTISER_KEYS,
+  );
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'overdue' | 'paid'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [messageFor, setMessageFor] = useState<{ id: string; companyName: string } | null>(null);
+  const [messageDraft, setMessageDraft] = useState('');
 
   async function download(path: 'all' | 'print' | string, fileName: string) {
     setDownloadError(null);
@@ -1755,6 +1770,15 @@ export function AdvertiserInvoicesPage() {
   });
   const remindable = (r: (typeof shownRows)[number]) =>
     Boolean(r.invoiceId && r.sentAt && r.email && r.status !== 'Paid' && r.status !== 'Cancelled');
+  // Nog niet verstuurd, met e-mailadres: kan per adverteerder geselecteerd worden om te versturen (fase 27r).
+  const sendable = (r: (typeof shownRows)[number]) =>
+    Boolean(r.invoiceId && !r.sentAt && r.email && r.status !== 'Cancelled');
+  const selectable = (r: (typeof shownRows)[number]) => sendable(r) || remindable(r);
+  // Een factuur kan een persoonlijk bericht krijgen zolang hij nog niet verstuurd is (het vervangt alleen de intro bij de eerste mail).
+  const canEditMessage = (r: (typeof shownRows)[number]) =>
+    Boolean(r.invoiceId && !r.sentAt && r.email && r.status !== 'Cancelled');
+  const selectedSendable = shownRows.filter((r) => sendable(r) && selected.has(r.invoiceId!)).map((r) => r.invoiceId!);
+  const selectedRemindable = shownRows.filter((r) => remindable(r) && selected.has(r.invoiceId!)).map((r) => r.invoiceId!);
   return (
     <>
       <div className="page-header">
@@ -1772,6 +1796,8 @@ export function AdvertiserInvoicesPage() {
           create.error ??
           createOne.error ??
           send.error ??
+          sendSelected.error ??
+          savePersonalMessage.error ??
           saveSettings.error ??
           refreshPayment.error ??
           remind.error ??
@@ -1839,13 +1865,30 @@ export function AdvertiserInvoicesPage() {
               <option value="overdue">Vervallen</option>
               <option value="paid">Betaald</option>
             </select>
-            {selected.size > 0 ? (
+            {selectedSendable.length > 0 ? (
+              <button
+                type="button"
+                className="button small"
+                disabled={sendSelected.isPending}
+                onClick={() =>
+                  sendSelected.mutate(selectedSendable, {
+                    onSuccess: (count) => {
+                      setSelected(new Set());
+                      setMessage(`${count ?? 0} facturen worden verstuurd.`);
+                    },
+                  })
+                }
+              >
+                Verstuur geselecteerde ({selectedSendable.length})
+              </button>
+            ) : null}
+            {selectedRemindable.length > 0 ? (
               <button
                 type="button"
                 className="button small"
                 disabled={remind.isPending}
                 onClick={() =>
-                  remind.mutate([...selected], {
+                  remind.mutate(selectedRemindable, {
                     onSuccess: (count) => {
                       setSelected(new Set());
                       setMessage(`${count ?? 0} herinneringen worden verstuurd.`);
@@ -1853,7 +1896,7 @@ export function AdvertiserInvoicesPage() {
                   })
                 }
               >
-                Herinnering sturen ({selected.size})
+                Herinnering sturen ({selectedRemindable.length})
               </button>
             ) : null}
           </div>
@@ -1877,7 +1920,7 @@ export function AdvertiserInvoicesPage() {
                 {shownRows.map((r) => (
                   <tr key={r.advertiserId} style={r.overdue ? { background: '#F4CCCC' } : undefined}>
                     <td>
-                      {remindable(r) ? (
+                      {selectable(r) ? (
                         <>
                           <label className="visually-hidden" htmlFor={`sel-${r.invoiceId}`}>
                             Selecteer factuur {r.invoiceNumber}
@@ -1898,13 +1941,27 @@ export function AdvertiserInvoicesPage() {
                     </td>
                     <td>
                       {r.invoiceId && r.invoiceNumber ? (
-                        <button
-                          type="button"
-                          className="link-button"
-                          onClick={() => void download(r.invoiceId!, `Factuur ${r.invoiceNumber}.pdf`)}
-                        >
-                          {r.invoiceNumber}
-                        </button>
+                        <div className="stacked-cell">
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={() => void download(r.invoiceId!, `Factuur ${r.invoiceNumber}.pdf`)}
+                          >
+                            {r.invoiceNumber}
+                          </button>
+                          {canEditMessage(r) ? (
+                            <button
+                              type="button"
+                              className="link-button small"
+                              onClick={() => {
+                                setMessageFor({ id: r.invoiceId!, companyName: r.companyName });
+                                setMessageDraft(r.personalMessage ?? '');
+                              }}
+                            >
+                              {r.personalMessage ? '✉︎ persoonlijk bericht' : '✎ persoonlijk bericht'}
+                            </button>
+                          ) : null}
+                        </div>
                       ) : (
                         <button
                           type="button"
@@ -2075,6 +2132,71 @@ export function AdvertiserInvoicesPage() {
         }
         onCancel={() => setConfirmSend(false)}
       />
+
+      <Dialog open={messageFor !== null} title="Persoonlijk bericht" onClose={() => setMessageFor(null)}>
+        {messageFor ? (
+          <>
+            <p className="card-hint">
+              Dit bericht vervangt in de factuurmail aan <strong>{messageFor.companyName}</strong> alleen de standaard
+              openingstekst. De aanhef, het bedrag, de betaallink en de afsluiting blijven automatisch staan. Laat het
+              veld leeg voor de standaardtekst.
+            </p>
+            <div className="field">
+              <label htmlFor="factuur-bericht">Persoonlijk bericht</label>
+              <textarea
+                id="factuur-bericht"
+                rows={5}
+                maxLength={2000}
+                value={messageDraft}
+                placeholder="Hartelijk dank voor jullie steun dit jaar…"
+                onChange={(e) => setMessageDraft(e.target.value)}
+              />
+              <span className="card-hint">{messageDraft.length}/2000 tekens</span>
+            </div>
+            <div className="mail-preview" aria-label="Voorbeeld van de mail">
+              <p className="card-hint" style={{ marginBottom: '0.25rem' }}>
+                Voorbeeld:
+              </p>
+              <p>Beste [voornaam],</p>
+              <p>
+                {messageDraft.trim()
+                  ? messageDraft.trim()
+                  : `Hartelijk dank voor de steun van ${messageFor.companyName} aan De Vrolijke Drammers. In de bijlage vindt u de factuur.`}
+              </p>
+              <p className="muted">
+                [bedrag] · [betaallink] · met vriendelijke groet, de penningmeester — blijven automatisch staan
+              </p>
+            </div>
+            <div className="actions">
+              <button type="button" className="button secondary" onClick={() => setMessageFor(null)}>
+                Annuleren
+              </button>
+              <button
+                type="button"
+                className="button"
+                disabled={savePersonalMessage.isPending}
+                onClick={() =>
+                  savePersonalMessage.mutate(
+                    { id: messageFor.id, text: messageDraft },
+                    {
+                      onSuccess: () => {
+                        setMessageFor(null);
+                        setMessage(
+                          messageDraft.trim()
+                            ? 'Persoonlijk bericht opgeslagen.'
+                            : 'Persoonlijk bericht gewist; de standaardtekst wordt gebruikt.',
+                        );
+                      },
+                    },
+                  )
+                }
+              >
+                Opslaan
+              </button>
+            </div>
+          </>
+        ) : null}
+      </Dialog>
     </>
   );
 }

@@ -24,6 +24,7 @@ import { ResultsPage } from './pages/ResultsPage';
 import { ParadePage } from './pages/ParadePage';
 import { TicketsPage } from './pages/TicketsPage';
 import { PronkzittingPage } from './pages/PronkzittingPage';
+import { PronkzittingSeatingPage } from './pages/PronkzittingSeatingPage';
 import { KassaLogPage } from './pages/KassaLogPage';
 import { AwardsPage } from './pages/AwardsPage';
 import { KaderPage } from './pages/KaderPage';
@@ -129,6 +130,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/toegang/statistieken', component: guarded('ticket.read', AccessStatsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/tickets', component: guarded('ticket.read', TicketsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/pronkzitting', component: guarded('sale.manage', PronkzittingPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/pronkzitting/tafelindeling', component: guarded('sale.manage', PronkzittingSeatingPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/dagkaarten', component: guarded('sale.manage', DayTicketsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/activiteiten', component: guarded('sale.manage', EventTicketsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/verkoop/munten', component: guarded('sale.manage', TokensPage) }),

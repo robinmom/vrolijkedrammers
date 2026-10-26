@@ -101,6 +101,24 @@ export function useEvenings() {
   });
 }
 
+export type SeatingLayout = Schemas['SeatingLayout'];
+export type SeatingParty = Schemas['SeatingParty'];
+export type SeatingRow = Schemas['SeatingRow'];
+export type SeatingTable = Schemas['SeatingTable'];
+
+/** De tafelindeling van één pronkzittingavond (fase 19t). */
+export function useSeating(productId: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['sales', 'seating', productId],
+    enabled: productId !== null,
+    queryFn: async () =>
+      required(
+        (await api.GET('/api/v1/admin/sales/pronkzitting/{productId}/seating', { params: { path: { productId: productId! } } })).data,
+      ),
+  });
+}
+
 export function useWaitlist(productId: string | null) {
   const api = useApi();
   return useQuery({

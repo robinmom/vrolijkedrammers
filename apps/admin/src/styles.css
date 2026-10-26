@@ -2549,3 +2549,147 @@ html[data-environment='acc'] .env-banner {
   color: #ffffff;
   background: var(--dvd-action-secondary);
 }
+
+/* Fase 19t: tafelindeling pronkzitting (plattegrond + gezelschappen). */
+.seat-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  flex: 0 0 auto;
+}
+
+.inline-label {
+  align-self: center;
+  color: var(--dvd-text-secondary);
+}
+
+.narrow-number {
+  width: 4.5rem;
+}
+
+.seat-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.seat-podium {
+  align-self: center;
+  min-width: 40%;
+  text-align: center;
+  padding: 0.4rem 1.5rem;
+  border-radius: 999px;
+  background: var(--dvd-text-primary);
+  color: var(--dvd-surface);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+
+.seat-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+  padding: 0.5rem;
+  border: 1px dashed transparent;
+  border-radius: var(--dvd-radius-card);
+}
+
+.seat-row.dragover {
+  border-color: var(--dvd-feestgoud);
+  background: var(--dvd-surface-muted);
+}
+
+.seat-row-label {
+  flex: 0 0 5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.seat-row-tables {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+}
+
+.seat-table {
+  flex: 0 0 8.5rem;
+  min-height: 5.5rem;
+  border: 1px solid var(--dvd-border);
+  border-radius: var(--dvd-radius-control);
+  background: var(--dvd-surface);
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.seat-table.empty {
+  background: var(--dvd-surface-muted);
+  border-style: dashed;
+}
+
+.seat-table.overflow {
+  border-color: var(--dvd-action-danger);
+}
+
+.seat-table-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.seat-table-number {
+  font-weight: 700;
+}
+
+.seat-table-count {
+  color: var(--dvd-text-secondary);
+}
+
+.seat-table-parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.seat-table-parts li {
+  display: flex;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.seat-part-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seat-part-count {
+  color: var(--dvd-text-secondary);
+  margin-left: 0.3rem;
+}
+
+.seat-table-empty {
+  margin: auto;
+  color: var(--dvd-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.seat-overflow-badge {
+  align-self: flex-start;
+}
+
+.seat-move-buttons {
+  display: flex;
+  gap: 0.25rem;
+}

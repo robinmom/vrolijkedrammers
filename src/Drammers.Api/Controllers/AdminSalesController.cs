@@ -250,6 +250,98 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
             $"Pronkzitting tafelindeling {today.ToString("d-M-yyyy", CultureInfo.InvariantCulture)}.xlsx");
     }
 
+    /// <summary>De tafelindeling van één avond: de plattegrond (4 rijen × tafels van 8) en de lijst gezelschappen met hun tafels.</summary>
+    [HttpGet("pronkzitting/{productId:guid}/seating")]
+    [ProducesResponseType<SeatingLayout>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public Task<SeatingLayout> Seating([FromServices] PronkzittingSeating seating, Guid productId, CancellationToken cancellationToken) =>
+        seating.LayoutAsync(productId, cancellationToken);
+
+    /// <summary>Het aantal tafels per rij instellen voor een avond.</summary>
+    [HttpPut("pronkzitting/{productId:guid}/seating/tables-per-row")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SeatingTablesPerRow(
+        [FromServices] PronkzittingSeating seating, Guid productId, SeatingTablesRequest request, CancellationToken cancellationToken)
+    {
+        await seating.SetTablesPerRowAsync(productId, request.TablesPerRow, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Een gezelschap naar een andere rij of plaats verslepen.</summary>
+    [HttpPut("pronkzitting/{productId:guid}/seating/move")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SeatingMove(
+        [FromServices] PronkzittingSeating seating, Guid productId, SeatingMoveRequest request, CancellationToken cancellationToken)
+    {
+        await seating.MoveAsync(productId, request.PartyKey, request.RowIndex, request.Position, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>De hele indeling automatisch (opnieuw) verdelen.</summary>
+    [HttpPost("pronkzitting/{productId:guid}/seating/arrange")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SeatingArrange([FromServices] PronkzittingSeating seating, Guid productId, CancellationToken cancellationToken)
+    {
+        await seating.AutoArrangeAsync(productId, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Afdruklijst van de tafelindeling: per gezelschap de tafelnummers (Excel).</summary>
+    [HttpGet("pronkzitting/{productId:guid}/seating/export")]
+    [Produces(AdminParadeExchangeController.XlsxContentType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<FileContentResult> SeatingExport([FromServices] PronkzittingSeating seating, Guid productId, CancellationToken cancellationToken)
+    {
+        var layout = await seating.LayoutAsync(productId, cancellationToken);
+        var dutch = CultureInfo.GetCultureInfo("nl-NL");
+        var label = layout.Date?.ToString("dddd d MMMM", dutch) ?? layout.ProductName;
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet(SheetName(label, workbook));
+        string[] headers = ["Gezelschap", "Soort", "Aantal", "Rij", "Tafel(s)", "Opmerking / wensen"];
+        double[] widths = [34, 12, 8, 6, 18, 45];
+        for (var c = 0; c < headers.Length; c++)
+        {
+            sheet.Cell(1, c + 1).Value = headers[c];
+            sheet.Column(c + 1).Width = widths[c];
+        }
+
+        sheet.Row(1).Style.Font.Bold = true;
+        var row = 2;
+        foreach (var p in layout.Parties)
+        {
+            object?[] values =
+                [p.Name, p.IsGroup ? "Groep" : "Los", p.Seats, p.RowIndex + 1, string.Join(", ", p.Tables), p.Remark];
+            for (var c = 0; c < values.Length; c++)
+            {
+                sheet.Cell(row, c + 1).Value = XLCellValue.FromObject(values[c]);
+            }
+
+            row++;
+        }
+
+        sheet.Cell(row, 1).Value = "Totaal";
+        sheet.Cell(row, 3).Value = layout.TotalSeats;
+        sheet.Row(row).Style.Font.Bold = true;
+        sheet.SheetView.FreezeRows(1);
+        if (row > 2)
+        {
+            sheet.Range(1, 1, row - 1, headers.Length).SetAutoFilter();
+        }
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        await audit.WriteAsync(new AuditEntry("sale.seating-exported", "SaleProduct", productId.ToString()), cancellationToken);
+        var today = TimeZoneInfo.ConvertTimeFromUtc(clock.UtcNow.UtcDateTime, TimeZoneInfo.FindSystemTimeZoneById("Europe/Amsterdam"));
+        return File(stream.ToArray(), AdminParadeExchangeController.XlsxContentType,
+            $"Pronkzitting afdruklijst {today.ToString("d-M-yyyy", CultureInfo.InvariantCulture)}.xlsx");
+    }
+
     private static string SheetName(string label, XLWorkbook workbook)
     {
         var name = new string([.. label.Where(ch => ch is not ('[' or ']' or '*' or '?' or '/' or '\\' or ':'))]);
@@ -324,3 +416,7 @@ public sealed record CancelOrderRequest([StringLength(500)] string? Reason);
 public sealed record MoveTokensRequest(Guid DeviceId, [Required, StringLength(500, MinimumLength = 5)] string Reason);
 
 public sealed record GrantWaitlistRequest(PortalPayment Payment);
+
+public sealed record SeatingTablesRequest([Range(1, 50)] int TablesPerRow);
+
+public sealed record SeatingMoveRequest([Required, StringLength(110)] string PartyKey, [Range(0, 3)] int RowIndex, [Range(0, 1000)] int Position);

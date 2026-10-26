@@ -329,6 +329,7 @@ public static class DependencyInjection
         services.AddScoped<Members.MemberHistory>();
         services.AddScoped<Tasks.CarnivalTasks>();
         services.AddScoped<Sales.SaleAdministration>();
+        services.AddScoped<Sales.PronkzittingSeating>();
         services.AddScoped<Sales.TokenCollection>();
         services.TryAddScoped<Sales.SaleExpiryJob>();
         services.AddScoped<ParadePublicRegistrations>();

@@ -9100,6 +9100,73 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.PronkzittingSeat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("PartyKey")
+                        .IsRequired()
+                        .HasMaxLength(110)
+                        .HasColumnType("nvarchar(110)")
+                        .HasColumnName("party_key");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int")
+                        .HasColumnName("position");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("product_id");
+
+                    b.Property<byte>("RowIndex")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("row_index");
+
+                    b.HasKey("Id")
+                        .HasName("PK_PronkzittingSeat");
+
+                    b.HasIndex("ProductId", "PartyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PronkzittingSeat_product_id_party_key");
+
+                    b.ToTable("PronkzittingSeat", "ticketing", t =>
+                        {
+                            t.HasCheckConstraint("CK_PronkzittingSeat_row", "[row_index] BETWEEN 0 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.PronkzittingSeatingLayout", b =>
+                {
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("product_id");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<int>("TablesPerRow")
+                        .HasColumnType("int")
+                        .HasColumnName("tables_per_row");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("ProductId")
+                        .HasName("PK_PronkzittingSeatingLayout");
+
+                    b.ToTable("PronkzittingSeatingLayout", "ticketing", t =>
+                        {
+                            t.HasCheckConstraint("CK_PronkzittingSeatingLayout_tables", "[tables_per_row] BETWEEN 1 AND 50");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.SaleOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10840,6 +10907,24 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasOne("Drammers.Modules.Ticketing.Sales.SaleOrder", null)
                         .WithMany()
                         .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.PronkzittingSeat", b =>
+                {
+                    b.HasOne("Drammers.Modules.Ticketing.Sales.SaleProduct", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Ticketing.Sales.PronkzittingSeatingLayout", b =>
+                {
+                    b.HasOne("Drammers.Modules.Ticketing.Sales.SaleProduct", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

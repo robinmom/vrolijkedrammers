@@ -37,7 +37,10 @@ public sealed class FinanceReports(DrammersDbContext db)
 {
     public const string Advertisers = "Adverteerders";
     public const string Festival = "Dansgardefestival";
-    public const string Sales = "Kaartverkoop";
+    public const string Pronkzitting = "Pronkzitting";
+    public const string DayTickets = "Dagkaarten";
+    public const string EventTickets = "Activiteiten";
+    public const string Tokens = "Munten";
     public const string Contribution = "Contributie";
 
     /// <summary>Totaaloverzicht: adverteerders + festival + kaartverkoop van het (gekozen of actieve) carnavalsjaar.</summary>
@@ -124,17 +127,31 @@ public sealed class FinanceReports(DrammersDbContext db)
         var festivalTotal = await festivalRows.SumAsync(p => (long?)p.AmountCents, cancellationToken) ?? 0L;
         var festivalPaid = await festivalRows.Where(p => p.Status == DanceFestivalPaymentStatus.Paid).SumAsync(p => (long?)p.AmountCents, cancellationToken) ?? 0L;
 
-        // Kaartverkoop — bestellingen (cents), op CarnivalYearId; verlopen en geannuleerde tellen niet mee.
-        var saleRows = db.SaleOrders.AsNoTracking()
-            .Where(o => o.CarnivalYearId == year.Id && o.Status != SaleOrderStatus.Cancelled && o.Status != SaleOrderStatus.Expired);
-        var saleTotal = await saleRows.SumAsync(o => (long?)o.AmountCents, cancellationToken) ?? 0L;
-        var salePaid = await saleRows.Where(o => o.Status == SaleOrderStatus.Confirmed).SumAsync(o => (long?)o.AmountCents, cancellationToken) ?? 0L;
+        // Verkoop per soort (cents), op CarnivalYearId; verlopen en geannuleerde tellen niet mee. Pronkzitting,
+        // dagkaarten, activiteiten en munten zijn aparte bronnen (via SaleProduct.Kind).
+        var saleByKind = await db.SaleOrders.AsNoTracking()
+            .Where(o => o.CarnivalYearId == year.Id && o.Status != SaleOrderStatus.Cancelled && o.Status != SaleOrderStatus.Expired)
+            .Join(db.SaleProducts.AsNoTracking(), o => o.ProductId, p => p.Id, (o, p) => new { p.Kind, o.Status, o.AmountCents })
+            .GroupBy(x => x.Kind)
+            .Select(g => new
+            {
+                Kind = g.Key,
+                Total = g.Sum(x => (long)x.AmountCents),
+                Paid = g.Sum(x => x.Status == SaleOrderStatus.Confirmed ? (long)x.AmountCents : 0L),
+            })
+            .ToListAsync(cancellationToken);
+
+        decimal SaleTotal(SaleProductKind kind) => (saleByKind.FirstOrDefault(s => s.Kind == kind)?.Total ?? 0L) / 100m;
+        decimal SalePaid(SaleProductKind kind) => (saleByKind.FirstOrDefault(s => s.Kind == kind)?.Paid ?? 0L) / 100m;
 
         var list = new List<FinanceSourceAmount>
         {
             new(Advertisers, advertiserTotal, advertiserPaid),
             new(Festival, festivalTotal / 100m, festivalPaid / 100m),
-            new(Sales, saleTotal / 100m, salePaid / 100m),
+            new(Pronkzitting, SaleTotal(SaleProductKind.Pronkzitting), SalePaid(SaleProductKind.Pronkzitting)),
+            new(DayTickets, SaleTotal(SaleProductKind.DayTicket), SalePaid(SaleProductKind.DayTicket)),
+            new(EventTickets, SaleTotal(SaleProductKind.EventTicket), SalePaid(SaleProductKind.EventTicket)),
+            new(Tokens, SaleTotal(SaleProductKind.Tokens), SalePaid(SaleProductKind.Tokens)),
         };
 
         if (includeContribution)

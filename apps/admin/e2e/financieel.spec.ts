@@ -32,7 +32,8 @@ test('totaaloverzicht: inkomsten per bron van het carnavalsjaar', async ({ page 
   const table = page.getByRole('region', { name: 'Inkomsten per bron' });
   await expect(table.getByText('Adverteerders')).toBeVisible();
   await expect(table.getByText('Dansgardefestival')).toBeVisible();
-  await expect(table.getByText('Kaartverkoop')).toBeVisible();
+  await expect(table.getByText('Pronkzitting')).toBeVisible();
+  await expect(table.getByText('Munten')).toBeVisible();
 
   await expectNoSeriousA11yIssues(page);
   await expectNoOverflow(page);

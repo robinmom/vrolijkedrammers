@@ -105,6 +105,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Statistieken', to: '/toegang/statistieken', permission: 'ticket.read', icon: 'rapport', section: 'Toegang' },
   // Fase 19: één pagina per soort product.
   { label: 'Pronkzitting', to: '/verkoop/pronkzitting', permission: 'sale.manage', icon: 'agenda', section: 'Verkoop' },
+  { label: 'Tafelindeling', to: '/verkoop/pronkzitting/tafelindeling', permission: 'sale.manage', icon: 'groepen', section: 'Verkoop' },
   { label: 'Dagkaarten', to: '/verkoop/dagkaarten', permission: 'sale.manage', icon: 'ticket', section: 'Verkoop' },
   { label: 'Activiteiten', to: '/verkoop/activiteiten', permission: 'sale.manage', icon: 'jaar', section: 'Verkoop' },
   { label: 'Munten', to: '/verkoop/munten', permission: 'sale.manage', icon: 'munten', section: 'Verkoop' },

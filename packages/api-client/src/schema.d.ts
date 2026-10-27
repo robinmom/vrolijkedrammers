@@ -14740,6 +14740,279 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De tafelindeling van één avond: de plattegrond (4 rijen × tafels van 8) en de lijst gezelschappen met hun tafels. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SeatingLayout"];
+                        "application/json": components["schemas"]["SeatingLayout"];
+                        "text/json": components["schemas"]["SeatingLayout"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/tables-per-row": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Het aantal tafels per rij instellen voor een avond. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SeatingTablesRequest"];
+                    "text/json": components["schemas"]["SeatingTablesRequest"];
+                    "application/*+json": components["schemas"]["SeatingTablesRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Een gezelschap naar een andere rij of plaats verslepen. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SeatingMoveRequest"];
+                    "text/json": components["schemas"]["SeatingMoveRequest"];
+                    "application/*+json": components["schemas"]["SeatingMoveRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/arrange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De hele indeling automatisch (opnieuw) verdelen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Afdruklijst van de tafelindeling: per gezelschap de tafelnummers (Excel). */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sales/kassalog": {
         parameters: {
             query?: never;
@@ -29514,6 +29787,89 @@ export interface components {
         SeasonsResponse: {
             current: components["schemas"]["SeasonResponse"];
             archive: components["schemas"]["SeasonResponse"][];
+        };
+        /** @description De volledige tafelindeling van één avond: de plattegrond (rijen met tafels) én de lijst gezelschappen (afdruklijst). */
+        SeatingLayout: {
+            /** Format: uuid */
+            productId: string;
+            productName: string;
+            /** Format: date */
+            date: null | string;
+            /** Format: int32 */
+            tablesPerRow: number;
+            /** Format: int32 */
+            seatsPerTable: number;
+            /** Format: int32 */
+            rowCount: number;
+            /** Format: int32 */
+            totalSeats: number;
+            /** Format: int32 */
+            capacity: null | number;
+            overflow: boolean;
+            rows: components["schemas"]["SeatingRow"][];
+            parties: components["schemas"]["SeatingParty"][];
+        };
+        SeatingMoveRequest: {
+            partyKey: string;
+            /** Format: int32 */
+            rowIndex: number;
+            /** Format: int32 */
+            position: number;
+        };
+        /** @description Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur. */
+        SeatingParty: {
+            key: string;
+            name: string;
+            isGroup: boolean;
+            /** Format: int32 */
+            seats: number;
+            /** Format: int32 */
+            rowIndex: number;
+            /** Format: int32 */
+            position: number;
+            manual: boolean;
+            remark: null | string;
+            /** Format: int32 */
+            color: number;
+            tables: number[];
+        };
+        /** @description Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij. */
+        SeatingRow: {
+            /** Format: int32 */
+            rowIndex: number;
+            /** Format: int32 */
+            seats: number;
+            /** Format: int32 */
+            tableCount: number;
+            tables: components["schemas"]["SeatingTable"][];
+        };
+        /** @description Eén tafel in de plattegrond: het nummer (101, 102, … / 201, …), de rij en wie er zit. */
+        SeatingTable: {
+            /** Format: int32 */
+            number: number;
+            /** Format: int32 */
+            rowIndex: number;
+            /** Format: int32 */
+            indexInRow: number;
+            /** Format: int32 */
+            seats: number;
+            shared: boolean;
+            overflow: boolean;
+            parts: components["schemas"]["SeatingTablePart"][];
+        };
+        /** @description Het aandeel van één gezelschap in één tafel (voor een gedeelde tafel staan er meerdere onder elkaar). */
+        SeatingTablePart: {
+            partyKey: string;
+            partyName: string;
+            isGroup: boolean;
+            /** Format: int32 */
+            color: number;
+            /** Format: int32 */
+            seats: number;
+        };
+        SeatingTablesRequest: {
+            /** Format: int32 */
+            tablesPerRow: number;
         };
         SelectionOption: {
             key: string;

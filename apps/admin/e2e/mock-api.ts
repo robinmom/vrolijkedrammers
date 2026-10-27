@@ -500,6 +500,21 @@ export class MockApi {
   ];
   /** Munten van een bestelling zijn door het bestuur naar een ander toestel verplaatst (kan maar één keer). */
   tokensMoved = false;
+  // Fase 19t: tafelindeling-gezelschappen en de bewaarde plaatsen per avond.
+  seatingParties: Record<
+    string,
+    { key: string; name: string; isGroup: boolean; seats: number; remark: string | null }[]
+  > = {
+    'sp-vr': [
+      { key: 'G:De Kruumels', name: 'De Kruumels', isGroup: true, seats: 10, remark: '1 rolstoelplek' },
+      { key: 'G:Fam. Bos', name: 'Fam. Bos', isGroup: true, seats: 6, remark: null },
+      { key: 'O:ord-12', name: 'Jan Jansen', isGroup: false, seats: 2, remark: 'Bij De Kruumels zitten' },
+    ],
+    'sp-za': [],
+  };
+  seatingState: Record<string, { tablesPerRow: number; assignments: Record<string, { row: number; pos: number }> }> =
+    {};
+
   saleOrders: Record<string, unknown>[] = [
     {
       id: 'so-1',
@@ -1437,6 +1452,28 @@ export class MockApi {
       oldValues: null,
       newValues: JSON.stringify(newValues),
     });
+  }
+
+  /** Fase 19t: de bewaarde tafelindeling-stand van een avond (standaard 6 tafels per rij, niets ingedeeld). */
+  seatingFor(productId: string) {
+    return (this.seatingState[productId] ??= { tablesPerRow: 6, assignments: {} });
+  }
+
+  /** Fase 19t: de tafelindeling van een avond opbouwen (dezelfde logica als de backend, voor de e2e-mock). */
+  buildSeating(productId: string) {
+    const state = this.seatingFor(productId);
+    const evening = {
+      'sp-vr': { name: 'Pronkzitting vrijdag', date: '2027-02-05' },
+      'sp-za': { name: 'Pronkzitting zaterdag', date: '2027-02-06' },
+    }[productId] ?? { name: 'Pronkzitting', date: null as string | null };
+    return buildSeatingLayout(
+      productId,
+      evening.name,
+      evening.date,
+      this.seatingParties[productId] ?? [],
+      state.tablesPerRow,
+      state.assignments,
+    );
   }
 
   /** Laatste voorbeeld van een mailing (fase 27a), zoals de API het op een eigen adres zet. */
@@ -2852,6 +2889,32 @@ export class MockApi {
           headers: {
             'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'content-disposition': "attachment; filename*=UTF-8''Pronkzitting%20tafelindeling%2029-9-2026.xlsx",
+          },
+          body: 'xlsx',
+        });
+      }
+      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating$/)) && method === 'GET') {
+        return json(this.buildSeating(m![1]!));
+      }
+      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/tables-per-row$/)) && method === 'PUT') {
+        this.seatingFor(m![1]!).tablesPerRow = Number((body as { tablesPerRow: number }).tablesPerRow);
+        return noContent();
+      }
+      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/move$/)) && method === 'PUT') {
+        const b = body as { partyKey: string; rowIndex: number; position: number };
+        this.seatingFor(m![1]!).assignments[b.partyKey] = { row: b.rowIndex, pos: b.position };
+        return noContent();
+      }
+      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/arrange$/)) && method === 'POST') {
+        this.seatingFor(m![1]!).assignments = {};
+        return noContent();
+      }
+      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/export$/)) && method === 'GET') {
+        return route.fulfill({
+          status: 200,
+          headers: {
+            'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'content-disposition': "attachment; filename*=UTF-8''Pronkzitting%20afdruklijst%205-2-2027.xlsx",
           },
           body: 'xlsx',
         });
@@ -4594,4 +4657,131 @@ export class MockApi {
     }
     return json({ status: 404, title: 'Not Found', code: 'NOT_FOUND' }, 404);
   }
+}
+
+/** Fase 19t: een vaste kleurindex per gezelschap (FNV-1a), gelijk aan de backend. */
+function seatingColor(key: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash ^ key.charCodeAt(i)) >>> 0;
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash % 10;
+}
+
+type SeatingPartyInput = { key: string; name: string; isGroup: boolean; seats: number; remark: string | null };
+
+/** Fase 19t: de tafelindeling opbouwen (4 rijen × tafels van 8), zoals PronkzittingSeating.Build in de backend. */
+function buildSeatingLayout(
+  productId: string,
+  productName: string,
+  date: string | null,
+  parties: SeatingPartyInput[],
+  tablesPerRow: number,
+  assignments: Record<string, { row: number; pos: number }>,
+) {
+  const SeatsPerTable = 8;
+  const rowSeats = [0, 0, 0, 0];
+  const rowParties: { p: SeatingPartyInput; pos: number; manual: boolean }[][] = [[], [], [], []];
+  for (const p of parties) {
+    const a = assignments[p.key];
+    if (a) {
+      const r = Math.max(0, Math.min(3, a.row));
+      rowParties[r]!.push({ p, pos: a.pos, manual: true });
+      rowSeats[r]! += p.seats;
+    }
+  }
+  for (const p of parties
+    .filter((x) => !assignments[x.key])
+    .sort((a, b) => b.seats - a.seats || a.name.localeCompare(b.name))) {
+    let r = 0;
+    for (let i = 1; i < 4; i++) if (rowSeats[i]! < rowSeats[r]!) r = i;
+    const bucket = rowParties[r]!;
+    const nextPos = bucket.length ? Math.max(...bucket.map((x) => x.pos)) + 1 : 0;
+    bucket.push({ p, pos: nextPos, manual: false });
+    rowSeats[r]! += p.seats;
+  }
+
+  const seatingParties: unknown[] = [];
+  const seatingRows: unknown[] = [];
+  let overflow = false;
+  for (let r = 0; r < 4; r++) {
+    const ordered = rowParties[r]!.slice().sort((a, b) => a.pos - b.pos || a.p.name.localeCompare(b.p.name));
+    const tableParts: Record<
+      number,
+      { partyKey: string; partyName: string; isGroup: boolean; color: number; seats: number }[]
+    > = {};
+    const tableSeats: Record<number, number> = {};
+    let seatOffset = 0;
+    let maxTable = -1;
+    ordered.forEach((item, pi) => {
+      const p = item.p;
+      const start = seatOffset;
+      const end = seatOffset + p.seats;
+      const firstTable = Math.floor(start / SeatsPerTable);
+      const lastTable = Math.floor((end - 1) / SeatsPerTable);
+      const tables: number[] = [];
+      for (let t = firstTable; t <= lastTable; t++) {
+        const seatsHere = Math.min(end, (t + 1) * SeatsPerTable) - Math.max(start, t * SeatsPerTable);
+        (tableParts[t] ??= []).push({
+          partyKey: p.key,
+          partyName: p.name,
+          isGroup: p.isGroup,
+          color: seatingColor(p.key),
+          seats: seatsHere,
+        });
+        tableSeats[t] = (tableSeats[t] ?? 0) + seatsHere;
+        tables.push((r + 1) * 100 + t + 1);
+        maxTable = Math.max(maxTable, t);
+      }
+      seatingParties.push({
+        key: p.key,
+        name: p.name,
+        isGroup: p.isGroup,
+        seats: p.seats,
+        rowIndex: r,
+        position: pi,
+        manual: item.manual,
+        remark: p.remark,
+        color: seatingColor(p.key),
+        tables,
+      });
+      seatOffset = end;
+    });
+    const tableCount = Math.max(tablesPerRow, maxTable + 1);
+    const tables: unknown[] = [];
+    for (let t = 0; t < tableCount; t++) {
+      const ov = t >= tablesPerRow;
+      if (ov && tableParts[t]) overflow = true;
+      tables.push({
+        number: (r + 1) * 100 + t + 1,
+        rowIndex: r,
+        indexInRow: t,
+        seats: tableSeats[t] ?? 0,
+        shared: (tableParts[t]?.length ?? 0) > 1,
+        overflow: ov,
+        parts: tableParts[t] ?? [],
+      });
+    }
+    seatingRows.push({ rowIndex: r, seats: rowSeats[r], tableCount, tables });
+  }
+  seatingParties.sort(
+    (a, b) =>
+      (a as { rowIndex: number }).rowIndex - (b as { rowIndex: number }).rowIndex ||
+      (a as { position: number }).position - (b as { position: number }).position ||
+      (a as { name: string }).name.localeCompare((b as { name: string }).name),
+  );
+  return {
+    productId,
+    productName,
+    date,
+    tablesPerRow,
+    seatsPerTable: 8,
+    rowCount: 4,
+    totalSeats: parties.reduce((n, p) => n + p.seats, 0),
+    capacity: 300,
+    overflow,
+    rows: seatingRows,
+    parties: seatingParties,
+  };
 }

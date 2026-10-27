@@ -17626,6 +17626,316 @@
         }
       }
     },
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating": {
+      "get": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "De tafelindeling van één avond: de plattegrond (4 rijen × tafels van 8) en de lijst gezelschappen met hun tafels.",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatingLayout"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatingLayout"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatingLayout"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/tables-per-row": {
+      "put": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Het aantal tafels per rij instellen voor een avond.",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatingTablesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatingTablesRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatingTablesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/move": {
+      "put": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Een gezelschap naar een andere rij of plaats verslepen.",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatingMoveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatingMoveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeatingMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/arrange": {
+      "post": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "De hele indeling automatisch (opnieuw) verdelen.",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/export": {
+      "get": {
+        "tags": [
+          "AdminSales"
+        ],
+        "summary": "Afdruklijst van de tafelindeling: per gezelschap de tafelnummers (Excel).",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/sales/kassalog": {
       "get": {
         "tags": [
@@ -47606,6 +47916,272 @@
           }
         },
         "description": "Het actieve carnavalsjaar en de oudere jaren met inhoud (nieuwste eerst)."
+      },
+      "SeatingLayout": {
+        "required": [
+          "productId",
+          "productName",
+          "date",
+          "tablesPerRow",
+          "seatsPerTable",
+          "rowCount",
+          "totalSeats",
+          "capacity",
+          "overflow",
+          "rows",
+          "parties"
+        ],
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "tablesPerRow": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seatsPerTable": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rowCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSeats": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "capacity": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "overflow": {
+            "type": "boolean"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatingRow"
+            }
+          },
+          "parties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatingParty"
+            }
+          }
+        },
+        "description": "De volledige tafelindeling van één avond: de plattegrond (rijen met tafels) én de lijst gezelschappen (afdruklijst)."
+      },
+      "SeatingMoveRequest": {
+        "required": [
+          "partyKey",
+          "rowIndex",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "partyKey": {
+            "type": "string"
+          },
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SeatingParty": {
+        "required": [
+          "key",
+          "name",
+          "isGroup",
+          "seats",
+          "rowIndex",
+          "position",
+          "manual",
+          "remark",
+          "color",
+          "tables"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isGroup": {
+            "type": "boolean"
+          },
+          "seats": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "manual": {
+            "type": "boolean"
+          },
+          "remark": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "color": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "description": "Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur."
+      },
+      "SeatingRow": {
+        "required": [
+          "rowIndex",
+          "seats",
+          "tableCount",
+          "tables"
+        ],
+        "type": "object",
+        "properties": {
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seats": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tableCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatingTable"
+            }
+          }
+        },
+        "description": "Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij."
+      },
+      "SeatingTable": {
+        "required": [
+          "number",
+          "rowIndex",
+          "indexInRow",
+          "seats",
+          "shared",
+          "overflow",
+          "parts"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rowIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "indexInRow": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seats": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "shared": {
+            "type": "boolean"
+          },
+          "overflow": {
+            "type": "boolean"
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatingTablePart"
+            }
+          }
+        },
+        "description": "Eén tafel in de plattegrond: het nummer (101, 102, … / 201, …), de rij en wie er zit."
+      },
+      "SeatingTablePart": {
+        "required": [
+          "partyKey",
+          "partyName",
+          "isGroup",
+          "color",
+          "seats"
+        ],
+        "type": "object",
+        "properties": {
+          "partyKey": {
+            "type": "string"
+          },
+          "partyName": {
+            "type": "string"
+          },
+          "isGroup": {
+            "type": "boolean"
+          },
+          "color": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seats": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Het aandeel van één gezelschap in één tafel (voor een gedeelde tafel staan er meerdere onder elkaar)."
+      },
+      "SeatingTablesRequest": {
+        "required": [
+          "tablesPerRow"
+        ],
+        "type": "object",
+        "properties": {
+          "tablesPerRow": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "SelectionOption": {
         "required": [

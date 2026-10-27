@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useApi } from '../api/ApiContext';
 import { kindPages, useEvenings, useSaleProducts, type Evening, type EveningRow, type SaleProduct } from '../api/sales';
 import { DataTable, columnHelper } from '../components/DataTable';
@@ -158,6 +159,9 @@ export function PronkzittingPage() {
           <p className="page-subtitle">{kindPages.Pronkzitting.subtitle}</p>
         </div>
         <div className="actions">
+          <Link to="/verkoop/pronkzitting/tafelindeling" className="button secondary">
+            Tafelindeling
+          </Link>
           <ExportSeating />
           <OrderButtons kind="Pronkzitting" onMessage={setMessage} />
         </div>

@@ -150,3 +150,29 @@ internal sealed class TokenScanConfiguration : IEntityTypeConfiguration<TokenSca
         builder.HasOne<Member>().WithMany().HasForeignKey(s => s.MemberId).OnDelete(DeleteBehavior.SetNull);
     }
 }
+
+internal sealed class PronkzittingSeatingLayoutConfiguration : IEntityTypeConfiguration<PronkzittingSeatingLayout>
+{
+    public void Configure(EntityTypeBuilder<PronkzittingSeatingLayout> builder)
+    {
+        builder.ToTable("PronkzittingSeatingLayout", Schemas.Ticketing,
+            t => t.HasCheckConstraint("CK_PronkzittingSeatingLayout_tables", "[tables_per_row] BETWEEN 1 AND 50"));
+        builder.HasKey(l => l.ProductId);
+        builder.Property(l => l.ProductId).ValueGeneratedNever();
+        builder.Property(l => l.RowVersion).IsRowVersion();
+        builder.HasOne<SaleProduct>().WithMany().HasForeignKey(l => l.ProductId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class PronkzittingSeatConfiguration : IEntityTypeConfiguration<PronkzittingSeat>
+{
+    public void Configure(EntityTypeBuilder<PronkzittingSeat> builder)
+    {
+        builder.ToTable("PronkzittingSeat", Schemas.Ticketing,
+            t => t.HasCheckConstraint("CK_PronkzittingSeat_row", "[row_index] BETWEEN 0 AND 3"));
+        builder.Property(s => s.Id).ValueGeneratedNever();
+        builder.Property(s => s.PartyKey).HasMaxLength(110);
+        builder.HasIndex(s => new { s.ProductId, s.PartyKey }).IsUnique();
+        builder.HasOne<SaleProduct>().WithMany().HasForeignKey(s => s.ProductId).OnDelete(DeleteBehavior.Cascade);
+    }
+}

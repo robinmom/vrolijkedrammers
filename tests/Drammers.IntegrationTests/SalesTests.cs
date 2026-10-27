@@ -742,6 +742,80 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "sale-product.sale-resumed")));
     }
 
+    [Fact]
+    public async Task Fase19t_tafelindeling_pakt_groepen_bij_elkaar_verplaatst_en_exporteert()
+    {
+        var vrijdag = await ProductAsync("Pronkzitting", "Pronkzitting vrijdag", 1250, capacity: 300, date: "2027-02-05");
+
+        static SaleOrder ConfirmedOrder(SaleProduct product, string number, string buyer, string? group, int member, int paid) => new()
+        {
+            Id = IdGenerator.NewId(),
+            Number = number,
+            CarnivalYearId = product.CarnivalYearId,
+            ProductId = product.Id,
+            Channel = SaleChannel.Portal,
+            Status = SaleOrderStatus.Confirmed,
+            PaymentMethod = group is null ? SalePaymentMethod.Mollie : SalePaymentMethod.Free,
+            GroupName = group,
+            MemberQuantity = member,
+            PaidQuantity = paid,
+            AmountCents = paid * 1250,
+            BuyerName = buyer,
+            BuyerEmail = $"{number}@example.com",
+            AccessTokenProtected = $"tok-{number}",
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        var looseId = await WithDbAsync(async db =>
+        {
+            var product = await db.SaleProducts.SingleAsync(p => p.Id == vrijdag);
+            var kruumels = ConfirmedOrder(product, "2027-9001", "Mendy Mom", "De Kruumels", member: 10, paid: 0);
+            var bos = ConfirmedOrder(product, "2027-9002", "Bea Bos", "Fam. Bos", member: 0, paid: 6);
+            var jan = ConfirmedOrder(product, "2027-9003", "Jan Jansen", group: null, member: 0, paid: 2);
+            db.SaleOrders.AddRange(kruumels, bos, jan);
+            await db.SaveChangesAsync();
+            return jan.Id;
+        });
+
+        // De indeling: 4 rijen, 8 per tafel, 18 plaatsen; elke groep bij elkaar, de grootste (10) over twee tafels.
+        var layout = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"));
+        Assert.Equal((4, 8, 18, 6), (layout.GetProperty("rowCount").GetInt32(), layout.GetProperty("seatsPerTable").GetInt32(),
+            layout.GetProperty("totalSeats").GetInt32(), layout.GetProperty("tablesPerRow").GetInt32()));
+        var parties = layout.GetProperty("parties").EnumerateArray().ToList();
+        var kruumelsParty = parties.Single(p => p.GetProperty("name").GetString() == "De Kruumels");
+        Assert.Equal([101, 102], kruumelsParty.GetProperty("tables").EnumerateArray().Select(t => t.GetInt32()));
+        Assert.True(kruumelsParty.GetProperty("isGroup").GetBoolean());
+        var janParty = parties.Single(p => p.GetProperty("name").GetString() == "Jan Jansen");
+        Assert.False(janParty.GetProperty("isGroup").GetBoolean());
+        Assert.StartsWith("O:", janParty.GetProperty("key").GetString());
+
+        // Tafels per rij instellen.
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/tables-per-row", new { tablesPerRow = 3 }),
+            HttpStatusCode.NoContent);
+        Assert.Equal(3, (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"))).GetProperty("tablesPerRow").GetInt32());
+
+        // Jan Jansen naar rij 1 (index 0) verslepen; hij staat daarna in rij 1.
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/move",
+            new { partyKey = $"O:{looseId}", rowIndex = 0, position = 0 }), HttpStatusCode.NoContent);
+        var moved = (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"))).GetProperty("parties")
+            .EnumerateArray().Single(p => p.GetProperty("name").GetString() == "Jan Jansen");
+        Assert.Equal(0, moved.GetProperty("rowIndex").GetInt32());
+        Assert.True(moved.GetProperty("manual").GetBoolean());
+        Assert.Equal(1, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == $"O:{looseId}")));
+
+        // Automatisch verdelen wist de handmatige plaatsen.
+        await JsonAsync(await _bestuur.PostAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/arrange", null), HttpStatusCode.NoContent);
+        Assert.Equal(0, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag)));
+
+        // Afdruklijst (Excel) met één regel per gezelschap.
+        var export = await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/export");
+        Assert.Equal(HttpStatusCode.OK, export.StatusCode);
+        using var workbook = new XLWorkbook(new MemoryStream(await export.Content.ReadAsByteArrayAsync()));
+        var sheet = workbook.Worksheets.First();
+        Assert.Equal("Gezelschap", sheet.Cell(1, 1).GetString());
+        Assert.Contains("De Kruumels", sheet.CellsUsed().Select(c => c.GetString()));
+    }
+
     private sealed class FakeTurnstile : Drammers.Infrastructure.Contact.ITurnstileVerifier
     {
         public const string Valid = "turnstile-ok";

@@ -152,6 +152,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<Modules.Ticketing.Sales.TokenScan> TokenScans => Set<Modules.Ticketing.Sales.TokenScan>();
 
+    public DbSet<Modules.Ticketing.Sales.PronkzittingSeatingLayout> PronkzittingSeatingLayouts => Set<Modules.Ticketing.Sales.PronkzittingSeatingLayout>();
+
+    public DbSet<Modules.Ticketing.Sales.PronkzittingSeat> PronkzittingSeats => Set<Modules.Ticketing.Sales.PronkzittingSeat>();
+
     public DbSet<EventCategory> EventCategories => Set<EventCategory>();
 
     public DbSet<Event> Events => Set<Event>();

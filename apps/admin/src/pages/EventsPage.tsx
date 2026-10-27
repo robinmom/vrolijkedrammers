@@ -6,7 +6,6 @@ import {
   useAdminEventCategories,
   useAdminEvents,
   useApiMutation,
-  useEventCategories,
   type AdminEventCategory,
   type EventRequest,
 } from '../api/hooks';
@@ -206,7 +205,9 @@ export function EventEditorPage() {
   const api = useApi();
   const auth = useAuth();
   const navigate = useNavigate();
-  const categories = useEventCategories();
+  // De admin-lijst (ongecachet) i.p.v. de publieke /event-categories, die 5 minuten gecachet is: zo verschijnt een net
+  // aangemaakte categorie meteen in de keuzelijst.
+  const categories = useAdminEventCategories();
   const existing = useAdminEvent(isNew ? null : id);
   const [form, setForm] = useState<EventRequest>(() => (isNew ? newEvent() : emptyEvent));
   const [message, setMessage] = useState<string | null>(null);

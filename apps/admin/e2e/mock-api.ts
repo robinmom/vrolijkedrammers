@@ -121,6 +121,9 @@ export class MockApi {
     { id: 1, code: 'carnaval', name: 'Carnaval', sortOrder: 10, eventCount: 1 },
     { id: 2, code: 'jeugd', name: 'Jeugd', sortOrder: 20, eventCount: 0 },
   ];
+  // De publieke /event-categories is in productie 5 minuten gecachet; we bevriezen hier de begin-snapshot zodat een net
+  // aangemaakte categorie daar (net als echt) nog niet in staat. De beheer-endpoints zijn wél actueel.
+  eventCategoriesPublicSnapshot = this.eventCategories.map((c) => ({ id: c.id, code: c.code, name: c.name }));
 
   collectivePaid: Record<string, { key: string; party: string; reference: string; paidOn: string; amount: number }[]> =
     {
@@ -3365,7 +3368,7 @@ export class MockApi {
       return noContent();
     }
     if (path === '/event-categories') {
-      return json(this.eventCategories.map((c) => ({ id: c.id, code: c.code, name: c.name })));
+      return json(this.eventCategoriesPublicSnapshot);
     }
     if (path === '/admin/events/categories') {
       if (method === 'POST') {

@@ -17771,12 +17771,12 @@
         }
       }
     },
-    "/api/v1/admin/sales/pronkzitting/{productId}/seating/move": {
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/place": {
       "put": {
         "tags": [
           "AdminSales"
         ],
-        "summary": "Een gezelschap naar een andere rij of plaats verslepen.",
+        "summary": "Een gezelschap op een starttafel zetten (tafelnummer, bijv. 205) of weer automatisch laten indelen (table = null).",
         "parameters": [
           {
             "name": "productId",
@@ -17792,17 +17792,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SeatingMoveRequest"
+                "$ref": "#/components/schemas/SeatingPlaceRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/SeatingMoveRequest"
+                "$ref": "#/components/schemas/SeatingPlaceRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/SeatingMoveRequest"
+                "$ref": "#/components/schemas/SeatingPlaceRequest"
               }
             }
           },
@@ -47928,6 +47928,7 @@
           "totalSeats",
           "capacity",
           "overflow",
+          "conflict",
           "rows",
           "parties"
         ],
@@ -47973,6 +47974,9 @@
           "overflow": {
             "type": "boolean"
           },
+          "conflict": {
+            "type": "boolean"
+          },
           "rows": {
             "type": "array",
             "items": {
@@ -47988,27 +47992,6 @@
         },
         "description": "De volledige tafelindeling van één avond: de plattegrond (rijen met tafels) én de lijst gezelschappen (afdruklijst)."
       },
-      "SeatingMoveRequest": {
-        "required": [
-          "partyKey",
-          "rowIndex",
-          "position"
-        ],
-        "type": "object",
-        "properties": {
-          "partyKey": {
-            "type": "string"
-          },
-          "rowIndex": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "position": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
       "SeatingParty": {
         "required": [
           "key",
@@ -48016,7 +47999,7 @@
           "isGroup",
           "seats",
           "rowIndex",
-          "position",
+          "startTable",
           "manual",
           "remark",
           "color",
@@ -48041,7 +48024,7 @@
             "type": "integer",
             "format": "int32"
           },
-          "position": {
+          "startTable": {
             "type": "integer",
             "format": "int32"
           },
@@ -48066,7 +48049,26 @@
             }
           }
         },
-        "description": "Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur."
+        "description": "Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur.\nint SeatingParty.StartTable is de tafel waarop het gezelschap begint; bool SeatingParty.Manual geeft aan of het bestuur die\nplaats zelf heeft gekozen (anders automatisch ingedeeld)."
+      },
+      "SeatingPlaceRequest": {
+        "required": [
+          "partyKey",
+          "table"
+        ],
+        "type": "object",
+        "properties": {
+          "partyKey": {
+            "type": "string"
+          },
+          "table": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
       },
       "SeatingRow": {
         "required": [

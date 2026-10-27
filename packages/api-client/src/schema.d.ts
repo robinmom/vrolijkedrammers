@@ -14855,7 +14855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/sales/pronkzitting/{productId}/seating/move": {
+    "/api/v1/admin/sales/pronkzitting/{productId}/seating/place": {
         parameters: {
             query?: never;
             header?: never;
@@ -14863,7 +14863,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Een gezelschap naar een andere rij of plaats verslepen. */
+        /** Een gezelschap op een starttafel zetten (tafelnummer, bijv. 205) of weer automatisch laten indelen (table = null). */
         put: {
             parameters: {
                 query?: never;
@@ -14875,9 +14875,9 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["SeatingMoveRequest"];
-                    "text/json": components["schemas"]["SeatingMoveRequest"];
-                    "application/*+json": components["schemas"]["SeatingMoveRequest"];
+                    "application/json": components["schemas"]["SeatingPlaceRequest"];
+                    "text/json": components["schemas"]["SeatingPlaceRequest"];
+                    "application/*+json": components["schemas"]["SeatingPlaceRequest"];
                 };
             };
             responses: {
@@ -29806,17 +29806,15 @@ export interface components {
             /** Format: int32 */
             capacity: null | number;
             overflow: boolean;
+            conflict: boolean;
             rows: components["schemas"]["SeatingRow"][];
             parties: components["schemas"]["SeatingParty"][];
         };
-        SeatingMoveRequest: {
-            partyKey: string;
-            /** Format: int32 */
-            rowIndex: number;
-            /** Format: int32 */
-            position: number;
-        };
-        /** @description Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur. */
+        /**
+         * @description Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur.
+         *     int SeatingParty.StartTable is de tafel waarop het gezelschap begint; bool SeatingParty.Manual geeft aan of het bestuur die
+         *     plaats zelf heeft gekozen (anders automatisch ingedeeld).
+         */
         SeatingParty: {
             key: string;
             name: string;
@@ -29826,12 +29824,17 @@ export interface components {
             /** Format: int32 */
             rowIndex: number;
             /** Format: int32 */
-            position: number;
+            startTable: number;
             manual: boolean;
             remark: null | string;
             /** Format: int32 */
             color: number;
             tables: number[];
+        };
+        SeatingPlaceRequest: {
+            partyKey: string;
+            /** Format: int32 */
+            table: null | number;
         };
         /** @description Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij. */
         SeatingRow: {

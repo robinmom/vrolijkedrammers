@@ -512,8 +512,10 @@ export class MockApi {
     ],
     'sp-za': [],
   };
-  seatingState: Record<string, { tablesPerRow: number; assignments: Record<string, { row: number; pos: number }> }> =
-    {};
+  seatingState: Record<
+    string,
+    { tablesPerRow: number; assignments: Record<string, { row: number; startSeat: number }> }
+  > = {};
 
   saleOrders: Record<string, unknown>[] = [
     {
@@ -2900,9 +2902,14 @@ export class MockApi {
         this.seatingFor(m![1]!).tablesPerRow = Number((body as { tablesPerRow: number }).tablesPerRow);
         return noContent();
       }
-      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/move$/)) && method === 'PUT') {
-        const b = body as { partyKey: string; rowIndex: number; position: number };
-        this.seatingFor(m![1]!).assignments[b.partyKey] = { row: b.rowIndex, pos: b.position };
+      if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/place$/)) && method === 'PUT') {
+        const b = body as { partyKey: string; table: number | null };
+        const state = this.seatingFor(m![1]!);
+        if (b.table == null) {
+          delete state.assignments[b.partyKey];
+        } else {
+          state.assignments[b.partyKey] = { row: Math.floor(b.table / 100) - 1, startSeat: ((b.table % 100) - 1) * 8 };
+        }
         return noContent();
       }
       if ((m = path.match(/^\/admin\/sales\/pronkzitting\/([^/]+)\/seating\/arrange$/)) && method === 'POST') {
@@ -4671,6 +4678,16 @@ function seatingColor(key: string): number {
 
 type SeatingPartyInput = { key: string; name: string; isGroup: boolean; seats: number; remark: string | null };
 
+/** De vroegste vrije plaats in een rij waar `seats` plaatsen aaneengesloten passen binnen de capaciteit, anders -1. */
+function seatingFindGap(occ: { start: number; end: number }[], capacity: number, seats: number): number {
+  let cursor = 0;
+  for (const o of [...occ].sort((a, b) => a.start - b.start)) {
+    if (o.start - cursor >= seats) return cursor;
+    cursor = Math.max(cursor, o.end);
+  }
+  return capacity - cursor >= seats ? cursor : -1;
+}
+
 /** Fase 19t: de tafelindeling opbouwen (4 rijen × tafels van 8), zoals PronkzittingSeating.Build in de backend. */
 function buildSeatingLayout(
   productId: string,
@@ -4678,107 +4695,115 @@ function buildSeatingLayout(
   date: string | null,
   parties: SeatingPartyInput[],
   tablesPerRow: number,
-  assignments: Record<string, { row: number; pos: number }>,
+  assignments: Record<string, { row: number; startSeat: number }>,
 ) {
   const SeatsPerTable = 8;
-  const rowSeats = [0, 0, 0, 0];
-  const rowParties: { p: SeatingPartyInput; pos: number; manual: boolean }[][] = [[], [], [], []];
-  for (const p of parties) {
-    const a = assignments[p.key];
-    if (a) {
-      const r = Math.max(0, Math.min(3, a.row));
-      rowParties[r]!.push({ p, pos: a.pos, manual: true });
-      rowSeats[r]! += p.seats;
-    }
-  }
   const rowCapacity = tablesPerRow * SeatsPerTable;
+  const occupied: { start: number; end: number }[][] = [[], [], [], []];
+  const placed: { p: SeatingPartyInput; row: number; start: number; manual: boolean }[] = [];
+  let conflict = false;
+
+  // 1) Gekozen plaatsen eerst (op rij, starttafel); botst het, dan doorschuiven naar de eerste vrije plaats erna.
+  for (const { p, a } of parties
+    .filter((x) => assignments[x.key])
+    .map((x) => ({ p: x, a: assignments[x.key]! }))
+    .sort((x, y) => x.a.row - y.a.row || x.a.startSeat - y.a.startSeat)) {
+    const row = Math.max(0, Math.min(3, a.row));
+    let start = Math.max(0, a.startSeat);
+    while (occupied[row]!.some((o) => start < o.end && o.start < start + p.seats)) {
+      start = Math.max(...occupied[row]!.filter((o) => start < o.end && o.start < start + p.seats).map((o) => o.end));
+      conflict = true;
+    }
+    occupied[row]!.push({ start, end: start + p.seats });
+    placed.push({ p, row, start, manual: true });
+  }
+
+  // 2) De rest automatisch: grootste eerst, in de vroegste rij met een vrij gat dat past; anders achteraan de minst gevulde rij.
+  const seatsIn = (occ: { start: number; end: number }[]) => occ.reduce((n, o) => n + (o.end - o.start), 0);
   for (const p of parties
     .filter((x) => !assignments[x.key])
     .sort((a, b) => b.seats - a.seats || a.name.localeCompare(b.name))) {
-    // De rijen lopen op volgorde vol: eerste rij waar het gezelschap nog helemaal in past; anders de rij met de meeste ruimte over.
-    let r = -1;
-    for (let i = 0; i < 4; i++)
-      if (rowSeats[i]! + p.seats <= rowCapacity) {
-        r = i;
-        break;
+    let chosenRow = -1;
+    let chosenStart = -1;
+    for (let r = 0; r < 4 && chosenRow < 0; r++) {
+      const gap = seatingFindGap(occupied[r]!, rowCapacity, p.seats);
+      if (gap >= 0) {
+        chosenRow = r;
+        chosenStart = gap;
       }
-    if (r < 0) {
-      r = 0;
-      for (let i = 1; i < 4; i++) if (rowSeats[i]! < rowSeats[r]!) r = i;
     }
-    const bucket = rowParties[r]!;
-    const nextPos = bucket.length ? Math.max(...bucket.map((x) => x.pos)) + 1 : 0;
-    bucket.push({ p, pos: nextPos, manual: false });
-    rowSeats[r]! += p.seats;
+    if (chosenRow < 0) {
+      chosenRow = 0;
+      for (let r = 1; r < 4; r++) if (seatsIn(occupied[r]!) < seatsIn(occupied[chosenRow]!)) chosenRow = r;
+      chosenStart = occupied[chosenRow]!.length ? Math.max(...occupied[chosenRow]!.map((o) => o.end)) : 0;
+    }
+    occupied[chosenRow]!.push({ start: chosenStart, end: chosenStart + p.seats });
+    placed.push({ p, row: chosenRow, start: chosenStart, manual: false });
   }
 
   const seatingParties: unknown[] = [];
+  const rowTableParts: Record<
+    number,
+    { partyKey: string; partyName: string; isGroup: boolean; color: number; seats: number }[]
+  >[] = [{}, {}, {}, {}];
+  const rowTableSeats: Record<number, number>[] = [{}, {}, {}, {}];
+  const rowMaxTable = [-1, -1, -1, -1];
+  for (const { p, row, start, manual } of placed) {
+    const end = start + p.seats;
+    const firstTable = Math.floor(start / SeatsPerTable);
+    const lastTable = Math.floor((end - 1) / SeatsPerTable);
+    const tables: number[] = [];
+    for (let t = firstTable; t <= lastTable; t++) {
+      const seatsHere = Math.min(end, (t + 1) * SeatsPerTable) - Math.max(start, t * SeatsPerTable);
+      (rowTableParts[row]![t] ??= []).push({
+        partyKey: p.key,
+        partyName: p.name,
+        isGroup: p.isGroup,
+        color: seatingColor(p.key),
+        seats: seatsHere,
+      });
+      rowTableSeats[row]![t] = (rowTableSeats[row]![t] ?? 0) + seatsHere;
+      tables.push((row + 1) * 100 + t + 1);
+      rowMaxTable[row] = Math.max(rowMaxTable[row]!, t);
+    }
+    seatingParties.push({
+      key: p.key,
+      name: p.name,
+      isGroup: p.isGroup,
+      seats: p.seats,
+      rowIndex: row,
+      startTable: (row + 1) * 100 + Math.floor(start / SeatsPerTable) + 1,
+      manual,
+      remark: p.remark,
+      color: seatingColor(p.key),
+      tables,
+    });
+  }
+
   const seatingRows: unknown[] = [];
   let overflow = false;
   for (let r = 0; r < 4; r++) {
-    const ordered = rowParties[r]!.slice().sort((a, b) => a.pos - b.pos || a.p.name.localeCompare(b.p.name));
-    const tableParts: Record<
-      number,
-      { partyKey: string; partyName: string; isGroup: boolean; color: number; seats: number }[]
-    > = {};
-    const tableSeats: Record<number, number> = {};
-    let seatOffset = 0;
-    let maxTable = -1;
-    ordered.forEach((item, pi) => {
-      const p = item.p;
-      const start = seatOffset;
-      const end = seatOffset + p.seats;
-      const firstTable = Math.floor(start / SeatsPerTable);
-      const lastTable = Math.floor((end - 1) / SeatsPerTable);
-      const tables: number[] = [];
-      for (let t = firstTable; t <= lastTable; t++) {
-        const seatsHere = Math.min(end, (t + 1) * SeatsPerTable) - Math.max(start, t * SeatsPerTable);
-        (tableParts[t] ??= []).push({
-          partyKey: p.key,
-          partyName: p.name,
-          isGroup: p.isGroup,
-          color: seatingColor(p.key),
-          seats: seatsHere,
-        });
-        tableSeats[t] = (tableSeats[t] ?? 0) + seatsHere;
-        tables.push((r + 1) * 100 + t + 1);
-        maxTable = Math.max(maxTable, t);
-      }
-      seatingParties.push({
-        key: p.key,
-        name: p.name,
-        isGroup: p.isGroup,
-        seats: p.seats,
-        rowIndex: r,
-        position: pi,
-        manual: item.manual,
-        remark: p.remark,
-        color: seatingColor(p.key),
-        tables,
-      });
-      seatOffset = end;
-    });
-    const tableCount = Math.max(tablesPerRow, maxTable + 1);
+    const tableCount = Math.max(tablesPerRow, rowMaxTable[r]! + 1);
     const tables: unknown[] = [];
     for (let t = 0; t < tableCount; t++) {
       const ov = t >= tablesPerRow;
-      if (ov && tableParts[t]) overflow = true;
+      if (ov && rowTableParts[r]![t]) overflow = true;
       tables.push({
         number: (r + 1) * 100 + t + 1,
         rowIndex: r,
         indexInRow: t,
-        seats: tableSeats[t] ?? 0,
-        shared: (tableParts[t]?.length ?? 0) > 1,
+        seats: rowTableSeats[r]![t] ?? 0,
+        shared: (rowTableParts[r]![t]?.length ?? 0) > 1,
         overflow: ov,
-        parts: tableParts[t] ?? [],
+        parts: rowTableParts[r]![t] ?? [],
       });
     }
-    seatingRows.push({ rowIndex: r, seats: rowSeats[r], tableCount, tables });
+    seatingRows.push({ rowIndex: r, seats: seatsIn(occupied[r]!), tableCount, tables });
   }
   seatingParties.sort(
     (a, b) =>
       (a as { rowIndex: number }).rowIndex - (b as { rowIndex: number }).rowIndex ||
-      (a as { position: number }).position - (b as { position: number }).position ||
+      (a as { startTable: number }).startTable - (b as { startTable: number }).startTable ||
       (a as { name: string }).name.localeCompare((b as { name: string }).name),
   );
   return {
@@ -4791,6 +4816,7 @@ function buildSeatingLayout(
     totalSeats: parties.reduce((n, p) => n + p.seats, 0),
     capacity: 300,
     overflow,
+    conflict,
     rows: seatingRows,
     parties: seatingParties,
   };

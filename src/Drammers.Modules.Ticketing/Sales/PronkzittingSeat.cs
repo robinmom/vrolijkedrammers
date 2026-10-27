@@ -18,10 +18,11 @@ public sealed class PronkzittingSeatingLayout
 }
 
 /// <summary>
-/// De plaats van één gezelschap (een groep uit e-Boekhouden of een losse bestelling) in de tafelindeling van een avond
-/// (fase 19t). De indeling wordt per gezelschap bewaard; een gezelschap blijft in dezelfde rij en kan over meerdere tafels
-/// in die rij lopen. Gezelschappen zonder bewaarde plaats worden bij het tonen automatisch (gebalanceerd) ingedeeld,
-/// totdat het bestuur ze versleept.
+/// De vaste plaats van één gezelschap (een groep uit e-Boekhouden of een losse bestelling) in de tafelindeling van een
+/// avond (fase 19t). Het bestuur zet een gezelschap op een gekozen <b>starttafel</b>: de rij en de eerste plaats van die
+/// tafel (<see cref="StartSeat"/>). Een gezelschap bezet van daaraf aaneengesloten plaatsen en kan over meerdere tafels
+/// lopen. Gezelschappen zónder bewaarde plaats worden bij het tonen automatisch ingedeeld (ze vullen de lege plekken,
+/// ook vóór een handmatig geplaatst gezelschap), totdat het bestuur ook die een plaats geeft.
 /// </summary>
 public sealed class PronkzittingSeat
 {
@@ -39,6 +40,6 @@ public sealed class PronkzittingSeat
     /// <summary>De rij (0..3); rij 0 staat het dichtst bij het podium.</summary>
     public byte RowIndex { get; set; }
 
-    /// <summary>De volgorde binnen de rij, van links naar rechts.</summary>
-    public int Position { get; set; }
+    /// <summary>De eerste plaats binnen de rij (0-gebaseerd): de starttafel maal acht plaatsen (tafel 1 → 0, tafel 2 → 8, …).</summary>
+    public int StartSeat { get; set; }
 }

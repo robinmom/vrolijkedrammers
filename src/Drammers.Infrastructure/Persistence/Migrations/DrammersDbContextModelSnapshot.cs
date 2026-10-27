@@ -9112,10 +9112,6 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(110)")
                         .HasColumnName("party_key");
 
-                    b.Property<int>("Position")
-                        .HasColumnType("int")
-                        .HasColumnName("position");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("product_id");
@@ -9123,6 +9119,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Property<byte>("RowIndex")
                         .HasColumnType("tinyint")
                         .HasColumnName("row_index");
+
+                    b.Property<int>("StartSeat")
+                        .HasColumnType("int")
+                        .HasColumnName("start_seat");
 
                     b.HasKey("Id")
                         .HasName("PK_PronkzittingSeat");

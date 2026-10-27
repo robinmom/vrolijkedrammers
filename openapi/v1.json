@@ -11344,6 +11344,66 @@
         }
       }
     },
+    "/api/v1/admin/members/import-bank": {
+      "post": {
+        "tags": [
+          "AdminMemberSync"
+        ],
+        "summary": "Eenmalig alleen de IBAN's en machtigingen uit e-Boekhouden overnemen voor bestaande actieve leden (fase 23d): matchen\nop lidnummer, overschrijven waar e-Boekhouden een geldige IBAN heeft, en het IBAN-veld lokaal markeren. Voegt geen leden\ntoe, verwijdert niets en wijzigt geen andere velden — het backend-ledenbestand blijft leidend. Doe eerst een dry-run.",
+        "parameters": [
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/sync-jobs": {
       "get": {
         "tags": [

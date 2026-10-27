@@ -48,7 +48,7 @@ public sealed class MemberSyncScheduleJob(
 
         try
         {
-            await sync.RequestAsync(dryRun: false, SyncTrigger.Scheduled, requestedBy: null, cancellationToken);
+            await sync.RequestAsync(dryRun: false, SyncTrigger.Scheduled, requestedBy: null, bankOnly: false, cancellationToken);
         }
         catch (DomainException ex) when (ex.Code == ErrorCodes.SyncAlreadyRunning)
         {

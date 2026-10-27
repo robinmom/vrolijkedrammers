@@ -3913,6 +3913,31 @@ export class MockApi {
       });
       return json({ id }, 202);
     }
+    if (path === '/admin/members/import-bank' && method === 'POST') {
+      const dryRun = url.searchParams.get('dryRun') !== 'false';
+      const id = `j-${this.syncJobs.length + 1}`;
+      this.syncJobs.unshift({
+        id,
+        status: 'Succeeded',
+        dryRun,
+        trigger: 'Manual',
+        requestedAt: new Date().toISOString(),
+        startedAt: null,
+        completedAt: new Date().toISOString(),
+        totalInSource: 3,
+        created: 0,
+        updated: 2,
+        unchanged: 1,
+        missing: 0,
+        deactivated: 0,
+        reactivated: 0,
+        warnings: 0,
+        errors: 0,
+        conflicts: 0,
+        errorMessage: null,
+      });
+      return json({ id }, 202);
+    }
     if (path === '/admin/privacy-requests') {
       return json({ items: this.privacyRequests, page: 1, pageSize: 25, totalCount: this.privacyRequests.length });
     }

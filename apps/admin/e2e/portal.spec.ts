@@ -211,6 +211,22 @@ test('bestuur start een dry-run, bekijkt het rapport en handelt een conflict af'
   await expect(page.getByRole('cell', { name: 'e-mail, plaats' })).toBeVisible();
 });
 
+test('eenmalig IBANs importeren uit e-Boekhouden (preview en importeren)', async ({ page }) => {
+  const api = new MockApi();
+  await open(page, api, 'ledensync');
+
+  // Preview (dry-run) van de IBAN-import.
+  await page.getByRole('button', { name: 'Dry-run (preview)' }).click();
+  await expect(page.getByText('Dry-run van de IBAN-import gestart.', { exact: false })).toBeVisible();
+
+  // Echte import met bevestiging.
+  await page.getByRole('button', { name: "IBAN's importeren" }).click();
+  const dialog = page.getByRole('dialog', { name: "IBAN's importeren" });
+  await expect(dialog).toContainText('geen leden toegevoegd of verwijderd');
+  await dialog.getByRole('button', { name: 'Nu importeren' }).click();
+  await expect(page.getByText('IBAN-import gestart.', { exact: false })).toBeVisible();
+});
+
 test('lid-detail: status-override opslaan en ontbrekend lid op inactief zetten', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'leden');

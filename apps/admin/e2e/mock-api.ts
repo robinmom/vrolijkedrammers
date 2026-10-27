@@ -4691,11 +4691,21 @@ function buildSeatingLayout(
       rowSeats[r]! += p.seats;
     }
   }
+  const rowCapacity = tablesPerRow * SeatsPerTable;
   for (const p of parties
     .filter((x) => !assignments[x.key])
     .sort((a, b) => b.seats - a.seats || a.name.localeCompare(b.name))) {
-    let r = 0;
-    for (let i = 1; i < 4; i++) if (rowSeats[i]! < rowSeats[r]!) r = i;
+    // De rijen lopen op volgorde vol: eerste rij waar het gezelschap nog helemaal in past; anders de rij met de meeste ruimte over.
+    let r = -1;
+    for (let i = 0; i < 4; i++)
+      if (rowSeats[i]! + p.seats <= rowCapacity) {
+        r = i;
+        break;
+      }
+    if (r < 0) {
+      r = 0;
+      for (let i = 1; i < 4; i++) if (rowSeats[i]! < rowSeats[r]!) r = i;
+    }
     const bucket = rowParties[r]!;
     const nextPos = bucket.length ? Math.max(...bucket.map((x) => x.pos)) + 1 : 0;
     bucket.push({ p, pos: nextPos, manual: false });

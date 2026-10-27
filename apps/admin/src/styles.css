@@ -2589,37 +2589,46 @@ html[data-environment='acc'] .env-banner {
   letter-spacing: 0.15em;
 }
 
-.seat-row {
+/* Vier rijen naast elkaar (rij 1 links → rij 4 rechts); horizontaal scrollbaar op smalle schermen. */
+.seat-columns {
   display: flex;
   gap: 0.75rem;
-  align-items: stretch;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+.seat-column {
+  flex: 1 1 0;
+  min-width: 9.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.5rem;
   border: 1px dashed transparent;
   border-radius: var(--dvd-radius-card);
 }
 
-.seat-row.dragover {
+.seat-column.dragover {
   border-color: var(--dvd-feestgoud);
   background: var(--dvd-surface-muted);
 }
 
-.seat-row-label {
-  flex: 0 0 5rem;
+.seat-column-label {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
-.seat-row-tables {
+.seat-column-tables {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
-  flex: 1 1 auto;
 }
 
 .seat-table {
-  flex: 0 0 8.5rem;
-  min-height: 5.5rem;
+  width: 100%;
+  min-height: 4rem;
   border: 1px solid var(--dvd-border);
   border-radius: var(--dvd-radius-control);
   background: var(--dvd-surface);

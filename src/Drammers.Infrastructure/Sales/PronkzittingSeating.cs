@@ -30,8 +30,8 @@ public sealed record SeatingLayout(
 /// Tafelindeling van de pronkzitting (fase 19t): elke groep of losse bestelling zit bij elkaar, altijd vier rijen met acht
 /// plaatsen per tafel en een instelbaar aantal tafels per rij. Een gezelschap blijft in dezelfde rij en kan over meerdere
 /// tafels lopen; kleine bestellingen vullen de lege plaatsen aan, zodat een tafel door twee gezelschappen gedeeld kan worden.
-/// Wie nog geen plaats heeft wordt automatisch gebalanceerd over de rijen verdeeld; het bestuur kan ze versslepen en het
-/// resultaat als afdruklijst (gezelschap → tafelnummers) uitdraaien.
+/// Wie nog geen plaats heeft wordt automatisch ingedeeld: de rijen lopen op volgorde vol (links→rechts) voordat de volgende
+/// begint. Het bestuur kan gezelschappen verslepen en de indeling als afdruklijst (gezelschap → tafelnummers) uitdraaien.
 /// </summary>
 public sealed class PronkzittingSeating(DrammersDbContext db, IAuditLogger audit, IClock clock)
 {
@@ -187,16 +187,32 @@ public sealed class PronkzittingSeating(DrammersDbContext db, IAuditLogger audit
             rowSeats[r] += party.Seats;
         }
 
-        // De automatisch in te delen gezelschappen: grootste eerst, telkens naar de rij met de minste plaatsen (gebalanceerd).
+        // De automatisch in te delen gezelschappen: grootste eerst, en de rijen worden op volgorde gevuld — elk gezelschap
+        // komt in de eerste rij (links→rechts) waar het nog helemaal in past, zodat een rij volledig volloopt voordat de
+        // volgende begint en kleine bestellingen achter grote aanschuiven. Past niemand meer? Dan de rij met de meeste ruimte over.
+        var rowCapacity = tablesPerRow * SeatsPerTable;
         foreach (var party in parties.Where(p => !assignments.ContainsKey(p.Key))
                      .OrderByDescending(p => p.Seats).ThenBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
         {
-            var r = 0;
-            for (var i = 1; i < RowCount; i++)
+            var r = -1;
+            for (var i = 0; i < RowCount; i++)
             {
-                if (rowSeats[i] < rowSeats[r])
+                if (rowSeats[i] + party.Seats <= rowCapacity)
                 {
                     r = i;
+                    break;
+                }
+            }
+
+            if (r < 0)
+            {
+                r = 0;
+                for (var i = 1; i < RowCount; i++)
+                {
+                    if (rowSeats[i] < rowSeats[r])
+                    {
+                        r = i;
+                    }
                 }
             }
 

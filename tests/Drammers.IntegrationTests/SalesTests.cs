@@ -788,18 +788,26 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         var janParty = parties.Single(p => p.GetProperty("name").GetString() == "Jan Jansen");
         Assert.False(janParty.GetProperty("isGroup").GetBoolean());
         Assert.StartsWith("O:", janParty.GetProperty("key").GetString());
+        // Een rij loopt eerst vol: met ruime tafels passen alle 18 plaatsen in rij 1 (de kleintjes schuiven achter de groep aan).
+        Assert.All(parties, p => Assert.Equal(0, p.GetProperty("rowIndex").GetInt32()));
 
-        // Tafels per rij instellen.
-        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/tables-per-row", new { tablesPerRow = 3 }),
+        // Minder tafels per rij: rij 1 is vol bij 16 plaatsen (2 tafels), de rest schuift door naar rij 2.
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/tables-per-row", new { tablesPerRow = 2 }),
             HttpStatusCode.NoContent);
-        Assert.Equal(3, (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"))).GetProperty("tablesPerRow").GetInt32());
+        var tight = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"));
+        Assert.Equal(2, tight.GetProperty("tablesPerRow").GetInt32());
+        var tightParties = tight.GetProperty("parties").EnumerateArray().ToList();
+        Assert.Equal(16, tight.GetProperty("rows").EnumerateArray().First().GetProperty("seats").GetInt32());
+        Assert.Equal(0, tightParties.Single(p => p.GetProperty("name").GetString() == "De Kruumels").GetProperty("rowIndex").GetInt32());
+        Assert.Equal(0, tightParties.Single(p => p.GetProperty("name").GetString() == "Fam. Bos").GetProperty("rowIndex").GetInt32());
+        Assert.Equal(1, tightParties.Single(p => p.GetProperty("name").GetString() == "Jan Jansen").GetProperty("rowIndex").GetInt32());
 
-        // Jan Jansen naar rij 1 (index 0) verslepen; hij staat daarna in rij 1.
+        // Jan Jansen naar rij 2 (index 1) verslepen; hij staat daarna handmatig in rij 2.
         await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/move",
-            new { partyKey = $"O:{looseId}", rowIndex = 0, position = 0 }), HttpStatusCode.NoContent);
+            new { partyKey = $"O:{looseId}", rowIndex = 1, position = 0 }), HttpStatusCode.NoContent);
         var moved = (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"))).GetProperty("parties")
             .EnumerateArray().Single(p => p.GetProperty("name").GetString() == "Jan Jansen");
-        Assert.Equal(0, moved.GetProperty("rowIndex").GetInt32());
+        Assert.Equal(1, moved.GetProperty("rowIndex").GetInt32());
         Assert.True(moved.GetProperty("manual").GetBoolean());
         Assert.Equal(1, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == $"O:{looseId}")));
 

@@ -9684,6 +9684,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/members/import-bank": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Eenmalig alleen de IBAN's en machtigingen uit e-Boekhouden overnemen voor bestaande actieve leden (fase 23d): matchen
+         *     op lidnummer, overschrijven waar e-Boekhouden een geldige IBAN heeft, en het IBAN-veld lokaal markeren. Voegt geen leden
+         *     toe, verwijdert niets en wijzigt geen andere velden — het backend-ledenbestand blijft leidend. Doe eerst een dry-run.
+         */
+        post: {
+            parameters: {
+                query?: {
+                    dryRun?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sync-jobs": {
         parameters: {
             query?: never;

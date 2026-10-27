@@ -40,7 +40,18 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         var id = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
         using var scope = _api.Services.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<MemberSync>().RunAsync(id, CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<MemberSync>().RunAsync(id, bankOnly: false, CancellationToken.None);
+        return await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().SyncJobs.AsNoTracking().SingleAsync(j => j.Id == id);
+    }
+
+    /// <summary>Vraagt een eenmalige bank-import aan via de API en voert hem uit zoals de worker dat doet.</summary>
+    private async Task<SyncJob> BankImportAsync(bool dryRun = false)
+    {
+        var response = await _admin.PostAsync($"/api/v1/admin/members/import-bank?dryRun={dryRun.ToString().ToLowerInvariant()}", null);
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        var id = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        using var scope = _api.Services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<MemberSync>().RunAsync(id, bankOnly: true, CancellationToken.None);
         return await scope.ServiceProvider.GetRequiredService<DrammersDbContext>().SyncJobs.AsNoTracking().SingleAsync(j => j.Id == id);
     }
 
@@ -58,6 +69,36 @@ public class MemberSyncTests(SqlServerFixture sql) : IAsyncLifetime
         {
             _eb.Add($"{i:000}", $"Piet van der Lid{i}", $"lid{i}@example.com");
         }
+    }
+
+    [Fact]
+    public async Task Bank_import_haalt_ibans_voor_bestaande_leden_markeert_lokaal_en_wist_niets()
+    {
+        _eb.Add("001", "Piet van der Lid1", "lid1@example.com");
+        _eb.Add("002", "Jan de Tweede", "lid2@example.com");
+        await SyncAsync(); // twee actieve leden, nog zonder IBAN
+
+        Assert.Null((await MemberAsync("001")).IbanProtected);
+
+        // e-Boekhouden krijgt nu een IBAN + machtiging voor lid 001; lid 002 blijft zonder.
+        _eb.Update("001", m => m with { Iban = "NL91ABNA0417164300", Mandate = true, MandateId = "M-001", MandateSignedDate = "2026-01-15" });
+
+        var job = await BankImportAsync();
+        Assert.Equal(SyncJobStatus.Succeeded, job.Status);
+        Assert.Equal((1, 0, 0), (job.Updated, job.Created, job.Deactivated)); // alleen lid 001 kreeg een IBAN; niets toegevoegd/verwijderd
+        Assert.Equal(2, await WithDbAsync(db => db.Members.CountAsync()));
+
+        var m1 = await MemberAsync("001");
+        Assert.NotNull(m1.IbanProtected);
+        Assert.Equal(("4300", "M-001"), (m1.IbanLast4, m1.MandateReference));
+        Assert.Equal(new DateOnly(2026, 1, 15), m1.MandateSignedOn);
+        Assert.Contains("iban", (m1.LocalFields ?? string.Empty).Split(','));
+        Assert.Null((await MemberAsync("002")).IbanProtected); // niet gewist, gewoon leeg gebleven
+
+        // Een gewone sync wist de geïmporteerde IBAN niet meer (lokaal gemarkeerd), ook al heeft e-Boekhouden 'm niet.
+        _eb.Update("001", m => m with { Iban = null, Mandate = false });
+        await SyncAsync();
+        Assert.NotNull((await MemberAsync("001")).IbanProtected);
     }
 
     [Fact]

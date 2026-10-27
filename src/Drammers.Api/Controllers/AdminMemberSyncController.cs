@@ -24,7 +24,22 @@ public sealed class AdminMemberSyncController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CreatedResponse>> Import([FromQuery] bool dryRun = true, CancellationToken cancellationToken = default)
     {
-        var id = await sync.RequestAsync(dryRun, SyncTrigger.Manual, actor.UserId, cancellationToken);
+        var id = await sync.RequestAsync(dryRun, SyncTrigger.Manual, actor.UserId, bankOnly: false, cancellationToken);
+        return Accepted($"/api/v1/admin/sync-jobs/{id}", new CreatedResponse(id));
+    }
+
+    /// <summary>
+    /// Eenmalig alleen de IBAN's en machtigingen uit e-Boekhouden overnemen voor bestaande actieve leden (fase 23d): matchen
+    /// op lidnummer, overschrijven waar e-Boekhouden een geldige IBAN heeft, en het IBAN-veld lokaal markeren. Voegt geen leden
+    /// toe, verwijdert niets en wijzigt geen andere velden — het backend-ledenbestand blijft leidend. Doe eerst een dry-run.
+    /// </summary>
+    [HttpPost("members/import-bank")]
+    [RequirePermission(Permissions.ImportRun)]
+    [ProducesResponseType<CreatedResponse>(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CreatedResponse>> ImportBank([FromQuery] bool dryRun = true, CancellationToken cancellationToken = default)
+    {
+        var id = await sync.RequestAsync(dryRun, SyncTrigger.Manual, actor.UserId, bankOnly: true, cancellationToken);
         return Accepted($"/api/v1/admin/sync-jobs/{id}", new CreatedResponse(id));
     }
 

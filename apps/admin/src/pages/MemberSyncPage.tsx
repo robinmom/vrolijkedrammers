@@ -89,11 +89,16 @@ export function MemberSyncPage() {
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmReal, setConfirmReal] = useState(false);
+  const [confirmBank, setConfirmBank] = useState(false);
   const jobs = useSyncJobs(page);
   const busy = jobs.data?.items.some((j) => j.status === 'Queued' || j.status === 'Running') ?? false;
   const canConfigure = (me.data?.permissions ?? []).includes('config.manage');
   const start = useApiMutation(
     (dryRun: boolean) => api.POST('/api/v1/admin/members/import', { params: { query: { dryRun } } }),
+    [['sync-jobs']],
+  );
+  const bankImport = useApiMutation(
+    (dryRun: boolean) => api.POST('/api/v1/admin/members/import-bank', { params: { query: { dryRun } } }),
     [['sync-jobs']],
   );
 
@@ -103,6 +108,20 @@ export function MemberSyncPage() {
       onSuccess: () => {
         setConfirmReal(false);
         setMessage(dryRun ? 'Dry-run gestart. Het rapport verschijnt hieronder.' : 'Synchronisatie gestart.');
+      },
+    });
+  }
+
+  function runBank(dryRun: boolean) {
+    setMessage(null);
+    bankImport.mutate(dryRun, {
+      onSuccess: () => {
+        setConfirmBank(false);
+        setMessage(
+          dryRun
+            ? 'Dry-run van de IBAN-import gestart. Het rapport verschijnt bij de runs hieronder.'
+            : 'IBAN-import gestart. Het resultaat verschijnt bij de runs hieronder.',
+        );
       },
     });
   }
@@ -133,10 +152,28 @@ export function MemberSyncPage() {
         </div>
       </div>
       <SuccessMessage message={message} />
-      <ProblemAlert error={start.error ?? jobs.error} />
+      <ProblemAlert error={start.error ?? bankImport.error ?? jobs.error} />
 
       <SyncStatus lastDone={lastDone} canConfigure={canConfigure} />
       {running ? <RunningJob job={running} /> : null}
+
+      <section className="card" aria-labelledby="iban-import-kop">
+        <h2 id="iban-import-kop">IBAN's eenmalig ophalen uit e-Boekhouden</h2>
+        <p className="card-hint">
+          Haalt alléén de IBAN's en machtigingen uit e-Boekhouden en zet ze bij de bestaande actieve leden (gematcht op
+          lidnummer). Dit <strong>voegt geen leden toe, verwijdert niets en wijzigt geen andere gegevens</strong> — het
+          ledenbestand in de app blijft leidend. De opgehaalde IBAN's worden als "handmatig" gemarkeerd, zodat een latere
+          sync ze niet meer overschrijft. Doe eerst een dry-run.
+        </p>
+        <div className="actions">
+          <button type="button" className="button secondary" disabled={busy || bankImport.isPending} onClick={() => runBank(true)}>
+            Dry-run (preview)
+          </button>
+          <button type="button" className="button" disabled={busy || bankImport.isPending} onClick={() => setConfirmBank(true)}>
+            IBAN's importeren
+          </button>
+        </div>
+      </section>
 
       <OpenConflicts />
       <ExcludedMembers />
@@ -168,6 +205,23 @@ export function MemberSyncPage() {
           </button>
           <button type="button" className="button" disabled={start.isPending} onClick={() => run(false)}>
             Nu synchroniseren
+          </button>
+        </div>
+      </Dialog>
+
+      <Dialog open={confirmBank} title="IBAN's importeren" onClose={() => setConfirmBank(false)}>
+        <p>
+          De IBAN's en machtigingen uit e-Boekhouden worden overgenomen bij de bestaande actieve leden (op lidnummer) en
+          overschrijven de huidige waarde. Er worden geen leden toegevoegd of verwijderd en er worden geen andere gegevens
+          gewijzigd. Draai bij voorkeur eerst een dry-run.
+        </p>
+        <ProblemAlert error={bankImport.error} />
+        <div className="actions">
+          <button type="button" className="button secondary" onClick={() => setConfirmBank(false)}>
+            Annuleren
+          </button>
+          <button type="button" className="button" disabled={bankImport.isPending} onClick={() => runBank(false)}>
+            Nu importeren
           </button>
         </div>
       </Dialog>

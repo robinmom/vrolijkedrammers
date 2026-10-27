@@ -35,8 +35,12 @@ public sealed class MemberSync(
 
     private static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(30);
 
-    /// <summary>Zet een run in de wachtrij (outbox); de worker voert hem uit. Maximaal één run tegelijk.</summary>
-    public async Task<Guid> RequestAsync(bool dryRun, SyncTrigger trigger, Guid? requestedBy, CancellationToken cancellationToken)
+    /// <summary>
+    /// Zet een run in de wachtrij (outbox); de worker voert hem uit. Maximaal één run tegelijk.
+    /// <paramref name="bankOnly"/>: alleen de IBAN's en machtigingen uit e-Boekhouden overnemen voor bestaande actieve leden
+    /// (eenmalig, fase 23d) — zonder leden toe te voegen, te verwijderen of andere velden te wijzigen.
+    /// </summary>
+    public async Task<Guid> RequestAsync(bool dryRun, SyncTrigger trigger, Guid? requestedBy, bool bankOnly, CancellationToken cancellationToken)
     {
         if (!eBoekhoudenOptions.Value.Enabled)
         {
@@ -56,10 +60,10 @@ public sealed class MemberSync(
 
         var job = new SyncJob { Id = IdGenerator.NewId(), Status = SyncJobStatus.Queued, DryRun = dryRun, Trigger = trigger, RequestedBy = requestedBy, RequestedAt = now };
         db.SyncJobs.Add(job);
-        outbox.Enqueue(MessageType, new SyncMessage(job.Id));
+        outbox.Enqueue(MessageType, new SyncMessage(job.Id, bankOnly));
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("member-sync.requested", "SyncJob", job.Id.ToString(), null,
-            JsonSerializer.Serialize(new { dryRun, trigger = trigger.ToString() })), cancellationToken);
+            JsonSerializer.Serialize(new { dryRun, bankOnly, trigger = trigger.ToString() })), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return job.Id;
     }
@@ -81,7 +85,7 @@ public sealed class MemberSync(
     }
 
     /// <summary>Voert een run uit die in de wachtrij staat. Idempotent: een run die al gestart is, wordt overgeslagen.</summary>
-    public async Task RunAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task RunAsync(Guid jobId, bool bankOnly, CancellationToken cancellationToken)
     {
         var now = clock.UtcNow.UtcDateTime;
         var claimed = await db.SyncJobs.Where(j => j.Id == jobId && j.Status == SyncJobStatus.Queued)
@@ -98,7 +102,15 @@ public sealed class MemberSync(
             await using var session = await eBoekhouden.OpenSessionAsync(cancellationToken);
             var references = await session.ListMembersAsync(cancellationToken);
             job.TotalInSource = references.Count;
-            await new Run(db, clock.UtcNow.UtcDateTime, logger, job, mapping, session, ibans).ExecuteAsync(references, cancellationToken);
+            var run = new Run(db, clock.UtcNow.UtcDateTime, logger, job, mapping, session, ibans);
+            if (bankOnly)
+            {
+                await run.ExecuteBankAsync(references, cancellationToken);
+            }
+            else
+            {
+                await run.ExecuteAsync(references, cancellationToken);
+            }
         }
         catch (EBoekhoudenException ex)
         {
@@ -137,8 +149,9 @@ public sealed class MemberSync(
             logger.LogWarning("Ledensync {JobId} heeft {Conflicts} conflict(en) die beoordeeld moeten worden", job.Id, job.Conflicts);
         }
 
-        // Inactief geworden leden kunnen niet meer inloggen; weer actieve leden wel (fase 9b).
-        if (!job.DryRun && job.Status != SyncJobStatus.Failed)
+        // Inactief geworden leden kunnen niet meer inloggen; weer actieve leden wel (fase 9b). Een bank-import raakt het
+        // lidmaatschap of de accounts niet aan, dus die naverwerking is daar niet nodig.
+        if (!job.DryRun && !bankOnly && job.Status != SyncJobStatus.Failed)
         {
             await lifecycle.ReconcileAsync(null, cancellationToken);
             // Nieuwe of gewijzigde leden: openstaande accountverzoeken kunnen nu wel kloppen.
@@ -149,7 +162,7 @@ public sealed class MemberSync(
         }
     }
 
-    public sealed record SyncMessage(Guid SyncJobId);
+    public sealed record SyncMessage(Guid SyncJobId, bool BankOnly = false);
 
     /// <summary>De verwerking van één run; houdt de lokale leden en tellingen bij.</summary>
     private sealed class Run(
@@ -240,6 +253,108 @@ public sealed class MemberSync(
             job.Status = job.Conflicts > 0 ? SyncJobStatus.Conflict
                 : job.Warnings > 0 || job.Errors > 0 ? SyncJobStatus.SucceededWithWarnings
                 : SyncJobStatus.Succeeded;
+        }
+
+        /// <summary>
+        /// Alleen de IBAN's en machtigingen uit e-Boekhouden overnemen voor bestaande actieve leden (fase 23d): matchen op
+        /// lidnummer, overschrijven waar e-Boekhouden een geldige IBAN + machtiging heeft (nooit wissen), en het IBAN-veld als
+        /// lokaal markeren zodat de sync het daarna met rust laat. Geen leden toevoegen, verwijderen of andere velden wijzigen.
+        /// </summary>
+        public async Task ExecuteBankAsync(IReadOnlyList<EbMemberReference> references, CancellationToken cancellationToken)
+        {
+            var activeMembers = job.DryRun
+                ? await db.Members.AsNoTracking().Where(m => m.MembershipStatus == MembershipStatus.Active).ToListAsync(cancellationToken)
+                : await db.Members.Where(m => m.MembershipStatus == MembershipStatus.Active).ToListAsync(cancellationToken);
+            var byNumber = activeMembers.ToDictionary(m => m.MemberNumber, StringComparer.OrdinalIgnoreCase);
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var consecutiveErrors = 0;
+
+            foreach (var reference in references)
+            {
+                EbMember source;
+                try
+                {
+                    source = await session.GetMemberAsync(reference.Id, cancellationToken);
+                    consecutiveErrors = 0;
+                }
+                catch (EBoekhoudenException ex)
+                {
+                    if (++consecutiveErrors >= MaxConsecutiveErrors)
+                    {
+                        throw;
+                    }
+
+                    await AddItemAsync(reference.MemberNumber ?? $"#{reference.Id}", null, SyncItemAction.Error, null, ex.Message, cancellationToken);
+                    continue;
+                }
+
+                var number = source.MemberNumber?.Trim();
+                if (string.IsNullOrEmpty(number) || !seen.Add(number) || !byNumber.TryGetValue(number, out var member))
+                {
+                    // Geen (uniek) lidnummer of geen actief lid in de backend → met rust laten; het backend-ledenbestand is leidend.
+                    continue;
+                }
+
+                var warnings = new List<string>();
+                var set = ApplyBankImport(member, source, warnings);
+                if (set)
+                {
+                    job.Updated++;
+                }
+                else
+                {
+                    job.Unchanged++;
+                }
+
+                await AddItemAsync(number, member.Id, set ? SyncItemAction.Updated : SyncItemAction.Unchanged, set ? "iban" : null, null,
+                    cancellationToken, warnings);
+            }
+
+            await FlushItemsAsync(cancellationToken);
+            job.Status = job.Warnings > 0 || job.Errors > 0 ? SyncJobStatus.SucceededWithWarnings : SyncJobStatus.Succeeded;
+        }
+
+        /// <summary>Bank-import: alleen zetten als e-Boekhouden een geldige IBAN + machtiging heeft (nooit wissen); altijd het IBAN-veld lokaal markeren.</summary>
+        private bool ApplyBankImport(Member member, EbMember source, List<string> warnings)
+        {
+            MarkIbanLocal(member);
+
+            string? iban = null;
+            if (!string.IsNullOrWhiteSpace(source.Iban))
+            {
+                try
+                {
+                    iban = MembershipApplications.NormalizeIban(source.Iban);
+                }
+                catch (Drammers.SharedKernel.Errors.DomainException)
+                {
+                    warnings.Add("IBAN in e-Boekhouden is ongeldig; niet overgenomen.");
+                }
+            }
+
+            if (iban is null || !source.Mandate)
+            {
+                return false;
+            }
+
+            member.IbanProtected = ibans.Protect(iban);
+            member.IbanLast4 = iban[^4..];
+            member.AccountHolder = Clip(member.FullName, 70);
+            member.MandateReference = Clip(source.MandateId?.Trim(), 35) ?? $"DVD-{member.MemberNumber}";
+            member.MandateSignedOn = source.MandateSignedDate is { Length: >= 10 } signed
+                && DateOnly.TryParseExact(signed[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                ? date
+                : null;
+            return true;
+        }
+
+        private static void MarkIbanLocal(Member member)
+        {
+            var local = new HashSet<string>((member.LocalFields ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal)
+            {
+                MemberFields.Iban,
+            };
+            member.LocalFields = string.Join(',', local.Order(StringComparer.Ordinal));
         }
 
         private async Task CreateAsync(EbMember source, string number, CancellationToken cancellationToken)
@@ -618,6 +733,9 @@ public sealed class MemberSyncHandler(MemberSync sync) : IOutboxMessageHandler
 {
     public string Type => MemberSync.MessageType;
 
-    public Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken) =>
-        sync.RunAsync(JsonSerializer.Deserialize<MemberSync.SyncMessage>(message.Payload, JsonSerializerOptions.Web)!.SyncJobId, cancellationToken);
+    public Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken)
+    {
+        var msg = JsonSerializer.Deserialize<MemberSync.SyncMessage>(message.Payload, JsonSerializerOptions.Web)!;
+        return sync.RunAsync(msg.SyncJobId, msg.BankOnly, cancellationToken);
+    }
 }

@@ -14,16 +14,20 @@ public sealed record SeatingTablePart(string PartyKey, string PartyName, bool Is
 /// <summary>Eén tafel in de plattegrond: het nummer (101, 102, … / 201, …), de rij en wie er zit.</summary>
 public sealed record SeatingTable(int Number, int RowIndex, int IndexInRow, int Seats, bool Shared, bool Overflow, IReadOnlyList<SeatingTablePart> Parts);
 
-/// <summary>Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij.</summary>
-public sealed record SeatingRow(int RowIndex, int Seats, int TableCount, IReadOnlyList<SeatingTable> Tables);
+/// <summary>
+/// Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij. <see cref="Chairs"/> zijn losse
+/// stoelen ná de laatste tafel: als er minder dan vier plaatsen overblijven komt er geen extra tafel maar zetten we stoelen neer.
+/// </summary>
+public sealed record SeatingRow(int RowIndex, int Seats, int TableCount, IReadOnlyList<SeatingTable> Tables, IReadOnlyList<SeatingTablePart> Chairs);
 
 /// <summary>
 /// Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur.
 /// <see cref="StartTable"/> is de tafel waarop het gezelschap begint; <see cref="Manual"/> geeft aan of het bestuur die
-/// plaats zelf heeft gekozen (anders automatisch ingedeeld).
+/// plaats zelf heeft gekozen (anders automatisch ingedeeld). <see cref="ChairSeats"/> is het aantal plaatsen op losse stoelen.
 /// </summary>
 public sealed record SeatingParty(
-    string Key, string Name, bool IsGroup, int Seats, int RowIndex, int StartTable, bool Manual, string? Remark, int Color, IReadOnlyList<int> Tables);
+    string Key, string Name, bool IsGroup, int Seats, int RowIndex, int StartTable, bool Manual, string? Remark, int Color,
+    IReadOnlyList<int> Tables, int ChairSeats);
 
 /// <summary>De volledige tafelindeling van één avond: de plattegrond (rijen met tafels) én de lijst gezelschappen (afdruklijst).</summary>
 public sealed record SeatingLayout(
@@ -42,6 +46,9 @@ public sealed class PronkzittingSeating(DrammersDbContext db, IAuditLogger audit
     public const int RowCount = 4;
     public const int SeatsPerTable = 8;
     public const int DefaultTablesPerRow = 6;
+
+    /// <summary>Blijven er na de laatste tafel minder dan zoveel plaatsen over, dan losse stoelen i.p.v. een extra tafel.</summary>
+    public const int ChairThreshold = 4;
     private const int Palette = 10;
 
     /// <summary>De tafelindeling van een avond opbouwen: gekozen plaatsen gerespecteerd, de rest in de vrije plekken gevuld.</summary>
@@ -242,42 +249,71 @@ public sealed class PronkzittingSeating(DrammersDbContext db, IAuditLogger audit
             placed.Add((party, chosenRow, chosenStart, false));
         }
 
+        // Per rij: waar beginnen de losse stoelen? Als de laatste (overloop)tafel minder dan ChairThreshold plaatsen heeft,
+        // tonen we die staart als losse stoelen ná de laatste tafel i.p.v. als extra tafel.
+        var chairsStart = new int[RowCount];
+        for (var r = 0; r < RowCount; r++)
+        {
+            var maxSeat = occupied[r].Count == 0 ? 0 : occupied[r].Max(o => o.End);
+            var lastTableIndex = maxSeat == 0 ? -1 : (maxSeat - 1) / SeatsPerTable;
+            var seatsInLast = maxSeat - lastTableIndex * SeatsPerTable;
+            chairsStart[r] = lastTableIndex >= tablesPerRow && seatsInLast < ChairThreshold ? lastTableIndex * SeatsPerTable : int.MaxValue;
+        }
+
         var seatingParties = new List<SeatingParty>();
         var rowTableParts = new Dictionary<int, List<SeatingTablePart>>[RowCount];
         var rowTableSeats = new Dictionary<int, int>[RowCount];
+        var rowChairs = new List<SeatingTablePart>[RowCount];
         var rowMaxTable = new int[RowCount];
         for (var r = 0; r < RowCount; r++)
         {
             rowTableParts[r] = [];
             rowTableSeats[r] = [];
+            rowChairs[r] = [];
             rowMaxTable[r] = -1;
         }
 
-        foreach (var (party, row, start, manual) in placed)
+        // Van links naar rechts, zodat de volgorde van de stoelen in een tafel klopt (eerste gezelschap vooraan).
+        foreach (var (party, row, start, manual) in placed.OrderBy(x => x.Row).ThenBy(x => x.Start))
         {
             var end = start + party.Seats;
-            var firstTable = start / SeatsPerTable;
-            var lastTable = (end - 1) / SeatsPerTable;
+            var color = Color(party.Key);
             var tables = new List<int>();
-            for (var t = firstTable; t <= lastTable; t++)
+
+            // Plaatsen die nog op een genummerde tafel vallen (vóór de losse stoelen).
+            var tableEnd = Math.Min(end, chairsStart[row]);
+            if (tableEnd > start)
             {
-                var seatsHere = Math.Min(end, (t + 1) * SeatsPerTable) - Math.Max(start, t * SeatsPerTable);
-                rowTableParts[row].TryAdd(t, []);
-                rowTableParts[row][t].Add(new SeatingTablePart(party.Key, party.Name, party.IsGroup, Color(party.Key), seatsHere));
-                rowTableSeats[row][t] = rowTableSeats[row].GetValueOrDefault(t) + seatsHere;
-                tables.Add(TableNumber(row, t));
-                rowMaxTable[row] = Math.Max(rowMaxTable[row], t);
+                var firstTable = start / SeatsPerTable;
+                var lastTable = (tableEnd - 1) / SeatsPerTable;
+                for (var t = firstTable; t <= lastTable; t++)
+                {
+                    var seatsHere = Math.Min(tableEnd, (t + 1) * SeatsPerTable) - Math.Max(start, t * SeatsPerTable);
+                    rowTableParts[row].TryAdd(t, []);
+                    rowTableParts[row][t].Add(new SeatingTablePart(party.Key, party.Name, party.IsGroup, color, seatsHere));
+                    rowTableSeats[row][t] = rowTableSeats[row].GetValueOrDefault(t) + seatsHere;
+                    tables.Add(TableNumber(row, t));
+                    rowMaxTable[row] = Math.Max(rowMaxTable[row], t);
+                }
             }
 
-            seatingParties.Add(new SeatingParty(party.Key, party.Name, party.IsGroup, party.Seats, row, TableNumber(row, firstTable), manual,
-                party.Remark, Color(party.Key), tables));
+            // Plaatsen op losse stoelen (de staart die niet meer op een tafel komt).
+            var chairSeats = end - Math.Max(start, chairsStart[row]);
+            if (chairSeats > 0)
+            {
+                rowChairs[row].Add(new SeatingTablePart(party.Key, party.Name, party.IsGroup, color, chairSeats));
+            }
+
+            seatingParties.Add(new SeatingParty(party.Key, party.Name, party.IsGroup, party.Seats, row, TableNumber(row, start / SeatsPerTable),
+                manual, party.Remark, color, tables, Math.Max(0, chairSeats)));
         }
 
         var seatingRows = new List<SeatingRow>();
         var anyOverflow = false;
         for (var r = 0; r < RowCount; r++)
         {
-            var tableCount = Math.Max(tablesPerRow, rowMaxTable[r] + 1);
+            var maxNumberedTable = chairsStart[r] == int.MaxValue ? rowMaxTable[r] : chairsStart[r] / SeatsPerTable - 1;
+            var tableCount = Math.Max(tablesPerRow, maxNumberedTable + 1);
             var rowTables = new List<SeatingTable>();
             for (var t = 0; t < tableCount; t++)
             {
@@ -287,7 +323,7 @@ public sealed class PronkzittingSeating(DrammersDbContext db, IAuditLogger audit
                     rowTableParts[r].GetValueOrDefault(t)?.Count > 1, overflow, rowTableParts[r].GetValueOrDefault(t) ?? []));
             }
 
-            seatingRows.Add(new SeatingRow(r, SeatsIn(occupied[r]), tableCount, rowTables));
+            seatingRows.Add(new SeatingRow(r, SeatsIn(occupied[r]), tableCount, rowTables, rowChairs[r]));
         }
 
         var orderedParties = seatingParties

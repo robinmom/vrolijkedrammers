@@ -315,8 +315,13 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
         var row = 2;
         foreach (var p in layout.Parties)
         {
-            object?[] values =
-                [p.Name, p.IsGroup ? "Groep" : "Los", p.Seats, p.RowIndex + 1, string.Join(", ", p.Tables), p.Remark];
+            var plaats = string.Join(", ", p.Tables);
+            if (p.ChairSeats > 0)
+            {
+                plaats = (plaats.Length > 0 ? plaats + " + " : "") + $"{p.ChairSeats} losse stoel{(p.ChairSeats == 1 ? "" : "en")}";
+            }
+
+            object?[] values = [p.Name, p.IsGroup ? "Groep" : "Los", p.Seats, p.RowIndex + 1, plaats, p.Remark];
             for (var c = 0; c < values.Length; c++)
             {
                 sheet.Cell(row, c + 1).Value = XLCellValue.FromObject(values[c]);

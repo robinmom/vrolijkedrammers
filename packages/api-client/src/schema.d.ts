@@ -29813,7 +29813,7 @@ export interface components {
         /**
          * @description Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur.
          *     int SeatingParty.StartTable is de tafel waarop het gezelschap begint; bool SeatingParty.Manual geeft aan of het bestuur die
-         *     plaats zelf heeft gekozen (anders automatisch ingedeeld).
+         *     plaats zelf heeft gekozen (anders automatisch ingedeeld). int SeatingParty.ChairSeats is het aantal plaatsen op losse stoelen.
          */
         SeatingParty: {
             key: string;
@@ -29830,13 +29830,18 @@ export interface components {
             /** Format: int32 */
             color: number;
             tables: number[];
+            /** Format: int32 */
+            chairSeats: number;
         };
         SeatingPlaceRequest: {
             partyKey: string;
             /** Format: int32 */
             table: null | number;
         };
-        /** @description Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij. */
+        /**
+         * @description Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij. IReadOnlyList&lt;SeatingTablePart&gt; SeatingRow.Chairs zijn losse
+         *     stoelen ná de laatste tafel: als er minder dan vier plaatsen overblijven komt er geen extra tafel maar zetten we stoelen neer.
+         */
         SeatingRow: {
             /** Format: int32 */
             rowIndex: number;
@@ -29845,6 +29850,7 @@ export interface components {
             /** Format: int32 */
             tableCount: number;
             tables: components["schemas"]["SeatingTable"][];
+            chairs: components["schemas"]["SeatingTablePart"][];
         };
         /** @description Eén tafel in de plattegrond: het nummer (101, 102, … / 201, …), de rij en wie er zit. */
         SeatingTable: {

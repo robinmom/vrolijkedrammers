@@ -807,7 +807,25 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(101, bosPlaced.GetProperty("tables").EnumerateArray().First().GetInt32());
         Assert.Equal(1, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == "G:De Kruumels")));
 
-        // Weer automatisch laten indelen (tafel = null) wist de gekozen plaats.
+        // Stoelen-regel: met 2 tafels per rij en De Kruumels (10) op tafel 102 lopen 2 plaatsen over → losse stoelen (geen extra tafel).
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/tables-per-row", new { tablesPerRow = 2 }),
+            HttpStatusCode.NoContent);
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/place",
+            new { partyKey = "G:De Kruumels", table = 102 }), HttpStatusCode.NoContent);
+        var chairLayout = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"));
+        var row0 = chairLayout.GetProperty("rows").EnumerateArray().First();
+        var chairs = row0.GetProperty("chairs").EnumerateArray().ToList();
+        Assert.Single(chairs);
+        Assert.Equal(("De Kruumels", 2), (chairs[0].GetProperty("partyName").GetString(), chairs[0].GetProperty("seats").GetInt32()));
+        // Rij 1 toont maar 2 tafels (de overloop is stoelen, geen extra tafel); De Kruumels heeft 2 plaatsen op stoelen.
+        Assert.Equal(2, row0.GetProperty("tableCount").GetInt32());
+        var kruumelsChair = chairLayout.GetProperty("parties").EnumerateArray().Single(p => p.GetProperty("name").GetString() == "De Kruumels");
+        Assert.Equal(2, kruumelsChair.GetProperty("chairSeats").GetInt32());
+        Assert.Equal([102], kruumelsChair.GetProperty("tables").EnumerateArray().Select(t => t.GetInt32()));
+
+        // Weer automatisch laten indelen (tafel = null) wist de gekozen plaats; terug naar 6 tafels per rij.
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/tables-per-row", new { tablesPerRow = 6 }),
+            HttpStatusCode.NoContent);
         await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/place",
             new { partyKey = "G:De Kruumels", table = (int?)null }), HttpStatusCode.NoContent);
         Assert.Equal(0, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == "G:De Kruumels")));

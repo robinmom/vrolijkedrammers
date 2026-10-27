@@ -32,7 +32,26 @@ test('plattegrond met podium bovenaan en vier rijen naast elkaar', async ({ page
   for (const name of ['De Kruumels', 'Fam. Bos', 'Jan Jansen']) {
     await expect(page.getByRole('cell', { name, exact: false }).first()).toBeVisible();
   }
+  // Een gezelschap is óók op de plattegrond zelf sleepbaar (de naam in de tafel heeft draggable).
+  await expect(page.getByLabel('Tafel 101').locator('li[draggable="true"]').first()).toBeVisible();
   await expectNoSeriousA11yIssues(page);
+});
+
+test('overloop: minder dan vier over wordt losse stoelen i.p.v. een extra tafel', async ({ page }) => {
+  const api = new MockApi(['sale.manage']);
+  await api.install(page);
+  await page.goto('/beheer/verkoop/pronkzitting/tafelindeling');
+
+  // Twee tafels per rij, en De Kruumels (10) op tafel 102: 8 op tafel 102, 2 lopen over → losse stoelen (geen extra tafel).
+  await page.getByLabel('Tafels per rij').fill('2');
+  await page.getByLabel('Tafels per rij').blur();
+  await expect(page.getByText('Aantal tafels per rij opgeslagen.')).toBeVisible();
+  await page.getByLabel('Starttafel voor De Kruumels').selectOption('102');
+
+  await expect(page.getByText('Losse stoelen', { exact: false }).first()).toBeVisible();
+  const row0 = (api.buildSeating('sp-vr') as { rows: { chairs: { partyName: string; seats: number }[] }[] }).rows[0]!;
+  expect(row0.chairs).toHaveLength(1);
+  expect(row0.chairs[0]).toMatchObject({ partyName: 'De Kruumels', seats: 2 });
 });
 
 test('een groep aan een gekozen starttafel zetten, ook als eerdere tafels leeg zijn', async ({ page }) => {

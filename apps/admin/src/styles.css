@@ -2708,3 +2708,60 @@ html[data-environment='acc'] .env-banner {
   display: flex;
   gap: 0.25rem;
 }
+
+/* Fase 19t: de tafel met stoelen (verticaal tafelblad, vier stoelen links en vier rechts). */
+.seat-table-parts li[draggable='true'] {
+  cursor: grab;
+}
+
+.seat-top {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 0.4rem;
+  padding: 0.3rem 0 0.1rem;
+}
+
+.seat-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+.seat-board {
+  width: 0.5rem;
+  border-radius: 4px;
+  background: var(--dvd-surface-muted, #ecece6);
+  border: 1px solid var(--dvd-border, #d8d8d2);
+}
+
+.seat-chair {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.seat-chair.empty {
+  background: transparent;
+  border: 1px solid var(--dvd-border, #d8d8d2);
+}
+
+/* Losse stoelen ná de laatste tafel in een rij. */
+.seat-chairs {
+  border: 1px dashed var(--dvd-border, #d8d8d2);
+  border-radius: var(--dvd-radius-control);
+  background: var(--dvd-surface-muted, #fafaf7);
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.seat-chairs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding-top: 0.2rem;
+}

@@ -23,11 +23,56 @@ function colorFor(index: number): string {
   return PARTY_COLORS[((index % PARTY_COLORS.length) + PARTY_COLORS.length) % PARTY_COLORS.length] ?? PARTY_COLORS[0]!;
 }
 
+type SeatPart = SeatingTable['parts'][number];
+
 function Dot({ color }: { color: number }) {
   return <span className="seat-dot" style={{ background: colorFor(color) }} aria-hidden="true" />;
 }
 
-/** Eén tafel in de plattegrond: het nummer en wie er zit (gedeelde tafels tonen beide gezelschappen onder elkaar). */
+/** De plaatsen (op volgorde) uitvouwen tot losse stoelen: per stoel de kleur van het gezelschap, of null voor leeg. */
+function seatColors(parts: readonly SeatPart[], capacity: number): (number | null)[] {
+  const seats: (number | null)[] = [];
+  for (const p of parts) {
+    for (let i = 0; i < p.seats; i++) seats.push(p.color);
+  }
+  while (seats.length < capacity) seats.push(null);
+  return seats;
+}
+
+/** Eén stoel (een gekleurde stip, grijs als leeg). */
+function Chair({ color }: { color: number | null }) {
+  return (
+    <span
+      className={color === null ? 'seat-chair empty' : 'seat-chair'}
+      style={color === null ? undefined : { background: colorFor(color) }}
+      aria-hidden="true"
+    />
+  );
+}
+
+/** De tafel met stoelen: een verticaal tafelblad met vier stoelen links en vier rechts, gekleurd per gezelschap. */
+function TableTop({ parts }: { parts: readonly SeatPart[] }) {
+  const seats = seatColors(parts, 8);
+  const left = seats.slice(0, 4);
+  const right = seats.slice(4, 8);
+  return (
+    <div className="seat-top" aria-hidden="true">
+      <div className="seat-side">
+        {left.map((c, i) => (
+          <Chair key={`l${i}`} color={c} />
+        ))}
+      </div>
+      <div className="seat-board" />
+      <div className="seat-side">
+        {right.map((c, i) => (
+          <Chair key={`r${i}`} color={c} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Eén tafel in de plattegrond: het nummer, wie er zit (sleepbaar) en de tafel met stoelen. */
 function TableCard({
   table,
   dragging,
@@ -35,6 +80,8 @@ function TableCard({
   onEnter,
   onLeave,
   onDropHere,
+  onPartyDragStart,
+  onPartyDragEnd,
 }: {
   table: SeatingTable;
   dragging: boolean;
@@ -42,6 +89,8 @@ function TableCard({
   onEnter: () => void;
   onLeave: () => void;
   onDropHere: () => void;
+  onPartyDragStart: (partyKey: string) => void;
+  onPartyDragEnd: () => void;
 }) {
   const classes = ['seat-table'];
   if (table.overflow) classes.push('overflow');
@@ -64,17 +113,21 @@ function TableCard({
       }}
     >
       <div className="seat-table-head">
-        <span className="seat-table-number">{table.number}</span>
-        <span className="seat-table-count">
-          {table.seats}/{8}
-        </span>
+        <span className="seat-table-number">Tafel {table.number}</span>
+        <span className="seat-table-count">{table.seats}/8</span>
       </div>
       {table.parts.length === 0 ? (
-        <p className="seat-table-empty">leeg</p>
+        <p className="seat-table-empty">Vrije plaatsen</p>
       ) : (
         <ul className="seat-table-parts">
           {table.parts.map((p) => (
-            <li key={p.partyKey}>
+            <li
+              key={p.partyKey}
+              draggable
+              title={`Sleep ${p.partyName} naar een andere tafel`}
+              onDragStart={() => onPartyDragStart(p.partyKey)}
+              onDragEnd={onPartyDragEnd}
+            >
               <Dot color={p.color} />
               <span className="seat-part-name">{p.partyName}</span>
               <span className="seat-part-count">{p.seats}p</span>
@@ -82,7 +135,35 @@ function TableCard({
           ))}
         </ul>
       )}
+      <TableTop parts={table.parts} />
       {table.overflow ? <span className="badge warn seat-overflow-badge">extra tafel</span> : null}
+    </div>
+  );
+}
+
+/** Losse stoelen ná de laatste tafel in een rij (als er minder dan vier plaatsen overblijven). */
+function LooseChairs({ parts }: { parts: readonly SeatPart[] }) {
+  const total = parts.reduce((n, p) => n + p.seats, 0);
+  return (
+    <div className="seat-chairs" aria-label={`Losse stoelen: ${parts.map((p) => `${p.partyName} ${p.seats}`).join(', ')}`}>
+      <div className="seat-table-head">
+        <span className="seat-table-number">Losse stoelen</span>
+        <span className="seat-table-count">{total}</span>
+      </div>
+      <ul className="seat-table-parts">
+        {parts.map((p) => (
+          <li key={p.partyKey}>
+            <Dot color={p.color} />
+            <span className="seat-part-name">{p.partyName}</span>
+            <span className="seat-part-count">{p.seats}p</span>
+          </li>
+        ))}
+      </ul>
+      <div className="seat-chairs-row" aria-hidden="true">
+        {seatColors(parts, total).map((c, i) => (
+          <Chair key={i} color={c} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -238,9 +319,10 @@ export function PronkzittingSeatingPage() {
             </div>
 
             {layout.overflow ? (
-              <p className="card-error" role="alert">
-                Er zijn meer plaatsen dan tafels in een rij. Zet het aantal tafels per rij hoger of verplaats gezelschappen
-                naar een andere rij; de extra tafels staan met een waarschuwing aangegeven.
+              <p className="card-hint" role="status">
+                In een rij passen niet alle plaatsen op het ingestelde aantal tafels. Er staat een <strong>extra tafel</strong>{' '}
+                bij (vanaf vier plaatsen); bij minder dan vier plaatsen komen er <strong>losse stoelen</strong> na de laatste
+                tafel. Je kunt ook het aantal tafels per rij verhogen of gezelschappen naar een andere rij verslepen.
               </p>
             ) : null}
 
@@ -272,8 +354,14 @@ export function PronkzittingSeatingPage() {
                             setDragKey(null);
                             setDropTable(null);
                           }}
+                          onPartyDragStart={(key) => setDragKey(key)}
+                          onPartyDragEnd={() => {
+                            setDragKey(null);
+                            setDropTable(null);
+                          }}
                         />
                       ))}
+                      {row.chairs.length > 0 ? <LooseChairs parts={row.chairs} /> : null}
                     </div>
                   </div>
                 ))}

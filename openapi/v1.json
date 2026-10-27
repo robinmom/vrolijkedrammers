@@ -48003,7 +48003,8 @@
           "manual",
           "remark",
           "color",
-          "tables"
+          "tables",
+          "chairSeats"
         ],
         "type": "object",
         "properties": {
@@ -48047,9 +48048,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          "chairSeats": {
+            "type": "integer",
+            "format": "int32"
           }
         },
-        "description": "Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur.\nint SeatingParty.StartTable is de tafel waarop het gezelschap begint; bool SeatingParty.Manual geeft aan of het bestuur die\nplaats zelf heeft gekozen (anders automatisch ingedeeld)."
+        "description": "Eén gezelschap (groep of losse bestelling) met z'n plaats, de tafels waarop het zit en een vaste kleur.\nint SeatingParty.StartTable is de tafel waarop het gezelschap begint; bool SeatingParty.Manual geeft aan of het bestuur die\nplaats zelf heeft gekozen (anders automatisch ingedeeld). int SeatingParty.ChairSeats is het aantal plaatsen op losse stoelen."
       },
       "SeatingPlaceRequest": {
         "required": [
@@ -48075,7 +48080,8 @@
           "rowIndex",
           "seats",
           "tableCount",
-          "tables"
+          "tables",
+          "chairs"
         ],
         "type": "object",
         "properties": {
@@ -48096,9 +48102,15 @@
             "items": {
               "$ref": "#/components/schemas/SeatingTable"
             }
+          },
+          "chairs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeatingTablePart"
+            }
           }
         },
-        "description": "Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij."
+        "description": "Eén rij tafels (rij 0 staat bij het podium), met het totaal aantal plaatsen in die rij. IReadOnlyList&lt;SeatingTablePart&gt; SeatingRow.Chairs zijn losse\nstoelen ná de laatste tafel: als er minder dan vier plaatsen overblijven komt er geen extra tafel maar zetten we stoelen neer."
       },
       "SeatingTable": {
         "required": [

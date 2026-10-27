@@ -219,38 +219,41 @@ export function PronkzittingSeatingPage() {
               <div className="seat-podium" aria-hidden="true">
                 PODIUM
               </div>
-              {layout.rows.map((row) => (
-                <div
-                  key={row.rowIndex}
-                  className={dragRow === row.rowIndex ? 'seat-row dragover' : 'seat-row'}
-                  onDragOver={(e) => {
-                    if (dragKey) {
+              {/* Vier rijen naast elkaar: rij 1 links, rij 4 rechts; de tafels lopen binnen een rij van boven naar onder. */}
+              <div className="seat-columns" tabIndex={0} role="region" aria-label="Plattegrond met de rijen">
+                {layout.rows.map((row) => (
+                  <div
+                    key={row.rowIndex}
+                    className={dragRow === row.rowIndex ? 'seat-column dragover' : 'seat-column'}
+                    onDragOver={(e) => {
+                      if (dragKey) {
+                        e.preventDefault();
+                        setDragRow(row.rowIndex);
+                      }
+                    }}
+                    onDragLeave={() => setDragRow((r) => (r === row.rowIndex ? null : r))}
+                    onDrop={(e) => {
                       e.preventDefault();
-                      setDragRow(row.rowIndex);
-                    }
-                  }}
-                  onDragLeave={() => setDragRow((r) => (r === row.rowIndex ? null : r))}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragRow(null);
-                    if (dragKey) {
-                      const party = layout.parties.find((p) => p.key === dragKey);
-                      if (party) moveTo(party, row.rowIndex, row.tableCount * 8);
-                      setDragKey(null);
-                    }
-                  }}
-                >
-                  <div className="seat-row-label">
-                    <strong>Rij {row.rowIndex + 1}</strong>
-                    <span className="muted small-text">{row.seats} plaatsen</span>
+                      setDragRow(null);
+                      if (dragKey) {
+                        const party = layout.parties.find((p) => p.key === dragKey);
+                        if (party) moveTo(party, row.rowIndex, row.tableCount * 8);
+                        setDragKey(null);
+                      }
+                    }}
+                  >
+                    <div className="seat-column-label">
+                      <strong>Rij {row.rowIndex + 1}</strong>
+                      <span className="muted small-text">{row.seats} plaatsen</span>
+                    </div>
+                    <div className="seat-column-tables">
+                      {row.tables.map((table) => (
+                        <TableCard key={table.number} table={table} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="seat-row-tables">
-                    {row.tables.map((table) => (
-                      <TableCard key={table.number} table={table} />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </section>
 

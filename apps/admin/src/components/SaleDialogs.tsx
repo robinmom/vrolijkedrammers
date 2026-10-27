@@ -272,7 +272,7 @@ export function NewOrderDialog({
   const [productId, setProductId] = useState('');
   const [groupName, setGroupName] = useState('');
   const [memberQuantity, setMemberQuantity] = useState('0');
-  const [paidQuantity, setPaidQuantity] = useState('1');
+  const [paidQuantity, setPaidQuantity] = useState('0');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -287,7 +287,7 @@ export function NewOrderDialog({
       setProductId('');
       setGroupName('');
       setMemberQuantity('0');
-      setPaidQuantity('1');
+      setPaidQuantity('0');
       setName('');
       setEmail('');
       setPhone('');

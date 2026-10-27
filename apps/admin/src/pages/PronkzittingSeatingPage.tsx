@@ -28,12 +28,41 @@ function Dot({ color }: { color: number }) {
 }
 
 /** Eén tafel in de plattegrond: het nummer en wie er zit (gedeelde tafels tonen beide gezelschappen onder elkaar). */
-function TableCard({ table }: { table: SeatingTable }) {
+function TableCard({
+  table,
+  dragging,
+  active,
+  onEnter,
+  onLeave,
+  onDropHere,
+}: {
+  table: SeatingTable;
+  dragging: boolean;
+  active: boolean;
+  onEnter: () => void;
+  onLeave: () => void;
+  onDropHere: () => void;
+}) {
   const classes = ['seat-table'];
   if (table.overflow) classes.push('overflow');
   if (table.seats === 0) classes.push('empty');
+  if (active) classes.push('droptarget');
   return (
-    <div className={classes.join(' ')} aria-label={`Tafel ${table.number}`}>
+    <div
+      className={classes.join(' ')}
+      aria-label={`Tafel ${table.number}`}
+      onDragOver={(e) => {
+        if (dragging) e.preventDefault();
+      }}
+      onDragEnter={() => {
+        if (dragging) onEnter();
+      }}
+      onDragLeave={onLeave}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDropHere();
+      }}
+    >
       <div className="seat-table-head">
         <span className="seat-table-number">{table.number}</span>
         <span className="seat-table-count">
@@ -73,7 +102,7 @@ export function PronkzittingSeatingPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [exportError, setExportError] = useState<unknown>(null);
   const [dragKey, setDragKey] = useState<string | null>(null);
-  const [dragRow, setDragRow] = useState<number | null>(null);
+  const [dropTable, setDropTable] = useState<number | null>(null);
   const api = useApi();
 
   const layout = seating.data;
@@ -82,11 +111,11 @@ export function PronkzittingSeatingPage() {
     if (layout) setTablesPerRow(layout.tablesPerRow);
   }, [layout]);
 
-  const move = useApiMutation(
-    ({ partyKey, rowIndex, position }: { partyKey: string; rowIndex: number; position: number }) =>
-      api.PUT('/api/v1/admin/sales/pronkzitting/{productId}/seating/move', {
+  const place = useApiMutation(
+    ({ partyKey, table }: { partyKey: string; table: number | null }) =>
+      api.PUT('/api/v1/admin/sales/pronkzitting/{productId}/seating/place', {
         params: { path: { productId: effectiveId! } },
-        body: { partyKey, rowIndex, position },
+        body: { partyKey, table },
       }),
     SALES_KEYS,
   );
@@ -106,8 +135,8 @@ export function PronkzittingSeatingPage() {
     SALES_KEYS,
   );
 
-  function moveTo(party: SeatingParty, rowIndex: number, position: number) {
-    move.mutate({ partyKey: party.key, rowIndex, position });
+  function placeAt(party: SeatingParty, table: number | null) {
+    place.mutate({ partyKey: party.key, table });
   }
 
   async function exportExcel() {
@@ -141,8 +170,8 @@ export function PronkzittingSeatingPage() {
         <div className="page-title">
           <h1>Tafelindeling pronkzitting</h1>
           <p className="page-subtitle">
-            Vier rijen, acht plaatsen per tafel. Elke groep zit bij elkaar; versleep of verplaats ze om de zaal in te
-            delen. Het podium staat bovenaan.
+            Vier rijen, acht plaatsen per tafel, podium bovenaan. Elke groep zit bij elkaar. Sleep een gezelschap op een
+            tafel of kies een starttafel; de rest wordt automatisch in de vrije plekken gevuld.
           </p>
         </div>
         <div className="actions">
@@ -153,7 +182,7 @@ export function PronkzittingSeatingPage() {
       </div>
 
       <SuccessMessage message={message} />
-      <ProblemAlert error={evenings.error ?? seating.error ?? move.error ?? saveTables.error ?? arrange.error ?? exportError} />
+      <ProblemAlert error={evenings.error ?? seating.error ?? place.error ?? saveTables.error ?? arrange.error ?? exportError} />
 
       {(evenings.data ?? []).length > 1 ? (
         <div className="filters" role="group" aria-label="Kies de avond">
@@ -219,36 +248,31 @@ export function PronkzittingSeatingPage() {
               <div className="seat-podium" aria-hidden="true">
                 PODIUM
               </div>
-              {/* Vier rijen naast elkaar: rij 1 links, rij 4 rechts; de tafels lopen binnen een rij van boven naar onder. */}
+              {/* Vier rijen naast elkaar: rij 1 links, rij 4 rechts; de tafels lopen binnen een rij van boven naar onder.
+                  Sleep een gezelschap op een tafel om het daar te laten starten. */}
               <div className="seat-columns" tabIndex={0} role="region" aria-label="Plattegrond met de rijen">
                 {layout.rows.map((row) => (
-                  <div
-                    key={row.rowIndex}
-                    className={dragRow === row.rowIndex ? 'seat-column dragover' : 'seat-column'}
-                    onDragOver={(e) => {
-                      if (dragKey) {
-                        e.preventDefault();
-                        setDragRow(row.rowIndex);
-                      }
-                    }}
-                    onDragLeave={() => setDragRow((r) => (r === row.rowIndex ? null : r))}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragRow(null);
-                      if (dragKey) {
-                        const party = layout.parties.find((p) => p.key === dragKey);
-                        if (party) moveTo(party, row.rowIndex, row.tableCount * 8);
-                        setDragKey(null);
-                      }
-                    }}
-                  >
+                  <div key={row.rowIndex} className="seat-column">
                     <div className="seat-column-label">
                       <strong>Rij {row.rowIndex + 1}</strong>
                       <span className="muted small-text">{row.seats} plaatsen</span>
                     </div>
                     <div className="seat-column-tables">
                       {row.tables.map((table) => (
-                        <TableCard key={table.number} table={table} />
+                        <TableCard
+                          key={table.number}
+                          table={table}
+                          dragging={dragKey !== null}
+                          active={dropTable === table.number}
+                          onEnter={() => setDropTable(table.number)}
+                          onLeave={() => setDropTable((t) => (t === table.number ? null : t))}
+                          onDropHere={() => {
+                            const party = dragKey ? layout.parties.find((p) => p.key === dragKey) : null;
+                            if (party) placeAt(party, table.number);
+                            setDragKey(null);
+                            setDropTable(null);
+                          }}
+                        />
                       ))}
                     </div>
                   </div>
@@ -260,8 +284,8 @@ export function PronkzittingSeatingPage() {
           <section className="card" aria-labelledby="gezelschappen-kop">
             <h2 id="gezelschappen-kop">Gezelschappen</h2>
             <p className="card-hint">
-              Sleep een gezelschap naar een rij in de plattegrond, of gebruik de knoppen. Binnen een rij bepaalt de
-              volgorde welke tafels het gezelschap krijgt.
+              Sleep een gezelschap op een tafel in de plattegrond, of kies hieronder de starttafel. "Automatisch" laat het
+              gezelschap de eerste vrije plek vullen. Een handmatig gekozen tafel blijft staan, ook als eerdere tafels leeg zijn.
             </p>
             <div className="table-scroll" tabIndex={0} role="region" aria-label="Gezelschappen">
               <table className="table compact">
@@ -269,79 +293,57 @@ export function PronkzittingSeatingPage() {
                   <tr>
                     <th scope="col">Gezelschap</th>
                     <th scope="col">Aantal</th>
-                    <th scope="col">Rij</th>
+                    <th scope="col">Starttafel</th>
                     <th scope="col">Tafel(s)</th>
-                    <th scope="col">Verplaatsen</th>
                     <th scope="col">Opmerking / wensen</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {layout.parties.map((party) => {
-                    const inRow = layout.parties.filter((p) => p.rowIndex === party.rowIndex);
-                    const first = party.position === 0;
-                    const last = party.position === inRow.length - 1;
-                    return (
-                      <tr
-                        key={party.key}
-                        draggable
-                        onDragStart={() => setDragKey(party.key)}
-                        onDragEnd={() => {
-                          setDragKey(null);
-                          setDragRow(null);
-                        }}
-                      >
-                        <td>
-                          <Dot color={party.color} />
-                          <strong>{party.name}</strong>
-                          <div className="muted small-text">{party.isGroup ? 'groep' : 'losse kaarten'}</div>
-                        </td>
-                        <td>{party.seats}</td>
-                        <td>
-                          <label className="visually-hidden" htmlFor={`rij-${party.key}`}>
-                            Rij voor {party.name}
-                          </label>
-                          <select
-                            id={`rij-${party.key}`}
-                            value={party.rowIndex}
-                            onChange={(e) => moveTo(party, Number(e.target.value), 9999)}
-                          >
-                            {layout.rows.map((r) => (
-                              <option key={r.rowIndex} value={r.rowIndex}>
-                                Rij {r.rowIndex + 1}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>{party.tables.join(', ')}</td>
-                        <td>
-                          <div className="seat-move-buttons">
-                            <button
-                              type="button"
-                              className="button ghost small"
-                              disabled={first || move.isPending}
-                              aria-label={`${party.name} naar voren`}
-                              onClick={() => moveTo(party, party.rowIndex, party.position - 1)}
-                            >
-                              ↑
-                            </button>
-                            <button
-                              type="button"
-                              className="button ghost small"
-                              disabled={last || move.isPending}
-                              aria-label={`${party.name} naar achteren`}
-                              onClick={() => moveTo(party, party.rowIndex, party.position + 1)}
-                            >
-                              ↓
-                            </button>
-                          </div>
-                        </td>
-                        <td>{party.remark ?? ''}</td>
-                      </tr>
-                    );
-                  })}
+                  {layout.parties.map((party) => (
+                    <tr
+                      key={party.key}
+                      draggable
+                      onDragStart={() => setDragKey(party.key)}
+                      onDragEnd={() => {
+                        setDragKey(null);
+                        setDropTable(null);
+                      }}
+                    >
+                      <td>
+                        <Dot color={party.color} />
+                        <strong>{party.name}</strong>
+                        <div className="muted small-text">{party.isGroup ? 'groep' : 'losse kaarten'}</div>
+                      </td>
+                      <td>{party.seats}</td>
+                      <td>
+                        <label className="visually-hidden" htmlFor={`tafel-${party.key}`}>
+                          Starttafel voor {party.name}
+                        </label>
+                        <select
+                          id={`tafel-${party.key}`}
+                          value={party.manual ? String(party.startTable) : 'auto'}
+                          disabled={place.isPending}
+                          onChange={(e) => placeAt(party, e.target.value === 'auto' ? null : Number(e.target.value))}
+                        >
+                          <option value="auto">Automatisch</option>
+                          {layout.rows.map((r) => (
+                            <optgroup key={r.rowIndex} label={`Rij ${r.rowIndex + 1}`}>
+                              {r.tables.map((t) => (
+                                <option key={t.number} value={t.number}>
+                                  Tafel {t.number}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </td>
+                      <td>{party.tables.join(', ')}</td>
+                      <td>{party.remark ?? ''}</td>
+                    </tr>
+                  ))}
                   {layout.parties.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="muted">
+                      <td colSpan={5} className="muted">
                         Nog geen betaalde bestellingen voor deze avond.
                       </td>
                     </tr>

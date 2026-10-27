@@ -743,7 +743,7 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Fase19t_tafelindeling_pakt_groepen_bij_elkaar_verplaatst_en_exporteert()
+    public async Task Fase19t_tafelindeling_starttafel_automatisch_vullen_en_exporteren()
     {
         var vrijdag = await ProductAsync("Pronkzitting", "Pronkzitting vrijdag", 1250, capacity: 300, date: "2027-02-05");
 
@@ -787,29 +787,30 @@ public class SalesTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.True(kruumelsParty.GetProperty("isGroup").GetBoolean());
         var janParty = parties.Single(p => p.GetProperty("name").GetString() == "Jan Jansen");
         Assert.False(janParty.GetProperty("isGroup").GetBoolean());
-        Assert.StartsWith("O:", janParty.GetProperty("key").GetString());
+        Assert.Equal($"O:{looseId}", janParty.GetProperty("key").GetString());
         // Een rij loopt eerst vol: met ruime tafels passen alle 18 plaatsen in rij 1 (de kleintjes schuiven achter de groep aan).
         Assert.All(parties, p => Assert.Equal(0, p.GetProperty("rowIndex").GetInt32()));
 
-        // Minder tafels per rij: rij 1 is vol bij 16 plaatsen (2 tafels), de rest schuift door naar rij 2.
-        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/tables-per-row", new { tablesPerRow = 2 }),
-            HttpStatusCode.NoContent);
-        var tight = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"));
-        Assert.Equal(2, tight.GetProperty("tablesPerRow").GetInt32());
-        var tightParties = tight.GetProperty("parties").EnumerateArray().ToList();
-        Assert.Equal(16, tight.GetProperty("rows").EnumerateArray().First().GetProperty("seats").GetInt32());
-        Assert.Equal(0, tightParties.Single(p => p.GetProperty("name").GetString() == "De Kruumels").GetProperty("rowIndex").GetInt32());
-        Assert.Equal(0, tightParties.Single(p => p.GetProperty("name").GetString() == "Fam. Bos").GetProperty("rowIndex").GetInt32());
-        Assert.Equal(1, tightParties.Single(p => p.GetProperty("name").GetString() == "Jan Jansen").GetProperty("rowIndex").GetInt32());
+        // De Kruumels (10) handmatig op starttafel 205 zetten — ook al zijn 201 t/m 204 nog leeg.
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/place",
+            new { partyKey = "G:De Kruumels", table = 205 }), HttpStatusCode.NoContent);
+        var placed = await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"));
+        var placedParties = placed.GetProperty("parties").EnumerateArray().ToList();
+        var kruumelsPlaced = placedParties.Single(p => p.GetProperty("name").GetString() == "De Kruumels");
+        Assert.True(kruumelsPlaced.GetProperty("manual").GetBoolean());
+        Assert.Equal(205, kruumelsPlaced.GetProperty("startTable").GetInt32());
+        Assert.Equal([205, 206], kruumelsPlaced.GetProperty("tables").EnumerateArray().Select(t => t.GetInt32()));
+        Assert.Equal(1, kruumelsPlaced.GetProperty("rowIndex").GetInt32());
+        // De automatisch ingedeelde gezelschappen vullen de vrije plekken vóór De Kruumels (rij 1, vanaf tafel 101).
+        var bosPlaced = placedParties.Single(p => p.GetProperty("name").GetString() == "Fam. Bos");
+        Assert.False(bosPlaced.GetProperty("manual").GetBoolean());
+        Assert.Equal(101, bosPlaced.GetProperty("tables").EnumerateArray().First().GetInt32());
+        Assert.Equal(1, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == "G:De Kruumels")));
 
-        // Jan Jansen naar rij 2 (index 1) verslepen; hij staat daarna handmatig in rij 2.
-        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/move",
-            new { partyKey = $"O:{looseId}", rowIndex = 1, position = 0 }), HttpStatusCode.NoContent);
-        var moved = (await JsonAsync(await _bestuur.GetAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating"))).GetProperty("parties")
-            .EnumerateArray().Single(p => p.GetProperty("name").GetString() == "Jan Jansen");
-        Assert.Equal(1, moved.GetProperty("rowIndex").GetInt32());
-        Assert.True(moved.GetProperty("manual").GetBoolean());
-        Assert.Equal(1, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == $"O:{looseId}")));
+        // Weer automatisch laten indelen (tafel = null) wist de gekozen plaats.
+        await JsonAsync(await _bestuur.PutAsJsonAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/place",
+            new { partyKey = "G:De Kruumels", table = (int?)null }), HttpStatusCode.NoContent);
+        Assert.Equal(0, await WithDbAsync(db => db.PronkzittingSeats.CountAsync(s => s.ProductId == vrijdag && s.PartyKey == "G:De Kruumels")));
 
         // Automatisch verdelen wist de handmatige plaatsen.
         await JsonAsync(await _bestuur.PostAsync($"/api/v1/admin/sales/pronkzitting/{vrijdag}/seating/arrange", null), HttpStatusCode.NoContent);

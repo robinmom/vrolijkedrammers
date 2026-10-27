@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { MockApi } from './mock-api';
 
-/** Fase 19t: tafelindeling pronkzitting — plattegrond (4 rijen naast elkaar × tafels van 8), vullen, verplaatsen en afdruklijst. */
+/** Fase 19t: tafelindeling pronkzitting — plattegrond (4 rijen naast elkaar × tafels van 8), starttafel kiezen, vullen en afdruklijst. */
 
 async function expectNoSeriousA11yIssues(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
@@ -35,32 +35,49 @@ test('plattegrond met podium bovenaan en vier rijen naast elkaar', async ({ page
   await expectNoSeriousA11yIssues(page);
 });
 
-test('een rij loopt eerst vol voordat de volgende begint', async ({ page }) => {
+test('een groep aan een gekozen starttafel zetten, ook als eerdere tafels leeg zijn', async ({ page }) => {
   const api = new MockApi(['sale.manage']);
   await api.install(page);
   await page.goto('/beheer/verkoop/pronkzitting/tafelindeling');
 
-  // Met 2 tafels per rij is rij 1 vol bij 16 plaatsen; De Kruumels (10) en Fam. Bos (6) vullen rij 1, Jan Jansen schuift door.
-  await page.getByLabel('Tafels per rij').fill('2');
+  // Meer tafels per rij zodat tafel 205 bestaat.
+  await page.getByLabel('Tafels per rij').fill('6');
   await page.getByLabel('Tafels per rij').blur();
-  await expect(page.getByText('Aantal tafels per rij opgeslagen.')).toBeVisible();
 
-  await expect(page.getByLabel('Rij voor De Kruumels')).toHaveValue('0');
-  await expect(page.getByLabel('Rij voor Fam. Bos')).toHaveValue('0');
-  await expect(page.getByLabel('Rij voor Jan Jansen')).toHaveValue('1');
+  // De Kruumels (10) laten starten op tafel 205 — ook al zijn 201 t/m 204 leeg.
+  await page.getByLabel('Starttafel voor De Kruumels').selectOption('205');
+  await expect(page.getByLabel('Starttafel voor De Kruumels')).toHaveValue('205');
+  expect(api.seatingState['sp-vr']?.assignments['G:De Kruumels']).toEqual({ row: 1, startSeat: 32 });
+
+  // De groep bezet vanaf tafel 205 (10 plekken → 205 en 206).
+  const row = api.buildSeating('sp-vr') as { parties: { name: string; tables: number[] }[] };
+  expect(row.parties.find((p) => p.name === 'De Kruumels')?.tables).toEqual([205, 206]);
 });
 
-test('een gezelschap verplaatsen, automatisch verdelen en de afdruklijst downloaden', async ({ page }) => {
+test('automatisch vult de vrije plekken, ook vóór een handmatig geplaatste groep', async ({ page }) => {
   const api = new MockApi(['sale.manage']);
   await api.install(page);
   await page.goto('/beheer/verkoop/pronkzitting/tafelindeling');
 
-  // Jan Jansen naar rij 4 verplaatsen.
-  await page.getByLabel('Rij voor Jan Jansen').selectOption('3');
-  await expect(page.getByLabel('Rij voor Jan Jansen')).toHaveValue('3');
-  expect(api.seatingState['sp-vr']?.assignments['O:ord-12']?.row).toBe(3);
+  // De Kruumels handmatig op tafel 103; Fam. Bos en Jan Jansen blijven automatisch en vullen rij 1 vanaf tafel 101.
+  await page.getByLabel('Starttafel voor De Kruumels').selectOption('103');
+  await expect(page.getByLabel('Starttafel voor De Kruumels')).toHaveValue('103');
+  const layout = api.buildSeating('sp-vr') as { parties: { name: string; manual: boolean; tables: number[] }[] };
+  expect(layout.parties.find((p) => p.name === 'Fam. Bos')?.tables).toEqual([101]);
+  expect(layout.parties.find((p) => p.name === 'Fam. Bos')?.manual).toBe(false);
 
-  // Automatisch verdelen wist de handmatige plaatsen.
+  // Terug naar automatisch.
+  await page.getByLabel('Starttafel voor De Kruumels').selectOption('auto');
+  await expect(page.getByLabel('Starttafel voor De Kruumels')).toHaveValue('auto');
+  expect(api.seatingState['sp-vr']?.assignments['G:De Kruumels']).toBeUndefined();
+});
+
+test('automatisch verdelen en de afdruklijst downloaden', async ({ page }) => {
+  const api = new MockApi(['sale.manage']);
+  await api.install(page);
+  await page.goto('/beheer/verkoop/pronkzitting/tafelindeling');
+
+  await page.getByLabel('Starttafel voor Jan Jansen').selectOption('301');
   await page.getByRole('button', { name: 'Automatisch verdelen' }).click();
   await expect(page.getByText('De indeling is automatisch verdeeld.')).toBeVisible();
   expect(Object.keys(api.seatingState['sp-vr']?.assignments ?? {})).toHaveLength(0);

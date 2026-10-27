@@ -269,15 +269,15 @@ public sealed class AdminSalesController(SaleAdministration administration, Tick
         return NoContent();
     }
 
-    /// <summary>Een gezelschap naar een andere rij of plaats verslepen.</summary>
-    [HttpPut("pronkzitting/{productId:guid}/seating/move")]
+    /// <summary>Een gezelschap op een starttafel zetten (tafelnummer, bijv. 205) of weer automatisch laten indelen (table = null).</summary>
+    [HttpPut("pronkzitting/{productId:guid}/seating/place")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
-    public async Task<IActionResult> SeatingMove(
-        [FromServices] PronkzittingSeating seating, Guid productId, SeatingMoveRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SeatingPlace(
+        [FromServices] PronkzittingSeating seating, Guid productId, SeatingPlaceRequest request, CancellationToken cancellationToken)
     {
-        await seating.MoveAsync(productId, request.PartyKey, request.RowIndex, request.Position, cancellationToken);
+        await seating.PlaceAsync(productId, request.PartyKey, request.Table, cancellationToken);
         return NoContent();
     }
 
@@ -419,4 +419,4 @@ public sealed record GrantWaitlistRequest(PortalPayment Payment);
 
 public sealed record SeatingTablesRequest([Range(1, 50)] int TablesPerRow);
 
-public sealed record SeatingMoveRequest([Required, StringLength(110)] string PartyKey, [Range(0, 3)] int RowIndex, [Range(0, 1000)] int Position);
+public sealed record SeatingPlaceRequest([Required, StringLength(110)] string PartyKey, [Range(101, 499)] int? Table);

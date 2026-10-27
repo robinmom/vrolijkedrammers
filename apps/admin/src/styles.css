@@ -2647,6 +2647,12 @@ html[data-environment='acc'] .env-banner {
   border-color: var(--dvd-action-danger);
 }
 
+.seat-table.droptarget {
+  border-color: var(--dvd-feestgoud);
+  border-style: solid;
+  box-shadow: 0 0 0 2px var(--dvd-feestgoud);
+}
+
 .seat-table-head {
   display: flex;
   justify-content: space-between;

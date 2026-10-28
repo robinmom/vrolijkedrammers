@@ -42137,7 +42137,8 @@
           "memberId",
           "roles",
           "permissions",
-          "features"
+          "features",
+          "eBoekhoudenEnabled"
         ],
         "type": "object",
         "properties": {
@@ -42175,6 +42176,9 @@
             "additionalProperties": {
               "type": "boolean"
             }
+          },
+          "eBoekhoudenEnabled": {
+            "type": "boolean"
           }
         }
       },

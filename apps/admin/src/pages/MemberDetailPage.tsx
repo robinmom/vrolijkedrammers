@@ -68,6 +68,8 @@ export function MemberDetailPage() {
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
   const canApprove = (me.data?.permissions ?? []).includes('member.approve');
   const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  // Zonder e-Boekhouden-koppeling wordt de ledenadministratie hier bijgehouden; sync-status is dan niet van toepassing.
+  const eBoekhouden = me.data?.eBoekhoudenEnabled !== false;
   const canWebsite = (me.data?.permissions ?? []).includes('website.manage');
   const canCheckIn = (me.data?.permissions ?? []).includes('ticket.scan');
   const canContribution = (me.data?.permissions ?? []).includes('contribution.manage');
@@ -144,20 +146,20 @@ export function MemberDetailPage() {
           <h1>
             {m.fullName}{' '}
             <span className={`badge ${statusTone[m.effectiveStatus] ?? ''}`}>{membershipStatusLabels[m.effectiveStatus] ?? m.effectiveStatus}</span>
-            {m.syncState !== 'InSync' ? (
+            {eBoekhouden && m.syncState !== 'InSync' ? (
               <span className={`badge ${m.syncState === 'Missing' ? 'warn' : 'error'}`}>{syncStateLabels[m.syncState] ?? m.syncState}</span>
             ) : null}
           </h1>
           <p className="page-subtitle">
             Lidnummer {m.memberNumber}
             {m.joinYear ? ` · lid sinds ${m.joinYear}` : ''}
-            {m.ebLastSeenAt ? ` · laatst gezien in e-Boekhouden ${formatDateTime(m.ebLastSeenAt)}` : ''}
+            {eBoekhouden && m.ebLastSeenAt ? ` · laatst gezien in e-Boekhouden ${formatDateTime(m.ebLastSeenAt)}` : ''}
           </p>
         </div>
       </div>
       <SuccessMessage message={message} />
 
-      {m.syncState === 'Missing' ? (
+      {eBoekhouden && m.syncState === 'Missing' ? (
         <div className="alert alert-warning banner" role="status">
           <Icon name="waarschuwing" size={22} />
           <div className="banner-text">
@@ -177,7 +179,7 @@ export function MemberDetailPage() {
 
       <div className="columns">
         <div>
-          <MemberDataCard member={m} canEdit={canEdit} />
+          <MemberDataCard member={m} canEdit={canEdit} eBoekhouden={eBoekhouden} />
 
           <section className="card" aria-labelledby="lokaal">
             <h2 id="lokaal">Gegevens van de app</h2>
@@ -392,7 +394,7 @@ export function MemberDetailPage() {
             </section>
           ) : null}
 
-          {canContribution ? <MembershipCard member={m} /> : null}
+          {canContribution ? <MembershipCard member={m} eBoekhouden={eBoekhouden} /> : null}
 
           <JubileeCard member={m} canEdit={canEdit} />
 

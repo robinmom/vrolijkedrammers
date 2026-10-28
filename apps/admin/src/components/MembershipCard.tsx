@@ -19,7 +19,7 @@ interface Form {
  * Lidmaatschap en contributie van een lid (fase 23a): soort lidmaatschap, bij een partner het lid dat betaalt, en een
  * vrijstelling (bijvoorbeeld Convent). Zonder soort volgt de app het lidmaatschap uit e-Boekhouden.
  */
-export function MembershipCard({ member }: { member: MemberDetail }) {
+export function MembershipCard({ member, eBoekhouden = true }: { member: MemberDetail; eBoekhouden?: boolean }) {
   const api = useApi();
   const settings = useMembershipSettings(member.id, true);
   const [form, setForm] = useState<Form | null>(null);
@@ -92,7 +92,9 @@ export function MembershipCard({ member }: { member: MemberDetail }) {
             value={form.kind}
             onChange={(e) => set({ kind: e.target.value as MembershipKind | '', payerMemberId: null })}
           >
-            <option value="">Volgt e-Boekhouden{member.ebStatusRaw ? ` (${member.ebStatusRaw})` : ''}</option>
+            <option value="">
+              {eBoekhouden ? `Volgt e-Boekhouden${member.ebStatusRaw ? ` (${member.ebStatusRaw})` : ''}` : 'Standaard (automatisch)'}
+            </option>
             {(Object.keys(kindLabels) as MembershipKind[]).map((k) => (
               <option key={k} value={k}>
                 {kindLabels[k]}

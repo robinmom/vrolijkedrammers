@@ -18,7 +18,9 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/me")]
 [RequireActiveUser]
-public sealed class MeController(AppConfigReader appConfig, DrammersDbContext db, MyAccount account) : ControllerBase
+public sealed class MeController(
+    AppConfigReader appConfig, DrammersDbContext db, MyAccount account,
+    Microsoft.Extensions.Options.IOptions<Drammers.Infrastructure.EBoekhouden.EBoekhoudenOptions> eBoekhouden) : ControllerBase
 {
     /// <summary>Permissions zijn alleen bedoeld voor het tonen of verbergen van UI; de server blijft leidend (docs/07 §1).</summary>
     [HttpGet]
@@ -34,7 +36,8 @@ public sealed class MeController(AppConfigReader appConfig, DrammersDbContext db
             user.MemberId,
             [.. user.Roles.Select(r => new MeRole(r.Code, r.Name))],
             [.. user.Permissions.Order(StringComparer.Ordinal)],
-            config.Features);
+            config.Features,
+            eBoekhouden.Value.Enabled);
     }
 
     /// <summary>Eigen lidgegevens (read-only; wijzigen via het secretariaat in e-Boekhouden) en groepen.</summary>
@@ -171,7 +174,9 @@ public sealed record MeResponse(
     Guid? MemberId,
     IReadOnlyList<MeRole> Roles,
     IReadOnlyList<string> Permissions,
-    IReadOnlyDictionary<string, bool> Features);
+    IReadOnlyDictionary<string, bool> Features,
+    // Staat de e-Boekhouden-koppeling aan? Zo niet: ledenadministratie wordt hier bijgehouden en het portal verbergt de sync-/e-Boekhouden-onderdelen.
+    bool EBoekhoudenEnabled);
 
 public sealed record MeRole(string Code, string Name);
 

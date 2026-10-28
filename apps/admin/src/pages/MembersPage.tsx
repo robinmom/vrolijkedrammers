@@ -66,6 +66,9 @@ export function MembersPage() {
   const members = useMembers(filters, page);
   const permissions = me.data?.permissions ?? [];
   const s = summary.data;
+  // Zonder e-Boekhouden-koppeling wordt de ledenadministratie hier bijgehouden; de sync-kolom en -filter vervallen dan.
+  const eBoekhouden = me.data?.eBoekhoudenEnabled !== false;
+  const cols = eBoekhouden ? columns : columns.filter((c) => (c as { accessorKey?: string }).accessorKey !== 'syncState');
 
   async function exportExcel() {
     setExportError(null);
@@ -150,7 +153,7 @@ export function MembersPage() {
 
       <DataTable
         caption="Leden"
-        columns={columns}
+        columns={cols}
         data={members.data?.items ?? EMPTY}
         columnPicker={false}
         header={
@@ -170,17 +173,19 @@ export function MembersPage() {
                 ))}
               </select>
             </div>
-            <div className="field">
-              <label htmlFor="sync-filter">Sync</label>
-              <select id="sync-filter" value={form.syncState} onChange={(e) => setForm({ ...form, syncState: e.target.value as MemberSyncState | '' })}>
-                <option value="">Alle</option>
-                {Object.entries(syncStateLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {eBoekhouden ? (
+              <div className="field">
+                <label htmlFor="sync-filter">Sync</label>
+                <select id="sync-filter" value={form.syncState} onChange={(e) => setForm({ ...form, syncState: e.target.value as MemberSyncState | '' })}>
+                  <option value="">Alle</option>
+                  {Object.entries(syncStateLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <button type="submit" className="button secondary">
               Zoeken
             </button>

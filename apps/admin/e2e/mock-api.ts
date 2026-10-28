@@ -1421,6 +1421,9 @@ export class MockApi {
     };
   }
 
+  /** Staat de e-Boekhouden-koppeling aan? Zet op false om het portal zonder e-Boekhouden/sync te tonen. */
+  eBoekhoudenEnabled = true;
+
   constructor(
     permissions: string[] = [
       'report.view',
@@ -2558,6 +2561,7 @@ export class MockApi {
         roles: [{ code: 'bestuur', name: 'Bestuur' }],
         permissions: this.permissions,
         features: {},
+        eBoekhoudenEnabled: this.eBoekhoudenEnabled,
       });
     }
     if (taskPath === '/admin/tasks' && method === 'GET') {

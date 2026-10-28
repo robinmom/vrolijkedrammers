@@ -227,6 +227,26 @@ test('eenmalig IBANs importeren uit e-Boekhouden (preview en importeren)', async
   await expect(page.getByText('IBAN-import gestart.', { exact: false })).toBeVisible();
 });
 
+test('zonder e-Boekhouden-koppeling zijn de sync-/e-Boekhouden-onderdelen verborgen', async ({ page }) => {
+  const api = new MockApi();
+  api.eBoekhoudenEnabled = false;
+  await open(page, api, 'leden');
+
+  // Het menu-item "Ledensync" is er niet meer.
+  const toggle = page.getByRole('button', { name: 'Menu' });
+  if (await toggle.isVisible()) await toggle.click();
+  await expect(page.getByRole('navigation').getByRole('link', { name: 'Ledensync' })).toHaveCount(0);
+
+  // De ledenlijst heeft geen "Sync"-kolom of -filter meer.
+  await expect(page.getByRole('columnheader', { name: 'Sync' })).toHaveCount(0);
+  await expect(page.getByLabel('Sync')).toHaveCount(0);
+
+  // Wie tóch naar /ledensync gaat, krijgt een nette melding i.p.v. de sync-knoppen.
+  await page.goto('/beheer/ledensync');
+  await expect(page.getByText('De koppeling met e-Boekhouden staat uit', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Dry-run starten' })).toHaveCount(0);
+});
+
 test('lid-detail: status-override opslaan en ontbrekend lid op inactief zetten', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'leden');

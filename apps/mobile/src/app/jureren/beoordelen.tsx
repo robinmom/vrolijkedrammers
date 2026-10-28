@@ -6,17 +6,20 @@ import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, unwrap } from '../../api/client';
 import { queryKeys, useJurySession, useMe } from '../../api/queries';
-import { criteria, passComplete, passes, valueOf, type JudgingEntry } from '../../features/judging';
+import { carriedOver, criteria, passComplete, passes, valueOf, type JudgingEntry } from '../../features/judging';
 import { useJudging } from '../../features/useJudging';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider } from '../../ui';
 
-type Page = { kind: 'entry'; entry: JudgingEntry } | { kind: 'end' };
+type Page = { kind: 'entry'; entry: JudgingEntry; pass: number } | { kind: 'end' };
 
 /**
  * J2–J7 Beoordelen (fase 22b, Figma "⚖️ Jury"): van links naar rechts door de optocht swipen. Per wagen of groep het
  * startnummer, de groep en het motto, dan per voorbijtrekken (1, 2, 3) vier sliders. Standaard alleen de eigen
  * categorieën; met "Hele optocht" ook de rest (dat telt pas mee na akkoord). Aan het einde: jurering indienen.
+ *
+ * Het swipen loopt door álle voorbijtrekkens: na de laatste wagen van voorbij 1 komt de eerste wagen van voorbij 2, en
+ * na voorbij 3 het einde. Het actieve voorbijtrekken volgt dus uit de pagina waar je staat, niet uit losse state.
  */
 export default function BeoordelenScreen() {
   const { colors } = useTheme();
@@ -28,7 +31,6 @@ export default function BeoordelenScreen() {
   const judging = useJudging(session.data, me.data?.id);
   const client = useQueryClient();
   const [whole, setWhole] = useState(false);
-  const [pass, setPass] = useState(Number(params.passage) || 1);
   const [chosen, setChosen] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Tijdens het slepen van een slider niet naar de volgende wagen swipen.
@@ -39,15 +41,22 @@ export default function BeoordelenScreen() {
   const submitted = Boolean(s?.submittedAt);
 
   const entries = useMemo(() => (s?.entries ?? []).filter((e) => whole || e.assigned), [s, whole]);
-  const pages: Page[] = useMemo(() => [...entries.map((entry) => ({ kind: 'entry' as const, entry })), { kind: 'end' as const }], [entries]);
+  // Eerst alle wagens van voorbij 1, dan die van voorbij 2, enzovoort, en als laatste de afrondpagina.
+  const pages: Page[] = useMemo(
+    () => [...passes.flatMap((pass) => entries.map((entry) => ({ kind: 'entry' as const, entry, pass }))), { kind: 'end' as const }],
+    [entries],
+  );
 
   // Beginnen bij de inzending (of het einde) waar het startscherm naar verwees.
   const initialIndex = useMemo(() => {
     if (params.einde) return pages.length - 1;
-    return Math.max(0, pages.findIndex((p) => p.kind === 'entry' && p.entry.registrationId === params.start));
-  }, [pages, params.einde, params.start]);
+    const wanted = Number(params.passage) || 1;
+    return Math.max(0, pages.findIndex((p) => p.kind === 'entry' && p.entry.registrationId === params.start && p.pass === wanted));
+  }, [pages, params.einde, params.passage, params.start]);
   const index = chosen ?? initialIndex;
   const setIndex = setChosen;
+  // Pass-major: de index van een wagen in een voorbijtrekken is te berekenen, zodat de tabs ernaartoe kunnen springen.
+  const indexFor = (pass: number, entryIndex: number) => (pass - 1) * entries.length + entryIndex;
 
   const goTo = (i: number) => {
     const target = Math.max(0, Math.min(pages.length - 1, i));
@@ -55,11 +64,16 @@ export default function BeoordelenScreen() {
     list.current?.scrollToIndex({ index: target, animated: true });
   };
 
+  // Het aantal wagens verandert, en daarmee wat elke index betekent: daarom altijd terug naar het begin.
+  const restart = (next: boolean) => {
+    setWhole(next);
+    setIndex(0);
+    list.current?.scrollToOffset({ offset: 0, animated: false });
+  };
+
   const toggleWhole = () => {
     if (whole) {
-      setWhole(false);
-      setIndex(0);
-      list.current?.scrollToOffset({ offset: 0, animated: false });
+      restart(false);
       return;
     }
     Alert.alert(
@@ -67,7 +81,7 @@ export default function BeoordelenScreen() {
       'Je ziet dan ook de wagens en groepen uit categorieën die niet aan jou zijn toegewezen. Scores daarvan tellen pas mee als het bestuur of de hoofdjury ze goedkeurt; die krijgen hier een melding van.',
       [
         { text: 'Alleen mijn categorieën', style: 'cancel' },
-        { text: 'Ja, hele optocht beoordelen', onPress: () => setWhole(true) },
+        { text: 'Ja, hele optocht beoordelen', onPress: () => restart(true) },
       ],
     );
   };
@@ -132,10 +146,27 @@ export default function BeoordelenScreen() {
   const scoredOutside = s.entries.filter((e) => !e.assigned && passes.some((p) => criteria.some((c) => valueOf(judging.scores, e.registrationId, p, c.key) !== null)));
   const missing = passes.flatMap((p) => assigned.filter((e) => !passComplete(judging.scores, e.registrationId, p)).map((e) => ({ pass: p, entry: e })));
   const current = pages[index];
+  // Positie binnen het huidige voorbijtrekken (de pagina's staan pass-major achter elkaar).
+  const posInPass = current?.kind === 'entry' ? index % Math.max(1, entries.length) : -1;
   const neighbour = (i: number) => {
     const p = pages[i];
-    return p?.kind === 'entry' ? (p.entry.startNumber != null ? `nr. ${p.entry.startNumber}` : p.entry.groupName) : p ? 'Einde' : null;
+    if (!p) return null;
+    if (p.kind === 'end') return 'Einde';
+    const name = p.entry.startNumber != null ? `nr. ${p.entry.startNumber}` : p.entry.groupName;
+    // Bij de overgang naar een volgend voorbijtrekken erbij zetten dat het voorbijtrekken wisselt.
+    return current?.kind === 'entry' && p.pass !== current.pass ? `Voorbij ${p.pass} · ${name}` : name;
   };
+
+  /** Per criterium de eigen waarde in dit voorbijtrekken en wat er uit een eerder voorbijtrekken over te nemen is. */
+  const criteriaFor = (entry: JudgingEntry, pass: number) =>
+    criteria.map((c) => ({
+      criterion: c,
+      own: valueOf(judging.scores, entry.registrationId, pass, c.key),
+      carried: carriedOver(judging.scores, entry.registrationId, pass, c.key),
+    }));
+  /** Wat nog bevestigd kan worden: een overgenomen waarde zonder eigen waarde in dit voorbijtrekken. */
+  const toConfirm = (entry: JudgingEntry, pass: number) =>
+    criteriaFor(entry, pass).flatMap((x) => (x.own === null && x.carried ? [{ key: x.criterion.key, value: x.carried.value }] : []));
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top, backgroundColor: colors.canvas }]}>
@@ -143,7 +174,7 @@ export default function BeoordelenScreen() {
         <BackLink label="Jureren" />
         <View style={styles.headerRight}>
           <AppText variant="caption" color={colors.textSecondary}>
-            {current?.kind === 'entry' ? `${index + 1} van ${entries.length}` : 'Einde optocht'}
+            {current?.kind === 'entry' ? `${posInPass + 1} van ${entries.length}` : 'Einde optocht'}
           </AppText>
           <Pressable
             onPress={toggleWhole}
@@ -167,7 +198,7 @@ export default function BeoordelenScreen() {
         pagingEnabled
         scrollEnabled={!sliding}
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(p) => (p.kind === 'entry' ? p.entry.registrationId : 'einde')}
+        keyExtractor={(p) => (p.kind === 'entry' ? `${p.pass}|${p.entry.registrationId}` : 'einde')}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
         initialScrollIndex={initialIndex}
         onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
@@ -209,11 +240,11 @@ export default function BeoordelenScreen() {
               <View style={[styles.segmented, { backgroundColor: colors.surfaceMuted }]} accessibilityRole="tablist">
                 {passes.map((p) => {
                   const done = passComplete(judging.scores, item.entry.registrationId, p);
-                  const active = p === pass;
+                  const active = p === item.pass;
                   return (
                     <Pressable
                       key={p}
-                      onPress={() => setPass(p)}
+                      onPress={() => goTo(indexFor(p, entries.findIndex((e) => e.registrationId === item.entry.registrationId)))}
                       accessibilityRole="tab"
                       accessibilityState={{ selected: active }}
                       accessibilityLabel={`Voorbijtrekken ${p}${done ? ', ingevuld' : ''}`}
@@ -227,24 +258,36 @@ export default function BeoordelenScreen() {
                   );
                 })}
               </View>
-              {pass > 1 && passComplete(judging.scores, item.entry.registrationId, pass - 1) ? (
-                <AppText variant="caption" color={colors.textSecondary}>
-                  Voorbij {pass - 1}:{' '}
-                  {criteria.map((c) => `${c.label.toLowerCase()} ${valueOf(judging.scores, item.entry.registrationId, pass - 1, c.key)}`).join(' · ')}
-                </AppText>
-              ) : null}
               <Card style={styles.sliders}>
-                {criteria.map((c) => (
+                {criteriaFor(item.entry, item.pass).map(({ criterion, own, carried }) => (
                   <ScoreSlider
-                    key={c.key}
-                    label={c.label}
-                    value={valueOf(judging.scores, item.entry.registrationId, pass, c.key)}
-                    onChange={(v) => judging.setScore(item.entry.registrationId, pass, c.key, v)}
+                    key={criterion.key}
+                    label={criterion.label}
+                    value={own}
+                    suggested={carried?.value ?? null}
+                    suggestedHint={carried ? `${carried.value}, overgenomen uit voorbij ${carried.fromPass}, nog niet bevestigd` : undefined}
+                    onChange={(v) => judging.setScore(item.entry.registrationId, item.pass, criterion.key, v)}
                     onSlidingStart={() => setSliding(true)}
                     onSlidingEnd={() => setSliding(false)}
                   />
                 ))}
               </Card>
+              {toConfirm(item.entry, item.pass).length > 0 ? (
+                <View style={styles.carried}>
+                  <AppText variant="caption" color={colors.textSecondary}>
+                    De grijze waardes komen uit een eerder voorbijtrekken en tellen nog niet mee. Raak ze aan, of neem ze in één keer over.
+                  </AppText>
+                  <Button
+                    label="Vorige waardes overnemen"
+                    variant="secondary"
+                    onPress={() => {
+                      for (const { key, value } of toConfirm(item.entry, item.pass)) {
+                        judging.setScore(item.entry.registrationId, item.pass, key, value);
+                      }
+                    }}
+                  />
+                </View>
+              ) : null}
             </ScrollView>
           ) : (
             <ScrollView style={{ width }} contentContainerStyle={styles.page}>
@@ -343,8 +386,9 @@ export default function BeoordelenScreen() {
           </AppText>
         </Pressable>
         <View style={styles.dots} importantForAccessibility="no-hide-descendants">
-          {Array.from({ length: Math.min(7, pages.length) }, (_, i) => {
-            const on = i === Math.min(3, index, Math.max(0, 6 - (pages.length - 1 - index)));
+          {/* Stippen tellen binnen het huidige voorbijtrekken, niet over alle voorbijtrekkens heen. */}
+          {Array.from({ length: Math.min(7, Math.max(1, entries.length)) }, (_, i) => {
+            const on = posInPass >= 0 && i === Math.min(3, posInPass, Math.max(0, 6 - (entries.length - 1 - posInPass)));
             return <View key={i} style={[styles.dot, { backgroundColor: on ? brand.red : colors.border }, on && styles.dotOn]} />;
           })}
         </View>
@@ -383,6 +427,7 @@ const styles = StyleSheet.create({
   segment: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 9 },
   segmentActive: { shadowColor: '#000000', shadowOpacity: 0.1, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
   sliders: { gap: 12, padding: 16, borderRadius: radius.md },
+  carried: { gap: 8 },
   card: { gap: 10, padding: 16, borderRadius: radius.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8 },

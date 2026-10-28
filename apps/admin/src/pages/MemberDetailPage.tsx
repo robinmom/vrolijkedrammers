@@ -68,6 +68,8 @@ export function MemberDetailPage() {
   const canEdit = (me.data?.permissions ?? []).includes('member.update');
   const canApprove = (me.data?.permissions ?? []).includes('member.approve');
   const canPrivacy = (me.data?.permissions ?? []).includes('member.privacy');
+  // Zonder e-Boekhouden-koppeling wordt de ledenadministratie hier bijgehouden; sync-status is dan niet van toepassing.
+  const eBoekhouden = me.data?.eBoekhoudenEnabled !== false;
   const canWebsite = (me.data?.permissions ?? []).includes('website.manage');
   const canCheckIn = (me.data?.permissions ?? []).includes('ticket.scan');
   const canContribution = (me.data?.permissions ?? []).includes('contribution.manage');
@@ -144,20 +146,20 @@ export function MemberDetailPage() {
           <h1>
             {m.fullName}{' '}
             <span className={`badge ${statusTone[m.effectiveStatus] ?? ''}`}>{membershipStatusLabels[m.effectiveStatus] ?? m.effectiveStatus}</span>
-            {m.syncState !== 'InSync' ? (
+            {eBoekhouden && m.syncState !== 'InSync' ? (
               <span className={`badge ${m.syncState === 'Missing' ? 'warn' : 'error'}`}>{syncStateLabels[m.syncState] ?? m.syncState}</span>
             ) : null}
           </h1>
           <p className="page-subtitle">
             Lidnummer {m.memberNumber}
             {m.joinYear ? ` · lid sinds ${m.joinYear}` : ''}
-            {m.ebLastSeenAt ? ` · laatst gezien in e-Boekhouden ${formatDateTime(m.ebLastSeenAt)}` : ''}
+            {eBoekhouden && m.ebLastSeenAt ? ` · laatst gezien in e-Boekhouden ${formatDateTime(m.ebLastSeenAt)}` : ''}
           </p>
         </div>
       </div>
       <SuccessMessage message={message} />
 
-      {m.syncState === 'Missing' ? (
+      {eBoekhouden && m.syncState === 'Missing' ? (
         <div className="alert alert-warning banner" role="status">
           <Icon name="waarschuwing" size={22} />
           <div className="banner-text">
@@ -177,7 +179,7 @@ export function MemberDetailPage() {
 
       <div className="columns">
         <div>
-          <MemberDataCard member={m} canEdit={canEdit} />
+          <MemberDataCard member={m} canEdit={canEdit} eBoekhouden={eBoekhouden} />
 
           <section className="card" aria-labelledby="lokaal">
             <h2 id="lokaal">Gegevens van de app</h2>
@@ -205,15 +207,18 @@ export function MemberDetailPage() {
                       value={form.localStatusOverride}
                       onChange={(e) => set({ localStatusOverride: e.target.value as MembershipStatus | '' })}
                     >
-                      <option value="">Volgt e-Boekhouden ({membershipStatusLabels[m.syncedStatus] ?? m.syncedStatus})</option>
+                      <option value="">
+                        {eBoekhouden ? 'Volgt e-Boekhouden' : 'Standaard'} ({membershipStatusLabels[m.syncedStatus] ?? m.syncedStatus})
+                      </option>
                       <option value="Active">Actief</option>
                       <option value="Suspended">Geschorst</option>
                       <option value="Inactive">Inactief</option>
                       <option value="Deceased">Overleden</option>
                     </select>
                     <small id="override-hint" className="muted">
-                      Een override wint altijd van de status uit e-Boekhouden. Kies Actief voor een lid dat niet in e-Boekhouden staat
-                      (bijvoorbeeld via lid worden in de app).
+                      {eBoekhouden
+                        ? 'Een override wint altijd van de status uit e-Boekhouden. Kies Actief voor een lid dat niet in e-Boekhouden staat (bijvoorbeeld via lid worden in de app).'
+                        : 'De override bepaalt de status van dit lid.'}
                     </small>
                   </div>
                   <Field label="Geldig vanaf" type="date" value={form.membershipValidFrom} onChange={(e) => set({ membershipValidFrom: e.target.value })} />
@@ -331,7 +336,7 @@ export function MemberDetailPage() {
                       type="button"
                       className="button"
                       disabled={!m.email || m.effectiveStatus !== 'Active' || provision.isPending || Boolean(m.provisioning && !m.provisioning.lastError)}
-                      title={m.email ? undefined : 'Vul eerst een e-mailadres in e-Boekhouden in'}
+                      title={m.email ? undefined : eBoekhouden ? 'Vul eerst een e-mailadres in e-Boekhouden in' : 'Vul eerst een e-mailadres in bij de ledengegevens'}
                       onClick={() =>
                         provision.mutate(undefined, { onSuccess: () => setMessage(`Het account wordt aangemaakt; ${m.fullName} krijgt een welkomstmail op ${m.email}.`) })
                       }
@@ -392,7 +397,7 @@ export function MemberDetailPage() {
             </section>
           ) : null}
 
-          {canContribution ? <MembershipCard member={m} /> : null}
+          {canContribution ? <MembershipCard member={m} eBoekhouden={eBoekhouden} /> : null}
 
           <JubileeCard member={m} canEdit={canEdit} />
 
@@ -403,8 +408,10 @@ export function MemberDetailPage() {
               <h2 id="verwijderen">Lid volledig verwijderen</h2>
               <p className="muted">
                 Haalt dit lid in één keer uit de app: het app-account en de inlog, groepen, aanmeldingen en alle gegevens die alleen de app
-                bewaart. Het lidnummer wordt uitgesloten, zodat de synchronisatie het niet terugzet. e-Boekhouden blijft ongemoeid; het
-                lidmaatschap daar beëindigt het secretariaat zelf.
+                bewaart.
+                {eBoekhouden
+                  ? ' Het lidnummer wordt uitgesloten, zodat de synchronisatie het niet terugzet. e-Boekhouden blijft ongemoeid; het lidmaatschap daar beëindigt het secretariaat zelf.'
+                  : ''}
               </p>
               <div className="actions">
                 <button type="button" className="button danger" onClick={() => setRemoving(true)}>
@@ -448,7 +455,7 @@ export function MemberDetailPage() {
       <ConfirmDialog
         open={confirmRemoveAccount}
         title="App-account verwijderen"
-        message={`Het app-account van ${m.fullName} verwijderen? Inloggen kan daarna niet meer; rollen en apparaten vervallen. Het lid in e-Boekhouden blijft staan, en je kunt later opnieuw een account aanmaken.`}
+        message={`Het app-account van ${m.fullName} verwijderen? Inloggen kan daarna niet meer; rollen en apparaten vervallen. Het lid blijft staan, en je kunt later opnieuw een account aanmaken.`}
         confirmLabel="App-account verwijderen"
         busy={removeAccount.isPending}
         onCancel={() => setConfirmRemoveAccount(false)}

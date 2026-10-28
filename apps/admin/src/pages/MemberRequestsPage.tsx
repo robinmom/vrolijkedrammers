@@ -69,8 +69,7 @@ export function MemberRequestsPage() {
           Gegevens wijzigen <span className="muted">({changes.length})</span>
         </h2>
         <p className="card-hint">
-          Na goedkeuring zijn de gewijzigde velden &quot;handmatig&quot;: de sync met e-Boekhouden overschrijft ze niet.
-          Het lid krijgt een e-mail. Een IBAN zie je hier alleen gemaskeerd.
+          Na goedkeuring wordt de wijziging doorgevoerd en krijgt het lid een e-mail. Een IBAN zie je hier alleen gemaskeerd.
         </p>
         {requests.data && changes.length === 0 ? <p className="muted">Geen openstaande verzoeken.</p> : null}
         {changes.map((c) => (

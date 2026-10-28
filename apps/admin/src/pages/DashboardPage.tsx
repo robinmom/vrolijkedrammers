@@ -88,12 +88,14 @@ export function DashboardPage() {
   const publishedNews = (news.data ?? []).filter((n) => n.status === 'Published').length;
   const scheduledNews = (news.data ?? []).filter((n) => n.status === 'Scheduled');
 
+  // Zonder e-Boekhouden-koppeling wordt de ledenadministratie hier bijgehouden; de sync-aandachtspunten vervallen dan.
+  const eBoekhouden = me.data?.eBoekhoudenEnabled !== false;
   const attention: Attention[] = [];
-  if (conflicts.data?.length) {
+  if (eBoekhouden && conflicts.data?.length) {
     const n = conflicts.data.length;
     attention.push({ key: 'conflicten', tone: 'warn', badge: `${n} conflict${n === 1 ? '' : 'en'}`, text: 'De ledensync heeft conflicten die beoordeeld moeten worden.', link: 'ledensync', action: 'Bekijken' });
   }
-  if (summary.data?.missingInEBoekhouden) {
+  if (eBoekhouden && summary.data?.missingInEBoekhouden) {
     const n = summary.data.missingInEBoekhouden;
     attention.push({ key: 'ontbrekend', tone: 'warn', badge: `${n} ${n === 1 ? 'lid' : 'leden'}`, text: 'Staan niet meer in e-Boekhouden en worden bij de volgende sync inactief.', link: 'leden', action: 'Bekijken' });
   }
@@ -169,7 +171,7 @@ export function DashboardPage() {
           <div className="kpi">
             <span className="kpi-label">Actieve leden</span>
             <span className="kpi-value">{summary.data.active}</span>
-            <span className="kpi-hint">Volgens e-Boekhouden</span>
+            <span className="kpi-hint">{eBoekhouden ? 'Volgens e-Boekhouden' : 'In de ledenadministratie'}</span>
           </div>
         ) : null}
         {d ? (

@@ -79,8 +79,7 @@ export function PrivacyRequestsPage() {
           <h1 className="page-title">AVG-verzoeken</h1>
           <p className="page-subtitle">
             Inzage en wissen van de gegevens die de app bewaart. Een verzoek namens een lid (per brief of e-mail) start je bij{' '}
-            <Link to="/gebruikers">Gebruikers</Link> → de gebruiker → Privacy. De ledenadministratie in e-Boekhouden valt hierbuiten; die past
-            het secretariaat zelf aan.
+            <Link to="/gebruikers">Gebruikers</Link> → de gebruiker → Privacy.
           </p>
         </div>
       </div>

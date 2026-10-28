@@ -51,7 +51,7 @@ const genderLabels: Record<string, string> = { m: 'Man', v: 'Vrouw', a: 'Anders'
  * "handmatig": de sync overschrijft het niet meer (het portal wint) en meldt het als e-Boekhouden afwijkt. Met
  * "Teruggeven aan e-Boekhouden" neemt de volgende sync alles weer over.
  */
-export function MemberDataCard({ member: m, canEdit }: { member: MemberDetail; canEdit: boolean }) {
+export function MemberDataCard({ member: m, canEdit, eBoekhouden = true }: { member: MemberDetail; canEdit: boolean; eBoekhouden?: boolean }) {
   const api = useApi();
   const [form, setForm] = useState<DataForm | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -92,13 +92,13 @@ export function MemberDataCard({ member: m, canEdit }: { member: MemberDetail; c
     save.mutate(form!, {
       onSuccess: () => {
         setForm(null);
-        setMessage('Gegevens opgeslagen. Aangepaste velden overschrijft de sync niet meer.');
+        setMessage(eBoekhouden ? 'Gegevens opgeslagen. Aangepaste velden overschrijft de sync niet meer.' : 'Gegevens opgeslagen.');
       },
     });
   }
 
   const Manual = ({ field }: { field: string }) =>
-    local.has(field) ? (
+    eBoekhouden && local.has(field) ? (
       <span className="badge" title="In het portal aangepast; de sync overschrijft dit niet">
         handmatig
       </span>
@@ -126,9 +126,11 @@ export function MemberDataCard({ member: m, canEdit }: { member: MemberDetail; c
           </button>
         ) : null}
       </div>
-      <p className="card-hint">
-        Komt uit e-Boekhouden. Wat je hier aanpast, is &quot;handmatig&quot;: de sync overschrijft het niet meer.
-      </p>
+      {eBoekhouden ? (
+        <p className="card-hint">
+          Komt uit e-Boekhouden. Wat je hier aanpast, is &quot;handmatig&quot;: de sync overschrijft het niet meer.
+        </p>
+      ) : null}
       <ProblemAlert error={release.error} />
       <SuccessMessage message={message} />
       {form ? (
@@ -275,7 +277,7 @@ export function MemberDataCard({ member: m, canEdit }: { member: MemberDetail; c
           <dd>
             {m.joinYear ?? '—'} <Manual field="joinYear" />
           </dd>
-          {m.ebStatusRaw ? (
+          {eBoekhouden && m.ebStatusRaw ? (
             <>
               <dt>Status in e-Boekhouden</dt>
               <dd>
@@ -294,7 +296,7 @@ export function MemberDataCard({ member: m, canEdit }: { member: MemberDetail; c
           </dd>
         </dl>
       )}
-      {canEdit && local.size > 0 && !form ? (
+      {eBoekhouden && canEdit && local.size > 0 && !form ? (
         <div className="actions">
           <button type="button" className="button ghost small" onClick={() => setConfirmRelease(true)}>
             Teruggeven aan e-Boekhouden

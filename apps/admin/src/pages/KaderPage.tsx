@@ -211,7 +211,7 @@ function KaderDialog({
   return (
     <Dialog open title={member ? `${member.name} bewerken` : 'Kaderlid toevoegen'} onClose={() => onClose()}>
       <form onSubmit={submit}>
-        <p className="muted">Kies iemand uit de ledenlijst. Functie en pasfoto staan niet in e-Boekhouden en worden alleen hier bewaard.</p>
+        <p className="muted">Kies iemand uit de ledenlijst. Functie en pasfoto worden alleen hier bewaard.</p>
         <Field label="Zoek in de ledenlijst" hint="Naam of lidnummer, minstens 2 tekens." value={search} onChange={(e) => setSearch(e.target.value)} />
         {candidates.data && candidates.data.length > 0 ? (
           <ul className="pick-list" aria-label="Gevonden leden">

@@ -28263,6 +28263,7 @@ export interface components {
             features: {
                 [key: string]: boolean;
             };
+            eBoekhoudenEnabled: boolean;
         };
         MeRole: {
             code: string;

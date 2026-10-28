@@ -280,7 +280,7 @@ export function NotificationComposerPage() {
               ) : null}
               {options.data?.anyAudience ? (
                 <Checkbox
-                  label="Dansgarde (iedereen met groep Dansgarde in e-Boekhouden)"
+                  label="Dansgarde (iedereen met groep Dansgarde)"
                   checked={Boolean(selection.dansgarde)}
                   onChange={(e) => setSelection({ ...selection, dansgarde: e.target.checked })}
                 />

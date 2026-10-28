@@ -97,8 +97,8 @@ export function MembershipsPage() {
         </div>
         <p className="card-hint">
           Het hoofdlid krijgt een mail met een persoonlijke link (90 dagen geldig) om het tweede lid te registreren. Het
-          formulier is dan al ingevuld met het e-mailadres en, als die bekend zijn, de naam uit e-Boekhouden (vrij veld
-          &quot;Tweede lid&quot;) en het adres. De aanmelding komt daarna bij Aanmeldingen. Antwoorden gaan naar het
+          formulier is dan al ingevuld met het e-mailadres en, als die bekend zijn, de naam en het adres. De aanmelding
+          komt daarna bij Aanmeldingen. Antwoorden gaan naar het
           secretariaat.
         </p>
         {splits.data && candidates.length === 0 ? (
@@ -111,7 +111,7 @@ export function MembershipsPage() {
                 <tr>
                   <th scope="col">Lidnummer</th>
                   <th scope="col">Hoofdlid</th>
-                  <th scope="col">Tweede lid (e-Boekhouden)</th>
+                  <th scope="col">Tweede lid</th>
                   <th scope="col">E-mailadres</th>
                   <th scope="col">Stand</th>
                   <th scope="col">

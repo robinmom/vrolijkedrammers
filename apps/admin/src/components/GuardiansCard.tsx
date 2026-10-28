@@ -481,7 +481,7 @@ function OwnAccountDialog({
               niet meer.
             </li>
           ) : null}
-          <li>Het e-mailadres in e-Boekhouden verandert niet vanzelf; pas het daar aan als {firstName} dat wil.</li>
+          <li>Het e-mailadres verandert niet vanzelf; pas het aan bij de ledengegevens als {firstName} dat wil.</li>
         </ul>
         <ProblemAlert error={give.error} />
         <div className="actions">

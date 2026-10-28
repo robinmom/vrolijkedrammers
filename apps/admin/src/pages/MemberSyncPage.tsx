@@ -129,6 +129,28 @@ export function MemberSyncPage() {
   const running = jobs.data?.items.find((j) => j.status === 'Queued' || j.status === 'Running');
   const lastDone = jobs.data?.items.find((j) => j.status !== 'Queued' && j.status !== 'Running');
 
+  // Koppeling uit: de ledenadministratie wordt hier bijgehouden; de sync-onderdelen zijn dan niet van toepassing.
+  if (me.data?.eBoekhoudenEnabled === false) {
+    return (
+      <>
+        <Link to="/leden" className="back-link">
+          <Icon name="terug" size={16} /> Leden
+        </Link>
+        <div className="page-header">
+          <div className="page-title">
+            <h1>Synchronisatie met e-Boekhouden</h1>
+          </div>
+        </div>
+        <section className="card">
+          <p className="muted">
+            De koppeling met e-Boekhouden staat uit: de ledenadministratie wordt hier bijgehouden. Synchroniseren is daarom
+            niet beschikbaar.
+          </p>
+        </section>
+      </>
+    );
+  }
+
   return (
     <>
       <Link to="/leden" className="back-link">

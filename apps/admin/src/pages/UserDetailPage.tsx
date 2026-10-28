@@ -243,7 +243,7 @@ export function UserDetailPage() {
           <h2 id="privacy">Privacy (AVG)</h2>
           <p className="muted">
             Voor een verzoek van dit lid (per brief of e-mail). Wissen verwijdert het account, de inlog en alle gegevens die alleen de app
-            bewaart; de auditlog blijft. De ledenadministratie in e-Boekhouden past het secretariaat zelf aan.
+            bewaart; de auditlog blijft. De ledengegevens zelf blijven bij Leden staan.
           </p>
           <ProblemAlert error={exportData.error ?? erase.error} />
           <div className="actions">
@@ -263,7 +263,7 @@ export function UserDetailPage() {
             erase.mutate(undefined, {
               onSuccess: () => {
                 setErasing(false);
-                setMessage('De app-gegevens zijn gewist en het account is verwijderd. Vergeet e-Boekhouden niet.');
+                setMessage('De app-gegevens zijn gewist en het account is verwijderd.');
               },
             });
           }}
@@ -395,8 +395,8 @@ function ParadeLeaderCard({
         onChange={(e) => onChange(e.target.checked)}
       />
       <p className="muted">
-        Zonder dit vinkje ziet het lid in de app alleen de informatiepagina van de optocht. De groepsnaam komt uit e-Boekhouden (vrij veld,
-        in te stellen bij Ledensync).
+        Zonder dit vinkje ziet het lid in de app alleen de informatiepagina van de optocht. De groepsnaam komt uit de
+        ledengegevens.
       </p>
       <ProblemAlert error={error} />
     </section>

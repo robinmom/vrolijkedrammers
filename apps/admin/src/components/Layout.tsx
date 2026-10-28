@@ -40,7 +40,8 @@ export function Layout() {
   const auth = useAuth();
   const me = useMe();
   const [menuOpen, setMenuOpen] = useState(false);
-  const sections = navSections(me.data?.permissions ?? []);
+  // Verberg de e-Boekhouden-/sync-onderdelen alleen als de koppeling expliciet uitstaat; tijdens het laden blijven ze zichtbaar.
+  const sections = navSections(me.data?.permissions ?? [], me.data?.eBoekhoudenEnabled !== false);
   // Een menu-item met onderliggende menu-items (bijv. /optocht en /optocht/samenstellen) is alleen actief op zijn eigen pad.
   const allPaths = sections.flatMap((s) => s.items.map((i) => i.to));
   const exact = (to: string) => to === '/' || allPaths.some((p) => p !== to && p.startsWith(`${to}/`));

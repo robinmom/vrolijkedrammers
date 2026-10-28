@@ -272,8 +272,7 @@ export function JubileesPage() {
               Zonder inschrijfjaar <span className="muted">({r.withoutJoinYear.length})</span>
             </h2>
             <p className="card-hint">
-              Actieve leden zonder inschrijfjaar tellen niet mee. Vul het inschrijfjaar aan in e-Boekhouden of bij het
-              lid.
+              Actieve leden zonder inschrijfjaar tellen niet mee. Vul het inschrijfjaar aan bij het lid.
             </p>
             {r.withoutJoinYear.length === 0 ? (
               <p className="muted">Van alle actieve leden is het inschrijfjaar bekend.</p>

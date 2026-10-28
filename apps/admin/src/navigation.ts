@@ -7,6 +7,8 @@ export interface NavItem {
   /** Eén permission, of meerdere waarvan er één volstaat. */
   permission: string | readonly string[];
   icon: IconName;
+  /** Alleen tonen als de e-Boekhouden-koppeling aanstaat (anders wordt de ledenadministratie hier bijgehouden). */
+  requiresEBoekhouden?: boolean;
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
   section?:
     | 'Content'
@@ -77,7 +79,7 @@ export const navItems: readonly NavItem[] = [
   { label: 'Accountverzoeken', to: '/accountverzoeken', permission: 'member.approve', icon: 'gebruiker', section: 'Leden' },
   { label: 'Koppelverzoeken', to: '/koppelverzoeken', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
-  { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden' },
+  { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden', requiresEBoekhouden: true },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
   // Fase 25: lidmaatschappen (soorten, tarieven, splitsen); contributie is het overzicht per lid.
   { label: 'Lidmaatschappen', to: '/lidmaatschappen', permission: 'contribution.manage', icon: 'groepen', section: 'Leden' },
@@ -122,14 +124,20 @@ export function navPermissions(item: NavItem): readonly string[] {
   return typeof item.permission === 'string' ? [item.permission] : item.permission;
 }
 
-export function visibleNavItems(permissions: readonly string[]): NavItem[] {
-  return navItems.filter((item) => navPermissions(item).some((p) => permissions.includes(p)));
+export function visibleNavItems(permissions: readonly string[], eBoekhoudenEnabled = true): NavItem[] {
+  return navItems.filter(
+    (item) =>
+      (!item.requiresEBoekhouden || eBoekhoudenEnabled) && navPermissions(item).some((p) => permissions.includes(p)),
+  );
 }
 
 /** Zichtbare items gegroepeerd per sectie, in de volgorde van het menu; lege secties vallen weg. */
-export function navSections(permissions: readonly string[]): { section: NavItem['section']; items: NavItem[] }[] {
+export function navSections(
+  permissions: readonly string[],
+  eBoekhoudenEnabled = true,
+): { section: NavItem['section']; items: NavItem[] }[] {
   const result: { section: NavItem['section']; items: NavItem[] }[] = [];
-  for (const item of visibleNavItems(permissions)) {
+  for (const item of visibleNavItems(permissions, eBoekhoudenEnabled)) {
     const last = result.at(-1);
     if (last && last.section === item.section) {
       last.items.push(item);

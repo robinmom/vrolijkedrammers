@@ -171,7 +171,7 @@ export function DashboardPage() {
           <div className="kpi">
             <span className="kpi-label">Actieve leden</span>
             <span className="kpi-value">{summary.data.active}</span>
-            <span className="kpi-hint">Volgens e-Boekhouden</span>
+            <span className="kpi-hint">{eBoekhouden ? 'Volgens e-Boekhouden' : 'In de ledenadministratie'}</span>
           </div>
         ) : null}
         {d ? (

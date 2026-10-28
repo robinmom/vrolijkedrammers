@@ -56,7 +56,7 @@ export function DanceGroupsPage() {
         <div className="page-title">
           <h1>Dansgroepen</h1>
           <p className="page-subtitle">
-            De indeling van de dansgarde. Alleen leden met groep "Dansgarde" in e-Boekhouden kunnen in een dansgroep.
+            De indeling van de dansgarde. Alleen leden met groep "Dansgarde" kunnen in een dansgroep.
           </p>
         </div>
       </div>

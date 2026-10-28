@@ -38,7 +38,7 @@ export function DansgardePage() {
         <div className="page-title">
           <h1>Dansgarde</h1>
           <p className="page-subtitle">
-            Alle leden met groep "Dansgarde" in e-Boekhouden (vrij veld 3). Ze staan ook gewoon onder Leden. Hier deel
+            Alle leden met groep "Dansgarde". Ze staan ook gewoon onder Leden. Hier deel
             je ze in bij een dansgroep en zie je of de ouders gekoppeld zijn.
           </p>
         </div>
@@ -50,7 +50,7 @@ export function DansgardePage() {
             <div className="kpi">
               <span className="kpi-label">Dansgarde</span>
               <span className="kpi-value">{d.total}</span>
-              <span className="kpi-hint">groep Dansgarde in e-Boekhouden</span>
+              <span className="kpi-hint">groep Dansgarde</span>
             </div>
             <div className="kpi">
               <span className="kpi-label">Zonder dansgroep</span>
@@ -110,7 +110,7 @@ export function DansgardePage() {
               ) : null}
             </div>
             {d.members.length === 0 ? (
-              <p className="muted">Nog geen leden met groep "Dansgarde" in e-Boekhouden.</p>
+              <p className="muted">Nog geen leden met groep "Dansgarde".</p>
             ) : (
               <div className="table-scroll" tabIndex={0} role="region" aria-label="Dansgarde">
                 <table className="table">

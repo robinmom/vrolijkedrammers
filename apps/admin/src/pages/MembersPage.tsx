@@ -106,8 +106,9 @@ export function MembersPage() {
         <div className="page-title">
           <h1>Leden</h1>
           <p className="page-subtitle">
-            Uit e-Boekhouden{s?.lastSyncAt ? ` · laatste synchronisatie ${formatDateTime(s.lastSyncAt)}` : ''}. Naam, adres en
-            contactgegevens wijzig je in e-Boekhouden.
+            {eBoekhouden
+              ? `Uit e-Boekhouden${s?.lastSyncAt ? ` · laatste synchronisatie ${formatDateTime(s.lastSyncAt)}` : ''}. Naam, adres en contactgegevens wijzig je in e-Boekhouden.`
+              : 'Het ledenbestand van de vereniging. Gegevens pas je hier aan.'}
           </p>
         </div>
         <div className="actions">
@@ -116,7 +117,7 @@ export function MembersPage() {
               Exporteren (Excel)
             </button>
           ) : null}
-          {permissions.includes('import.run') ? (
+          {eBoekhouden && permissions.includes('import.run') ? (
             <Link to="/ledensync" className="button">
               Synchronisatie
             </Link>
@@ -131,18 +132,20 @@ export function MembersPage() {
           <div className="kpi">
             <span className="kpi-label">Actieve leden</span>
             <span className="kpi-value">{s.active}</span>
-            <span className="kpi-hint">{s.suspended ? `${s.suspended} geschorst` : 'Volgens e-Boekhouden'}</span>
+            <span className="kpi-hint">{s.suspended ? `${s.suspended} geschorst` : eBoekhouden ? 'Volgens e-Boekhouden' : 'Actief lid'}</span>
           </div>
           <div className="kpi">
             <span className="kpi-label">Inactief</span>
             <span className="kpi-value">{s.inactive + s.deceased}</span>
             <span className="kpi-hint">Opgezegd of gestopt</span>
           </div>
-          <div className="kpi">
-            <span className="kpi-label">Ontbreekt in e-Boekhouden</span>
-            <span className="kpi-value">{s.missingInEBoekhouden}</span>
-            <span className="kpi-hint">{s.missingInEBoekhouden ? 'Controleren' : 'Alles in orde'}</span>
-          </div>
+          {eBoekhouden ? (
+            <div className="kpi">
+              <span className="kpi-label">Ontbreekt in e-Boekhouden</span>
+              <span className="kpi-value">{s.missingInEBoekhouden}</span>
+              <span className="kpi-hint">{s.missingInEBoekhouden ? 'Controleren' : 'Alles in orde'}</span>
+            </div>
+          ) : null}
           <div className="kpi">
             <span className="kpi-label">Met app-account</span>
             <span className="kpi-value">{s.activeWithAccount}</span>
@@ -208,8 +211,7 @@ export function MembersPage() {
               Gevarenzone <span className="badge">Alleen test- en acceptatieomgeving</span>
             </h2>
             <p>
-              Verwijdert alle leden, syncruns en conflicten uit de app en zet de nachtelijke sync uit. In e-Boekhouden verandert
-              niets; met een synchronisatie zijn de leden er zo weer.
+              Verwijdert alle leden, syncruns en conflicten uit de app en zet de nachtelijke sync uit. Alleen voor test/acceptatie.
             </p>
           </div>
           <button type="button" className="button danger" onClick={() => setPurging(true)}>
@@ -267,8 +269,7 @@ function PurgeDialog({
       <form onSubmit={submit}>
         <p>
           Dit verwijdert <strong>alle leden</strong>, syncruns en conflicten uit deze omgeving en zet de nachtelijke
-          sync uit. App-accounts blijven bestaan, maar zijn daarna niet meer aan een lid gekoppeld. In e-Boekhouden
-          verandert niets.
+          sync uit. App-accounts blijven bestaan, maar zijn daarna niet meer aan een lid gekoppeld.
         </p>
         <p className="muted">Deze functie werkt alleen in de test- en acceptatieomgeving.</p>
         <Field

@@ -131,10 +131,7 @@ export function ContributionsPage() {
                           {l.fullName}
                         </Link>
                       </td>
-                      <td>
-                        {kindLabel(l.kind, l.senior)}
-                        {l.kindFromEBoekhouden && l.kind ? <span className="muted"> (e-Boekhouden)</span> : null}
-                      </td>
+                      <td>{kindLabel(l.kind, l.senior)}</td>
                       <td>{formatAmount(l.amount)}</td>
                       <td>{statusLabels[l.status]}</td>
                       <td>{l.note ?? (l.partnerName ? `Partner: ${l.partnerName}` : '')}</td>

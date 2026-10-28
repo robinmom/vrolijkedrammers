@@ -277,7 +277,7 @@ export function ApplicationDetailPage() {
                 )}
               </p>
               {a.provisioning?.memberNumber?.startsWith('SIM') ? (
-                <p className="muted small-text">Gesimuleerd lidnummer: in deze omgeving schrijft de app niet naar e-Boekhouden.</p>
+                <p className="muted small-text">Gesimuleerd lidnummer (testomgeving).</p>
               ) : null}
               {a.status === 'ProvisioningFailed' ? (
                 <>

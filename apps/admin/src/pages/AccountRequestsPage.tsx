@@ -168,8 +168,8 @@ export function AccountRequestsPage() {
         <div>
           <h1 className="page-title">Accountverzoeken</h1>
           <p className="page-subtitle">
-            Leden die met &quot;Ik ben al lid&quot; een account vroegen, maar niet exact overeenkwamen met een lid: uit e-Boekhouden of
-            hier aangemaakt (bijvoorbeeld via &quot;lid worden&quot;). Is het lid later aangemaakt, actief gezet of heeft het een ander
+            Leden die met &quot;Ik ben al lid&quot; een account vroegen, maar niet exact overeenkwamen met een lid
+            (bijvoorbeeld via &quot;lid worden&quot;). Is het lid later aangemaakt, actief gezet of heeft het een ander
             e-mailadres gekregen? Dan wordt het verzoek vanzelf opnieuw gecontroleerd, of klik op Opnieuw controleren. Het account
             krijgt altijd het e-mailadres van het lid.
           </p>

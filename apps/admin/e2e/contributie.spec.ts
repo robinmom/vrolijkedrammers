@@ -10,9 +10,7 @@ test('fase 23a: contributie, tarief toevoegen en een partner koppelen', async ({
   await page.goto('/beheer/contributie');
 
   await expect(page.getByRole('heading', { name: 'Contributie', level: 1 })).toBeVisible();
-  await expect(
-    page.getByRole('row', { name: /001 Piet van der Berg Combinatie \(e-Boekhouden\) € 57,50 Betaalt/ }),
-  ).toBeVisible();
+  await expect(page.getByRole('row', { name: /001 Piet van der Berg Combinatie € 57,50 Betaalt/ })).toBeVisible();
   await expect(
     page.getByRole('row', { name: /002 Anna Jansen Onbekend € 0,00 Onbekend Soort lidmaatschap onbekend/ }),
   ).toBeVisible();

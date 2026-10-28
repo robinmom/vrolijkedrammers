@@ -395,7 +395,7 @@ test('fase 9: app-account van een lid verwijderen na bevestiging', async ({ page
   await open(page, api, 'leden/m-2');
   await page.getByRole('button', { name: 'App-account verwijderen' }).click();
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText(/Het lid in e-Boekhouden blijft staan/)).toBeVisible();
+  await expect(dialog.getByText(/Het lid blijft staan/)).toBeVisible();
   await dialog.getByRole('button', { name: 'App-account verwijderen' }).click();
   await expect(page.getByText('Het app-account van Anna Jansen is verwijderd.')).toBeVisible();
   expect(api.members[1]!.hasAccount).toBe(false);

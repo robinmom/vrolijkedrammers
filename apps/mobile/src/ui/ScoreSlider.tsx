@@ -11,6 +11,9 @@ import { AppText } from './AppText';
  * (@react-native-community/slider): die vangt het slepen zelf af, en tijdens het slepen zet het jureerscherm het swipen
  * naar de volgende wagen uit (`onSlidingStart`/`onSlidingEnd`). Zolang er nog niets is ingevuld staat er "–" en is de
  * balk grijs. Met VoiceOver/TalkBack is het geheel één instelbaar element: omhoog of omlaag vegen = 5 erbij of eraf.
+ *
+ * `suggested` is een overgenomen waarde uit een eerder voorbijtrekken: die staat er wel (getal en duim), maar de balk
+ * blijft grijs en `onChange` is niet gebeurd. Eén tik of veeg bevestigt hem; zo blijft "nog niet ingevuld" eerlijk.
  */
 export function ScoreSlider({
   label,
@@ -20,6 +23,8 @@ export function ScoreSlider({
   onSlidingEnd,
   disabled = false,
   max = 100,
+  suggested = null,
+  suggestedHint,
 }: {
   label: string;
   value: number | null;
@@ -28,14 +33,19 @@ export function ScoreSlider({
   onSlidingEnd?: () => void;
   disabled?: boolean;
   max?: number;
+  suggested?: number | null;
+  suggestedHint?: string;
 }) {
   const { colors } = useTheme();
   const [dragging, setDragging] = useState<number | null>(null);
-  const shown = dragging ?? value;
+  // Ingevuld of op dit moment aan het slepen: dan pas rood. Een overgenomen waarde laat de balk grijs.
+  const filled = dragging !== null || value !== null;
+  const shown = dragging ?? value ?? suggested;
 
   const onAction = (event: AccessibilityActionEvent) => {
     const step = max <= 10 ? 1 : 5;
-    const base = value ?? Math.round(max / 2);
+    // Zonder eigen waarde bevestigt de eerste veeg wat er staat (overgenomen waarde of het midden).
+    const base = value ?? suggested ?? Math.round(max / 2);
     if (event.nativeEvent.actionName === 'increment') onChange(Math.min(max, value === null ? base : base + step));
     if (event.nativeEvent.actionName === 'decrement') onChange(Math.max(0, value === null ? base : base - step));
   };
@@ -47,14 +57,18 @@ export function ScoreSlider({
       accessibilityRole="adjustable"
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
-      accessibilityValue={shown === null ? { text: 'nog niet ingevuld' } : { min: 0, max, now: shown }}
+      accessibilityValue={
+        filled && shown !== null
+          ? { min: 0, max, now: shown }
+          : { text: suggested !== null ? (suggestedHint ?? `${suggested}, nog niet bevestigd`) : 'nog niet ingevuld' }
+      }
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={onAction}
     >
       <View style={styles.top}>
         <AppText variant="listTitle">{label}</AppText>
-        <View style={[styles.value, { backgroundColor: shown === null ? colors.surfaceMuted : colors.tintRed }]}>
-          <AppText variant="dateDay" color={shown === null ? colors.textSecondary : colors.accentText}>
+        <View style={[styles.value, { backgroundColor: filled ? colors.tintRed : colors.surfaceMuted }]}>
+          <AppText variant="dateDay" color={filled ? colors.accentText : colors.textSecondary}>
             {shown === null ? '–' : String(shown)}
           </AppText>
         </View>
@@ -64,12 +78,12 @@ export function ScoreSlider({
         minimumValue={0}
         maximumValue={max}
         step={1}
-        value={value ?? Math.round(max / 2)}
+        value={value ?? suggested ?? Math.round(max / 2)}
         disabled={disabled}
         tapToSeek
-        minimumTrackTintColor={shown === null ? colors.border : brand.red}
+        minimumTrackTintColor={filled ? brand.red : colors.border}
         maximumTrackTintColor={colors.border}
-        thumbTintColor={shown === null ? colors.textTertiary : brand.red}
+        thumbTintColor={filled ? brand.red : colors.textTertiary}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         onSlidingStart={() => onSlidingStart?.()}

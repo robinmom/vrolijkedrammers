@@ -94,4 +94,22 @@ export function passComplete(scores: Map<string, LocalScore>, registrationId: st
   return criteria.every((c) => scores.has(scoreKey(registrationId, pass, c.key)));
 }
 
+/**
+ * De waarde uit het laatste eerdere voorbijtrekken, als startpunt voor dit voorbijtrekken. Alleen om te tonen: zolang
+ * het jurylid hem niet bevestigt blijft het criterium officieel niet ingevuld, dus hij wordt niet opgeslagen en de
+ * eindcontrole blijft hem melden.
+ */
+export function carriedOver(
+  scores: Map<string, LocalScore>,
+  registrationId: string,
+  pass: number,
+  criterion: Criterion,
+): { value: number; fromPass: number } | null {
+  for (let p = pass - 1; p >= 1; p--) {
+    const value = valueOf(scores, registrationId, p, criterion);
+    if (value !== null) return { value, fromPass: p };
+  }
+  return null;
+}
+
 export const entryLabel = (e: JudgingEntry) => `${e.startNumber != null ? `nr. ${e.startNumber} ` : ''}${e.groupName}`;

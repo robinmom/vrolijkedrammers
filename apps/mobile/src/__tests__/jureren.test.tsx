@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import OptochtScreen from '../app/(tabs)/optocht';
@@ -42,9 +43,11 @@ const requests = (path: string, method: string) =>
     .map(([input, init]) => (typeof input === 'string' ? new Request(input, init as RequestInit) : (input as Request)))
     .filter((r) => r.url.includes(path) && r.method === method);
 
-beforeEach(() => {
+beforeEach(async () => {
   (globalThis.fetch as jest.Mock).mockClear();
   setSessionForTest('signedIn');
+  // Scores staan op de telefoon; zonder wissen neemt de volgende test die van de vorige mee.
+  await AsyncStorage.clear();
 });
 
 describe('Jureren (fase 22b)', () => {
@@ -61,8 +64,9 @@ describe('Jureren (fase 22b)', () => {
     expect(screen.getAllByText('0 van 2')).toHaveLength(3);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Start jureren (nr. 5)' }));
-    expect(await screen.findByText('De Beunhazen')).toBeTruthy();
-    expect(screen.getByText('“Importheffingen Trump”')).toBeTruthy();
+    // Dezelfde wagen staat op een pagina per voorbijtrekken, dus hij komt meer dan één keer voor.
+    expect(await screen.findAllByText('De Beunhazen')).not.toHaveLength(0);
+    expect(screen.getAllByText('“Importheffingen Trump”')).not.toHaveLength(0);
     expect(screen.getByText('1 van 2')).toBeTruthy();
 
     const originaliteit = screen.getAllByRole('adjustable', { name: 'Originaliteit' })[0]!;
@@ -81,8 +85,45 @@ describe('Jureren (fase 22b)', () => {
     await fireEvent.press(screen.getByRole('switch', { name: 'Hele optocht' }));
     expect(alert).toHaveBeenCalledWith('Je gaat nu de hele optocht beoordelen', expect.any(String), expect.any(Array));
     expect(await screen.findByText('1 van 3')).toBeTruthy();
-    expect(screen.getByText(/Niet aan jou toegewezen/)).toBeTruthy();
+    expect(screen.getAllByText(/Niet aan jou toegewezen/)).not.toHaveLength(0);
     alert.mockRestore();
+  });
+
+  it('doorswipen: na de laatste wagen van een voorbijtrekken komt de eerste wagen van het volgende', async () => {
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    await renderApp(routes, '/jureren/beoordelen?start=r-7&passage=1');
+    // nr. 7 is de laatste van de eigen categorieën, dus hierna begint voorbij 2 weer bij nr. 5.
+    expect(await screen.findByText('2 van 2')).toBeTruthy();
+    expect(screen.getByText('Voorbij 2 · nr. 5 ›')).toBeTruthy();
+  });
+
+  it('overgenomen waardes staan er als startpunt en tellen pas na bevestigen mee', async () => {
+    const scored = (criterion: string, value: number) => ({ registrationId: 'r-5', pass: 1, criterion, value, scoredAt: '2027-02-07T13:40:00Z' });
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/jury/current': {
+        ...session(),
+        entries: [session().entries[0]!],
+        scores: [scored('Originality', 48), scored('Carnivalesque', 40), scored('Quality', 35), scored('Overall', 42)],
+      },
+      '/api/v1/jury/parades/p-1/scores': { changed: 4 },
+    });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=2');
+
+    // Voorbij 2 laat de 48 uit voorbij 1 zien, maar nog niet als ingevuld.
+    const sliders = await screen.findAllByLabelText('Originaliteit');
+    expect(
+      sliders.some((n) => String((n.props as { accessibilityValue?: { text?: string } }).accessibilityValue?.text ?? '').includes('overgenomen uit voorbij 1')),
+    ).toBe(true);
+
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Vorige waardes overnemen' })[0]!);
+    await waitFor(() => expect(requests('/scores', 'PUT')).toHaveLength(1), { timeout: 4000 });
+    const body = await requests('/scores', 'PUT')[0]!.json();
+    expect(body.scores).toHaveLength(4);
+    expect(body.scores).toEqual(
+      expect.arrayContaining([expect.objectContaining({ registrationId: 'r-5', pass: 2, criterion: 'Originality', value: 48 })]),
+    );
   });
 
   it('einde: indienen met bevestiging, daarna bedankt en niets meer te wijzigen', async () => {

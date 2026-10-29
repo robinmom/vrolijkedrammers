@@ -27,7 +27,8 @@ public sealed class JuryController(ParadeJudging judging) : ControllerBase
         return new JurorSessionResponse(s.ParadeId, s.ParadeName, s.ParadeDate, s.StartTime, s.SubmittedAt,
             [.. s.Categories.Select(c => new JudgingCategoryRefResponse(c.Id, c.Name))],
             [.. s.Entries.Select(e => new JudgingEntryResponse(e.RegistrationId, e.StartNumber, e.GroupName, e.Motto, e.CategoryId, e.CategoryName, e.Assigned))],
-            [.. s.Scores.Select(x => new JudgingScoreResponse(x.RegistrationId, x.Pass, x.Criterion, x.Value, x.ScoredAt))]);
+            [.. s.Scores.Select(x => new JudgingScoreResponse(x.RegistrationId, x.Pass, x.Criterion, x.Value, x.ScoredAt))],
+            [.. s.Weights.Select(w => new JudgingCategoryWeightsResponse(w.CategoryId, w.Originality, w.Carnivalesque, w.Quality, w.Overall))]);
     }
 
     [HttpPut("parades/{paradeId:guid}/scores")]
@@ -48,9 +49,13 @@ public sealed class JuryController(ParadeJudging judging) : ControllerBase
 
 public sealed record JurorSessionResponse(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, TimeOnly StartTime, DateTime? SubmittedAt,
-    IReadOnlyList<JudgingCategoryRefResponse> Categories, IReadOnlyList<JudgingEntryResponse> Entries, IReadOnlyList<JudgingScoreResponse> Scores);
+    IReadOnlyList<JudgingCategoryRefResponse> Categories, IReadOnlyList<JudgingEntryResponse> Entries, IReadOnlyList<JudgingScoreResponse> Scores,
+    IReadOnlyList<JudgingCategoryWeightsResponse> Weights);
 
 public sealed record JudgingCategoryRefResponse(int Id, string Name);
+
+/// <summary>De weging per criterium, zodat het jurylid in de app een totaal per inzending ziet zoals het meetelt.</summary>
+public sealed record JudgingCategoryWeightsResponse(int CategoryId, int Originality, int Carnivalesque, int Quality, int Overall);
 
 public sealed record JudgingEntryResponse(Guid RegistrationId, int? StartNumber, string GroupName, string? Motto, int CategoryId, string CategoryName, bool Assigned);
 

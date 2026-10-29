@@ -15,9 +15,13 @@ public sealed record JudgingScoreRow(Guid RegistrationId, int Pass, JudgingCrite
 
 public sealed record JudgingCategoryRef(int Id, string Name);
 
+/// <summary>De weging per criterium van een beoordeelde categorie, zodat de app zelf een totaal per inzending kan tonen.</summary>
+public sealed record JudgingWeightsRow(int CategoryId, int Originality, int Carnivalesque, int Quality, int Overall);
+
 public sealed record JurorSession(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, TimeOnly StartTime, DateTime? SubmittedAt,
-    IReadOnlyList<JudgingCategoryRef> Categories, IReadOnlyList<JudgingEntry> Entries, IReadOnlyList<JudgingScoreRow> Scores);
+    IReadOnlyList<JudgingCategoryRef> Categories, IReadOnlyList<JudgingEntry> Entries, IReadOnlyList<JudgingScoreRow> Scores,
+    IReadOnlyList<JudgingWeightsRow> Weights);
 
 public sealed record ScoreInput(Guid RegistrationId, int Pass, JudgingCriterion Criterion, int Value, DateTime ScoredAt);
 
@@ -58,8 +62,12 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
             .Select(s => new JudgingScoreRow(s.RegistrationId, s.Pass, s.Criterion, s.Value, s.ScoredAt)).ToListAsync(cancellationToken);
         var submitted = await db.JudgingSubmissions.AsNoTracking().Where(s => s.ParadeId == parade.Id && s.UserId == userId)
             .Select(s => (DateTime?)s.SubmittedAt).FirstOrDefaultAsync(cancellationToken);
+        // Van alle beoordeelde categorieën, want met "Hele optocht" beoordeelt een jurylid ook buiten de eigen categorieën.
+        var weights = await db.ParadeJudgingCategories.AsNoTracking().Where(j => j.ParadeId == parade.Id && j.Judged)
+            .Select(j => new JudgingWeightsRow(j.CategoryId, j.WeightOriginality, j.WeightCarnivalesque, j.WeightQuality, j.WeightOverall))
+            .ToListAsync(cancellationToken);
         return new JurorSession(parade.Id, parade.Name, parade.ParadeDate, parade.StartTime, submitted, categories,
-            [.. entries.Select(e => e with { Assigned = assigned.Contains(e.CategoryId) })], scores);
+            [.. entries.Select(e => e with { Assigned = assigned.Contains(e.CategoryId) })], scores, weights);
     }
 
     /// <summary>De inzendingen die beoordeeld worden: ingediend, niet ingetrokken of afgewezen, in een beoordeelde categorie.</summary>

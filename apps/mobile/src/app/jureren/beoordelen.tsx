@@ -6,7 +6,18 @@ import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, unwrap } from '../../api/client';
 import { queryKeys, useJurySession, useMe } from '../../api/queries';
-import { carriedOver, criteria, passComplete, passes, valueOf, type JudgingEntry } from '../../features/judging';
+import {
+  carriedOver,
+  criteria,
+  entryLabel,
+  entryTotal,
+  firstIncompletePass,
+  maxTotal,
+  passComplete,
+  passes,
+  valueOf,
+  type JudgingEntry,
+} from '../../features/judging';
 import { useJudging } from '../../features/useJudging';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider } from '../../ui';
@@ -32,6 +43,8 @@ export default function BeoordelenScreen() {
   const client = useQueryClient();
   const [whole, setWhole] = useState(false);
   const [chosen, setChosen] = useState<number | null>(null);
+  // Waar het jurylid was toen hij naar het overzicht ging, zodat hij daar weer terugkomt.
+  const [returnTo, setReturnTo] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Tijdens het slepen van een slider niet naar de volgende wagen swipen.
   const [sliding, setSliding] = useState(false);
@@ -168,20 +181,42 @@ export default function BeoordelenScreen() {
   const toConfirm = (entry: JudgingEntry, pass: number) =>
     criteriaFor(entry, pass).flatMap((x) => (x.own === null && x.carried ? [{ key: x.criterion.key, value: x.carried.value }] : []));
 
+  /** Naar een wagen of groep, standaard bij het eerste voorbijtrekken dat nog niet af is (vanuit het overzicht). */
+  const goToEntry = (entry: JudgingEntry, pass?: number) => {
+    const i = entries.findIndex((e) => e.registrationId === entry.registrationId);
+    if (i < 0) return;
+    goTo(indexFor(pass ?? firstIncompletePass(judging.scores, entry.registrationId), i));
+  };
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top, backgroundColor: colors.canvas }]}>
       <View style={styles.header}>
         <BackLink label="Jureren" />
         <View style={styles.headerRight}>
-          <AppText variant="caption" color={colors.textSecondary}>
+          <AppText variant="caption" color={colors.textSecondary} numberOfLines={1}>
             {current?.kind === 'entry' ? `${posInPass + 1} van ${entries.length}` : 'Einde optocht'}
           </AppText>
+          {/* Altijd bij het overzicht kunnen: daar staan de totalen, de gaten en het indienen. */}
+          <Pressable
+            onPress={() => {
+              setReturnTo(current?.kind === 'entry' ? index : null);
+              goTo(pages.length - 1);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Overzicht"
+            style={[styles.chip, styles.chipFixed, { backgroundColor: colors.tintBlue }]}
+            hitSlop={6}
+          >
+            <AppText variant="label" color={colors.linkText}>
+              Overzicht
+            </AppText>
+          </Pressable>
           <Pressable
             onPress={toggleWhole}
             accessibilityRole="switch"
             accessibilityState={{ checked: whole }}
             accessibilityLabel="Hele optocht"
-            style={[styles.chip, { backgroundColor: whole ? `${brand.yellow}59` : colors.tintBlue }]}
+            style={[styles.chip, styles.chipFixed, { backgroundColor: whole ? `${brand.yellow}59` : colors.tintBlue }]}
             hitSlop={6}
           >
             <AppText variant="label" color={whole ? brand.navy : colors.linkText}>
@@ -299,7 +334,7 @@ export default function BeoordelenScreen() {
               </AppText>
               <Card style={styles.card}>
                 <AppText variant="overline" color={colors.textSecondary}>
-                  Overzicht
+                  Voortgang
                 </AppText>
                 {passes.map((p) => {
                   const done = assigned.filter((e) => passComplete(judging.scores, e.registrationId, p)).length;
@@ -313,6 +348,38 @@ export default function BeoordelenScreen() {
                         {done === assigned.length ? ' ✓' : ''}
                       </AppText>
                     </View>
+                  );
+                })}
+              </Card>
+              <Card style={styles.card}>
+                <AppText variant="overline" color={colors.textSecondary}>
+                  Jouw punten
+                </AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  Alleen jouw eigen punten, zoals ze meetellen: per criterium het gemiddelde over de voorbijtrekkens die je hebt
+                  ingevuld, maal de weging van de categorie. Tik op een wagen of groep om hem na te kijken.
+                </AppText>
+                {assigned.map((e) => {
+                  const total = entryTotal(judging.scores, e, s.weights);
+                  const max = maxTotal(e, s.weights);
+                  const open = passes.filter((p) => !passComplete(judging.scores, e.registrationId, p)).length;
+                  return (
+                    <Pressable
+                      key={e.registrationId}
+                      onPress={() => goToEntry(e)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${entryLabel(e)}, ${
+                        total === null ? 'nog geen punten' : `${total} punten${max ? ` van ${max}` : ''}`
+                      }${open > 0 ? `, ${open} ${open === 1 ? 'voorbijtrekken' : 'voorbijtrekkens'} nog niet ingevuld` : ''}`}
+                      style={styles.row}
+                    >
+                      <AppText variant="bodyStrong" style={styles.flex} numberOfLines={1}>
+                        {entryLabel(e)}
+                      </AppText>
+                      <AppText variant="link" color={open === 0 ? colors.successText : colors.accentText}>
+                        {total === null ? 'open' : `${total}${open > 0 ? ' •' : ' ✓'}`}
+                      </AppText>
+                    </Pressable>
                   );
                 })}
               </Card>
@@ -337,6 +404,15 @@ export default function BeoordelenScreen() {
                   <AppText variant="caption" color={brand.navy}>
                     Een gemiste passage telt niet mee: het gemiddelde gaat over de passages die je wel hebt ingevuld.
                   </AppText>
+                  {/* Direct naar het eerste gat, zodat je niet zelf hoeft te zoeken waar je gebleven was. */}
+                  <Button
+                    label="Ga naar inzending"
+                    variant="secondary"
+                    onPress={() => {
+                      const first = missing[0];
+                      if (first) goToEntry(first.entry, first.pass);
+                    }}
+                  />
                 </View>
               ) : null}
               {scoredOutside.length > 0 ? (
@@ -373,7 +449,14 @@ export default function BeoordelenScreen() {
                 disabled={submitting}
                 onPress={() => confirmSubmit(assigned.length + scoredOutside.length, missing.length)}
               />
-              <Button label="Terug naar de optocht" variant="secondary" onPress={() => goTo(0)} />
+              <Button
+                label="Terug naar het jureren"
+                variant="secondary"
+                onPress={() => {
+                  goTo(returnTo ?? 0);
+                  setReturnTo(null);
+                }}
+              />
             </ScrollView>
           )
         }
@@ -414,8 +497,10 @@ const styles = StyleSheet.create({
   centerText: { textAlign: 'center' },
   okCircle: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 20 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   chip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  // De knoppen houden hun breedte; op een smal toestel krimpt de teller.
+  chipFixed: { flexShrink: 0 },
   page: { paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
   banner: { padding: 12, borderRadius: radius.sm, gap: 4 },
   entryHead: { flexDirection: 'row', alignItems: 'center', gap: 14 },

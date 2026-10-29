@@ -6,6 +6,7 @@ import { storageKeys } from '../lib/storageKeys';
 export type Criterion = components['schemas']['JudgingCriterion'];
 export type JurorSession = components['schemas']['JurorSessionResponse'];
 export type JudgingEntry = components['schemas']['JudgingEntryResponse'];
+export type JudgingWeights = components['schemas']['JudgingCategoryWeightsResponse'];
 
 /** De vier criteria (fase 22), in de volgorde van het jureerscherm. */
 export const criteria: { key: Criterion; label: string }[] = [
@@ -113,3 +114,46 @@ export function carriedOver(
 }
 
 export const entryLabel = (e: JudgingEntry) => `${e.startNumber != null ? `nr. ${e.startNumber} ` : ''}${e.groupName}`;
+
+/** Het eerste voorbijtrekken dat nog niet af is; is alles af, dan het eerste (om te kunnen nakijken). */
+export function firstIncompletePass(scores: Map<string, LocalScore>, registrationId: string): number {
+  return passes.find((p) => !passComplete(scores, registrationId, p)) ?? passes[0];
+}
+
+const weightKeys: Record<Criterion, 'originality' | 'carnivalesque' | 'quality' | 'overall'> = {
+  Originality: 'originality',
+  Carnivalesque: 'carnivalesque',
+  Quality: 'quality',
+  Overall: 'overall',
+};
+
+/**
+ * Het totaal van dit jurylid voor één inzending, op dezelfde manier als de uiteindelijke uitslag: per criterium het
+ * gemiddelde over de ingevulde voorbijtrekkens, maal de weging van de categorie. Een gemist voorbijtrekken verlaagt het
+ * gemiddelde dus niet. `null` als er nog niets is ingevuld of de weging onbekend is.
+ */
+export function entryTotal(
+  scores: Map<string, LocalScore>,
+  entry: JudgingEntry,
+  // Kan ontbreken: een sessie uit de cache van vóór deze versie heeft nog geen wegingen.
+  weights: readonly JudgingWeights[] | undefined,
+): number | null {
+  const weight = weights?.find((w) => w.categoryId === entry.categoryId);
+  if (!weight) return null;
+  let total = 0;
+  let scored = false;
+  for (const c of criteria) {
+    const values = passes.map((p) => valueOf(scores, entry.registrationId, p, c.key)).filter((v): v is number => v !== null);
+    if (values.length === 0) continue;
+    scored = true;
+    total += (values.reduce((sum, v) => sum + v, 0) / values.length) * weight[weightKeys[c.key]];
+  }
+  // Eén decimaal, net als de uitslag.
+  return scored ? Math.round(total * 10) / 10 : null;
+}
+
+/** Het hoogst haalbare totaal voor een categorie: 100 per criterium maal de weging. */
+export function maxTotal(entry: JudgingEntry, weights: readonly JudgingWeights[] | undefined): number | null {
+  const w = weights?.find((x) => x.categoryId === entry.categoryId);
+  return w ? 100 * (w.originality + w.carnivalesque + w.quality + w.overall) : null;
+}

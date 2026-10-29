@@ -39405,6 +39405,39 @@
           }
         }
       },
+      "JudgingCategoryWeightsResponse": {
+        "required": [
+          "categoryId",
+          "originality",
+          "carnivalesque",
+          "quality",
+          "overall"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "originality": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "carnivalesque": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quality": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overall": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "De weging per criterium, zodat het jurylid in de app een totaal per inzending ziet zoals het meetelt."
+      },
       "JudgingCriterion": {
         "enum": [
           "Originality",
@@ -39599,7 +39632,8 @@
           "submittedAt",
           "categories",
           "entries",
-          "scores"
+          "scores",
+          "weights"
         ],
         "type": "object",
         "properties": {
@@ -39641,6 +39675,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JudgingScoreResponse"
+            }
+          },
+          "weights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JudgingCategoryWeightsResponse"
             }
           }
         }

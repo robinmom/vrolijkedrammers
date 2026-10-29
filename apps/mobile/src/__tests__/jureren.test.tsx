@@ -36,6 +36,11 @@ const session = (submittedAt: string | null = null) => ({
     { registrationId: 'r-7', startNumber: 7, groupName: 'De Snotapen', motto: 'Festa Olimpica', categoryId: 1, categoryName: 'Getrokken wagens volwassenen', assigned: true },
   ],
   scores: [] as unknown[],
+  // Weging per beoordeelde categorie; bepaalt het totaal dat het jurylid in het overzicht ziet.
+  weights: [
+    { categoryId: 1, originality: 1, carnivalesque: 1, quality: 2, overall: 1 },
+    { categoryId: 3, originality: 1, carnivalesque: 1, quality: 1, overall: 2 },
+  ],
 });
 
 const requests = (path: string, method: string) =>
@@ -124,6 +129,31 @@ describe('Jureren (fase 22b)', () => {
     expect(body.scores).toEqual(
       expect.arrayContaining([expect.objectContaining({ registrationId: 'r-5', pass: 2, criterion: 'Originality', value: 48 })]),
     );
+  });
+
+  it('overzicht: gewogen totaal per wagen, en "ga naar inzending" springt naar het eerste gat', async () => {
+    const scored = (criterion: string, value: number) => ({ registrationId: 'r-5', pass: 1, criterion, value, scoredAt: '2027-02-07T13:40:00Z' });
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      // Alleen voorbij 1 van nr. 5 is ingevuld; weging kwaliteit telt dubbel.
+      '/api/v1/jury/current': {
+        ...session(),
+        scores: [scored('Originality', 48), scored('Carnivalesque', 40), scored('Quality', 35), scored('Overall', 42)],
+      },
+    });
+    await renderApp(routes, '/jureren/beoordelen?einde=1');
+    expect(await screen.findByText('Klaar met jureren?')).toBeTruthy();
+
+    // 48×1 + 40×1 + 35×2 + 42×1 = 200, van maximaal 100 × (1+1+2+1) = 500.
+    expect(screen.getByLabelText(/nr\. 5 De Beunhazen, 200 punten van 500/)).toBeTruthy();
+    expect(screen.getByText('200 •')).toBeTruthy();
+    // Zonder punten staat er "open".
+    expect(screen.getByLabelText(/nr\. 7 De Snotapen, nog geen punten/)).toBeTruthy();
+
+    // Eerste gat is voorbij 1 bij nr. 7, want nr. 5 is daar al af.
+    await fireEvent.press(screen.getByRole('button', { name: 'Ga naar inzending' }));
+    expect(await screen.findByText('2 van 2')).toBeTruthy();
   });
 
   it('einde: indienen met bevestiging, daarna bedankt en niets meer te wijzigen', async () => {

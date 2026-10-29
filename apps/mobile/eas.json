@@ -8,7 +8,8 @@
       "distribution": "internal",
       "environment": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://app-dvd-api-dev.azurewebsites.net"
+        "EXPO_PUBLIC_API_URL": "https://app-dvd-api-dev.azurewebsites.net",
+        "APP_VARIANT": "development"
       },
       "android": {
         "buildType": "apk"
@@ -18,7 +19,8 @@
       "distribution": "store",
       "environment": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://app-dvd-api-dev.azurewebsites.net"
+        "EXPO_PUBLIC_API_URL": "https://app-dvd-api-dev.azurewebsites.net",
+        "APP_VARIANT": "development"
       },
       "autoIncrement": true,
       "ios": {
@@ -40,7 +42,7 @@
   "submit": {
     "testflight": {
       "ios": {
-        "ascAppId": "6818789905"
+        "ascAppId": "6828389452"
       }
     },
     "production": {

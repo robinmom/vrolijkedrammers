@@ -20,6 +20,7 @@ export function JuryPhotoCard({
   serverThumbnailUrl,
   serverPending,
   onQueued,
+  uploadError,
   disabled = false,
 }: {
   userId: string;
@@ -29,6 +30,8 @@ export function JuryPhotoCard({
   serverPending?: boolean;
   /** Versturen van de wachtrij; wordt afgewacht zodat de kaart daarna de juiste status kan tonen. */
   onQueued?: () => void | Promise<void>;
+  /** Waarom de laatste poging misliep; dan niet doen alsof er alleen geen internet is. */
+  uploadError?: string | null;
   disabled?: boolean;
 }) {
   const { colors } = useTheme();
@@ -106,7 +109,7 @@ export function JuryPhotoCard({
         </AppText>
         {localUri ? (
           <AppText variant="caption" color={colors.accentText}>
-            wacht op internet
+            {uploadError ? 'versturen lukt niet' : 'wacht op internet'}
           </AppText>
         ) : serverPending ? (
           <AppText variant="caption" color={colors.textSecondary}>
@@ -125,9 +128,9 @@ export function JuryPhotoCard({
           Nog geen foto. Handig om later terug te zien welke wagen dit was; alleen de optochtcommissie ziet hem.
         </AppText>
       )}
-      {error ? (
+      {error ?? (localUri && uploadError) ? (
         <AppText variant="caption" color={colors.accentText} accessibilityRole="alert">
-          {error}
+          {error ?? `De foto staat op je telefoon, maar versturen lukt niet: ${uploadError}.`}
         </AppText>
       ) : null}
       {busy ? (

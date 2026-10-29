@@ -19,7 +19,7 @@ import {
   type JudgingEntry,
 } from '../../features/judging';
 import { JuryPhotoCard } from '../../features/JuryPhotoCard';
-import { flushPhotos, pendingPhotos } from '../../features/juryPhotos';
+import { flushPhotos, lastPhotoError, pendingPhotos } from '../../features/juryPhotos';
 import { useJudging } from '../../features/useJudging';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider } from '../../ui';
@@ -49,6 +49,7 @@ export default function BeoordelenScreen() {
   const [returnTo, setReturnTo] = useState<number | null>(null);
   // Juryfoto's die nog op internet wachten; de bestanden staan op het toestel.
   const [photoQueue, setPhotoQueue] = useState(0);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Tijdens het slepen van een slider niet naar de volgende wagen swipen.
   const [sliding, setSliding] = useState(false);
@@ -143,6 +144,7 @@ export default function BeoordelenScreen() {
     }
     const rest = await flushPhotos(userId, paradeId).catch(() => before);
     setPhotoQueue(rest);
+    setPhotoError(rest > 0 ? lastPhotoError() : null);
     // Gelukt: de sessie opnieuw ophalen, zodat de miniatuur van de server verschijnt.
     if (rest < before) await client.invalidateQueries({ queryKey: queryKeys.jury });
   }, [client, paradeId, userId]);
@@ -362,6 +364,7 @@ export default function BeoordelenScreen() {
                   serverThumbnailUrl={(s.photos ?? []).find((p) => p.registrationId === item.entry.registrationId)?.thumbnailUrl}
                   serverPending={(s.photos ?? []).some((p) => p.registrationId === item.entry.registrationId && p.status === 'Pending')}
                   onQueued={flushPhotoQueue}
+                  uploadError={photoError}
                 />
               ) : null}
             </ScrollView>

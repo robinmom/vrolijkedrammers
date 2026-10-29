@@ -2,10 +2,11 @@ import { brand, radius } from '@drammers/design-tokens';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, unwrap } from '../../api/client';
 import { queryKeys, useJurySession, useMe } from '../../api/queries';
+import { useRefresh } from '../../api/useRefresh';
 import {
   carriedOver,
   criteria,
@@ -43,6 +44,8 @@ export default function BeoordelenScreen() {
   const session = useJurySession(me.data?.permissions.includes('parade.judge') ?? false);
   const judging = useJudging(session.data, me.data?.id);
   const client = useQueryClient();
+  // Naar beneden trekken haalt de sessie opnieuw op; een net verstuurde foto is pas zichtbaar als de server hem verwerkt heeft.
+  const refresh = useRefresh([queryKeys.jury]);
   const [whole, setWhole] = useState(false);
   const [chosen, setChosen] = useState<number | null>(null);
   // Waar het jurylid was toen hij naar het overzicht ging, zodat hij daar weer terugkomt.
@@ -272,7 +275,11 @@ export default function BeoordelenScreen() {
         onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
         renderItem={({ item }) =>
           item.kind === 'entry' ? (
-            <ScrollView style={{ width }} contentContainerStyle={styles.page}>
+            <ScrollView
+              style={{ width }}
+              contentContainerStyle={styles.page}
+              refreshControl={<RefreshControl refreshing={refresh.refreshing} onRefresh={refresh.onRefresh} />}
+            >
               {!item.entry.assigned ? (
                 <View style={[styles.banner, { backgroundColor: `${brand.yellow}40` }]}>
                   <AppText variant="caption" color={brand.navy}>
@@ -369,7 +376,11 @@ export default function BeoordelenScreen() {
               ) : null}
             </ScrollView>
           ) : (
-            <ScrollView style={{ width }} contentContainerStyle={styles.page}>
+            <ScrollView
+              style={{ width }}
+              contentContainerStyle={styles.page}
+              refreshControl={<RefreshControl refreshing={refresh.refreshing} onRefresh={refresh.onRefresh} />}
+            >
               <AppText variant="heroTitle" accessibilityRole="header">
                 Klaar met jureren?
               </AppText>

@@ -78,7 +78,7 @@ public class ParadeJudgingTests(SqlServerFixture sql) : IAsyncLifetime
     [Fact]
     public async Task Jurylid_beoordeelt_buiten_categorie_wacht_op_akkoord_en_na_indienen_is_alles_vast()
     {
-        var (wagons, _, a, b, c) = await SeedAsync();
+        var (wagons, groups, a, b, c) = await SeedAsync();
         var (jurorId, jurorOid) = await _api.CreateUserAsync("jurylid@example.com", DefaultRoles.Jury);
         var juror = _api.ClientFor(jurorOid);
         await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/jurors/{jurorId}/categories", new { categoryIds = new[] { wagons } });
@@ -88,6 +88,16 @@ public class ParadeJudgingTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal([5, 6, 7], entries.Select(e => e.GetProperty("startNumber").GetInt32()));
         Assert.Equal([true, false, true], entries.Select(e => e.GetProperty("assigned").GetBoolean()));
         Assert.Equal("Motto van DwarZ", entries[1].GetProperty("motto").GetString());
+
+        // De app rekent het totaal per inzending zelf uit (ook offline) en heeft daarvoor de wegingen nodig. Ook van de
+        // categorieën buiten de eigen indeling, want met "Hele optocht" beoordeelt een jurylid die ook.
+        var weights = session.GetProperty("weights").EnumerateArray().ToList();
+        var wagonWeights = weights.Single(w => w.GetProperty("categoryId").GetInt32() == wagons);
+        Assert.Equal(1, wagonWeights.GetProperty("originality").GetInt32());
+        Assert.Equal(1, wagonWeights.GetProperty("carnivalesque").GetInt32());
+        Assert.Equal(2, wagonWeights.GetProperty("quality").GetInt32());
+        Assert.Equal(1, wagonWeights.GetProperty("overall").GetInt32());
+        Assert.Contains(weights, w => w.GetProperty("categoryId").GetInt32() == groups);
 
         var t = _api.Clock.UtcNow;
         var saved = await juror.PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new

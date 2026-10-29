@@ -27529,6 +27529,19 @@ export interface components {
             /** Format: int32 */
             entryCount: number;
         };
+        /** @description De weging per criterium, zodat het jurylid in de app een totaal per inzending ziet zoals het meetelt. */
+        JudgingCategoryWeightsResponse: {
+            /** Format: int32 */
+            categoryId: number;
+            /** Format: int32 */
+            originality: number;
+            /** Format: int32 */
+            carnivalesque: number;
+            /** Format: int32 */
+            quality: number;
+            /** Format: int32 */
+            overall: number;
+        };
         /**
          * @description De vier criteria waarop de jury beoordeelt (fase 22), elk van 0 tot en met 100.
          * @enum {unknown}
@@ -27600,6 +27613,7 @@ export interface components {
             categories: components["schemas"]["JudgingCategoryRefResponse"][];
             entries: components["schemas"]["JudgingEntryResponse"][];
             scores: components["schemas"]["JudgingScoreResponse"][];
+            weights: components["schemas"]["JudgingCategoryWeightsResponse"][];
         };
         /** @description Een programmacategorie voor het jurylid: ingediend, aan de beurt (de eerste die nog niet is ingediend) of later. */
         JuryCategory: {

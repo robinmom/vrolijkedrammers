@@ -24065,6 +24065,131 @@
         }
       }
     },
+    "/api/v1/jury/parades/{paradeId}/entries/{registrationId}/photo": {
+      "post": {
+        "tags": [
+          "Jury"
+        ],
+        "summary": "Foto van een wagen of groep (fase 22e): één per jurylid per inzending, dus een nieuwe vervangt de vorige. De foto\nkomt in het jury-album van de optocht, dat een concept blijft; alleen de commissie ziet hem in het portal.",
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/jury/parades/{paradeId}/submit": {
       "post": {
         "tags": [
@@ -39491,6 +39616,30 @@
           }
         }
       },
+      "JudgingPhotoResponse": {
+        "required": [
+          "registrationId",
+          "status",
+          "thumbnailUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PhotoProcessingStatus"
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "De eigen foto van dit jurylid bij een inzending (fase 22e); bij `Pending` loopt de scan nog."
+      },
       "JudgingScoreResponse": {
         "required": [
           "registrationId",
@@ -39633,7 +39782,8 @@
           "categories",
           "entries",
           "scores",
-          "weights"
+          "weights",
+          "photos"
         ],
         "type": "object",
         "properties": {
@@ -39681,6 +39831,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JudgingCategoryWeightsResponse"
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JudgingPhotoResponse"
             }
           }
         }

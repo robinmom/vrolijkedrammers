@@ -14,7 +14,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/jury")]
 [RequirePermission(Permissions.ParadeJudge)]
-public sealed class JuryController(ParadeJudging judging) : ControllerBase
+public sealed class JuryController(ParadeJudging judging, Content.ContentUrls urls) : ControllerBase
 {
     private Guid UserId => CurrentUser.Get(HttpContext)!.UserId;
 
@@ -28,7 +28,10 @@ public sealed class JuryController(ParadeJudging judging) : ControllerBase
             [.. s.Categories.Select(c => new JudgingCategoryRefResponse(c.Id, c.Name))],
             [.. s.Entries.Select(e => new JudgingEntryResponse(e.RegistrationId, e.StartNumber, e.GroupName, e.Motto, e.CategoryId, e.CategoryName, e.Assigned))],
             [.. s.Scores.Select(x => new JudgingScoreResponse(x.RegistrationId, x.Pass, x.Criterion, x.Value, x.ScoredAt))],
-            [.. s.Weights.Select(w => new JudgingCategoryWeightsResponse(w.CategoryId, w.Originality, w.Carnivalesque, w.Quality, w.Overall))]);
+            [.. s.Weights.Select(w => new JudgingCategoryWeightsResponse(w.CategoryId, w.Originality, w.Carnivalesque, w.Quality, w.Overall))],
+            [.. await Task.WhenAll(s.Photos.Select(async p => new JudgingPhotoResponse(
+                p.RegistrationId, p.Status,
+                await urls.ForAsync(Drammers.Infrastructure.Files.FileContainers.PhotosDerived, p.ThumbnailBlobPath, cancellationToken))))]);
     }
 
     [HttpPut("parades/{paradeId:guid}/scores")]
@@ -40,6 +43,24 @@ public sealed class JuryController(ParadeJudging judging) : ControllerBase
         new(await judging.SaveScoresAsync(UserId, paradeId,
             [.. request.Scores.Select(s => new ScoreInput(s.RegistrationId, s.Pass, s.Criterion, s.Value, s.ScoredAt))], cancellationToken));
 
+    /// <summary>
+    /// Foto van een wagen of groep (fase 22e): één per jurylid per inzending, dus een nieuwe vervangt de vorige. De foto
+    /// komt in het jury-album van de optocht, dat een concept blijft; alleen de commissie ziet hem in het portal.
+    /// </summary>
+    [HttpPost("parades/{paradeId:guid}/entries/{registrationId:guid}/photo")]
+    [RequestSizeLimit(Infrastructure.Content.ContentFiles.MaxPhotoBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = Infrastructure.Content.ContentFiles.MaxPhotoBytes)]
+    [ProducesResponseType<CreatedResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<CreatedResponse>> AddPhoto(Guid paradeId, Guid registrationId, IFormFile file, CancellationToken cancellationToken)
+    {
+        var id = await judging.SavePhotoAsync(UserId, paradeId, registrationId,
+            new Infrastructure.Content.UploadedFile(file.FileName, file.Length, file.OpenReadStream), cancellationToken);
+        return Created($"/api/v1/jury/parades/{paradeId}/entries/{registrationId}/photo", new CreatedResponse(id));
+    }
+
     [HttpPost("parades/{paradeId:guid}/submit")]
     [ProducesResponseType<SubmitJudgingResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -50,7 +71,10 @@ public sealed class JuryController(ParadeJudging judging) : ControllerBase
 public sealed record JurorSessionResponse(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, TimeOnly StartTime, DateTime? SubmittedAt,
     IReadOnlyList<JudgingCategoryRefResponse> Categories, IReadOnlyList<JudgingEntryResponse> Entries, IReadOnlyList<JudgingScoreResponse> Scores,
-    IReadOnlyList<JudgingCategoryWeightsResponse> Weights);
+    IReadOnlyList<JudgingCategoryWeightsResponse> Weights, IReadOnlyList<JudgingPhotoResponse> Photos);
+
+/// <summary>De eigen foto van dit jurylid bij een inzending (fase 22e); bij <c>Pending</c> loopt de scan nog.</summary>
+public sealed record JudgingPhotoResponse(Guid RegistrationId, Modules.Content.Photos.PhotoProcessingStatus Status, string? ThumbnailUrl);
 
 public sealed record JudgingCategoryRefResponse(int Id, string Name);
 

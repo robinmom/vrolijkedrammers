@@ -8148,6 +8148,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("info_text");
 
+                    b.Property<Guid?>("JuryAlbumId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("jury_album_id");
+
                     b.Property<int>("MaxDocumentSizeMb")
                         .HasColumnType("int")
                         .HasColumnName("max_document_size_mb");

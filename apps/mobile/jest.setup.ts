@@ -87,3 +87,53 @@ jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(async () => undefined),
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
+
+// Juryfoto (fase 22e): de fotokiezer geeft terug wat een test in `globalThis.__pick` zet, anders "geannuleerd".
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  requestMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  launchCameraAsync: jest.fn(async () => (globalThis as { __pick?: unknown }).__pick ?? { canceled: true }),
+  launchImageLibraryAsync: jest.fn(async () => (globalThis as { __pick?: unknown }).__pick ?? { canceled: true }),
+}));
+
+// Bestanden in het geheugen, zodat de fotowachtrij te testen is zonder native bestandssysteem.
+jest.mock('expo-file-system', () => {
+  const files = new Set<string>();
+  const directories = new Set<string>();
+  const join = (...parts: unknown[]) =>
+    parts.map((part) => (typeof part === 'string' ? part : (part as { uri: string }).uri)).join('/');
+  class Directory {
+    uri: string;
+    constructor(...parts: unknown[]) {
+      this.uri = join(...parts);
+    }
+    get exists() {
+      return directories.has(this.uri);
+    }
+    create() {
+      directories.add(this.uri);
+    }
+    delete() {
+      directories.delete(this.uri);
+      for (const file of [...files]) {
+        if (file.startsWith(`${this.uri}/`)) files.delete(file);
+      }
+    }
+  }
+  class File {
+    uri: string;
+    constructor(...parts: unknown[]) {
+      this.uri = join(...parts);
+    }
+    get exists() {
+      return files.has(this.uri);
+    }
+    copy(target: { uri: string }) {
+      files.add(target.uri);
+    }
+    delete() {
+      files.delete(this.uri);
+    }
+  }
+  return { __esModule: true, __files: files, Paths: { document: 'file:///doc' }, Directory, File };
+});

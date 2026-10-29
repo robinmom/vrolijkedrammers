@@ -18,10 +18,13 @@ public sealed record JudgingCategoryRef(int Id, string Name);
 /// <summary>De weging per criterium van een beoordeelde categorie, zodat de app zelf een totaal per inzending kan tonen.</summary>
 public sealed record JudgingWeightsRow(int CategoryId, int Originality, int Carnivalesque, int Quality, int Overall);
 
+/// <summary>De eigen foto van dit jurylid bij een inzending (fase 22e); <c>Pending</c> zolang de scan nog loopt.</summary>
+public sealed record JudgingPhotoRow(Guid RegistrationId, Modules.Content.Photos.PhotoProcessingStatus Status, string? ThumbnailBlobPath);
+
 public sealed record JurorSession(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, TimeOnly StartTime, DateTime? SubmittedAt,
     IReadOnlyList<JudgingCategoryRef> Categories, IReadOnlyList<JudgingEntry> Entries, IReadOnlyList<JudgingScoreRow> Scores,
-    IReadOnlyList<JudgingWeightsRow> Weights);
+    IReadOnlyList<JudgingWeightsRow> Weights, IReadOnlyList<JudgingPhotoRow> Photos);
 
 public sealed record ScoreInput(Guid RegistrationId, int Pass, JudgingCriterion Criterion, int Value, DateTime ScoredAt);
 
@@ -38,7 +41,7 @@ public sealed record OutsideDecisionInput(Guid UserId, Guid RegistrationId, Outs
 /// Beoordelingen buiten de eigen categorieën tellen alleen mee na akkoord van het bestuur of de hoofdjury; die zien
 /// daarbij nooit de scores zelf.
 /// </summary>
-public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICurrentActor actor, IClock clock)
+public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICurrentActor actor, IClock clock, Content.ContentAdministration content)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -66,8 +69,15 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
         var weights = await db.ParadeJudgingCategories.AsNoTracking().Where(j => j.ParadeId == parade.Id && j.Judged)
             .Select(j => new JudgingWeightsRow(j.CategoryId, j.WeightOriginality, j.WeightCarnivalesque, j.WeightQuality, j.WeightOverall))
             .ToListAsync(cancellationToken);
+        // Eigen juryfoto's, zodat het jurylid op een ander toestel of na opnieuw installeren ziet wat er al staat.
+        var photos = parade.JuryAlbumId is { } juryAlbumId
+            ? await db.Photos.AsNoTracking()
+                .Where(f => f.AlbumId == juryAlbumId && f.UploadedBy == userId && f.RegistrationId != null && !f.Hidden)
+                .Select(f => new JudgingPhotoRow(f.RegistrationId!.Value, f.ProcessingStatus, f.ThumbnailBlobPath))
+                .ToListAsync(cancellationToken)
+            : [];
         return new JurorSession(parade.Id, parade.Name, parade.ParadeDate, parade.StartTime, submitted, categories,
-            [.. entries.Select(e => e with { Assigned = assigned.Contains(e.CategoryId) })], scores, weights);
+            [.. entries.Select(e => e with { Assigned = assigned.Contains(e.CategoryId) })], scores, weights, photos);
     }
 
     /// <summary>De inzendingen die beoordeeld worden: ingediend, niet ingetrokken of afgewezen, in een beoordeelde categorie.</summary>
@@ -164,6 +174,63 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
         var count = await db.JudgingScores.CountAsync(s => s.ParadeId == paradeId && s.UserId == userId, cancellationToken);
         await audit.WriteAsync(new AuditEntry("jury.submitted", "Parade", paradeId.ToString(), null, JsonSerializer.Serialize(new { userId, scores = count }, Json)), cancellationToken);
         return Now;
+    }
+
+    /// <summary>
+    /// Eén foto per jurylid per inzending (fase 22e); een nieuwe vervangt de vorige. De foto komt in het jury-album van
+    /// de optocht, dat een concept blijft en dus niet publiek is. De commissie zet een bruikbare foto in het portal met
+    /// "verplaatsen" naar het uitslagalbum; daarmee wordt het automatisch de uitslagfoto van die inzending.
+    /// </summary>
+    public async Task<Guid> SavePhotoAsync(
+        Guid userId, Guid paradeId, Guid registrationId, Content.UploadedFile upload, CancellationToken cancellationToken)
+    {
+        await EnsureNotSubmittedAsync(paradeId, userId, cancellationToken);
+        if (!await db.ParadeJurorAssignments.AnyAsync(a => a.ParadeId == paradeId && a.UserId == userId, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.NotFound, "Je bent geen jurylid van deze optocht.", DomainErrorKind.NotFound);
+        }
+
+        var entry = (await EntriesAsync(paradeId, cancellationToken)).SingleOrDefault(e => e.RegistrationId == registrationId)
+            ?? throw new DomainException(ErrorCodes.Validation, "Deze inzending hoort niet bij de optocht die je jureert.");
+
+        var parade = await db.Parades.SingleAsync(p => p.Id == paradeId, cancellationToken);
+        if (parade.JuryAlbumId is not { } albumId || !await db.PhotoAlbums.AnyAsync(a => a.Id == albumId, cancellationToken))
+        {
+            albumId = await content.CreateAlbumAsync(
+                new Content.AlbumInput(
+                    $"Jurybeelden {parade.Name}",
+                    parade.ParadeDate,
+                    $"Foto's die juryleden maakten tijdens {parade.Name}. Dit album blijft een concept; verplaats een bruikbare foto naar het uitslagalbum.",
+                    null,
+                    new Content.PublicationInput(
+                        Modules.Content.Shared.ContentVisibility.Public, [], Modules.Content.Shared.PublicationStatus.Draft, null),
+                    Modules.Content.Photos.PhotoCategory.Parade),
+                cancellationToken);
+            parade.JuryAlbumId = albumId;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        var previous = await db.Photos
+            .Where(f => f.AlbumId == albumId && f.RegistrationId == registrationId && f.UploadedBy == userId)
+            .Select(f => f.Id).ToListAsync(cancellationToken);
+
+        var photoId = (await content.UploadPhotosAsync(albumId, [upload], cancellationToken))[0];
+        var caption = entry.StartNumber is { } number ? $"nr. {number} {entry.GroupName}" : entry.GroupName;
+        await db.Photos.Where(f => f.Id == photoId).ExecuteUpdateAsync(u => u
+            .SetProperty(f => f.RegistrationId, registrationId)
+            .SetProperty(f => f.Caption, caption), cancellationToken);
+
+        // Pas opruimen als de nieuwe er staat, zodat een mislukte upload de vorige foto niet weggooit.
+        foreach (var old in previous)
+        {
+            await content.DeletePhotoAsync(old, cancellationToken);
+        }
+
+        await audit.WriteAsync(
+            new AuditEntry("jury.photo-added", "Parade", paradeId.ToString(), null,
+                JsonSerializer.Serialize(new { userId, registrationId, photoId, replaced = previous.Count }, Json)),
+            cancellationToken);
+        return photoId;
     }
 
     private async Task EnsureNotSubmittedAsync(Guid paradeId, Guid userId, CancellationToken cancellationToken)

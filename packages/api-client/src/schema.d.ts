@@ -20211,6 +20211,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jury/parades/{paradeId}/entries/{registrationId}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Foto van een wagen of groep (fase 22e): één per jurylid per inzending, dus een nieuwe vervangt de vorige. De foto
+         *     komt in het jury-album van de optocht, dat een concept blijft; alleen de commissie ziet hem in het portal.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                    registrationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jury/parades/{paradeId}/submit": {
         parameters: {
             query?: never;
@@ -27559,6 +27642,13 @@ export interface components {
             categoryName: string;
             assigned: boolean;
         };
+        /** @description De eigen foto van dit jurylid bij een inzending (fase 22e); bij `Pending` loopt de scan nog. */
+        JudgingPhotoResponse: {
+            /** Format: uuid */
+            registrationId: string;
+            status: components["schemas"]["PhotoProcessingStatus"];
+            thumbnailUrl: null | string;
+        };
         JudgingScoreResponse: {
             /** Format: uuid */
             registrationId: string;
@@ -27614,6 +27704,7 @@ export interface components {
             entries: components["schemas"]["JudgingEntryResponse"][];
             scores: components["schemas"]["JudgingScoreResponse"][];
             weights: components["schemas"]["JudgingCategoryWeightsResponse"][];
+            photos: components["schemas"]["JudgingPhotoResponse"][];
         };
         /** @description Een programmacategorie voor het jurylid: ingediend, aan de beurt (de eerste die nog niet is ingediend) of later. */
         JuryCategory: {

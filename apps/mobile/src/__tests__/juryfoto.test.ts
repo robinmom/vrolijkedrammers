@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setSessionForTest } from '../auth/session';
-import { flushPhotos, pendingPhotoUri, pendingPhotos, queuePhoto } from '../features/juryPhotos';
+import { flushPhotos, lastPhotoError, pendingPhotoUri, pendingPhotos, queuePhoto } from '../features/juryPhotos';
 
 /** Fase 22e: één foto per wagen, bewaard op het toestel tot er internet is. */
 
@@ -40,6 +40,23 @@ describe("Juryfoto's (fase 22e)", () => {
     (globalThis.fetch as jest.Mock).mockImplementation(reply(409));
     expect(await flushPhotos('u-1', 'p-1')).toBe(0);
     expect(await pendingPhotoUri('u-1', 'p-1', 'r-5')).toBeNull();
+  });
+
+  it('onthoudt waarom het misliep, zodat het niet als "geen internet" wordt gepresenteerd', async () => {
+    await queuePhoto('u-1', 'p-1', 'r-5', 'file:///tmp/a.jpg');
+    (globalThis.fetch as jest.Mock).mockImplementation(() => {
+      throw new Error('Network request failed');
+    });
+    expect(await flushPhotos('u-1', 'p-1')).toBe(1);
+    expect(lastPhotoError()).toContain('Network request failed');
+
+    (globalThis.fetch as jest.Mock).mockImplementation(reply(500));
+    expect(await flushPhotos('u-1', 'p-1')).toBe(1);
+    expect(lastPhotoError()).toContain('500');
+
+    (globalThis.fetch as jest.Mock).mockImplementation(reply(201));
+    expect(await flushPhotos('u-1', 'p-1')).toBe(0);
+    expect(lastPhotoError()).toBeNull();
   });
 
   it('houdt de wachtrij per gebruiker apart', async () => {

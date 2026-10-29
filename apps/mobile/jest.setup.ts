@@ -134,6 +134,21 @@ jest.mock('expo-file-system', () => {
     delete() {
       files.delete(this.uri);
     }
+    // De native uploader; in tests via de gemockte `fetch`, zodat een test gewoon statuscodes kan teruggeven.
+    async upload(url: string, options?: { headers?: Record<string, string> }) {
+      const response: Response = await (globalThis.fetch as jest.Mock)(url, {
+        method: 'POST',
+        headers: options?.headers ?? {},
+      });
+      return { status: response.status, body: await response.text().catch(() => ''), headers: {} };
+    }
   }
-  return { __esModule: true, __files: files, Paths: { document: 'file:///doc' }, Directory, File };
+  return {
+    __esModule: true,
+    __files: files,
+    Paths: { document: 'file:///doc' },
+    Directory,
+    File,
+    UploadType: { BINARY_CONTENT: 0, MULTIPART: 1 },
+  };
 });

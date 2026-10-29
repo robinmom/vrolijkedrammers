@@ -20,6 +20,7 @@ export function JuryPhotoCard({
   serverThumbnailUrl,
   serverPending,
   onQueued,
+  uploadError,
   disabled = false,
 }: {
   userId: string;
@@ -27,7 +28,10 @@ export function JuryPhotoCard({
   registrationId: string;
   serverThumbnailUrl?: string | null;
   serverPending?: boolean;
-  onQueued?: () => void;
+  /** Versturen van de wachtrij; wordt afgewacht zodat de kaart daarna de juiste status kan tonen. */
+  onQueued?: () => void | Promise<void>;
+  /** Waarom de laatste poging misliep; dan niet doen alsof er alleen geen internet is. */
+  uploadError?: string | null;
   disabled?: boolean;
 }) {
   const { colors } = useTheme();
@@ -35,6 +39,9 @@ export function JuryPhotoCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Ook opnieuw kijken als de serverstatus verandert: na een geslaagde upload is het bestand weg, en dan moet "wacht op
+  // internet" verdwijnen. Zonder die afhankelijkheid bleef dat label staan en wees de voorvertoning naar een
+  // verwijderd bestand.
   useEffect(() => {
     let active = true;
     void pendingPhotoUri(userId, paradeId, registrationId).then((uri) => {
@@ -43,7 +50,7 @@ export function JuryPhotoCard({
     return () => {
       active = false;
     };
-  }, [userId, paradeId, registrationId]);
+  }, [userId, paradeId, registrationId, serverThumbnailUrl, serverPending]);
 
   const save = useCallback(
     async (uri: string) => {
@@ -51,8 +58,10 @@ export function JuryPhotoCard({
       setError(null);
       try {
         await queuePhoto(userId, paradeId, registrationId, uri);
+        // Eerst de foto van het toestel tonen, dan versturen, en daarna opnieuw kijken: is hij weg, dan is hij binnen.
         setLocalUri(await pendingPhotoUri(userId, paradeId, registrationId));
-        onQueued?.();
+        await onQueued?.();
+        setLocalUri(await pendingPhotoUri(userId, paradeId, registrationId));
       } catch {
         setError('De foto kon niet worden opgeslagen. Probeer het opnieuw.');
       } finally {
@@ -100,7 +109,7 @@ export function JuryPhotoCard({
         </AppText>
         {localUri ? (
           <AppText variant="caption" color={colors.accentText}>
-            wacht op internet
+            {uploadError ? 'versturen lukt niet' : 'wacht op internet'}
           </AppText>
         ) : serverPending ? (
           <AppText variant="caption" color={colors.textSecondary}>
@@ -110,14 +119,18 @@ export function JuryPhotoCard({
       </View>
       {shown ? (
         <Image source={{ uri: shown }} style={styles.preview} contentFit="cover" accessibilityLabel="Foto van deze wagen of groep" />
+      ) : serverPending ? (
+        <AppText variant="caption" color={colors.textSecondary}>
+          Je foto is verstuurd en wordt nog verwerkt; hij verschijnt hier zodra dat klaar is.
+        </AppText>
       ) : (
         <AppText variant="caption" color={colors.textSecondary}>
           Nog geen foto. Handig om later terug te zien welke wagen dit was; alleen de optochtcommissie ziet hem.
         </AppText>
       )}
-      {error ? (
+      {error ?? (localUri && uploadError) ? (
         <AppText variant="caption" color={colors.accentText} accessibilityRole="alert">
-          {error}
+          {error ?? `De foto staat op je telefoon, maar versturen lukt niet: ${uploadError}.`}
         </AppText>
       ) : null}
       {busy ? (

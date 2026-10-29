@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
-import { Directory, File, Paths } from 'expo-file-system';
+import { Directory, File, Paths, UploadType } from 'expo-file-system';
 import { apiBaseUrl } from '../api/client';
 import { getAccessToken, getInstallationId } from '../auth/session';
 import { storageKeys } from '../lib/storageKeys';
@@ -19,6 +19,14 @@ export interface PendingPhoto {
 }
 
 const queueKey = (userId: string, paradeId: string) => `${storageKeys.paradeJuryPhotoPrefix}${userId}:${paradeId}`;
+
+/**
+ * Waarom de laatste poging misliep, zodat de app geen "wacht op internet" toont terwijl er iets anders aan de hand is.
+ * Bewust niet in de opslag: bij een volgende poging is hij toch achterhaald.
+ */
+let lastError: string | null = null;
+
+export const lastPhotoError = () => lastError;
 
 /** Eigen map in de documentmap: die wordt niet door het systeem opgeruimd als de opslag vol raakt. */
 const folder = () => new Directory(Paths.document, 'jury-photos');
@@ -89,31 +97,42 @@ export async function flushPhotos(userId: string, paradeId: string): Promise<num
   const token = await getAccessToken();
   const deviceId = await getInstallationId();
   const sent: string[] = [];
+  lastError = null;
   for (const pending of queue) {
     const file = new File(folder(), pending.name);
     if (!file.exists) {
       sent.push(pending.name);
       continue;
     }
-    // Multipart met een bestand van het toestel: gewone fetch, want openapi-fetch kent de React Native-bestandsvorm niet.
-    const body = new FormData();
-    body.append('file', { uri: file.uri, name: pending.name, type: 'image/jpeg' } as unknown as Blob);
-    const response = await fetch(`${apiBaseUrl}/api/v1/jury/parades/${paradeId}/entries/${pending.registrationId}/photo`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token ?? ''}`, 'x-device-id': deviceId },
-      body,
-    });
-    if (response.ok) {
+    let status: number;
+    try {
+      // De eigen uploader van expo-file-system geeft het bestand native door. Een FormData met een `file://`-verwijzing
+      // (het patroon van de documentupload) kwam hier niet eens tot een request.
+      const result = await file.upload(`${apiBaseUrl}/api/v1/jury/parades/${paradeId}/entries/${pending.registrationId}/photo`, {
+        uploadType: UploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: 'image/jpeg',
+        headers: { authorization: `Bearer ${token ?? ''}`, 'x-device-id': deviceId },
+      });
+      status = result.status;
+    } catch (error) {
+      // Geen verbinding of een fout in de upload zelf: laten staan, maar wél onthouden waarom.
+      lastError = error instanceof Error ? error.message : 'onbekende fout';
+      break;
+    }
+    if (status >= 200 && status < 300) {
       removeFile(pending.name);
       sent.push(pending.name);
       continue;
     }
     // 4xx anders dan 408/429 komt niet goed door opnieuw te proberen (bijv. al ingediend, of te groot): niet blijven hangen.
-    if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) {
+    if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+      lastError = `de server weigerde de foto (${status})`;
       removeFile(pending.name);
       sent.push(pending.name);
       continue;
     }
+    lastError = `de server gaf een fout (${status})`;
     break;
   }
   const rest = (await readQueue(userId, paradeId)).filter((p) => !sent.includes(p.name));

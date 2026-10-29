@@ -69,9 +69,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "De Vrolijke Drammers gebruikt de camera om QR-codes te scannen bij de ingang en de kassa.",
+          "cameraPermission": "De Vrolijke Drammers gebruikt de camera om QR-codes te scannen bij de ingang en de kassa, en om als jurylid een foto van een wagen of groep te maken.",
           "microphonePermission": false,
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "De Vrolijke Drammers gebruikt je foto's zodat je als jurylid een bestaande foto van een wagen of groep kunt kiezen."
         }
       ]
     ],

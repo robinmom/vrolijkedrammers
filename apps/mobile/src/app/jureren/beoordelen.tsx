@@ -1,7 +1,7 @@
 import { brand, radius } from '@drammers/design-tokens';
-import { useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, unwrap } from '../../api/client';
@@ -18,6 +18,8 @@ import {
   valueOf,
   type JudgingEntry,
 } from '../../features/judging';
+import { JuryPhotoCard } from '../../features/JuryPhotoCard';
+import { flushPhotos, pendingPhotos } from '../../features/juryPhotos';
 import { useJudging } from '../../features/useJudging';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider } from '../../ui';
@@ -45,6 +47,8 @@ export default function BeoordelenScreen() {
   const [chosen, setChosen] = useState<number | null>(null);
   // Waar het jurylid was toen hij naar het overzicht ging, zodat hij daar weer terugkomt.
   const [returnTo, setReturnTo] = useState<number | null>(null);
+  // Juryfoto's die nog op internet wachten; de bestanden staan op het toestel.
+  const [photoQueue, setPhotoQueue] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   // Tijdens het slepen van een slider niet naar de volgende wagen swipen.
   const [sliding, setSliding] = useState(false);
@@ -126,6 +130,33 @@ export default function BeoordelenScreen() {
         { text: 'Ja, indienen', style: 'destructive', onPress: () => void submit() },
       ],
     );
+
+  // Foto's die nog op het toestel staan versturen: bij openen en zodra er weer internet is.
+  const userId = me.data?.id;
+  const paradeId = s?.paradeId;
+  const flushPhotoQueue = useCallback(async () => {
+    if (!userId || !paradeId) return;
+    const before = await pendingPhotos(userId, paradeId);
+    if (before === 0) {
+      setPhotoQueue(0);
+      return;
+    }
+    const rest = await flushPhotos(userId, paradeId).catch(() => before);
+    setPhotoQueue(rest);
+    // Gelukt: de sessie opnieuw ophalen, zodat de miniatuur van de server verschijnt.
+    if (rest < before) await client.invalidateQueries({ queryKey: queryKeys.jury });
+  }, [client, paradeId, userId]);
+
+  useEffect(() => {
+    if (!userId || !paradeId) return;
+    // Na de eerste render, zodat het openen van het scherm niet op de wachtrij wacht.
+    const timer = setTimeout(() => void flushPhotoQueue(), 0);
+    const unsubscribe = onlineManager.subscribe((online) => (online ? void flushPhotoQueue() : undefined));
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [flushPhotoQueue, paradeId, userId]);
 
   if (!s) {
     return (
@@ -323,6 +354,16 @@ export default function BeoordelenScreen() {
                   />
                 </View>
               ) : null}
+              {userId ? (
+                <JuryPhotoCard
+                  userId={userId}
+                  paradeId={s.paradeId}
+                  registrationId={item.entry.registrationId}
+                  serverThumbnailUrl={(s.photos ?? []).find((p) => p.registrationId === item.entry.registrationId)?.thumbnailUrl}
+                  serverPending={(s.photos ?? []).some((p) => p.registrationId === item.entry.registrationId && p.status === 'Pending')}
+                  onQueued={() => void flushPhotoQueue()}
+                />
+              ) : null}
             </ScrollView>
           ) : (
             <ScrollView style={{ width }} contentContainerStyle={styles.page}>
@@ -436,6 +477,11 @@ export default function BeoordelenScreen() {
               {judging.pending > 0 ? (
                 <AppText variant="caption" color={colors.textSecondary}>
                   {judging.syncing ? 'Scores versturen…' : `${judging.pending} ${judging.pending === 1 ? 'score wacht' : 'scores wachten'} op internet.`}
+                </AppText>
+              ) : null}
+              {photoQueue > 0 ? (
+                <AppText variant="caption" color={colors.textSecondary}>
+                  {photoQueue === 1 ? '1 foto wacht' : `${photoQueue} foto's wachten`} op internet; ze staan veilig op je telefoon.
                 </AppText>
               ) : null}
               {message ? (

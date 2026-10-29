@@ -15,6 +15,8 @@ export const storageKeys = {
   ticketChildren: 'dvd.ticket.children.v1',
   /** Jurypunten van de optocht (AsyncStorage): `jury:scores:{userId}:{paradeId}`. */
   paradeJuryPrefix: 'jury:scores:',
+  /** Juryfoto's die nog op internet wachten (AsyncStorage): `jury:photos:{userId}:{paradeId}`. */
+  paradeJuryPhotoPrefix: 'jury:photos:',
   /** Punten en opmerkingen van het Dansgardefestival (AsyncStorage): `festival-jury:{userId}:{festivalId}`. */
   festivalJuryPrefix: 'festival-jury:',
 } as const;

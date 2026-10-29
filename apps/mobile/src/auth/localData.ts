@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { removeAllPhotoFiles } from '../features/juryPhotos';
 import { storageKeys } from '../lib/storageKeys';
 
 /**
@@ -11,7 +12,12 @@ import { storageKeys } from '../lib/storageKeys';
 const STORE: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY };
 
 const isJuryKey = (key: string) =>
-  key.startsWith(storageKeys.paradeJuryPrefix) || key.startsWith(storageKeys.festivalJuryPrefix);
+  key.startsWith(storageKeys.paradeJuryPrefix) ||
+  key.startsWith(storageKeys.festivalJuryPrefix) ||
+  isPhotoKey(key);
+
+/** Juryfoto's: één item per nog te versturen foto, en de bestanden staan in de documentmap. */
+const isPhotoKey = (key: string) => key.startsWith(storageKeys.paradeJuryPhotoPrefix);
 
 async function ticketChildren(): Promise<string[]> {
   const raw = await SecureStore.getItemAsync(storageKeys.ticketChildren, STORE).catch(() => null);
@@ -32,6 +38,7 @@ export async function forgetTicket(): Promise<void> {
 /** Wist alles van de gebruiker op dit toestel; ook wat nog niet verstuurd is (zie {@link countUnsentLocalData}). */
 export async function clearLocalUserData(): Promise<void> {
   const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
+  removeAllPhotoFiles();
   await Promise.all([
     forgetTicket(),
     AsyncStorage.multiRemove([storageKeys.queryCache, storageKeys.offlineScans, ...keys.filter(isJuryKey)]).catch(
@@ -40,7 +47,7 @@ export async function clearLocalUserData(): Promise<void> {
   ]);
 }
 
-/** Aantal offline scans en jurypunten/-opmerkingen dat de server nog niet heeft (gaat bij uitloggen verloren). */
+/** Aantal offline scans, jurypunten/-opmerkingen en juryfoto's dat de server nog niet heeft (gaat bij uitloggen verloren). */
 export async function countUnsentLocalData(): Promise<number> {
   const keys = await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]);
   const entries = await AsyncStorage.multiGet([storageKeys.offlineScans, ...keys.filter(isJuryKey)]).catch(() => []);
@@ -49,7 +56,8 @@ export async function countUnsentLocalData(): Promise<number> {
     if (!raw) continue;
     try {
       const value = JSON.parse(raw) as unknown;
-      if (key === storageKeys.offlineScans) {
+      if (key === storageKeys.offlineScans || isPhotoKey(key)) {
+        // Een wachtrij: alles wat er nog in staat is nog niet verstuurd.
         count += (value as unknown[]).length;
       } else if (Array.isArray(value)) {
         // Optocht: een lijst met punten.

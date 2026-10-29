@@ -88,8 +88,13 @@ public sealed class ParadeResults(
             .Select(r => new { r.UserId, r.RegistrationId }).ToListAsync(cancellationToken)).Select(r => (r.UserId, r.RegistrationId)).ToHashSet();
         var scores = await db.JudgingScores.AsNoTracking().Where(s => s.ParadeId == paradeId && submitted.Contains(s.UserId)).ToListAsync(cancellationToken);
         var entryIds = entries.Select(e => e.RegistrationId).ToList();
+        // Alleen foto's uit het uitslagalbum. Juryfoto's (fase 22e) hangen aan dezelfde inzending maar horen niet op de
+        // publieke uitslag; die komen er pas in als de commissie ze bewust naar het uitslagalbum verplaatst.
+        var resultsAlbumId = await db.Parades.AsNoTracking().Where(p => p.Id == paradeId)
+            .Select(p => p.ResultsAlbumId).SingleOrDefaultAsync(cancellationToken);
         var photos = await db.Photos.AsNoTracking()
             .Where(f => f.RegistrationId != null && entryIds.Contains(f.RegistrationId.Value) && !f.Hidden
+                && f.AlbumId == resultsAlbumId
                 && f.ProcessingStatus == Modules.Content.Photos.PhotoProcessingStatus.Ready)
             .OrderBy(f => f.SortOrder).Select(f => new { RegistrationId = f.RegistrationId!.Value, f.Id, f.ThumbnailBlobPath, f.DisplayBlobPath })
             .ToListAsync(cancellationToken);

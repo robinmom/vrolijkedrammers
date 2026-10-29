@@ -6,8 +6,10 @@ using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Parade.Registrations;
 using Drammers.SharedKernel.Identifiers;
+using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Drammers.IntegrationTests;
 
@@ -74,6 +76,49 @@ public class ParadeJudgingTests(SqlServerFixture sql) : IAsyncLifetime
 
     private static object Score(Guid registration, int pass, string criterion, int value, DateTimeOffset at) =>
         new { registrationId = registration, pass, criterion, value, scoredAt = at.UtcDateTime };
+
+    [Fact]
+    public async Task Juryfoto_komt_in_het_jury_album_vervangt_de_vorige_en_blijft_buiten_de_uitslag()
+    {
+        var (wagons, _, a, _, _) = await SeedAsync();
+        var (jurorId, jurorOid) = await _api.CreateUserAsync("fotojury@example.com", DefaultRoles.Jury);
+        var juror = _api.ClientFor(jurorOid);
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/jurors/{jurorId}/categories", new { categoryIds = new[] { wagons } });
+
+        var upload = await juror.PostAsync($"/api/v1/jury/parades/{_paradeId}/entries/{a}/photo",
+            ContentTests.Multipart("file", "wagen.jpg", TestImages.JpegWithGps()));
+        Assert.Equal(HttpStatusCode.Created, upload.StatusCode);
+
+        // Nog een keer: één foto per jurylid per inzending, dus de vorige vervalt.
+        Assert.Equal(HttpStatusCode.Created,
+            (await juror.PostAsync($"/api/v1/jury/parades/{_paradeId}/entries/{a}/photo",
+                ContentTests.Multipart("file", "beter.jpg", TestImages.JpegWithGps()))).StatusCode);
+
+        var processor = new OutboxProcessor(_api.Services.GetRequiredService<IServiceScopeFactory>(), new OutboxSignal(), TimeProvider.System, NullLogger<OutboxProcessor>.Instance);
+        while (await processor.ProcessBatchAsync(default) > 0)
+        {
+        }
+
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var parade = await db.Parades.SingleAsync(p => p.Id == _paradeId);
+            var juryAlbumId = Assert.IsType<Guid>(parade.JuryAlbumId);
+            // Een eigen album, los van de uitslag, en dat album blijft een concept.
+            Assert.NotEqual(parade.ResultsAlbumId, parade.JuryAlbumId);
+            Assert.Equal(Modules.Content.Shared.PublicationStatus.Draft, (await db.PhotoAlbums.SingleAsync(x => x.Id == juryAlbumId)).Status);
+            var photo = Assert.Single(await db.Photos.Where(f => f.AlbumId == juryAlbumId).ToListAsync());
+            Assert.Equal((a, jurorId), (photo.RegistrationId!.Value, photo.UploadedBy!.Value));
+        }
+
+        // De kern: een juryfoto hoort niet bij de uitslag.
+        var uitslag = _api.ClientFor((await _api.CreateUserAsync("uitslag@example.com", DefaultRoles.Uitslagcommissie)).ObjectId);
+        var rows = (await uitslag.GetFromJsonAsync<JsonElement>($"/api/v1/admin/results?paradeId={_paradeId}"))
+            .GetProperty("categories").EnumerateArray()
+            .SelectMany(c => c.GetProperty("rows").EnumerateArray())
+            .Where(r => r.GetProperty("registrationId").GetGuid() == a);
+        Assert.All(rows, r => Assert.Equal(0, r.GetProperty("photoCount").GetInt32()));
+    }
 
     [Fact]
     public async Task Jurylid_beoordeelt_buiten_categorie_wacht_op_akkoord_en_na_indienen_is_alles_vast()

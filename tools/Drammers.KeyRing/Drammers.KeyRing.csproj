@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <!-- Beveiligingsupdate (2026-10-14, GHSA-r955-8q5j-3h83 e.a.): de indirecte versie expliciet op de gepatchte zetten. -->
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.14" />
   </ItemGroup>
 </Project>

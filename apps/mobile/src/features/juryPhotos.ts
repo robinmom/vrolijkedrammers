@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { randomUUID } from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
 import { apiBaseUrl } from '../api/client';
 import { getAccessToken, getInstallationId } from '../auth/session';
@@ -55,7 +56,9 @@ const writeQueue = (userId: string, paradeId: string, queue: PendingPhoto[]) =>
  */
 export async function queuePhoto(userId: string, paradeId: string, registrationId: string, sourceUri: string): Promise<number> {
   const directory = ensureFolder();
-  const name = `${registrationId}-${Date.now()}.jpg`;
+  // Een echt unieke naam: met een tijdstempel kunnen twee foto's binnen dezelfde milliseconde dezelfde naam krijgen, en
+  // dan gooit het opruimen van de vorige juist het net gekopieerde bestand weg.
+  const name = `${registrationId}-${randomUUID()}.jpg`;
   new File(sourceUri).copy(new File(directory, name));
   const queue = await readQueue(userId, paradeId);
   for (const old of queue.filter((p) => p.registrationId === registrationId)) {

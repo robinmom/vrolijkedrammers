@@ -156,6 +156,31 @@ describe('Jureren (fase 22b)', () => {
     expect(await screen.findByText('2 van 2')).toBeTruthy();
   });
 
+  it('foto: na versturen verdwijnt "wacht op internet" en staat er dat hij verwerkt wordt', async () => {
+    let photos: unknown[] = [];
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      '/api/v1/jury/current': () => ({ ...session(), photos }),
+      '/api/v1/jury/parades/p-1/entries/r-5/photo': () => {
+        // Na de upload kent de server de foto, maar hij wordt nog verwerkt (geen miniatuur).
+        photos = [{ registrationId: 'r-5', status: 'Pending', thumbnailUrl: null }];
+        return { status: 201, body: { id: 'f-1' } };
+      },
+    });
+    (globalThis as { __pick?: unknown }).__pick = { canceled: false, assets: [{ uri: 'file:///tmp/wagen.jpg' }] };
+    try {
+      await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+      await fireEvent.press((await screen.findAllByRole('button', { name: 'Foto maken' }))[0]!);
+      // Zodra de server de foto kent toont de kaart dat hij verwerkt wordt.
+      await waitFor(() => expect(screen.getAllByText(/wordt nog verwerkt/)).not.toHaveLength(0), { timeout: 4000 });
+      // En dan hoort "wacht op internet" weg te zijn; zonder de fix bleef dat label voor altijd staan.
+      expect(screen.queryAllByText('wacht op internet')).toHaveLength(0);
+    } finally {
+      delete (globalThis as { __pick?: unknown }).__pick;
+    }
+  });
+
   it('einde: indienen met bevestiging, daarna bedankt en niets meer te wijzigen', async () => {
     let submittedAt: string | null = null;
     const alert = jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => buttons?.at(-1)?.onPress?.());

@@ -361,7 +361,7 @@ export default function BeoordelenScreen() {
                   registrationId={item.entry.registrationId}
                   serverThumbnailUrl={(s.photos ?? []).find((p) => p.registrationId === item.entry.registrationId)?.thumbnailUrl}
                   serverPending={(s.photos ?? []).some((p) => p.registrationId === item.entry.registrationId && p.status === 'Pending')}
-                  onQueued={() => void flushPhotoQueue()}
+                  onQueued={flushPhotoQueue}
                 />
               ) : null}
             </ScrollView>

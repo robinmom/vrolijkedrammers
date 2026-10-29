@@ -20,6 +20,9 @@ overrides:
   shell-quote: ^1.11.0
   # GHSA-xjj6-f33q-929c (2026-10-23): alleen via vitest/jsdom (testtooling); 8.12.2 is gepatcht.
   undici: ^8.12.2
+  # GHSA-97r2-qh9m-474h, GHSA-wp97-x4hv-qvhp, GHSA-7rv5-mrxv-xcr9 (2026-10-29): alleen via @tanstack/react-router in
+  # het portal; 1.6.8 is gepatcht.
+  seroval: ^1.6.8
 
 # Bewuste uitzonderingen op `pnpm audit` (CI-stap "Kwetsbare npm-pakketten"). Alleen voor advisories zonder
 # gepatchte versie en buiten de geleverde app. De workflow "Dagelijkse audit" faalt zodra er een patch is.

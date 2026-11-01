@@ -96,6 +96,7 @@ public sealed class AdminMembersController(
             m.Id, m.MemberNumber, m.EbMemberId, m.FullName, m.FirstName, m.NamePrefix, m.LastName, m.NameCorrectedManually,
             m.Salutation, m.Gender, m.AddressLine, m.PostalCode, m.City, m.Country, m.Email, m.Phone, m.MobilePhone,
             m.BirthDate, m.JoinYear, m.EbStatusRaw, m.MemberCategory, m.ParadeGroupName, MembershipWeights.Persons(m.EbStatusRaw),
+            m.MembershipKind ?? Contributions.KindFromEBoekhouden(m.EbStatusRaw),
             m.MembershipStatus, m.LocalStatusOverride, m.LocalStatusOverride ?? m.MembershipStatus, m.MembershipValidFrom, m.MembershipValidTo,
             m.SyncState, m.EbLastSeenAt, m.EbMissingSince,
             new MemberFieldSourcesResponse(mapping.BirthDate is not null, mapping.JoinYear is not null, mapping.Status is not null, mapping.Category is not null),
@@ -295,7 +296,11 @@ public sealed record MemberDetailResponse(
     Guid Id, string MemberNumber, int? EbMemberId, string FullName, string? FirstName, string? NamePrefix, string? LastName,
     bool NameCorrectedManually, string? Salutation, string? Gender, string? AddressLine, string? PostalCode, string? City,
     string? Country, string? Email, string? Phone, string? MobilePhone, DateOnly? BirthDate, short? JoinYear, string? EbStatusRaw,
-    string? MemberCategory, string? ParadeGroupName, int Persons, MembershipStatus SyncedStatus, MembershipStatus? LocalStatusOverride, MembershipStatus EffectiveStatus,
+    string? MemberCategory, string? ParadeGroupName, int Persons,
+    // Het soort lidmaatschap zoals de app het nu gebruikt: de eigen keuze, en anders afgeleid uit het statusveld van de
+    // ledenadministratie. Staat hier zodat lid-detail het soort kan tonen zonder die afleiding over te doen.
+    MembershipKind? EffectiveMembershipKind,
+    MembershipStatus SyncedStatus, MembershipStatus? LocalStatusOverride, MembershipStatus EffectiveStatus,
     DateOnly? MembershipValidFrom, DateOnly? MembershipValidTo, MemberSyncState SyncState, DateTime? EbLastSeenAt,
     DateTime? EbMissingSince, MemberFieldSourcesResponse FieldSources, MemberAccountResponse? Account, IReadOnlyList<MemberGroupResponse> Groups,
     MemberProvisioningResponse? Provisioning, IReadOnlyList<MemberKaderResponse>? Kader = null, short? JubileeJoinYearOverride = null,

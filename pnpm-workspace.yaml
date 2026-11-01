@@ -23,13 +23,20 @@ overrides:
   # GHSA-97r2-qh9m-474h, GHSA-wp97-x4hv-qvhp, GHSA-7rv5-mrxv-xcr9 (2026-10-29): alleen via @tanstack/react-router in
   # het portal; 1.6.8 is gepatcht.
   seroval: ^1.6.8
+  # GHSA-7wch-p9px-956x, GHSA-jc66-7q78-782g, GHSA-8hrf-8g6f-7xwp, GHSA-hqq3-7jhf-c5jx, GHSA-5x38-2vff-x55p en
+  # GHSA-86w9-cpqp-85rv (2026-11-01): alleen via @expo/cli (bouwtooling); 1.4.1 is gepatcht en blijft CommonJS, dus
+  # @expo/cli kan ermee overweg.
+  node-forge: ^1.4.1
 
 # Bewuste uitzonderingen op `pnpm audit` (CI-stap "Kwetsbare npm-pakketten"). Alleen voor advisories zonder
 # gepatchte versie en buiten de geleverde app. De workflow "Dagelijkse audit" faalt zodra er een patch is.
 auditConfig:
   ignoreGhsas:
-    # node-forge <=1.4.0 (2026-10-02): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel.
-    - GHSA-86w9-cpqp-85rv
+    # decode-uri-component <=0.5.0 (2026-11-01): via expo-router>query-string, dus wél in de app-bundel.
+    # [geen-bruikbare-patch] 0.5.1 is alleen-ESM en query-string@7 laadt het met require(); forceren breekt
+    # expo-router. Vervalt zodra Expo naar een query-string gaat die de gepatchte versie kan laden. Impact hier is
+    # beperkt: expo-router ontleedt er deeplinks mee, dus een misvormde link kan de app laten vastlopen.
+    - GHSA-qr28-fpjm-wq7f
     # braces (2026-10-03): alleen via Metro (bundler van Expo), zit niet in de app-bundel.
     - GHSA-vfj7-8cjw-p6xm
     # zod <4.6.6 (2026-10-23): alleen via @expo/cli (bouwtooling), zit niet in de app-bundel. [geen-bruikbare-patch] de patch is zod 4, een breaking major die Expo niet gebruikt; vervalt zodra Expo naar zod 4 gaat.

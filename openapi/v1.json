@@ -41241,6 +41241,7 @@
           "memberCategory",
           "paradeGroupName",
           "persons",
+          "effectiveMembershipKind",
           "syncedStatus",
           "localStatusOverride",
           "effectiveStatus",
@@ -41383,6 +41384,16 @@
           "persons": {
             "type": "integer",
             "format": "int32"
+          },
+          "effectiveMembershipKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MembershipKind"
+              }
+            ]
           },
           "syncedStatus": {
             "$ref": "#/components/schemas/MembershipStatus"

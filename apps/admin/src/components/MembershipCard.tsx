@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
-import { kindLabels, useMembershipSettings, type MembershipKind } from '../api/contributions';
+import { kindLabel, kindLabels, useMembershipSettings, type MembershipKind } from '../api/contributions';
 import { useApiMutation, type MemberDetail } from '../api/hooks';
 import { Field } from './Field';
 import { ProblemAlert, SuccessMessage } from './ProblemAlert';
@@ -17,7 +17,8 @@ interface Form {
 
 /**
  * Lidmaatschap en contributie van een lid (fase 23a): soort lidmaatschap, bij een partner het lid dat betaalt, en een
- * vrijstelling (bijvoorbeeld Convent). Zonder soort volgt de app het lidmaatschap uit e-Boekhouden.
+ * vrijstelling (bijvoorbeeld Convent). Zonder eigen keuze leidt de app het soort af uit het statusveld van de
+ * ledenadministratie; die uitkomst staat in de keuzelijst, zodat te zien is wat er dan geldt.
  */
 export function MembershipCard({ member, eBoekhouden = true }: { member: MemberDetail; eBoekhouden?: boolean }) {
   const api = useApi();
@@ -93,7 +94,11 @@ export function MembershipCard({ member, eBoekhouden = true }: { member: MemberD
             onChange={(e) => set({ kind: e.target.value as MembershipKind | '', payerMemberId: null })}
           >
             <option value="">
-              {eBoekhouden ? `Volgt e-Boekhouden${member.ebStatusRaw ? ` (${member.ebStatusRaw})` : ''}` : 'Standaard (automatisch)'}
+              {eBoekhouden
+                ? `Volgt e-Boekhouden${member.ebStatusRaw ? ` (${member.ebStatusRaw})` : ''}`
+                : member.effectiveMembershipKind
+                  ? `Automatisch: ${kindLabel(member.effectiveMembershipKind, false)}`
+                  : 'Automatisch (nog niet bekend)'}
             </option>
             {(Object.keys(kindLabels) as MembershipKind[]).map((k) => (
               <option key={k} value={k}>

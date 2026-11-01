@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useApi } from '../api/ApiContext';
+import { kindLabel } from '../api/contributions';
 import { useApiMutation, type MemberDetail } from '../api/hooks';
 import { formatDate } from '../format';
 import { ConfirmDialog } from './Dialog';
@@ -277,13 +278,15 @@ export function MemberDataCard({ member: m, canEdit, eBoekhouden = true }: { mem
           <dd>
             {m.joinYear ?? '—'} <Manual field="joinYear" />
           </dd>
+          <dt>Soort lidmaatschap</dt>
+          <dd>
+            {kindLabel(m.effectiveMembershipKind, false)}
+            {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}
+          </dd>
           {eBoekhouden && m.ebStatusRaw ? (
             <>
               <dt>Status in e-Boekhouden</dt>
-              <dd>
-                {m.ebStatusRaw}
-                {m.persons > 1 ? ` (telt als ${m.persons} personen)` : ''}
-              </dd>
+              <dd>{m.ebStatusRaw}</dd>
             </>
           ) : null}
           <dt>Categorie</dt>

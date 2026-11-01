@@ -28096,6 +28096,7 @@ export interface components {
             paradeGroupName: null | string;
             /** Format: int32 */
             persons: number;
+            effectiveMembershipKind: null | components["schemas"]["MembershipKind"];
             syncedStatus: components["schemas"]["MembershipStatus"];
             localStatusOverride: null | components["schemas"]["MembershipStatus"];
             effectiveStatus: components["schemas"]["MembershipStatus"];

@@ -247,6 +247,23 @@ test('zonder e-Boekhouden-koppeling zijn de sync-/e-Boekhouden-onderdelen verbor
   await expect(page.getByRole('button', { name: 'Dry-run starten' })).toHaveCount(0);
 });
 
+test('zonder e-Boekhouden-koppeling blijft het soort lidmaatschap op lid-detail te zien', async ({ page }) => {
+  const api = new MockApi();
+  api.eBoekhoudenEnabled = false;
+  // De kaart "Lidmaatschap en contributie" vraagt dit recht; daar staat de keuzelijst.
+  api.permissions.push('contribution.manage');
+  await open(page, api, 'leden');
+  await page.getByRole('link', { name: 'Piet van der Berg' }).click();
+
+  // Het soort lidmaatschap hing aan de regel "Status in e-Boekhouden"; die is weg, dit moet blijven.
+  await expect(page.getByRole('definition').filter({ hasText: 'Combinatie (telt als 2 personen)' })).toBeVisible();
+  await expect(page.getByText('Status in e-Boekhouden')).toHaveCount(0);
+
+  // En de keuzelijst vertelt wat er geldt als er geen eigen keuze is vastgelegd.
+  await expect(page.getByLabel('Soort lidmaatschap')).toHaveValue('');
+  await expect(page.getByLabel('Soort lidmaatschap')).toContainText('Automatisch: Combinatie');
+});
+
 test('lid-detail: status-override opslaan en ontbrekend lid op inactief zetten', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'leden');

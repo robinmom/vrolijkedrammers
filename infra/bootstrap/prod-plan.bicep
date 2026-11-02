@@ -3,7 +3,7 @@
 param location string
 param tags object
 
-resource plan 'Microsoft.Web/serverfarms@2024-11-01' = {
+resource plan 'Microsoft.Web/serverfarms@2025-03-01' = {
   name: 'asp-dvd-prod'
   location: location
   tags: tags

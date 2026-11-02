@@ -15,13 +15,13 @@ var tags = {
   managedBy: 'bicep'
 }
 
-resource sharedGroup 'Microsoft.Resources/resourceGroups@2024-11-01' = {
+resource sharedGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-dvd-prod-shared'
   location: location
   tags: union(tags, { environment: 'prod-shared' })
 }
 
-resource prodGroup 'Microsoft.Resources/resourceGroups@2024-11-01' = {
+resource prodGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-dvd-prod'
   location: location
   tags: tags

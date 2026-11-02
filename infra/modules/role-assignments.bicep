@@ -16,7 +16,7 @@ var roles = {
   communicationEmailServiceOwner: '09976791-48a7-449e-bb21-39d1a415f350'
 }
 
-resource vault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
+resource vault 'Microsoft.KeyVault/vaults@2026-05-15' existing = {
   name: keyVaultName
 }
 

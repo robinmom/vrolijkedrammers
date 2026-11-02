@@ -25,13 +25,13 @@ var tags = {
   managedBy: 'bicep'
 }
 
-resource sharedGroup 'Microsoft.Resources/resourceGroups@2024-11-01' = {
+resource sharedGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-dvd-nonprod-shared'
   location: location
   tags: tags
 }
 
-resource environmentGroups 'Microsoft.Resources/resourceGroups@2024-11-01' = [
+resource environmentGroups 'Microsoft.Resources/resourceGroups@2025-04-01' = [
   for env in environments: {
     name: 'rg-dvd-${env}'
     location: location

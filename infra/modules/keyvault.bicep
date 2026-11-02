@@ -7,7 +7,7 @@ param workspaceId string
 @description('Purge protection kan na aanzetten niet meer uit; in Dev uit zodat de omgeving na verwijderen opnieuw kan worden opgebouwd.')
 param enablePurgeProtection bool
 
-resource vault 'Microsoft.KeyVault/vaults@2024-11-01' = {
+resource vault 'Microsoft.KeyVault/vaults@2026-05-15' = {
   name: 'kv-dvd-${environmentName}'
   location: location
   tags: tags
@@ -29,7 +29,7 @@ resource vault 'Microsoft.KeyVault/vaults@2024-11-01' = {
 
 // Beschermt de Data Protection-sleutelring van de API (push-tokens, docs/06). Aangemaakt via ARM (control plane);
 // de API mag er alleen mee wrappen/unwrappen (role-assignments.bicep).
-resource dataProtectionKey 'Microsoft.KeyVault/vaults/keys@2024-11-01' = {
+resource dataProtectionKey 'Microsoft.KeyVault/vaults/keys@2026-05-15' = {
   parent: vault
   name: 'dataprotection'
   properties: {

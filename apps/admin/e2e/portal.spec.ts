@@ -1042,11 +1042,11 @@ test('dansgardefestival: programma samenstellen met schuiven, loten, blok en afd
   await page.getByRole('button', { name: 'Toon dansen Minioren Garde' }).click();
   await expect(page.getByText('Möllekuukens')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Senioren Solo Garde omhoog' }).click();
+  await page.getByRole('button', { name: 'Hoofdklasse Solo Garde omhoog' }).click();
   await expect
     .poll(() => api.programCalls)
     .toContain('POST /admin/dance-festival/program/items/c-2/move {"direction":-1}');
-  await expect(page.locator('.program-item').nth(1)).toContainText('Senioren Solo Garde');
+  await expect(page.locator('.program-item').nth(1)).toContainText('Hoofdklasse Solo Garde');
 
   await page.getByLabel('Minuten per dans Minioren Garde').fill('5');
   await page.getByLabel('Minuten per dans Minioren Garde').blur();
@@ -1087,6 +1087,8 @@ test('dansgardefestival: jury uitnodigen en uitslag naar de hoofdjury, afdrukken
   await expect(page.getByRole('heading', { name: 'Uitslag nog niet compleet' })).toBeVisible();
   await page.getByRole('button', { name: 'Ja, uitslag bekijken' }).click();
   await expect(page.getByText('Junioren Drammers')).toBeVisible();
+  // Halve punten staan er met een komma (2026-11-02).
+  await expect(page.getByText('60,5')).toBeVisible();
 
   await page.getByRole('button', { name: 'Publiceer naar hoofdjury' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Toch publiceren' }).click();

@@ -14,11 +14,11 @@ namespace Drammers.Infrastructure.Festival;
 
 public sealed record FestivalJurorView(Guid UserId, int Number, string Name, string Email, bool Active, bool HeadJury, int SubmittedCategories);
 
-public sealed record FestivalScoreInput(Guid EntryId, FestivalCriterion Criterion, int Value, DateTime ScoredAt);
+public sealed record FestivalScoreInput(Guid EntryId, FestivalCriterion Criterion, decimal Value, DateTime ScoredAt);
 
 public sealed record FestivalCommentInput(Guid EntryId, string? Text);
 
-public sealed record FestivalScoreView(Guid EntryId, FestivalCriterion Criterion, int Value, DateTime ScoredAt);
+public sealed record FestivalScoreView(Guid EntryId, FestivalCriterion Criterion, decimal Value, DateTime ScoredAt);
 
 public sealed record FestivalCommentView(Guid EntryId, string Text);
 
@@ -33,10 +33,10 @@ public sealed record FestivalJurySession(
     IReadOnlyList<JuryCategory> Categories, JuryCategory? Current, IReadOnlyList<JuryDance> Dances,
     IReadOnlyList<FestivalScoreView> Scores, IReadOnlyList<FestivalCommentView> Comments);
 
-/// <summary>Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid.</summary>
+/// <summary>Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid, in halve punten.</summary>
 public sealed record ResultRow(
-    Guid EntryId, Guid RegistrationId, int Place, string Club, string Names, string? Title, int Synchronicity, int Choreography, int Execution,
-    int Difficulty, int Total, IReadOnlyList<int?> PerJuror);
+    Guid EntryId, Guid RegistrationId, int Place, string Club, string Names, string? Title, decimal Synchronicity, decimal Choreography,
+    decimal Execution, decimal Difficulty, decimal Total, IReadOnlyList<decimal?> PerJuror);
 
 public sealed record ResultCategory(string Key, string Name, int Part, bool Solo, int Jurors, int Submitted, bool Complete, IReadOnlyList<ResultRow> Rows);
 
@@ -54,7 +54,7 @@ public sealed record HeadJuryView(bool Published, string FestivalName, IReadOnly
 /// nummer; ze beoordelen alle dansen in programmavolgorde. De app toont alleen de categorie die aan de beurt is: de eerste
 /// die het jurylid nog niet heeft ingediend. Indienen kan pas als alle dansen van de categorie vier onderdelen hebben.
 /// Totaal = de som van alle onderdelen van alle juryleden; bij gelijk totaal wint de hoogste Uitvoering, anders een
-/// gedeelde plaats (nog te bevestigen door de organisatie).
+/// gedeelde plaats (nog te bevestigen door de organisatie; het reglement beschrijft hier een eigen regel voor).
 /// </summary>
 public sealed class FestivalJudgingService(
     DrammersDbContext db,
@@ -65,7 +65,7 @@ public sealed class FestivalJudgingService(
     IAuditLogger audit,
     IClock clock)
 {
-    public const int MaxScore = 10;
+    public const int MaxScore = FestivalPoints.Max;
 
     public const int MaxCommentLength = 1000;
 
@@ -163,9 +163,9 @@ public sealed class FestivalJudgingService(
     {
         var festival = await program.ActiveFestivalAsync(cancellationToken);
         await EnsureNumberAsync(festival.Id, userId, cancellationToken);
-        if (scores.Any(s => s.Value is < 0 or > MaxScore || !Enum.IsDefined(s.Criterion)))
+        if (scores.Any(s => !FestivalPoints.IsValid(s.Value) || !Enum.IsDefined(s.Criterion)))
         {
-            throw new DomainException(ErrorCodes.Validation, $"Punten zijn 0 tot en met {MaxScore}.");
+            throw new DomainException(ErrorCodes.Validation, $"Punten zijn 0 tot en met {MaxScore}, in hele of halve punten.");
         }
 
         if (comments.Any(c => c.Text?.Length > MaxCommentLength))
@@ -287,12 +287,12 @@ public sealed class FestivalJudgingService(
             var rows = category.Dances.Select(d =>
             {
                 var own = scores.Where(s => s.EntryId == d.EntryId).ToList();
-                int Sum(FestivalCriterion c) => own.Where(s => s.Criterion == c).Sum(s => s.Value);
+                decimal Sum(FestivalCriterion c) => own.Where(s => s.Criterion == c).Sum(s => s.Value);
                 var perJuror = Enumerable.Range(1, maxNumber).Select(n =>
                 {
                     var user = numbers.FirstOrDefault(x => x.Value == n).Key;
                     var mine = own.Where(s => s.UserId == user).ToList();
-                    return mine.Count == 0 ? (int?)null : mine.Sum(s => s.Value);
+                    return mine.Count == 0 ? (decimal?)null : mine.Sum(s => s.Value);
                 }).ToList();
                 return new ResultRow(d.EntryId, d.RegistrationId, 0, d.Club, d.Names, d.Title, Sum(FestivalCriterion.Synchronicity),
                     Sum(FestivalCriterion.Choreography), Sum(FestivalCriterion.Execution), Sum(FestivalCriterion.Difficulty), own.Sum(s => s.Value), perJuror);

@@ -26352,7 +26352,7 @@ export interface components {
          * @description Categorie op gemiddelde leeftijd (reglement art. 1).
          * @enum {unknown}
          */
-        DanceCategory: "Minioren" | "Junioren" | "Jeugd" | "Senioren";
+        DanceCategory: "Minioren" | "Junioren" | "Jeugd" | "Hoofdklasse";
         /** @enum {unknown} */
         DanceEntryStatus: "New" | "InfoRequested" | "Approved" | "Waitlisted" | "Rejected" | "Changed";
         DanceFestivalDecisionRequest: {
@@ -26743,8 +26743,9 @@ export interface components {
             text: string;
         };
         /**
-         * @description De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10. Bij solo heet het eerste onderdeel Ritme in
-         *     plaats van Synchroniteit (zoals in de uitslag-Excel van 2026).
+         * @description De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10 in halve punten (zie
+         *     FestivalPoints). Bij solo heet het eerste onderdeel Ritme in plaats van Synchroniteit, omdat er bij een
+         *     solodans niets te synchroniseren valt (bevestigd door de organisatie op 2026-11-02).
          * @enum {unknown}
          */
         FestivalCriterion: "Synchronicity" | "Choreography" | "Execution" | "Difficulty";
@@ -26978,7 +26979,7 @@ export interface components {
             /** Format: uuid */
             entryId: string;
             criterion: components["schemas"]["FestivalCriterion"];
-            /** Format: int32 */
+            /** Format: double */
             value: number;
             /** Format: date-time */
             scoredAt: string;
@@ -26991,7 +26992,7 @@ export interface components {
             /** Format: uuid */
             entryId: string;
             criterion: components["schemas"]["FestivalCriterion"];
-            /** Format: int32 */
+            /** Format: double */
             value: number;
             /** Format: date-time */
             scoredAt: string;
@@ -29645,7 +29646,7 @@ export interface components {
             publishedAt: null | string;
             categories: components["schemas"]["CategoryResultResponse"][];
         };
-        /** @description Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid. */
+        /** @description Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid, in halve punten. */
         ResultRow: {
             /** Format: uuid */
             entryId: string;
@@ -29656,15 +29657,15 @@ export interface components {
             club: string;
             names: string;
             title: null | string;
-            /** Format: int32 */
+            /** Format: double */
             synchronicity: number;
-            /** Format: int32 */
+            /** Format: double */
             choreography: number;
-            /** Format: int32 */
+            /** Format: double */
             execution: number;
-            /** Format: int32 */
+            /** Format: double */
             difficulty: number;
-            /** Format: int32 */
+            /** Format: double */
             total: number;
             perJuror: (null | number)[];
         };

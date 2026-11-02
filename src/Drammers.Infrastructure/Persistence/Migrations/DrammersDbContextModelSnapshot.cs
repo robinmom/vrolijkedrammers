@@ -1043,7 +1043,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_DanceFestivalEntry_age", "[average_age] >= 0 AND [average_age] <= 99");
 
-                            t.HasCheckConstraint("CK_DanceFestivalEntry_category", "[category] IN ('Minioren', 'Junioren', 'Jeugd', 'Senioren')");
+                            t.HasCheckConstraint("CK_DanceFestivalEntry_category", "[category] IN ('Minioren', 'Junioren', 'Jeugd', 'Hoofdklasse')");
 
                             t.HasCheckConstraint("CK_DanceFestivalEntry_dance_type", "[dance_type] IN ('Garde', 'Show')");
 
@@ -1505,8 +1505,9 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("scored_at");
 
-                    b.Property<int>("Value")
-                        .HasColumnType("int")
+                    b.Property<decimal>("Value")
+                        .HasPrecision(3, 1)
+                        .HasColumnType("decimal(3,1)")
                         .HasColumnName("value");
 
                     b.HasKey("EntryId", "UserId", "Criterion")
@@ -1519,7 +1520,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_FestivalScore_criterion", "[criterion] IN ('Synchronicity', 'Choreography', 'Execution', 'Difficulty')");
 
-                            t.HasCheckConstraint("CK_FestivalScore_value", "[value] >= 0 AND [value] <= 10");
+                            t.HasCheckConstraint("CK_FestivalScore_value", "[value] >= 0 AND [value] <= 10 AND [value] % 0.5 = 0");
                         });
                 });
 

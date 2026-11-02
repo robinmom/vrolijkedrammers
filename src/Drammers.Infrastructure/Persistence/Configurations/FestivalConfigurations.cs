@@ -136,8 +136,11 @@ internal sealed class FestivalScoreConfiguration : IEntityTypeConfiguration<Fest
 {
     public void Configure(EntityTypeBuilder<FestivalScore> builder)
     {
-        builder.ToTable("FestivalScore", Schemas.Content, t => t.HasCheckConstraint("CK_FestivalScore_value", "[value] >= 0 AND [value] <= 10"));
+        // Halve punten (2026-11-02): decimal(3,1) en de controle dat er niets fijner dan een half punt in de database komt.
+        builder.ToTable("FestivalScore", Schemas.Content,
+            t => t.HasCheckConstraint("CK_FestivalScore_value", "[value] >= 0 AND [value] <= 10 AND [value] % 0.5 = 0"));
         builder.HasKey(s => new { s.EntryId, s.UserId, s.Criterion });
+        builder.Property(s => s.Value).HasPrecision(3, 1);
         builder.HasIndex(s => new { s.FestivalId, s.UserId });
         builder.HasOne<DanceFestivalEntry>().WithMany().HasForeignKey(s => s.EntryId).OnDelete(DeleteBehavior.Cascade);
     }

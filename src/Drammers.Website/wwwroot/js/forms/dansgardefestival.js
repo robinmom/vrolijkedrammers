@@ -36,7 +36,7 @@
     if (age < 9) return ['Minioren', 't/m 8 jaar'];
     if (age < 12) return ['Junioren', '9 t/m 11 jaar'];
     if (age < 16) return ['Jeugd', '12 t/m 15 jaar'];
-    return ['Senioren', '16 jaar en ouder'];
+    return ['Hoofdklasse', '16 jaar en ouder'];
   }
 
   function el(tag, attrs = {}, ...children) {

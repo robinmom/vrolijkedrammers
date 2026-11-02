@@ -171,7 +171,7 @@ public enum DanceCategory
     Minioren,
     Junioren,
     Jeugd,
-    Senioren,
+    Hoofdklasse,
 }
 
 public enum DanceEntryStatus
@@ -234,13 +234,13 @@ public sealed class DanceFestivalEntry
 
     public byte[] RowVersion { get; set; } = [];
 
-    /// <summary>Categorie uit de gemiddelde leeftijd: t/m 8 minioren, 9–11 junioren, 12–15 jeugd, 16+ senioren.</summary>
+    /// <summary>Categorie uit de gemiddelde leeftijd: t/m 8 minioren, 9–11 junioren, 12–15 jeugd, 16+ hoofdklasse.</summary>
     public static DanceCategory CategoryFor(decimal averageAge) => averageAge switch
     {
         < 9m => DanceCategory.Minioren,
         < 12m => DanceCategory.Junioren,
         < 16m => DanceCategory.Jeugd,
-        _ => DanceCategory.Senioren,
+        _ => DanceCategory.Hoofdklasse,
     };
 }
 

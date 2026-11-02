@@ -130,7 +130,7 @@ public sealed class FestivalResultsPublisher(
         return new FestivalReport(registration.Id, registration.ClubName, results, dances);
     }
 
-    /// <summary>"Gardedans · Solo · Senioren", "Showdans · Groep · Jeugd · Karakter".</summary>
+    /// <summary>"Gardedans · Solo · Hoofdklasse", "Showdans · Groep · Jeugd · Karakter".</summary>
     public static string Heading(DanceFestivalEntry e)
     {
         var format = e.Format switch { DanceFormat.Solo => "Solo", DanceFormat.Duo => "Duo", _ => "Groep" };
@@ -163,7 +163,7 @@ public sealed class FestivalResultsPublisher(
                 foreach (var row in category.Rows)
                 {
                     var name = row.Title is { Length: > 0 } title ? $"{title} ({row.Names})" : row.Names;
-                    md.Append(CultureInfo.InvariantCulture, $"| {row.Place} | {Cell(row.Club)} | {Cell(name)} | {row.Total} |\n");
+                    md.Append(CultureInfo.InvariantCulture, $"| {row.Place} | {Cell(row.Club)} | {Cell(name)} | {FestivalPoints.Format(row.Total)} |\n");
                 }
 
                 md.Append('\n');
@@ -206,7 +206,7 @@ public sealed class FestivalReportMailHandler(DrammersDbContext db, FestivalResu
     {
         var festival = report.Results.FestivalName;
         var subject = $"Juryrapport {festival} – {registration.ClubName}";
-        var places = string.Join("\n", report.Dances.Select(d => $"- {d.Heading} ({d.Names}): {d.Place}e plaats, {d.Total} punten"));
+        var places = string.Join("\n", report.Dances.Select(d => $"- {d.Heading} ({d.Names}): {d.Place}e plaats, {FestivalPoints.Format(d.Total)} punten"));
         var text = $"""
             Beste {registration.ContactName},
 
@@ -223,7 +223,7 @@ public sealed class FestivalReportMailHandler(DrammersDbContext db, FestivalResu
             .Append(CultureInfo.InvariantCulture, $"<p>Hartelijk dank voor jullie deelname aan het {WebUtility.HtmlEncode(festival)}! In de bijlage vinden jullie het juryrapport met per dans de punten en de opmerkingen van de jury, en de volledige uitslag.</p><ul>");
         foreach (var d in report.Dances)
         {
-            html.Append(CultureInfo.InvariantCulture, $"<li>{WebUtility.HtmlEncode(d.Heading)} ({WebUtility.HtmlEncode(d.Names)}): <strong>{d.Place}e plaats</strong>, {d.Total} punten</li>");
+            html.Append(CultureInfo.InvariantCulture, $"<li>{WebUtility.HtmlEncode(d.Heading)} ({WebUtility.HtmlEncode(d.Names)}): <strong>{d.Place}e plaats</strong>, {FestivalPoints.Format(d.Total)} punten</li>");
         }
 
         html.Append("</ul><p>Met carnavaleske groet,<br>De organisatie van het Dansgardefestival<br>De Vrolijke Drammers</p>");

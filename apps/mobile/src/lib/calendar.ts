@@ -1,7 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
 import { createEventInCalendarAsync } from 'expo-calendar/legacy';
-import { Alert, Linking, Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { apiBaseUrl, type EventDetail } from '../api/client';
+import { showAlert } from './alert';
 
 /** De iCalendar-feed met alle openbare activiteiten (het agenda-abonnement), op dezelfde host als de API. */
 export const agendaFeedUrl = `${apiBaseUrl}/api/v1/events/agenda.ics`;
@@ -23,7 +24,7 @@ export async function subscribeToAgenda(): Promise<void> {
   try {
     await Linking.openURL(webcal);
   } catch {
-    Alert.alert(
+    showAlert(
       'Agenda toevoegen',
       `Voeg deze link toe in Google Agenda via "Andere agenda's → Via URL":\n\n${https}`,
       [

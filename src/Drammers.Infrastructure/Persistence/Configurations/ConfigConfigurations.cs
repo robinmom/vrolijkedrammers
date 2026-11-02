@@ -32,6 +32,18 @@ internal sealed class RoleInfoConfiguration : IEntityTypeConfiguration<RoleInfo>
     }
 }
 
+internal sealed class AppTextOverrideConfiguration : IEntityTypeConfiguration<AppTextOverride>
+{
+    public void Configure(EntityTypeBuilder<AppTextOverride> builder)
+    {
+        builder.ToTable("AppTextOverride", Schemas.Config);
+        builder.HasKey(t => t.Key);
+        builder.Property(t => t.Key).HasMaxLength(16).IsUnicode(false);
+        builder.Property(t => t.Original).HasMaxLength(2000);
+        builder.Property(t => t.Value).HasMaxLength(2000);
+    }
+}
+
 internal sealed class AppConfigurationSettingConfiguration : IEntityTypeConfiguration<AppConfigurationSetting>
 {
     public void Configure(EntityTypeBuilder<AppConfigurationSetting> builder)

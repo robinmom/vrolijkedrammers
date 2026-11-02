@@ -4720,6 +4720,130 @@
         }
       }
     },
+    "/api/v1/admin/config/app-texts": {
+      "get": {
+        "tags": [
+          "AdminConfig"
+        ],
+        "summary": "Alle zichtbare teksten van de app, met de aanpassing als die er is. De lijst komt uit de catalogus die bij de\napp-build hoort, dus hij past bij de app die in de store staat zolang API en app samen zijn uitgerold.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppTextResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppTextResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppTextResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/config/app-texts/{key}": {
+      "put": {
+        "tags": [
+          "AdminConfig"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9a-f]{16}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppTextRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppTextRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminConfig"
+        ],
+        "summary": "Zet de tekst terug op die uit de app-bundel.",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9a-f]{16}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/admin/config/retention": {
       "get": {
         "tags": [
@@ -21606,6 +21730,35 @@
         }
       }
     },
+    "/api/v1/app-texts": {
+      "get": {
+        "tags": [
+          "AppTexts"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppTextsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppTextsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppTextsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/carnival-years": {
       "get": {
         "tags": [
@@ -32943,6 +33096,77 @@
             "format": "uuid"
           }
         }
+      },
+      "AppTextPlaceResponse": {
+        "required": [
+          "file",
+          "where"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "where": {
+            "type": "string"
+          }
+        }
+      },
+      "AppTextRequest": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "AppTextResponse": {
+        "required": [
+          "key",
+          "default",
+          "value",
+          "places"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "default": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "places": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppTextPlaceResponse"
+            }
+          }
+        },
+        "description": "Een tekst uit de app: de tekst uit de bundel, de aanpassing (als die er is) en waar hij staat."
+      },
+      "AppTextsResponse": {
+        "required": [
+          "texts"
+        ],
+        "type": "object",
+        "properties": {
+          "texts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Per oorspronkelijke tekst uit de app de tekst die het toestel in de plaats moet zetten."
       },
       "ArrivalChange": {
         "required": [
@@ -51510,6 +51734,9 @@
     },
     {
       "name": "AppConfig"
+    },
+    {
+      "name": "AppTexts"
     },
     {
       "name": "CarnivalYears"

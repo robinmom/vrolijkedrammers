@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- De tekstcatalogus van de app (gegenereerd door apps/mobile/scripts/collect-texts.mjs) gaat mee in de build. -->
+    <EmbeddedResource Include="Content\app-texts.catalog.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />

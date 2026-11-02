@@ -1,5 +1,7 @@
 import { fontFamily, typography } from '@drammers/design-tokens';
+import { Children } from 'react';
 import { Text, type TextProps } from 'react-native';
+import { useText } from '../content/texts';
 import { useTheme } from '../theme/ThemeProvider';
 
 export type TextVariant = keyof typeof typography;
@@ -20,9 +22,19 @@ interface AppTextProps extends TextProps {
   color?: string;
 }
 
-export function AppText({ variant = 'body', color, style, ...rest }: AppTextProps) {
+/**
+ * Alle zichtbare tekst in de app gaat hier langs, dus dit is ook de plek waar een in het portal aangepaste tekst in
+ * de plaats komt (zie content/texts.tsx). Losse tekst tussen de tags wordt vervangen; een tekst die de app ter plekke
+ * samenstelt staat als geheel nergens in de bron en blijft dus zoals hij is.
+ */
+export function AppText({ variant = 'body', color, style, children, ...rest }: AppTextProps) {
   const { colors } = useTheme();
+  const text = useText();
   const token: { font: string; size: number; lineHeight?: number; uppercase?: boolean } = typography[variant];
+  const content =
+    typeof children === 'string'
+      ? text(children)
+      : Children.map(children, (child) => (typeof child === 'string' ? text(child) : child));
   return (
     <Text
       maxFontSizeMultiplier={displayVariants.includes(variant) ? 1.6 : 2}
@@ -37,6 +49,8 @@ export function AppText({ variant = 'body', color, style, ...rest }: AppTextProp
         style,
       ]}
       {...rest}
-    />
+    >
+      {content}
+    </Text>
   );
 }

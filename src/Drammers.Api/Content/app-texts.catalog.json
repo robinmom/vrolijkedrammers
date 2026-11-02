@@ -1,0 +1,6011 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "key": "50ddb251f7a79d3b",
+      "text": " · gem. ",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0e6688aa77673cc6",
+      "text": " · laatst gebruikt",
+      "places": [
+        {
+          "file": "app/account/apparaten.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "97334f1385efb1b0",
+      "text": " · swipe voor de volgende",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "735874762fbb487a",
+      "text": " (nu ",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f22233a70bba7feb",
+      "text": " 18 is.",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "90965b13a8d94b3f",
+      "text": " afgehandeld",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ba3eab2421b221c2",
+      "text": " al besteld door de groep. Plaatsen worden niet vastgehouden: is de avond vol, dan kun je op de wachtlijst.",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "78e302d7ee39f575",
+      "text": " heeft een eigen account: de QR staat op de eigen telefoon. Jij ontvangt nog meldingen namens",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "2f120e857857def4",
+      "text": " in de app akkoord geven. Daarna beoordeelt de ledenadministratie het.",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "edf14de0dfece1db",
+      "text": " jaar lid. Proficiat!",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "dbc575bc7903d757",
+      "text": " jr",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "4fbe3cf34a4cde46",
+      "text": " kaarten over",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bced03f722d9b966",
+      "text": " kaarten.",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "9352db447b85f985",
+      "text": " kB",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "30fa5e30ebd7472e",
+      "text": " leden) · ",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bb751cffaa08b8a7",
+      "text": " lid (combinatie). Willen jullie ieder een eigen lidmaatschap? Dan betaalt ieder de contributie voor één lid. Jullie jaren lid blijven gelijk.",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "9256e08ebd7d0b9c",
+      "text": " lid.",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "56dac8faee6e0156",
+      "text": " MB.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "e7aa35dc59ced3b2",
+      "text": " munten",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a4ad600f17911998",
+      "text": " munten · ",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "04d7eba1e087001b",
+      "text": " naar ",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bdc5fc2e3d645068",
+      "text": " op internet; ze staan veilig op je telefoon.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "896c3ea161d32df3",
+      "text": " personen (",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "fd29afc6163f2d07",
+      "text": " pnt",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7609aff193e46a25",
+      "text": " staat nog niet op deze telefoon. Voeg hem alleen toe als het je eigen bestelling is; daarna staat hij onder Mijn kaarten.",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ac90370144e4207e",
+      "text": " staat op opgehaald voor ",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "9bf56466aafaa9fa",
+      "text": " van ",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c8f0200495fa4520",
+      "text": " VAN ",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "787ce22d46b081d8",
+      "text": " wil de combinatie verbreken. Geef je akkoord?",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "adef0163b20f03c8",
+      "text": " wil jullie combinatie verbreken, zodat ieder een eigen lidmaatschap heeft. Ben je het ermee eens?",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7275882d8e539cf8",
+      "text": ", dan zie je de gratis kaarten voor je groep.",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a472dfe14c9e1c8f",
+      "text": ", start ",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "89d2190037a4d104",
+      "text": ". Controleer of dit dezelfde persoon is.",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f46a6dd769e1115f",
+      "text": ". Delen kan alleen binnen je eigen groep.",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "68de5629d11c1630",
+      "text": ". Het bestuur kijkt de gegevens na.",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0284aba8c2e51ec5",
+      "text": ". Je kaarten komen in de app en per e-mail.",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "089136f64c5cf6b1",
+      "text": ". Je krijgt een melding zodra het bestuur het heeft bekeken.",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3eb535166be918b3",
+      "text": ". Je krijgt een melding zodra het is goedgekeurd; daarna staat je kind onder Mijn kinderen.",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "73d5c7fa4637efa4",
+      "text": ". Kijk ook in je map met ongewenste e-mail.",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "5ea076bd4064bd70",
+      "text": ". Pas na deze code is de inschrijving ingediend.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b950a65283c47f12",
+      "text": "‹ Scannen",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d56f671960df8059",
+      "text": "‹ Terug",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/scannen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ca76d70a23d4303d",
+      "text": ") wacht op goedkeuring.",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b81b82a80dc34e48",
+      "text": "&quot;, verstuurd op",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f10bb7ee6c6e552d",
+      "text": "+ Andere locatie",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "91813e1ae18643ab",
+      "text": "Aanmelden",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/meer/lid-worden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "heading"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "0be8ceb1952394e8",
+      "text": "Aanmelden optocht",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "fd7d2129a064161b",
+      "text": "Aanrijtijd",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "87fa54b3d6d79dc0",
+      "text": "Aanrijtijden",
+      "places": [
+        {
+          "file": "app/optocht/aanrijtijden.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "a6d74bd75bf913fc",
+      "text": "Aanrijtijden wagens",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "218aeb920a7af7ec",
+      "text": "AANTAL DEELNEMERS",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6b5e53ef428aa928",
+      "text": "Aantal kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "f6f431d020141b19",
+      "text": "Aantal munten",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "7e1b0d5641f2640c",
+      "text": "Account",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7a317adc61a2b516",
+      "text": "Account aanvragen",
+      "places": [
+        {
+          "file": "app/meer/account-aanvragen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "9ff40b2ac47a1aaf",
+      "text": "Account verwijderen",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/verwijderen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "1c6c4f38620b0c94",
+      "text": "Achternaam",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "6548799c527ba2cb",
+      "text": "Achternaam kind",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "db829391de90024d",
+      "text": "Activiteit niet gevonden",
+      "places": [
+        {
+          "file": "app/activiteit/[id].tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "f616159245fa6bec",
+      "text": "Activiteiten en wijzigingen in het programma",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "a0a3412ce49fa13a",
+      "text": "Adverteerder toegevoegd",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "67adbc91f60f2e1e",
+      "text": "Adverteerders",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "a2b7c45d97484d0c",
+      "text": "Adverteerders ophalen",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "f5ed41bda12bb65e",
+      "text": "Adverteerders ophalen kan alleen als je in het kader zit of collectant bent.",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ef895c75eaa55720",
+      "text": "Advertentie",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0e3453fc7b42d261",
+      "text": "Afgehaald om ",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a761b93e21cd29f9",
+      "text": "Afhalen kan pas als de betaling is afgerond. Munten worden niet terugbetaald.",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f5692c496b7d628e",
+      "text": "Afmelden",
+      "places": [
+        {
+          "file": "app/account/apparaten.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/account/apparaten.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "a61c590cadf2728d",
+      "text": "Afvinken als opgehaald",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0fdf485f5bfd3762",
+      "text": "Agenda",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "b53da7797f7ab043",
+      "text": "Alaaf! Het feest komt eraan 🎉",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7c84820dbe46e813",
+      "text": "Album niet gevonden",
+      "places": [
+        {
+          "file": "app/fotos/[id]/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "94a09edb0f9a4036",
+      "text": "Algemene indruk",
+      "places": [
+        {
+          "file": "features/judging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3801a35c51822839",
+      "text": "Alle",
+      "places": [
+        {
+          "file": "app/(tabs)/programma.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "050cc25ee5aaef73",
+      "text": "Alle categorieën zijn ingediend. De organisatie maakt de uitslag; de hoofdjury reikt de prijzen uit.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b8855752264d4802",
+      "text": "Alleen de doelgroep telt mee: volwassenen bij volwassenen, kinderen bij jeugd.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c6aef2ebf294af77",
+      "text": "Alleen de hoofdjury van het Dansgardefestival ziet hier de uitslag.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "e68c34b74012d4d4",
+      "text": "Alleen invullen als de contributie voortaan van een andere rekening moet komen.",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1221042b7bf1561c",
+      "text": "Alleen jouw eigen punten, zoals ze meetellen: per criterium het gemiddelde over de voorbijtrekkens die je hebt ingevuld, maal de weging van de categorie. Tik op een wagen of groep om hem na te kijken.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f92e3624a39caba9",
+      "text": "Alleen juryleden kunnen jureren. Vraag het bestuur als dit niet klopt.",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "f0af65092679ea6d",
+      "text": "Alleen juryleden van het Dansgardefestival kunnen hier jureren.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "c20b85a9edd9a36a",
+      "text": "Alleen mijn categorieën",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "c640fd4f769a6fe7",
+      "text": "Alleen voor de kassa",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "c2f3d6f70acfb41f",
+      "text": "Alleen voor de optocht, niet zichtbaar voor anderen.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "c95a1726c525afdc",
+      "text": "Alleen voor deurcontrole",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "39486ec95da69556",
+      "text": "Alleen voor leden. Aankoop is persoonsgebonden: je haalt de munten zelf op bij de kassa met de munten-QR op het beginscherm. Die QR kun je niet delen en werkt alleen op dit toestel: hij is nooit over te zetten naar een ander toestel.",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3fb6ed7bdea4c240",
+      "text": "Als gast ontvang je algemene berichten van de vereniging. Log in om je persoonlijke meldingen hier terug te lezen en te kiezen welke je wilt ontvangen.",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c6a8d25fe37a7cc5",
+      "text": "Annuleren",
+      "places": [
+        {
+          "file": "app/account/apparaten.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "text"
+        },
+        {
+          "file": "features/account.ts",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "897c7e19376c2da8",
+      "text": "Annuleren — niets uitgeven",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "296a2ab28d42e94f",
+      "text": "Annuleren (niets uitgegeven)",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "98a9d14d2083c453",
+      "text": "App bijwerken",
+      "places": [
+        {
+          "file": "shell/AppGate.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "1065257b262652ce",
+      "text": "Bedankt voor je aanmelding!",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d57e11a1c28a757d",
+      "text": "Bedankt, je jurering is ingediend",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "62689507591ae262",
+      "text": "Bedankt! De uitslagcommissie maakt de uitslag bekend bij de prijsuitreiking.",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ea9ba767d7acdd82",
+      "text": "Bedrag (€)",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "9a0b3fbaf9d4552c",
+      "text": "Bedrag dit jaar (€)",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "7f97a4d284d1e928",
+      "text": "Belangrijke wijzigingen, zoals een afgelaste optocht",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "7c005e1f656b36c2",
+      "text": "Ben je lid?",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "dd83e88c3b24e2eb",
+      "text": "Ben je lid? Log in, dan bestel je gratis kaarten voor je groep.",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0c83db7cfe3f3d1c",
+      "text": "Bericht niet gevonden",
+      "places": [
+        {
+          "file": "app/nieuws/[id].tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "400de32d53b4ec99",
+      "text": "Berichten over je account en apparaten",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "a9564c1a2294c0c2",
+      "text": "Berichten van de vereniging verschijnen hier.",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "caaf23dc6ca19348",
+      "text": "Berichten voor kaderleden",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "d1f335b2046ff17a",
+      "text": "bestelling ",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "dcce36b37018490f",
+      "text": "Bestelling ",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "features/SaleParts.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "317647342266e613",
+      "text": "Bestuur",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "heading"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "4e355fbe26be96a3",
+      "text": "Betalen gaat met iDEAL via Mollie. Kaarten en munten worden niet terugbetaald.",
+      "places": [
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ae1b7c5ca20fb8b9",
+      "text": "Bevestig je e-mailadres",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7d02c9ea97559089",
+      "text": "Bezig met inloggen…",
+      "places": [
+        {
+          "file": "app/auth.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "2c54a2459fbec75f",
+      "text": "Bijdrage",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1c07751594fd4158",
+      "text": "Bijlagen",
+      "places": [
+        {
+          "file": "app/activiteit/[id].tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "970e91703a0c49b7",
+      "text": "Bijvoorbeeld 21-03-2015",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "72edad7701c02529",
+      "text": "Bijvoorbeeld bij wie jullie willen zitten.",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "279d2cac2cd35c2b",
+      "text": "Bijvoorbeeld muziek, geluid of bijzonderheden voor de veiligheid.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "1112092ffc6a7a77",
+      "text": "Bouwlocatie",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "beaef89e0163c922",
+      "text": "Buiten jouw categorieën",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "648cdf90e8501d40",
+      "text": "Carnaval is voorbij",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "78efacf8b712febf",
+      "text": "Carnavalesk",
+      "places": [
+        {
+          "file": "features/judging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3977d35296ee808f",
+      "text": "Categorie",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "20e495aeb9b38215",
+      "text": "Categorie en deelnemers",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "77d32812567087fe",
+      "text": "Categorie indienen",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "839591608b2d5920",
+      "text": "Choreografie",
+      "places": [
+        {
+          "file": "features/festivalJudging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "340f463033e0fd5d",
+      "text": "Code",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "765b561a05975e28",
+      "text": "Combinatie",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "11107b651ce86003",
+      "text": "Combinatie beheren",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "adc51db29829eb3b",
+      "text": "Componenten (ontwikkeling)",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "34c8d817994665cb",
+      "text": "Concept opgeslagen",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "295c4731fc4e699b",
+      "text": "Concept verwijderen",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3f7c5d40d465b51c",
+      "text": "Consumptiemunten",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "2b5c3d26721ae9c3",
+      "text": "Contact",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/meer/contact.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0ab119101802beda",
+      "text": "Contact opnemen",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "2a3ca0e44e66d47e",
+      "text": "Contactpersoon",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "ad055ba5d2743ab0",
+      "text": "Contant",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "a7fe11d00aa0da96",
+      "text": "Contributie",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1a2b8e4e47a74d53",
+      "text": "Controleer je punten en dien de categorie in. Daarna kun je niets meer wijzigen en komt de volgende categorie.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1bb4af39e7b50e8b",
+      "text": "CV De Vrolijke Drammers · Loil · sinds 1958",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "37a7107449019d96",
+      "text": "CV De Vrolijke Drammers is sinds 1958 de carnavalsvereniging van Loil. Elk jaar zorgen we samen met de Prins, de jeugdraad, de dansgardes en vele vrijwilligers voor een onvergetelijk carnaval.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "eb173e3989f85af3",
+      "text": "Daarna: ",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a06c579a4388d598",
+      "text": "Dagen",
+      "places": [
+        {
+          "file": "ui/CountdownCard.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "bef8e610511f6403",
+      "text": "De aanrijtijden van de wagens verschijnen hier zodra de optochtcommissie ze bekendmaakt.",
+      "places": [
+        {
+          "file": "app/optocht/aanrijtijden.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "ad83ed3de7ba8ba3",
+      "text": "De grijze waardes komen uit een eerder voorbijtrekken en tellen nog niet mee. Raak ze aan, of neem ze in één keer over.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d728de4f2261af92",
+      "text": "De kaartverkoop voor de pronkzitting is nog niet open.",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "13ea23eafd11b2f1",
+      "text": "De ledenadministratie beoordeelt je wijziging. Na goedkeuring krijg je een e-mail en zie je de nieuwe gegevens onder Mijn gegevens.",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "cfe57b9d8783279e",
+      "text": "De optochtcommissie beoordeelt jullie inschrijving; pas na goedkeuring is hij definitief. Het opgavenummer is de volgorde van binnenkomst, niet jullie startnummer.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "061d89347dc27254",
+      "text": "De organisatie publiceert de uitslag zodra alle juryleden alles hebben ingediend. Trek naar beneden om te verversen.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "86c9f4e57d405084",
+      "text": "De QR verschijnt zodra de betaling binnen is.",
+      "places": [
+        {
+          "file": "features/SaleParts.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "8f9d9557e9aa3aea",
+      "text": "De uitslagcommissie maakt de uitslag bekend bij de prijsuitreiking.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "283c83214bcfca27",
+      "text": "De Vrolijke Drammers",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "be419579d099244b",
+      "text": "Deze activiteit bestaat niet (meer) of is niet openbaar.",
+      "places": [
+        {
+          "file": "app/activiteit/[id].tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "09f294663bf842be",
+      "text": "Deze bestelling is net ook op een andere kassa gescand om ",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "873c20a3ab12f380",
+      "text": "Deze bestelling laden lukt nu niet.",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "f5a7aa4464858d74",
+      "text": "Deze bestelling toevoegen?",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "96a09c60974e388f",
+      "text": "Deze categorie is voor ",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f6b6ff04f7e73983",
+      "text": "Deze gegevens zijn nog niet eerder geladen. Probeer het opnieuw als je online bent.",
+      "places": [
+        {
+          "file": "ui/QueryState.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "1a8b17f5abd70658",
+      "text": "Deze informatie is alleen voor de prins(es) en de adjudanten.",
+      "places": [
+        {
+          "file": "app/prins-info.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7b4e891aa4688513",
+      "text": "Deze QR is al gescand.",
+      "places": [
+        {
+          "file": "features/SaleParts.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f51ce4aca17ad698",
+      "text": "Dit bericht bestaat niet (meer) of is niet openbaar.",
+      "places": [
+        {
+          "file": "app/nieuws/[id].tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "b35efa2e8db605f5",
+      "text": "Dit carnavalsjaar ben je ",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3ae1363b306fb60d",
+      "text": "Dit kind is niet (meer) aan je account gekoppeld.",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "message"
+        },
+        {
+          "file": "app/kinderen/[id]/qr.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "b7549450c4a8469e",
+      "text": "Dit onderdeel bestaat niet (meer) of is niet openbaar.",
+      "places": [
+        {
+          "file": "ui/QueryState.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "60d27339a976ac1c",
+      "text": "Documenten zijn alleen zichtbaar voor jullie beheerders en de optochtcommissie.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c1e8a0d880bddfa7",
+      "text": "Doe mee met de gezelligste carnavalsvereniging van Loil.",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "69392a3c571ac708",
+      "text": "Dorpsplein, Loil",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "ca351133d550c4ae",
+      "text": "E-mailadres",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/account-aanvragen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3bae19f085d658ee",
+      "text": "Een gemiste passage telt niet mee: het gemiddelde gaat over de passages die je wel hebt ingevuld.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "cd1d9aafb324463f",
+      "text": "Een groep inschrijven",
+      "places": [
+        {
+          "file": "app/optocht/info.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b87090e37c2966b9",
+      "text": "Eén QR voor de hele bestelling. Bij het scannen gaan alle personen tegelijk naar binnen en wordt de QR geblokkeerd. Deel je een kaart met een lid van je groep, dan krijgt die een eigen QR.",
+      "places": [
+        {
+          "file": "app/kaarten/mijn.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "174987ee9c85056c",
+      "text": "Eerder nieuws",
+      "places": [
+        {
+          "file": "features/NewsFeed.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3dc6d3965c8497e9",
+      "text": "Eerste keer vanavond",
+      "places": [
+        {
+          "file": "features/offlineScan.ts",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "48a37f332cde58d6",
+      "text": "Eigen account",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c5e8ab5891019be3",
+      "text": "Elk lid krijgt een account en een welkomstmail. Geen mail gehad of lukt inloggen niet? Neem contact op met het secretariaat.",
+      "places": [
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d21639e76333b32b",
+      "text": "Er is een nieuwe versie van de app. Werk de app bij om verder te gaan.",
+      "places": [
+        {
+          "file": "shell/AppGate.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "d6ab4067867dc843",
+      "text": "Er is nog geen informatie voor deze campagne.",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d5353aafdd9d5497",
+      "text": "Er staat nog geen informatie klaar.",
+      "places": [
+        {
+          "file": "app/prins-info.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "65daa9b5e2179418",
+      "text": "Er staat nu geen Dansgardefestival klaar. Zodra de organisatie het programma heeft ingepland, zie je het hier.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "afc33e2fae125296",
+      "text": "Er zijn geen andere actieve leden in je groep.",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "0a724bb4480e103a",
+      "text": "Er zijn nog geen kinderen aan je account gekoppeld.",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "4d04373c9ccef755",
+      "text": "Even geduld",
+      "places": [
+        {
+          "file": "shell/AppGate.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "d31da1645c2d4e0b",
+      "text": "Extra informatie (optioneel)",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "494e0843d958b988",
+      "text": "Foto",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "149c2754d4903186",
+      "text": "Foto: ",
+      "places": [
+        {
+          "file": "app/fotos/[id]/[photoId].tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6067e14918a78645",
+      "text": "Foto's",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/fotos/[id]/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/fotos/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/nieuws/[id].tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "09bb434ebc59cc95",
+      "text": "Foto's waarop het lid te zien is, mogen in de app en op de website van de vereniging worden getoond.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "7f322fcc457333e2",
+      "text": "Ga naar inzending",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "a6fea9b909f587e9",
+      "text": "Geboortedatum",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "144454ec440037d9",
+      "text": "Geef toegang tot de camera om munten-QR&apos;s te scannen.",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7d234c8626c657f6",
+      "text": "Geef toegang tot de camera om QR-codes te scannen.",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c059b37384ef6b79",
+      "text": "Geen eerdere bijdragen bekend.",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bf87a400a1f4bc6a",
+      "text": "Geen geldig ticket",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "563f85329196bb53",
+      "text": "Geen groepsleden",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "07ee8474ca635321",
+      "text": "Geen hoofdjury",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "4a6f67e502d998e8",
+      "text": "Geen internet. Munten uitgeven kan alleen online.",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "2bc3dea65f0b5b96",
+      "text": "Geen jurylid",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "99a6725086b4d0bd",
+      "text": "Geen toegang",
+      "places": [
+        {
+          "file": "features/offlineScan.ts",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "9bb9fe4b04d4fbf6",
+      "text": "Geen toegangscontrole nu",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "550a7a1670b67efa",
+      "text": "Geen verbinding",
+      "places": [
+        {
+          "file": "ui/QueryState.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "9e1fd632333dc488",
+      "text": "Geen verbinding. Je gegevens zijn nog niet opgeslagen; probeer het opnieuw.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "cd86ff74ce2b671e",
+      "text": "Geen verbinding. Probeer het opnieuw.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "message"
+        },
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "58deca8f3b6e8609",
+      "text": "Gegevens",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "5821bcbc58aa1303",
+      "text": "Gegevens wijzigen",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "e58576edda1268b8",
+      "text": "Geld contant ontvangen",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "78136b3de70b38e0",
+      "text": "Geldig voor ",
+      "places": [
+        {
+          "file": "features/SaleParts.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "75b5e55b319ebba2",
+      "text": "Geschatte lengte (meter)",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "749cb5862cf4ba0a",
+      "text": "Geschiedenis",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "heading"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "aabfe1ea08338e22",
+      "text": "Gevraagd door de optochtcommissie",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1a596a091cc50943",
+      "text": "Gift",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "8dfe502550609be3",
+      "text": "Groep",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "954618df1bbc3db1",
+      "text": "Groepen",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "b725f5c59a4efca7",
+      "text": "Groepen worden ingeschreven door een groepsverantwoordelijke. Ben jij dat? Vraag het bestuur of de optochtcommissie om je account als groepsverantwoordelijke aan te zetten; daarna zie je hier de knop Aanmelden optocht.",
+      "places": [
+        {
+          "file": "app/optocht/info.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "78a281711d2e111e",
+      "text": "Groepsnaam",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "876eeafaf9b36899",
+      "text": "Herinneringen aan activiteiten en deadlines",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "0fa06d3f6f7a50b8",
+      "text": "Het bestuur bekijkt je verzoek voor ",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "fd2f847ff9948d85",
+      "text": "Het bestuur kan contact met je opnemen om te controleren dat je de ouder of verzorger bent. Een kind heeft maximaal 2 ouders of verzorgers in de app.",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "4ba0ee1873d75d2c",
+      "text": "Het kleurrijke hoogtepunt van carnaval in Loil",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "subtitle"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "f8b11af6d57b1f16",
+      "text": "Het nieuwe lid",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "e51a90e9a01f2748",
+      "text": "Het nieuwe lid is jonger dan 15. De ouder of verzorger krijgt het account voor de app en ontvangt de e-mails.",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c5388d44a2535f4c",
+      "text": "Hier komt binnenkort de geschiedenis van de vereniging.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "72b8d54e0562a988",
+      "text": "Hier komt binnenkort de thuisbasis van De Vrolijke Drammers, met adres en routebeschrijving.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "intro"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "fe3766cde5726190",
+      "text": "Hier komt binnenkort een overzicht van het bestuur en de commissies.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "3ccbc6a81cb934cc",
+      "text": "Hier sturen we de bevestiging en het startnummer naartoe.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "35956f835840fcf9",
+      "text": "Hoe heet jullie groep?",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "664304c5cf2adca6",
+      "text": "Hoeveel kaarten?",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3a78695388b38b5c",
+      "text": "Home",
+      "places": [
+        {
+          "file": "app/(tabs)/_layout.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/munten/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/prins-info.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "58e9cf3aa033eb80",
+      "text": "Hoofdjury",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "697ccb88f47f7490",
+      "text": "Hoofdjury dansgardefestival",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3e3854c894b58dc6",
+      "text": "Hoofdjury: uitslag",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "ec7bf67d71e9a959",
+      "text": "Huisnummer",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "7e345c3ba789219b",
+      "text": "IBAN",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "28d023ff95132961",
+      "text": "Iemand anders heeft deze inschrijving net gewijzigd. Open hem opnieuw.",
+      "places": [
+        {
+          "file": "features/parade.ts",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "632c8cf3a2ec89db",
+      "text": "Ik bevestig dat de gegevens juist zijn en ga akkoord met het optochtreglement.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "7460c8a019ddeef6",
+      "text": "Ik ga akkoord met de verwerking van deze gegevens voor het lidmaatschap, zoals beschreven in de privacyverklaring van de vereniging.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "5ff67d03a8ed431e",
+      "text": "Ik geef CV De Vrolijke Drammers toestemming om doorlopende incasso-opdrachten te sturen naar mijn bank om de contributie van mijn rekening af te schrijven, en mijn bank om doorlopend een bedrag van mijn rekening af te schrijven overeenkomstig de opdracht van CV De Vrolijke Drammers. Ben ik het niet eens met een afschrijving, dan kan ik die binnen 8 weken via mijn bank laten terugboeken.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "f1a5572c737fc97d",
+      "text": "Inclusief trekkend voertuig en eventuele aanhanger. Maximaal 100 m, 1 decimaal (bijv. 12,5).",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "cf897060f703d120",
+      "text": "Indienen kan pas als alle dansen van deze categorie punten hebben. Swipe terug of tik op de dans.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "170322a32f3c35b2",
+      "text": "Info",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/prins-info.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "cf8b6cd72917b92a",
+      "text": "Informatie ",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "783c7752d8136712",
+      "text": "Ingediend",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "f81d940775469042",
+      "text": "Ingelogd als ",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "902a4c2ada7bc751",
+      "text": "Inloggen",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/account-aanvragen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/meldingen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/munten/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "8c23f49056c2bfba",
+      "text": "Inschrijven lukt nu niet",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "feae47291ce71ac0",
+      "text": "Inschrijving en informatie over de optocht",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "2701873dad7cb276",
+      "text": "Instellingen",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "13ee5a1000dcbe97",
+      "text": "Instellingen openen",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "9125329b68dbc308",
+      "text": "Intrekken",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "448e5c13225dea45",
+      "text": "Ja, afgerond",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "ef4759bff80c735a",
+      "text": "Ja, hele optocht beoordelen",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "627895c27e766496",
+      "text": "Ja, indienen",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "03a21a5d1b095630",
+      "text": "Je aanmelding is ontvangen. Het bestuur beoordeelt hem zo snel mogelijk; daarna krijg je een e-mail.",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "aad1d2dda01cfbad",
+      "text": "Je app-account en je inlog worden verwijderd, en je wordt op al je apparaten uitgelogd. Je lidmaatschap van De Vrolijke Drammers blijft bestaan; wil je opzeggen, neem dan contact op met het secretariaat.",
+      "places": [
+        {
+          "file": "app/account/verwijderen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bb3977aa0458bb4f",
+      "text": "Je bent aan het einde van de optocht. Controleer je beoordelingen en dien ze in. Daarna kun je niets meer wijzigen.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d58d5366326689b5",
+      "text": "Je bent nog niet ingedeeld. Het bestuur of de hoofdjury wijst je categorieën toe.",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "422830377235057b",
+      "text": "Je bent offline. Je ziet de laatst geladen gegevens.",
+      "places": [
+        {
+          "file": "ui/OfflineBanner.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "67aba35237692d8b",
+      "text": "Je bent samen met ",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "be1944a271d36c28",
+      "text": "Je foto is verstuurd en wordt nog verwerkt; hij verschijnt hier zodra dat klaar is.",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "074514eee38588d6",
+      "text": "Je jurering is ingediend",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "fbf61cb30ae73d3c",
+      "text": "Je kunt tussendoor stoppen: je gaat later verder waar je was, ook op een ander toestel.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a87aa759a03bb4fa",
+      "text": "Je laatste wijziging is niet doorgevoerd",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "e40f8b388bdc4e8f",
+      "text": "Je lidmaatschap is geen combinatie.",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b9227dbe5a5acf5a",
+      "text": "Je QR verschijnt bij carnaval",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "505d3a08ce5e2dcf",
+      "text": "Je wijziging (",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "259856c1bd65dc11",
+      "text": "JEUGD",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "9cc5967d35555c55",
+      "text": "Jij bent",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "35a2712ff3056b1f",
+      "text": "Jij houdt ",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "8980043d4a72dba0",
+      "text": "Jouw categorieën",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "dde7f85bfd25d76f",
+      "text": "Jouw punten",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6676335ddfdf4d91",
+      "text": "Jouw rekening",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "33bd87e50b7a95d8",
+      "text": "Jubilaris",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "463e41c95c102771",
+      "text": "JULLIE OPGAVENUMMER",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a0e2bad65c53d448",
+      "text": "Jureren",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "8d732983ea1ac22a",
+      "text": "Jureren dansgardefestival",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "4d3c3722f6b382c6",
+      "text": "Jurering indienen",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "19259ed7ff1cb43e",
+      "text": "Jurylid",
+      "places": [
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0f3c116af4bec518",
+      "text": "Kaart delen",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "598e2c467ed45b5e",
+      "text": "Kaart delen met groepslid",
+      "places": [
+        {
+          "file": "features/SaleParts.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "8d3962f241c4f354",
+      "text": "Kaarten",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/kaarten/mijn.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "12d34957135dab4b",
+      "text": "Kaarten die je koopt, staan hier met de QR voor de ingang.",
+      "places": [
+        {
+          "file": "app/kaarten/mijn.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "ad81bbc5825aeea5",
+      "text": "Kaarten en munten worden niet terugbetaald.",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d81a92b3758e106b",
+      "text": "Kaarten groep",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "64d1e57298a2c1ac",
+      "text": "Kaarten kopen",
+      "places": [
+        {
+          "file": "app/kaarten/mijn.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "6b720d973c450d50",
+      "text": "Kassa",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d7b6e2f34be3bc27",
+      "text": "KASSA",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b56b8cc5cadd6e78",
+      "text": "Kassa: munten uitgeven",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "95bddcfb0e6de9cf",
+      "text": "Kies een avond. Leden bestellen voor hun groep; de kaarten zitten in de contributie.",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7185edec425dcac0",
+      "text": "Kies een lid van ",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "be0a7c0ad874985e",
+      "text": "Kiezen",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "71d47535abfbcc93",
+      "text": "Kind koppelen",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "244413b3f49da210",
+      "text": "Kind koppelen aanvragen",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "09cd30e419f6d176",
+      "text": "Kind niet gevonden",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/kinderen/[id]/qr.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "2a8d0186be71a3ec",
+      "text": "Kinderen",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "182412839c525239",
+      "text": "Klaar met ",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "28cfda825ccfa52b",
+      "text": "Klaar met jureren?",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "659fe2cda6761569",
+      "text": "Klopt er iets niet? Pas het aan met Gegevens wijzigen; de ledenadministratie controleert elke wijziging.",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6908e6e71ea0fb36",
+      "text": "Klopt er iets niet? Wijzigingen gaan via het secretariaat.",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "5b5c25df4566ef37",
+      "text": "Komt anoniem in het rapport (met je jurynummer). Wordt direct op je telefoon bewaard.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "9559b7d3be3651a2",
+      "text": "Koop munten vooraf en haal ze op bij de kassa: daar wordt je munten-QR gescand en krijg je de munten. Aankoop is persoonsgebonden en werkt alleen op het toestel waarop je koopt.",
+      "places": [
+        {
+          "file": "app/munten/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "23d663b52a2def98",
+      "text": "Koppelverzoek voor &quot;",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "365bca9296e2b455",
+      "text": "Kwaliteit",
+      "places": [
+        {
+          "file": "features/judging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "940983ab6a6ccef0",
+      "text": "Laat de code scannen bij de kassa: elke bestelling heeft een eigen QR. Je krijgt de munten zodra de kassa de bestelling uitgeeft. Een screenshot werkt niet.",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "daf3589b17d90a91",
+      "text": "Laatste meldingen",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3fa51cc90c4c2e8b",
+      "text": "Laatste nieuws",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "03549b5c861980d2",
+      "text": "Later kun je altijd opnieuw een account aanvragen.",
+      "places": [
+        {
+          "file": "app/account/verwijderen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "8300567b1f7732d1",
+      "text": "Leden · gratis",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0a954e230fb1e048",
+      "text": "Leden die bij jou horen. Je ziet hun gegevens, meldingen en inschrijvingen, en je kunt hun QR tonen bij de ingang.",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b72b827d3e3ac1ae",
+      "text": "Lees meer",
+      "places": [
+        {
+          "file": "ui/NewsCards.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "fc7163cf75bf7d18",
+      "text": "Lengte",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3c4ce8b257079292",
+      "text": "Lid van de vereniging? Log in: dan zijn je gegevens al ingevuld en kun je later verder waar je was.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "de184effb2318e1b",
+      "text": "Lid worden",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/lid-worden.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "32c0048c6f16d9ad",
+      "text": "Lid worden kan vanaf 5 jaar, bijvoorbeeld bij de dansgarde. Ben je jonger dan 16, dan meldt je ouder of verzorger je aan. Het bestuur beoordeelt elke aanmelding; daarna hoor je van ons.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "564e5595fcea6cd0",
+      "text": "lidnummer ",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "fff7c7fc13217ebd",
+      "text": "Locatie",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/locatie.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "812040cb2640d0cc",
+      "text": "Log eerst in",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "c189840cf7e2d6f6",
+      "text": "Log in",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0b262f77fbbe0cfc",
+      "text": "Log in als lid om munten te kopen.",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b8c25387e89580ba",
+      "text": "Log in met het e-mailadres dat bij de vereniging bekend is. De eerste keer? Kies op de inlogpagina &quot;Wachtwoord vergeten?&quot;: je krijgt een code per e-mail en kiest zelf een wachtwoord.",
+      "places": [
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f0e8d912e31e6d7a",
+      "text": "Log in met je account; daarna zie je hier de kinderen die bij jou horen.",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "3c1fea4fa79fe2b7",
+      "text": "Loil",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "348fb020ce7c5466",
+      "text": "Loil · sinds 1958",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0b78086738938e61",
+      "text": "Losse kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "26b712b035d65243",
+      "text": "Losse kaarten (niet-leden)",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a0fe1c9d73fc490f",
+      "text": "Machtiging",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "b351912b60b7c62a",
+      "text": "Maximaal 2 ouders of verzorgers per kind. Vanaf 15 jaar kan het bestuur je kind een eigen account geven.",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b3fefcc69609108a",
+      "text": "Maximaal 2000 tekens.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "800043ec868fe77f",
+      "text": "Meedoen aan de optocht",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/info.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "2aaf74329a61387c",
+      "text": "Meer",
+      "places": [
+        {
+          "file": "app/(tabs)/_layout.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/fotos/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/weergave.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "a761d4ca3766cfd7",
+      "text": "Meldingen",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meldingen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "ab3e2eb9a7874aa3",
+      "text": "Met de lengte stelt de commissie de optocht samen.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bdf4c3903f9a2db5",
+      "text": "Mijn apparaten",
+      "places": [
+        {
+          "file": "app/account/apparaten.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "77d77414e09df5c6",
+      "text": "Mijn gegevens",
+      "places": [
+        {
+          "file": "app/account/apparaten.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/account/verwijderen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "7b422fddea62996e",
+      "text": "Mijn gegevens downloaden",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "5e405ffc0e196c05",
+      "text": "Mijn inschrijving",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "2ce10390dbc8ec46",
+      "text": "Mijn kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/delen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/mijn.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "5f4fc478cbcc93c4",
+      "text": "Mijn kinderen",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/[id]/qr.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "135cc4d303fb5a34",
+      "text": "Minuten",
+      "places": [
+        {
+          "file": "ui/CountdownCard.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "458b98fa834906fb",
+      "text": "Moeilijkheidsgraad",
+      "places": [
+        {
+          "file": "features/festivalJudging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "53ef5f5d75a639dd",
+      "text": "Munten",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/munten/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "fc93dfa709ab4443",
+      "text": "Munten kopen",
+      "places": [
+        {
+          "file": "app/munten/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "b1af90b833ac5ab5",
+      "text": "Munten op een ander toestel",
+      "places": [
+        {
+          "file": "app/munten/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "90111b6a008928b0",
+      "text": "Munten uitgeven kan met de rol Kassa. Het bestuur kent die toe.",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "body"
+        }
+      ]
+    },
+    {
+      "key": "f3edba50dd5f2bd6",
+      "text": "Munten werken alleen op het toestel waarop ze gekocht zijn en zijn niet over te zetten.",
+      "places": [
+        {
+          "file": "app/munten/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6f9e57dbc8b7ed5d",
+      "text": "Munten-QR niet beschikbaar",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "61b7f7720f3b99e1",
+      "text": "Munten-QR tonen",
+      "places": [
+        {
+          "file": "features/SaleParts.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "82535af8aab6b39b",
+      "text": "MUZIEK",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bff434fe320cccb4",
+      "text": "Na de optocht en andere wedstrijden verschijnen de uitslagen hier.",
+      "places": [
+        {
+          "file": "app/uitslagen.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "4d94f213af66a57e",
+      "text": "Na het verbreken betaal je zelf de contributie voor één lid. Vul de rekening in waarvan we die mogen incasseren.",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a6aeff529ea1f206",
+      "text": "Na jouw verzoek moet ",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "eca46fcab2ab68be",
+      "text": "Naam",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "2e96c26e0b4c46cb",
+      "text": "Naam bedrijf",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "015cd1827a1baa53",
+      "text": "Naam ouder/verzorger",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0dbd96d7aed14673",
+      "text": "Naam rekeninghouder",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "d1728aba4436c2b0",
+      "text": "Naar de website",
+      "places": [
+        {
+          "file": "app/meer/contact.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "fb1c66c56b3b6b1e",
+      "text": "Naar Kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "36fe6288c3c548dd",
+      "text": "Naar Meer",
+      "places": [
+        {
+          "file": "app/auth.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0251c8ce1d9dcffe",
+      "text": "Naar mijn inschrijving",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "13acdc55d0c0d858",
+      "text": "Naar Mijn kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "4c37efdaf4ed40c2",
+      "text": "Naar Mijn kinderen",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "b414baac86f20e20",
+      "text": "Namens ",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "8b746fb695662928",
+      "text": "Nee, nog niet",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "4ec48020e6d89133",
+      "text": "Neem contact op",
+      "places": [
+        {
+          "file": "app/meer/lid-worden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "423a0a882e29a243",
+      "text": "Niet aan jou toegewezen · telt pas mee na goedkeuring door het bestuur of de hoofdjury",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6afef71269c5f236",
+      "text": "Niet akkoord",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "1cd8ffd1904fc940",
+      "text": "Niet nu",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "417c1d6c738a4d02",
+      "text": "Niet toevoegen",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "051b21f89590d931",
+      "text": "Niet uitgeven",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "64ef50217160daf9",
+      "text": "Nieuw rekeningnummer",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b8f13995d224c8f2",
+      "text": "Nieuwe activiteiten verschijnen hier vanzelf.",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "3000a663b77dc1d6",
+      "text": "Nieuwe adverteerder",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "035ffbe518121b96",
+      "text": "Nieuwe berichten van de vereniging",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "c4a767851e36e429",
+      "text": "Nieuwe code sturen",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "abaeac1ce6b84264",
+      "text": "Nieuws",
+      "places": [
+        {
+          "file": "app/(tabs)/_layout.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/(tabs)/nieuws.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/nieuws/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "eed211e024a40461",
+      "text": "Nog geen account?",
+      "places": [
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6875bcec4983c2a5",
+      "text": "Nog geen activiteiten",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "a577a9c45baaacd0",
+      "text": "Nog geen festival",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "8664052a463899cb",
+      "text": "Nog geen foto. Handig om later terug te zien welke wagen dit was; alleen de optochtcommissie ziet hem.",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7c03121032b88e5c",
+      "text": "Nog geen foto's in dit album",
+      "places": [
+        {
+          "file": "app/fotos/[id]/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "6fbd1df59db0c343",
+      "text": "Nog geen kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/mijn.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "403ba52f23f56db2",
+      "text": "Nog geen lid? Kijk bij Lid worden.",
+      "places": [
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "90dae718777a5d26",
+      "text": "Nog geen meldingen",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "630ebeea40059b45",
+      "text": "Nog geen meldingen namens ",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0e5cafecdef28f27",
+      "text": "Nog geen nieuws.",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "817e2eb111846d01",
+      "text": "Nog geen uitslag",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "c5a04721f8886245",
+      "text": "Nog geen uitslagen",
+      "places": [
+        {
+          "file": "app/uitslagen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "4a656dea8dbc7ec8",
+      "text": "Nog niet (helemaal) ingevuld",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f7bafe2f228f03c9",
+      "text": "Nog niet bekend",
+      "places": [
+        {
+          "file": "app/optocht/aanrijtijden.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "e0639f9aae67e50b",
+      "text": "Nog niet beoordeeld",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "643bf84b5d5ee6b4",
+      "text": "Nog niet te koop",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "7754b444f595adfa",
+      "text": "Nog niets uitgegeven op dit toestel vanavond.",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "405061c2b7869750",
+      "text": "Nog tot ",
+      "places": [
+        {
+          "file": "ui/CountdownCard.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "fbcebae39bd76915",
+      "text": "NR",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "eec599be28da7418",
+      "text": "Nu aan de beurt",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "2c73ed6e41266e03",
+      "text": "Nu geen munten te koop",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "6cc519d4f85d5636",
+      "text": "Nu niets te koop",
+      "places": [
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "dd10d4180d2fd7c8",
+      "text": "Offline gecontroleerd",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b7ffff09e5668510",
+      "text": "Onderwerp",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "5ec16ecad69f5580",
+      "text": "Op de wachtlijst",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "d6db148df4a5a04c",
+      "text": "Open in kaarten",
+      "places": [
+        {
+          "file": "app/meer/locatie.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "4114f9f7e7ffeec4",
+      "text": "Open instellingen",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "075502a9e10d764e",
+      "text": "Opgavenummer",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3a28cb4683b2ef12",
+      "text": "Opgehaald",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "838b422fb117c20a",
+      "text": "Opmerking",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "d0f0934e46897a01",
+      "text": "Opmerking of wensen (optioneel)",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "aade491f9af02578",
+      "text": "Opmerking voor de vereniging",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "bd996efd4a923afb",
+      "text": "Opnieuw",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "label"
+        },
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "576434df7a00aeae",
+      "text": "Opnieuw proberen",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "ui/QueryState.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "ac92691fa2f9ba4d",
+      "text": "Optioneel: bijvoorbeeld een verzekeringsbewijs of een tekening van de wagen. PDF, JPG of PNG, maximaal",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "156729fed772ce03",
+      "text": "Optocht",
+      "places": [
+        {
+          "file": "app/(tabs)/_layout.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/aanrijtijden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/info.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "99dc607504516c2a",
+      "text": "Originaliteit",
+      "places": [
+        {
+          "file": "features/judging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "76d84d3b1dee9d23",
+      "text": "Ouder of verzorger",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "3ceb9255c167ff77",
+      "text": "Oudere meldingen",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "8d1d1620a8931c19",
+      "text": "Ouders/verzorgers",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "f76e284566023899",
+      "text": "Over de app",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/over.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "1079b34e671157f2",
+      "text": "Over deze activiteit",
+      "places": [
+        {
+          "file": "app/activiteit/[id].tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6c20ea442bdde6a2",
+      "text": "Overzicht",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "4a9648ac02b79458",
+      "text": "Pas aan wat er niet klopt. De ledenadministratie controleert elke wijziging voordat ze wordt doorgevoerd.",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "4888f01ba73ab2ac",
+      "text": "Plaats",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "0a4387d25c62e78b",
+      "text": "Postcode",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "ea63f6bd17f7b6be",
+      "text": "Prijsuitreiking afgerond ✓",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "edb8f46ff43372c0",
+      "text": "Prijsuitreiking afronden",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "54a57c3147c49f33",
+      "text": "Privacy",
+      "places": [
+        {
+          "file": "app/meer/over.tsx",
+          "where": "heading"
+        }
+      ]
+    },
+    {
+      "key": "e9f061a47c031078",
+      "text": "Programma",
+      "places": [
+        {
+          "file": "app/(tabs)/_layout.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/(tabs)/programma.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/activiteit/[id].tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "9f82f96fad743dfe",
+      "text": "Pronkzitting",
+      "places": [
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "711424f64334771a",
+      "text": "Pushmeldingen",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "173838b281681d09",
+      "text": "Pushmeldingen aanzetten",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "10d34a1c44cd789d",
+      "text": "QR beschikbaar",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "2c24d35a117c162d",
+      "text": "QR code",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "690dbe9dc0993c42",
+      "text": "Recent",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "d5d42c012481a089",
+      "text": "RECENT",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7a82c80e2858e19b",
+      "text": "Recent toegevoegd",
+      "places": [
+        {
+          "file": "app/fotos/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "d56589d8f3f8b03e",
+      "text": "Richt de camera op de munten-QR in de app van het lid",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "57a452ca967349ff",
+      "text": "Richt de camera op Mijn QR of de QR van een gekochte kaart",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "06d2e65cd5f801cf",
+      "text": "Rollen in de app: ",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "adc74704d65d5cc9",
+      "text": "Route",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "2a53b07837ce1607",
+      "text": "Scannen",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c0b37f0352722069",
+      "text": "Scannen bij de deur",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "6fdc9ca3e43674ea",
+      "text": "Scannen kan met de rol Deurcontrole. Het bestuur kent die toe.",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "body"
+        }
+      ]
+    },
+    {
+      "key": "34335e2e6c657270",
+      "text": "Seconden",
+      "places": [
+        {
+          "file": "ui/CountdownCard.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "efaa40642bccd84c",
+      "text": "Soort lidmaatschap",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "e272ee8b4fc97acd",
+      "text": "Staat de wagen bij de jurering ergens anders? Zet het vinkje uit, dan vragen we dat adres.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "6a6524ca5111f169",
+      "text": "Stalling voor de jury is gelijk aan het bouwadres",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "9253bf25b1e08825",
+      "text": "STAP ",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "e4bb9f1ece9af926",
+      "text": "Start",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "6215485f488e2163",
+      "text": "Start optocht",
+      "places": [
+        {
+          "file": "app/(tabs)/optocht.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1432a6a8f10874e9",
+      "text": "Startnummer",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "731adcef70293a8d",
+      "text": "Stopt",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "be7aca177302bb13",
+      "text": "Stopt dit jaar",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "ba1eb8856bae5a39",
+      "text": "Straat",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "fe48188ee90e2c63",
+      "text": "Straat en huisnummer",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "04b52a1372d3a9d5",
+      "text": "Te betalen",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "16458ac2f650830b",
+      "text": "Te veel pogingen vanaf dit netwerk. Probeer het over tien minuten opnieuw.",
+      "places": [
+        {
+          "file": "features/parade.ts",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "5d54efb51f2c6aec",
+      "text": "Telefoon",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "51748d2f46e823ba",
+      "text": "Telefoon (optioneel)",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "c08625f5e33d21fe",
+      "text": "Telefoon ouder/verzorger",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "83c814cdb1487701",
+      "text": "Telefoonnummer (optioneel)",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "ebf6cf719cfa302b",
+      "text": "Terug",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kassa.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meldingen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/scannen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/uitslagen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "6c866da63096527e",
+      "text": "Terug naar de dansen",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "46e1a2e008599aee",
+      "text": "Terug naar de optocht",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "7afc844f71cd9a48",
+      "text": "Terug naar het jureren",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "342b12b24c645aae",
+      "text": "Terug naar mijn adverteerders",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "2467a456d068f98c",
+      "text": "Terug naar Mijn gegevens",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "73e4e271f870eac8",
+      "text": "Terug naar Mijn kinderen",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "cd2f39866d7486e1",
+      "text": "Tickets en toegang",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "f9423ce48015527d",
+      "text": "Tik pas op de knop als de munten zijn overhandigd. Dit wordt gelogd in het portal (Kassalog).",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7c59da43e837c4e8",
+      "text": "Tip: open Mijn QR één keer vóór carnaval met internet; daarna werkt het ook offline.",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "1aaf836e9f3dde25",
+      "text": "Toch nog langs",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "bdc635ad0df4aeb1",
+      "text": "Toch toelaten",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "5118e8d7f0eeb61d",
+      "text": "Toch uitloggen",
+      "places": [
+        {
+          "file": "features/account.ts",
+          "where": "text"
+        }
+      ]
+    },
+    {
+      "key": "129cc6602551c161",
+      "text": "Toegang geldig",
+      "places": [
+        {
+          "file": "features/offlineScan.ts",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "6cc9a3c05b362b30",
+      "text": "Toelichting (optioneel)",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "56e6d8448fa58951",
+      "text": "Toestemming",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f95d95b0a861c136",
+      "text": "Toev.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "e5ab98c6a7d6e3c4",
+      "text": "Toevoegen aan Mijn kaarten",
+      "places": [
+        {
+          "file": "app/kaarten/bestelling.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "3c329c9b2186eded",
+      "text": "tot ",
+      "places": [
+        {
+          "file": "app/kinderen/[id]/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "127fcc31cd61b1ac",
+      "text": "Totaal",
+      "places": [
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "2210416934b321a6",
+      "text": "Totaal deze dans",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "05ccf761ae767f6e",
+      "text": "Totaal: ",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "54ee450c8b1cc2a3",
+      "text": "Trainingen en optredens van de dansgarde",
+      "places": [
+        {
+          "file": "features/push.ts",
+          "where": "description"
+        }
+      ]
+    },
+    {
+      "key": "0370988e2ef14353",
+      "text": "Tussenvoegsel",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "8181580ff5616ea4",
+      "text": "Uitloggen",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/dansgardefestival-jury/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "98b3244067266605",
+      "text": "Uitslagen",
+      "places": [
+        {
+          "file": "app/(tabs)/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/uitslagen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "adafa393bb91908a",
+      "text": "Uitvoering",
+      "places": [
+        {
+          "file": "features/festivalJudging.ts",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "4d8018805e32b51b",
+      "text": "Update nodig",
+      "places": [
+        {
+          "file": "shell/AppGate.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "d005eb79f0ac1464",
+      "text": "Uur",
+      "places": [
+        {
+          "file": "ui/CountdownCard.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "136f62a991632dc7",
+      "text": "Van de laatste plaats naar de winnaar",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7532cf6b12d4fdaf",
+      "text": "Vanavond uitgegeven",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "82a1d3baff27bf76",
+      "text": "Veilig betalen via Mollie",
+      "places": [
+        {
+          "file": "app/kaarten/afrekenen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "b87a095b1fd03ed5",
+      "text": "Verder naar afrekenen",
+      "places": [
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "29a2d42f06a6f0c7",
+      "text": "Vereniging",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/vereniging.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "be54e38b52f03e9a",
+      "text": "Versie",
+      "places": [
+        {
+          "file": "app/meer/over.tsx",
+          "where": "heading"
+        }
+      ]
+    },
+    {
+      "key": "d6c44c3e95df5008",
+      "text": "Verwijderen",
+      "places": [
+        {
+          "file": "app/optocht/[id].tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "text"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "262abe4416d62173",
+      "text": "Verzoek intrekken",
+      "places": [
+        {
+          "file": "app/account/combinatie.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "8662b4e249a0c8f5",
+      "text": "Verzoek verstuurd",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "86e252cf199ad6ee",
+      "text": "Vol. Zet je op de wachtlijst: komt er plek, dan krijg je een betaallink die 48 uur geldig is.",
+      "places": [
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "36973ab082b42253",
+      "text": "Volgende scannen",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/scannen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "46ecaedd91091d88",
+      "text": "Volwassenen",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "1be0fba01c93d346",
+      "text": "VOLWASSENEN",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "52310ca44ba24b25",
+      "text": "Voor de ",
+      "places": [
+        {
+          "file": "app/kaarten/pronkzitting.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c034480a9e347b56",
+      "text": "Voor gasten. Leden hebben hun ledenticket onder QR code.",
+      "places": [
+        {
+          "file": "app/kaarten/bestellen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c9e011e0d27599fc",
+      "text": "Voor leden",
+      "places": [
+        {
+          "file": "app/meer/inloggen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "4842c537763cbe77",
+      "text": "Voorbij ",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c4ef1de34654f063",
+      "text": "Voorbijtrekken ",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a904227634272082",
+      "text": "Voorlopige informatie; het bestuur vult deze pagina binnenkort aan.",
+      "places": [
+        {
+          "file": "features/InfoPage.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "fe9eaa4a2b8f8895",
+      "text": "Voornaam",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "a8c213bcfc143776",
+      "text": "Voornaam kind",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "4e3bd99cb2a5720a",
+      "text": "Voortgang",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0ec22d744602c1e2",
+      "text": "Vorige",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "5c8d43f92dfbbf24",
+      "text": "Vorige waardes overnemen",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "db81df9969235824",
+      "text": "Vragen over de vereniging, de optocht of een activiteit? Neem gerust contact met ons op.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "intro"
+        },
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "730fd87a7da3feaa",
+      "text": "Vrije gift",
+      "places": [
+        {
+          "file": "app/adverteerders/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "531f33dd4dabf60d",
+      "text": "Vul de naam van je kind in zoals die bij de vereniging bekend is. Het bestuur controleert je verzoek; pas daarna zie je je kind hier.",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "bb2cc423a028f7d4",
+      "text": "Vul het e-mailadres in dat bij de vereniging bekend is. Delen meerdere leden dit adres, dan kijkt het bestuur welk lid je bent.",
+      "places": [
+        {
+          "file": "app/meer/account-aanvragen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "95f3cd2265294dd4",
+      "text": "Waar gaat jullie groep over? De jury en de omroeper gebruiken dit.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "ccc8d256e2762179",
+      "text": "Waar wordt de wagen of het kostuum gebouwd?",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "57d250ca491f676c",
+      "text": "wacht op akkoord",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "8edff952e99c1d0d",
+      "text": "Wacht op bestuur",
+      "places": [
+        {
+          "file": "app/kinderen/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "7a2f444384fbf097",
+      "text": "We hebben een code van 6 cijfers gestuurd naar ",
+      "places": [
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "27582a421488b9ce",
+      "text": "We hebben je verzoek ontvangen",
+      "places": [
+        {
+          "file": "app/kinderen/koppelen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f91962419f4ebaae",
+      "text": "Weergave",
+      "places": [
+        {
+          "file": "app/meer/weergave.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "cd769047ba884245",
+      "text": "Weigeren",
+      "places": [
+        {
+          "file": "app/scannen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "dee648c0507225af",
+      "text": "Welke meldingen wil je?",
+      "places": [
+        {
+          "file": "app/meldingen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "c1d8cac82f5b9286",
+      "text": "Wie kan de optochtcommissie bereiken?",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "a6d012994849ac31",
+      "text": "Wijzig",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "00cd7a3c7a51b126",
+      "text": "Wijziging verstuurd",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
+      "key": "7a911c4753f0da34",
+      "text": "Woonplaats",
+      "places": [
+        {
+          "file": "app/account/wijzigen.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "c91002e34527c7a8",
+      "text": "Word ook een Drammer!",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c1551a460d893234",
+      "text": "Word ook een Drammer! Als lid help je mee aan het gezelligste carnaval van Loil en ben je welkom bij alle activiteiten van de vereniging.",
+      "places": [
+        {
+          "file": "content/static.ts",
+          "where": "vaste tekst"
+        }
+      ]
+    },
+    {
+      "key": "743031f2fb29c9dd",
+      "text": "wordt verwerkt",
+      "places": [
+        {
+          "file": "features/JuryPhotoCard.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "f77712b3b31c2e23",
+      "text": "Zelfde locatie",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "0fc9331de69501a3",
+      "text": "Zet de agenda in je telefoon",
+      "places": [
+        {
+          "file": "app/(tabs)/programma.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "861973eb9164269c",
+      "text": "Zet in mijn agenda",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "key": "e3c75c3a4cb43afe",
+      "text": "Zo kan één ticket nooit op twee telefoons tegelijk gebruikt worden.",
+      "places": [
+        {
+          "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "key": "c8b5d7628e944b3e",
+      "text": "Zoals de groep in het programma en bij de jury komt te staan.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "key": "c414125967e47975",
+      "text": "Zodra de kaartverkoop opent, staat het hier.",
+      "places": [
+        {
+          "file": "app/kaarten/index.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "dd29f80bbc3a51b7",
+      "text": "Zodra de verkoop opent, kun je hier munten kopen.",
+      "places": [
+        {
+          "file": "app/munten/kopen.tsx",
+          "where": "message"
+        }
+      ]
+    },
+    {
+      "key": "8efb01c50821fdf7",
+      "text": "Zoek een activiteit",
+      "places": [
+        {
+          "file": "app/(tabs)/programma.tsx",
+          "where": "placeholder"
+        }
+      ]
+    },
+    {
+      "key": "20eff78921666fe9",
+      "text": "Zoek in het nieuws",
+      "places": [
+        {
+          "file": "app/(tabs)/nieuws.tsx",
+          "where": "placeholder"
+        }
+      ]
+    },
+    {
+      "key": "0544a23836c217f0",
+      "text": "Zoek op naam of plaats",
+      "places": [
+        {
+          "file": "app/adverteerders/index.tsx",
+          "where": "placeholder"
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 import { brand } from '@drammers/design-tokens';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SaleStepperRow } from '../../features/SaleParts';
 import { formatDay, formatEuro, useSaleCatalog, type SaleProduct } from '../../features/sales';
+import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, EmptyState, LargeTitleHeader, QueryState, Screen } from '../../ui';
 
@@ -36,7 +37,7 @@ export default function PronkzittingScreen() {
     }
     const other = evenings.find((e) => e.id !== selected.id && fits(e));
     const day = formatDay(selected.date);
-    Alert.alert(
+    showAlert(
       `${day.charAt(0).toUpperCase()}${day.slice(1)} is vol`,
       other
         ? `Kies ${formatDay(other.date)} (nog ${other.remaining ?? 'genoeg'} plaatsen) of zet je op de wachtlijst. Komt er plek, dan krijg je een melding en een betaallink die 48 uur geldig is.`

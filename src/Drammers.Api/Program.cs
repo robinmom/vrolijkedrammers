@@ -49,6 +49,7 @@ try
     builder.Services.AddDrammersAuthorization();
     builder.Services.AddScoped<Drammers.Api.Content.ContentViewerResolver>();
     builder.Services.AddScoped<Drammers.Api.Content.ContentUrls>();
+    builder.Services.AddSingleton<AppTextCatalog>();
     builder.Services.AddSingleton<MailingPreviewDocuments>();
     builder.Services.AddSingleton<IClock, SystemClock>();
     builder.Services.AddWebsite(builder.Configuration);

@@ -16,6 +16,8 @@ public class AuthorizationConventionTests
     private static readonly string[] ExpectedAnonymousEndpoints =
     [
         $"{nameof(AppConfigController)}.{nameof(AppConfigController.Get)}",
+        // De in het portal aangepaste app-teksten; de app heeft ze ook zonder account nodig (publieke schermen).
+        $"{nameof(AppTextsController)}.{nameof(AppTextsController.Get)}",
         $"{nameof(CarnivalYearsController)}.{nameof(CarnivalYearsController.GetCurrent)}",
         $"{nameof(CarnivalYearsController)}.{nameof(CarnivalYearsController.List)}",
         $"{nameof(PortalConfigController)}.{nameof(PortalConfigController.Get)}",

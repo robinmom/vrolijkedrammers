@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
 import { queryKeys, useMyRegistration, useParadeCategories } from '../../api/queries';
 import { formatAddress, formFromRegistration, problemFrom, statusBadge, statusLabels } from '../../features/parade';
+import { showAlert } from '../../lib/alert';
 import { fullDate } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Badge, Button, Card, LargeTitleHeader, QueryState, Screen } from '../../ui';
@@ -20,7 +21,7 @@ export default function InschrijvingScreen() {
   const r = registration.data;
 
   const removeDraft = () =>
-    Alert.alert(
+    showAlert(
       'Concept verwijderen',
       'Weet je het zeker? Het concept en de toegevoegde documenten worden verwijderd.',
       [
@@ -42,7 +43,7 @@ export default function InschrijvingScreen() {
     );
 
   const withdraw = () =>
-    Alert.alert(
+    showAlert(
       'Inschrijving intrekken',
       'Weet je het zeker? Jullie doen dan niet mee aan de optocht; het opgavenummer vervalt.',
       [

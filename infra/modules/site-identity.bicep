@@ -2,7 +2,7 @@
 // output van de app-module, zodat de lookup pas gebeurt nadat de app bestaat (bij een nieuwe omgeving).
 param siteName string
 
-resource site 'Microsoft.Web/sites@2024-11-01' existing = {
+resource site 'Microsoft.Web/sites@2025-03-01' existing = {
   name: siteName
 }
 

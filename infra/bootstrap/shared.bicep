@@ -12,7 +12,7 @@ param environments array
 @allowed(['B1', 'F1'])
 param planSku string = 'B1'
 
-resource plan 'Microsoft.Web/serverfarms@2024-11-01' = {
+resource plan 'Microsoft.Web/serverfarms@2025-03-01' = {
   name: 'asp-dvd-nonprod'
   location: location
   tags: tags

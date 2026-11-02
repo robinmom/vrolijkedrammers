@@ -4,11 +4,11 @@ param siteName string
 param hostName string
 param thumbprint string
 
-resource site 'Microsoft.Web/sites@2024-11-01' existing = {
+resource site 'Microsoft.Web/sites@2025-03-01' existing = {
   name: siteName
 }
 
-resource binding 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+resource binding 'Microsoft.Web/sites/hostNameBindings@2025-03-01' = {
   parent: site
   name: hostName
   properties: {

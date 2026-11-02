@@ -21,7 +21,7 @@ param boundHostNames array = []
 
 var newHostNames = filter(customHostNames, host => !contains(boundHostNames, host))
 
-resource api 'Microsoft.Web/sites@2024-11-01' = {
+resource api 'Microsoft.Web/sites@2025-03-01' = {
   name: 'app-dvd-api-${environmentName}'
   location: location
   tags: tags
@@ -47,13 +47,13 @@ resource api 'Microsoft.Web/sites@2024-11-01' = {
 }
 
 // Geen publicatie met gebruikersnaam/wachtwoord (FTP en SCM basic auth uit); deploy via Entra/OIDC.
-resource ftpPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-11-01' = {
+resource ftpPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01' = {
   parent: api
   name: 'ftp'
   properties: { allow: false }
 }
 
-resource scmPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-11-01' = {
+resource scmPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01' = {
   parent: api
   name: 'scm'
   properties: { allow: false }
@@ -79,7 +79,7 @@ resource diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
 // dan SNI met dat certificaat. Strikt na elkaar: App Service weigert een wijziging aan de site terwijl een andere nog
 // loopt (409 "another operation is in progress"), ook van de publicatie- en diagnose-instellingen hierboven.
 @batchSize(1)
-resource hostNames 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = [
+resource hostNames 'Microsoft.Web/sites/hostNameBindings@2025-03-01' = [
   for host in newHostNames: {
     parent: api
     name: host
@@ -94,7 +94,7 @@ resource hostNames 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = [
 ]
 
 @batchSize(1)
-resource certificates 'Microsoft.Web/certificates@2024-11-01' = [
+resource certificates 'Microsoft.Web/certificates@2025-03-01' = [
   for host in customHostNames: {
     name: '${host}-${api.name}'
     location: location

@@ -7,6 +7,7 @@ using Drammers.Infrastructure.Persistence;
 using Drammers.Infrastructure.Persistence.Configurations;
 using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Content.Festival;
+using Drammers.SharedKernel.Identifiers;
 using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +67,40 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
 
     private const string Mini = "Minioren|Garde|Group|";
     private const string Solo = "Hoofdklasse|Garde|Solo|";
+
+    /// <summary>Een lid van de vereniging mag niet jureren: de eigen dansgroepen doen mee (organisatie, 2026-11-02).</summary>
+    [Fact]
+    public async Task Een_lid_van_de_vereniging_kan_geen_jurylid_worden()
+    {
+        const string email = "gerrie@example.com";
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            var member = new Drammers.Modules.Membership.Members.Member
+            {
+                Id = IdGenerator.NewId(),
+                MemberNumber = "9101",
+                FullName = "Gerrie Lid",
+                MembershipStatus = Drammers.Modules.Membership.Members.MembershipStatus.Active,
+            };
+            db.Members.Add(member);
+            await db.SaveChangesAsync();
+            var (userId, _) = await _api.CreateUserAsync(email);
+            await db.Users.Where(u => u.Id == userId).ExecuteUpdateAsync(x => x.SetProperty(u => u.MemberId, member.Id));
+        }
+
+        var refused = await _org.PostAsJsonAsync("/api/v1/admin/dance-festival/jury", new { name = "Gerrie Lid", email, headJury = false });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        Assert.Contains("lid van de vereniging", await refused.Content.ReadAsStringAsync());
+
+        // En ook niet als hoofdjury, want de hoofdjury beoordeelt gewoon mee.
+        var refusedHead = await _org.PostAsJsonAsync("/api/v1/admin/dance-festival/jury", new { name = "Gerrie Lid", email, headJury = true });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refusedHead.StatusCode);
+
+        // Iemand van buiten de vereniging kan wel.
+        var ok = await _org.PostAsJsonAsync("/api/v1/admin/dance-festival/jury", new { name = "Wim Jurylid", email = "wim@example.com", headJury = false });
+        Assert.Equal(HttpStatusCode.Created, ok.StatusCode);
+    }
 
     [Fact]
     public async Task Per_categorie_jureren_indienen_uitslag_hoofdjury_en_prijsuitreiking()

@@ -1,5 +1,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
+import TabLayout from '../app/(tabs)/_layout';
+import HomeScreen from '../app/(tabs)/index';
 import MeerScreen from '../app/(tabs)/meer';
 import FestivalBeoordelenScreen from '../app/dansgardefestival-jury/beoordelen';
 import HeadJuryScreen from '../app/dansgardefestival-jury/hoofdjury';
@@ -17,15 +19,17 @@ const routes = {
   '(tabs)/meer': MeerScreen,
 };
 
-const me = (permissions: string[]) => ({
+const me = (permissions: string[], extra: { memberId?: string | null; roles?: { code: string; name: string }[] } = {}) => ({
   id: 'u-1',
   email: 'merel@example.com',
   displayName: 'Merel',
-  memberId: null,
-  roles: [],
+  memberId: extra.memberId ?? null,
+  roles: extra.roles ?? [],
   permissions,
   features: {},
 });
+
+const juryRole = [{ code: 'jury-dansgardefestival', name: 'Jury dansgardefestival' }];
 
 const category = (key: string, name: string, solo: boolean, dances: number, submitted: boolean, current: boolean) => ({
   key,
@@ -158,5 +162,55 @@ describe('Jureren dansgardefestival', () => {
     expect(alert).toHaveBeenCalledWith('Prijsuitreiking afgerond?', expect.any(String), expect.any(Array));
     await waitFor(() => expect(requests('/festival-jury/head/awards', 'POST')).toHaveLength(1));
     alert.mockRestore();
+  });
+});
+
+/** 2026-11-02: jury-modus — een jurylid van buiten de vereniging ziet alleen het jureren en een uitlogknop. */
+describe('Jury-modus', () => {
+  const juryRoutes = {
+    '(tabs)/_layout': TabLayout,
+    '(tabs)/index': HomeScreen,
+    'dansgardefestival-jury/index': FestivalJuryScreen,
+  };
+
+  it('een jurylid zonder lidmaatschap komt na inloggen direct op het jureerscherm, zonder tabbalk', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['festival.judge'], { roles: juryRole }),
+      '/api/v1/festival-jury': session(),
+    });
+    await renderApp(juryRoutes, '/');
+
+    expect(await screen.findByText('Nu aan de beurt')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Uitloggen' })).toBeTruthy();
+    // Geen tabbalk en geen weg terug naar de rest van de app.
+    expect(screen.queryByText('Programma')).not.toBeNull(); // de kaart Programma hoort er wél te zijn
+    expect(screen.queryByRole('button', { name: 'Meer' })).toBeNull();
+    expect(screen.queryByText('De Vrolijke Drammers')).toBeNull();
+  });
+
+  it('een lid dat ook jurylid is houdt de gewone app', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['festival.judge'], { memberId: 'm-1', roles: juryRole }),
+      '/api/v1/festival-jury': session(),
+    });
+    await renderApp(juryRoutes, '/dansgardefestival-jury');
+
+    expect(await screen.findByText('Nu aan de beurt')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Uitloggen' })).toBeNull();
+    expect(screen.getByText('Meer')).toBeTruthy();
+  });
+
+  it('staat er geen festival klaar, dan een rustige melding met alleen uitloggen', async () => {
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['festival.judge'], { roles: juryRole }),
+      '/api/v1/festival-jury': { status: 404 },
+    });
+    await renderApp(juryRoutes, '/dansgardefestival-jury');
+
+    expect(await screen.findByText('Nog geen festival')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Uitloggen' })).toBeTruthy();
   });
 });

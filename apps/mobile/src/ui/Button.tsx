@@ -8,8 +8,8 @@ import { Icon, type IconName } from './Icon';
 interface ButtonProps {
   label: string;
   onPress?: () => void;
-  /** `primary` = rood gevuld; `secondary` = blauwe rand (Figma 04 Optocht). */
-  variant?: 'primary' | 'secondary';
+  /** `primary` = rood gevuld; `secondary` = blauwe rand (Figma 04 Optocht); `text` = alleen blauwe tekst (Figma Knop/Tekst). */
+  variant?: 'primary' | 'secondary' | 'text';
   icon?: IconName;
   disabled?: boolean;
   /** Rood telbolletje op de hoek, bijv. een openstaande actie ("1 actie nodig"). */
@@ -21,6 +21,13 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled, ba
   const { colors } = useTheme();
   const primary = variant === 'primary';
   const foreground = primary ? colors.onActionPrimary : colors.linkText;
+  // De tekstknop houdt dezelfde hoogte, zodat hij net zo makkelijk te raken blijft als een gewone knop.
+  const frame =
+    variant === 'text'
+      ? null
+      : primary
+        ? { backgroundColor: brand.red }
+        : { borderWidth: 1.5, borderColor: colors.linkText };
   return (
     <Pressable
       onPress={onPress}
@@ -30,7 +37,7 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled, ba
       accessibilityLabel={badge > 0 ? withCount(label, badge, badgeLabel) : undefined}
       style={({ pressed }) => [
         styles.button,
-        primary ? { backgroundColor: brand.red } : { borderWidth: 1.5, borderColor: colors.linkText },
+        frame,
         (pressed || disabled) && styles.dimmed,
       ]}
     >

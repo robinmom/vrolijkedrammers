@@ -93,6 +93,14 @@ public sealed class FestivalJudgingService(
             throw new DomainException(ErrorCodes.Validation, "Vul een naam (hooguit 100 tekens) en een geldig e-mailadres in.");
         }
 
+        // Een lid van de vereniging mag niet jureren: de eigen dansgroepen doen mee, dus dat wekt de schijn van
+        // partijdigheid (organisatie, 2026-11-02). Dit geldt ook voor de hoofdjury, want die beoordeelt gewoon mee.
+        if (await db.Users.AsNoTracking().AnyAsync(u => u.Email == address && u.MemberId != null && u.AccountStatus != AccountStatus.Deleted, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation,
+                "Dit e-mailadres hoort bij een lid van de vereniging. Een lid kan geen jurylid zijn, omdat de eigen dansgroepen meedoen.");
+        }
+
         var festival = await program.ActiveFestivalAsync(cancellationToken);
         var userId = await accounts.EnsureInvitedAccountAsync(address, cleanName, DefaultRoles.JuryDansgardefestival, cancellationToken);
         if (headJury)

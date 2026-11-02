@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import { api } from '../api/client';
 import { countUnsentLocalData } from '../auth/localData';
 import { clearLocalSession, getInstallationId } from '../auth/session';
@@ -43,4 +44,26 @@ export async function signOut(): Promise<void> {
 export async function unsentBeforeSignOut(): Promise<number> {
   await flushQueue().catch(() => undefined);
   return countUnsentLocalData();
+}
+
+/**
+ * Uitloggen met de waarschuwing erbij: staan er nog onverstuurde scans of jurypunten op dit toestel, dan wist uitloggen
+ * ze. Wordt gebruikt vanuit Mijn account én vanuit de jury-modus, waar uitloggen de enige andere knop is.
+ */
+export async function confirmSignOut(onSignedOut: () => void): Promise<void> {
+  const unsent = await unsentBeforeSignOut();
+  const leave = () => void signOut().then(onSignedOut);
+  if (unsent === 0) {
+    leave();
+    return;
+  }
+
+  Alert.alert(
+    'Nog niet verstuurd',
+    `Op deze telefoon staan nog ${unsent} ${unsent === 1 ? 'scan of jurypunt' : 'scans of jurypunten'} die nog niet zijn verstuurd. Uitloggen wist ze. Open eerst met internet het scan- of jureerscherm, zodat ze worden verstuurd.`,
+    [
+      { text: 'Annuleren', style: 'cancel' },
+      { text: 'Toch uitloggen', style: 'destructive', onPress: leave },
+    ],
+  );
 }

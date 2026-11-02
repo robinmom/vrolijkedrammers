@@ -147,7 +147,8 @@ function InviteDialog({ onClose }: { onClose: (message?: string) => void }) {
         }}
       >
         <p className="muted">
-          Het jurylid krijgt een e-mail met uitleg: inloggen in de app met dit e-mailadres en een code per e-mail.
+          Het jurylid krijgt een e-mail met uitleg: inloggen in de app met dit e-mailadres en een code per e-mail. Een
+          lid van de vereniging kan geen jurylid zijn, ook niet als hoofdjury: de eigen dansgroepen doen mee.
         </p>
         <Field label="Naam" required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
         <Field

@@ -1,9 +1,12 @@
 import { radius } from '@drammers/design-tokens';
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { ApiError } from '../../api/client';
 import { queryKeys, useFestivalJurySession, useMe } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { confirmSignOut } from '../../features/account';
 import { danceComplete } from '../../features/festivalJudging';
+import { useJuryOnly } from '../../features/juryMode';
 import { useFestivalJudging } from '../../features/useFestivalJudging';
 import { fullDate } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -12,6 +15,9 @@ import { AppText, BackLink, Badge, Button, Card, EmptyState, LargeTitleHeader, Q
 /**
  * F1 Jureren dansgardefestival (2026-10-15, Figma "💃 Dansgardefestival"): welke categorie nu aan de beurt is, wat daarna
  * komt en de voortgang in het programma. Alleen de dansen van de categorie die op het podium is.
+ *
+ * In de jury-modus (F0, 2026-11-02) is dit het eerste scherm na inloggen: geen tabbalk en geen weg terug, dus zonder
+ * terugkoppeling en met uitloggen als enige andere knop. Zie `useJuryOnly`.
  */
 export default function FestivalJuryScreen() {
   const { colors } = useTheme();
@@ -21,6 +27,11 @@ export default function FestivalJuryScreen() {
   const session = useFestivalJurySession(canJudge);
   const judging = useFestivalJudging(session.data, me.data?.id);
   const refresh = useRefresh([queryKeys.festivalJury]);
+  const juryOnly = useJuryOnly();
+  const logOut = () => void confirmSignOut(() => router.replace('/'));
+  // Buiten het festival om is er geen actief festival (404). In de jury-modus is dit het enige scherm, dus dan een
+  // rustige melding in plaats van een foutmelding.
+  const noFestival = session.error instanceof ApiError && session.error.status === 404;
   const s = session.data;
   const current = s?.current ?? null;
   const index = s && current ? s.categories.findIndex((c) => c.key === current.key) : -1;
@@ -30,13 +41,22 @@ export default function FestivalJuryScreen() {
 
   return (
     <Screen {...refresh}>
-      <BackLink label="Meer" />
+      {juryOnly ? null : <BackLink label="Meer" />}
       <View style={styles.titleRow}>
         <LargeTitleHeader title="Jureren" />
         {s ? <Badge label={`Jurylid ${s.jurorNumber}`} variant="highlight" /> : null}
       </View>
       {!canJudge && me.isSuccess ? (
         <EmptyState icon="uitslagen" title="Geen jurylid" message="Alleen juryleden van het Dansgardefestival kunnen hier jureren." />
+      ) : noFestival ? (
+        <View style={styles.content}>
+          <EmptyState
+            icon="uitslagen"
+            title="Nog geen festival"
+            message="Er staat nu geen Dansgardefestival klaar. Zodra de organisatie het programma heeft ingepland, zie je het hier."
+          />
+          {juryOnly ? <Button label="Uitloggen" variant="text" onPress={logOut} /> : null}
+        </View>
       ) : !s ? (
         <QueryState query={session} />
       ) : (
@@ -117,6 +137,7 @@ export default function FestivalJuryScreen() {
           {s.headJury ? (
             <Button label="Hoofdjury: uitslag" variant="secondary" icon="uitslagen" onPress={() => router.push('/dansgardefestival-jury/hoofdjury')} />
           ) : null}
+          {juryOnly ? <Button label="Uitloggen" variant="text" onPress={logOut} /> : null}
         </View>
       )}
     </Screen>

@@ -148,7 +148,7 @@ public static class FestivalPdf
             row.ConstantItem(90).Background(Gold).Padding(6).AlignCenter().Column(c =>
             {
                 c.Item().AlignCenter().Text($"{dance.Place}e van {dance.Of}").FontFamily("Poppins").Bold();
-                c.Item().AlignCenter().Text($"{dance.Total} punten").FontSize(8).FontColor(Muted);
+                c.Item().AlignCenter().Text($"{FestivalPoints.Format(dance.Total)} punten").FontSize(8).FontColor(Muted);
             });
         });
         card.Item().Table(table =>
@@ -171,10 +171,10 @@ public static class FestivalPdf
                 table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).PaddingHorizontal(4).Text($"Jurylid {juror.Number}").FontColor(JurorColors[(juror.Number - 1) % JurorColors.Length].Text).Bold();
                 foreach (var v in juror.Values)
                 {
-                    table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).AlignCenter().Text(v?.ToString(Dutch) ?? "–");
+                    table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).AlignCenter().Text(v is { } value ? FestivalPoints.Format(value) : "–");
                 }
 
-                table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).AlignCenter().Text(juror.Values.Sum(v => v ?? 0).ToString(Dutch)).Bold();
+                table.Cell().BorderBottom(0.5f).BorderColor(Line).PaddingVertical(3).AlignCenter().Text(FestivalPoints.Format(juror.Values.Sum(v => v ?? 0))).Bold();
             }
         });
         foreach (var comment in dance.Comments)
@@ -228,10 +228,10 @@ public static class FestivalPdf
                 table.Cell().Element(Cell).Text(r.Title is { Length: > 0 } title ? $"{title} ({r.Names})" : r.Names);
                 foreach (var v in new[] { r.Synchronicity, r.Choreography, r.Execution, r.Difficulty })
                 {
-                    table.Cell().Element(Cell).AlignRight().Text(v.ToString(Dutch));
+                    table.Cell().Element(Cell).AlignRight().Text(FestivalPoints.Format(v));
                 }
 
-                table.Cell().Element(Cell).AlignRight().Text(r.Total.ToString(Dutch)).Bold();
+                table.Cell().Element(Cell).AlignRight().Text(FestivalPoints.Format(r.Total)).Bold();
             }
         });
     }
@@ -271,11 +271,12 @@ public static class FestivalPdf
 /// <summary>Gegevens voor het juryrapport van één vereniging.</summary>
 public sealed record FestivalReport(Guid RegistrationId, string ClubName, FestivalResults Results, IReadOnlyList<ReportDance> Dances);
 
-/// <summary>Een eigen dans in het rapport: kop ("Gardedans · Solo · Senioren"), plaats, punten per jurylid en opmerkingen.</summary>
+/// <summary>Een eigen dans in het rapport: kop ("Gardedans · Solo · Hoofdklasse"), plaats, punten per jurylid en opmerkingen.</summary>
 public sealed record ReportDance(
-    string Heading, string ShortHeading, string Names, string Details, bool Solo, int Place, int Of, int Total, IReadOnlyList<ReportJuror> Jurors, IReadOnlyList<ReportComment> Comments);
+    string Heading, string ShortHeading, string Names, string Details, bool Solo, int Place, int Of, decimal Total, IReadOnlyList<ReportJuror> Jurors,
+    IReadOnlyList<ReportComment> Comments);
 
 /// <summary>Punten van één jurylid in de volgorde Synchroniteit (Ritme), Choreografie, Uitvoering, Moeilijkheid.</summary>
-public sealed record ReportJuror(int Number, IReadOnlyList<int?> Values);
+public sealed record ReportJuror(int Number, IReadOnlyList<decimal?> Values);
 
 public sealed record ReportComment(int JurorNumber, string Text);

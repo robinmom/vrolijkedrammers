@@ -10,6 +10,13 @@ export function formatDate(value: string | null | undefined): string {
   return value ? date.format(new Date(`${value}T12:00:00Z`)) : '—';
 }
 
+const points = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 1 });
+
+/** Jurypunten: hele of halve punten, zonder nul achter de komma ("7,5" en "8"). */
+export function formatPoints(value: number): string {
+  return points.format(value);
+}
+
 export const accountStatusLabels: Record<string, string> = {
   Active: 'Actief',
   Blocked: 'Geblokkeerd',

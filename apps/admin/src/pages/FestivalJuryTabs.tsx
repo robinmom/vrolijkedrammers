@@ -5,7 +5,7 @@ import { useApiMutation, type Schemas } from '../api/hooks';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Checkbox, Field } from '../components/Field';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
-import { formatDateTime } from '../format';
+import { formatDateTime, formatPoints } from '../format';
 
 type Category = Schemas['ResultCategory'];
 
@@ -525,7 +525,7 @@ function CategoryDetail({ category }: { category: Category }) {
               <strong>{row.title ? `${row.title} · ${row.names}` : row.names}</strong>
               <span className="muted small-text"> {row.club}</span>
             </span>
-            <span className="ranking-total">{row.total}</span>
+            <span className="ranking-total">{formatPoints(row.total)}</span>
           </li>
         ))}
       </ol>

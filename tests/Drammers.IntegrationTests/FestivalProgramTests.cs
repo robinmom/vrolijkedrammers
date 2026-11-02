@@ -23,7 +23,7 @@ public class FestivalProgramTests(SqlServerFixture sql) : IAsyncLifetime
         _org = _api.ClientFor((await _api.CreateUserAsync("chantal@example.com", DefaultRoles.Dansgardefestival)).ObjectId);
         using var scope = _api.Services.CreateScope();
         await SeedAsync(scope.ServiceProvider.GetRequiredService<DrammersDbContext>(),
-            new("De Deurdouwers", DanceCategory.Senioren, DanceType.Garde, DanceFormat.Solo, "Lynn Knuman"),
+            new("De Deurdouwers", DanceCategory.Hoofdklasse, DanceType.Garde, DanceFormat.Solo, "Lynn Knuman"),
             new("De Deurdouwers", DanceCategory.Junioren, DanceType.Garde, DanceFormat.Group, "ShowStars"),
             new("De Vrolijke Drammers", DanceCategory.Junioren, DanceType.Garde, DanceFormat.Group, "Junioren Drammers"),
             new("DG Dynamite", DanceCategory.Junioren, DanceType.Show, DanceFormat.Duo, "Naomy & Fenna", ShowStyle.Character, "Pettycoat"),
@@ -42,23 +42,23 @@ public class FestivalProgramTests(SqlServerFixture sql) : IAsyncLifetime
     public async Task Categorieen_in_standaardvolgorde_met_aansluitende_tijden()
     {
         var program = await ProgramAsync();
-        Assert.Equal(["Opening", "Minioren Garde", "Junioren Garde", "Senioren Solo Garde", "Junioren Duo Karakter", "Prijsuitreiking"], Titles(program));
+        Assert.Equal(["Opening", "Minioren Garde", "Junioren Garde", "Hoofdklasse Solo Garde", "Junioren Duo Karakter", "Prijsuitreiking"], Titles(program));
         Assert.Equal(("10:30", "10:35"), (Item(program, "Opening").GetProperty("start").GetString(), Item(program, "Opening").GetProperty("end").GetString()));
         var junioren = Item(program, "Junioren Garde");
         Assert.Equal(("10:39", "10:47"), (junioren.GetProperty("start").GetString(), junioren.GetProperty("end").GetString()));
         Assert.Equal(["10:39", "10:43"], junioren.GetProperty("dances").EnumerateArray().Select(d => d.GetProperty("time").GetString()!).ToArray());
-        Assert.True(Item(program, "Senioren Solo Garde").GetProperty("solo").GetBoolean());
-        Assert.Equal(5, Item(program, "Senioren Solo Garde").GetProperty("minutes").GetInt32());
+        Assert.True(Item(program, "Hoofdklasse Solo Garde").GetProperty("solo").GetBoolean());
+        Assert.Equal(5, Item(program, "Hoofdklasse Solo Garde").GetProperty("minutes").GetInt32());
 
         // Pauze na Junioren Garde, starttijd met de hand, minuten per dans aanpassen.
         var juniorenId = junioren.GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.Created, (await _org.PostAsJsonAsync("/api/v1/admin/dance-festival/program/blocks", new { title = "Pauze", minutes = 15, afterItemId = juniorenId })).StatusCode);
-        var solo = Item(await ProgramAsync(), "Senioren Solo Garde").GetProperty("id").GetGuid();
+        var solo = Item(await ProgramAsync(), "Hoofdklasse Solo Garde").GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.NoContent, (await _org.PutAsJsonAsync($"/api/v1/admin/dance-festival/program/items/{solo}", new { start = "11.30", minutes = 6 })).StatusCode);
         program = await ProgramAsync();
         Assert.Equal(("10:47", "11:02"), (Item(program, "Pauze").GetProperty("start").GetString(), Item(program, "Pauze").GetProperty("end").GetString()));
-        Assert.Equal(("11:30", "11:36", true), (Item(program, "Senioren Solo Garde").GetProperty("start").GetString(),
-            Item(program, "Senioren Solo Garde").GetProperty("end").GetString(), Item(program, "Senioren Solo Garde").GetProperty("startOverridden").GetBoolean()));
+        Assert.Equal(("11:30", "11:36", true), (Item(program, "Hoofdklasse Solo Garde").GetProperty("start").GetString(),
+            Item(program, "Hoofdklasse Solo Garde").GetProperty("end").GetString(), Item(program, "Hoofdklasse Solo Garde").GetProperty("startOverridden").GetBoolean()));
         Assert.Equal("11:36", Item(program, "Junioren Duo Karakter").GetProperty("start").GetString());
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _org.PutAsJsonAsync($"/api/v1/admin/dance-festival/program/items/{solo}", new { start = "25:99", minutes = 6 })).StatusCode);
     }

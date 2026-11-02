@@ -35095,7 +35095,7 @@
           "Minioren",
           "Junioren",
           "Jeugd",
-          "Senioren"
+          "Hoofdklasse"
         ],
         "description": "Categorie op gemiddelde leeftijd (reglement art. 1)."
       },
@@ -36549,7 +36549,7 @@
           "Execution",
           "Difficulty"
         ],
-        "description": "De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10. Bij solo heet het eerste onderdeel Ritme in\nplaats van Synchroniteit (zoals in de uitslag-Excel van 2026)."
+        "description": "De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10 in halve punten (zie\nFestivalPoints). Bij solo heet het eerste onderdeel Ritme in plaats van Synchroniteit, omdat er bij een\nsolodans niets te synchroniseren valt (bevestigd door de organisatie op 2026-11-02)."
       },
       "FestivalDecision": {
         "enum": [
@@ -37372,8 +37372,8 @@
             "$ref": "#/components/schemas/FestivalCriterion"
           },
           "value": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "scoredAt": {
             "type": "string",
@@ -37425,8 +37425,8 @@
             "$ref": "#/components/schemas/FestivalCriterion"
           },
           "value": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "scoredAt": {
             "type": "string",
@@ -47124,37 +47124,37 @@
             ]
           },
           "synchronicity": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "choreography": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "execution": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "difficulty": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "total": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "perJuror": {
             "type": "array",
             "items": {
               "type": [
                 "null",
-                "integer"
+                "number"
               ],
-              "format": "int32"
+              "format": "double"
             }
           }
         },
-        "description": "Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid."
+        "description": "Een dans in de uitslag: punten per onderdeel (som over de juryleden) en per jurylid, in halve punten."
       },
       "ResultRowResponse": {
         "required": [

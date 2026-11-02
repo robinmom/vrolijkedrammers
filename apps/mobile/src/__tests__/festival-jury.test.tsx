@@ -46,10 +46,10 @@ const session = (submitted = false) => ({
   headJury: true,
   categories: [
     category('Minioren|Garde|Group|', 'Minioren Garde', false, 2, submitted, !submitted),
-    category('Senioren|Garde|Solo|', 'Senioren Solo Garde', true, 1, false, submitted),
+    category('Hoofdklasse|Garde|Solo|', 'Hoofdklasse Solo Garde', true, 1, false, submitted),
   ],
   current: submitted
-    ? category('Senioren|Garde|Solo|', 'Senioren Solo Garde', true, 1, false, true)
+    ? category('Hoofdklasse|Garde|Solo|', 'Hoofdklasse Solo Garde', true, 1, false, true)
     : category('Minioren|Garde|Group|', 'Minioren Garde', false, 2, false, true),
   dances: submitted
     ? [{ entryId: 'e-3', number: 1, club: 'CV De Deurdouwers', names: 'Lynn Knuman', title: null, dancerCount: 1, averageAge: 16 }]
@@ -78,11 +78,11 @@ describe('Jureren dansgardefestival', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Jureren dansgardefestival' }));
     expect(await screen.findByText('Jurylid 2')).toBeTruthy();
     expect(screen.getAllByText('Minioren Garde').length).toBeGreaterThan(0);
-    expect(screen.getByText('Daarna: Senioren Solo Garde')).toBeTruthy();
+    expect(screen.getByText('Daarna: Hoofdklasse Solo Garde')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Hoofdjury: uitslag' })).toBeTruthy();
   });
 
-  it('beoordelen: vier onderdelen van 0 tot 10, totaal en opmerking worden verstuurd', async () => {
+  it('beoordelen: vier onderdelen in halve punten, totaal en opmerking worden verstuurd', async () => {
     mockApi({ ...api, '/api/v1/me': me(['festival.judge']), '/api/v1/festival-jury': session(), '/api/v1/festival-jury/scores': {} });
     await renderApp(routes, '/dansgardefestival-jury/beoordelen');
     expect(await screen.findByText('Dans 1 van 2')).toBeTruthy();
@@ -93,7 +93,9 @@ describe('Jureren dansgardefestival', () => {
     await fireEvent.changeText(screen.getAllByLabelText('Opmerking voor de vereniging')[0]!, 'Mooie lijnen');
     await waitFor(() => expect(requests('/festival-jury/scores', 'PUT').length).toBeGreaterThan(0), { timeout: 4000 });
     const bodies = await Promise.all(requests('/festival-jury/scores', 'PUT').map((r) => r.json()));
-    expect(bodies.flatMap((b) => b.scores)).toContainEqual(expect.objectContaining({ entryId: 'e-1', criterion: 'Execution', value: 6 }));
+    // Twee keer vegen vanaf het midden: halve punten, dus 5,5 en niet 7 (2026-11-02).
+    expect(bodies.flatMap((b) => b.scores)).toContainEqual(expect.objectContaining({ entryId: 'e-1', criterion: 'Execution', value: 5.5 }));
+    expect(screen.getAllByText('5,5').length).toBeGreaterThan(0);
     expect(bodies.flatMap((b) => b.comments)).toContainEqual({ entryId: 'e-1', text: 'Mooie lijnen' });
   });
 
@@ -109,11 +111,11 @@ describe('Jureren dansgardefestival', () => {
       '/api/v1/festival-jury/submit': {},
     });
     await renderApp(routes, '/dansgardefestival-jury/beoordelen?dans=1');
-    expect(await screen.findByText('Klaar met Senioren Solo Garde?')).toBeTruthy();
+    expect(await screen.findByText('Klaar met Hoofdklasse Solo Garde?')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Categorie indienen' }));
-    expect(alert).toHaveBeenCalledWith('Senioren Solo Garde indienen?', expect.any(String), expect.any(Array));
+    expect(alert).toHaveBeenCalledWith('Hoofdklasse Solo Garde indienen?', expect.any(String), expect.any(Array));
     await waitFor(() => expect(requests('/festival-jury/submit', 'POST')).toHaveLength(1));
-    expect(await requests('/festival-jury/submit', 'POST')[0]!.json()).toEqual({ categoryKey: 'Senioren|Garde|Solo|' });
+    expect(await requests('/festival-jury/submit', 'POST')[0]!.json()).toEqual({ categoryKey: 'Hoofdklasse|Garde|Solo|' });
     alert.mockRestore();
   });
 

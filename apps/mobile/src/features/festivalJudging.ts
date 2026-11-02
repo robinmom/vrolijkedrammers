@@ -8,7 +8,10 @@ export type FestivalSession = components['schemas']['FestivalJurySession'];
 export type FestivalDance = components['schemas']['JuryDance'];
 export type HeadJury = components['schemas']['HeadJuryView'];
 
-/** De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10; bij solo heet het eerste Ritme. */
+/**
+ * De vier onderdelen van het juryformulier (2026-10-15), elk 0 tot en met 10 in halve punten; bij solo heet het eerste
+ * Ritme, omdat er bij een solodans niets te synchroniseren valt.
+ */
 export const festivalCriteria = (solo: boolean): { key: FestivalCriterion; label: string }[] => [
   { key: 'Synchronicity', label: solo ? 'Ritme' : 'Synchroniteit' },
   { key: 'Choreography', label: 'Choreografie' },
@@ -17,6 +20,12 @@ export const festivalCriteria = (solo: boolean): { key: FestivalCriterion; label
 ];
 
 export const MAX_SCORE = 10;
+
+/** Halve punten mogen (organisatie, 2026-11-02); in de praktijk geven juryleden meestal hele punten. */
+export const SCORE_STEP = 0.5;
+
+/** Punten in het Nederlands zonder nul achter de komma: "7,5" en "8". */
+export const formatPoints = (value: number) => String(value).replace('.', ',');
 
 /** Punten zoals de telefoon ze bewaart; `synced` = de server heeft deze versie. */
 export interface LocalFestivalScore {
@@ -98,7 +107,9 @@ export function danceComplete(scores: Map<string, LocalFestivalScore>, entryId: 
 }
 
 export function danceTotal(scores: Map<string, LocalFestivalScore>, entryId: string): number {
-  return festivalCriteria(false).reduce((sum, c) => sum + (scores.get(festivalScoreKey(entryId, c.key))?.value ?? 0), 0);
+  const total = festivalCriteria(false).reduce((sum, c) => sum + (scores.get(festivalScoreKey(entryId, c.key))?.value ?? 0), 0);
+  // Halve punten: de rekenfoutjes van komma-getallen eruit.
+  return Math.round(total * 10) / 10;
 }
 
 export const danceLabel = (d: FestivalDance) => (d.title ? `${d.title} · ${d.names}` : d.names);

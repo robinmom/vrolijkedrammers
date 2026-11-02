@@ -31,7 +31,7 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
             new("De Vrolijke Drammers", DanceCategory.Minioren, DanceType.Garde, DanceFormat.Group, "Mini Drammers"),
             new("DG Dynamite", DanceCategory.Minioren, DanceType.Garde, DanceFormat.Group, "Flames"),
             new("De Deurdouwers", DanceCategory.Minioren, DanceType.Garde, DanceFormat.Group, "ShowSparks"),
-            new("De Deurdouwers", DanceCategory.Senioren, DanceType.Garde, DanceFormat.Solo, "Lynn Knuman"));
+            new("De Deurdouwers", DanceCategory.Hoofdklasse, DanceType.Garde, DanceFormat.Solo, "Lynn Knuman"));
     }
 
     public async Task DisposeAsync() => await _api.DisposeAsync();
@@ -53,7 +53,7 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     /// <summary>Alle vier onderdelen van één dans; de waarden voor synchroniteit, choreografie, uitvoering en moeilijkheid.</summary>
-    private Task<HttpResponseMessage> ScoreAsync(HttpClient juror, string dance, int sync, int choreo, int exec, int diff, string? comment = null) =>
+    private Task<HttpResponseMessage> ScoreAsync(HttpClient juror, string dance, decimal sync, decimal choreo, decimal exec, decimal diff, string? comment = null) =>
         juror.PutAsJsonAsync("/api/v1/festival-jury/scores", new
         {
             scores = new[] { ("Synchronicity", sync), ("Choreography", choreo), ("Execution", exec), ("Difficulty", diff) }
@@ -65,7 +65,7 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
         juror.PostAsJsonAsync("/api/v1/festival-jury/submit", new { categoryKey = key });
 
     private const string Mini = "Minioren|Garde|Group|";
-    private const string Solo = "Senioren|Garde|Solo|";
+    private const string Solo = "Hoofdklasse|Garde|Solo|";
 
     [Fact]
     public async Task Per_categorie_jureren_indienen_uitslag_hoofdjury_en_prijsuitreiking()
@@ -79,6 +79,9 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.True(session.GetProperty("headJury").GetBoolean());
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await ScoreAsync(j1, "Mini Drammers", 11, 8, 8, 8)).StatusCode);
 
+        // Halve punten mogen, kleinere stappen niet (2026-11-02).
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await ScoreAsync(j1, "Mini Drammers", 7.25m, 8, 8, 8)).StatusCode);
+
         // Indienen pas als alle dansen vier onderdelen hebben.
         Assert.Equal(HttpStatusCode.NoContent, (await ScoreAsync(j1, "Mini Drammers", 8, 8, 9, 8, "Mooie lijnen")).StatusCode);
         var incomplete = await SubmitAsync(j1, Mini);
@@ -89,19 +92,19 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NoContent, (await SubmitAsync(j1, Mini)).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await ScoreAsync(j1, "Flames", 1, 1, 1, 1)).StatusCode);
         session = await j1.GetFromJsonAsync<JsonElement>("/api/v1/festival-jury");
-        Assert.Equal("Senioren Solo Garde", session.GetProperty("current").GetProperty("name").GetString());
+        Assert.Equal("Hoofdklasse Solo Garde", session.GetProperty("current").GetProperty("name").GetString());
         Assert.True(session.GetProperty("current").GetProperty("solo").GetBoolean());
 
         // Uitslag: Mini Drammers en Flames gelijk op totaal; Mini Drammers heeft de hoogste uitvoering.
         await ScoreAsync(j2, "Mini Drammers", 7, 7, 8, 7);
         await ScoreAsync(j2, "Flames", 7, 7, 7, 8);
-        await ScoreAsync(j2, "ShowSparks", 6, 6, 6, 6);
+        await ScoreAsync(j2, "ShowSparks", 6.5m, 6, 6, 6);
         await SubmitAsync(j2, Mini);
         var results = await _org.GetFromJsonAsync<JsonElement>("/api/v1/admin/dance-festival/results");
         var mini = results.GetProperty("categories").EnumerateArray().Single(c => c.GetProperty("key").GetString() == Mini);
         Assert.True(mini.GetProperty("complete").GetBoolean());
-        var rows = mini.GetProperty("rows").EnumerateArray().Select(r => (r.GetProperty("names").GetString(), r.GetProperty("place").GetInt32(), r.GetProperty("total").GetInt32())).ToArray();
-        Assert.Equal([("Mini Drammers", 1, 62), ("Flames", 2, 62), ("ShowSparks", 3, 52)], rows);
+        var rows = mini.GetProperty("rows").EnumerateArray().Select(r => (r.GetProperty("names").GetString(), r.GetProperty("place").GetInt32(), r.GetProperty("total").GetDecimal())).ToArray();
+        Assert.Equal([("Mini Drammers", 1, 62m), ("Flames", 2, 62m), ("ShowSparks", 3, 52.5m)], rows);
         Assert.False(results.GetProperty("complete").GetBoolean());
 
         // Naar de hoofdjury: zonder force niet zolang de solo nog open is.
@@ -157,7 +160,7 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
         {
             await ScoreAsync(j, "Mini Drammers", 8, 8, 9 - n, 8, n == 0 ? "Mooie lijnen in de rijen" : null);
             await ScoreAsync(j, "Flames", 7, 7, 7, 7);
-            await ScoreAsync(j, "ShowSparks", 6, 6, 6, 6);
+            await ScoreAsync(j, "ShowSparks", n == 0 ? 6.5m : 6, 6, 6, 6);
             await SubmitAsync(j, Mini);
             await ScoreAsync(j, "Lynn Knuman", 9, 9, 9, 9, n == 1 ? "Sterke uitstraling" : null);
             await SubmitAsync(j, Solo);
@@ -176,6 +179,9 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
             Assert.Equal("Uitslag Dansgardefestival 2027", news.Title);
             Assert.True(news.ShowOnWebsite);
             Assert.Contains("| 1 | De Vrolijke Drammers | Mini Drammers | 65 |", news.Body);
+
+            // Halve punten in het Nederlands, zonder nul achter de komma.
+            Assert.Contains("| 3 | De Deurdouwers | ShowSparks | 48,5 |", news.Body);
             Assert.Contains("## Deel 3 · Jeugd en hoofdklasse", news.Body);
         }
 
@@ -187,7 +193,7 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
         await RunReportMailsAsync();
         var deurdouwers = Assert.Single(_api.Emails.Sent, m => m.To == "dedeurdouwers@example.com");
         Assert.Equal(("dansgardefestival", true), (deurdouwers.From, deurdouwers.ViaMailbox));
-        Assert.Contains("Senioren", deurdouwers.PlainText);
+        Assert.Contains("Hoofdklasse", deurdouwers.PlainText);
         var pdf = Assert.Single(deurdouwers.Attachments!);
         Assert.Equal("application/pdf", pdf.ContentType);
 
@@ -197,7 +203,7 @@ public class FestivalJuryTests(SqlServerFixture sql) : IAsyncLifetime
             var publisher = scope.ServiceProvider.GetRequiredService<FestivalResultsPublisher>();
             var registrationId = scope.ServiceProvider.GetRequiredService<DrammersDbContext>().DanceFestivalRegistrations.Single(r => r.ClubName == "De Deurdouwers").Id;
             var report = (await publisher.ReportAsync(registrationId, CancellationToken.None))!;
-            Assert.Equal(["Gardedans · Groep · Minioren", "Gardedans · Solo · Senioren"], report.Dances.Select(d => d.Heading).Order().ToArray());
+            Assert.Equal(["Gardedans · Groep · Minioren", "Gardedans · Solo · Hoofdklasse"], report.Dances.Select(d => d.Heading).Order().ToArray());
             var solo = report.Dances.Single(d => d.Solo);
             Assert.Equal((2, "Sterke uitstraling"), (Assert.Single(solo.Comments).JurorNumber, solo.Comments[0].Text));
             Assert.DoesNotContain(report.Dances, d => d.Comments.Any(c => c.Text.Contains("Mooie lijnen", StringComparison.Ordinal)));

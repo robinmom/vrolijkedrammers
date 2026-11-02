@@ -5,6 +5,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { api, unwrap } from '../../api/client';
 import { queryKeys, useHeadJury, useMe } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
+import { formatPoints } from '../../features/festivalJudging';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, EmptyState, FilterChips, LargeTitleHeader, QueryState, Screen } from '../../ui';
 
@@ -75,7 +76,7 @@ export default function HeadJuryScreen() {
                   key={r.entryId}
                   style={[styles.row, r.place === 1 && { backgroundColor: `${brand.yellow}40`, borderRadius: radius.sm }]}
                   accessible
-                  accessibilityLabel={`${r.place}e plaats: ${r.title ? `${r.title}, ` : ''}${r.names}, ${r.club}, ${r.total} punten`}
+                  accessibilityLabel={`${r.place}e plaats: ${r.title ? `${r.title}, ` : ''}${r.names}, ${r.club}, ${formatPoints(r.total)} punten`}
                 >
                   <AppText variant="cardTitle" style={styles.place}>
                     {r.place}e
@@ -86,7 +87,7 @@ export default function HeadJuryScreen() {
                       {r.club}
                     </AppText>
                   </View>
-                  <AppText variant="bodyStrong">{r.total} pnt</AppText>
+                  <AppText variant="bodyStrong">{formatPoints(r.total)} pnt</AppText>
                 </View>
               ))}
             </Card>

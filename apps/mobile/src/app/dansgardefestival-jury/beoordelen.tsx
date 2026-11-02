@@ -6,7 +6,17 @@ import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, ApiError, unwrap } from '../../api/client';
 import { queryKeys, useFestivalJurySession, useMe } from '../../api/queries';
-import { danceComplete, danceLabel, danceTotal, festivalCriteria, festivalScoreKey, MAX_SCORE, type FestivalDance } from '../../features/festivalJudging';
+import {
+  danceComplete,
+  danceLabel,
+  danceTotal,
+  festivalCriteria,
+  festivalScoreKey,
+  formatPoints,
+  MAX_SCORE,
+  SCORE_STEP,
+  type FestivalDance,
+} from '../../features/festivalJudging';
 import { useFestivalJudging } from '../../features/useFestivalJudging';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider, TextField } from '../../ui';
@@ -15,7 +25,7 @@ type Page = { kind: 'dance'; dance: FestivalDance } | { kind: 'end' };
 
 /**
  * F2–F6 Beoordelen op het Dansgardefestival (2026-10-15, Figma "💃 Dansgardefestival"): swipen tussen de dansen van de
- * categorie die aan de beurt is. Per dans vier onderdelen van 0 tot 10 (solo: Ritme), het totaal en een opmerking voor
+ * categorie die aan de beurt is. Per dans vier onderdelen van 0 tot 10 in halve punten (solo: Ritme), het totaal en een opmerking voor
  * de vereniging. Aan het einde de categorie indienen; dat kan pas als alle dansen punten hebben.
  */
 export default function FestivalBeoordelenScreen() {
@@ -169,6 +179,7 @@ export default function FestivalBeoordelenScreen() {
                     key={c.key}
                     label={c.label}
                     max={MAX_SCORE}
+                    step={SCORE_STEP}
                     value={judging.scores.get(festivalScoreKey(item.dance.entryId, c.key))?.value ?? null}
                     onChange={(v) => judging.setScore(item.dance.entryId, c.key, v)}
                     onSlidingStart={() => setSliding(true)}
@@ -180,7 +191,7 @@ export default function FestivalBeoordelenScreen() {
                     Totaal deze dans
                   </AppText>
                   <AppText variant="cardTitle">
-                    {danceTotal(judging.scores, item.dance.entryId)} / {criteria.length * MAX_SCORE}
+                    {formatPoints(danceTotal(judging.scores, item.dance.entryId))} / {criteria.length * MAX_SCORE}
                   </AppText>
                 </View>
                 <TextField
@@ -213,7 +224,7 @@ export default function FestivalBeoordelenScreen() {
                         {d.number} · {d.names}
                       </AppText>
                       <AppText variant="link" color={complete ? colors.successText : colors.accentText}>
-                        {complete ? `${danceTotal(judging.scores, d.entryId)} ✓` : 'open'}
+                        {complete ? `${formatPoints(danceTotal(judging.scores, d.entryId))} ✓` : 'open'}
                       </AppText>
                     </Pressable>
                   );

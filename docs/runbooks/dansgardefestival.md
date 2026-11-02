@@ -128,13 +128,21 @@ De rapporten komen van **dansgardefestival@vrolijkedrammers.nl** (een gedeelde m
 
    Zie runbook mailing-via-mailbox.
 
+## Antwoorden van de organisatie (2026-11-02)
+
+- **Hoofdklasse, niet Senioren.** De categorie 16+ heet overal Hoofdklasse: op het inschrijfformulier, in het programma,
+  in de uitslag en in het rapport. De naam staat als tekst in de database, dus de migratie `HoofdklasseHalvePunten`
+  werkt de categorie van elke dans en de categoriesleutels van het programma en de ingediende categorieën bij. Oude
+  versies van een inschrijving (JSON) blijven staan zoals ze toen waren, dus daar kan nog "Senioren" staan.
+- **Ritme bij solo klopt.** Bij een solodans valt er niets te synchroniseren; de app en de uitslag noemen het eerste
+  onderdeel daar Ritme. De uitslag-Excel van 2026 deed dat nog niet, onze overzichten wel.
+- **Punten per jurylid mogen in het rapport.** De jury is anoniem (Jurylid 1, 2, 3), de punten per jurylid mogen de
+  verenigingen zien. Dat was al zo.
+- **Halve punten mogen.** Juryleden geven 0 tot en met 10 in stappen van een half punt; in de praktijk gebeurt dat niet
+  vaak. Punten staan met een komma en zonder nul achter de komma: "7,5" en "8".
+
 ## Open punten (te bespreken met de organisatie)
 
-- **Senioren of Hoofdklasse:** het inschrijfformulier zegt Senioren (16+), de overzichten Hoofdklasse. Nu staan beide
-  (de categorie heet in het programma "Senioren …", deel 3 heet "Jeugd en hoofdklasse").
-- **Ritme bij solo:** de app gebruikt bij solo Ritme in plaats van Synchroniteit, zoals de uitslag-Excel van 2026.
-  Klopt dat?
-- **Gelijke stand:** nu wint de hoogste Uitvoering, anders een gedeelde plaats.
-- **Inhoud van het rapport:** de verenigingen zien de punten per jurylid. Is dat gewenst, of alleen plaatsen en
-  opmerkingen?
-- **Halve punten:** nu alleen hele punten van 0 tot 10.
+- **Gelijke stand:** het reglement beschrijft hier een eigen regel voor, waarbij naar meerdere onderdelen van de
+  beoordeling wordt gekeken. Wat de app nu doet (hoogste Uitvoering, anders een gedeelde plaats) is een aanname en moet
+  nog langs die regel gelegd worden.

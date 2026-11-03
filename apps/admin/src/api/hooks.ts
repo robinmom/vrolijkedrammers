@@ -121,6 +121,15 @@ export function useAppConfigSettings() {
   });
 }
 
+/** Alle zichtbare teksten van de app met de aanpassing erbij (Beheer → App-teksten). */
+export function useAppTexts() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['app-texts'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/config/app-texts')).data),
+  });
+}
+
 export function useFeatureFlags(enabled = true) {
   const api = useApi();
   return useQuery({

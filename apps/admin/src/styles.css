@@ -2765,3 +2765,17 @@ html[data-environment='acc'] .env-banner {
   gap: 0.3rem;
   padding-top: 0.2rem;
 }
+
+/* Beheer → App-teksten: per tekst het invoerveld met de knoppen eronder. */
+.app-text {
+  padding: 12px 0;
+  border-top: 1px solid var(--dvd-border);
+}
+
+.app-text:first-child {
+  border-top: 0;
+}
+
+.app-text .actions {
+  justify-content: flex-start;
+}

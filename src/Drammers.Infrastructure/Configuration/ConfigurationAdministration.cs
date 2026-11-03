@@ -55,6 +55,48 @@ public sealed class ConfigurationAdministration(DrammersDbContext db, IAuditLogg
         appConfig.Invalidate();
     }
 
+    /// <summary>
+    /// Zet een aangepaste tekst voor de app. <paramref name="original"/> is de tekst zoals die in de app staat: daar
+    /// zoekt het toestel de vervanging mee op, dus die gaat mee de tabel in.
+    /// </summary>
+    public async Task SetAppTextAsync(string key, string original, string value, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var text = await db.AppTextOverrides.SingleOrDefaultAsync(t => t.Key == key, cancellationToken);
+        var before = text is null ? null : JsonSerializer.Serialize(new { text.Original, text.Value }, Json);
+        if (text is null)
+        {
+            db.AppTextOverrides.Add(new AppTextOverride { Key = key, Original = original, Value = value });
+        }
+        else
+        {
+            text.Original = original;
+            text.Value = value;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("config.app-text.changed", "AppTextOverride", key, before,
+            JsonSerializer.Serialize(new { original, value }, Json)), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    /// <summary>Haalt de aanpassing weg; de app toont daarna weer de tekst uit de bundel.</summary>
+    public async Task ResetAppTextAsync(string key, CancellationToken cancellationToken)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var text = await db.AppTextOverrides.SingleOrDefaultAsync(t => t.Key == key, cancellationToken);
+        if (text is null)
+        {
+            return;
+        }
+
+        var before = JsonSerializer.Serialize(new { text.Original, text.Value }, Json);
+        db.AppTextOverrides.Remove(text);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("config.app-text.reset", "AppTextOverride", key, before, null), cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
     public async Task SetFeatureFlagAsync(string key, bool enabled, string? description, CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);

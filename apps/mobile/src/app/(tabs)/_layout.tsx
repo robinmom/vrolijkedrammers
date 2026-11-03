@@ -3,6 +3,7 @@ import { Redirect, Tabs } from 'expo-router';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useMe } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
+import { useText } from '../../content/texts';
 import { useParadeActionCount } from '../../features/badges';
 import { useJuryOnly } from '../../features/juryMode';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -31,6 +32,7 @@ const tabs: { name: string; title: string; icon: IconName }[] = [
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const text = useText();
   // Rood bolletje op Optocht als de optochtcommissie om een aanvulling vraagt.
   const paradeActions = useParadeActionCount();
   // Jury-modus: een jurylid van het Dansgardefestival krijgt geen tabbalk maar meteen het jureerscherm.
@@ -64,7 +66,8 @@ export default function TabLayout() {
           key={tab.name}
           name={tab.name}
           options={{
-            title: tab.title,
+            // De tabbalk tekent zijn label zelf, dus hier de tekst uit het portal (content/texts.tsx).
+            title: text(tab.title),
             ...(tab.name === 'optocht' && paradeActions > 0
               ? { tabBarBadge: paradeActions, tabBarBadgeStyle: { backgroundColor: brand.red, color: '#FFFFFF', fontFamily: fontFamily.body.semibold } }
               : {}),

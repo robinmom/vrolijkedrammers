@@ -5,10 +5,11 @@ import { createEventInCalendarAsync } from 'expo-calendar/legacy';
 import { router, useFocusEffect } from 'expo-router';
 import { usePreventScreenCapture, useScreenshotListener } from 'expo-screen-capture';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { queryKeys, useChildTicket, useMyTicket } from '../api/queries';
 import { useSessionStatus } from '../auth/useSession';
+import { showAlert } from '../lib/alert';
 import {
   bindThisDevice,
   deviceCode,
@@ -68,7 +69,7 @@ export function TicketScreen({
   usePreventScreenCapture();
   useScreenshotListener(() => {
     if (Platform.OS === 'ios') {
-      Alert.alert(
+      showAlert(
         'Schermafdruk werkt niet',
         forTokens
           ? 'Bij de kassa werkt alleen de live code: die verandert elke 30 seconden. De munten-QR is niet te delen.'

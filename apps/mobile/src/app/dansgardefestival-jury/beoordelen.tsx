@@ -2,7 +2,7 @@ import { brand, radius } from '@drammers/design-tokens';
 import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, ApiError, unwrap } from '../../api/client';
 import { queryKeys, useFestivalJurySession, useMe } from '../../api/queries';
@@ -18,6 +18,7 @@ import {
   type FestivalDance,
 } from '../../features/festivalJudging';
 import { useFestivalJudging } from '../../features/useFestivalJudging';
+import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider, TextField } from '../../ui';
 
@@ -115,7 +116,7 @@ export default function FestivalBeoordelenScreen() {
     return p?.kind === 'dance' ? p.dance.names : p ? 'Einde' : null;
   };
   const confirmSubmit = () =>
-    Alert.alert(`${category.name} indienen?`, `Je dient de punten en opmerkingen in van ${s.dances.length} ${s.dances.length === 1 ? 'dans' : 'dansen'}. Daarna kun je ze niet meer wijzigen.`, [
+    showAlert(`${category.name} indienen?`, `Je dient de punten en opmerkingen in van ${s.dances.length} ${s.dances.length === 1 ? 'dans' : 'dansen'}. Daarna kun je ze niet meer wijzigen.`, [
       { text: 'Annuleren', style: 'cancel' },
       { text: 'Ja, indienen', style: 'destructive', onPress: () => void submit() },
     ]);

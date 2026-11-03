@@ -2,7 +2,8 @@ import { radius } from '@drammers/design-tokens';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { showAlert } from '../lib/alert';
 import { useTheme } from '../theme/ThemeProvider';
 import { AppText, Card } from '../ui';
 import { pendingPhotoUri, queuePhoto } from './juryPhotos';
@@ -73,7 +74,7 @@ export function JuryPhotoCard({
 
   /** Toegang geweigerd: niet opnieuw vragen (dat doet het systeem niet), maar naar de instellingen wijzen. */
   const denied = (what: string) =>
-    Alert.alert(`Geen toegang tot ${what}`, `Geef in de instellingen toegang tot ${what} om een foto toe te voegen.`, [
+    showAlert(`Geen toegang tot ${what}`, `Geef in de instellingen toegang tot ${what} om een foto toe te voegen.`, [
       { text: 'Niet nu', style: 'cancel' },
       { text: 'Open instellingen', onPress: () => void Linking.openSettings() },
     ]);

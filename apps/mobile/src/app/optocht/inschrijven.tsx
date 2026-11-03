@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { api, apiBaseUrl } from '../../api/client';
 import {
   queryKeys,
@@ -34,6 +34,7 @@ import {
   type StepKey,
   type ValidationIssue,
 } from '../../features/parade';
+import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, CheckboxRow, ErrorState, Screen, TextField } from '../../ui';
 
@@ -762,7 +763,7 @@ function LocationStep({
   const [adding, setAdding] = useState(!matching && Boolean(form.build.postalCode));
 
   const remove = (id: string, label: string) =>
-    Alert.alert('Locatie verwijderen', `${label} verwijderen uit je bewaarde locaties?`, [
+    showAlert('Locatie verwijderen', `${label} verwijderen uit je bewaarde locaties?`, [
       { text: 'Annuleren', style: 'cancel' },
       {
         text: 'Verwijderen',

@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
 import { useMe } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
@@ -15,6 +15,7 @@ import {
   salesKeys,
   useSaleCatalog,
 } from '../../features/sales';
+import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, LargeTitleHeader, QueryState, Screen, TextField } from '../../ui';
 
@@ -72,7 +73,7 @@ export default function AfrekenenScreen() {
     const { data, error: problem, response } = await api.POST('/api/v1/sales/orders', { body: body() });
     if (!response.ok || !data) {
       if (problemCode(problem) === 'SOLD_OUT') {
-        Alert.alert('Net vol', problemMessage(problem, response.status), [
+        showAlert('Net vol', problemMessage(problem, response.status), [
           { text: 'Op de wachtlijst', onPress: () => void run(joinWaitlist) },
           { text: 'Terug', style: 'cancel' },
         ]);

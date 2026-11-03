@@ -2,7 +2,7 @@ import { brand, radius } from '@drammers/design-tokens';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, unwrap } from '../../api/client';
 import { queryKeys, useJurySession, useMe } from '../../api/queries';
@@ -22,6 +22,7 @@ import {
 import { JuryPhotoCard } from '../../features/JuryPhotoCard';
 import { flushPhotos, lastPhotoError, pendingPhotos } from '../../features/juryPhotos';
 import { useJudging } from '../../features/useJudging';
+import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, QueryState, ScoreSlider } from '../../ui';
 
@@ -97,7 +98,7 @@ export default function BeoordelenScreen() {
       restart(false);
       return;
     }
-    Alert.alert(
+    showAlert(
       'Je gaat nu de hele optocht beoordelen',
       'Je ziet dan ook de wagens en groepen uit categorieën die niet aan jou zijn toegewezen. Scores daarvan tellen pas mee als het bestuur of de hoofdjury ze goedkeurt; die krijgen hier een melding van.',
       [
@@ -126,7 +127,7 @@ export default function BeoordelenScreen() {
   }
 
   const confirmSubmit = (count: number, missing: number) =>
-    Alert.alert(
+    showAlert(
       'Jurering indienen?',
       `Je dient de beoordelingen in van ${count} ${count === 1 ? 'wagen of groep' : 'wagens en groepen'}. Daarna kun je ze niet meer wijzigen.${missing > 0 ? ` ${missing} ${missing === 1 ? 'passage is' : 'passages zijn'} niet ingevuld.` : ''}`,
       [

@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Redirect } from 'expo-router';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { api } from '../../api/client';
 import { queryKeys, useMyDevices } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { useSessionStatus } from '../../auth/useSession';
+import { showAlert } from '../../lib/alert';
 import { formatDateOnly } from '../../lib/dates';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, LargeTitleHeader, QueryState, Screen } from '../../ui';
@@ -26,7 +27,7 @@ export default function ApparatenScreen() {
   }
 
   function confirmRevoke(id: string, name: string) {
-    Alert.alert(
+    showAlert(
       `${name} afmelden?`,
       'Je wordt op dat apparaat uitgelogd. Voor de veiligheid moet je daarna ook op je andere apparaten (en hier) opnieuw inloggen. Munten die op dat apparaat zijn gekocht, zijn daarna niet meer af te halen.',
       [

@@ -153,6 +153,36 @@ public class AdminPortalApiTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task App_tekst_aanpassen_staat_in_het_publieke_antwoord_en_terugzetten_haalt_hem_weg()
+    {
+        // De lijst komt uit de catalogus die uit de app-bron gegenereerd is; welke tekst we pakken maakt niet uit.
+        var texts = await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/config/app-texts");
+        Assert.NotEmpty(texts!);
+        var entry = texts![0];
+        var key = entry.GetProperty("key").GetString();
+        var original = entry.GetProperty("default").GetString()!;
+        Assert.True(entry.GetProperty("value").ValueKind == JsonValueKind.Null);
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PutAsJsonAsync($"/api/v1/admin/config/app-texts/{key}", new { value = "Aangepast in het portal" })).StatusCode);
+
+        var published = await _api.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/app-texts");
+        Assert.Equal("Aangepast in het portal", published.GetProperty("texts").GetProperty(original).GetString());
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/config/app-texts/{key}")).StatusCode);
+        var afterReset = await _api.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/app-texts");
+        Assert.False(afterReset.GetProperty("texts").TryGetProperty(original, out _));
+    }
+
+    [Fact]
+    public async Task Een_tekst_die_niet_in_de_app_staat_kan_niet_aangepast_worden()
+    {
+        var response = await _bestuur.PutAsJsonAsync("/api/v1/admin/config/app-texts/0123456789abcdef", new { value = "Iets" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Auditlog_toont_wijzigingen_met_gemaskeerde_gevoelige_velden()
     {
         await _bestuur.PutAsJsonAsync("/api/v1/admin/config/app-config", new

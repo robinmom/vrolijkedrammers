@@ -6,6 +6,7 @@ import { ApplicationDetailPage, ApplicationsPage } from './pages/ApplicationsPag
 import { AuditLogPage } from './pages/AuditLogPage';
 import { PrivacyRequestsPage } from './pages/PrivacyRequestsPage';
 import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
+import { AppTextsPage } from './pages/AppTextsPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { IncomePage, SettlementsPage } from './pages/FinancePage';
@@ -168,6 +169,7 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/rollen', component: guarded('role.manage', RolesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/carnavalsjaren', component: guarded('config.manage', CarnivalYearsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/configuratie', component: guarded('config.manage', ConfigPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/app-teksten', component: guarded('config.manage', AppTextsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/avg', component: guarded('member.privacy', PrivacyRequestsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/auditlog', component: guarded('audit.read', AuditLogPage) }),
 ]);

@@ -1,11 +1,12 @@
 import { brand, radius } from '@drammers/design-tokens';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { api, unwrap } from '../../api/client';
 import { queryKeys, useHeadJury, useMe } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
 import { formatPoints } from '../../features/festivalJudging';
+import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
 import { AppText, BackLink, Button, Card, EmptyState, FilterChips, LargeTitleHeader, QueryState, Screen } from '../../ui';
 
@@ -36,7 +37,7 @@ export default function HeadJuryScreen() {
   }
 
   const ask = () =>
-    Alert.alert('Prijsuitreiking afgerond?', 'Bij Ja mag de organisatie de uitslag op de website zetten en gaan de juryrapporten naar de verenigingen.', [
+    showAlert('Prijsuitreiking afgerond?', 'Bij Ja mag de organisatie de uitslag op de website zetten en gaan de juryrapporten naar de verenigingen.', [
       { text: 'Nee, nog niet', style: 'cancel' },
       { text: 'Ja, afgerond', onPress: () => void complete(true) },
     ]);

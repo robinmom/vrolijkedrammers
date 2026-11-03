@@ -163,6 +163,49 @@ describe('Jureren dansgardefestival', () => {
     await waitFor(() => expect(requests('/festival-jury/head/awards', 'POST')).toHaveLength(1));
     alert.mockRestore();
   });
+
+  /**
+   * Artikel 7 van het reglement: blijft het na uitvoering, moeilijkheidsgraad en choreografie gelijk, dan beslist de
+   * voorzitter van de jury. De app zegt dat erbij, want de hoofdjury leest de uitslag hier voor.
+   */
+  it('hoofdjury: een gelijke stand vraagt een keuze van de voorzitter', async () => {
+    const tie = (names: string) => ({
+      entryId: names,
+      registrationId: 'r',
+      place: 1,
+      club: 'CV',
+      names,
+      title: null,
+      synchronicity: 0,
+      choreography: 16,
+      execution: 15,
+      difficulty: 14,
+      total: 90,
+      perJuror: [],
+    });
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['festival.head-jury']),
+      '/api/v1/festival-jury/head': {
+        published: true,
+        festivalName: 'Dansgardefestival 2027',
+        awardsCompletedAt: null,
+        parts: [
+          {
+            part: 1,
+            name: 'Deel 1 · Minioren',
+            categories: [{ key: 'k', name: 'Minioren Garde', part: 1, solo: false, jurors: 3, submitted: 3, complete: true, rows: [tie('Flames'), tie('Mini Drammers')] }],
+          },
+        ],
+      },
+      '/api/v1/festival-jury/head/awards': {},
+    });
+    await renderApp(routes, '/dansgardefestival-jury/hoofdjury');
+
+    expect(await screen.findByLabelText('1e plaats (gelijke stand, jij beslist): Flames, CV, 90 punten')).toBeTruthy();
+    expect(screen.getByLabelText('1e plaats (gelijke stand, jij beslist): Mini Drammers, CV, 90 punten')).toBeTruthy();
+    expect(screen.getByText(/Gelijke stand: ook uitvoering/)).toBeTruthy();
+  });
 });
 
 /** 2026-11-02: jury-modus — een jurylid van buiten de vereniging ziet alleen het jureren en een uitlogknop. */

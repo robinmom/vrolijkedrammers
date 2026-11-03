@@ -1334,6 +1334,22 @@ export class MockApi {
             total: 60.5,
             perJuror: [30, 30.5],
           },
+          // Gelijk met ShowStars tot en met choreografie (artikel 7 van het reglement): alleen synchroniteit verschilt,
+          // en daar stopt het reglement. Hier beslist de voorzitter van de jury.
+          {
+            entryId: 'e-3',
+            registrationId: 'r-3',
+            place: 2,
+            club: 'CV De Peelkabouters',
+            names: 'Dansgarde Beek',
+            title: null,
+            synchronicity: 14,
+            choreography: 15,
+            execution: 15.5,
+            difficulty: 15,
+            total: 60.5,
+            perJuror: [30, 30.5],
+          },
         ],
       },
       {

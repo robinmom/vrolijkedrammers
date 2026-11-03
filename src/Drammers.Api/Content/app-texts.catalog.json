@@ -2198,6 +2198,26 @@
       ]
     },
     {
+      "id": "a12d257e35e642f8",
+      "text": "Gelijke stand",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "447b022604c14e36",
+      "text": "Gelijke stand: ook uitvoering, moeilijkheidsgraad en choreografie zijn gelijk. Jij beslist hier op algehele indruk.",
+      "places": [
+        {
+          "file": "app/dansgardefestival-jury/hoofdjury.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "75b5e55b319ebba2",
       "text": "Geschatte lengte (meter)",
       "places": [

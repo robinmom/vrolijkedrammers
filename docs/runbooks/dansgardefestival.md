@@ -141,8 +141,22 @@ De rapporten komen van **dansgardefestival@vrolijkedrammers.nl** (een gedeelde m
 - **Halve punten mogen.** Juryleden geven 0 tot en met 10 in stappen van een half punt; in de praktijk gebeurt dat niet
   vaak. Punten staan met een komma en zonder nul achter de komma: "7,5" en "8".
 
-## Open punten (te bespreken met de organisatie)
+## Gelijke stand (artikel 7 van het reglement)
 
-- **Gelijke stand:** het reglement beschrijft hier een eigen regel voor, waarbij naar meerdere onderdelen van de
-  beoordeling wordt gekeken. Wat de app nu doet (hoogste Uitvoering, anders een gedeelde plaats) is een aanname en moet
-  nog langs die regel gelegd worden.
+Het reglement van 2026-09-22 geeft de rangorde bij een gelijk aantal punten in dezelfde categorie. Zo rekent de app het
+ook uit (`FestivalJudgingService.Rank`):
+
+1. het hoogste **totaal**;
+2. gelijk totaal → de hoogste **uitvoering**;
+3. nog gelijk → de hoogste **moeilijkheidsgraad**;
+4. nog gelijk → de hoogste **choreografie**.
+
+**Synchroniteit beslist niet**: daar stopt het reglement. Zijn die vier gelijk, dan beslist volgens artikel 7 de
+voorzitter van de jury op algehele indruk. Dat is geen rekenwerk, dus de dansen houden dezelfde plaats en:
+
+- het portal zet op het tabblad Uitslag een melding boven de lijst en "Voorzitter beslist" achter de betrokken dansen;
+- de app van de hoofdjury zegt het in de categorie en in het voorleeslabel van de regel.
+
+De keuze van de voorzitter wordt **nog niet vastgelegd**. Blijft er na de prijsuitreiking een gelijke stand staan, dan
+komt die ook als gedeelde plaats op de website en in de juryrapporten. Wil de organisatie dat de voorzitter zijn keuze
+in de app kan doorgeven, dan is dat een aparte wens.

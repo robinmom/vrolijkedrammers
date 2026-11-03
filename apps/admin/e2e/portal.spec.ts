@@ -1087,8 +1087,12 @@ test('dansgardefestival: jury uitnodigen en uitslag naar de hoofdjury, afdrukken
   await expect(page.getByRole('heading', { name: 'Uitslag nog niet compleet' })).toBeVisible();
   await page.getByRole('button', { name: 'Ja, uitslag bekijken' }).click();
   await expect(page.getByText('Junioren Drammers')).toBeVisible();
-  // Halve punten staan er met een komma (2026-11-02).
-  await expect(page.getByText('60,5')).toBeVisible();
+  // Halve punten staan er met een komma (2026-11-02); twee dansen staan hier gelijk op 60,5.
+  await expect(page.getByText('60,5')).toHaveCount(2);
+
+  // Artikel 7 van het reglement is uitgeput: gelijk totaal, gelijke uitvoering, moeilijkheidsgraad en choreografie.
+  await expect(page.getByText(/Twee of meer dansen staan nog gelijk/)).toBeVisible();
+  await expect(page.getByText('Voorzitter beslist')).toHaveCount(2);
 
   await page.getByRole('button', { name: 'Publiceer naar hoofdjury' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Toch publiceren' }).click();

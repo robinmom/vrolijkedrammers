@@ -7,6 +7,8 @@ export type AdvertiserPayment = Schemas['AdvertiserPayment'];
 export type AdvertiserYearStatus = Schemas['AdvertiserYearStatus'];
 export type AdvertiserRequest = Schemas['AdvertiserRequest'];
 export type AdvertiserImportPreview = Schemas['AdvertiserImportPreview'];
+export type AdvertiserReviewItem = Schemas['AdvertiserReviewItem'];
+export type DeletedAdvertiserItem = Schemas['DeletedAdvertiserItem'];
 
 export const ADVERTISER_KEYS = [['advertisers']];
 
@@ -48,6 +50,8 @@ export interface AdvertiserFilters {
   collector: string;
   kind: AdvertiserKind | '';
   payment: AdvertiserPayment | '';
+  /** '' = alles, 'ja' = alleen actieve, 'nee' = alleen niet-actieve. */
+  active: '' | 'ja' | 'nee';
 }
 
 export function useAdvertisers(filters: AdvertiserFilters) {
@@ -64,6 +68,7 @@ export function useAdvertisers(filters: AdvertiserFilters) {
                 collector: filters.collector || undefined,
                 kind: filters.kind || undefined,
                 payment: filters.payment || undefined,
+                active: filters.active === '' ? undefined : filters.active === 'ja',
               },
             },
           })
@@ -122,5 +127,23 @@ export function useAdvertiserStatus(year: number | null, collector: string, enab
           })
         ).data,
       ),
+  });
+}
+
+/** "Nieuwe adverteerders": de aanmeldingen uit de app die nog beoordeeld moeten worden. */
+export function useAdvertisersAwaitingReview() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['advertisers', 'awaiting-review'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/advertisers/awaiting-review')).data),
+  });
+}
+
+/** "Verwijderde adverteerders", met per adverteerder het aantal facturen. */
+export function useDeletedAdvertisers() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['advertisers', 'deleted'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/advertisers/deleted')).data),
   });
 }

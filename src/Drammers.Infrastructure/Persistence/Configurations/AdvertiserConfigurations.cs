@@ -26,6 +26,11 @@ internal sealed class AdvertiserConfiguration : IEntityTypeConfiguration<Adverti
         builder.Property(a => a.MandateReference).HasMaxLength(35);
         builder.Property(a => a.ImportedCollectorName).HasMaxLength(150);
         builder.Property(a => a.Notes).HasMaxLength(2000);
+        builder.Property(a => a.ReviewNote).HasMaxLength(500);
+        builder.Property(a => a.DeleteReason).HasMaxLength(500);
+        // De twee lijsten die het portal opvraagt: de wachtrij met aanmeldingen en de prullenbak.
+        builder.HasIndex(a => a.Review);
+        builder.HasIndex(a => a.DeletedAt);
         builder.HasOne<Drammers.Modules.Membership.Members.Member>().WithMany().HasForeignKey(a => a.CollectorMemberId).OnDelete(DeleteBehavior.SetNull);
         builder.HasIndex(a => a.CollectorMemberId);
         builder.HasMany(a => a.Years).WithOne().HasForeignKey(y => y.AdvertiserId).OnDelete(DeleteBehavior.Cascade);

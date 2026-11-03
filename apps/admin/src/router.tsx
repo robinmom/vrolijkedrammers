@@ -7,6 +7,7 @@ import { AuditLogPage } from './pages/AuditLogPage';
 import { PrivacyRequestsPage } from './pages/PrivacyRequestsPage';
 import { CarnivalYearsPage } from './pages/CarnivalYearsPage';
 import { AppTextsPage } from './pages/AppTextsPage';
+import { DeletedAdvertisersPage, NewAdvertisersPage } from './pages/AdvertiserReviewPages';
 import { ConfigPage } from './pages/ConfigPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { IncomePage, SettlementsPage } from './pages/FinancePage';
@@ -96,6 +97,8 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/mailing/$id', component: guarded('mailing.manage', MailingEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders', component: guarded('advertiser.manage', AdvertisersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/campagne', component: guarded('advertiser.manage', AdvertiserStatusPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/aanmeldingen', component: guarded('advertiser.manage', NewAdvertisersPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/verwijderd', component: guarded('advertiser.manage', DeletedAdvertisersPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/import', component: guarded('advertiser.manage', AdvertiserImportPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/incasso', component: guarded('advertiser.manage', AdvertiserCollectionsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/adverteerders/facturen', component: guarded('advertiser.manage', AdvertiserInvoicesPage) }),

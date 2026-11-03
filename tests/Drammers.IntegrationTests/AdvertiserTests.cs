@@ -217,12 +217,31 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Mandate", "NL91ABNA0417164300", false))).StatusCode);
         Assert.Equal(HttpStatusCode.Created, (await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Mandate", "NL91ABNA0417164300", true))).StatusCode);
 
+        // De aanmelding wacht op het bestuur (fase 27s): hij telt nog niet mee in de campagne en staat niet in het overzicht.
         var status = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/status?year=2027&collector={alfredId}");
-        Assert.Equal((2, 2, 90m), (status.GetProperty("totals").GetProperty("total").GetInt32(), status.GetProperty("totals").GetProperty("collected").GetInt32(),
+        Assert.Equal((1, 1, 40m), (status.GetProperty("totals").GetProperty("total").GetInt32(), status.GetProperty("totals").GetProperty("collected").GetInt32(),
             status.GetProperty("totals").GetProperty("collectedAmount").GetDecimal()));
+        Assert.DoesNotContain("Nieuwe Zaak",
+            (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Select(a => a.GetProperty("companyName").GetString()));
+
+        // In zijn eigen lijst in de app staat hij wel, anders denkt de collectant dat zijn aanmelding kwijt is.
+        Assert.Contains("Nieuwe Zaak", (await alfred.GetFromJsonAsync<JsonElement>("/api/v1/me/advertisers"))
+            .GetProperty("items").EnumerateArray().Select(i => i.GetProperty("companyName").GetString()));
+
+        // Na goedkeuring doet hij wel mee.
+        var aanmelding = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!);
+        Assert.Equal(("Nieuwe Zaak", "Pending", "Alfred Voorbeeld"), (aanmelding.GetProperty("companyName").GetString(),
+            aanmelding.GetProperty("review").GetString(), aanmelding.GetProperty("collectorName").GetString()));
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PostAsync($"/api/v1/admin/advertisers/{aanmelding.GetProperty("id").GetGuid()}/approve", null)).StatusCode);
+        var naGoedkeuren = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/status?year=2027&collector={alfredId}");
+        Assert.Equal((2, 2, 90m), (naGoedkeuren.GetProperty("totals").GetProperty("total").GetInt32(),
+            naGoedkeuren.GetProperty("totals").GetProperty("collected").GetInt32(),
+            naGoedkeuren.GetProperty("totals").GetProperty("collectedAmount").GetDecimal()));
         var added = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Single(a => a.GetProperty("companyName").GetString() == "Nieuwe Zaak");
-        Assert.Equal((3, true, true, "Alfred Voorbeeld"), (added.GetProperty("number").GetInt32(), added.GetProperty("addedViaApp").GetBoolean(),
+        Assert.Equal((3, false, true, "Alfred Voorbeeld"), (added.GetProperty("number").GetInt32(), added.GetProperty("addedViaApp").GetBoolean(),
             added.GetProperty("hasIban").GetBoolean(), added.GetProperty("collectorName").GetString()));
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!);
 
         // Niet meer in het kader: de adverteerders blijven aan hem gekoppeld, maar wijzigen mag hij niet meer.
         using (var scope = _api.Services.CreateScope())
@@ -234,6 +253,89 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NotFound, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{bakkerij}/status",
             new { status = "Stopped", amount = (decimal?)null, note = (string?)null })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await alfred.PutAsJsonAsync($"/api/v1/me/advertisers/{bakkerij}/note", new { note = "Toch niet" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Fase27s_aanmelding_afwijzen_of_meer_info_vragen_en_terugzetten()
+    {
+        var (_, alfred) = await LidMetAccountAsync("Alfred Voorbeeld", "alfred@example.com", kader: true);
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        Assert.Equal(HttpStatusCode.Created, (await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Cash", null, false))).StatusCode);
+        var id = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!).GetProperty("id").GetGuid();
+
+        // Meer info nodig: de vraag blijft bij de aanmelding staan, en hij telt nog steeds niet mee.
+        // Een lege vraag komt niet door de modelvalidatie (400); de domeinregel vangt wat daarna nog leeg blijkt.
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/advertisers/{id}/request-info", new { question = "   " })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/advertisers/{id}/request-info", new { question = "Wat is het e-mailadres?" })).StatusCode);
+        var wachtend = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!);
+        Assert.Equal(("InfoNeeded", "Wat is het e-mailadres?"), (wachtend.GetProperty("review").GetString(), wachtend.GetProperty("question").GetString()));
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!);
+
+        // De vraag staat ook op de detailpagina van de adverteerder.
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/{id}");
+        Assert.Equal(("InfoNeeded", "Wat is het e-mailadres?"), (detail.GetProperty("review").GetString(), detail.GetProperty("reviewNote").GetString()));
+
+        // Afwijzen kan niet zonder reden en brengt hem daarna naar de verwijderde adverteerders.
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/advertisers/{id}/reject", new { reason = "" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PostAsJsonAsync($"/api/v1/admin/advertisers/{id}/reject", new { reason = "Dubbel aangemeld" })).StatusCode);
+        var verwijderd = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/deleted"))!);
+        Assert.Equal(("Nieuwe Zaak", "Dubbel aangemeld", 0), (verwijderd.GetProperty("companyName").GetString(),
+            verwijderd.GetProperty("reason").GetString(), verwijderd.GetProperty("invoiceCount").GetInt32()));
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!);
+
+        // Terugzetten brengt hem terug in de wachtrij, zonder de oude vraag.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/advertisers/{id}/restore", null)).StatusCode);
+        var opnieuw = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!);
+        Assert.Equal(("Pending", (string?)null), (opnieuw.GetProperty("review").GetString(), opnieuw.GetProperty("question").GetString()));
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/deleted"))!);
+    }
+
+    [Fact]
+    public async Task Fase27s_adverteerder_verwijderen_telt_nergens_meer_mee_en_wissen_alleen_zonder_facturen()
+    {
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/collections/creditor",
+            new { name = "CV De Vrolijke Drammers", iban = "NL39 RABO 0300 0652 64", creditorId = "nl12zzz123456780000" });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/invoices/settings", new { address = "Postbus 123\n6940 AC Loil", kvk = "40122564" });
+        await _bestuur.PutAsJsonAsync("/api/v1/admin/advertisers/campaign-year", new { year = 2027 });
+        await _bestuur.PostAsync("/api/v1/admin/advertisers/import", Workbook(
+            Row("Alfred Voorbeeld", 1, "Bakkerij De Test", "A", "M", "NL91 ABNA 0417 1643 00", "DVD000000001", 35, 35),
+            Row("Alfred Voorbeeld", 2, "Garage Proef", "A", "C", null, null, 70, 70)));
+        var list = (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!;
+        Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(1)}/years/2027", new { status = "Collected", amount = 35m, note = (string?)null });
+
+        // Alleen de bakkerij staat op opgehaald en krijgt dus een factuur; de garage komt er daarna bij.
+        Assert.Equal(1, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices",
+            new { date = "2026-11-02", year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(2)}/years/2027", new { status = "Collected", amount = 70m, note = (string?)null });
+
+        // Verwijderen: uit het overzicht, uit de campagne en uit de incasso.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/advertisers/{Id(2)}?reason=Gestopt")).StatusCode);
+        Assert.Equal(["Bakkerij De Test"],
+            (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Select(a => a.GetProperty("companyName").GetString()));
+        var campagne = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/advertisers/status?year=2027");
+        Assert.Equal((1, 35m), (campagne.GetProperty("totals").GetProperty("total").GetInt32(),
+            campagne.GetProperty("totals").GetProperty("collectedAmount").GetDecimal()));
+
+        // Definitief wissen mag voor de garage (geen facturen), niet voor de bakkerij (wel een factuur).
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/advertisers/{Id(2)}/permanent")).StatusCode);
+        Assert.Empty((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/deleted"))!);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.DeleteAsync($"/api/v1/admin/advertisers/{Id(1)}")).StatusCode);
+        var bewaard = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/deleted"))!);
+        Assert.Equal(1, bewaard.GetProperty("invoiceCount").GetInt32());
+        var geweigerd = await _bestuur.DeleteAsync($"/api/v1/admin/advertisers/{Id(1)}/permanent");
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, geweigerd.StatusCode);
+        Assert.Contains("facturen", (await geweigerd.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString());
+
+        // Terugzetten brengt de bakkerij ongeschonden terug in de campagne.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/advertisers/{Id(1)}/restore", null)).StatusCode);
+        Assert.Equal(["Bakkerij De Test"],
+            (await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers"))!.Select(a => a.GetProperty("companyName").GetString()));
     }
 
     private static readonly System.Xml.Linq.XNamespace Ns = "urn:iso:std:iso:20022:tech:xsd:pain.008.001.08";
@@ -258,10 +360,21 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
             await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(number)}/years/2027", new { status = "Collected", amount = (decimal?)null, note = (string?)null });
         }
 
-        // Nieuw via de app met machtiging: eerste incasso (FRST).
+        // Nieuw via de app met machtiging: eerste incasso (FRST). Zolang het bestuur de aanmelding niet heeft
+        // goedgekeurd (fase 27s) wordt er niets afgeschreven: anders incasseer je bij een adverteerder die nog
+        // nagekeken moet worden.
         await alfred.PostAsJsonAsync("/api/v1/me/advertisers", NewAdvertiser("Mandate", "NL91ABNA0417164300", true));
 
         var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(10)).ToString("yyyy-MM-dd");
+        var wachtend = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/collections/preview?date={date}");
+        Assert.Equal((1, 35m), (wachtend.GetProperty("count").GetInt32(), wachtend.GetProperty("total").GetDecimal()));
+        Assert.DoesNotContain("Nieuwe Zaak",
+            wachtend.GetProperty("skipped").EnumerateArray().Select(x => x.GetProperty("fullName").GetString()));
+
+        var aanmelding = Assert.Single((await _bestuur.GetFromJsonAsync<List<JsonElement>>("/api/v1/admin/advertisers/awaiting-review"))!);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await _bestuur.PostAsync($"/api/v1/admin/advertisers/{aanmelding.GetProperty("id").GetGuid()}/approve", null)).StatusCode);
+
         var preview = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/advertisers/collections/preview?date={date}");
         Assert.Equal((2, 85m), (preview.GetProperty("count").GetInt32(), preview.GetProperty("total").GetDecimal()));
         var skipped = preview.GetProperty("skipped").EnumerateArray().Select(x => (x.GetProperty("fullName").GetString(), x.GetProperty("reason").GetString())).ToList();

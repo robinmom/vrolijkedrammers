@@ -61,7 +61,7 @@ function CollectorSelect({
 
 /** Adverteerders → Overzicht (fase 27b). */
 export function AdvertisersPage() {
-  const [filters, setFilters] = useState<AdvertiserFilters>({ search: '', collector: '', kind: '', payment: '' });
+  const [filters, setFilters] = useState<AdvertiserFilters>({ search: '', collector: '', kind: '', payment: '', active: '' });
   const advertisers = useAdvertisers(filters);
   const campaign = useCampaignYear();
   const historyYears = campaign.data ? [0, 1, 2, 3, 4].map((i) => campaign.data!.year - 4 + i) : [];
@@ -127,6 +127,18 @@ export function AdvertisersPage() {
                 {label}
               </option>
             ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="filter-actief">Meedoen</label>
+          <select
+            id="filter-actief"
+            value={filters.active}
+            onChange={(e) => set({ active: e.target.value as '' | 'ja' | 'nee' })}
+          >
+            <option value="">Actief en niet actief</option>
+            <option value="ja">Alleen actief</option>
+            <option value="nee">Alleen niet actief</option>
           </select>
         </div>
       </div>
@@ -308,7 +320,15 @@ export function AdvertiserEditorPage() {
       </p>
       <h1>{isNew ? 'Adverteerder toevoegen' : form.companyName || 'Adverteerder'}</h1>
       <SuccessMessage message={message} />
-      {a?.addedViaApp ? <p className="badge warn">Aangemeld via de app; kijk de gegevens na en sla op.</p> : null}
+      {a?.review === 'Pending' || a?.review === 'InfoNeeded' ? (
+        <p className="badge warn">
+          Aangemeld via de app en wacht op goedkeuring; hij telt nog niet mee in de campagne. Pas de gegevens hier
+          aan en keur hem daarna goed bij <Link to="/adverteerders/aanmeldingen">Nieuwe adverteerders</Link>.
+          {a.reviewNote ? ` Jouw vraag: ${a.reviewNote}` : ''}
+        </p>
+      ) : a?.addedViaApp ? (
+        <p className="badge warn">Aangemeld via de app; kijk de gegevens na en sla op.</p>
+      ) : null}
       {a?.importedCollectorName && !a.collectorMemberId ? (
         <p className="muted">
           Collectant in het Excel-bestand: {a.importedCollectorName}. Kies hieronder het kaderlid of de collectant.
@@ -512,7 +532,69 @@ export function AdvertiserEditorPage() {
           </div>
         </section>
       ) : null}
+
+      {a ? <DeleteAdvertiserCard id={a.id} companyName={a.companyName} /> : null}
     </>
+  );
+}
+
+/**
+ * Een adverteerder verwijderen (fase 27s). Hij blijft onder "Verwijderde adverteerders" staan en telt nergens meer
+ * mee; daar kun je hem terugzetten of, als er geen facturen aan hangen, definitief wissen.
+ */
+function DeleteAdvertiserCard({ id, companyName }: { id: string; companyName: string }) {
+  const api = useApi();
+  const navigate = useNavigate();
+  const [reason, setReason] = useState('');
+  const [confirm, setConfirm] = useState(false);
+  const remove = useApiMutation(
+    (value: string) =>
+      api.DELETE('/api/v1/admin/advertisers/{id}', {
+        params: { path: { id }, query: value === '' ? {} : { reason: value } },
+      }),
+    ADVERTISER_KEYS,
+  );
+
+  return (
+    <section className="card" aria-labelledby="verwijderen-kop">
+      <h2 id="verwijderen-kop">Verwijderen</h2>
+      <p>
+        Doet deze adverteerder dit jaar niet mee, maar wil je hem volgend jaar weer vragen? Zet hem dan hierboven op
+        niet actief. Verwijderen is voor een adverteerder die je niet meer nodig hebt: hij verdwijnt uit het overzicht
+        en de campagne, en komt bij de verwijderde adverteerders te staan.
+      </p>
+      <div className="field">
+        <label htmlFor="verwijderreden">Reden (niet verplicht)</label>
+        <input
+          id="verwijderreden"
+          maxLength={500}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </div>
+      <ProblemAlert error={remove.error} />
+      <div className="actions">
+        <button type="button" className="button danger" onClick={() => setConfirm(true)}>
+          Adverteerder verwijderen
+        </button>
+      </div>
+      <ConfirmDialog
+        open={confirm}
+        title="Adverteerder verwijderen"
+        message={`${companyName} verdwijnt uit het overzicht en telt niet meer mee in de campagne. Je kunt hem terugzetten bij de verwijderde adverteerders.`}
+        confirmLabel="Verwijderen"
+        busy={remove.isPending}
+        onCancel={() => setConfirm(false)}
+        onConfirm={() =>
+          remove.mutate(reason.trim(), {
+            onSuccess: () => {
+              setConfirm(false);
+              void navigate({ to: '/adverteerders/verwijderd' });
+            },
+          })
+        }
+      />
+    </section>
   );
 }
 

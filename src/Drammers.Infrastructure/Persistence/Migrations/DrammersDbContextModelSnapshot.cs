@@ -5082,6 +5082,19 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
+                    b.Property<string>("DeleteReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("delete_reason");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("deleted_by");
+
                     b.Property<string>("Email")
                         .HasMaxLength(254)
                         .HasColumnType("nvarchar(254)")
@@ -5150,6 +5163,25 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(10)")
                         .HasColumnName("postal_code");
 
+                    b.Property<string>("Review")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("review");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("review_note");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("reviewed_by");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("updated_at");
@@ -5169,15 +5201,23 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasIndex("CollectorMemberId")
                         .HasDatabaseName("IX_Advertiser_collector_member_id");
 
+                    b.HasIndex("DeletedAt")
+                        .HasDatabaseName("IX_Advertiser_deleted_at");
+
                     b.HasIndex("Number")
                         .IsUnique()
                         .HasDatabaseName("IX_Advertiser_number");
+
+                    b.HasIndex("Review")
+                        .HasDatabaseName("IX_Advertiser_review");
 
                     b.ToTable("Advertiser", "membership", t =>
                         {
                             t.HasCheckConstraint("CK_Advertiser_kind", "[kind] IN ('Advertisement', 'FreeGift', 'Gift')");
 
                             t.HasCheckConstraint("CK_Advertiser_payment", "[payment] IN ('Mandate', 'Cash', 'Invoice')");
+
+                            t.HasCheckConstraint("CK_Advertiser_review", "[review] IN ('Pending', 'InfoNeeded', 'Approved')");
                         });
                 });
 

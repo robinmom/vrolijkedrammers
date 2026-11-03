@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Drammers.Infrastructure.Advertisers;
 using Drammers.Infrastructure.Email;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Membership.Members;
@@ -231,7 +232,7 @@ public sealed class MailingService(
         // Adverteerders (fase 27c): aanhef op de contactpersoon, anders op de volledige naam van het bedrijf.
         if (lists.Any(l => l.AllAdvertisers))
         {
-            var advertisers = await db.Advertisers.AsNoTracking().Where(a => a.Active && a.Email != null).OrderBy(a => a.CompanyName)
+            var advertisers = await db.Advertisers.AsNoTracking().InCampaign().Where(a => a.Active && a.Email != null).OrderBy(a => a.CompanyName)
                 .Select(a => new { a.Email, a.ContactName, a.CompanyName }).ToListAsync(cancellationToken);
             foreach (var a in advertisers)
             {

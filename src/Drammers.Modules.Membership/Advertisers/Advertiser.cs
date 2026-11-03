@@ -42,6 +42,24 @@ public enum AdvertiserYearStatus
 }
 
 /// <summary>
+/// Beoordeling van een aanmelding die via de app binnenkwam (fase 27s). <c>null</c> bij een adverteerder die in het
+/// portal is ingevoerd: die hoeft niet beoordeeld te worden. Zolang de stand <see cref="Pending"/> of
+/// <see cref="InfoNeeded"/> is, telt de adverteerder niet mee in de campagne, de export en de facturen; de collectant
+/// ziet hem in de app wel staan, zodat hij niet denkt dat zijn aanmelding kwijt is.
+/// </summary>
+public enum AdvertiserReview
+{
+    /// <summary>Aangemeld via de app, wacht op het bestuur.</summary>
+    Pending,
+
+    /// <summary>Het bestuur heeft een vraag; die staat in <see cref="Advertiser.ReviewNote"/>.</summary>
+    InfoNeeded,
+
+    /// <summary>Nagekeken en goedgekeurd: doet gewoon mee.</summary>
+    Approved,
+}
+
+/// <summary>
 /// Adverteerder of gever (fase 27b), overgenomen uit "Advertentie overzicht" (Excel). Elke adverteerder heeft een
 /// collectant uit het kader die langsgaat; per jaar staat de bijdrage en de stand in <see cref="AdvertiserYear"/>.
 /// De IBAN staat versleuteld opgeslagen, zoals bij leden.
@@ -99,6 +117,27 @@ public sealed class Advertiser : IAuditable
 
     /// <summary>Via de app aangemeld door een collectant; het bestuur kijkt de gegevens na.</summary>
     public bool AddedViaApp { get; set; }
+
+    /// <summary>Stand van de beoordeling van een aanmelding uit de app; <c>null</c> als er niets te beoordelen valt.</summary>
+    public AdvertiserReview? Review { get; set; }
+
+    /// <summary>De vraag van het bestuur aan de collectant, of de reden van afwijzen.</summary>
+    public string? ReviewNote { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public Guid? ReviewedBy { get; set; }
+
+    /// <summary>
+    /// Verwijderd op (fase 27s): de adverteerder staat dan alleen nog onder "Verwijderde adverteerders" en telt
+    /// nergens meer mee. Terugzetten kan; definitief wissen alleen als er geen facturen aan hangen.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    public Guid? DeletedBy { get; set; }
+
+    /// <summary>Waarom hij weg is, bijv. "gestopt" of de reden van afwijzen.</summary>
+    public string? DeleteReason { get; set; }
 
     public List<AdvertiserYear> Years { get; set; } = [];
 

@@ -51,6 +51,8 @@ export const navItems: readonly NavItem[] = [
   // Fase 27b: adverteerders en de campagne voor de Drammerskrant.
   { label: 'Overzicht', to: '/adverteerders', permission: 'advertiser.manage', icon: 'rapport', section: 'Adverteerders' },
   { label: 'Campagne', to: '/adverteerders/campagne', permission: 'advertiser.manage', icon: 'jaar', section: 'Adverteerders' },
+  { label: 'Nieuwe adverteerders', to: '/adverteerders/aanmeldingen', permission: 'advertiser.manage', icon: 'rapport', section: 'Adverteerders' },
+  { label: 'Verwijderde adverteerders', to: '/adverteerders/verwijderd', permission: 'advertiser.manage', icon: 'rapport', section: 'Adverteerders' },
   // Fase 27c: incasso van de opgehaalde bijdragen.
   { label: 'Incasso', to: '/adverteerders/incasso', permission: 'advertiser.manage', icon: 'sync', section: 'Adverteerders' },
   // Fase 4c: Financieel — alle betalingen per carnavalsjaar bij elkaar.

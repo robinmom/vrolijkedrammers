@@ -31,7 +31,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         [FromQuery] string? search, [FromQuery] Guid? collector, [FromQuery] AdvertiserKind? kind, [FromQuery] AdvertiserPayment? payment,
         [FromQuery] bool? active, CancellationToken cancellationToken)
     {
-        var query = db.Advertisers.AsNoTracking();
+        var query = db.Advertisers.AsNoTracking().InCampaign();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
@@ -84,6 +84,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
         return new AdvertiserResponse(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Mobile, a.Email, a.AddressLine, a.PostalCode, a.City,
             a.Website, a.Page, a.Kind, a.Payment, a.IbanLast4 is null ? null : $"**** {a.IbanLast4}", a.MandateReference, a.CollectorMemberId,
             a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : null, a.ImportedCollectorName, a.Notes, a.Active, a.AddedViaApp,
+            a.Review, a.ReviewNote,
             [.. a.Years.OrderByDescending(y => y.Year).Select(y => new AdvertiserYearResponse(y.Year, y.Amount, y.IsFree, y.Status, y.StatusChangedAt, y.Note))]);
     }
 
@@ -112,6 +113,78 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     public async Task<IActionResult> Update(Guid id, AdvertiserRequest request, CancellationToken cancellationToken)
     {
         await advertisers.UpdateAsync(id, request.ToInput(), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>"Nieuwe adverteerders": de aanmeldingen uit de app die nog beoordeeld moeten worden (fase 27s).</summary>
+    [HttpGet("awaiting-review")]
+    [ProducesResponseType<IReadOnlyList<AdvertiserReviewItem>>(StatusCodes.Status200OK)]
+    public Task<IReadOnlyList<AdvertiserReviewItem>> AwaitingReview(CancellationToken cancellationToken) =>
+        advertisers.AwaitingReviewAsync(cancellationToken);
+
+    [HttpPost("{id:guid}/approve")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken)
+    {
+        await advertisers.ApproveAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Een vraag aan de collectant; die blijft bij de aanmelding staan tot het bestuur hem afhandelt.</summary>
+    [HttpPost("{id:guid}/request-info")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> RequestInfo(Guid id, AdvertiserQuestionRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.RequestInfoAsync(id, request.Question, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Reject(Guid id, AdvertiserReasonRequest request, CancellationToken cancellationToken)
+    {
+        await advertisers.RejectAsync(id, request.Reason, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>"Verwijderde adverteerders" (fase 27s), met per adverteerder of hij definitief gewist kan worden.</summary>
+    [HttpGet("deleted")]
+    [ProducesResponseType<IReadOnlyList<DeletedAdvertiserItem>>(StatusCodes.Status200OK)]
+    public Task<IReadOnlyList<DeletedAdvertiserItem>> Deleted(CancellationToken cancellationToken) =>
+        advertisers.DeletedAsync(cancellationToken);
+
+    /// <summary>Verwijderen: hij telt nergens meer mee, maar blijft onder "Verwijderde adverteerders" staan.</summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id, [FromQuery, StringLength(500)] string? reason, CancellationToken cancellationToken)
+    {
+        await advertisers.DeleteAsync(id, reason, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/restore")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        await advertisers.RestoreAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Definitief wissen; lukt niet als er facturen aan de adverteerder hangen (die blijven bewaard).</summary>
+    [HttpDelete("{id:guid}/permanent")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Purge(Guid id, CancellationToken cancellationToken)
+    {
+        await advertisers.PurgeAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -238,7 +311,7 @@ public sealed partial class AdminAdvertisersController(DrammersDbContext db, Adv
     public async Task<FileContentResult> Export([FromQuery] int? year, CancellationToken cancellationToken)
     {
         var campaign = year ?? await advertisers.CampaignYearAsync(cancellationToken);
-        var list = (await db.Advertisers.AsNoTracking().Include(a => a.Years).Where(a => a.Active).ToListAsync(cancellationToken))
+        var list = (await db.Advertisers.AsNoTracking().InCampaign().Include(a => a.Years).Where(a => a.Active).ToListAsync(cancellationToken))
             .OrderBy(a => PageNumber(a.Page) ?? int.MaxValue).ThenBy(a => a.Page).ThenBy(a => a.CompanyName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
 
@@ -439,7 +512,7 @@ public sealed record AdvertiserResponse(
     Guid Id, int Number, string CompanyName, string? ContactName, string? Phone, string? Mobile, string? Email, string? AddressLine, string? PostalCode,
     string? City, string? Website, string? Page, AdvertiserKind Kind, AdvertiserPayment Payment, string? MaskedIban, string? MandateReference,
     Guid? CollectorMemberId, string? CollectorName, string? ImportedCollectorName, string? Notes, bool Active, bool AddedViaApp,
-    IReadOnlyList<AdvertiserYearResponse> Years);
+    AdvertiserReview? Review, string? ReviewNote, IReadOnlyList<AdvertiserYearResponse> Years);
 
 public sealed record AdvertiserIbanResponse(string? Iban);
 
@@ -493,3 +566,7 @@ public sealed record CollectorLinkedResponse(int Linked);
 public sealed record ReassignCollectorRequest([param: Required, MinLength(1)] IReadOnlyList<Guid> AdvertiserIds, Guid? ToCollectorMemberId);
 
 public sealed record ReassignCollectorResponse(int Reassigned);
+
+public sealed record AdvertiserQuestionRequest([Required, StringLength(500, MinimumLength = 1)] string Question);
+
+public sealed record AdvertiserReasonRequest([Required, StringLength(500, MinimumLength = 1)] string Reason);

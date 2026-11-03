@@ -29,6 +29,11 @@ interface MockAdvertiser {
   round2027?: number | null;
   note2027?: string | null;
   paid2027?: string | null;
+  /** Fase 27s: beoordeling van een aanmelding uit de app en de prullenbak. */
+  review?: 'Pending' | 'InfoNeeded' | 'Approved' | null;
+  reviewNote?: string | null;
+  deletedAt?: string | null;
+  deleteReason?: string | null;
 }
 
 const PIXEL =
@@ -1059,6 +1064,33 @@ export class MockApi {
       amount2026: 70,
       note2027: 'Liever na 18 uur langskomen',
     },
+    {
+      id: 'adv-3',
+      number: 3,
+      companyName: 'Kapsalon Nieuw',
+      contactName: 'Nina Nieuw',
+      phone: '0612345678',
+      mobile: null,
+      email: null,
+      addressLine: null,
+      postalCode: null,
+      city: 'Loil',
+      website: null,
+      page: null,
+      kind: 'Advertisement',
+      payment: 'Cash',
+      maskedIban: null,
+      mandateReference: null,
+      collectorMemberId: 'm-1',
+      importedCollectorName: null,
+      notes: null,
+      active: true,
+      addedViaApp: true,
+      status2027: 'Collected',
+      amount2026: 0,
+      note2027: 'Wil graag een halve pagina',
+      review: 'Pending',
+    },
   ];
   advertiserCampaignYear = 2027;
   invoiceSettings = {
@@ -1751,6 +1783,87 @@ export class MockApi {
   ) {
     let m: RegExpMatchArray | null;
     const collectorName = (id: string | null) => this.advertiserCollectors.find((c) => c.memberId === id)?.name ?? null;
+    const awaiting = (a: MockAdvertiser) => !a.deletedAt && (a.review === 'Pending' || a.review === 'InfoNeeded');
+    if (path === '/admin/advertisers/awaiting-review') {
+      return json(
+        this.advertisers.filter(awaiting).map((a) => ({
+          id: a.id,
+          number: a.number,
+          companyName: a.companyName,
+          contactName: a.contactName,
+          phone: a.phone,
+          email: a.email,
+          city: a.city,
+          kind: a.kind,
+          payment: a.payment,
+          amount: a.amount2026 || 45,
+          note: a.note2027 ?? null,
+          collectorName: collectorName(a.collectorMemberId),
+          review: a.review,
+          question: a.reviewNote ?? null,
+          addedAt: '2026-11-01T10:00:00Z',
+        })),
+      );
+    }
+    if (path === '/admin/advertisers/deleted') {
+      return json(
+        this.advertisers
+          .filter((a) => a.deletedAt)
+          .map((a) => ({
+            id: a.id,
+            number: a.number,
+            companyName: a.companyName,
+            city: a.city,
+            collectorName: collectorName(a.collectorMemberId),
+            reason: a.deleteReason ?? null,
+            deletedAt: a.deletedAt,
+            invoiceCount: this.invoices.filter((i) => i.advertiserId === a.id).length,
+          })),
+      );
+    }
+    if (
+      (m = path.match(/^\/admin\/advertisers\/([^/]+)\/(approve|request-info|reject|restore)$/)) &&
+      method === 'POST'
+    ) {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      const action = m[2];
+      if (action === 'approve') {
+        a.review = 'Approved';
+        a.reviewNote = null;
+        a.addedViaApp = false;
+        this.record('advertiser.approved', 'Advertiser', a.id, null);
+      } else if (action === 'request-info') {
+        a.review = 'InfoNeeded';
+        a.reviewNote = (body as { question: string }).question;
+        this.record('advertiser.info-requested', 'Advertiser', a.id, body);
+      } else if (action === 'reject') {
+        a.deletedAt = '2026-11-03T09:00:00Z';
+        a.deleteReason = (body as { reason: string }).reason;
+        this.record('advertiser.rejected', 'Advertiser', a.id, body);
+      } else {
+        a.deletedAt = null;
+        a.deleteReason = null;
+        if (a.review === 'InfoNeeded') {
+          a.review = 'Pending';
+          a.reviewNote = null;
+        }
+        this.record('advertiser.restored', 'Advertiser', a.id, null);
+      }
+
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/advertisers\/([^/]+)\/permanent$/)) && method === 'DELETE') {
+      const a = this.advertisers.find((x) => x.id === m![1])!;
+      if (this.invoices.some((i) => i.advertiserId === a.id)) {
+        return json(
+          { title: 'Kan niet', detail: 'Deze adverteerder heeft facturen; die moeten in de administratie blijven.' },
+          422,
+        );
+      }
+      this.advertisers = this.advertisers.filter((x) => x.id !== a.id);
+      this.record('advertiser.purged', 'Advertiser', a.id, null);
+      return noContent();
+    }
     if (path === '/admin/advertisers/reassign-collector') {
       const ids = (body.advertiserIds as string[] | undefined) ?? [];
       const to = (body.toCollectorMemberId as string | null) ?? null;
@@ -1771,7 +1884,13 @@ export class MockApi {
     }
     if ((m = path.match(/^\/admin\/advertisers\/invoices\/advertiser\/([^/]+)$/)) && method === 'POST') {
       const a = this.advertisers.find((x) => x.id === m![1]);
-      if (a && a.status2027 === 'Collected' && !this.invoices.some((i) => i.advertiserId === a.id)) {
+      if (
+        a &&
+        !awaiting(a) &&
+        !a.deletedAt &&
+        a.status2027 === 'Collected' &&
+        !this.invoices.some((i) => i.advertiserId === a.id)
+      ) {
         const seq = this.invoices.length + 1;
         this.invoices.push({
           advertiserId: a.id,
@@ -1787,7 +1906,11 @@ export class MockApi {
     }
     if (path === '/admin/advertisers/invoices' && method === 'POST') {
       const due = this.advertisers.filter(
-        (a) => a.status2027 === 'Collected' && !this.invoices.some((i) => i.advertiserId === a.id),
+        (a) =>
+          !awaiting(a) &&
+          !a.deletedAt &&
+          a.status2027 === 'Collected' &&
+          !this.invoices.some((i) => i.advertiserId === a.id),
       );
       for (const a of due) {
         const seq = this.invoices.length + 1;
@@ -1844,7 +1967,7 @@ export class MockApi {
       return json({ pdf: true });
     }
     if (path === '/admin/advertisers/invoices') {
-      const collected = this.advertisers.filter((a) => a.status2027 === 'Collected');
+      const collected = this.advertisers.filter((a) => !awaiting(a) && !a.deletedAt && a.status2027 === 'Collected');
       const rows = collected.map((a) => {
         const inv = this.invoices.find((i) => i.advertiserId === a.id);
         return {
@@ -1979,7 +2102,7 @@ export class MockApi {
     if (path === '/admin/advertisers/status') {
       const collector = url.searchParams.get('collector');
       const rows = this.advertisers
-        .filter((a) => !collector || a.collectorMemberId === collector)
+        .filter((a) => !awaiting(a) && !a.deletedAt && (!collector || a.collectorMemberId === collector))
         .map((a) => ({
           id: a.id,
           number: a.number,
@@ -2073,10 +2196,14 @@ export class MockApi {
     if (path === '/admin/advertisers') {
       const collector = url.searchParams.get('collector');
       const search = (url.searchParams.get('search') ?? '').toLowerCase();
+      const active = url.searchParams.get('active');
       return json(
         this.advertisers
           .filter(
             (a) =>
+              !a.deletedAt &&
+              !awaiting(a) &&
+              (active === null || a.active === (active === 'true')) &&
               (!collector || a.collectorMemberId === collector) &&
               (!search || a.companyName.toLowerCase().includes(search)),
           )
@@ -2109,6 +2236,12 @@ export class MockApi {
     }
     if ((m = path.match(/^\/admin\/advertisers\/([^/]+)$/))) {
       const a = this.advertisers.find((x) => x.id === m![1])!;
+      if (method === 'DELETE') {
+        a.deletedAt = '2026-11-03T09:00:00Z';
+        a.deleteReason = url.searchParams.get('reason');
+        this.record('advertiser.deleted', 'Advertiser', a.id, null);
+        return noContent();
+      }
       if (method === 'PUT') {
         const { iban, ...rest } = body;
         Object.assign(a, rest, iban ? { maskedIban: '**** 9999' } : {});

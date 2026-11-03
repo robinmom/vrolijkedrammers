@@ -144,7 +144,7 @@ public sealed class AdvertiserInvoices(
     {
         var due = await db.AdvertiserYears.AsNoTracking()
             .Where(y => y.Year == year && y.Status == AdvertiserYearStatus.Collected && !y.IsFree && y.Amount > 0)
-            .Join(db.Advertisers.Where(a => a.Active), y => y.AdvertiserId, a => a.Id, (y, a) => new { a.Id, a.Number, a.CompanyName, y.Amount, a.Payment, a.Email })
+            .Join(db.Advertisers.InCampaign().Where(a => a.Active), y => y.AdvertiserId, a => a.Id, (y, a) => new { a.Id, a.Number, a.CompanyName, y.Amount, a.Payment, a.Email })
             .ToListAsync(cancellationToken);
         var invoices = await db.AdvertiserInvoices.AsNoTracking().Where(i => i.Year == year).ToDictionaryAsync(i => i.AdvertiserId, cancellationToken);
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);

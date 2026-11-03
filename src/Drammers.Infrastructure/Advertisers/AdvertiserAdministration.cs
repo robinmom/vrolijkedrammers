@@ -36,6 +36,17 @@ public sealed record AdvertiserInput(
 
 public sealed record AdvertiserCollector(Guid MemberId, string Name);
 
+/// <summary>Een aanmelding uit de app die nog beoordeeld moet worden (fase 27s).</summary>
+public sealed record AdvertiserReviewItem(
+    Guid Id, int Number, string CompanyName, string? ContactName, string? Phone, string? Email, string? City,
+    AdvertiserKind Kind, AdvertiserPayment Payment, decimal? Amount, string? Note, string? CollectorName,
+    AdvertiserReview Review, string? Question, DateTime AddedAt);
+
+/// <summary>Een verwijderde adverteerder (fase 27s), met of hij definitief gewist kan worden.</summary>
+public sealed record DeletedAdvertiserItem(
+    Guid Id, int Number, string CompanyName, string? City, string? CollectorName, string? Reason,
+    DateTime DeletedAt, int InvoiceCount);
+
 public sealed record AdvertiserStatusRow(
     Guid Id, int Number, string CompanyName, string? City, string? Page, AdvertiserKind Kind, AdvertiserPayment Payment, Guid? CollectorMemberId, string? CollectorName,
     AdvertiserYearStatus Status, decimal? Amount, bool IsFree, decimal? PreviousAmount, DateTime? StatusChangedAt, string? Note, DateTime? PaidAt = null,
@@ -476,6 +487,135 @@ public sealed class AdvertiserAdministration(
         await audit.WriteAsync(new AuditEntry("advertiser.updated", "Advertiser", id.ToString(), null, advertiser.CompanyName), cancellationToken);
     }
 
+    /// <summary>De wachtrij voor "Nieuwe adverteerders": aanmeldingen uit de app die het bestuur nog moet nakijken.</summary>
+    public async Task<IReadOnlyList<AdvertiserReviewItem>> AwaitingReviewAsync(CancellationToken cancellationToken)
+    {
+        var year = await CampaignYearAsync(cancellationToken);
+        var rows = await db.Advertisers.AsNoTracking().NotDeleted()
+            .Where(a => a.Review == AdvertiserReview.Pending || a.Review == AdvertiserReview.InfoNeeded)
+            .Include(a => a.Years.Where(y => y.Year == year))
+            .OrderBy(a => a.CreatedAt)
+            .ToListAsync(cancellationToken);
+        var names = await CollectorNamesAsync(rows.Select(a => a.CollectorMemberId), cancellationToken);
+        return [.. rows.Select(a => new AdvertiserReviewItem(a.Id, a.Number, a.CompanyName, a.ContactName, a.Phone, a.Email, a.City,
+            a.Kind, a.Payment, a.Years.SingleOrDefault(y => y.Year == year)?.Amount, a.Years.SingleOrDefault(y => y.Year == year)?.Note,
+            a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : a.ImportedCollectorName,
+            a.Review!.Value, a.ReviewNote, a.CreatedAt))];
+    }
+
+    /// <summary>De lijst voor "Verwijderde adverteerders", met per adverteerder het aantal facturen.</summary>
+    public async Task<IReadOnlyList<DeletedAdvertiserItem>> DeletedAsync(CancellationToken cancellationToken)
+    {
+        var rows = await db.Advertisers.AsNoTracking().Where(a => a.DeletedAt != null)
+            .OrderByDescending(a => a.DeletedAt).ToListAsync(cancellationToken);
+        var ids = rows.Select(a => a.Id).ToList();
+        var invoices = await db.AdvertiserInvoices.AsNoTracking().Where(i => ids.Contains(i.AdvertiserId))
+            .GroupBy(i => i.AdvertiserId).Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
+        var names = await CollectorNamesAsync(rows.Select(a => a.CollectorMemberId), cancellationToken);
+        return [.. rows.Select(a => new DeletedAdvertiserItem(a.Id, a.Number, a.CompanyName, a.City,
+            a.CollectorMemberId is { } c ? names.GetValueOrDefault(c) : a.ImportedCollectorName,
+            a.DeleteReason, a.DeletedAt!.Value, invoices.GetValueOrDefault(a.Id)))];
+    }
+
+    /// <summary>Goedkeuren: de aanmelding doet vanaf nu mee in de campagne.</summary>
+    public async Task ApproveAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var advertiser = await Awaiting(id, cancellationToken);
+        advertiser.Review = AdvertiserReview.Approved;
+        advertiser.ReviewNote = null;
+        advertiser.AddedViaApp = false;
+        Reviewed(advertiser);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.approved", "Advertiser", id.ToString(), null, advertiser.CompanyName), cancellationToken);
+    }
+
+    /// <summary>Meer info nodig: de vraag blijft bij de aanmelding staan tot het bestuur hem alsnog afhandelt.</summary>
+    public async Task RequestInfoAsync(Guid id, string question, CancellationToken cancellationToken)
+    {
+        if (Clean(question, 500) is not { } text)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul de vraag in die je aan de collectant wilt stellen.");
+        }
+
+        var advertiser = await Awaiting(id, cancellationToken);
+        advertiser.Review = AdvertiserReview.InfoNeeded;
+        advertiser.ReviewNote = text;
+        Reviewed(advertiser);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.info-requested", "Advertiser", id.ToString(), null, text), cancellationToken);
+    }
+
+    /// <summary>Afwijzen: de aanmelding gaat met de reden naar de verwijderde adverteerders.</summary>
+    public Task RejectAsync(Guid id, string reason, CancellationToken cancellationToken) =>
+        RemoveAsync(id, reason, "advertiser.rejected", requireAwaitingReview: true, cancellationToken);
+
+    /// <summary>Verwijderen: de adverteerder telt nergens meer mee, maar blijft onder "Verwijderde adverteerders" staan.</summary>
+    public Task DeleteAsync(Guid id, string? reason, CancellationToken cancellationToken) =>
+        RemoveAsync(id, reason, "advertiser.deleted", requireAwaitingReview: false, cancellationToken);
+
+    private async Task RemoveAsync(Guid id, string? reason, string auditAction, bool requireAwaitingReview, CancellationToken cancellationToken)
+    {
+        var advertiser = requireAwaitingReview
+            ? await Awaiting(id, cancellationToken)
+            : await db.Advertisers.SingleOrDefaultAsync(a => a.Id == id && a.DeletedAt == null, cancellationToken) ?? throw NotFound();
+        if (requireAwaitingReview && Clean(reason, 500) is null)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Vul de reden van afwijzen in.");
+        }
+
+        advertiser.DeletedAt = clock.UtcNow.UtcDateTime;
+        advertiser.DeletedBy = actor.UserId;
+        advertiser.DeleteReason = Clean(reason, 500);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry(auditAction, "Advertiser", id.ToString(), null,
+            $"{advertiser.CompanyName}{(advertiser.DeleteReason is { } r ? $" ({r})" : string.Empty)}"), cancellationToken);
+    }
+
+    /// <summary>Terugzetten. Een afgewezen aanmelding komt weer in de wachtrij, zodat hij alsnog beoordeeld wordt.</summary>
+    public async Task RestoreAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.SingleOrDefaultAsync(a => a.Id == id && a.DeletedAt != null, cancellationToken) ?? throw NotFound();
+        (advertiser.DeletedAt, advertiser.DeletedBy, advertiser.DeleteReason) = (null, null, null);
+        if (advertiser.Review is AdvertiserReview.Pending or AdvertiserReview.InfoNeeded)
+        {
+            advertiser.ReviewNote = null;
+            advertiser.Review = AdvertiserReview.Pending;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.restored", "Advertiser", id.ToString(), null, advertiser.CompanyName), cancellationToken);
+    }
+
+    /// <summary>
+    /// Definitief wissen. Dat kan alleen zonder facturen: een verstuurde factuur moet in de administratie blijven, en
+    /// de database laat de adverteerder ook niet gaan zolang er een factuur naar hem verwijst.
+    /// </summary>
+    public async Task PurgeAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var advertiser = await db.Advertisers.SingleOrDefaultAsync(a => a.Id == id && a.DeletedAt != null, cancellationToken) ?? throw NotFound();
+        if (await db.AdvertiserInvoices.AnyAsync(i => i.AdvertiserId == id, cancellationToken))
+        {
+            throw new DomainException(ErrorCodes.Validation,
+                "Deze adverteerder heeft facturen; die moeten in de administratie blijven. Hij blijft bij de verwijderde adverteerders staan.");
+        }
+
+        var name = $"{advertiser.Number} {advertiser.CompanyName}";
+        db.Advertisers.Remove(advertiser);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("advertiser.purged", "Advertiser", id.ToString(), name, null), cancellationToken);
+    }
+
+    private async Task<Advertiser> Awaiting(Guid id, CancellationToken cancellationToken) =>
+        await db.Advertisers.SingleOrDefaultAsync(
+            a => a.Id == id && a.DeletedAt == null && (a.Review == AdvertiserReview.Pending || a.Review == AdvertiserReview.InfoNeeded), cancellationToken)
+        ?? throw new DomainException(ErrorCodes.NotFound, "Deze aanmelding staat niet (meer) op de lijst met nieuwe adverteerders.", DomainErrorKind.NotFound);
+
+    private void Reviewed(Advertiser advertiser)
+    {
+        advertiser.ReviewedAt = clock.UtcNow.UtcDateTime;
+        advertiser.ReviewedBy = actor.UserId;
+    }
+
     private async Task ApplyAsync(Advertiser advertiser, AdvertiserInput input, CancellationToken cancellationToken)
     {
         if (Clean(input.CompanyName, 200) is not { } company)
@@ -557,9 +697,15 @@ public sealed class AdvertiserAdministration(
     }
 
     /// <summary>De stand van de campagne van een jaar: per adverteerder, per collectant en in totaal.</summary>
-    public async Task<AdvertiserStatusReport> StatusAsync(int year, Guid? collectorMemberId, CancellationToken cancellationToken)
+    public async Task<AdvertiserStatusReport> StatusAsync(
+        int year, Guid? collectorMemberId, CancellationToken cancellationToken, bool includeAwaitingReview = false)
     {
-        var query = db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year <= year)).Where(a => a.Active);
+        // includeAwaitingReview: alleen de eigen lijst van de collectant in de app neemt de aanmeldingen mee die nog op
+        // het bestuur wachten. Hij heeft zijn werk gedaan en moet zijn aanmelding terugzien, anders meldt hij hem nog
+        // een keer aan. In de campagne en de totalen van het portal hoort zo'n aanmelding nog niet.
+        var all = db.Advertisers.AsNoTracking();
+        var query = (includeAwaitingReview ? all.NotDeleted() : all.InCampaign())
+            .Include(a => a.Years.Where(y => y.Year <= year)).Where(a => a.Active);
         var advertisers = await query.ToListAsync(cancellationToken);
         var names = await CollectorNamesAsync(advertisers.Select(a => a.CollectorMemberId), cancellationToken);
         var rows = advertisers.Select(a =>
@@ -705,7 +851,7 @@ public sealed class AdvertiserAdministration(
         }
 
         var info = await InfoAsync(year, cancellationToken);
-        var report = await StatusAsync(year, memberId, cancellationToken);
+        var report = await StatusAsync(year, memberId, cancellationToken, includeAwaitingReview: true);
         var ids = report.Rows.Select(r => r.Id).ToList();
         var details = await db.Advertisers.AsNoTracking().Include(a => a.Years.Where(y => y.Year < year && y.Year >= year - 5))
             .Where(a => ids.Contains(a.Id)).ToDictionaryAsync(a => a.Id, cancellationToken);
@@ -728,7 +874,7 @@ public sealed class AdvertiserAdministration(
         Guid memberId, Guid advertiserId, AdvertiserYearStatus status, decimal? amount, string? note, CancellationToken cancellationToken, bool? cashReceived = null)
     {
         if (!await IsCollectorAsync(memberId, cancellationToken)
-            || !await db.Advertisers.AnyAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken))
+            || !await db.Advertisers.AnyAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active && a.DeletedAt == null, cancellationToken))
         {
             throw NotFound();
         }
@@ -745,7 +891,7 @@ public sealed class AdvertiserAdministration(
         }
 
         var advertiser = await db.Advertisers.Include(a => a.Years)
-            .SingleOrDefaultAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active, cancellationToken) ?? throw NotFound();
+            .SingleOrDefaultAsync(a => a.Id == advertiserId && a.CollectorMemberId == memberId && a.Active && a.DeletedAt == null, cancellationToken) ?? throw NotFound();
         var year = await CampaignYearAsync(cancellationToken);
         var row = advertiser.Years.SingleOrDefault(y => y.Year == year);
         if (row is null)
@@ -818,6 +964,8 @@ public sealed class AdvertiserAdministration(
             MandateReference = iban is null ? null : $"DVD-ADV-{number}-{now:yyyyMMdd}",
             CollectorMemberId = memberId,
             AddedViaApp = true,
+            // Wacht op het bestuur: tot die tijd telt hij niet mee in de campagne (zie AdvertiserQueries).
+            Review = AdvertiserReview.Pending,
         };
         advertiser.Years.Add(new AdvertiserYear
         {

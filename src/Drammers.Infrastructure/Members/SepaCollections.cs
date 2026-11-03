@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Drammers.Infrastructure.Advertisers;
 using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Membership.Advertisers;
@@ -306,7 +307,7 @@ public sealed partial class SepaCollections(
     {
         var rows = await db.AdvertiserYears.AsNoTracking()
             .Where(y => y.Year == year && y.Status == AdvertiserYearStatus.Collected && !y.IsFree && y.Amount > 0)
-            .Join(db.Advertisers.Where(a => a.Active && a.Payment == AdvertiserPayment.Mandate), y => y.AdvertiserId, a => a.Id, (y, a) => new { a, y.Amount })
+            .Join(db.Advertisers.InCampaign().Where(a => a.Active && a.Payment == AdvertiserPayment.Mandate), y => y.AdvertiserId, a => a.Id, (y, a) => new { a, y.Amount })
             .OrderBy(x => x.a.Number).ToListAsync(cancellationToken);
         var done = (await db.CollectionRunLines.AsNoTracking()
             .Join(db.CollectionRuns.Where(r => r.Kind == CollectionKind.Advertisers && r.CampaignYear == year), l => l.RunId, r => r.Id, (l, _) => l.AdvertiserId)

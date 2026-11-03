@@ -59,7 +59,7 @@ public sealed class AdminConfigController(DrammersDbContext db, AppConfigReader 
     {
         var overrides = await db.AppTextOverrides.AsNoTracking().ToDictionaryAsync(t => t.Key, t => t.Value, cancellationToken);
         return catalog.Entries
-            .Select(e => new AppTextResponse(e.Key, e.Text, overrides.GetValueOrDefault(e.Key),
+            .Select(e => new AppTextResponse(e.Id, e.Text, overrides.GetValueOrDefault(e.Id),
                 e.Places.Select(p => new AppTextPlaceResponse(p.File, p.Where)).ToList()))
             .OrderBy(t => t.Default, StringComparer.CurrentCulture)
             .ToList();

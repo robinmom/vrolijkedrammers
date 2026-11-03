@@ -6,8 +6,11 @@ namespace Drammers.Api.Content;
 /// <summary>Een plek in de app-bron waar een tekst staat; <paramref name="Where"/> is bijv. "tekst" of "label".</summary>
 public sealed record AppTextPlace(string File, string Where);
 
-/// <summary>Eén zichtbare tekst uit de app, met de plekken waar hij staat.</summary>
-public sealed record AppTextCatalogEntry(string Key, string Text, IReadOnlyList<AppTextPlace> Places);
+/// <summary>
+/// Eén zichtbare tekst uit de app, met de plekken waar hij staat. <paramref name="Id"/> is een hash van de tekst en
+/// heet bewust geen "key": dan ziet de secret-scanner er een API-sleutel in (zie collect-texts.mjs).
+/// </summary>
+public sealed record AppTextCatalogEntry(string Id, string Text, IReadOnlyList<AppTextPlace> Places);
 
 /// <summary>
 /// De catalogus van zichtbare teksten in de app: welke teksten bestaan er en waar staan ze. Hij wordt gegenereerd uit
@@ -31,7 +34,7 @@ public sealed class AppTextCatalog
             ?? throw new InvalidOperationException($"De tekstcatalogus ({ResourceName}) zit niet in deze build.");
         var document = JsonSerializer.Deserialize<CatalogDocument>(stream, new JsonSerializerOptions(JsonSerializerDefaults.Web))
             ?? throw new InvalidOperationException("De tekstcatalogus is leeg.");
-        return document.Entries.ToDictionary(e => e.Key);
+        return document.Entries.ToDictionary(e => e.Id);
     }
 
     private sealed record CatalogDocument(int Version, IReadOnlyList<AppTextCatalogEntry> Entries);

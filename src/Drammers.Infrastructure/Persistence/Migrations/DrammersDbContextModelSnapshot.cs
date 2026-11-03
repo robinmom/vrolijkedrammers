@@ -96,6 +96,48 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Infrastructure.Configuration.AppTextOverride", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)")
+                        .HasColumnName("key");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Original")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("original");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("value");
+
+                    b.HasKey("Key")
+                        .HasName("PK_AppTextOverride");
+
+                    b.ToTable("AppTextOverride", "config");
+                });
+
             modelBuilder.Entity("Drammers.Infrastructure.Configuration.FeatureFlag", b =>
                 {
                     b.Property<string>("Key")

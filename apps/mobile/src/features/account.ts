@@ -1,7 +1,7 @@
-import { Alert } from 'react-native';
 import { api } from '../api/client';
 import { countUnsentLocalData } from '../auth/localData';
 import { clearLocalSession, getInstallationId } from '../auth/session';
+import { showAlert } from '../lib/alert';
 import { flushQueue } from './offlineScan';
 
 export const statusLabels: Record<string, string> = {
@@ -58,7 +58,7 @@ export async function confirmSignOut(onSignedOut: () => void): Promise<void> {
     return;
   }
 
-  Alert.alert(
+  showAlert(
     'Nog niet verstuurd',
     `Op deze telefoon staan nog ${unsent} ${unsent === 1 ? 'scan of jurypunt' : 'scans of jurypunten'} die nog niet zijn verstuurd. Uitloggen wist ze. Open eerst met internet het scan- of jureerscherm, zodat ze worden verstuurd.`,
     [

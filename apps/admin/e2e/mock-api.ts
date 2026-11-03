@@ -97,6 +97,33 @@ export class MockApi {
     oldValues: string | null;
     newValues: string | null;
   }[] = [];
+  /** Beheer → App-teksten: een paar teksten uit twee schermen en een onderdeel. */
+  appTexts = [
+    {
+      key: '0000000000000001',
+      default: 'Bestuur',
+      value: null as string | null,
+      places: [{ file: 'app/meer/vereniging.tsx', where: 'vaste tekst' }],
+    },
+    {
+      key: '0000000000000002',
+      default: 'Geschiedenis',
+      value: null as string | null,
+      places: [{ file: 'app/meer/vereniging.tsx', where: 'vaste tekst' }],
+    },
+    {
+      key: '0000000000000003',
+      default: 'Lid worden',
+      value: 'Drammer worden' as string | null,
+      places: [{ file: 'app/meer/lid-worden.tsx', where: 'title' }],
+    },
+    {
+      key: '0000000000000004',
+      default: 'Opslaan',
+      value: null as string | null,
+      places: [{ file: 'ui/Button.tsx', where: 'label' }],
+    },
+  ];
   appConfig = {
     minAppVersionIos: '1.0.0',
     minAppVersionAndroid: '1.0.0',
@@ -2731,6 +2758,21 @@ export class MockApi {
         return noContent();
       }
       return json(this.appConfig);
+    }
+    if (path === '/admin/config/app-texts') {
+      return json(this.appTexts);
+    }
+    if ((m = path.match(/^\/admin\/config\/app-texts\/([^/]+)$/))) {
+      const text = this.appTexts.find((t) => t.key === m![1]);
+      if (!text) return json({ title: 'Niet gevonden' }, 404);
+      if (method === 'PUT') {
+        text.value = (body as { value: string }).value;
+        this.record('config.app-text.changed', 'AppTextOverride', text.key, body);
+      } else if (method === 'DELETE') {
+        text.value = null;
+        this.record('config.app-text.reset', 'AppTextOverride', text.key, null);
+      }
+      return noContent();
     }
     if (path === '/admin/config/feature-flags') {
       return json([{ key: 'nieuws.push', enabled: false, description: 'Push bij nieuws', hasAudience: false }]);

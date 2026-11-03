@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { QueryProvider } from '../api/QueryProvider';
 import { restoreSession } from '../auth/session';
+import { TextsProvider } from '../content/texts';
 import { usePushNotifications } from '../features/usePushNotifications';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
@@ -42,8 +43,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <QueryProvider>
-        <StatusBar style="auto" />
-        <Shell />
+        {/* Boven AppGate: ook het onderhouds- en updatescherm toont teksten die in het portal aangepast kunnen zijn. */}
+        <TextsProvider>
+          <StatusBar style="auto" />
+          <Shell />
+        </TextsProvider>
       </QueryProvider>
     </ThemeProvider>
   );

@@ -4018,6 +4018,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/config/app-texts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Alle zichtbare teksten van de app, met de aanpassing als die er is. De lijst komt uit de catalogus die bij de
+         *     app-build hoort, dus hij past bij de app die in de store staat zolang API en app samen zijn uitgerold.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppTextResponse"][];
+                        "application/json": components["schemas"]["AppTextResponse"][];
+                        "text/json": components["schemas"]["AppTextResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/app-texts/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AppTextRequest"];
+                    "text/json": components["schemas"]["AppTextRequest"];
+                    "application/*+json": components["schemas"]["AppTextRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Zet de tekst terug op die uit de app-bundel. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/config/retention": {
         parameters: {
             query?: never;
@@ -17976,6 +18089,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/app-texts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppTextsResponse"];
+                        "application/json": components["schemas"]["AppTextsResponse"];
+                        "text/json": components["schemas"]["AppTextsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carnival-years": {
         parameters: {
             query?: never;
@@ -25734,6 +25884,26 @@ export interface components {
         ApproveGuardianRequest: {
             /** Format: uuid */
             memberId: string;
+        };
+        AppTextPlaceResponse: {
+            file: string;
+            where: string;
+        };
+        AppTextRequest: {
+            value: string;
+        };
+        /** @description Een tekst uit de app: de tekst uit de bundel, de aanpassing (als die er is) en waar hij staat. */
+        AppTextResponse: {
+            key: string;
+            default: string;
+            value: null | string;
+            places: components["schemas"]["AppTextPlaceResponse"][];
+        };
+        /** @description Per oorspronkelijke tekst uit de app de tekst die het toestel in de plaats moet zetten. */
+        AppTextsResponse: {
+            texts: {
+                [key: string]: string;
+            };
         };
         ArrivalChange: {
             /** Format: uuid */

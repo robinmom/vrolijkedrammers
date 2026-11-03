@@ -60,6 +60,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "icons": "node scripts/generate-icons.mjs",
+    "texts": "node scripts/collect-texts.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest"

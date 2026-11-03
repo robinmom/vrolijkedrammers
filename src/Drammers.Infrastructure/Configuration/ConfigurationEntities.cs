@@ -39,6 +39,28 @@ public sealed class AppConfigurationSetting : IAuditable
     public Guid? UpdatedBy { get; set; }
 }
 
+/// <summary>
+/// Een aangepaste tekst in de app (<c>config.AppTextOverride</c>). De app zoekt een vervanging op met de tekst zoals
+/// die in de app staat, dus <see cref="Original"/> gaat mee naar het toestel; <see cref="Key"/> is de hash van die
+/// tekst uit de catalogus (<c>app-texts.catalog.json</c>) en dient alleen om de rij te adresseren vanuit het portal.
+/// </summary>
+public sealed class AppTextOverride : IAuditable
+{
+    public required string Key { get; set; }
+
+    public required string Original { get; set; }
+
+    public required string Value { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public Guid? CreatedBy { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public Guid? UpdatedBy { get; set; }
+}
+
 /// <summary>Informatie voor een rol in de app (<c>config.RoleInfo</c>), bijv. voor de prins of de adjudanten; Markdown.</summary>
 public sealed class RoleInfo : IAuditable
 {

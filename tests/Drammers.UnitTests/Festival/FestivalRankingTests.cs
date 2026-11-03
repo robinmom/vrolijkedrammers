@@ -3,11 +3,18 @@ using Drammers.Modules.Content.Festival;
 
 namespace Drammers.UnitTests.Festival;
 
-/// <summary>Uitslag van het Dansgardefestival: hoogste totaal; gelijk → hoogste uitvoering; nog gelijk → gedeelde plaats.</summary>
+/// <summary>
+/// Uitslag van het Dansgardefestival. Artikel 7 van het reglement: hoogste totaal; bij gelijk totaal achtereenvolgens
+/// uitvoering, moeilijkheidsgraad en choreografie; blijft het gelijk, dan beslist de voorzitter van de jury en houden de
+/// dansen hier een gedeelde plaats.
+/// </summary>
 public class FestivalRankingTests
 {
     private static ResultRow Row(string names, decimal total, decimal execution) =>
-        new(Guid.NewGuid(), Guid.NewGuid(), 0, "Club", names, null, 0, 0, execution, 0, total, []);
+        Row(names, total, execution, 0, 0);
+
+    private static ResultRow Row(string names, decimal total, decimal execution, decimal difficulty, decimal choreography) =>
+        new(Guid.NewGuid(), Guid.NewGuid(), 0, "Club", names, null, 0, choreography, execution, difficulty, total, []);
 
     [Fact]
     public void Gelijk_totaal_hoogste_uitvoering_wint_anders_gedeelde_plaats()
@@ -22,6 +29,42 @@ public class FestivalRankingTests
     {
         var ranked = FestivalJudgingService.Rank([Row("A", 60m, 15m), Row("B", 60.5m, 15m), Row("C", 60m, 15.5m)]);
         Assert.Equal([("B", 1), ("C", 2), ("A", 3)], ranked.Select(r => (r.Names, r.Place)).ToArray());
+    }
+
+    /// <summary>
+    /// Artikel 7 van het reglement, de hele keten: met hetzelfde totaal en dezelfde uitvoering beslist de
+    /// moeilijkheidsgraad, en daarna de choreografie.
+    /// </summary>
+    [Fact]
+    public void Gelijke_uitvoering_moeilijkheidsgraad_dan_choreografie_beslist()
+    {
+        var ranked = FestivalJudgingService.Rank(
+        [
+            Row("A", 60, 15, 14, 16),
+            Row("B", 60, 15, 15, 10),
+            Row("C", 60, 15, 14, 17),
+            Row("D", 60, 16, 10, 10),
+        ]);
+
+        Assert.Equal([("D", 1), ("B", 2), ("C", 3), ("A", 4)], ranked.Select(r => (r.Names, r.Place)).ToArray());
+    }
+
+    /// <summary>
+    /// Synchroniteit staat niet in artikel 7: als totaal, uitvoering, moeilijkheidsgraad en choreografie gelijk zijn, is het
+    /// gelijkspel en beslist de voorzitter van de jury. Die keuze is geen rekenwerk, dus beide dansen krijgen dezelfde plaats
+    /// en de volgende danst krijgt de plaats daarna.
+    /// </summary>
+    [Fact]
+    public void Blijft_het_gelijk_dan_een_gedeelde_plaats_voor_de_voorzitter()
+    {
+        var ranked = FestivalJudgingService.Rank(
+        [
+            Row("A", 60, 15, 14, 16) with { Synchronicity = 15 },
+            Row("B", 60, 15, 14, 16) with { Synchronicity = 10 },
+            Row("C", 55, 14, 13, 14),
+        ]);
+
+        Assert.Equal([("A", 1), ("B", 1), ("C", 3)], ranked.Select(r => (r.Names, r.Place)).ToArray());
     }
 
     [Theory]

@@ -507,6 +507,14 @@ function AfterAwards({
 }
 
 function CategoryDetail({ category }: { category: Category }) {
+  // Artikel 7 van het reglement scheidt een gelijk totaal op uitvoering, moeilijkheidsgraad en choreografie. Lukt dat
+  // niet, dan houden de dansen dezelfde plaats en beslist de voorzitter van de jury op algehele indruk.
+  const shared = new Set(
+    category.rows
+      .filter((row) => category.rows.filter((other) => other.place === row.place).length > 1)
+      .map((row) => row.place),
+  );
+
   return (
     <section className="card" aria-labelledby="uitslag-categorie">
       <div className="card-header">
@@ -516,8 +524,15 @@ function CategoryDetail({ category }: { category: Category }) {
         </span>
       </div>
       <p className="muted small-text">
-        Totaal = som van de 4 onderdelen van alle juryleden. Gelijk totaal: hoogste uitvoering wint.
+        Totaal = som van de 4 onderdelen van alle juryleden. Gelijk totaal: eerst uitvoering, dan moeilijkheidsgraad,
+        dan choreografie (artikel 7 van het reglement).
       </p>
+      {shared.size > 0 ? (
+        <p className="alert alert-warning" role="status">
+          Twee of meer dansen staan nog gelijk: ook uitvoering, moeilijkheidsgraad en choreografie zijn gelijk. De
+          voorzitter van de jury beslist hier op algehele indruk.
+        </p>
+      ) : null}
       <ol className="ranking">
         {category.rows.map((row) => (
           <li key={row.entryId} className={row.place === 1 ? 'winner' : undefined}>
@@ -526,6 +541,7 @@ function CategoryDetail({ category }: { category: Category }) {
               <strong>{row.title ? `${row.title} · ${row.names}` : row.names}</strong>
               <span className="muted small-text"> {row.club}</span>
             </span>
+            {shared.has(row.place) ? <span className="badge warn">Voorzitter beslist</span> : null}
             <span className="ranking-total">{formatPoints(row.total)}</span>
           </li>
         ))}

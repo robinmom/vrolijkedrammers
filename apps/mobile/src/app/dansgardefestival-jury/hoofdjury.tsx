@@ -15,6 +15,14 @@ import { AppText, BackLink, Button, Card, EmptyState, FilterChips, LargeTitleHea
  * organisatie per deel van de prijsuitreiking de uitslag per categorie, van de laatste plaats naar de winnaar (zo lees je
  * hem voor). Na de laatste categorie: "Prijsuitreiking afgerond?" (Ja/Nee; de organisatie kan dit in het portal overrulen).
  */
+/**
+ * De plaatsen die twee of meer dansen delen. Artikel 7 van het reglement scheidt een gelijk totaal op uitvoering,
+ * moeilijkheidsgraad en choreografie; zijn die ook gelijk, dan beslist de voorzitter van de jury op algehele indruk.
+ */
+function sharedPlaces(rows: readonly { place: number }[]) {
+  return new Set(rows.filter((row) => rows.filter((other) => other.place === row.place).length > 1).map((row) => row.place));
+}
+
 export default function HeadJuryScreen() {
   const { colors } = useTheme();
   const me = useMe();
@@ -64,35 +72,47 @@ export default function HeadJuryScreen() {
             selected={String(part)}
             onChange={(value) => setPart(Number(value))}
           />
-          {current?.categories.map((c) => (
-            <Card key={c.key} style={styles.card}>
-              <AppText variant="cardTitle" accessibilityRole="header">
-                {c.name}
-              </AppText>
-              <AppText variant="caption" color={colors.textSecondary}>
-                Van de laatste plaats naar de winnaar
-              </AppText>
-              {c.rows.map((r) => (
-                <View
-                  key={r.entryId}
-                  style={[styles.row, r.place === 1 && { backgroundColor: `${brand.yellow}40`, borderRadius: radius.sm }]}
-                  accessible
-                  accessibilityLabel={`${r.place}e plaats: ${r.title ? `${r.title}, ` : ''}${r.names}, ${r.club}, ${formatPoints(r.total)} punten`}
-                >
-                  <AppText variant="cardTitle" style={styles.place}>
-                    {r.place}e
-                  </AppText>
-                  <View style={styles.flex}>
-                    <AppText variant="bodyStrong">{r.title ? `${r.title} · ${r.names}` : r.names}</AppText>
-                    <AppText variant="caption" color={colors.textSecondary}>
-                      {r.club}
+          {current?.categories.map((c) => {
+            const shared = sharedPlaces(c.rows);
+            return (
+              <Card key={c.key} style={styles.card}>
+                <AppText variant="cardTitle" accessibilityRole="header">
+                  {c.name}
+                </AppText>
+                <AppText variant="caption" color={colors.textSecondary}>
+                  Van de laatste plaats naar de winnaar
+                </AppText>
+                {shared.size > 0 ? (
+                  <View style={[styles.info, { backgroundColor: colors.tintYellow }]}>
+                    <AppText variant="caption">
+                      Gelijke stand: ook uitvoering, moeilijkheidsgraad en choreografie zijn gelijk. Jij beslist hier op
+                      algehele indruk.
                     </AppText>
                   </View>
-                  <AppText variant="bodyStrong">{formatPoints(r.total)} pnt</AppText>
-                </View>
-              ))}
-            </Card>
-          ))}
+                ) : null}
+                {c.rows.map((r) => (
+                  <View
+                    key={r.entryId}
+                    style={[styles.row, r.place === 1 && { backgroundColor: `${brand.yellow}40`, borderRadius: radius.sm }]}
+                    accessible
+                    accessibilityLabel={`${r.place}e plaats${shared.has(r.place) ? ' (gelijke stand, jij beslist)' : ''}: ${r.title ? `${r.title}, ` : ''}${r.names}, ${r.club}, ${formatPoints(r.total)} punten`}
+                  >
+                    <AppText variant="cardTitle" style={styles.place}>
+                      {r.place}e
+                    </AppText>
+                    <View style={styles.flex}>
+                      <AppText variant="bodyStrong">{r.title ? `${r.title} · ${r.names}` : r.names}</AppText>
+                      <AppText variant="caption" color={colors.textSecondary}>
+                        {r.club}
+                      </AppText>
+                      {shared.has(r.place) ? <AppText variant="caption">Gelijke stand</AppText> : null}
+                    </View>
+                    <AppText variant="bodyStrong">{formatPoints(r.total)} pnt</AppText>
+                  </View>
+                ))}
+              </Card>
+            );
+          })}
           {h.awardsCompletedAt ? (
             <View style={[styles.info, { backgroundColor: colors.tintGreen }]}>
               <AppText variant="bodyStrong">Prijsuitreiking afgerond ✓</AppText>

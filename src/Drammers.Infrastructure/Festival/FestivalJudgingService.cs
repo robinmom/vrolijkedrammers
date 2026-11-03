@@ -53,8 +53,8 @@ public sealed record HeadJuryView(bool Published, string FestivalName, IReadOnly
 /// De jury van het Dansgardefestival (2026-10-15). Juryleden zijn eigen accounts (rol Jury dansgardefestival) met een vast
 /// nummer; ze beoordelen alle dansen in programmavolgorde. De app toont alleen de categorie die aan de beurt is: de eerste
 /// die het jurylid nog niet heeft ingediend. Indienen kan pas als alle dansen van de categorie vier onderdelen hebben.
-/// Totaal = de som van alle onderdelen van alle juryleden; bij gelijk totaal wint de hoogste Uitvoering, anders een
-/// gedeelde plaats (nog te bevestigen door de organisatie; het reglement beschrijft hier een eigen regel voor).
+/// Totaal = de som van alle onderdelen van alle juryleden; bij een gelijk totaal geldt de rangorde van artikel 7 van het
+/// reglement (zie <see cref="Rank"/>).
 /// </summary>
 public sealed class FestivalJudgingService(
     DrammersDbContext db,
@@ -315,19 +315,34 @@ public sealed class FestivalJudgingService(
             result.Count > 0 && result.All(c => c.Complete), festival.HeadJuryPublishedAt, festival.AwardsCompletedAt, festival.AwardsCompletedBy);
     }
 
-    /// <summary>Hoogste totaal eerst; gelijk totaal: hoogste Uitvoering; nog steeds gelijk: gedeelde plaats.</summary>
+    /// <summary>
+    /// Hoogste totaal eerst. Bij een gelijk totaal geeft artikel 7 van het reglement de doorslag, in deze volgorde:
+    /// uitvoering, dan moeilijkheidsgraad, dan choreografie. Synchroniteit beslist dus niet: daar stopt het reglement.
+    /// Blijft het daarna gelijk, dan beslist de voorzitter van de jury op algehele indruk. Dat is geen rekenwerk, dus die
+    /// dansen houden hier een gedeelde plaats; het portal en de app van de hoofdjury laten zien dat de voorzitter kiest.
+    /// </summary>
     public static IReadOnlyList<ResultRow> Rank(IReadOnlyList<ResultRow> rows)
     {
-        var ordered = rows.OrderByDescending(r => r.Total).ThenByDescending(r => r.Execution).ThenBy(r => r.Names, StringComparer.Ordinal).ToList();
+        var ordered = rows
+            .OrderByDescending(r => r.Total)
+            .ThenByDescending(r => r.Execution)
+            .ThenByDescending(r => r.Difficulty)
+            .ThenByDescending(r => r.Choreography)
+            .ThenBy(r => r.Names, StringComparer.Ordinal)
+            .ToList();
         var ranked = new List<ResultRow>();
         for (var i = 0; i < ordered.Count; i++)
         {
-            var place = i > 0 && ordered[i].Total == ordered[i - 1].Total && ordered[i].Execution == ordered[i - 1].Execution ? ranked[i - 1].Place : i + 1;
+            var place = i > 0 && SameRank(ordered[i], ordered[i - 1]) ? ranked[i - 1].Place : i + 1;
             ranked.Add(ordered[i] with { Place = place });
         }
 
         return ranked;
     }
+
+    /// <summary>Twee dansen die artikel 7 niet kan scheiden: alleen de voorzitter van de jury kan hier nog kiezen.</summary>
+    private static bool SameRank(ResultRow a, ResultRow b) =>
+        a.Total == b.Total && a.Execution == b.Execution && a.Difficulty == b.Difficulty && a.Choreography == b.Choreography;
 
     /// <summary>Delen van de prijsuitreiking: 1 minioren, 2 junioren, 3 jeugd en hoofdklasse (solo en duo bij hun leeftijd).</summary>
     public static int PartOf(string categoryKey) => categoryKey.Split('|')[0] switch

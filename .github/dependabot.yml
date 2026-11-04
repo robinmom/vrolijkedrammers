@@ -37,6 +37,7 @@ updates:
       - dependency-name: '@types/jest'
       - dependency-name: '@react-native-async-storage/async-storage'
       - dependency-name: '@react-native-community/netinfo'
+      - dependency-name: '@react-native-community/slider'
       # De typen volgen de Node-versie van CI en deploy (22); een nieuwere major pas samen met die upgrade.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']

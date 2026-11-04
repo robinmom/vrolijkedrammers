@@ -91,6 +91,12 @@
         "projectId": "c47e4952-d3a2-45cc-9e0f-150472c11eeb"
       }
     },
-    "owner": "robinmom"
+    "owner": "robinmom",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c47e4952-d3a2-45cc-9e0f-150472c11eeb"
+    }
   }
 }

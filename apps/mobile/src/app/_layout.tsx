@@ -9,6 +9,7 @@ import { StyleSheet, View } from 'react-native';
 import { QueryProvider } from '../api/QueryProvider';
 import { restoreSession } from '../auth/session';
 import { TextsProvider } from '../content/texts';
+import { useOrientationLock } from '../features/useOrientationLock';
 import { usePushNotifications } from '../features/usePushNotifications';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
@@ -56,6 +57,7 @@ export default function RootLayout() {
 function Shell() {
   const { colors } = useTheme();
   usePushNotifications();
+  useOrientationLock();
   return (
     <View style={[styles.flex, { backgroundColor: colors.canvas }]}>
       <AppGate>

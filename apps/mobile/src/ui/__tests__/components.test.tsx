@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { Linking } from 'react-native';
 import { ThemeProvider, type ThemeMode } from '../../theme/ThemeProvider';
-import { AppText, Button, EventCard, FilterChips, LinkText, Screen, SettingsList, ShortcutTile, tintSvg } from '../index';
+import { AppText, Button, EventCard, FilterChips, LinkText, MAX_READING_WIDTH, Screen, SettingsList, ShortcutTile, tintSvg } from '../index';
 import { icons } from '../icons.generated';
 
 async function renderIn(mode: ThemeMode, ui: ReactElement) {
@@ -53,6 +53,16 @@ describe('Screen', () => {
     const scroll = screen.getByTestId('screen-scroll');
     expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true);
     expect(scroll.props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  /**
+   * Op een tablet mag de inhoud niet meerekken tot de volle breedte: tekstregels worden dan onleesbaar
+   * lang. Dit scherm is gedeeld, dus deze ene kolom geldt voor bijna elk scherm in de app.
+   */
+  it('houdt de inhoud in een gecentreerde leeskolom', async () => {
+    await renderIn('light', <Screen><AppText>Inhoud</AppText></Screen>);
+    const column = screen.getByTestId('screen-column');
+    expect(column.props.style).toMatchObject({ maxWidth: MAX_READING_WIDTH, alignSelf: 'center', width: '100%' });
   });
 });
 

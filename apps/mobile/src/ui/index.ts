@@ -16,6 +16,7 @@ export { Icon, tintSvg } from './Icon';
 export type { IconName } from './Icon';
 export { InfoRow } from './InfoRow';
 export { LargeTitleHeader } from './LargeTitleHeader';
+export { MAX_READING_WIDTH, useIsWide, WIDE_BREAKPOINT } from './layout';
 export { LinkText } from './LinkText';
 export { FeaturedNewsCard, NewsRow } from './NewsCards';
 export { OfflineBanner } from './OfflineBanner';

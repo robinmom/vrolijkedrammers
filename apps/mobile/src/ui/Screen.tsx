@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
+import { MAX_READING_WIDTH } from './layout';
 
 interface ScreenProps {
   children: ReactNode;
@@ -28,7 +29,12 @@ export function Screen({ children, onRefresh, refreshing = false, hero }: Screen
         automaticallyAdjustKeyboardInsets
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={hero ? '#FFFFFF' : undefined} /> : undefined}
       >
-        {children}
+        {/* Leeskolom: op een tablet rekt de inhoud niet mee tot de volle breedte, want dan worden
+            tekstregels onleesbaar lang. Op een telefoon is het scherm smaller dan de grens, dus daar
+            verandert dit niets. */}
+        <View testID="screen-column" style={styles.column}>
+          {children}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -37,4 +43,5 @@ export function Screen({ children, onRefresh, refreshing = false, hero }: Screen
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { paddingBottom: 24 },
+  column: { width: '100%', maxWidth: MAX_READING_WIDTH, alignSelf: 'center' },
 });

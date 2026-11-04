@@ -84,5 +84,23 @@ app, gezondheid. Betaalgegevens (bankrekening bij iDEAL) worden door de betaaldi
    Console → **Gebruikers en rechten** uitnodigen met rechten voor releases, en de sleutel in EAS zetten
    (expo.dev → Project → Credentials → Android → Google Service Account Key). De sleutel is geheim en gaat niet via
    Claude.
+
+   **Dit staat er op 2026-11-04 nog niet.** `eas submit --platform android` stopt met "Google Service Account Keys
+   cannot be set up in --non-interactive mode" en uploadt niets. Zolang die sleutel ontbreekt, gaat elke Android-release
+   met de hand: Claude bouwt, geeft de downloadlink van de `.aab`, en jij uploadt die in de Play Console.
+
+   De sleutel toevoegen moet je zelf interactief doen, want hij is geheim:
+
+   ```bash
+   cd apps/mobile
+   npx eas-cli credentials --platform android
+   ```
+
+   Kies daar *Google Service Account Key* → *Set up a Google Service Account Key for Play Store submissions*.
 4. Productie: na de interne test **Productie → Nieuwe release** (of de release uit Interne tests promoveren) en
    ter beoordeling indienen.
+
+**Let op — `eas.json` staat sinds 2026-11-04 op de productie-track** (`submit.production.android.track`), op verzoek van
+Robin. Zodra de serviceaccount-sleutel er is, gaat `eas submit --profile production` dus **rechtstreeks naar alle
+Play-gebruikers**, zonder tussenstap via interne tests. Wil je eerst intern testen, gebruik dan een eigen submit-profiel
+of zet de track tijdelijk om.

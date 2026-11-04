@@ -12,8 +12,8 @@
   <ItemGroup>
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.5" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.5" />
-    <PackageReference Include="libphonenumber-csharp" Version="9.0.41" />
-    <PackageReference Include="Markdig" Version="1.5.0" />
+    <PackageReference Include="libphonenumber-csharp" Version="9.0.42" />
+    <PackageReference Include="Markdig" Version="1.5.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
     <ProjectReference Include="..\Drammers.Infrastructure\Drammers.Infrastructure.csproj" />
   </ItemGroup>

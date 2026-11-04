@@ -89,14 +89,44 @@ app, gezondheid. Betaalgegevens (bankrekening bij iDEAL) worden door de betaaldi
    cannot be set up in --non-interactive mode" en uploadt niets. Zolang die sleutel ontbreekt, gaat elke Android-release
    met de hand: Claude bouwt, geeft de downloadlink van de `.aab`, en jij uploadt die in de Play Console.
 
-   De sleutel toevoegen moet je zelf interactief doen, want hij is geheim:
+   De sleutel toevoegen moet je zelf doen, want hij is geheim: het JSON-bestand kan namens jou apps publiceren.
+   Behandel het als een wachtwoord, zet het niet in de repository (die staat in git én in iCloud) en stuur het niet
+   door een chat.
+
+   **a. Google Cloud — het account maken.** [console.cloud.google.com](https://console.cloud.google.com), ingelogd met
+   het Google-account waar de Play Console onder hangt. Kies of maak een project. Dan **IAM en beheer →
+   Serviceaccounts → Serviceaccount maken**, een naam als `play-console-uploader`, en **Maken en sluiten**. Kies
+   **geen rol**: de rechten komen uit de Play Console, niet uit Google Cloud. Kopieer het e-mailadres dat ontstaat
+   (`...@<project>.iam.gserviceaccount.com`).
+
+   **b. Google Cloud — sleutel en API.** Bij het account: **Sleutels beheren → Sleutel toevoegen → Nieuwe sleutel
+   maken → JSON**. Bewaar het bestand buiten de repository. Zet daarna de
+   [Google Play Android Developer API](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com)
+   aan, in hetzelfde project.
+
+   **c. Play Console — rechten.** **Gebruikers en rechten → Nieuwe gebruikers uitnodigen**, het e-mailadres uit stap a,
+   tabblad **App-rechten** → De Vrolijke Drammers. Aanzetten:
+
+   - App-toegang: App-informatie bekijken (alleen lezen)
+   - Concept-apps: Concept-apps bewerken en verwijderen
+   - Releases: Uitrollen naar productie, apparaten uitsluiten en Play App Signing gebruiken · Apps uitrollen naar
+     testtracks · Testtracks beheren en testerlijsten bewerken
+   - Winkelaanwezigheid: Winkelaanwezigheid beheren
+
+   Google vinkt er zelf een paar bij aan; dat hoort zo. Admin (alle rechten), financiële gegevens, bestellingen en
+   reacties op reviews zijn **niet** nodig.
+
+   **d. De sleutel in EAS.** In `apps/mobile`:
 
    ```bash
-   cd apps/mobile
    npx eas-cli credentials --platform android
    ```
 
-   Kies daar *Google Service Account Key* → *Set up a Google Service Account Key for Play Store submissions*.
+   Kies *Google Service Account Key* → *Set up a Google Service Account Key for Play Store submissions* en wijs het
+   JSON-bestand aan. Daarna mag het bestand van de schijf: EAS bewaart het versleuteld.
+
+   De rechten uit stap c hebben soms een paar minuten nodig voordat Google ze doorheeft. Faalt het insturen met een
+   rechtenfout, wacht dan even en probeer het opnieuw.
 4. Productie: na de interne test **Productie → Nieuwe release** (of de release uit Interne tests promoveren) en
    ter beoordeling indienen.
 

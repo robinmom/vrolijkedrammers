@@ -13,7 +13,8 @@
       },
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "preview"
     },
     "testflight": {
       "distribution": "store",
@@ -25,7 +26,8 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "default"
-      }
+      },
+      "channel": "testflight"
     },
     "production": {
       "distribution": "store",
@@ -36,7 +38,8 @@
       },
       "android": {
         "buildType": "app-bundle"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

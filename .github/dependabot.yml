@@ -55,3 +55,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # init en analyze moeten dezelfde versie hebben, anders faalt analyze met "Loaded a configuration file for
+      # version X, but running version Y". Los bijgewerkt kan geen van de twee PR's dus ooit groen worden.
+      codeql-action:
+        patterns: ['github/codeql-action*']

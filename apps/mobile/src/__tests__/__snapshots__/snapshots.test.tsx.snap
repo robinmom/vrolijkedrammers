@@ -33,6 +33,7 @@ exports[`snapshot dark 01 Home 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -40,6 +41,7 @@ exports[`snapshot dark 01 Home 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -2696,6 +2698,7 @@ exports[`snapshot dark 02 Programma 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -2703,6 +2706,7 @@ exports[`snapshot dark 02 Programma 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -5220,6 +5224,7 @@ exports[`snapshot dark 03 Nieuws 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -5227,6 +5232,7 @@ exports[`snapshot dark 03 Nieuws 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -6108,6 +6114,7 @@ exports[`snapshot dark 04 Optocht 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -6115,6 +6122,7 @@ exports[`snapshot dark 04 Optocht 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -6881,12 +6889,14 @@ exports[`snapshot dark 05 Meer 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
         }
       }
       keyboardShouldPersistTaps="handled"
+      testID="screen-scroll"
     >
       <View>
         <View
@@ -9732,6 +9742,7 @@ exports[`snapshot dark 06 Activiteit detail 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -9739,6 +9750,7 @@ exports[`snapshot dark 06 Activiteit detail 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -11057,6 +11069,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -11064,6 +11077,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -11796,6 +11810,7 @@ exports[`snapshot light 01 Home 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -11803,6 +11818,7 @@ exports[`snapshot light 01 Home 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -14459,6 +14475,7 @@ exports[`snapshot light 02 Programma 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -14466,6 +14483,7 @@ exports[`snapshot light 02 Programma 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -16983,6 +17001,7 @@ exports[`snapshot light 03 Nieuws 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -16990,6 +17009,7 @@ exports[`snapshot light 03 Nieuws 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -17871,6 +17891,7 @@ exports[`snapshot light 04 Optocht 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -17878,6 +17899,7 @@ exports[`snapshot light 04 Optocht 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -18644,12 +18666,14 @@ exports[`snapshot light 05 Meer 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
         }
       }
       keyboardShouldPersistTaps="handled"
+      testID="screen-scroll"
     >
       <View>
         <View
@@ -21495,6 +21519,7 @@ exports[`snapshot light 06 Activiteit detail 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -21502,6 +21527,7 @@ exports[`snapshot light 06 Activiteit detail 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>
@@ -22820,6 +22846,7 @@ exports[`snapshot light 07 Foto's 1`] = `
     }
   >
     <RCTScrollView
+      automaticallyAdjustKeyboardInsets={true}
       contentContainerStyle={
         {
           "paddingBottom": 24,
@@ -22827,6 +22854,7 @@ exports[`snapshot light 07 Foto's 1`] = `
       }
       keyboardShouldPersistTaps="handled"
       refreshControl="[RefreshControl]"
+      testID="screen-scroll"
     >
       <RCTRefreshControl />
       <View>

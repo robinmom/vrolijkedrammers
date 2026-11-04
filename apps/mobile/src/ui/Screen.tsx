@@ -18,9 +18,14 @@ export function Screen({ children, onRefresh, refreshing = false, hero }: Screen
   return (
     <SafeAreaView edges={hero ? [] : ['top']} style={[styles.safe, { backgroundColor: colors.canvas }]}>
       <ScrollView
+        testID="screen-scroll"
         contentContainerStyle={styles.content}
         // Knoppen reageren meteen, ook als het toetsenbord open staat (formulieren).
         keyboardShouldPersistTaps="handled"
+        // iOS schuift de inhoud niet vanzelf omhoog voor het toetsenbord, waardoor de onderste
+        // velden van een formulier erachter verdwijnen (gemeld voor adverteerders, 2026-11-04).
+        // Android doet dit al via windowSoftInputMode; op iOS is dit de enige knop ervoor.
+        automaticallyAdjustKeyboardInsets
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={hero ? '#FFFFFF' : undefined} /> : undefined}
       >
         {children}

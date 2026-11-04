@@ -150,7 +150,14 @@ export default function FestivalBeoordelenScreen() {
         onMomentumScrollEnd={(e) => setChosen(Math.round(e.nativeEvent.contentOffset.x / width))}
         renderItem={({ item }) =>
           item.kind === 'dance' ? (
-            <ScrollView style={{ width }} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={{ width }}
+              contentContainerStyle={styles.page}
+              keyboardShouldPersistTaps="handled"
+              // Zonder dit dekt het toetsenbord op iOS het opmerkingenveld af; dit scherm heeft een
+              // eigen scrollvlak en loopt dus niet via Screen.
+              automaticallyAdjustKeyboardInsets
+            >
               <View style={styles.entryHead}>
                 <View style={[styles.number, { backgroundColor: brand.navy }]} accessible accessibilityLabel={`Dans ${item.dance.number}`}>
                   <AppText variant="label" color="rgba(255,255,255,0.75)">

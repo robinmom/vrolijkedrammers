@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { Linking } from 'react-native';
 import { ThemeProvider, type ThemeMode } from '../../theme/ThemeProvider';
-import { Button, EventCard, FilterChips, LinkText, SettingsList, ShortcutTile, tintSvg } from '../index';
+import { AppText, Button, EventCard, FilterChips, LinkText, Screen, SettingsList, ShortcutTile, tintSvg } from '../index';
 import { icons } from '../icons.generated';
 
 async function renderIn(mode: ThemeMode, ui: ReactElement) {
@@ -39,6 +39,20 @@ describe.each<ThemeMode>(['light', 'dark'])('snapshots in thema %s', (mode) => {
   it('ShortcutTile', async () => {
     const tree = await renderIn(mode, <ShortcutTile icon="fotos" label="Foto's" tint="blue" />);
     expect(tree.toJSON()).toMatchSnapshot();
+  });
+});
+
+describe('Screen', () => {
+  /**
+   * Op iOS schoof de inhoud niet omhoog voor het toetsenbord, waardoor de onderste velden van een
+   * formulier erachter verdwenen (gemeld voor adverteerders op 2026-11-04). Het scherm is gedeeld,
+   * dus deze ene instelling geldt voor elk formulier in de app.
+   */
+  it('laat iOS de inhoud omhoog schuiven voor het toetsenbord', async () => {
+    await renderIn('light', <Screen><AppText>Inhoud</AppText></Screen>);
+    const scroll = screen.getByTestId('screen-scroll');
+    expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true);
+    expect(scroll.props.keyboardShouldPersistTaps).toBe('handled');
   });
 });
 

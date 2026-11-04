@@ -40,6 +40,12 @@ updates:
       # De typen volgen de Node-versie van CI en deploy (22); een nieuwere major pas samen met die upgrade.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # zod komt alleen via @expo/cli (bouwtooling) en zit niet in de app-bundel. De patch voor
+      # GHSA-mrhx-c7xc-m3w5 is zod 4, een major die Expo niet gebruikt; Dependabot kan die melding dus niet
+      # oplossen en liep er elke keer op stuk. Zie de uitzondering in pnpm-workspace.yaml. Vervalt zodra Expo
+      # naar zod 4 gaat.
+      - dependency-name: 'zod'
+        update-types: ['version-update:semver-major']
       # Nieuwe majors pas als typescript-eslint en eslint-plugin-react ze ondersteunen (fase 0).
       - dependency-name: 'eslint'
         update-types: ['version-update:semver-major']

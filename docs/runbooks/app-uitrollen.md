@@ -51,13 +51,15 @@ Vanuit `apps/mobile`, met `main` bijgewerkt en de controles groen (`pnpm lint`, 
 
 ```bash
 # eerst op de dev-app, zodat je het ziet werken
-npx eas-cli update --branch testflight --channel testflight --environment preview \
+EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel testflight --environment preview \
   --message "Gelijke stand bij de jury"
 
 # en daarna naar de echte app
-npx eas-cli update --branch production --channel production --environment production \
+EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel production --environment production \
   --message "Gelijke stand bij de jury"
 ```
+
+`--channel` is genoeg: EAS zoekt zelf de branch op die eraan hangt. `--branch` erbij geven is dubbelop.
 
 `--environment` is verplicht vanaf SDK 55. Het kiest welke omgevingsvariabelen in de bundel komen — dus welke API de
 app aanspreekt. **Verwissel dit niet:** `production` met `--environment preview` zou de publieke app naar de
@@ -69,9 +71,17 @@ app zit, ziet het dus niet meteen.
 Terugdraaien kan zonder build:
 
 ```bash
-npx eas-cli update:list --branch production          # welke updates staan er
+# alle toestellen terug naar de versie die in de winkel staat (werkt altijd)
+npx eas-cli update:roll-back-to-embedded --channel production --message "Terug naar de winkelversie"
+
+# of naar een eerdere OTA-update, als die er is
+npx eas-cli update:list --branch production                     # welke updates staan er
 npx eas-cli update:republish --branch production --group <id>   # zet een oudere terug
 ```
+
+`update:republish` werkt alleen als er al een eerdere update op de branch staat. Is de huidige update de eerste, dan is
+`update:roll-back-to-embedded` de enige weg terug. Gefaseerd uitrollen kan met `--rollout-percentage <n>` op
+`eas update`.
 
 ## Een echte build
 
@@ -83,11 +93,17 @@ EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli build --platform all --profile productio
 
 ## Valkuilen
 
-- **`EAS_SKIP_AUTO_FINGERPRINT=1` altijd meegeven.** Zonder die variabele blijft `eas build` hangen op "Computing
-  project fingerprint", omdat de repository in een iCloud-map staat. Zie runbook iCloud-duplicaten.
+- **`EAS_SKIP_AUTO_FINGERPRINT=1` altijd meegeven — ook bij `eas update`.** Zonder die variabele blijft `eas build`
+  hangen op "Computing project fingerprint", omdat de repository in een iCloud-map staat. `eas update` berekent die
+  fingerprint óók; die kwam op 2026-11-04 wel door, maar met de waarschuwing "taking longer than expected". Zie runbook
+  iCloud-duplicaten.
 - **`eas update:configure` schrijft te veel.** Toen het eenmalig gedraaid werd, dupliceerde het de hele
   `blockedPermissions`-lijst in `app.json` en zette het er een `permissions`-lijst bij die het uit de config-plugins had
   uitgerekend — met de microfoon erin, die juist geblokkeerd hoort te zijn. Draai het niet opnieuw; is het toch nodig,
   controleer dan de diff van `app.json` regel voor regel en houd alleen `updates` en `runtimeVersion` over.
 - **Een update op het verkeerde kanaal.** `--channel` en `--environment` horen bij elkaar (zie de tabel). Controleer het
   voordat je het naar `production` stuurt.
+- **Een kanaal bestaat pas na een build met dat profiel.** De tabel hierboven staat in `eas.json`, maar `eas update`
+  kan alleen naar een kanaal dat al door een build is aangemaakt. Op 2026-11-04 bestond daarom alleen `production`:
+  de laatste dev-build was van 2026-10-29, van vóór deze wijziging, en kon dus ook geen update ophalen. Controleer
+  `eas channel:list` en `eas build:list` voordat je belooft dat je eerst op de dev-app kunt testen.

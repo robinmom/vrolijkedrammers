@@ -35,6 +35,7 @@ jobs:
           status=0
           mark=0
           # Loop door de ignoreGhsas-sectie; de comment boven een GHSA kan die als bewust-niet-patchbaar markeren.
+          # De markering geldt voor het hele commentaarblok: een vervolgregel zonder markering zet hem niet uit.
           while IFS= read -r line; do
             case "$line" in
               *GHSA-*)
@@ -56,7 +57,6 @@ jobs:
               *"#"*)
                 case "$line" in
                   *"[geen-bruikbare-patch]"*) mark=1 ;;
-                  *) mark=0 ;;
                 esac
                 ;;
             esac

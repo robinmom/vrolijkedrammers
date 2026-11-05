@@ -171,7 +171,10 @@ export function JuryPhotoCard({
 const styles = StyleSheet.create({
   card: { gap: 10, padding: 16, borderRadius: radius.md },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  preview: { width: '100%', height: 180, borderRadius: radius.sm },
+  // Een vaste hoogte bij volle breedte werd op een tablet een strook van zo'n 1000 bij 180, waar `cover` het grootste
+  // deel uit wegsneed. Een vaste verhouding houdt de foto herkenbaar; de maximale breedte voorkomt dat hij op een
+  // breed scherm het hele scherm vult. Op een telefoon is het scherm smaller dan dat maximum, dus daar verandert niets.
+  preview: { width: '100%', maxWidth: 480, aspectRatio: 4 / 3, alignSelf: 'center', borderRadius: radius.sm },
   row: { flexDirection: 'row', gap: 8 },
   action: { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.sm },
   dim: { opacity: 0.5 },

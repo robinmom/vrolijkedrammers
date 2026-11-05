@@ -116,6 +116,34 @@ describe('Jureren (fase 22b)', () => {
     expect(await screen.findByText('2 van 2')).toBeTruthy();
   });
 
+  it('tablet: de lijst blijft staan als je naar het overzicht gaat', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+    expect(await screen.findByText('Jouw categorieën')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Overzicht' }));
+    expect(await screen.findByText('Klaar met jureren?')).toBeTruthy();
+    // Verdween de lijst hier, dan bleef die ruimte leeg terwijl de pagina's smal blijven.
+    expect(screen.getByText('Jouw categorieën')).toBeTruthy();
+  });
+
+  it('tablet: bij de hele optocht staan de wagens onder een kopje per categorie', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => buttons?.at(-1)?.onPress?.());
+    await renderApp(routes, '/jureren/beoordelen');
+    // Met alleen de eigen categorie valt er niets te groeperen, dus dan geen kopjes.
+    expect(await screen.findByText('Jouw categorieën')).toBeTruthy();
+    expect(screen.queryByText('Loopgroepen groot jeugd')).toBeNull();
+    await fireEvent.press(screen.getByRole('switch', { name: 'Hele optocht' }));
+    expect(await screen.findByText('1 van 3')).toBeTruthy();
+    // De categorienaam staat ook als chip bij de inzending zelf; het kopje in de lijst is een header.
+    const kopjes = screen.getAllByRole('header').map((h) => h.props.children);
+    expect(kopjes).toContain('Getrokken wagens volwassenen');
+    expect(kopjes).toContain('Loopgroepen groot jeugd');
+    alert.mockRestore();
+  });
+
   it('op een telefoon staat die lijst er niet; daar blijf je swipen', async () => {
     mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
     await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');

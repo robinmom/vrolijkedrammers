@@ -144,13 +144,14 @@ export default function FestivalBeoordelenScreen() {
       </View>
 
       <View style={styles.body}>
-        {wide && current?.kind === 'dance' ? (
+        {/* Ook op de afrondpagina blijft de lijst staan: anders blijft die ruimte leeg terwijl de pagina's smal zijn. */}
+        {wide ? (
           <View style={styles.columnWrap}>
             <JuryColumn
               width={columnWidth - 20}
               title={category.name}
               meta={`${s.dances.length} ${s.dances.length === 1 ? 'dans' : 'dansen'} · ${s.dances.filter((d) => danceComplete(judging.scores, d.entryId)).length} beoordeeld`}
-              activeKey={current.dance.entryId}
+              activeKey={current?.kind === 'dance' ? current.dance.entryId : null}
               onSelect={(key) => goTo(s.dances.findIndex((d) => d.entryId === key))}
               items={s.dances.map((dance) => ({
                 key: dance.entryId,
@@ -165,6 +166,7 @@ export default function FestivalBeoordelenScreen() {
         ) : null}
         <FlatList
           ref={list}
+          style={styles.flexList}
           data={pages}
           horizontal
           pagingEnabled
@@ -320,6 +322,7 @@ export default function FestivalBeoordelenScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   body: { flex: 1, flexDirection: 'row' },
+  flexList: { flex: 1 },
   columnWrap: { paddingLeft: 20, paddingBottom: 8 },
   center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 16 },
   centerText: { textAlign: 'center' },

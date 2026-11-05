@@ -8,7 +8,7 @@ import { subscribeToAgenda } from '../../lib/calendar';
 import { dateBlockParts, monthSection, seasonLabel, timeRange } from '../../lib/dates';
 import { eventBadge } from '../../lib/events';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, Button, EmptyState, EventCard, FilterChips, LargeTitleHeader, QueryState, Screen, SearchField } from '../../ui';
+import { AppText, Button, CardColumns, EmptyState, EventCard, FilterChips, LargeTitleHeader, QueryState, Screen, SearchField } from '../../ui';
 
 const ALL = 'alle';
 
@@ -47,7 +47,7 @@ export default function ProgrammaScreen() {
   }, [events.data, category, search]);
 
   return (
-    <Screen {...refresh}>
+    <Screen wide {...refresh}>
       <LargeTitleHeader
         title="Programma"
         subtitle={year.data ? seasonLabel(year.data.name) : undefined}
@@ -74,19 +74,22 @@ export default function ProgrammaScreen() {
               <AppText variant="overline" color={colors.textSecondary} style={styles.month} accessibilityRole="header">
                 {month}
               </AppText>
-              {items.map((event) => (
-                <EventCard
-                  key={event.id}
-                  title={event.title}
-                  date={dateBlockParts(event.startAt)}
-                  time={event.allDay ? 'Hele dag' : timeRange(event.startAt, null, false)}
-                  location={event.locationName ?? undefined}
-                  badge={eventBadge(event)}
-                  highlighted={event.isHighlight}
-                  onPress={() => router.push(`/activiteit/${event.id}`)}
-                  testID="event-card"
-                />
-              ))}
+              {/* Op een breed scherm twee kolommen per maand, in leesvolgorde: eerste helft links. */}
+              <CardColumns gap={10}>
+                {items.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    title={event.title}
+                    date={dateBlockParts(event.startAt)}
+                    time={event.allDay ? 'Hele dag' : timeRange(event.startAt, null, false)}
+                    location={event.locationName ?? undefined}
+                    badge={eventBadge(event)}
+                    highlighted={event.isHighlight}
+                    onPress={() => router.push(`/activiteit/${event.id}`)}
+                    testID="event-card"
+                  />
+                ))}
+              </CardColumns>
             </View>
           ))
         )}

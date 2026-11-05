@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import type { NewsSummary } from '../api/client';
 import { newsDateLong, newsDateShort } from '../lib/dates';
-import { AppText, FeaturedNewsCard, NewsRow } from '../ui';
+import { AppText, CardColumns, FeaturedNewsCard, NewsRow } from '../ui';
 
 /** Nieuwsoverzicht (Figma 03): het nieuwste bericht uitgelicht, daaronder "Eerder nieuws". */
 export function NewsFeed({ items }: { items: NewsSummary[] }) {
@@ -26,18 +26,21 @@ export function NewsFeed({ items }: { items: NewsSummary[] }) {
           Eerder nieuws
         </AppText>
       ) : null}
-      {rest.map((item) => (
-        <NewsRow
-          key={item.id}
-          variant="list"
-          id={item.id}
-          title={item.title}
-          imageUrl={item.imageUrl}
-          overline={item.category}
-          date={newsDateShort(item.publishedAt)}
-          onPress={() => open(item.id)}
-        />
-      ))}
+      {/* Het uitgelichte bericht blijft over de volle breedte; de rest gaat op een breed scherm in twee kolommen. */}
+      <CardColumns>
+        {rest.map((item) => (
+          <NewsRow
+            key={item.id}
+            variant="list"
+            id={item.id}
+            title={item.title}
+            imageUrl={item.imageUrl}
+            overline={item.category}
+            date={newsDateShort(item.publishedAt)}
+            onPress={() => open(item.id)}
+          />
+        ))}
+      </CardColumns>
     </View>
   );
 }

@@ -51,11 +51,20 @@ Vanuit `apps/mobile`, met `main` bijgewerkt en de controles groen (`pnpm lint`, 
 
 ```bash
 # eerst op de dev-app, zodat je het ziet werken
-EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel testflight --environment preview \
-  --message "Gelijke stand bij de jury"
+pnpm ota:testflight --message "Gelijke stand bij de jury"
 
 # en daarna naar de echte app
-EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel production --environment production \
+pnpm ota:production --message "Gelijke stand bij de jury"
+```
+
+Die twee scripts controleren eerst of de gekozen EAS-omgeving een API-adres heeft dat bij het kanaal past, en rollen
+pas daarna uit. Slaat de controle aan, dan gebeurt er niets en staat er in de uitvoer wat je moet zetten. Los
+controleren kan met `pnpm check:ota <kanaal> <omgeving>`.
+
+Het kale commando werkt nog steeds, maar dan sla je de controle over:
+
+```bash
+EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel testflight --environment preview \
   --message "Gelijke stand bij de jury"
 ```
 
@@ -64,6 +73,64 @@ EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel production --environmen
 `--environment` is verplicht vanaf SDK 55. Het kiest welke omgevingsvariabelen in de bundel komen — dus welke API de
 app aanspreekt. **Verwissel dit niet:** `production` met `--environment preview` zou de publieke app naar de
 dev-omgeving laten praten.
+
+### De valkuil die ons 5 november 2026 een halve dag kostte
+
+Het `env`-blok in `eas.json` geldt **alleen voor builds**. `eas update` kijkt er niet naar; die gebruikt de
+omgevingsvariabelen die bij EAS op de server staan (`eas env:list <omgeving>`). En daar ontbrak
+`EXPO_PUBLIC_API_URL` in de omgeving `preview`.
+
+Het gevolg was stil en vervelend: `src/api/config.ts` valt zonder die variabele terug op
+`__DEV__ ? dev : productie`, en in een uitgerolde bundel is `__DEV__` onwaar. De dev-app op de iPad praatte daardoor
+met de **productiedatabase**, zonder dat er ook maar iets aan te zien was. Pas toen de rollen van het ene toestel niet
+met het andere overeenkwamen, viel het op.
+
+Controleer daarom vóór een update naar `testflight` of `preview`:
+
+```bash
+npx eas-cli env:list preview | grep EXPO_PUBLIC_API_URL
+```
+
+Staat die er niet, zet hem dan eenmalig goed (dit hoeft maar één keer):
+
+```bash
+npx eas-cli env:set --name EXPO_PUBLIC_API_URL --value "https://app-dvd-api-dev.azurewebsites.net" \
+  --environment preview --environment development --visibility plaintext --scope project --type string
+```
+
+Kan dat niet, geef de waarde dan mee aan het commando zelf, **met `--clear-cache`**:
+
+```bash
+EXPO_PUBLIC_API_URL="https://app-dvd-api-dev.azurewebsites.net" EAS_SKIP_AUTO_FINGERPRINT=1 \
+  npx eas-cli update --channel testflight --environment preview --clear-cache --message "..."
+```
+
+Die `--clear-cache` is geen overbodige voorzichtigheid: Metro bakt de waarde bij het bundelen in en hergebruikt
+anders een eerdere bundel waarin een oude (of geen) waarde zat.
+
+**Nalopen achteraf** kan zonder de app te installeren: exporteer dezelfde bundel lokaal en kijk welke URL erin zit.
+
+```bash
+EXPO_PUBLIC_API_URL="https://app-dvd-api-dev.azurewebsites.net" npx expo export --platform ios --clear \
+  --output-dir /tmp/bundelcontrole
+strings /tmp/bundelcontrole/_expo/static/js/ios/*.hbc | grep -oE 'https://(app-dvd-api-dev[^"]*|www\.vrolijkedrammers\.nl)' | sort -u
+```
+
+Je hoort beide adressen te zien: het dev-adres is de ingevulde variabele, het productieadres staat er als
+terugvaloptie altijd in. Zie je **alleen** het productieadres, dan is de variabele niet meegekomen.
+
+### De drie vangnetten
+
+Na die ochtend liggen er drie, zodat dit niet nog eens stilletjes kan gebeuren:
+
+1. **De app raadt niet meer.** Ontbreekt `EXPO_PUBLIC_API_URL`, dan bepaalt het **kanaal van de build** de omgeving
+   (`src/api/config.ts`). Dat kanaal wordt bij het bouwen in de app gezet en een update kan het niet veranderen, dus
+   een testversie kan nooit meer productie kiezen. Vroeger hing die keuze aan `__DEV__`, en dat is in een uitgerolde
+   bundel altijd onwaar — precies de fout.
+2. **Je ziet het meteen.** Praat een testversie toch met productie, dan staat er een rode balk bovenin:
+   *"LET OP · deze testversie praat met PRODUCTIE"*. In de winkelversie wordt daar nooit iets getoond. Rustiger
+   terug te vinden is het op het accountscherm: een testversie zet daar bij welke omgeving hij gebruikt.
+3. **Het uitrollen controleert zichzelf**, via de `pnpm ota:*`-scripts hierboven.
 
 De app haalt de update op bij het opstarten en gebruikt hem bij de **volgende** keer opstarten. Een tester die nu in de
 app zit, ziet het dus niet meteen.

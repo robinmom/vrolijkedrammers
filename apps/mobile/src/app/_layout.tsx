@@ -13,7 +13,7 @@ import { useOrientationLock } from '../features/useOrientationLock';
 import { usePushNotifications } from '../features/usePushNotifications';
 import { AppGate } from '../shell/AppGate';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
-import { OfflineBanner } from '../ui';
+import { EnvironmentBanner, OfflineBanner } from '../ui';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,8 +63,9 @@ function Shell() {
       <AppGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }} />
       </AppGate>
-      {/* Als laatste gerenderd: de banner ligt bovenop de schermen en verschuift hun layout niet. */}
+      {/* Als laatste gerenderd: de banners liggen bovenop de schermen en verschuiven hun layout niet. */}
       <OfflineBanner />
+      <EnvironmentBanner />
     </View>
   );
 }

@@ -65,7 +65,10 @@
     "texts": "node scripts/collect-texts.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "jest"
+    "test": "jest",
+    "check:ota": "node scripts/check-ota-env.mjs",
+    "ota:testflight": "node scripts/check-ota-env.mjs testflight preview && EAS_SKIP_AUTO_FINGERPRINT=1 eas-cli update --channel testflight --environment preview",
+    "ota:production": "node scripts/check-ota-env.mjs production production && EAS_SKIP_AUTO_FINGERPRINT=1 eas-cli update --channel production --environment production"
   },
   "private": true,
   "description": "Mobiele app De Vrolijke Drammers (Expo, ADR-001)",

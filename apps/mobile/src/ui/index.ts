@@ -31,6 +31,7 @@ export { SettingsList } from './SettingsList';
 export type { SettingsItem } from './SettingsList';
 export { ShortcutTile } from './ShortcutTile';
 export type { TileTint } from './ShortcutTile';
+export { EnvironmentBanner } from './EnvironmentBanner';
 export { EmptyState, ErrorState } from './StateMessage';
 export { TextField } from './TextField';
 export { Screen } from './Screen';

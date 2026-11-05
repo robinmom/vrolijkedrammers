@@ -21,13 +21,18 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
 {
     private const string ValidIban = "NL91ABNA0417164300";
     private readonly FakeEBoekhouden _eb = new();
+    private readonly FakeMollie _mollie = new();
     private AuthenticatedApiFactory _api = null!;
     private HttpClient _bestuur = null!;
     private HttpClient _anonymous = null!;
 
     public async Task InitializeAsync()
     {
-        _api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), configure: services => services.AddSingleton<IEBoekhoudenClient>(_eb));
+        _api = new AuthenticatedApiFactory(await sql.CreateMigratedDatabaseAsync(), configure: services =>
+        {
+            services.AddSingleton<IEBoekhoudenClient>(_eb);
+            services.AddSingleton<Drammers.Infrastructure.Payments.IMollieClient>(_mollie);
+        });
         _bestuur = _api.ClientFor((await _api.CreateUserAsync("bestuur@example.com", DefaultRoles.Bestuur)).ObjectId);
         _anonymous = _api.CreateClient();
     }
@@ -131,6 +136,77 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         var me = await client.GetFromJsonAsync<JsonElement>("/api/v1/me/member");
         Assert.Equal(member.MemberNumber, me.GetProperty("memberNumber").GetString());
         Assert.True(await WithDbAsync(db => db.AuditLog.AnyAsync(a => a.Action == "membership-application.activated")));
+    }
+
+    [Fact]
+    public async Task Lid_na_de_incasso_betaalt_zijn_eerste_jaar_met_een_betaallink_en_is_pas_daarna_lid()
+    {
+        // De contributie van dit carnavalsjaar is al geïnd; wie nu lid wordt valt buiten die inning.
+        await WithDbAsync(async db =>
+        {
+            db.CollectionRuns.Add(new CollectionRun
+            {
+                Id = IdGenerator.NewId(),
+                Kind = CollectionKind.Contribution,
+                CampaignYear = 1,
+                CollectionDate = Today.AddDays(-7),
+                Description = "Contributie 2026/2027",
+                MessageId = "MSG-TEST-1",
+                CreatedAt = _api.Clock.UtcNow.UtcDateTime,
+            });
+            // Carnaval moet nog komen, anders hoeft er niets te worden betaald.
+            await db.CarnivalYears.Where(y => y.Id == 1).ExecuteUpdateAsync(x => x.SetProperty(y => y.CarnivalStartDate, Today.AddDays(30)));
+            return await db.SaveChangesAsync();
+        });
+
+        var id = await SubmitAsync(Form("laat@example.com", 30), "laat@example.com");
+
+        // Het portal ziet dat er betaald moet worden, met het eenpersoonstarief.
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
+        var payment = detail.GetProperty("payment");
+        Assert.True(payment.GetProperty("required").GetBoolean());
+        Assert.Equal(32.50m, payment.GetProperty("amount").GetDecimal());
+
+        // Goedkeuren kan niet zomaar: eerst het betaalverzoek.
+        var send = await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/payment-request", null);
+        Assert.Equal(HttpStatusCode.NoContent, send.StatusCode);
+        Assert.Equal(ApplicationStatus.AwaitingPayment, await WithDbAsync(db => db.MembershipApplications.Where(a => a.Id == id).Select(a => a.Status).SingleAsync()));
+        Assert.Contains(_api.Emails.Sent, m => m.To == "laat@example.com" && m.Subject.Contains("contributie", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(3250, _mollie.Created.Single().AmountCents);
+
+        // Zolang er niet betaald is, is er geen lid en geen account.
+        await RunProvisioningAsync();
+        Assert.False(await WithDbAsync(db => db.Members.AnyAsync(m => m.Email == "laat@example.com")));
+
+        // Betaling binnen: de webhook keurt de aanvraag alsnog goed.
+        var molliePaymentId = _mollie.Created.Single().IdempotencyKey is not null ? _mollie.Payments.Keys.Single() : "";
+        _mollie.SetStatus(molliePaymentId, "paid");
+        var webhook = await _anonymous.PostAsync("/api/v1/payments/mollie/webhook",
+            new FormUrlEncodedContent([new KeyValuePair<string, string>("id", molliePaymentId)]));
+        Assert.Equal(HttpStatusCode.OK, webhook.StatusCode);
+
+        var after = await WithDbAsync(db => db.MembershipApplications.Where(a => a.Id == id).Select(a => new { a.Status, a.PaidAt, a.PaymentCarnivalYearId }).SingleAsync());
+        Assert.Equal(ApplicationStatus.Approved, after.Status);
+        Assert.NotNull(after.PaidAt);
+        Assert.Equal(1, after.PaymentCarnivalYearId);
+
+        // En nu wordt het lid wél aangemaakt.
+        await RunProvisioningAsync();
+        Assert.True(await WithDbAsync(db => db.Members.AnyAsync(m => m.Email == "laat@example.com")));
+    }
+
+    [Fact]
+    public async Task Zonder_incasso_of_na_carnaval_hoeft_er_niets_betaald_te_worden()
+    {
+        // Geen incassorun voor dit jaar: dan loopt het nieuwe lid gewoon mee in de eerstvolgende inning.
+        var id = await SubmitAsync(Form("gewoon@example.com", 30), "gewoon@example.com");
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("payment").ValueKind);
+
+        // Goedkeuren gaat dan zoals altijd, zonder betaalstap.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/approve", null)).StatusCode);
+        await RunProvisioningAsync();
+        Assert.True(await WithDbAsync(db => db.Members.AnyAsync(m => m.Email == "gewoon@example.com")));
     }
 
     [Fact]

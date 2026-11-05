@@ -152,6 +152,7 @@ export const applicationStatusLabels: Record<string, string> = {
   Draft: 'Concept',
   Submitted: 'Nieuw',
   InReview: 'In behandeling',
+  AwaitingPayment: 'In behandeling (onbetaald)',
   Approved: 'Goedgekeurd',
   Provisioning: 'Wordt verwerkt',
   ProvisioningFailed: 'Verwerken mislukt',
@@ -163,6 +164,7 @@ export const applicationStatusLabels: Record<string, string> = {
 export const applicationStatusTone: Record<string, string> = {
   Submitted: 'warn',
   InReview: 'info',
+  AwaitingPayment: 'warn',
   Approved: 'info',
   Provisioning: 'info',
   ProvisioningFailed: 'error',

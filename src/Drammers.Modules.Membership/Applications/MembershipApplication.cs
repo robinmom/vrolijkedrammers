@@ -10,6 +10,15 @@ public enum ApplicationStatus
     Submitted,
 
     InReview,
+
+    /// <summary>
+    /// Betaalverzoek verstuurd, nog niet betaald (wens 2026-11-05). Wie ná de incassodatum en vóór carnaval lid wordt,
+    /// wordt door de incasso van dit jaar niet meer geraakt; die betaalt zijn eerste jaar met een betaallink. Pas als
+    /// het geld binnen is gaat de aanvraag naar <see cref="Approved"/> en wordt het lid aangemaakt. Blijft het uit,
+    /// dan vervalt de aanvraag.
+    /// </summary>
+    AwaitingPayment,
+
     Approved,
     Rejected,
     Provisioning,
@@ -121,6 +130,34 @@ public sealed class MembershipApplication
     public string? RejectionReason { get; set; }
 
     public string? InternalNotes { get; set; }
+
+    // --- Eerste contributie bij een laat lidmaatschap (wens 2026-11-05) ---
+
+    /// <summary>Bedrag van het betaalverzoek in centen; het tarief van één persoon, of dansgarde, op het moment van sturen.</summary>
+    public int? PaymentAmountCents { get; set; }
+
+    /// <summary>Wanneer de secretaris het betaalverzoek stuurde; hiervandaan loopt de termijn van 30 dagen.</summary>
+    public DateTime? PaymentRequestedAt { get; set; }
+
+    /// <summary>Hierna vervalt de aanvraag als er niet is betaald.</summary>
+    public DateTime? PaymentExpiresAt { get; set; }
+
+    public DateTime? PaidAt { get; set; }
+
+    /// <summary>Betaling bij Mollie (<c>tr_…</c>); de webhook zoekt de aanvraag hiermee op.</summary>
+    public string? MolliePaymentId { get; set; }
+
+    /// <summary>Betaallink van Mollie, zodat de secretaris hem opnieuw kan sturen zonder nieuwe betaling aan te maken.</summary>
+    public string? PaymentCheckoutUrl { get; set; }
+
+    /// <summary>Carnavalsjaar waarvoor dit eerste jaar contributie is voldaan; het jaar erop loopt hij gewoon mee in de incasso.</summary>
+    public int? PaymentCarnivalYearId { get; set; }
+
+    /// <summary>Hoe vaak de betaallink is verstuurd; een herinnering is normaal, eindeloos sturen niet.</summary>
+    public int PaymentSendCount { get; set; }
+
+    /// <summary>Termijn waarbinnen het eerste jaar contributie betaald moet zijn.</summary>
+    public const int PaymentTermDays = 30;
 
     /// <summary>
     /// Lid splitsen (fase 25): dit is het tweede lid van het tweepersoonslidmaatschap van dit hoofdlid. Na goedkeuring

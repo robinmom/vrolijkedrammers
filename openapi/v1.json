@@ -11604,6 +11604,70 @@
         }
       }
     },
+    "/api/v1/admin/membership-applications/{id}/payment-request": {
+      "post": {
+        "tags": [
+          "AdminMembershipApplications"
+        ],
+        "summary": "Betaalverzoek voor het eerste jaar contributie sturen. Alleen nodig als iemand lid wordt ná de incassodatum en\nvóór carnaval; dan valt hij buiten de inning van dit jaar. De aanvraag blijft in behandeling tot er betaald is\nen wordt daarna vanzelf goedgekeurd. Nog een keer aanroepen stuurt dezelfde betaallink opnieuw.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/membership-applications/{id}/reject": {
       "post": {
         "tags": [
@@ -33425,6 +33489,16 @@
                 "$ref": "#/components/schemas/ApplicationSplitResponse"
               }
             ]
+          },
+          "payment": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationPaymentResponse"
+              }
+            ]
           }
         }
       },
@@ -33441,6 +33515,59 @@
             ]
           }
         }
+      },
+      "ApplicationPaymentResponse": {
+        "required": [
+          "required",
+          "amount",
+          "requestedAt",
+          "expiresAt",
+          "paidAt",
+          "sendCount",
+          "checkoutUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "requestedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "sendCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "checkoutUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Het eerste jaar contributie (wens 2026-11-05). `Required` is waar als deze aanvraag na de incassodatum en vóór\ncarnaval binnenkwam: dan toont het portal de knop om een betaalverzoek te sturen. Is er al een verzoek verstuurd,\ndan staan hier ook het bedrag, de vervaldatum en of er betaald is."
       },
       "ApplicationProvisioningResponse": {
         "required": [
@@ -33632,6 +33759,7 @@
           "Draft",
           "Submitted",
           "InReview",
+          "AwaitingPayment",
           "Approved",
           "Rejected",
           "Provisioning",

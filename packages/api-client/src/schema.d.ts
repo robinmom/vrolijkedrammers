@@ -9891,6 +9891,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/membership-applications/{id}/payment-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Betaalverzoek voor het eerste jaar contributie sturen. Alleen nodig als iemand lid wordt ná de incassodatum en
+         *     vóór carnaval; dan valt hij buiten de inning van dit jaar. De aanvraag blijft in behandeling tot er betaald is
+         *     en wordt daarna vanzelf goedgekeurd. Nog een keer aanroepen stuurt dezelfde betaallink opnieuw.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/membership-applications/{id}/reject": {
         parameters: {
             query?: never;
@@ -26254,9 +26316,29 @@ export interface components {
             emailInUseBy: null | string;
             membershipType: components["schemas"]["MembershipType"];
             splitFrom?: null | components["schemas"]["ApplicationSplitResponse"];
+            payment?: null | components["schemas"]["ApplicationPaymentResponse"];
         };
         ApplicationNotesRequest: {
             notes: null | string;
+        };
+        /**
+         * @description Het eerste jaar contributie (wens 2026-11-05). `Required` is waar als deze aanvraag na de incassodatum en vóór
+         *     carnaval binnenkwam: dan toont het portal de knop om een betaalverzoek te sturen. Is er al een verzoek verstuurd,
+         *     dan staan hier ook het bedrag, de vervaldatum en of er betaald is.
+         */
+        ApplicationPaymentResponse: {
+            required: boolean;
+            /** Format: double */
+            amount: number;
+            /** Format: date-time */
+            requestedAt: null | string;
+            /** Format: date-time */
+            expiresAt: null | string;
+            /** Format: date-time */
+            paidAt: null | string;
+            /** Format: int32 */
+            sendCount: number;
+            checkoutUrl: null | string;
         };
         ApplicationProvisioningResponse: {
             /** Format: uuid */
@@ -26307,7 +26389,7 @@ export interface components {
          * @description Statussen van een aanmelding (ADR-014, docs/04 §4). Nooit automatisch een definitief lidmaatschap.
          * @enum {unknown}
          */
-        ApplicationStatus: "Draft" | "Submitted" | "InReview" | "Approved" | "Rejected" | "Provisioning" | "ProvisioningFailed" | "Activated" | "Withdrawn";
+        ApplicationStatus: "Draft" | "Submitted" | "InReview" | "AwaitingPayment" | "Approved" | "Rejected" | "Provisioning" | "ProvisioningFailed" | "Activated" | "Withdrawn";
         ApplicationSummaryResponse: {
             /** Format: uuid */
             id: string;

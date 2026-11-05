@@ -58,12 +58,21 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
             ? await db.Members.AsNoTracking().Where(m => m.Id == mainId)
                 .Select(m => new ApplicationSplitResponse(m.Id, m.MemberNumber, m.FullName)).SingleOrDefaultAsync(cancellationToken)
             : null;
+        // Het eerste jaar contributie: alleen te betalen als de aanvraag tussen de incasso en carnaval binnenkwam.
+        var aangevraagdOp = DateOnly.FromDateTime(a.SubmittedAt ?? a.CreatedAt);
+        var betaalplicht = a.PaymentRequestedAt is not null || await applications.NeedsFirstYearPaymentAsync(aangevraagdOp, cancellationToken);
+        var payment = betaalplicht
+            ? new ApplicationPaymentResponse(
+                true,
+                a.PaymentAmountCents is { } cents ? cents / 100m : await applications.FirstYearAmountAsync(a, aangevraagdOp, cancellationToken),
+                a.PaymentRequestedAt, a.PaymentExpiresAt, a.PaidAt, a.PaymentSendCount, a.PaymentCheckoutUrl)
+            : null;
         return new ApplicationDetailResponse(
             a.Id, a.Status, a.Source, a.FirstName, a.NamePrefix, a.LastName, a.FullName, a.Gender, a.BirthDate, a.AgeOn(today), a.IsMinorOn(today),
             a.AddressLine, a.PostalCode, a.City, a.Email, a.Phone, a.GuardianName, a.GuardianPhone,
             MembershipApplications.MaskIban(a.Iban), a.AccountHolder, a.MandateReference, a.MandateConsentAt, a.ConsentPrivacyAt, a.ConsentPhoto,
             a.SubmittedAt, handler, a.HandledAt, a.DecisionAt, a.RejectionReason, a.InternalNotes, a.ResultingMemberId, provisioning, emailInUseBy,
-            a.MembershipType, splitFrom);
+            a.MembershipType, splitFrom, payment);
     }
 
     [HttpPost("{id:guid}/start-review")]
@@ -81,6 +90,21 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
     public async Task<IActionResult> Approve(Guid id, CancellationToken cancellationToken)
     {
         await applications.ApproveAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Betaalverzoek voor het eerste jaar contributie sturen. Alleen nodig als iemand lid wordt ná de incassodatum en
+    /// vóór carnaval; dan valt hij buiten de inning van dit jaar. De aanvraag blijft in behandeling tot er betaald is
+    /// en wordt daarna vanzelf goedgekeurd. Nog een keer aanroepen stuurt dezelfde betaallink opnieuw.
+    /// </summary>
+    [HttpPost("{id:guid}/payment-request")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SendPaymentRequest(Guid id, CancellationToken cancellationToken)
+    {
+        await applications.SendPaymentRequestAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
         return NoContent();
     }
 
@@ -124,7 +148,16 @@ public sealed record ApplicationDetailResponse(
     string? GuardianName, string? GuardianPhone, string? IbanMasked, string? AccountHolder, string MandateReference, DateTime? MandateConsentAt,
     DateTime ConsentPrivacyAt, bool ConsentPhoto, DateTime? SubmittedAt, string? HandledBy, DateTime? HandledAt, DateTime? DecisionAt,
     string? RejectionReason, string? InternalNotes, Guid? ResultingMemberId, ApplicationProvisioningResponse? Provisioning,
-    string? EmailInUseBy, MembershipType MembershipType, ApplicationSplitResponse? SplitFrom = null);
+    string? EmailInUseBy, MembershipType MembershipType, ApplicationSplitResponse? SplitFrom = null,
+    ApplicationPaymentResponse? Payment = null);
+
+/// <summary>
+/// Het eerste jaar contributie (wens 2026-11-05). <c>Required</c> is waar als deze aanvraag na de incassodatum en vóór
+/// carnaval binnenkwam: dan toont het portal de knop om een betaalverzoek te sturen. Is er al een verzoek verstuurd,
+/// dan staan hier ook het bedrag, de vervaldatum en of er betaald is.
+/// </summary>
+public sealed record ApplicationPaymentResponse(
+    bool Required, decimal Amount, DateTime? RequestedAt, DateTime? ExpiresAt, DateTime? PaidAt, int SendCount, string? CheckoutUrl);
 
 /// <summary>Lid splitsen (fase 25): het hoofdlid van wie dit het tweede lid is.</summary>
 public sealed record ApplicationSplitResponse(Guid MemberId, string MemberNumber, string FullName);

@@ -31,7 +31,8 @@ public sealed class JuryController(ParadeJudging judging, Content.ContentUrls ur
             [.. s.Weights.Select(w => new JudgingCategoryWeightsResponse(w.CategoryId, w.Originality, w.Carnivalesque, w.Quality, w.Overall))],
             [.. await Task.WhenAll(s.Photos.Select(async p => new JudgingPhotoResponse(
                 p.RegistrationId, p.Status,
-                await urls.ForAsync(Drammers.Infrastructure.Files.FileContainers.PhotosDerived, p.ThumbnailBlobPath, cancellationToken))))]);
+                await urls.ForAsync(Drammers.Infrastructure.Files.FileContainers.PhotosDerived, p.ThumbnailBlobPath, cancellationToken))))],
+            [.. s.Comments.Select(c => new JudgingCommentResponse(c.RegistrationId, c.Pass, c.Text, c.WrittenAt))]);
     }
 
     [HttpPut("parades/{paradeId:guid}/scores")]
@@ -41,7 +42,8 @@ public sealed class JuryController(ParadeJudging judging, Content.ContentUrls ur
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
     public async Task<SaveScoresResponse> SaveScores(Guid paradeId, SaveScoresRequest request, CancellationToken cancellationToken) =>
         new(await judging.SaveScoresAsync(UserId, paradeId,
-            [.. request.Scores.Select(s => new ScoreInput(s.RegistrationId, s.Pass, s.Criterion, s.Value, s.ScoredAt))], cancellationToken));
+            [.. request.Scores.Select(s => new ScoreInput(s.RegistrationId, s.Pass, s.Criterion, s.Value, s.ScoredAt))],
+            [.. (request.Comments ?? []).Select(c => new CommentInput(c.RegistrationId, c.Pass, c.Text, c.WrittenAt))], cancellationToken));
 
     /// <summary>
     /// Foto van een wagen of groep (fase 22e): één per jurylid per inzending, dus een nieuwe vervangt de vorige. De foto
@@ -71,7 +73,8 @@ public sealed class JuryController(ParadeJudging judging, Content.ContentUrls ur
 public sealed record JurorSessionResponse(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, TimeOnly StartTime, DateTime? SubmittedAt,
     IReadOnlyList<JudgingCategoryRefResponse> Categories, IReadOnlyList<JudgingEntryResponse> Entries, IReadOnlyList<JudgingScoreResponse> Scores,
-    IReadOnlyList<JudgingCategoryWeightsResponse> Weights, IReadOnlyList<JudgingPhotoResponse> Photos);
+    IReadOnlyList<JudgingCategoryWeightsResponse> Weights, IReadOnlyList<JudgingPhotoResponse> Photos,
+    IReadOnlyList<JudgingCommentResponse> Comments);
 
 /// <summary>De eigen foto van dit jurylid bij een inzending (fase 22e); bij <c>Pending</c> loopt de scan nog.</summary>
 public sealed record JudgingPhotoResponse(Guid RegistrationId, Modules.Content.Photos.PhotoProcessingStatus Status, string? ThumbnailUrl);
@@ -85,9 +88,16 @@ public sealed record JudgingEntryResponse(Guid RegistrationId, int? StartNumber,
 
 public sealed record JudgingScoreResponse(Guid RegistrationId, int Pass, JudgingCriterion Criterion, int Value, DateTime ScoredAt);
 
+/// <summary>Aantekening van dit jurylid; alleen voor hemzelf en voor het bestuur in het portal, niet voor de uitslag.</summary>
+public sealed record JudgingCommentResponse(Guid RegistrationId, int Pass, string Text, DateTime WrittenAt);
+
 public sealed record ScoreRequest(Guid RegistrationId, [Range(1, 3)] int Pass, JudgingCriterion Criterion, [Range(0, 100)] int Value, DateTime ScoredAt);
 
-public sealed record SaveScoresRequest([Required, MaxLength(1000)] IReadOnlyList<ScoreRequest> Scores);
+/// <summary>Een aantekening van het jurylid bij een inzending in een passage; een lege tekst wist hem.</summary>
+public sealed record CommentRequest(Guid RegistrationId, [Range(1, 3)] int Pass, [StringLength(1000)] string Text, DateTime WrittenAt);
+
+public sealed record SaveScoresRequest(
+    [Required, MaxLength(1000)] IReadOnlyList<ScoreRequest> Scores, [MaxLength(1000)] IReadOnlyList<CommentRequest>? Comments);
 
 public sealed record SaveScoresResponse(int Changed);
 

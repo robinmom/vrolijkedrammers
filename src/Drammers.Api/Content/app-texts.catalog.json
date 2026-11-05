@@ -560,6 +560,16 @@
       ]
     },
     {
+      "id": "2f45604c08a6558c",
+      "text": "Aantekening voor jezelf",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
       "id": "7e1b0d5641f2640c",
       "text": "Account",
       "places": [
@@ -892,6 +902,26 @@
         {
           "file": "app/scannen.tsx",
           "where": "title"
+        }
+      ]
+    },
+    {
+      "id": "fb78d440a93ea0b0",
+      "text": "Alleen voor jou; je leest ze terug voordat je indient. Komt niet in de uitslag. Wordt direct op je telefoon bewaard.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "hint"
+        }
+      ]
+    },
+    {
+      "id": "7822179483cc03a0",
+      "text": "Alleen voor jou. Ze komen niet in de uitslag; het bestuur kan ze opvragen als een groep om toelichting vraagt.",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
+          "where": "tekst"
         }
       ]
     },
@@ -2911,6 +2941,16 @@
       "places": [
         {
           "file": "app/kaarten/delen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "d68a982891c7f0bb",
+      "text": "Jouw aantekeningen",
+      "places": [
+        {
+          "file": "app/jureren/beoordelen.tsx",
           "where": "tekst"
         }
       ]

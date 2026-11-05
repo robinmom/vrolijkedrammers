@@ -30,21 +30,44 @@ export interface LocalScore {
 
 export const scoreKey = (registrationId: string, pass: number, criterion: Criterion) => `${registrationId}|${pass}|${criterion}`;
 
+/**
+ * Een aantekening van het jurylid bij één inzending in één passage (wens 2026-11-05). Alleen voor hemzelf: bij het
+ * indienen leest hij ze terug. Ze komen niet in de uitslag; het bestuur kan ze in het portal raadplegen.
+ */
+export interface LocalComment {
+  registrationId: string;
+  pass: number;
+  text: string;
+  writtenAt: string;
+  synced: boolean;
+}
+
+export const commentKey = (registrationId: string, pass: number) => `${registrationId}|${pass}`;
+
+/** Wat er op de telefoon staat. Een oudere versie bewaarde alleen een lijst scores; die vorm blijft werken. */
+interface LocalJudging {
+  scores: LocalScore[];
+  comments: LocalComment[];
+}
+
 /** Per gebruiker: een volgende gebruiker van de telefoon ziet ze niet (en bij uitloggen worden ze gewist). */
 const storageKey = (userId: string, paradeId: string) => `${storageKeys.paradeJuryPrefix}${userId}:${paradeId}`;
 
-/** Scores van deze optocht op de telefoon (overleeft afsluiten en een optocht zonder netwerk). */
-export async function loadLocalScores(userId: string, paradeId: string): Promise<LocalScore[]> {
+/** Scores en aantekeningen van deze optocht op de telefoon (overleeft afsluiten en een optocht zonder netwerk). */
+export async function loadLocalJudging(userId: string, paradeId: string): Promise<LocalJudging> {
   try {
     const raw = await AsyncStorage.getItem(storageKey(userId, paradeId));
-    return raw ? (JSON.parse(raw) as LocalScore[]) : [];
+    if (!raw) return { scores: [], comments: [] };
+    const parsed = JSON.parse(raw) as LocalScore[] | LocalJudging;
+    // Vóór de aantekeningen stond hier alleen een lijst scores; die van een lopende optocht mag niet verloren gaan.
+    return Array.isArray(parsed) ? { scores: parsed, comments: [] } : { scores: parsed.scores ?? [], comments: parsed.comments ?? [] };
   } catch {
-    return [];
+    return { scores: [], comments: [] };
   }
 }
 
-export async function saveLocalScores(userId: string, paradeId: string, scores: LocalScore[]) {
-  await AsyncStorage.setItem(storageKey(userId, paradeId), JSON.stringify(scores));
+export async function saveLocalJudging(userId: string, paradeId: string, judging: LocalJudging) {
+  await AsyncStorage.setItem(storageKey(userId, paradeId), JSON.stringify(judging));
 }
 
 /** Server en telefoon samenvoegen: per score wint de nieuwste invulling (net als op de server). */
@@ -63,24 +86,46 @@ export function mergeScores(server: JurorSession['scores'], local: LocalScore[])
   return [...merged.values()];
 }
 
+/** Samenvoegen van de aantekeningen op dezelfde manier als de scores: de nieuwste tekst wint. */
+export function mergeComments(server: JurorSession['comments'], local: LocalComment[]): LocalComment[] {
+  const merged = new Map<string, LocalComment>();
+  for (const c of server ?? []) {
+    merged.set(commentKey(c.registrationId, c.pass), { ...c, synced: true });
+  }
+  for (const c of local) {
+    const key = commentKey(c.registrationId, c.pass);
+    const other = merged.get(key);
+    if (!other || (!c.synced && Date.parse(c.writtenAt) > Date.parse(other.writtenAt))) {
+      merged.set(key, c);
+    }
+  }
+  return [...merged.values()];
+}
+
 /**
- * Stuurt de scores die de server nog niet heeft, in porties. Geeft de nieuwe lijst terug met wat nu verstuurd is als
- * `synced`; wat tussendoor opnieuw is ingevuld blijft openstaan.
+ * Stuurt wat de server nog niet heeft, in porties. Geeft terug wat nu verstuurd is (als sleutel met tijdstip), zodat
+ * alleen díé versie als `synced` geldt; wat tussendoor opnieuw is ingevuld blijft openstaan.
  */
-export async function pushScores(paradeId: string, scores: LocalScore[]): Promise<Set<string>> {
-  const pending = scores.filter((s) => !s.synced);
+export async function pushJudging(paradeId: string, scores: LocalScore[], comments: LocalComment[]): Promise<Set<string>> {
+  const pendingScores = scores.filter((s) => !s.synced);
+  const pendingComments = comments.filter((c) => !c.synced);
   const sent = new Set<string>();
-  for (let i = 0; i < pending.length; i += 500) {
-    const chunk = pending.slice(i, i + 500);
+  const batches = Math.max(1, Math.ceil(Math.max(pendingScores.length, pendingComments.length) / 500));
+  for (let i = 0; i < batches; i++) {
+    const scoreChunk = pendingScores.slice(i * 500, (i + 1) * 500);
+    const commentChunk = pendingComments.slice(i * 500, (i + 1) * 500);
+    if (scoreChunk.length === 0 && commentChunk.length === 0) continue;
     await unwrap(
       api.PUT('/api/v1/jury/parades/{paradeId}/scores', {
         params: { path: { paradeId } },
         body: {
-          scores: chunk.map((s) => ({ registrationId: s.registrationId, pass: s.pass, criterion: s.criterion, value: s.value, scoredAt: s.scoredAt })),
+          scores: scoreChunk.map((s) => ({ registrationId: s.registrationId, pass: s.pass, criterion: s.criterion, value: s.value, scoredAt: s.scoredAt })),
+          comments: commentChunk.map((c) => ({ registrationId: c.registrationId, pass: c.pass, text: c.text, writtenAt: c.writtenAt })),
         },
       }),
     );
-    chunk.forEach((s) => sent.add(`${scoreKey(s.registrationId, s.pass, s.criterion)}@${s.scoredAt}`));
+    scoreChunk.forEach((s) => sent.add(`${scoreKey(s.registrationId, s.pass, s.criterion)}@${s.scoredAt}`));
+    commentChunk.forEach((c) => sent.add(`c:${commentKey(c.registrationId, c.pass)}@${c.writtenAt}`));
   }
   return sent;
 }

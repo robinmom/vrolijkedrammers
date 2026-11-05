@@ -4233,7 +4233,9 @@ export class MockApi {
       return json({ items, page: 1, pageSize: 25, totalCount: items.length });
     }
     if (
-      (m = path.match(/^\/admin\/membership-applications\/([^/]+)(?:\/(start-review|approve|reject|notes|retry|payment-request))?$/))
+      (m = path.match(
+        /^\/admin\/membership-applications\/([^/]+)(?:\/(start-review|approve|reject|notes|retry|payment-request))?$/,
+      ))
     ) {
       const application = this.applications.find((a) => a.id === m![1]);
       if (!application) {

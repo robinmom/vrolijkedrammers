@@ -8,7 +8,9 @@ import { MockApi } from './mock-api';
  * tot er betaald is en wordt dan vanzelf goedgekeurd.
  */
 
-test('betaalverzoek sturen in plaats van goedkeuren, en de aanmelding blijft onbetaald in behandeling', async ({ page }) => {
+test('betaalverzoek sturen in plaats van goedkeuren, en de aanmelding blijft onbetaald in behandeling', async ({
+  page,
+}) => {
   const api = new MockApi(['member.read', 'member.update', 'member.approve']);
   await api.install(page);
   await page.goto('/beheer/aanmeldingen/ap-2');
@@ -54,6 +56,8 @@ test('op een smal scherm loopt niets buiten beeld', async ({ page }) => {
   await page.goto('/beheer/aanmeldingen/ap-2');
 
   await expect(page.getByRole('heading', { name: /Twan Derksen/, level: 1 })).toBeVisible();
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
   expect(overflow).toBeLessThanOrEqual(1);
 });

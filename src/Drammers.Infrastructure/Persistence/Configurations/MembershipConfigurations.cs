@@ -278,7 +278,11 @@ internal sealed class MembershipApplicationConfiguration : IEntityTypeConfigurat
         builder.Property(a => a.RejectionReason).HasMaxLength(500);
         builder.Property(a => a.InternalNotes).HasMaxLength(2000);
         builder.Property(a => a.IpHash).HasMaxLength(64).IsUnicode(false);
+        builder.Property(a => a.MolliePaymentId).HasMaxLength(40).IsUnicode(false);
+        builder.Property(a => a.PaymentCheckoutUrl).HasMaxLength(500).IsUnicode(false);
         builder.HasIndex(a => new { a.Status, a.SubmittedAt });
+        // De webhook van Mollie zoekt de aanvraag op het betalings-id; filtered, want bijna alle aanvragen hebben er geen.
+        builder.HasIndex(a => a.MolliePaymentId).IsUnique().HasFilter("[mollie_payment_id] IS NOT NULL");
         builder.HasOne<Member>().WithMany().HasForeignKey(a => a.ResultingMemberId).OnDelete(DeleteBehavior.SetNull);
         builder.Ignore(a => a.FullName);
     }

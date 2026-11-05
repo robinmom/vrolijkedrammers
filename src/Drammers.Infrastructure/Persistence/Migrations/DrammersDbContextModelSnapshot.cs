@@ -5648,10 +5648,46 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(40)")
                         .HasColumnName("membership_type");
 
+                    b.Property<string>("MolliePaymentId")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("mollie_payment_id");
+
                     b.Property<string>("NamePrefix")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("name_prefix");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<int?>("PaymentAmountCents")
+                        .HasColumnType("int")
+                        .HasColumnName("payment_amount_cents");
+
+                    b.Property<int?>("PaymentCarnivalYearId")
+                        .HasColumnType("int")
+                        .HasColumnName("payment_carnival_year_id");
+
+                    b.Property<string>("PaymentCheckoutUrl")
+                        .HasMaxLength(500)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("payment_checkout_url");
+
+                    b.Property<DateTime?>("PaymentExpiresAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("payment_expires_at");
+
+                    b.Property<DateTime?>("PaymentRequestedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("payment_requested_at");
+
+                    b.Property<int>("PaymentSendCount")
+                        .HasColumnType("int")
+                        .HasColumnName("payment_send_count");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
@@ -5724,6 +5760,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_MembershipApplication_mandate_reference");
 
+                    b.HasIndex("MolliePaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MembershipApplication_mollie_payment_id")
+                        .HasFilter("[mollie_payment_id] IS NOT NULL");
+
                     b.HasIndex("ResultingMemberId")
                         .HasDatabaseName("IX_MembershipApplication_resulting_member_id");
 
@@ -5736,7 +5777,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_MembershipApplication_source", "[source] IN ('App', 'Website', 'Portal')");
 
-                            t.HasCheckConstraint("CK_MembershipApplication_status", "[status] IN ('Draft', 'Submitted', 'InReview', 'Approved', 'Rejected', 'Provisioning', 'ProvisioningFailed', 'Activated', 'Withdrawn')");
+                            t.HasCheckConstraint("CK_MembershipApplication_status", "[status] IN ('Draft', 'Submitted', 'InReview', 'AwaitingPayment', 'Approved', 'Rejected', 'Provisioning', 'ProvisioningFailed', 'Activated', 'Withdrawn')");
                         });
                 });
 

@@ -75,6 +75,8 @@ public static class DependencyInjection
                 services.AddScheduledJob<MemberSyncScheduleJob>(MemberSyncScheduleJob.JobName, MemberSyncScheduleJob.Schedule, TimeSpan.FromHours(20));
                 services.AddScheduledJob<DataRetentionJob>(DataRetentionJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 30), TimeSpan.FromHours(20));
                 services.AddScheduledJob<Members.MemberHistoryJob>(Members.MemberHistoryJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 2, 45), TimeSpan.FromHours(20));
+                services.AddScheduledJob<Members.MembershipPaymentExpiryJob>(
+                    Members.MembershipPaymentExpiryJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 4, 0), TimeSpan.FromHours(20));
                 services.AddScheduledJob<ParadeDeadlineReminderJob>(ParadeDeadlineReminderJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 18, 0), TimeSpan.FromHours(20));
                 services.AddScheduledJob<Sales.SaleExpiryJob>(Sales.SaleExpiryJob.JobName, JobSchedule.DailyAt(MemberSyncScheduleJob.Loil, 3, 45), TimeSpan.FromHours(20));
             }

@@ -61,6 +61,8 @@ public sealed class MembershipApplications(
     MemberSyncSettings syncSettings,
     ICurrentActor actor,
     IClock clock,
+    Contributions contributions,
+    Payments.IMollieClient mollie,
     Microsoft.Extensions.Options.IOptions<EBoekhoudenOptions> eBoekhoudenOptions,
     MemberIbanProtector memberIbans)
 {
@@ -197,6 +199,150 @@ public sealed class MembershipApplications(
         application.DecisionAt = now;
         outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(id));
         await SaveWithAuditAsync("membership-application.approved", application, null, cancellationToken);
+    }
+
+    // ----- Eerste contributie bij een laat lidmaatschap (wens 2026-11-05) -------------------------------------------
+
+    /// <summary>
+    /// Of deze aanvraag zijn eerste jaar contributie met een betaallink moet voldoen: wie ná de incassodatum van dit
+    /// carnavalsjaar en vóór het begin van carnaval lid wordt, komt niet meer mee in de incasso van dit jaar. Zonder
+    /// betaalverzoek zou hij het hele seizoen gratis meedoen en vóór de volgende incasso kunnen opzeggen.
+    ///
+    /// Buiten dat venster verandert er niets: wie ná carnaval lid wordt gaat gewoon mee in de volgende incassorun, en
+    /// tot 6 januari daarop is er geen evenement waarvoor hij lid hoeft te zijn.
+    /// </summary>
+    public async Task<bool> NeedsFirstYearPaymentAsync(DateOnly on, CancellationToken cancellationToken)
+    {
+        var year = await db.CarnivalYears.AsNoTracking().SingleOrDefaultAsync(y => y.Active, cancellationToken);
+        if (year is null)
+        {
+            return false;
+        }
+
+        // De contributie-incasso van dit carnavalsjaar; zonder incassorun is er nog niets geïnd en hoeft dit niet.
+        var collected = await db.CollectionRuns.AsNoTracking()
+            .Where(r => r.Kind == Modules.Membership.Members.CollectionKind.Contribution && r.CampaignYear == year.Id)
+            .OrderByDescending(r => r.CollectionDate)
+            .Select(r => (DateOnly?)r.CollectionDate)
+            .FirstOrDefaultAsync(cancellationToken);
+        return collected is { } date && on > date && on < year.CarnivalStartDate;
+    }
+
+    /// <summary>Het bedrag voor het eerste jaar: altijd één persoon (andere soorten bestaan niet meer), of dansgarde.</summary>
+    public async Task<decimal> FirstYearAmountAsync(MembershipApplication application, DateOnly on, CancellationToken cancellationToken)
+    {
+        var rate = await contributions.RateOnAsync(on, cancellationToken);
+        var kind = application.MembershipType == MembershipType.Dansgarde ? MembershipKind.Dansgarde : MembershipKind.OnePerson;
+        return Contributions.Amount(rate, kind, Contributions.IsSenior(application.BirthDate, on));
+    }
+
+    /// <summary>
+    /// Het betaalverzoek sturen (bestuur). De aanvraag blijft in behandeling tot het geld binnen is; pas dan wordt hij
+    /// goedgekeurd en het lid aangemaakt. Een tweede keer sturen hergebruikt dezelfde betaling, zodat er nooit twee
+    /// openstaan voor hetzelfde lidmaatschap.
+    /// </summary>
+    public async Task SendPaymentRequestAsync(Guid id, string publicBaseUrl, CancellationToken cancellationToken)
+    {
+        var application = await FindAsync(id, cancellationToken);
+        if (application.Status is not (ApplicationStatus.Submitted or ApplicationStatus.InReview or ApplicationStatus.AwaitingPayment))
+        {
+            throw Decided();
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        var today = DateOnly.FromDateTime(now);
+        if (application.MolliePaymentId is null)
+        {
+            var amount = await FirstYearAmountAsync(application, today, cancellationToken);
+            if (amount <= 0)
+            {
+                throw new DomainException(ErrorCodes.Validation, "Er is geen contributiebedrag bekend voor dit soort lidmaatschap.");
+            }
+
+            var year = await db.CarnivalYears.AsNoTracking().SingleOrDefaultAsync(y => y.Active, cancellationToken);
+            var payment = await mollie.CreatePaymentAsync(new Payments.MollieNewPayment(
+                AmountCents: (int)Math.Round(amount * 100m, MidpointRounding.AwayFromZero),
+                Description: $"Contributie {year?.Name ?? today.Year.ToString(CultureInfo.InvariantCulture)} - {application.FullName}",
+                RedirectUrl: $"{publicBaseUrl}/lid-worden/betaald",
+                WebhookUrl: $"{publicBaseUrl}/api/v1/payments/mollie/webhook",
+                OrderId: application.Id,
+                IdempotencyKey: $"application:{application.Id}"), cancellationToken);
+            application.MolliePaymentId = payment.Id;
+            application.PaymentCheckoutUrl = payment.CheckoutUrl;
+            application.PaymentAmountCents = payment.AmountCents;
+            application.PaymentCarnivalYearId = year?.Id;
+            application.PaymentRequestedAt = now;
+            // De termijn loopt vanaf het sturen, niet vanaf de aanvraag: anders tikt de klok terwijl de aanvrager
+            // nog geen link heeft gehad.
+            application.PaymentExpiresAt = now.AddDays(MembershipApplication.PaymentTermDays);
+        }
+
+        application.Status = ApplicationStatus.AwaitingPayment;
+        application.HandledBy ??= actor.UserId;
+        application.HandledAt ??= now;
+        application.PaymentSendCount++;
+        await email.SendAsync(PaymentRequestMail(application), cancellationToken);
+        await SaveWithAuditAsync("membership-application.payment-requested", application, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Betaling binnen (webhook van Mollie): de aanvraag wordt alsnog goedgekeurd en het lid aangemaakt. Geeft
+    /// <c>false</c> als deze betaling niet bij een aanmelding hoort, zodat de webhook verder kan zoeken.
+    /// </summary>
+    public async Task<bool> HandleWebhookAsync(string molliePaymentId, CancellationToken cancellationToken)
+    {
+        var application = await db.MembershipApplications.SingleOrDefaultAsync(a => a.MolliePaymentId == molliePaymentId, cancellationToken);
+        if (application is null)
+        {
+            return false;
+        }
+
+        // Al afgehandeld (Mollie stuurt de webhook vaker): niets doen, maar wel "van ons" melden.
+        if (application.Status != ApplicationStatus.AwaitingPayment)
+        {
+            return true;
+        }
+
+        var payment = await mollie.GetPaymentAsync(molliePaymentId, cancellationToken);
+        if (!payment.IsPaid)
+        {
+            return true;
+        }
+
+        var now = clock.UtcNow.UtcDateTime;
+        application.PaidAt = payment.PaidAt ?? now;
+        application.Status = ApplicationStatus.Approved;
+        application.DecisionAt = now;
+        outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(application.Id));
+        await SaveWithAuditAsync("membership-application.paid", application, null, cancellationToken);
+        return true;
+    }
+
+    /// <summary>
+    /// Aanvragen waarvan de betaaltermijn verlopen is, vervallen. Draait als achtergrondtaak; de bankgegevens gaan er
+    /// net als bij een afwijzing meteen af.
+    /// </summary>
+    public async Task<int> ExpireUnpaidAsync(CancellationToken cancellationToken)
+    {
+        var now = clock.UtcNow.UtcDateTime;
+        var expired = await db.MembershipApplications
+            .Where(a => a.Status == ApplicationStatus.AwaitingPayment && a.PaymentExpiresAt != null && a.PaymentExpiresAt < now)
+            .ToListAsync(cancellationToken);
+        foreach (var application in expired)
+        {
+            application.Status = ApplicationStatus.Withdrawn;
+            application.DecisionAt = now;
+            application.RejectionReason = $"Niet betaald binnen {MembershipApplication.PaymentTermDays} dagen.";
+            WipeBankDetails(application);
+            await audit.WriteAsync(new AuditEntry("membership-application.payment-expired", "MembershipApplication", application.Id.ToString()), cancellationToken);
+        }
+
+        if (expired.Count > 0)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return expired.Count;
     }
 
     /// <summary>Afwijzen met reden; de bankgegevens worden direct gewist.</summary>
@@ -728,6 +874,47 @@ public sealed class MembershipApplications(
         return new EmailMessage(to, Subject, text, html);
     }
 
+    /// <summary>
+    /// Betaalverzoek voor het eerste jaar contributie. Legt uit waaróm er betaald moet worden: wie na de incasso lid
+    /// wordt valt buiten de inning van dit jaar, en zonder deze stap zou hij het seizoen gratis meemaken.
+    /// </summary>
+    public static EmailMessage PaymentRequestMail(MembershipApplication application)
+    {
+        const string Subject = "Nog één stap: de contributie voor dit carnavalsjaar";
+        var name = application.FirstName;
+        var amount = ((application.PaymentAmountCents ?? 0) / 100m).ToString("C", new CultureInfo("nl-NL"));
+        var until = (application.PaymentExpiresAt ?? DateTime.UtcNow).ToLocalTime().ToString("d MMMM yyyy", new CultureInfo("nl-NL"));
+        var link = application.PaymentCheckoutUrl ?? "";
+        var text = $"""
+            Beste {name},
+
+            Wat leuk dat je lid wordt van De Vrolijke Drammers! Je aanmelding is bijna rond.
+
+            Omdat je lid wordt nadat de contributie van dit carnavalsjaar al is geïnd, betaal je je eerste jaar met
+            onderstaande link. Het gaat om {amount}. Daarna loopt de contributie gewoon mee met de jaarlijkse incasso.
+
+            Betalen: {link}
+
+            Je bent lid zodra de betaling binnen is; je krijgt daarna een welkomstbericht met de app. Is er op
+            {until} nog niet betaald, dan vervalt je aanmelding en kun je je opnieuw aanmelden.
+
+            Groeten,
+            De Vrolijke Drammers
+            """;
+        var html = $"""
+            <p>Beste {System.Net.WebUtility.HtmlEncode(name)},</p>
+            <p>Wat leuk dat je lid wordt van De Vrolijke Drammers! Je aanmelding is bijna rond.</p>
+            <p>Omdat je lid wordt nadat de contributie van dit carnavalsjaar al is geïnd, betaal je je eerste jaar met
+            onderstaande link. Het gaat om <strong>{amount}</strong>. Daarna loopt de contributie gewoon mee met de
+            jaarlijkse incasso.</p>
+            <p><a href="{System.Net.WebUtility.HtmlEncode(link)}">Contributie betalen</a></p>
+            <p>Je bent lid zodra de betaling binnen is; je krijgt daarna een welkomstbericht met de app. Is er op
+            {until} nog niet betaald, dan vervalt je aanmelding en kun je je opnieuw aanmelden.</p>
+            <p>Groeten,<br>De Vrolijke Drammers</p>
+            """;
+        return new EmailMessage(application.Email, Subject, text, html);
+    }
+
     /// <summary>Welkom voor het tweede lid na het splitsen, als het e-mailadres al bij een ander app-account hoort.</summary>
     public static EmailMessage SplitWelcomeMail(string to, string firstName, string mainMemberName)
     {
@@ -793,4 +980,15 @@ public sealed class MembershipProvisioningHandler(MembershipApplications applica
     public Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken) =>
         applications.RunProvisioningAsync(
             JsonSerializer.Deserialize<MembershipApplications.ProvisionMessage>(message.Payload, JsonSerializerOptions.Web)!.ApplicationId, cancellationToken);
+}
+
+/// <summary>
+/// Laat aanmeldingen vervallen waarvan het eerste jaar contributie niet binnen de termijn is betaald (wens
+/// 2026-11-05). Dagelijks; de bankgegevens gaan er net als bij een afwijzing meteen af.
+/// </summary>
+public sealed class MembershipPaymentExpiryJob(MembershipApplications applications) : Drammers.Worker.Scheduling.IRecurringJob
+{
+    public const string JobName = "membership-payment-expiry";
+
+    public Task ExecuteAsync(CancellationToken cancellationToken) => applications.ExpireUnpaidAsync(cancellationToken);
 }

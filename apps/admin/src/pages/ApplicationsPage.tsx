@@ -1,5 +1,6 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { Fragment, useEffect, useState } from 'react';
+import { euro } from '../api/advertisers';
 import { useApi } from '../api/ApiContext';
 import { useApiMutation, useApplication, useApplications, type ApplicationStatus, type ApplicationSummary } from '../api/hooks';
 import { DataTable, columnHelper } from '../components/DataTable';
@@ -126,6 +127,10 @@ export function ApplicationDetailPage() {
 
   const startReview = useApiMutation(() => api.POST('/api/v1/admin/membership-applications/{id}/start-review', { params: { path: { id } } }), keys);
   const approve = useApiMutation(() => api.POST('/api/v1/admin/membership-applications/{id}/approve', { params: { path: { id } } }), keys);
+  const sendPayment = useApiMutation(
+    () => api.POST('/api/v1/admin/membership-applications/{id}/payment-request', { params: { path: { id } } }),
+    keys,
+  );
   const reject = useApiMutation(
     () => api.POST('/api/v1/admin/membership-applications/{id}/reject', { params: { path: { id } }, body: { reason } }),
     keys,
@@ -141,7 +146,7 @@ export function ApplicationDetailPage() {
   }
 
   const a = application.data;
-  const open = a.status === 'Submitted' || a.status === 'InReview';
+  const open = a.status === 'Submitted' || a.status === 'InReview' || a.status === 'AwaitingPayment';
   const rows: [string, string | null | undefined][] = [
     [
       'Soort lidmaatschap',
@@ -187,9 +192,16 @@ export function ApplicationDetailPage() {
             <button type="button" className="button secondary" onClick={() => setRejecting(true)}>
               Afwijzen
             </button>
-            <button type="button" className="button" onClick={() => setConfirmApprove(true)}>
-              Goedkeuren
-            </button>
+            {/* Moet het eerste jaar contributie betaald worden, dan keurt de betaling goed -- niet de knop. */}
+            {a.payment?.required && !a.payment.paidAt ? (
+              <button type="button" className="button" disabled={sendPayment.isPending} onClick={() => sendPayment.mutate(undefined)}>
+                {a.payment.requestedAt ? 'Betaallink opnieuw sturen' : 'Betaalverzoek sturen'}
+              </button>
+            ) : (
+              <button type="button" className="button" onClick={() => setConfirmApprove(true)}>
+                Goedkeuren
+              </button>
+            )}
           </div>
         ) : null}
       </div>
@@ -206,7 +218,29 @@ export function ApplicationDetailPage() {
           </div>
         </div>
       ) : null}
-      <ProblemAlert error={startReview.error ?? approve.error ?? reject.error ?? retry.error ?? saveNotes.error} />
+      {a.payment?.required ? (
+        <div className={`alert ${a.payment.paidAt ? 'alert-success' : 'alert-warning'} banner`} role="status">
+          <Icon name={a.payment.paidAt ? 'ticket' : 'waarschuwing'} size={22} />
+          <div className="banner-text">
+            <strong>Eerste jaar contributie: {euro(a.payment.amount)}</strong>
+            {a.payment.paidAt ? (
+              <p>Betaald op {formatDateTime(a.payment.paidAt)}. De aanmelding is daarmee goedgekeurd.</p>
+            ) : a.payment.requestedAt ? (
+              <p>
+                Betaalverzoek verstuurd op {formatDateTime(a.payment.requestedAt)}
+                {a.payment.sendCount > 1 ? ` (${a.payment.sendCount}×)` : ''}, nog niet betaald. Vervalt op{' '}
+                {formatDateTime(a.payment.expiresAt)}; daarna wordt de aanmelding ingetrokken.
+              </p>
+            ) : (
+              <p>
+                Deze aanmelding komt na de contributie-inning van dit carnavalsjaar en vóór carnaval, dus het eerste jaar wordt niet
+                meer geïnd. Stuur een betaalverzoek; zodra er betaald is wordt de aanmelding vanzelf goedgekeurd.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : null}
+      <ProblemAlert error={startReview.error ?? approve.error ?? sendPayment.error ?? reject.error ?? retry.error ?? saveNotes.error} />
 
       <div className="columns">
         <div className="stack">

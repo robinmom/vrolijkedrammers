@@ -834,6 +834,52 @@ export class MockApi {
       resultingMemberId: null as string | null,
       provisioning: null as Record<string, unknown> | null,
       emailInUseBy: null as string | null,
+      payment: null as Record<string, unknown> | null,
+    },
+    {
+      // Meldt zich aan ná de contributie-inning en vóór carnaval: betaalt zijn eerste jaar met een betaallink.
+      id: 'ap-2',
+      status: 'Submitted',
+      source: 'Website',
+      firstName: 'Twan',
+      namePrefix: null as string | null,
+      lastName: 'Derksen',
+      fullName: 'Twan Derksen',
+      gender: 'm',
+      birthDate: '1994-05-02',
+      age: 32,
+      minor: false,
+      addressLine: 'Kerkstraat 9',
+      postalCode: '6999 AC',
+      city: 'Loil',
+      email: 'twan@example.com',
+      phone: null as string | null,
+      guardianName: null as string | null,
+      guardianPhone: null as string | null,
+      ibanMasked: 'NL** **** **** 1234' as string | null,
+      accountHolder: 'T. Derksen' as string | null,
+      mandateReference: 'DVD-0123456789ABCDEF0124',
+      mandateConsentAt: '2027-01-20T08:00:00Z',
+      consentPrivacyAt: '2027-01-20T08:00:00Z',
+      consentPhoto: true,
+      submittedAt: '2027-01-20T08:05:00Z' as string | null,
+      handledBy: null as string | null,
+      handledAt: null as string | null,
+      decisionAt: null as string | null,
+      rejectionReason: null as string | null,
+      internalNotes: null as string | null,
+      resultingMemberId: null as string | null,
+      provisioning: null as Record<string, unknown> | null,
+      emailInUseBy: null as string | null,
+      payment: {
+        required: true,
+        amount: 32.5,
+        requestedAt: null as string | null,
+        expiresAt: null as string | null,
+        paidAt: null as string | null,
+        sendCount: 0,
+        checkoutUrl: null as string | null,
+      } as Record<string, unknown> | null,
     },
   ];
 
@@ -4187,7 +4233,9 @@ export class MockApi {
       return json({ items, page: 1, pageSize: 25, totalCount: items.length });
     }
     if (
-      (m = path.match(/^\/admin\/membership-applications\/([^/]+)(?:\/(start-review|approve|reject|notes|retry))?$/))
+      (m = path.match(
+        /^\/admin\/membership-applications\/([^/]+)(?:\/(start-review|approve|reject|notes|retry|payment-request))?$/,
+      ))
     ) {
       const application = this.applications.find((a) => a.id === m![1]);
       if (!application) {
@@ -4200,6 +4248,19 @@ export class MockApi {
           application.status = 'InReview';
           application.handledBy = 'Test Bestuurder';
           return noContent();
+        case 'payment-request': {
+          // Betaalverzoek voor het eerste jaar contributie: de aanvraag blijft in behandeling tot er betaald is.
+          const payment = application.payment as Record<string, unknown> | null;
+          application.status = 'AwaitingPayment';
+          application.handledBy = 'Test Bestuurder';
+          if (payment) {
+            payment.requestedAt = '2027-01-21T09:00:00Z';
+            payment.expiresAt = '2027-02-20T09:00:00Z';
+            payment.sendCount = ((payment.sendCount as number) ?? 0) + 1;
+            payment.checkoutUrl = 'https://mollie.test/checkout/tr_test1';
+          }
+          return noContent();
+        }
         case 'approve':
           application.status = 'Activated';
           application.ibanMasked = null;

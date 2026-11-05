@@ -14,7 +14,26 @@ export type JuryColumnItem = {
   done: boolean;
   /** Het lopende totaal, als er al iets is ingevuld. */
   score?: string | null;
+  /** Categorie; staat er meer dan één in de lijst, dan komen er kopjes boven de groepen. */
+  group?: string | null;
 };
+
+type Row = { kind: 'kop'; key: string; title: string } | { kind: 'rij'; key: string; item: JuryColumnItem };
+
+/**
+ * Kopjes per categorie, maar alleen als er iets te groeperen valt: bij één categorie zou een kopje boven de hele
+ * lijst alleen ruimte kosten. De volgorde van de inzendingen blijft zoals hij binnenkomt (startvolgorde).
+ */
+function toRows(items: JuryColumnItem[]): Row[] {
+  const groups = [...new Set(items.map((i) => i.group).filter((g): g is string => !!g))];
+  if (groups.length < 2) {
+    return items.map((item) => ({ kind: 'rij', key: item.key, item }));
+  }
+  return groups.flatMap((group) => [
+    { kind: 'kop' as const, key: `kop:${group}`, title: group },
+    ...items.filter((i) => i.group === group).map((item) => ({ kind: 'rij' as const, key: item.key, item })),
+  ]);
+}
 
 /**
  * De lijstkolom links van het jureren op een tablet (Figma 551:981 voor de optocht, 551:863 voor het festival). Op een
@@ -52,11 +71,19 @@ export function JuryColumn({
       </View>
       <FlatList
         style={styles.flex}
-        data={items}
-        keyExtractor={(item) => item.key}
+        data={toRows(items)}
+        keyExtractor={(row) => row.key}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => {
+        renderItem={({ item: row }) => {
+          if (row.kind === 'kop') {
+            return (
+              <AppText variant="overline" color={colors.textSecondary} style={styles.kop} accessibilityRole="header">
+                {row.title}
+              </AppText>
+            );
+          }
+          const item = row.item;
           const active = item.key === activeKey;
           return (
             <Pressable
@@ -106,6 +133,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   head: { gap: 2, paddingBottom: 8 },
   list: { gap: 4, paddingBottom: 8 },
+  kop: { paddingTop: 10, paddingBottom: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.sm, padding: 8, minHeight: 56 },
   number: { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 1 },

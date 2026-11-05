@@ -202,6 +202,9 @@ export default function BeoordelenScreen() {
   const scoredOutside = s.entries.filter((e) => !e.assigned && passes.some((p) => criteria.some((c) => valueOf(judging.scores, e.registrationId, p, c.key) !== null)));
   const missing = passes.flatMap((p) => assigned.filter((e) => !passComplete(judging.scores, e.registrationId, p)).map((e) => ({ pass: p, entry: e })));
   const current = pages[index];
+  // Op de overzichtspagina is er geen voorbijtrekken; dan volgt de lijst die van de pagina waar je vandaan kwam.
+  const columnReference = current?.kind === 'entry' ? current : returnTo != null ? pages[returnTo] : undefined;
+  const columnPass = columnReference?.kind === 'entry' ? columnReference.pass : passes[0];
   // Positie binnen het huidige voorbijtrekken (de pagina's staan pass-major achter elkaar).
   const posInPass = current?.kind === 'entry' ? index % Math.max(1, entries.length) : -1;
   const neighbour = (i: number) => {
@@ -270,16 +273,18 @@ export default function BeoordelenScreen() {
       </View>
 
       <View style={styles.body}>
-        {wide && current?.kind === 'entry' ? (
+        {/* De lijst blijft ook bij het overzicht staan: verdween hij, dan bleef die ruimte leeg terwijl de pagina's
+            smal blijven. Zonder actieve pagina volgt hij het voorbijtrekken waar je vandaan kwam. */}
+        {wide ? (
           <View style={styles.columnWrap}>
             <JuryColumn
               width={columnWidth - 20}
               title={whole ? 'Hele optocht' : 'Jouw categorieën'}
-              meta={`${entries.length} ${entries.length === 1 ? 'deelnemer' : 'deelnemers'} · ${entries.filter((e) => passComplete(judging.scores, e.registrationId, current.pass)).length} beoordeeld`}
-              activeKey={current.entry.registrationId}
+              meta={`${entries.length} ${entries.length === 1 ? 'deelnemer' : 'deelnemers'} · ${entries.filter((e) => passComplete(judging.scores, e.registrationId, columnPass)).length} beoordeeld`}
+              activeKey={current?.kind === 'entry' ? current.entry.registrationId : null}
               onSelect={(key) => {
                 const i = entries.findIndex((e) => e.registrationId === key);
-                if (i >= 0) goTo(indexFor(current.pass, i));
+                if (i >= 0) goTo(indexFor(columnPass, i));
               }}
               items={entries.map((entry) => {
                 const total = entryTotal(judging.scores, entry, s.weights);
@@ -288,7 +293,8 @@ export default function BeoordelenScreen() {
                   number: entry.startNumber != null ? String(entry.startNumber) : '–',
                   title: entry.groupName,
                   subtitle: entry.motto,
-                  done: passComplete(judging.scores, entry.registrationId, current.pass),
+                  group: entry.categoryName,
+                  done: passComplete(judging.scores, entry.registrationId, columnPass),
                   score: total !== null ? String(total).replace('.', ',') : null,
                 };
               })}
@@ -297,6 +303,7 @@ export default function BeoordelenScreen() {
         ) : null}
         <FlatList
           ref={list}
+          style={styles.flexList}
           data={pages}
           horizontal
           pagingEnabled
@@ -588,6 +595,7 @@ export default function BeoordelenScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   body: { flex: 1, flexDirection: 'row' },
+  flexList: { flex: 1 },
   columnWrap: { paddingLeft: 20, paddingBottom: 8 },
   center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 16 },
   centerText: { textAlign: 'center' },

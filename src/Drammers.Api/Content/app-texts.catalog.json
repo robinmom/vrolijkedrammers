@@ -3380,6 +3380,16 @@
       ]
     },
     {
+      "id": "a952def0eae26481",
+      "text": "LET OP · deze testversie praat met PRODUCTIE",
+      "places": [
+        {
+          "file": "ui/EnvironmentBanner.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "3c4ce8b257079292",
       "text": "Lid van de vereniging? Log in: dan zijn je gegevens al ingevuld en kun je later verder waar je was.",
       "places": [
@@ -5222,6 +5232,16 @@
         {
           "file": "app/kinderen/koppelen.tsx",
           "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "e28113ee5fc19cd2",
+      "text": "Testversie · praat met ",
+      "places": [
+        {
+          "file": "app/account/index.tsx",
+          "where": "tekst"
         }
       ]
     },

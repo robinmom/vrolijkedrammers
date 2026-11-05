@@ -51,11 +51,20 @@ Vanuit `apps/mobile`, met `main` bijgewerkt en de controles groen (`pnpm lint`, 
 
 ```bash
 # eerst op de dev-app, zodat je het ziet werken
-EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel testflight --environment preview \
-  --message "Gelijke stand bij de jury"
+pnpm ota:testflight --message "Gelijke stand bij de jury"
 
 # en daarna naar de echte app
-EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel production --environment production \
+pnpm ota:production --message "Gelijke stand bij de jury"
+```
+
+Die twee scripts controleren eerst of de gekozen EAS-omgeving een API-adres heeft dat bij het kanaal past, en rollen
+pas daarna uit. Slaat de controle aan, dan gebeurt er niets en staat er in de uitvoer wat je moet zetten. Los
+controleren kan met `pnpm check:ota <kanaal> <omgeving>`.
+
+Het kale commando werkt nog steeds, maar dan sla je de controle over:
+
+```bash
+EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli update --channel testflight --environment preview \
   --message "Gelijke stand bij de jury"
 ```
 
@@ -109,6 +118,19 @@ strings /tmp/bundelcontrole/_expo/static/js/ios/*.hbc | grep -oE 'https://(app-d
 
 Je hoort beide adressen te zien: het dev-adres is de ingevulde variabele, het productieadres staat er als
 terugvaloptie altijd in. Zie je **alleen** het productieadres, dan is de variabele niet meegekomen.
+
+### De drie vangnetten
+
+Na die ochtend liggen er drie, zodat dit niet nog eens stilletjes kan gebeuren:
+
+1. **De app raadt niet meer.** Ontbreekt `EXPO_PUBLIC_API_URL`, dan bepaalt het **kanaal van de build** de omgeving
+   (`src/api/config.ts`). Dat kanaal wordt bij het bouwen in de app gezet en een update kan het niet veranderen, dus
+   een testversie kan nooit meer productie kiezen. Vroeger hing die keuze aan `__DEV__`, en dat is in een uitgerolde
+   bundel altijd onwaar — precies de fout.
+2. **Je ziet het meteen.** Praat een testversie toch met productie, dan staat er een rode balk bovenin:
+   *"LET OP · deze testversie praat met PRODUCTIE"*. In de winkelversie wordt daar nooit iets getoond. Rustiger
+   terug te vinden is het op het accountscherm: een testversie zet daar bij welke omgeving hij gebruikt.
+3. **Het uitrollen controleert zichzelf**, via de `pnpm ota:*`-scripts hierboven.
 
 De app haalt de update op bij het opstarten en gebruikt hem bij de **volgende** keer opstarten. Een tester die nu in de
 app zit, ziet het dus niet meteen.

@@ -2,6 +2,7 @@ import { Redirect, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { apiEnvironmentLabel, isTestBuild, isTestBuildOnProduction } from '../../api/config';
 import { api } from '../../api/client';
 import { queryKeys, useMe, useMyChildren, useMyMember, useMyMemberRequests } from '../../api/queries';
 import { useRefresh } from '../../api/useRefresh';
@@ -175,6 +176,14 @@ export default function MijnGegevensScreen() {
         {me.data && me.data.roles.length > 0 ? (
           <AppText variant="caption" color={colors.textSecondary}>
             Rollen in de app: {me.data.roles.map((r) => r.name).join(', ')}
+          </AppText>
+        ) : null}
+
+        {/* Alleen in een testversie: met welke omgeving praat deze app? Zo is een verkeerd uitgerolde bundel hier op
+            te zoeken, ook als de alarmbalk niet aanslaat omdat het adres geen van beide bekende omgevingen is. */}
+        {isTestBuild ? (
+          <AppText variant="caption" color={isTestBuildOnProduction ? colors.accentText : colors.textSecondary}>
+            Testversie · praat met {apiEnvironmentLabel}
           </AppText>
         ) : null}
 

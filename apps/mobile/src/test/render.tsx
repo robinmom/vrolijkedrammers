@@ -45,3 +45,16 @@ export async function renderApp(routes: Record<string, ComponentType>, initialUr
   );
   return await renderRouter(routes, { initialUrl, wrapper });
 }
+
+/** Afmetingen in punten; `useWindowDimensions` geeft in tests terug wat hier staat (zie jest.setup.ts). */
+export const PHONE_SIZE = { width: 390, height: 844, scale: 3, fontScale: 1 };
+/** iPad 12,9" in portret: ruim boven WIDE_BREAKPOINT, dus de tabletindeling. */
+export const TABLET_SIZE = { width: 1024, height: 1366, scale: 2, fontScale: 1 };
+
+/**
+ * Zet de schermafmetingen voor de volgende render. Een test die dit gebruikt zet hem daarna terug op PHONE_SIZE,
+ * want binnen één testbestand blijft de waarde staan.
+ */
+export function setWindowSize(size: typeof PHONE_SIZE) {
+  globalThis.__testWindow = size;
+}

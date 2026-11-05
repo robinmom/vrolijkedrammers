@@ -66,12 +66,36 @@ en zonder beoordeling door Apple of Google — zie runbook app-uitrollen.
 Daarom hoort de leeskolom in diezelfde eerste build en niet in een OTA erna: **Apple test op een iPad**, en een app die
 daar stuk oogt wordt afgewezen. Zie runbook app-store-review.
 
+## De twee kolommen bij jureren en de kassa
+
+De drie schermen met een eigen scrollvlak hebben sinds 1.2.0 een tabletindeling. Ontwerpen: Figma `551:981` (optocht),
+`551:863` (festival), `552:858` (kassa).
+
+**Jureren** (optocht en festival) houdt de pager die er al was. De pagina's worden alleen smaller — `pageWidth` in plaats
+van de schermbreedte — en links komt `JuryColumn` ernaast te staan. Swipen blijft dus gewoon werken, de lijst is een
+snelkoppeling erbij; beide sturen dezelfde index aan. Daardoor hoefde er niets aan de doorswipe-logica te veranderen,
+en dat was bij de optocht het belangrijkst: die pagina's lopen pass-major door alle drie de voorbijtrekkens heen.
+
+De kolom is 30% van de breedte, tussen 280 en 360 punten. Op een iPad in portret (834 punten) blijft er zo ruim 450
+over voor de sliders, op een iPad in landschap ruim 800.
+
+**Kassa** toont op een tablet de camera links in een eigen vlak en Recent vast ernaast; de knop "Recent" verdwijnt dan,
+want er valt niets meer open te klappen. De regels zelf komen uit `RecentRows`, gedeeld met het volledige Recent-scherm
+van de telefoon.
+
+## De testomgeving is een telefoon
+
+`jest-expo` geeft 750×1334 door aan `useWindowDimensions()`. Dat zijn de **pixels** van een iPhone 8, terwijl de hook op
+een toestel **punten** teruggeeft (375×667 voor datzelfde toestel). Zonder correctie ligt elke test dus boven
+`WIDE_BREAKPOINT` en draait ongemerkt in de tabletindeling. `jest.setup.ts` zet de afmetingen daarom op 390×844; een
+test die juist de brede indeling wil, gebruikt `setWindowSize(TABLET_SIZE)` uit `src/test/render.tsx` en zet hem daarna
+terug.
+
+Dit kwam aan het licht doordat de kassatest omviel: die zocht de knop "Recent", en die hoort op een tablet niet te
+bestaan. Het fotoraster rekende om dezelfde reden met tegels van 248 in plaats van 128 punten.
+
 ## Wat nog niet gebouwd is
 
-Deze eerste stap maakt de app geschikt voor een tablet en geeft elk leesscherm een leesbreedte. Nog te doen, per OTA:
-
-- **Twee kolommen bij jureren** (lijst links, punten rechts) en bij **kassa** (camera links, Recent rechts). Ontwerpen:
-  Figma `551:981` (optocht), `551:863` (festival), `552:858` (kassa).
 - **Grotere aanraakdoelen op de schuiven**: op een tablet zit de jury verder van het scherm.
 
 ## Testen

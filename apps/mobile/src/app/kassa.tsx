@@ -9,7 +9,7 @@ import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet, View } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../api/client';
 import { useKassaRecent, useMe } from '../api/queries';
-import { AppText } from '../ui';
+import { AppText, useIsWide } from '../ui';
 
 type KassaResult = components['schemas']['KassaResult'];
 type KassaRecentRow = components['schemas']['KassaRecentRow'];
@@ -37,7 +37,9 @@ export default function KassaScreen() {
   const [error, setError] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
-  const recent = useKassaRecent(canCollect && recentOpen);
+  // Op een tablet staat Recent vast naast de camera (Figma 552:858); daar hoeft het dus niet opengeklapt te worden.
+  const wide = useIsWide();
+  const recent = useKassaRecent(canCollect && (recentOpen || wide));
   const busy = useRef(false);
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -100,7 +102,7 @@ export default function KassaScreen() {
     );
   }
 
-  if (recentOpen) {
+  if (recentOpen && !wide) {
     return <RecentList insets={insets} rows={recent.data ?? []} loading={recent.isLoading} onClose={() => setRecentOpen(false)} />;
   }
 
@@ -215,74 +217,117 @@ export default function KassaScreen() {
     );
   }
 
-  return (
-    <View style={[styles.fill, { backgroundColor: '#0B1620', paddingTop: insets.top }]}>
-      {permission.granted && online ? (
-        <CameraView
-          style={StyleSheet.absoluteFill}
-          facing="back"
-          enableTorch={torch}
-          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          onBarcodeScanned={({ data }) => void onScanned(data)}
-        />
-      ) : null}
-      <View style={styles.overlay} pointerEvents="box-none">
-        <View style={styles.top}>
-          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Terug" hitSlop={8}>
+  const camera =
+    permission.granted && online ? (
+      <CameraView
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        enableTorch={torch}
+        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+        onBarcodeScanned={({ data }) => void onScanned(data)}
+      />
+    ) : null;
+
+  const header = (
+    <View style={styles.top}>
+      <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Terug" hitSlop={8}>
+        <AppText variant="body" color="#FFFFFF">
+          ‹ Terug
+        </AppText>
+      </Pressable>
+      <View style={styles.topRight}>
+        {/* Op een tablet staat Recent al naast de camera; dan is deze knop overbodig. */}
+        {wide ? null : (
+          <Pressable onPress={() => setRecentOpen(true)} accessibilityRole="button" accessibilityLabel="Recent uitgegeven" hitSlop={8}>
             <AppText variant="body" color="#FFFFFF">
-              ‹ Terug
+              Recent
             </AppText>
           </Pressable>
-          <View style={styles.topRight}>
-            <Pressable onPress={() => setRecentOpen(true)} accessibilityRole="button" accessibilityLabel="Recent uitgegeven" hitSlop={8}>
-              <AppText variant="body" color="#FFFFFF">
-                Recent
-              </AppText>
-            </Pressable>
-            <Pressable
-              onPress={() => setTorch((t) => !t)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: torch }}
-              accessibilityLabel="Zaklamp"
-              hitSlop={8}
-            >
-              <AppText variant="body" color="#FFFFFF">
-                {torch ? '🔦 aan' : '🔦'}
-              </AppText>
-            </Pressable>
+        )}
+        <Pressable
+          onPress={() => setTorch((t) => !t)}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: torch }}
+          accessibilityLabel="Zaklamp"
+          hitSlop={8}
+        >
+          <AppText variant="body" color="#FFFFFF">
+            {torch ? '🔦 aan' : '🔦'}
+          </AppText>
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  const finder = (
+    <View style={styles.finderWrap}>
+      <View style={styles.finder} />
+      {!online ? (
+        <AppText variant="bodyStrong" color="#FFB4B4" style={styles.centerText} accessibilityRole="alert">
+          Geen internet. Munten uitgeven kan alleen online.
+        </AppText>
+      ) : permission.granted ? (
+        <AppText variant="body" color="rgba(255,255,255,0.85)" style={styles.centerText}>
+          Richt de camera op de munten-QR in de app van het lid
+        </AppText>
+      ) : (
+        <View style={styles.permission}>
+          <AppText variant="body" color="#FFFFFF" style={styles.centerText}>
+            Geef toegang tot de camera om munten-QR&apos;s te scannen.
+          </AppText>
+          <Button
+            label={permission.canAskAgain ? 'Camera toestaan' : 'Open instellingen'}
+            color={brand.navy}
+            onPress={() => (permission.canAskAgain ? void requestPermission() : void Linking.openSettings())}
+          />
+        </View>
+      )}
+      {error ? (
+        <AppText variant="bodyStrong" color="#FFB4B4" style={styles.centerText} accessibilityRole="alert">
+          {error}
+        </AppText>
+      ) : null}
+    </View>
+  );
+
+  // Tablet (Figma 552:858): de camera links in een eigen vlak, Recent vast ernaast. Zo hoeft de kassa tijdens een
+  // drukke avond niet heen en weer tussen scannen en terugkijken. Zie runbook tablet.
+  if (wide) {
+    return (
+      <View style={[styles.fill, { backgroundColor: '#0B1620', paddingTop: insets.top }]}>
+        <View style={styles.wideHead}>
+          {header}
+          <AppText variant="largeTitle" color="#FFFFFF" accessibilityRole="header">
+            Kassa
+          </AppText>
+        </View>
+        <View style={[styles.wideBody, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.cameraPane}>
+            {camera}
+            <View style={[StyleSheet.absoluteFill, styles.finderPad]} pointerEvents="box-none">
+              {finder}
+            </View>
+          </View>
+          <View style={styles.recentPane}>
+            <AppText variant="cardTitle" color="#FFFFFF" accessibilityRole="header">
+              Recent uitgegeven
+            </AppText>
+            <RecentRows rows={recent.data ?? []} loading={recent.isLoading} bottomPadding={8} />
           </View>
         </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.fill, { backgroundColor: '#0B1620', paddingTop: insets.top }]}>
+      {camera}
+      <View style={styles.overlay} pointerEvents="box-none">
+        {header}
         <AppText variant="largeTitle" color="#FFFFFF" accessibilityRole="header">
           Kassa
         </AppText>
-        <View style={styles.finderWrap}>
-          <View style={styles.finder} />
-          {!online ? (
-            <AppText variant="bodyStrong" color="#FFB4B4" style={styles.centerText} accessibilityRole="alert">
-              Geen internet. Munten uitgeven kan alleen online.
-            </AppText>
-          ) : permission.granted ? (
-            <AppText variant="body" color="rgba(255,255,255,0.85)" style={styles.centerText}>
-              Richt de camera op de munten-QR in de app van het lid
-            </AppText>
-          ) : (
-            <View style={styles.permission}>
-              <AppText variant="body" color="#FFFFFF" style={styles.centerText}>
-                Geef toegang tot de camera om munten-QR&apos;s te scannen.
-              </AppText>
-              <Button
-                label={permission.canAskAgain ? 'Camera toestaan' : 'Open instellingen'}
-                color={brand.navy}
-                onPress={() => (permission.canAskAgain ? void requestPermission() : void Linking.openSettings())}
-              />
-            </View>
-          )}
-          {error ? (
-            <AppText variant="bodyStrong" color="#FFB4B4" style={styles.centerText} accessibilityRole="alert">
-              {error}
-            </AppText>
-          ) : null}
-        </View>
+        {finder}
       </View>
     </View>
   );
@@ -349,42 +394,63 @@ function RecentList({ insets, rows, loading, onClose }: { insets: { top: number;
       <AppText variant="largeTitle" color="#FFFFFF" accessibilityRole="header" style={styles.recentTitle}>
         Vanavond uitgegeven
       </AppText>
-      {loading ? (
-        <View style={[styles.fill, styles.center]}>
-          <ActivityIndicator color="#FFFFFF" accessibilityLabel="Laden" />
-        </View>
-      ) : rows.length === 0 ? (
-        <View style={[styles.fill, styles.center, styles.recentEmpty]}>
-          <AppText variant="body" color="rgba(255,255,255,0.7)" style={styles.centerText}>
-            Nog niets uitgegeven op dit toestel vanavond.
-          </AppText>
-        </View>
-      ) : (
-        <FlatList
-          data={rows}
-          keyExtractor={(_, index) => String(index)}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 24, gap: 12 }}
-          renderItem={({ item }) => (
-            <View style={styles.recentRow}>
-              <View style={styles.recentCheck}>
-                <AppText variant="bodyStrong" color="#FFFFFF">
-                  ✓
-                </AppText>
-              </View>
-              <View style={styles.recentRowBody}>
-                <AppText variant="bodyStrong" color="#FFFFFF">
-                  {item.holderName ?? 'Onbekend lid'}
-                </AppText>
-                <AppText variant="caption" color="rgba(255,255,255,0.7)">
-                  {item.quantity ?? 0} munten · {item.time}
-                  {item.paidWith ? ` · ${item.paidWith}` : ''}
-                </AppText>
-              </View>
-            </View>
-          )}
-        />
-      )}
+      <RecentRows rows={rows} loading={loading} bottomPadding={insets.bottom + 24} horizontalPadding={24} />
     </View>
+  );
+}
+
+/** De regels zelf, gedeeld door het Recent-scherm op een telefoon en het vaste paneel op een tablet. */
+function RecentRows({
+  rows,
+  loading,
+  bottomPadding,
+  horizontalPadding = 0,
+}: {
+  rows: KassaRecentRow[];
+  loading: boolean;
+  bottomPadding: number;
+  horizontalPadding?: number;
+}) {
+  if (loading) {
+    return (
+      <View style={[styles.fill, styles.center]}>
+        <ActivityIndicator color="#FFFFFF" accessibilityLabel="Laden" />
+      </View>
+    );
+  }
+  if (rows.length === 0) {
+    return (
+      <View style={[styles.fill, styles.center, styles.recentEmpty]}>
+        <AppText variant="body" color="rgba(255,255,255,0.7)" style={styles.centerText}>
+          Nog niets uitgegeven op dit toestel vanavond.
+        </AppText>
+      </View>
+    );
+  }
+  return (
+    <FlatList
+      data={rows}
+      keyExtractor={(_, index) => String(index)}
+      contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: bottomPadding, gap: 12 }}
+      renderItem={({ item }) => (
+        <View style={styles.recentRow}>
+          <View style={styles.recentCheck}>
+            <AppText variant="bodyStrong" color="#FFFFFF">
+              ✓
+            </AppText>
+          </View>
+          <View style={styles.recentRowBody}>
+            <AppText variant="bodyStrong" color="#FFFFFF">
+              {item.holderName ?? 'Onbekend lid'}
+            </AppText>
+            <AppText variant="caption" color="rgba(255,255,255,0.7)">
+              {item.quantity ?? 0} munten · {item.time}
+              {item.paidWith ? ` · ${item.paidWith}` : ''}
+            </AppText>
+          </View>
+        </View>
+      )}
+    />
   );
 }
 
@@ -392,6 +458,11 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   center: { alignItems: 'center', justifyContent: 'center' },
   overlay: { flex: 1, paddingHorizontal: 24, gap: 12 },
+  wideHead: { paddingHorizontal: 24, gap: 4 },
+  wideBody: { flex: 1, flexDirection: 'row', gap: 16, paddingHorizontal: 24, paddingTop: 12 },
+  cameraPane: { flex: 1, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.05)' },
+  finderPad: { paddingHorizontal: 24 },
+  recentPane: { width: 340, borderRadius: 24, padding: 20, gap: 12, backgroundColor: 'rgba(255,255,255,0.06)' },
   top: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   recentHeader: { paddingHorizontal: 24 },

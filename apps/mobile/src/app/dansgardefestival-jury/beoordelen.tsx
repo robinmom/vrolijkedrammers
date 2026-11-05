@@ -20,7 +20,8 @@ import {
 import { useFestivalJudging } from '../../features/useFestivalJudging';
 import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, BackLink, Button, Card, QueryState, ScoreSlider, TextField } from '../../ui';
+import { JuryColumn } from '../../features/JuryColumn';
+import { AppText, BackLink, Button, Card, QueryState, ScoreSlider, TextField, useIsWide } from '../../ui';
 
 type Page = { kind: 'dance'; dance: FestivalDance } | { kind: 'end' };
 
@@ -33,6 +34,11 @@ export default function FestivalBeoordelenScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  // Op een tablet staat de danslijst links naast de pager, dus is een pagina smaller dan het scherm. Op een telefoon
+  // is columnWidth 0 en verandert er niets. Zie runbook tablet.
+  const wide = useIsWide();
+  const columnWidth = wide ? Math.round(Math.min(360, Math.max(280, width * 0.3))) : 0;
+  const pageWidth = width - columnWidth;
   const params = useLocalSearchParams<{ dans?: string }>();
   const me = useMe();
   const session = useFestivalJurySession(me.data?.permissions.includes('festival.judge') ?? false);
@@ -137,137 +143,158 @@ export default function FestivalBeoordelenScreen() {
         </View>
       </View>
 
-      <FlatList
-        ref={list}
-        data={pages}
-        horizontal
-        pagingEnabled
-        scrollEnabled={!sliding}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(p) => (p.kind === 'dance' ? p.dance.entryId : 'einde')}
-        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
-        initialScrollIndex={initialIndex}
-        onMomentumScrollEnd={(e) => setChosen(Math.round(e.nativeEvent.contentOffset.x / width))}
-        renderItem={({ item }) =>
-          item.kind === 'dance' ? (
-            <ScrollView
-              style={{ width }}
-              contentContainerStyle={styles.page}
-              keyboardShouldPersistTaps="handled"
-              // Zonder dit dekt het toetsenbord op iOS het opmerkingenveld af; dit scherm heeft een
-              // eigen scrollvlak en loopt dus niet via Screen.
-              automaticallyAdjustKeyboardInsets
-            >
-              <View style={styles.entryHead}>
-                <View style={[styles.number, { backgroundColor: brand.navy }]} accessible accessibilityLabel={`Dans ${item.dance.number}`}>
-                  <AppText variant="label" color="rgba(255,255,255,0.75)">
-                    NR
-                  </AppText>
-                  <AppText variant="largeTitle" color="#FFFFFF" style={styles.numberText}>
-                    {item.dance.number}
-                  </AppText>
-                </View>
-                <View style={styles.flex}>
-                  <AppText variant="cardTitle" accessibilityRole="header">
-                    {danceLabel(item.dance)}
-                  </AppText>
-                  <View style={[styles.category, { backgroundColor: colors.tintBlue }]}>
-                    <AppText variant="label" color={colors.linkText}>
-                      {item.dance.club}
+      <View style={styles.body}>
+        {wide && current?.kind === 'dance' ? (
+          <View style={styles.columnWrap}>
+            <JuryColumn
+              width={columnWidth - 20}
+              title={category.name}
+              meta={`${s.dances.length} ${s.dances.length === 1 ? 'dans' : 'dansen'} · ${s.dances.filter((d) => danceComplete(judging.scores, d.entryId)).length} beoordeeld`}
+              activeKey={current.dance.entryId}
+              onSelect={(key) => goTo(s.dances.findIndex((d) => d.entryId === key))}
+              items={s.dances.map((dance) => ({
+                key: dance.entryId,
+                number: String(dance.number),
+                title: dance.names,
+                subtitle: dance.club,
+                done: danceComplete(judging.scores, dance.entryId),
+                score: formatPoints(danceTotal(judging.scores, dance.entryId)),
+              }))}
+            />
+          </View>
+        ) : null}
+        <FlatList
+          ref={list}
+          data={pages}
+          horizontal
+          pagingEnabled
+          scrollEnabled={!sliding}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(p) => (p.kind === 'dance' ? p.dance.entryId : 'einde')}
+          getItemLayout={(_, i) => ({ length: pageWidth, offset: pageWidth * i, index: i })}
+          initialScrollIndex={initialIndex}
+          onMomentumScrollEnd={(e) => setChosen(Math.round(e.nativeEvent.contentOffset.x / pageWidth))}
+          renderItem={({ item }) =>
+            item.kind === 'dance' ? (
+              <ScrollView
+                style={{ width: pageWidth }}
+                contentContainerStyle={styles.page}
+                keyboardShouldPersistTaps="handled"
+                // Zonder dit dekt het toetsenbord op iOS het opmerkingenveld af; dit scherm heeft een
+                // eigen scrollvlak en loopt dus niet via Screen.
+                automaticallyAdjustKeyboardInsets
+              >
+                <View style={styles.entryHead}>
+                  <View style={[styles.number, { backgroundColor: brand.navy }]} accessible accessibilityLabel={`Dans ${item.dance.number}`}>
+                    <AppText variant="label" color="rgba(255,255,255,0.75)">
+                      NR
+                    </AppText>
+                    <AppText variant="largeTitle" color="#FFFFFF" style={styles.numberText}>
+                      {item.dance.number}
                     </AppText>
                   </View>
+                  <View style={styles.flex}>
+                    <AppText variant="cardTitle" accessibilityRole="header">
+                      {danceLabel(item.dance)}
+                    </AppText>
+                    <View style={[styles.category, { backgroundColor: colors.tintBlue }]}>
+                      <AppText variant="label" color={colors.linkText}>
+                        {item.dance.club}
+                      </AppText>
+                    </View>
+                  </View>
                 </View>
-              </View>
-              <AppText variant="body" color={colors.textSecondary}>
-                {item.dance.dancerCount} {item.dance.dancerCount === 1 ? 'danser' : 'dansers'} · gem. {String(item.dance.averageAge).replace('.', ',')} jr
-              </AppText>
-              <Card style={styles.sliders}>
-                {criteria.map((c) => (
-                  <ScoreSlider
-                    key={c.key}
-                    label={c.label}
-                    max={MAX_SCORE}
-                    step={SCORE_STEP}
-                    value={judging.scores.get(festivalScoreKey(item.dance.entryId, c.key))?.value ?? null}
-                    onChange={(v) => judging.setScore(item.dance.entryId, c.key, v)}
-                    onSlidingStart={() => setSliding(true)}
-                    onSlidingEnd={() => setSliding(false)}
+                <AppText variant="body" color={colors.textSecondary}>
+                  {item.dance.dancerCount} {item.dance.dancerCount === 1 ? 'danser' : 'dansers'} · gem. {String(item.dance.averageAge).replace('.', ',')} jr
+                </AppText>
+                <Card style={styles.sliders}>
+                  {criteria.map((c) => (
+                    <ScoreSlider
+                      key={c.key}
+                      label={c.label}
+                      max={MAX_SCORE}
+                      step={SCORE_STEP}
+                      value={judging.scores.get(festivalScoreKey(item.dance.entryId, c.key))?.value ?? null}
+                      onChange={(v) => judging.setScore(item.dance.entryId, c.key, v)}
+                      onSlidingStart={() => setSliding(true)}
+                      onSlidingEnd={() => setSliding(false)}
+                    />
+                  ))}
+                  <View style={[styles.total, { borderTopColor: colors.border }]}>
+                    <AppText variant="bodyStrong" style={styles.flex}>
+                      Totaal deze dans
+                    </AppText>
+                    <AppText variant="cardTitle">
+                      {formatPoints(danceTotal(judging.scores, item.dance.entryId))} / {criteria.length * MAX_SCORE}
+                    </AppText>
+                  </View>
+                  <TextField
+                    label="Opmerking voor de vereniging"
+                    hint="Komt anoniem in het rapport (met je jurynummer). Wordt direct op je telefoon bewaard."
+                    multiline
+                    maxLength={1000}
+                    value={judging.comments.get(item.dance.entryId) ?? ''}
+                    onChangeText={(text) => judging.setComment(item.dance.entryId, text)}
                   />
-                ))}
-                <View style={[styles.total, { borderTopColor: colors.border }]}>
-                  <AppText variant="bodyStrong" style={styles.flex}>
-                    Totaal deze dans
-                  </AppText>
-                  <AppText variant="cardTitle">
-                    {formatPoints(danceTotal(judging.scores, item.dance.entryId))} / {criteria.length * MAX_SCORE}
-                  </AppText>
-                </View>
-                <TextField
-                  label="Opmerking voor de vereniging"
-                  hint="Komt anoniem in het rapport (met je jurynummer). Wordt direct op je telefoon bewaard."
-                  multiline
-                  maxLength={1000}
-                  value={judging.comments.get(item.dance.entryId) ?? ''}
-                  onChangeText={(text) => judging.setComment(item.dance.entryId, text)}
-                />
-              </Card>
-            </ScrollView>
-          ) : (
-            <ScrollView style={{ width }} contentContainerStyle={styles.page}>
-              <AppText variant="heroTitle" accessibilityRole="header">
-                Klaar met {category.name}?
-              </AppText>
-              <AppText variant="body" color={colors.textSecondary}>
-                Controleer je punten en dien de categorie in. Daarna kun je niets meer wijzigen en komt de volgende categorie.
-              </AppText>
-              <Card style={styles.card}>
-                <AppText variant="overline" color={colors.textSecondary}>
-                  Overzicht
+                </Card>
+              </ScrollView>
+            ) : (
+              <ScrollView style={{ width: pageWidth }} contentContainerStyle={styles.page}>
+                <AppText variant="heroTitle" accessibilityRole="header">
+                  Klaar met {category.name}?
                 </AppText>
-                {s.dances.map((d) => {
-                  const complete = danceComplete(judging.scores, d.entryId);
-                  return (
-                    <Pressable key={d.entryId} style={styles.row} onPress={() => goTo(s.dances.indexOf(d))} accessibilityRole="button">
-                      <AppText variant="bodyStrong" style={styles.flex}>
-                        {d.number} · {d.names}
-                      </AppText>
-                      <AppText variant="link" color={complete ? colors.successText : colors.accentText}>
-                        {complete ? `${formatPoints(danceTotal(judging.scores, d.entryId))} ✓` : 'open'}
-                      </AppText>
-                    </Pressable>
-                  );
-                })}
-              </Card>
-              {missing.length > 0 ? (
-                <View style={[styles.banner, { backgroundColor: `${brand.yellow}40` }]}>
-                  <AppText variant="bodyStrong" color={brand.navy}>
-                    Nog niet beoordeeld
-                  </AppText>
-                  <AppText variant="caption" color={brand.navy}>
-                    {missing.map((d) => `${d.number} · ${d.names}`).join('  ·  ')}
-                  </AppText>
-                  <AppText variant="caption" color={brand.navy}>
-                    Indienen kan pas als alle dansen van deze categorie punten hebben. Swipe terug of tik op de dans.
-                  </AppText>
-                </View>
-              ) : null}
-              {judging.pending > 0 ? (
-                <AppText variant="caption" color={colors.textSecondary}>
-                  {judging.syncing ? 'Versturen…' : `${judging.pending} ${judging.pending === 1 ? 'wijziging wacht' : 'wijzigingen wachten'} op internet.`}
+                <AppText variant="body" color={colors.textSecondary}>
+                  Controleer je punten en dien de categorie in. Daarna kun je niets meer wijzigen en komt de volgende categorie.
                 </AppText>
-              ) : null}
-              {message ? (
-                <AppText variant="bodyStrong" color={colors.accentText} accessibilityRole="alert">
-                  {message}
-                </AppText>
-              ) : null}
-              {submitting ? <ActivityIndicator /> : null}
-              <Button label="Categorie indienen" disabled={submitting || missing.length > 0} onPress={confirmSubmit} />
-              <Button label="Terug naar de dansen" variant="secondary" onPress={() => goTo(0)} />
-            </ScrollView>
-          )
-        }
-      />
+                <Card style={styles.card}>
+                  <AppText variant="overline" color={colors.textSecondary}>
+                    Overzicht
+                  </AppText>
+                  {s.dances.map((d) => {
+                    const complete = danceComplete(judging.scores, d.entryId);
+                    return (
+                      <Pressable key={d.entryId} style={styles.row} onPress={() => goTo(s.dances.indexOf(d))} accessibilityRole="button">
+                        <AppText variant="bodyStrong" style={styles.flex}>
+                          {d.number} · {d.names}
+                        </AppText>
+                        <AppText variant="link" color={complete ? colors.successText : colors.accentText}>
+                          {complete ? `${formatPoints(danceTotal(judging.scores, d.entryId))} ✓` : 'open'}
+                        </AppText>
+                      </Pressable>
+                    );
+                  })}
+                </Card>
+                {missing.length > 0 ? (
+                  <View style={[styles.banner, { backgroundColor: `${brand.yellow}40` }]}>
+                    <AppText variant="bodyStrong" color={brand.navy}>
+                      Nog niet beoordeeld
+                    </AppText>
+                    <AppText variant="caption" color={brand.navy}>
+                      {missing.map((d) => `${d.number} · ${d.names}`).join('  ·  ')}
+                    </AppText>
+                    <AppText variant="caption" color={brand.navy}>
+                      Indienen kan pas als alle dansen van deze categorie punten hebben. Swipe terug of tik op de dans.
+                    </AppText>
+                  </View>
+                ) : null}
+                {judging.pending > 0 ? (
+                  <AppText variant="caption" color={colors.textSecondary}>
+                    {judging.syncing ? 'Versturen…' : `${judging.pending} ${judging.pending === 1 ? 'wijziging wacht' : 'wijzigingen wachten'} op internet.`}
+                  </AppText>
+                ) : null}
+                {message ? (
+                  <AppText variant="bodyStrong" color={colors.accentText} accessibilityRole="alert">
+                    {message}
+                  </AppText>
+                ) : null}
+                {submitting ? <ActivityIndicator /> : null}
+                <Button label="Categorie indienen" disabled={submitting || missing.length > 0} onPress={confirmSubmit} />
+                <Button label="Terug naar de dansen" variant="secondary" onPress={() => goTo(0)} />
+              </ScrollView>
+            )
+          }
+        />
+      </View>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
         <Pressable onPress={() => goTo(index - 1)} disabled={index === 0} accessibilityRole="button" accessibilityLabel="Vorige dans" hitSlop={8}>
@@ -292,6 +319,8 @@ export default function FestivalBeoordelenScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  body: { flex: 1, flexDirection: 'row' },
+  columnWrap: { paddingLeft: 20, paddingBottom: 8 },
   center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 16 },
   centerText: { textAlign: 'center' },
   okCircle: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },

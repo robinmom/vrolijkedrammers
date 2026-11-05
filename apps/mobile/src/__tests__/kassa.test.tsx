@@ -6,9 +6,11 @@ import { setSessionForTest } from '../auth/session';
 import { base45 } from '../features/deviceQr';
 import { checkOffline } from '../features/offlineScan';
 import { api } from '../test/api-fixture';
-import { mockApi, renderApp } from '../test/render';
+import { mockApi, PHONE_SIZE, renderApp, setWindowSize, TABLET_SIZE } from '../test/render';
 
 /** Fase 19c: de Kassa (munten uitgeven) en gekochte kaarten bij de deur. */
+
+afterEach(() => setWindowSize(PHONE_SIZE));
 
 const routes = { kassa: KassaScreen, scannen: ScannenScreen, '(tabs)/meer': MeerScreen };
 
@@ -151,6 +153,20 @@ describe('Kassa (fase 19c)', () => {
     expect(await screen.findByText('Mendy Mom')).toBeTruthy();
     expect(screen.getByText('20 munten · 21:03 · iDEAL')).toBeTruthy();
     expect(screen.getByText('Jan Jansen')).toBeTruthy();
+  });
+
+  it('op een tablet staat Recent vast naast de camera, zonder knop', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({
+      ...api,
+      '/api/v1/me': me(['sale.collect']),
+      '/api/v1/kassa/recent': [{ holderName: 'Mendy Mom', quantity: 20, time: '21:03', paidWith: 'iDEAL' }],
+    });
+    await renderApp(routes, '/kassa');
+    // De regels staan er meteen, zonder dat er iets opengeklapt hoeft te worden.
+    expect(await screen.findByText('Recent uitgegeven')).toBeTruthy();
+    expect(await screen.findByText('Mendy Mom')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Recent uitgegeven' })).toBeNull();
   });
 });
 

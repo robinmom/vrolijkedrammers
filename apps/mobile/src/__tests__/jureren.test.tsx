@@ -7,7 +7,7 @@ import JurerenScreen from '../app/jureren';
 import UitslagenScreen from '../app/uitslagen';
 import { setSessionForTest } from '../auth/session';
 import { api } from '../test/api-fixture';
-import { mockApi, renderApp } from '../test/render';
+import { mockApi, PHONE_SIZE, renderApp, setWindowSize, TABLET_SIZE } from '../test/render';
 
 /** Fase 22b: jureren in de app — eigen categorieën, sliders per voorbijtrekken, hele optocht en indienen. */
 
@@ -47,6 +47,8 @@ const requests = (path: string, method: string) =>
   (globalThis.fetch as jest.Mock).mock.calls
     .map(([input, init]) => (typeof input === 'string' ? new Request(input, init as RequestInit) : (input as Request)))
     .filter((r) => r.url.includes(path) && r.method === method);
+
+afterEach(() => setWindowSize(PHONE_SIZE));
 
 beforeEach(async () => {
   (globalThis.fetch as jest.Mock).mockClear();
@@ -100,6 +102,25 @@ describe('Jureren (fase 22b)', () => {
     // nr. 7 is de laatste van de eigen categorieën, dus hierna begint voorbij 2 weer bij nr. 5.
     expect(await screen.findByText('2 van 2')).toBeTruthy();
     expect(screen.getByText('Voorbij 2 · nr. 5 ›')).toBeTruthy();
+  });
+
+  it('tablet: de deelnemerslijst staat ernaast en springt naar een andere wagen', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+    expect(await screen.findByText('Jouw categorieën')).toBeTruthy();
+    expect(screen.getByText('2 deelnemers · 0 beoordeeld')).toBeTruthy();
+    // Tikken in de lijst gaat naar die wagen; de kop telt binnen het voorbijtrekken.
+    expect(await screen.findByText('1 van 2')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('7, De Snotapen, nog niet beoordeeld'));
+    expect(await screen.findByText('2 van 2')).toBeTruthy();
+  });
+
+  it('op een telefoon staat die lijst er niet; daar blijf je swipen', async () => {
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+    expect(await screen.findByText('1 van 2')).toBeTruthy();
+    expect(screen.queryByText('Jouw categorieën')).toBeNull();
   });
 
   it('overgenomen waardes staan er als startpunt en tellen pas na bevestigen mee', async () => {

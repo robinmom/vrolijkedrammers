@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 import OptochtScreen from '../app/(tabs)/optocht';
 import BeoordelenScreen from '../app/jureren/beoordelen';
 import JurerenScreen from '../app/jureren';
@@ -125,6 +125,26 @@ describe('Jureren (fase 22b)', () => {
     expect(await screen.findByText('Klaar met jureren?')).toBeTruthy();
     // Verdween de lijst hier, dan bleef die ruimte leeg terwijl de pagina's smal blijven.
     expect(screen.getByText('Jouw categorieën')).toBeTruthy();
+  });
+
+  it('tablet: de lijst krijgt hoogte, anders zie je alleen de kop', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+    expect(await screen.findByText('Jouw categorieën')).toBeTruthy();
+    // Zonder flex op de kaart is de lijst erbinnen nul hoog: dan staat de kop er wel en de inzendingen niet.
+    // Zo gebeurde het op de iPad (5-11-2026), terwijl de rijen in de test gewoon renderden.
+    const kaart = screen.getByTestId('jury-column');
+    expect(StyleSheet.flatten(kaart.props.style)).toMatchObject({ flex: 1 });
+  });
+
+  it('tablet: ook met één categorie staan de wagens onder een kopje', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session() });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+    expect(await screen.findByText('Jouw categorieën')).toBeTruthy();
+    // Je jureert hier alleen Getrokken wagens; dat kopje hoort er dan ook te staan.
+    expect(screen.getAllByRole('header').map((h) => h.props.children)).toContain('Getrokken wagens volwassenen');
   });
 
   it('tablet: bij de hele optocht staan de wagens onder een kopje per categorie', async () => {

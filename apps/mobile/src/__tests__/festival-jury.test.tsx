@@ -8,7 +8,7 @@ import HeadJuryScreen from '../app/dansgardefestival-jury/hoofdjury';
 import FestivalJuryScreen from '../app/dansgardefestival-jury';
 import { setSessionForTest } from '../auth/session';
 import { api } from '../test/api-fixture';
-import { mockApi, renderApp } from '../test/render';
+import { mockApi, PHONE_SIZE, renderApp, setWindowSize, TABLET_SIZE } from '../test/render';
 
 /** 2026-10-15: jureren op het Dansgardefestival — alleen de categorie die aan de beurt is, 0 tot 10, indienen, hoofdjury. */
 
@@ -101,6 +101,17 @@ describe('Jureren dansgardefestival', () => {
     expect(bodies.flatMap((b) => b.scores)).toContainEqual(expect.objectContaining({ entryId: 'e-1', criterion: 'Execution', value: 5.5 }));
     expect(screen.getAllByText('5,5').length).toBeGreaterThan(0);
     expect(bodies.flatMap((b) => b.comments)).toContainEqual({ entryId: 'e-1', text: 'Mooie lijnen' });
+  });
+
+  it('tablet: de danslijst staat ernaast en springt naar een andere dans', async () => {
+    setWindowSize(TABLET_SIZE);
+    mockApi({ ...api, '/api/v1/me': me(['festival.judge']), '/api/v1/festival-jury': session(), '/api/v1/festival-jury/scores': {} });
+    await renderApp(routes, '/dansgardefestival-jury/beoordelen');
+    expect(await screen.findByText('Dans 1 van 2')).toBeTruthy();
+    expect(screen.getByText('2 dansen · 0 beoordeeld')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('2, Flames, nog niet beoordeeld'));
+    expect(await screen.findByText('Dans 2 van 2')).toBeTruthy();
+    setWindowSize(PHONE_SIZE);
   });
 
   it('solo: Ritme in plaats van Synchroniteit; indienen pas als alles punten heeft', async () => {

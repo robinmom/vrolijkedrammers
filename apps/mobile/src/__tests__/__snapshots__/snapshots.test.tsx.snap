@@ -11733,7 +11733,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
                       "top": "50%",
                     }
                   }
-                  height={248}
+                  height={128}
                   nativeViewRef={"[React.ref]"}
                   onError={[Function]}
                   onLoad={[Function]}
@@ -11752,8 +11752,8 @@ exports[`snapshot dark 07 Foto's 1`] = `
                   style={
                     {
                       "backgroundColor": "rgba(8,123,193,0.14)",
-                      "height": 248,
-                      "width": 248,
+                      "height": 128,
+                      "width": 128,
                     }
                   }
                   symbolSize={null}
@@ -11763,7 +11763,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
                       "duration": 150,
                     }
                   }
-                  width={248}
+                  width={128}
                 />
               </View>
               <View
@@ -11812,7 +11812,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
                       "top": "50%",
                     }
                   }
-                  height={248}
+                  height={128}
                   nativeViewRef={"[React.ref]"}
                   onError={[Function]}
                   onLoad={[Function]}
@@ -11831,8 +11831,8 @@ exports[`snapshot dark 07 Foto's 1`] = `
                   style={
                     {
                       "backgroundColor": "rgba(8,123,193,0.14)",
-                      "height": 248,
-                      "width": 248,
+                      "height": 128,
+                      "width": 128,
                     }
                   }
                   symbolSize={null}
@@ -11842,7 +11842,7 @@ exports[`snapshot dark 07 Foto's 1`] = `
                       "duration": 150,
                     }
                   }
-                  width={248}
+                  width={128}
                 />
               </View>
             </View>
@@ -23587,7 +23587,7 @@ exports[`snapshot light 07 Foto's 1`] = `
                       "top": "50%",
                     }
                   }
-                  height={248}
+                  height={128}
                   nativeViewRef={"[React.ref]"}
                   onError={[Function]}
                   onLoad={[Function]}
@@ -23606,8 +23606,8 @@ exports[`snapshot light 07 Foto's 1`] = `
                   style={
                     {
                       "backgroundColor": "rgba(8,123,193,0.14)",
-                      "height": 248,
-                      "width": 248,
+                      "height": 128,
+                      "width": 128,
                     }
                   }
                   symbolSize={null}
@@ -23617,7 +23617,7 @@ exports[`snapshot light 07 Foto's 1`] = `
                       "duration": 150,
                     }
                   }
-                  width={248}
+                  width={128}
                 />
               </View>
               <View
@@ -23666,7 +23666,7 @@ exports[`snapshot light 07 Foto's 1`] = `
                       "top": "50%",
                     }
                   }
-                  height={248}
+                  height={128}
                   nativeViewRef={"[React.ref]"}
                   onError={[Function]}
                   onLoad={[Function]}
@@ -23685,8 +23685,8 @@ exports[`snapshot light 07 Foto's 1`] = `
                   style={
                     {
                       "backgroundColor": "rgba(8,123,193,0.14)",
-                      "height": 248,
-                      "width": 248,
+                      "height": 128,
+                      "width": 128,
                     }
                   }
                   symbolSize={null}
@@ -23696,7 +23696,7 @@ exports[`snapshot light 07 Foto's 1`] = `
                       "duration": 150,
                     }
                   }
-                  width={248}
+                  width={128}
                 />
               </View>
             </View>

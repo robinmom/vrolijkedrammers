@@ -152,3 +152,18 @@ jest.mock('expo-file-system', () => {
     UploadType: { BINARY_CONTENT: 0, MULTIPART: 1 },
   };
 });
+
+/**
+ * De testomgeving is een telefoon, niet een tablet.
+ *
+ * jest-expo geeft 750x1334 door: dat zijn de pixels van een iPhone 8, terwijl `useWindowDimensions()` op een toestel
+ * punten teruggeeft (375x667 voor datzelfde toestel). Zonder deze correctie ligt de breedte boven WIDE_BREAKPOINT en
+ * draait elke test ongemerkt in de tabletindeling. Een test die juist de brede indeling wil, gebruikt `setWindowSize`
+ * uit src/test/render.tsx en zet hem daarna terug.
+ */
+globalThis.__testWindow = { width: 390, height: 844, scale: 3, fontScale: 1 };
+
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => globalThis.__testWindow,
+}));

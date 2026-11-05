@@ -4844,6 +4844,16 @@
       ]
     },
     {
+      "id": "f50941385a706407",
+      "text": "Recent uitgegeven",
+      "places": [
+        {
+          "file": "app/kassa.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "d56589d8f3f8b03e",
       "text": "Richt de camera op de munten-QR in de app van het lid",
       "places": [

@@ -89,6 +89,14 @@
         {
           "photosPermission": "De Vrolijke Drammers gebruikt je foto's zodat je als jurylid een bestaande foto van een wagen of groep kunt kiezen."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true
+          }
+        }
       ]
     ],
     "scheme": "drammers",

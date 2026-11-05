@@ -25,7 +25,7 @@ import { flushPhotos, lastPhotoError, pendingPhotos } from '../../features/juryP
 import { useJudging } from '../../features/useJudging';
 import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
-import { AppText, BackLink, Button, Card, QueryState, ScoreSlider, useIsWide } from '../../ui';
+import { AppText, BackLink, Button, Card, QueryState, ScoreSlider, TextField, useIsWide } from '../../ui';
 
 type Page = { kind: 'entry'; entry: JudgingEntry; pass: number } | { kind: 'end' };
 
@@ -227,6 +227,9 @@ export default function BeoordelenScreen() {
   const toConfirm = (entry: JudgingEntry, pass: number) =>
     criteriaFor(entry, pass).flatMap((x) => (x.own === null && x.carried ? [{ key: x.criterion.key, value: x.carried.value }] : []));
 
+  /** Inzendingen waar dit jurylid iets bij heeft genoteerd, in dezelfde volgorde als de lijst. */
+  const noted = entries.filter((e) => passes.some((p) => judging.comments.get(`${e.registrationId}|${p}`)));
+
   /** Naar een wagen of groep, standaard bij het eerste voorbijtrekken dat nog niet af is (vanuit het overzicht). */
   const goToEntry = (entry: JudgingEntry, pass?: number) => {
     const i = entries.findIndex((e) => e.registrationId === entry.registrationId);
@@ -318,6 +321,10 @@ export default function BeoordelenScreen() {
               <ScrollView
                 style={{ width: pageWidth }}
                 contentContainerStyle={styles.page}
+                keyboardShouldPersistTaps="handled"
+                // Zonder dit dekt het toetsenbord op iOS de aantekening af; dit scherm heeft een eigen scrollvlak en
+                // loopt dus niet via Screen. Zelfde reden als op het festivalscherm.
+                automaticallyAdjustKeyboardInsets
                 refreshControl={<RefreshControl refreshing={refresh.refreshing} onRefresh={refresh.onRefresh} />}
               >
                 {!item.entry.assigned ? (
@@ -403,6 +410,18 @@ export default function BeoordelenScreen() {
                     />
                   </View>
                 ) : null}
+                {/* Aantekening per voorbijtrekken: je ziet de wagen drie keer en per keer valt iets anders op. Bij het
+                    indienen staan ze bij elkaar in het overzicht. Ze komen niet in de uitslag. */}
+                <Card style={styles.note}>
+                  <TextField
+                    label="Aantekening voor jezelf"
+                    hint="Alleen voor jou; je leest ze terug voordat je indient. Komt niet in de uitslag. Wordt direct op je telefoon bewaard."
+                    multiline
+                    maxLength={1000}
+                    value={judging.comments.get(`${item.entry.registrationId}|${item.pass}`) ?? ''}
+                    onChangeText={(text) => judging.setComment(item.entry.registrationId, item.pass, text)}
+                  />
+                </Card>
                 {userId ? (
                   <JuryPhotoCard
                     userId={userId}
@@ -478,6 +497,39 @@ export default function BeoordelenScreen() {
                     );
                   })}
                 </Card>
+                {/* Alle aantekeningen bij elkaar: hiervoor zijn ze bedoeld, om ze vlak voor het indienen nog eens na
+                    te lopen. Staan er geen, dan laten we de kaart weg. */}
+                {noted.length > 0 ? (
+                  <Card style={styles.card}>
+                    <AppText variant="overline" color={colors.textSecondary}>
+                      Jouw aantekeningen
+                    </AppText>
+                    <AppText variant="caption" color={colors.textSecondary}>
+                      Alleen voor jou. Ze komen niet in de uitslag; het bestuur kan ze opvragen als een groep om toelichting vraagt.
+                    </AppText>
+                    {noted.map((e) => (
+                      <Pressable
+                        key={e.registrationId}
+                        onPress={() => goToEntry(e)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Aantekeningen bij ${entryLabel(e)}`}
+                        style={styles.noteRow}
+                      >
+                        <AppText variant="bodyStrong" numberOfLines={1}>
+                          {entryLabel(e)}
+                        </AppText>
+                        {passes
+                          .map((p) => ({ pass: p, text: judging.comments.get(`${e.registrationId}|${p}`) }))
+                          .filter((x) => !!x.text)
+                          .map((x) => (
+                            <AppText key={x.pass} variant="caption" color={colors.textSecondary}>
+                              Voorbij {x.pass}: {x.text}
+                            </AppText>
+                          ))}
+                      </Pressable>
+                    ))}
+                  </Card>
+                ) : null}
                 {missing.length > 0 ? (
                   <View style={[styles.banner, { backgroundColor: `${brand.yellow}40` }]}>
                     <AppText variant="bodyStrong" color={brand.navy}>
@@ -615,6 +667,8 @@ const styles = StyleSheet.create({
   segmented: { flexDirection: 'row', padding: 4, borderRadius: radius.sm, gap: 4 },
   segment: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 9 },
   segmentActive: { shadowColor: '#000000', shadowOpacity: 0.1, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  note: { padding: 16, borderRadius: radius.md },
+  noteRow: { gap: 2, paddingVertical: 6 },
   sliders: { gap: 12, padding: 16, borderRadius: radius.md },
   carried: { gap: 8 },
   card: { gap: 10, padding: 16, borderRadius: radius.md },

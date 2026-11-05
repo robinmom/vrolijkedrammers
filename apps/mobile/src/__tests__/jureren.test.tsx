@@ -180,6 +180,24 @@ describe('Jureren (fase 22b)', () => {
     );
   });
 
+  it('aantekening per voorbijtrekken: bewaard, verstuurd en terug te lezen bij het indienen', async () => {
+    mockApi({ ...api, '/api/v1/me': me, '/api/v1/jury/current': session(), '/api/v1/jury/parades/p-1/scores': { changed: 1 } });
+    await renderApp(routes, '/jureren/beoordelen?start=r-5&passage=1');
+    expect(await screen.findByText('1 van 2')).toBeTruthy();
+    await fireEvent.changeText(screen.getAllByLabelText('Aantekening voor jezelf')[0]!, 'Muziek te zacht');
+
+    await waitFor(() => expect(requests('/jury/parades/p-1/scores', 'PUT').length).toBeGreaterThan(0), { timeout: 4000 });
+    const bodies = await Promise.all(requests('/jury/parades/p-1/scores', 'PUT').map((r) => r.json()));
+    expect(bodies.flatMap((b) => b.comments ?? [])).toContainEqual(
+      expect.objectContaining({ registrationId: 'r-5', pass: 1, text: 'Muziek te zacht' }),
+    );
+
+    // Bij het indienen staan ze bij elkaar, zodat het jurylid ze nog eens nakijkt.
+    await fireEvent.press(screen.getByRole('button', { name: 'Overzicht' }));
+    expect(await screen.findByText('Jouw aantekeningen')).toBeTruthy();
+    expect(screen.getByText('Voorbij 1: Muziek te zacht')).toBeTruthy();
+  });
+
   it('overzicht: gewogen totaal per wagen, en "ga naar inzending" springt naar het eerste gat', async () => {
     const scored = (criterion: string, value: number) => ({ registrationId: 'r-5', pass: 1, criterion, value, scoredAt: '2027-02-07T13:40:00Z' });
     mockApi({

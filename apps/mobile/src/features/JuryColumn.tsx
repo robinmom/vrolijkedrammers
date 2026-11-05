@@ -21,12 +21,13 @@ export type JuryColumnItem = {
 type Row = { kind: 'kop'; key: string; title: string } | { kind: 'rij'; key: string; item: JuryColumnItem };
 
 /**
- * Kopjes per categorie, maar alleen als er iets te groeperen valt: bij één categorie zou een kopje boven de hele
- * lijst alleen ruimte kosten. De volgorde van de inzendingen blijft zoals hij binnenkomt (startvolgorde).
+ * De inzendingen onder een kopje per categorie. Ook bij één categorie: je wilt zien welke categorie je jureert. Alleen
+ * als er helemaal geen categorie bekend is blijft het een kale lijst. De volgorde van de inzendingen blijft zoals hij
+ * binnenkomt (startvolgorde).
  */
 function toRows(items: JuryColumnItem[]): Row[] {
   const groups = [...new Set(items.map((i) => i.group).filter((g): g is string => !!g))];
-  if (groups.length < 2) {
+  if (groups.length === 0) {
     return items.map((item) => ({ kind: 'rij', key: item.key, item }));
   }
   return groups.flatMap((group) => [
@@ -60,7 +61,7 @@ export function JuryColumn({
   const { colors } = useTheme();
 
   return (
-    <Card style={[styles.column, { width }]}>
+    <Card testID="jury-column" style={[styles.column, { width }]}>
       <View style={styles.head}>
         <AppText variant="cardTitle" accessibilityRole="header" numberOfLines={1}>
           {title}
@@ -129,7 +130,9 @@ export function JuryColumn({
 }
 
 const styles = StyleSheet.create({
-  column: { padding: 16, gap: 4, borderRadius: radius.md },
+  // flex: 1 is hier geen opsmuk: zonder dat volgt de kaart zijn inhoud, is de lijst erbinnen nul hoog en zie je
+  // alleen de kop. Zo gebeurde het op de iPad (5-11-2026).
+  column: { flex: 1, padding: 16, gap: 4, borderRadius: radius.md },
   flex: { flex: 1 },
   head: { gap: 2, paddingBottom: 8 },
   list: { gap: 4, paddingBottom: 8 },

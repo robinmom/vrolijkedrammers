@@ -7768,6 +7768,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/jury/parades/{paradeId}/entries/{registrationId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Beoordelingen buiten categorie goedkeuren of afwijzen (`null` = weer open); de scores blijven verborgen. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    paradeId: string;
+                    registrationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EntryCommentResponse"][];
+                        "application/json": components["schemas"]["EntryCommentResponse"][];
+                        "text/json": components["schemas"]["EntryCommentResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/jury/parades/{paradeId}/outside": {
         parameters: {
             query?: never;
@@ -7776,7 +7817,6 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Beoordelingen buiten categorie goedkeuren of afwijzen (`null` = weer open); de scores blijven verborgen. */
         put: {
             parameters: {
                 query?: never;
@@ -26733,6 +26773,16 @@ export interface components {
         };
         /** @enum {unknown} */
         CombinationBreakStatus: "AwaitingAgreement" | "AwaitingApproval" | "Approved" | "Rejected" | "Cancelled";
+        /** @description Een aantekening van het jurylid bij een inzending in een passage; een lege tekst wist hem. */
+        CommentRequest: {
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            pass: number;
+            text: string;
+            /** Format: date-time */
+            writtenAt: string;
+        };
         CommitteeMemberRequest: {
             /** Format: int32 */
             committeeId: number;
@@ -27177,6 +27227,17 @@ export interface components {
             boundWithHardwareKey: number;
             /** Format: int32 */
             notBound: number;
+        };
+        /** @description Aantekening van een jurylid bij een inzending; niet gedeeld, alleen voor het bestuur. */
+        EntryCommentResponse: {
+            /** Format: uuid */
+            userId: string;
+            jurorName: string;
+            /** Format: int32 */
+            pass: number;
+            text: string;
+            /** Format: date-time */
+            writtenAt: string;
         };
         EraseRequest: {
             confirmation: string;
@@ -28229,6 +28290,16 @@ export interface components {
             /** Format: int32 */
             overall: number;
         };
+        /** @description Aantekening van dit jurylid; alleen voor hemzelf en voor het bestuur in het portal, niet voor de uitslag. */
+        JudgingCommentResponse: {
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: int32 */
+            pass: number;
+            text: string;
+            /** Format: date-time */
+            writtenAt: string;
+        };
         /**
          * @description De vier criteria waarop de jury beoordeelt (fase 22), elk van 0 tot en met 100.
          * @enum {unknown}
@@ -28309,6 +28380,7 @@ export interface components {
             scores: components["schemas"]["JudgingScoreResponse"][];
             weights: components["schemas"]["JudgingCategoryWeightsResponse"][];
             photos: components["schemas"]["JudgingPhotoResponse"][];
+            comments: components["schemas"]["JudgingCommentResponse"][];
         };
         /** @description Een programmacategorie voor het jurylid: ingediend, aan de beurt (de eerste die nog niet is ingediend) of later. */
         JuryCategory: {
@@ -30518,6 +30590,7 @@ export interface components {
         };
         SaveScoresRequest: {
             scores: components["schemas"]["ScoreRequest"][];
+            comments: null | components["schemas"]["CommentRequest"][];
         };
         SaveScoresResponse: {
             /** Format: int32 */

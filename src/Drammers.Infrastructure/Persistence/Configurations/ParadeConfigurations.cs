@@ -242,6 +242,19 @@ internal sealed class JudgingScoreConfiguration : IEntityTypeConfiguration<Modul
     }
 }
 
+internal sealed class JudgingCommentConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.JudgingComment>
+{
+    public void Configure(EntityTypeBuilder<Modules.Parade.Judging.JudgingComment> builder)
+    {
+        builder.ToTable("JudgingComment", Schemas.Parade, t => t.HasCheckConstraint("CK_JudgingComment_pass", "[pass] BETWEEN 1 AND 3"));
+        builder.HasKey(c => new { c.RegistrationId, c.UserId, c.Pass });
+        builder.Property(c => c.Text).HasMaxLength(Modules.Parade.Judging.JudgingComment.MaxLength);
+        builder.HasOne<ParadeRegistration>().WithMany().HasForeignKey(c => c.RegistrationId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<Modules.Identity.Users.User>().WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(c => new { c.ParadeId, c.UserId });
+    }
+}
+
 internal sealed class JudgingSubmissionConfiguration : IEntityTypeConfiguration<Modules.Parade.Judging.JudgingSubmission>
 {
     public void Configure(EntityTypeBuilder<Modules.Parade.Judging.JudgingSubmission> builder)

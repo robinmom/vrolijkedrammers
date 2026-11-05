@@ -190,6 +190,63 @@ public class ParadeJudgingTests(SqlServerFixture sql) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Aantekeningen_blijven_prive_per_passage_en_alleen_het_bestuur_ziet_ze()
+    {
+        var (wagons, _, a, _, _) = await SeedAsync();
+        var (jurorId, jurorOid) = await _api.CreateUserAsync("jurylid@example.com", DefaultRoles.Jury);
+        var juror = _api.ClientFor(jurorOid);
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/jurors/{jurorId}/categories", new { categoryIds = new[] { wagons } });
+        var t = _api.Clock.UtcNow;
+
+        // Per passage een eigen aantekening: het jurylid ziet de wagen drie keer langskomen.
+        await juror.PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new
+        {
+            scores = Array.Empty<object>(),
+            comments = new[]
+            {
+                new { registrationId = a, pass = 1, text = "Mooie opbouw, muziek te zacht", writtenAt = t.UtcDateTime },
+                new { registrationId = a, pass = 2, text = "Nu wel goed te horen", writtenAt = t.UtcDateTime },
+            },
+        });
+
+        // Het jurylid leest ze terug bij het indienen, ook op een ander toestel.
+        var mine = (await juror.GetFromJsonAsync<JsonElement>("/api/v1/jury/current")).GetProperty("comments").EnumerateArray().ToList();
+        Assert.Equal(2, mine.Count);
+        Assert.Equal("Mooie opbouw, muziek te zacht", mine.Single(c => c.GetProperty("pass").GetInt32() == 1).GetProperty("text").GetString());
+
+        // De nieuwste versie wint, net als bij een score.
+        await juror.PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new
+        {
+            scores = Array.Empty<object>(),
+            comments = new[] { new { registrationId = a, pass = 1, text = "Toch prima muziek", writtenAt = t.AddMinutes(1).UtcDateTime } },
+        });
+        mine = (await juror.GetFromJsonAsync<JsonElement>("/api/v1/jury/current")).GetProperty("comments").EnumerateArray().ToList();
+        Assert.Equal("Toch prima muziek", mine.Single(c => c.GetProperty("pass").GetInt32() == 1).GetProperty("text").GetString());
+
+        // Een lege tekst wist de aantekening.
+        await juror.PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new
+        {
+            scores = Array.Empty<object>(),
+            comments = new[] { new { registrationId = a, pass = 2, text = "", writtenAt = t.AddMinutes(2).UtcDateTime } },
+        });
+        mine = (await juror.GetFromJsonAsync<JsonElement>("/api/v1/jury/current")).GetProperty("comments").EnumerateArray().ToList();
+        Assert.Single(mine);
+
+        // Het bestuur kan ze raadplegen als een groep om toelichting vraagt, met de naam van het jurylid erbij.
+        var seen = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/jury/parades/{_paradeId}/entries/{a}/comments");
+        var rows = seen.EnumerateArray().ToList();
+        Assert.Single(rows);
+        Assert.Equal("Toch prima muziek", rows[0].GetProperty("text").GetString());
+        Assert.Equal(1, rows[0].GetProperty("pass").GetInt32());
+        Assert.False(string.IsNullOrWhiteSpace(rows[0].GetProperty("jurorName").GetString()));
+
+        // Maar ze staan niet in de uitslag: die kent alleen punten.
+        var hoofdjury = _api.ClientFor((await _api.CreateUserAsync("hoofdjury@example.com", DefaultRoles.Hoofdjury)).ObjectId);
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await hoofdjury.GetAsync($"/api/v1/admin/jury/parades/{_paradeId}/entries/{a}/comments")).StatusCode);
+    }
+
+    [Fact]
     public async Task Jurylid_slaat_alleen_scores_op_voor_een_optocht_waarin_hij_is_ingedeeld()
     {
         var (wagons, _, a, _, _) = await SeedAsync();

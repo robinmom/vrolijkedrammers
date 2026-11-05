@@ -36,6 +36,18 @@ public sealed class AdminJuryController(ParadeJury jury, ParadeJudging judging) 
     }
 
     /// <summary>Beoordelingen buiten categorie goedkeuren of afwijzen (<c>null</c> = weer open); de scores blijven verborgen.</summary>
+    /// <summary>
+    /// De aantekeningen van de juryleden bij één inzending. Alleen het bestuur (<c>jury.manage</c>), niet de
+    /// hoofdjury: die jureert zelf mee, en aantekeningen van een collega horen daar niet bij. Ze zijn bedoeld voor
+    /// het jurylid zelf en worden niet gedeeld; het bestuur raadpleegt ze als een groep om toelichting vraagt.
+    /// </summary>
+    [HttpGet("parades/{paradeId:guid}/entries/{registrationId:guid}/comments")]
+    [RequirePermission(Permissions.JuryManage)]
+    [ProducesResponseType<IReadOnlyList<EntryCommentResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<EntryCommentResponse>> EntryComments(Guid paradeId, Guid registrationId, CancellationToken cancellationToken) =>
+        [.. (await judging.EntryCommentsAsync(paradeId, registrationId, cancellationToken))
+            .Select(c => new EntryCommentResponse(c.UserId, c.JurorName, c.Pass, c.Text, c.WrittenAt))];
+
     [HttpPut("parades/{paradeId:guid}/outside")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
@@ -130,6 +142,9 @@ public sealed record JudgingCategoryResponse(
     int CategoryId, string Name, bool Judged, int Originality, int Carnivalesque, int Quality, int Overall, int JurorCount, int EntryCount);
 
 public sealed record InviteJurorRequest([Required, StringLength(100)] string Name, [Required, EmailAddress, StringLength(254)] string Email);
+
+/// <summary>Aantekening van een jurylid bij een inzending; niet gedeeld, alleen voor het bestuur.</summary>
+public sealed record EntryCommentResponse(Guid UserId, string JurorName, int Pass, string Text, DateTime WrittenAt);
 
 public sealed record JurorCategoriesRequest([Required] IReadOnlyList<int> CategoryIds);
 

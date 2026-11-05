@@ -93,6 +93,37 @@ public sealed class JudgingScore
     public const int Passes = 3;
 }
 
+/// <summary>
+/// Een aantekening van een jurylid bij één inzending in één passage (fase 22b, wens 2026-11-05). Bedoeld voor het
+/// jurylid zelf: bij het indienen leest hij zijn aantekeningen van alle drie de passages terug voordat hij zijn
+/// oordeel vastzet.
+///
+/// Deze tekst wordt <b>niet gedeeld</b>: hij staat niet in de uitslag en niet in een rapport dat naar buiten gaat.
+/// Het bestuur kan hem in het portal inzien, zodat een groep die erom vraagt alsnog antwoord kan krijgen.
+///
+/// Per passage en niet per inzending, omdat het jurylid de wagen drie keer ziet langskomen en per keer iets anders
+/// opvalt. Net als bij een score wint de nieuwste wijziging volgens de klok van het toestel.
+/// </summary>
+public sealed class JudgingComment
+{
+    public Guid ParadeId { get; set; }
+
+    public Guid RegistrationId { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public int Pass { get; set; }
+
+    public required string Text { get; set; }
+
+    /// <summary>Moment van schrijven op het toestel (UTC); bepaalt welke versie wint bij later versturen.</summary>
+    public DateTime WrittenAt { get; set; }
+
+    public DateTime ReceivedAt { get; set; }
+
+    public const int MaxLength = 1000;
+}
+
 /// <summary>Een jurylid heeft voor deze optocht ingediend; daarna kan hij niets meer wijzigen.</summary>
 public sealed class JudgingSubmission
 {

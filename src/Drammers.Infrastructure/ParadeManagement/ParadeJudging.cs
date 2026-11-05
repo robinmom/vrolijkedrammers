@@ -13,6 +13,9 @@ public sealed record JudgingEntry(Guid RegistrationId, int? StartNumber, string 
 
 public sealed record JudgingScoreRow(Guid RegistrationId, int Pass, JudgingCriterion Criterion, int Value, DateTime ScoredAt);
 
+/// <summary>Een aantekening van dit jurylid bij een inzending in een passage; niet gedeeld, zie JudgingComment.</summary>
+public sealed record JudgingCommentRow(Guid RegistrationId, int Pass, string Text, DateTime WrittenAt);
+
 public sealed record JudgingCategoryRef(int Id, string Name);
 
 /// <summary>De weging per criterium van een beoordeelde categorie, zodat de app zelf een totaal per inzending kan tonen.</summary>
@@ -24,15 +27,21 @@ public sealed record JudgingPhotoRow(Guid RegistrationId, Modules.Content.Photos
 public sealed record JurorSession(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, TimeOnly StartTime, DateTime? SubmittedAt,
     IReadOnlyList<JudgingCategoryRef> Categories, IReadOnlyList<JudgingEntry> Entries, IReadOnlyList<JudgingScoreRow> Scores,
-    IReadOnlyList<JudgingWeightsRow> Weights, IReadOnlyList<JudgingPhotoRow> Photos);
+    IReadOnlyList<JudgingWeightsRow> Weights, IReadOnlyList<JudgingPhotoRow> Photos, IReadOnlyList<JudgingCommentRow> Comments);
 
 public sealed record ScoreInput(Guid RegistrationId, int Pass, JudgingCriterion Criterion, int Value, DateTime ScoredAt);
+
+/// <summary>Een aantekening zoals het toestel hem stuurt; een lege tekst wist hem.</summary>
+public sealed record CommentInput(Guid RegistrationId, int Pass, string Text, DateTime WrittenAt);
 
 public sealed record JurorProgress(Guid UserId, DateTime? SubmittedAt, int Scored, int Assigned);
 
 public sealed record OutsideScore(Guid UserId, string JurorName, Guid RegistrationId, int? StartNumber, string GroupName, string CategoryName, int Passes, OutsideDecision? Decision);
 
 public sealed record OutsideDecisionInput(Guid UserId, Guid RegistrationId, OutsideDecision? Decision);
+
+/// <summary>Een aantekening met de naam van het jurylid erbij, voor het bestuur in het portal.</summary>
+public sealed record EntryCommentRow(Guid UserId, string JurorName, int Pass, string Text, DateTime WrittenAt);
 
 /// <summary>
 /// Jureren in de app (fase 22b). Een jurylid ziet de inzendingen van de huidige optocht in startvolgorde, met per
@@ -76,8 +85,11 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
                 .Select(f => new JudgingPhotoRow(f.RegistrationId!.Value, f.ProcessingStatus, f.ThumbnailBlobPath))
                 .ToListAsync(cancellationToken)
             : [];
+        // Eigen aantekeningen, zodat het jurylid ze bij het indienen kan teruglezen, ook op een ander toestel.
+        var comments = await db.JudgingComments.AsNoTracking().Where(c => c.ParadeId == parade.Id && c.UserId == userId)
+            .Select(c => new JudgingCommentRow(c.RegistrationId, c.Pass, c.Text, c.WrittenAt)).ToListAsync(cancellationToken);
         return new JurorSession(parade.Id, parade.Name, parade.ParadeDate, parade.StartTime, submitted, categories,
-            [.. entries.Select(e => e with { Assigned = assigned.Contains(e.CategoryId) })], scores, weights, photos);
+            [.. entries.Select(e => e with { Assigned = assigned.Contains(e.CategoryId) })], scores, weights, photos, comments);
     }
 
     /// <summary>De inzendingen die beoordeeld worden: ingediend, niet ingetrokken of afgewezen, in een beoordeelde categorie.</summary>
@@ -96,11 +108,17 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
     /// Scores opslaan of bijwerken; per score wint de nieuwste invulling. Geeft het aantal gewijzigde scores. Alleen voor
     /// een optocht waarin het jurylid in minstens één categorie is ingedeeld.
     /// </summary>
-    public async Task<int> SaveScoresAsync(Guid userId, Guid paradeId, IReadOnlyList<ScoreInput> scores, CancellationToken cancellationToken)
+    public async Task<int> SaveScoresAsync(
+        Guid userId, Guid paradeId, IReadOnlyList<ScoreInput> scores, IReadOnlyList<CommentInput> comments, CancellationToken cancellationToken)
     {
-        if (scores.Count > MaxBatch)
+        if (scores.Count > MaxBatch || comments.Count > MaxBatch)
         {
-            throw new DomainException(ErrorCodes.Validation, $"Hooguit {MaxBatch} scores per keer.");
+            throw new DomainException(ErrorCodes.Validation, $"Hooguit {MaxBatch} scores of aantekeningen per keer.");
+        }
+
+        if (comments.Any(c => c.Pass is < 1 or > JudgingScore.Passes || c.Text.Length > JudgingComment.MaxLength))
+        {
+            throw new DomainException(ErrorCodes.Validation, $"Een aantekening hoort bij passage 1, 2 of 3 en is hooguit {JudgingComment.MaxLength} tekens.");
         }
 
         if (scores.Any(s => s.Value is < 0 or > 100 || s.Pass is < 1 or > JudgingScore.Passes || !Enum.IsDefined(s.Criterion)))
@@ -116,7 +134,7 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
 
         await EnsureNotSubmittedAsync(paradeId, userId, cancellationToken);
         var entryIds = (await EntriesAsync(paradeId, cancellationToken)).Select(e => e.RegistrationId).ToHashSet();
-        if (scores.Any(s => !entryIds.Contains(s.RegistrationId)))
+        if (scores.Any(s => !entryIds.Contains(s.RegistrationId)) || comments.Any(c => !entryIds.Contains(c.RegistrationId)))
         {
             throw new DomainException(ErrorCodes.Validation, "Deze inzending wordt in deze optocht niet beoordeeld.");
         }
@@ -151,9 +169,80 @@ public sealed class ParadeJudging(DrammersDbContext db, IAuditLogger audit, ICur
             }
         }
 
+        changed += await ApplyCommentsAsync(userId, paradeId, comments, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return changed;
     }
+
+    /// <summary>
+    /// Aantekeningen bijwerken; net als bij een score wint de nieuwste versie volgens de klok van het toestel. Een lege
+    /// tekst wist de aantekening, zodat een jurylid er vanaf kan.
+    /// </summary>
+    private async Task<int> ApplyCommentsAsync(Guid userId, Guid paradeId, IReadOnlyList<CommentInput> comments, CancellationToken cancellationToken)
+    {
+        if (comments.Count == 0)
+        {
+            return 0;
+        }
+
+        var ids = comments.Select(c => c.RegistrationId).Distinct().ToList();
+        var existing = await db.JudgingComments.Where(c => c.UserId == userId && ids.Contains(c.RegistrationId)).ToListAsync(cancellationToken);
+        var changed = 0;
+        foreach (var input in comments.GroupBy(c => (c.RegistrationId, c.Pass)).Select(g => g.MaxBy(c => c.WrittenAt)!))
+        {
+            var writtenAt = DateTime.SpecifyKind(input.WrittenAt, DateTimeKind.Utc);
+            writtenAt = writtenAt > Now + MaxClockSkew ? Now : writtenAt;
+            var text = input.Text.Trim();
+            var comment = existing.SingleOrDefault(c => c.RegistrationId == input.RegistrationId && c.Pass == input.Pass);
+            if (comment is null)
+            {
+                if (text.Length == 0)
+                {
+                    continue;
+                }
+
+                db.JudgingComments.Add(new JudgingComment
+                {
+                    ParadeId = paradeId,
+                    RegistrationId = input.RegistrationId,
+                    UserId = userId,
+                    Pass = input.Pass,
+                    Text = text,
+                    WrittenAt = writtenAt,
+                    ReceivedAt = Now,
+                });
+                changed++;
+            }
+            else if (comment.WrittenAt < writtenAt && comment.Text != text)
+            {
+                if (text.Length == 0)
+                {
+                    db.JudgingComments.Remove(comment);
+                }
+                else
+                {
+                    (comment.Text, comment.WrittenAt, comment.ReceivedAt) = (text, writtenAt, Now);
+                }
+
+                changed++;
+            }
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// De aantekeningen van alle juryleden bij één inzending, voor het bestuur. Deze teksten zijn niet gedeeld: ze
+    /// staan niet in de uitslag en niet in een rapport. Het bestuur raadpleegt ze als een groep om toelichting vraagt.
+    /// </summary>
+    public async Task<IReadOnlyList<EntryCommentRow>> EntryCommentsAsync(Guid paradeId, Guid registrationId, CancellationToken cancellationToken) =>
+        await (
+            from c in db.JudgingComments.AsNoTracking()
+            join u in db.Users.AsNoTracking() on c.UserId equals u.Id
+            where c.ParadeId == paradeId && c.RegistrationId == registrationId
+            orderby u.DisplayName, c.Pass
+            select new EntryCommentRow(c.UserId, u.DisplayName, c.Pass, c.Text, c.WrittenAt))
+        .ToListAsync(cancellationToken);
 
     /// <summary>Indienen (idempotent); daarna kan het jurylid voor deze optocht niets meer wijzigen.</summary>
     public async Task<DateTime> SubmitAsync(Guid userId, Guid paradeId, CancellationToken cancellationToken)

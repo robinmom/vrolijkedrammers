@@ -9059,12 +9059,70 @@
         }
       }
     },
+    "/api/v1/admin/jury/parades/{paradeId}/entries/{registrationId}/comments": {
+      "get": {
+        "tags": [
+          "AdminJury"
+        ],
+        "summary": "Beoordelingen buiten categorie goedkeuren of afwijzen (`null` = weer open); de scores blijven verborgen.",
+        "parameters": [
+          {
+            "name": "paradeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntryCommentResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntryCommentResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntryCommentResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/jury/parades/{paradeId}/outside": {
       "put": {
         "tags": [
           "AdminJury"
         ],
-        "summary": "Beoordelingen buiten categorie goedkeuren of afwijzen (`null` = weer open); de scores blijven verborgen.",
         "parameters": [
           {
             "name": "paradeId",
@@ -35180,6 +35238,33 @@
           "Cancelled"
         ]
       },
+      "CommentRequest": {
+        "required": [
+          "registrationId",
+          "pass",
+          "text",
+          "writtenAt"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": "string"
+          },
+          "writtenAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Een aantekening van het jurylid bij een inzending in een passage; een lege tekst wist hem."
+      },
       "CommitteeMemberRequest": {
         "required": [
           "committeeId",
@@ -36758,6 +36843,37 @@
           }
         },
         "description": "\"Klaar voor de deur\": hoeveel actieve leden hun ledenticket aan een telefoon hebben gekoppeld (Mijn QR) en hoeveel\nniet — die laatsten moeten bij de deur via de ledenlijst worden ingecheckt."
+      },
+      "EntryCommentResponse": {
+        "required": [
+          "userId",
+          "jurorName",
+          "pass",
+          "text",
+          "writtenAt"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jurorName": {
+            "type": "string"
+          },
+          "pass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": "string"
+          },
+          "writtenAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Aantekening van een jurylid bij een inzending; niet gedeeld, alleen voor het bestuur."
       },
       "EraseRequest": {
         "required": [
@@ -40430,6 +40546,33 @@
         },
         "description": "De weging per criterium, zodat het jurylid in de app een totaal per inzending ziet zoals het meetelt."
       },
+      "JudgingCommentResponse": {
+        "required": [
+          "registrationId",
+          "pass",
+          "text",
+          "writtenAt"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pass": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": "string"
+          },
+          "writtenAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Aantekening van dit jurylid; alleen voor hemzelf en voor het bestuur in het portal, niet voor de uitslag."
+      },
       "JudgingCriterion": {
         "enum": [
           "Originality",
@@ -40650,7 +40793,8 @@
           "entries",
           "scores",
           "weights",
-          "photos"
+          "photos",
+          "comments"
         ],
         "type": "object",
         "properties": {
@@ -40704,6 +40848,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JudgingPhotoResponse"
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JudgingCommentResponse"
             }
           }
         }
@@ -48933,7 +49083,8 @@
       },
       "SaveScoresRequest": {
         "required": [
-          "scores"
+          "scores",
+          "comments"
         ],
         "type": "object",
         "properties": {
@@ -48941,6 +49092,15 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ScoreRequest"
+            }
+          },
+          "comments": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CommentRequest"
             }
           }
         }

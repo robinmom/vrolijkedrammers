@@ -7992,6 +7992,53 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Parade.Judging.JudgingComment", b =>
+                {
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("registration_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Pass")
+                        .HasColumnType("int")
+                        .HasColumnName("pass");
+
+                    b.Property<Guid>("ParadeId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("parade_id");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("received_at");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("text");
+
+                    b.Property<DateTime>("WrittenAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("written_at");
+
+                    b.HasKey("RegistrationId", "UserId", "Pass")
+                        .HasName("PK_JudgingComment");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_JudgingComment_user_id");
+
+                    b.HasIndex("ParadeId", "UserId")
+                        .HasDatabaseName("IX_JudgingComment_parade_id_user_id");
+
+                    b.ToTable("JudgingComment", "parade", t =>
+                        {
+                            t.HasCheckConstraint("CK_JudgingComment_pass", "[pass] BETWEEN 1 AND 3");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Parade.Judging.JudgingOutsideReview", b =>
                 {
                     b.Property<Guid>("ParadeId")
@@ -10627,6 +10674,21 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ParadeId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Parade.Judging.JudgingComment", b =>
+                {
+                    b.HasOne("Drammers.Modules.Parade.Registrations.ParadeRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Drammers.Modules.Identity.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Drammers.Modules.Parade.Judging.JudgingOutsideReview", b =>

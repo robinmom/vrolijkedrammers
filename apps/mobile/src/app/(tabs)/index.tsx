@@ -12,6 +12,7 @@ import { dateBlockParts, greeting, newsDateLong, startTime } from '../../lib/dat
 import { useTheme } from '../../theme/ThemeProvider';
 import { useHeroStatusBar } from '../../theme/useHeroStatusBar';
 import {
+  Columns,
   AppText,
   Button,
   Card,
@@ -58,7 +59,7 @@ export default function HomeScreen() {
   const latest = news.data?.slice(0, 3) ?? [];
 
   return (
-    <Screen hero {...refresh}>
+    <Screen hero wide {...refresh}>
       <View style={styles.hero}>
         {hero.data?.imageUrl ? <RemoteImage uri={hero.data.imageUrl} cacheKey="website-hero" style={StyleSheet.absoluteFill} /> : null}
         <LinearGradient
@@ -117,51 +118,62 @@ export default function HomeScreen() {
           <ShortcutTile icon="locatie" label="Locatie" tint="green" onPress={() => router.push('/meer/locatie')} />
         </View>
 
-        <SectionHeader title="Agenda" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
-        {upcoming.length > 0 ? (
-          <View style={styles.list}>
-            {upcoming.map((event, index) => (
-              <EventCard
-                key={event.id}
-                title={event.title}
-                date={dateBlockParts(event.startAt)}
-                dateVariant={index === 0 ? 'solid' : undefined}
-                meta="inline"
-                time={event.allDay ? 'Hele dag' : startTime(event.startAt)}
-                location={event.locationName ?? undefined}
-                onPress={() => router.push(`/activiteit/${event.id}`)}
-                testID={index === 0 ? 'next-event' : undefined}
-              />
-            ))}
+        {/* Op een breed scherm staan agenda en nieuws naast elkaar; op een telefoon onder elkaar, zoals altijd. */}
+        <Columns
+          gap={20}
+          left={
+          <View style={styles.section}>
+            <SectionHeader title="Agenda" linkLabel="Alles" onLinkPress={() => router.push('/programma')} />
+            {upcoming.length > 0 ? (
+              <View style={styles.list}>
+                {upcoming.map((event, index) => (
+                  <EventCard
+                    key={event.id}
+                    title={event.title}
+                    date={dateBlockParts(event.startAt)}
+                    dateVariant={index === 0 ? 'solid' : undefined}
+                    meta="inline"
+                    time={event.allDay ? 'Hele dag' : startTime(event.startAt)}
+                    location={event.locationName ?? undefined}
+                    onPress={() => router.push(`/activiteit/${event.id}`)}
+                    testID={index === 0 ? 'next-event' : undefined}
+                  />
+                ))}
+              </View>
+            ) : events.data ? (
+              <EmptyState title="Nog geen activiteiten" message="Nieuwe activiteiten verschijnen hier vanzelf." />
+            ) : (
+              <QueryState query={events} />
+            )}
           </View>
-        ) : events.data ? (
-          <EmptyState title="Nog geen activiteiten" message="Nieuwe activiteiten verschijnen hier vanzelf." />
-        ) : (
-          <QueryState query={events} />
-        )}
-
-        <SectionHeader title="Laatste nieuws" linkLabel="Meer" onLinkPress={() => router.push('/nieuws')} />
-        {latest.length > 0 ? (
-          <View style={styles.list}>
-            {latest.map((item) => (
-              <NewsRow
-                key={item.id}
-                variant="home"
-                id={item.id}
-                title={item.title}
-                imageUrl={item.imageUrl}
-                overline={newsDateLong(item.publishedAt)}
-                onPress={() => router.push(`/nieuws/${item.id}`)}
-              />
-            ))}
+          }
+          right={
+          <View style={styles.section}>
+            <SectionHeader title="Laatste nieuws" linkLabel="Meer" onLinkPress={() => router.push('/nieuws')} />
+            {latest.length > 0 ? (
+              <View style={styles.list}>
+                {latest.map((item) => (
+                  <NewsRow
+                    key={item.id}
+                    variant="home"
+                    id={item.id}
+                    title={item.title}
+                    imageUrl={item.imageUrl}
+                    overline={newsDateLong(item.publishedAt)}
+                    onPress={() => router.push(`/nieuws/${item.id}`)}
+                  />
+                ))}
+              </View>
+            ) : news.data ? (
+              <AppText variant="body" color={colors.textSecondary}>
+                Nog geen nieuws.
+              </AppText>
+            ) : (
+              <QueryState query={news} />
+            )}
           </View>
-        ) : news.data ? (
-          <AppText variant="body" color={colors.textSecondary}>
-            Nog geen nieuws.
-          </AppText>
-        ) : (
-          <QueryState query={news} />
-        )}
+          }
+        />
       </View>
     </Screen>
   );
@@ -183,6 +195,7 @@ const styles = StyleSheet.create({
   greeting: { gap: 6 },
   subtitle: { fontSize: 14 },
   content: { padding: 20, gap: 14 },
+  section: { gap: 14 },
   shortcuts: { flexDirection: 'row', gap: 10 },
   list: { gap: 10 },
 });

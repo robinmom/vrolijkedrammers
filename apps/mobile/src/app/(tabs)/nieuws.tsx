@@ -26,7 +26,7 @@ export default function NieuwsScreen() {
   }, [news.data, search]);
 
   return (
-    <Screen {...refresh}>
+    <Screen wide {...refresh}>
       <LargeTitleHeader
         title="Nieuws"
         actions={[

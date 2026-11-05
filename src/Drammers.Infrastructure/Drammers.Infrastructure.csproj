@@ -18,7 +18,7 @@
     <!-- Vanaf SqlClient 7 zit Entra-authenticatie (managed identity) in een apart pakket. -->
     <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.1" />
     <PackageReference Include="HtmlSanitizer" Version="10.0.1120" />
-    <PackageReference Include="Markdig" Version="1.5.1" />
+    <PackageReference Include="Markdig" Version="1.6.0" />
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
     <!-- Foto's draaien, verkleinen en als JPEG zonder metadata opslaan (MIT). Vervangt ImageSharp (licentiesleutel vanaf v4). -->

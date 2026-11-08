@@ -62,10 +62,16 @@ jobs:
         with:
           name: api
           path: publish/api
+          # Alleen bedoeld om het build-resultaat door te geven aan de deploy-job hieronder. GitHub
+          # bewaart artifacts standaard 90 dagen; dat was opgelopen tot 96 GB (8-11-2026).
+          retention-days: 1
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: db
           path: publish/db
+          # Alleen bedoeld om het build-resultaat door te geven aan de deploy-job hieronder. GitHub
+          # bewaart artifacts standaard 90 dagen; dat was opgelopen tot 96 GB (8-11-2026).
+          retention-days: 1
 
   deploy:
     name: Uitrol ${{ inputs.environment || 'dev' }}

@@ -1,7 +1,11 @@
 <#
 .SYNOPSIS
-  Laat de API (managed identity van app-dvd-api-prod) mailings versturen vanuit de mailboxen voorzitter@ en secretaris@ in
-  Microsoft 365, en zet DKIM aan voor Microsoft 365 (runbook docs/runbooks/mailing-via-mailbox.md).
+  Laat de API (managed identity van app-dvd-api-prod) mail versturen vanuit de mailboxen voorzitter@, secretaris@,
+  dansgardefestival@ en app@ in Microsoft 365, en zet DKIM aan voor Microsoft 365
+  (runbook docs/runbooks/mailing-via-mailbox.md).
+
+  app@ is geen mailing maar de verificatiecode van een aanmelding. Die hoort hier thuis omdat ACS afknijpt op 100 mails
+  per uur per abonnement: zonder deze route legt één mailing naar de leden het aanmeldformulier plat (11-11-2026).
 
 .DESCRIPTION
   Gebruikt Exchange "RBAC for Applications": de app krijgt de rol "Application Mail.Send" ALLEEN voor de opgegeven
@@ -16,7 +20,8 @@
   van Microsoft 365.
 #>
 param(
-    [string[]] $Mailboxes = @('voorzitter@vrolijkedrammers.nl', 'secretaris@vrolijkedrammers.nl', 'dansgardefestival@vrolijkedrammers.nl'),
+    [string[]] $Mailboxes = @('voorzitter@vrolijkedrammers.nl', 'secretaris@vrolijkedrammers.nl',
+        'dansgardefestival@vrolijkedrammers.nl', 'app@vrolijkedrammers.nl'),
     [string] $WebApp = 'app-dvd-api-prod',
     [string] $ResourceGroup = 'rg-dvd-prod',
     [string] $Domain = 'vrolijkedrammers.nl',
@@ -96,6 +101,6 @@ foreach ($mailbox in $Mailboxes) {
 }
 
 Write-Host ''
-Write-Host 'Klaar. Zet in GitHub (environment prod) DVD_EMAIL_MAILBOX_SENDERS=voorzitter,secretaris,dansgardefestival en draai de Deploy (prod).' -ForegroundColor Green
+Write-Host 'Klaar. Zet in GitHub (environment prod) DVD_EMAIL_MAILBOX_SENDERS=voorzitter,secretaris,dansgardefestival,app en draai de Deploy (prod).' -ForegroundColor Green
 Write-Host 'Rechten in Exchange kunnen tot een uur nodig hebben voordat ze werken; tot die tijd gaat de mail via Azure.'
 Disconnect-ExchangeOnline -Confirm:$false

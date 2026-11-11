@@ -30956,6 +30956,7 @@ export interface components {
         SplitInviteRequest: {
             memberIds: null | string[];
         };
+        /** @description Invited is het aantal uitnodigingen dat in de wachtrij staat; LastAt is wanneer de laatste mail ongeveer weggaat. */
         SplitInviteResult: {
             /** Format: int32 */
             invited: number;
@@ -30963,6 +30964,8 @@ export interface components {
             withoutEmail: number;
             /** Format: int32 */
             skipped: number;
+            /** Format: date-time */
+            lastAt: string;
         };
         /**
          * @description Wat het splitsformulier vooraf invult (alleen met een geldige link). Niet het e-mailadres: daar hoort het eigen adres
@@ -30978,7 +30981,7 @@ export interface components {
             city: null | string;
         };
         /** @enum {unknown} */
-        SplitState: "NotInvited" | "Invited" | "Applied";
+        SplitState: "NotInvited" | "Queued" | "Invited" | "Applied";
         StartNumberChange: {
             /** Format: uuid */
             id: string;

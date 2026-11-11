@@ -4751,13 +4751,14 @@ export class MockApi {
           withoutEmail++;
           continue;
         }
-        c.state = 'Invited';
+        // De mail gaat via de outbox, dus de stand is eerst 'in de wachtrij'.
+        c.state = 'Queued';
         c.invitedAt = '2026-10-03T10:00:00Z';
         c.timesInvited++;
         invited++;
       }
       this.record('member.split-invited', 'Member', 'split', { invited });
-      return json({ invited, withoutEmail, skipped: 0 });
+      return json({ invited, withoutEmail, skipped: 0, lastAt: '2026-10-03T11:00:00Z' });
     }
     if (path === '/admin/contributions' && method === 'GET') {
       const rate = this.contributionRates[0]!;

@@ -25,10 +25,13 @@ test('fase 25: hoofdleden mailen om het tweede lid te registreren', async ({ pag
   ).toEqual([]);
 
   await page.getByRole('button', { name: 'Iedereen mailen die nog niet gemaild is (1)' }).click();
+  await expect(page.getByRole('dialog')).toContainText('verdeeld over de tijd');
   await page.getByRole('dialog').getByRole('button', { name: 'Mails versturen' }).click();
-  await expect(page.getByText('1 mail verstuurd, 1 zonder e-mailadres overgeslagen.')).toBeVisible();
-  await expect(page.getByRole('row', { name: /Piet van der Berg .*Gemaild/ })).toBeVisible();
+
+  // Versturen gaat via de outbox: de uitnodiging staat eerst in de wachtrij, de mail volgt.
+  await expect(page.getByText('1 mail in de wachtrij gezet, 1 zonder e-mailadres overgeslagen.')).toBeVisible();
+  await expect(page.getByRole('row', { name: /Piet van der Berg .*In de wachtrij/ })).toBeVisible();
   await page.getByRole('button', { name: 'Opnieuw mailen: Piet van der Berg' }).click();
-  await expect(page.getByText('1 mail verstuurd.')).toBeVisible();
+  await expect(page.getByText('1 mail in de wachtrij gezet.')).toBeVisible();
   expect(api.splitCandidates[0]!.timesInvited).toBe(2);
 });

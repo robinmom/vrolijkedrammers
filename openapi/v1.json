@@ -50187,7 +50187,8 @@
         "required": [
           "invited",
           "withoutEmail",
-          "skipped"
+          "skipped",
+          "lastAt"
         ],
         "type": "object",
         "properties": {
@@ -50202,8 +50203,13 @@
           "skipped": {
             "type": "integer",
             "format": "int32"
+          },
+          "lastAt": {
+            "type": "string",
+            "format": "date-time"
           }
-        }
+        },
+        "description": "Invited is het aantal uitnodigingen dat in de wachtrij staat; LastAt is wanneer de laatste mail ongeveer weggaat."
       },
       "SplitPrefill": {
         "required": [
@@ -50262,6 +50268,7 @@
       "SplitState": {
         "enum": [
           "NotInvited",
+          "Queued",
           "Invited",
           "Applied"
         ]

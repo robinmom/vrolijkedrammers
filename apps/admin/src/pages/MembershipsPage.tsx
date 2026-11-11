@@ -13,6 +13,7 @@ type SplitInviteResult = Schemas['SplitInviteResult'];
 
 const stateLabels: Record<SplitCandidate['state'], string> = {
   NotInvited: 'Nog niet gemaild',
+  Queued: 'In de wachtrij',
   Invited: 'Gemaild',
   Applied: 'Aanmelding ingediend',
 };
@@ -48,10 +49,11 @@ export function MembershipsPage() {
         setConfirmAll(false);
         const result = data as SplitInviteResult | undefined;
         if (!result) return;
-        const parts = [`${result.invited} ${result.invited === 1 ? 'mail' : 'mails'} verstuurd`];
+        const parts = [`${result.invited} ${result.invited === 1 ? 'mail' : 'mails'} in de wachtrij gezet`];
         if (result.withoutEmail > 0) parts.push(`${result.withoutEmail} zonder e-mailadres overgeslagen`);
         if (result.skipped > 0) parts.push(`${result.skipped} met een lopende aanmelding overgeslagen`);
-        setMessage(`${parts.join(', ')}.`);
+        const last = result.invited > 1 ? ` De laatste mail gaat rond ${formatDateTime(result.lastAt)} weg.` : '';
+        setMessage(`${parts.join(', ')}.${last}`);
       },
     });
   }
@@ -149,10 +151,10 @@ export function MembershipsPage() {
                           type="button"
                           className="button ghost small"
                           disabled={invite.isPending}
-                          aria-label={`${c.state === 'Invited' ? 'Opnieuw mailen' : 'Mail sturen'}: ${c.fullName}`}
+                          aria-label={`${c.state === 'NotInvited' ? 'Mail sturen' : 'Opnieuw mailen'}: ${c.fullName}`}
                           onClick={() => runInvite([c.memberId])}
                         >
-                          {c.state === 'Invited' ? 'Opnieuw mailen' : 'Mail sturen'}
+                          {c.state === 'NotInvited' ? 'Mail sturen' : 'Opnieuw mailen'}
                         </button>
                       ) : null}
                     </td>
@@ -169,7 +171,7 @@ export function MembershipsPage() {
       <ConfirmDialog
         open={confirmAll}
         title="Hoofdleden mailen?"
-        message={`Er gaat een mail met een persoonlijke link naar ${notInvited} ${notInvited === 1 ? 'hoofdlid' : 'hoofdleden'} die nog niet gemaild zijn.`}
+        message={`Er gaat een mail met een persoonlijke link naar ${notInvited} ${notInvited === 1 ? 'hoofdlid' : 'hoofdleden'} die nog niet gemaild zijn. De mails gaan verdeeld over de tijd weg, dus ze staan niet meteen allemaal in de inbox.`}
         confirmLabel="Mails versturen"
         busy={invite.isPending}
         onConfirm={() => runInvite(null)}

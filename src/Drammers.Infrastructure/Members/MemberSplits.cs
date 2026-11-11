@@ -3,14 +3,18 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Drammers.Infrastructure.Email;
+using Drammers.Infrastructure.Mailings;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Membership.Applications;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Auditing;
 using Drammers.SharedKernel.Errors;
 using Drammers.SharedKernel.Identifiers;
+using Drammers.SharedKernel.Messaging;
 using Drammers.SharedKernel.Time;
+using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Drammers.Infrastructure.Members;
 
@@ -18,6 +22,9 @@ public enum SplitState
 {
     /// <summary>Nog niet gemaild.</summary>
     NotInvited,
+
+    /// <summary>In de wachtrij: de uitnodiging staat in de outbox, de mail gaat er nog uit.</summary>
+    Queued,
 
     /// <summary>Gemaild; het tweede lid heeft zich nog niet aangemeld.</summary>
     Invited,
@@ -30,7 +37,8 @@ public sealed record SplitCandidate(
     Guid MemberId, string MemberNumber, string FullName, string? Email, string? SecondMemberName, SplitState State, DateTime? InvitedAt,
     int TimesInvited, Guid? ApplicationId);
 
-public sealed record SplitInviteResult(int Invited, int WithoutEmail, int Skipped);
+/// <summary><paramref name="Invited"/> is het aantal uitnodigingen dat in de wachtrij staat; <paramref name="LastAt"/> is wanneer de laatste mail ongeveer weggaat.</summary>
+public sealed record SplitInviteResult(int Invited, int WithoutEmail, int Skipped, DateTime LastAt);
 
 /// <summary>
 /// Wat het splitsformulier vooraf invult (alleen met een geldige link). Niet het e-mailadres: daar hoort het eigen adres
@@ -46,8 +54,12 @@ public sealed record SplitPrefill(string MainMemberName, string? SecondFirstName
 /// lid en de partner van het hoofdlid (combinatie; het hoofdlid betaalt). De mail komt van het secretariaat (als dat een
 /// afzender op het eigen domein is, anders van het systeemadres); antwoorden gaan naar het secretariaat.
 /// </summary>
-public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAuditLogger audit, IClock clock, ICurrentActor actor)
+public sealed class MemberSplits(
+    DrammersDbContext db, IOutbox outbox, IAuditLogger audit, IClock clock, ICurrentActor actor, IOptions<MailingOptions> mailingOptions)
 {
+    /// <summary>Berichttype in de outbox: één uitnodiging, één mail.</summary>
+    public const string InviteMailMessageType = "member.split-invite-mail";
+
     public const string ReplyTo = "secretaris@vrolijkedrammers.nl";
 
     /// <summary>Afzender vóór de @; het antwoordadres bepaalt de afzender niet meer (<see cref="EmailSenderAddress"/>).</summary>
@@ -79,15 +91,25 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
         return [.. twoPersons.OrderBy(m => m.LastName ?? m.FullName).ThenBy(m => m.FirstName).Select(m =>
         {
             var invitation = invitations.GetValueOrDefault(m.Id);
-            var state = applied.ContainsKey(m.Id) ? SplitState.Applied : invitation is null ? SplitState.NotInvited : SplitState.Invited;
+            var state = applied.ContainsKey(m.Id) ? SplitState.Applied
+                : invitation is null ? SplitState.NotInvited
+                : invitation.TokenHash.Length == 0 ? SplitState.Queued
+                : SplitState.Invited;
             return new SplitCandidate(m.Id, m.MemberNumber, m.FullName, m.Email, m.SecondMemberName, state, invitation?.SentAt,
                 invitation?.TimesSent ?? 0, applied.TryGetValue(m.Id, out var appId) ? appId : null);
         })];
     }
 
     /// <summary>
-    /// Mailt de hoofdleden (zonder <paramref name="memberIds"/>: iedereen die nog niet gemaild is). Elke mail bevat een
-    /// nieuwe link; een eerdere link vervalt. Wie geen e-mailadres heeft of al een aanmelding heeft lopen, wordt overgeslagen.
+    /// Zet voor de hoofdleden een uitnodiging in de wachtrij (zonder <paramref name="memberIds"/>: iedereen die nog niet
+    /// gemaild is). Elke mail bevat een nieuwe link; een eerdere link vervalt. Wie geen e-mailadres heeft of al een
+    /// aanmelding heeft lopen, wordt overgeslagen.
+    ///
+    /// Het versturen gebeurt <b>niet</b> hier maar in de outbox, één bericht per hoofdlid, verdeeld over de tijd
+    /// (<see cref="MailingOptions.MaxPerHour"/>) — net als de mailing en de advertentiefacturen. Eerder stuurde deze lus
+    /// de mails zelf: op 11-11-2026 liep dat bij 134 uitnodigingen tegen de **240 seconden** van App Service aan
+    /// (111 verstuurd, 3 afgeknepen, de rest bleef liggen) en vulde het bovendien de ACS-pot van 100 mails per uur,
+    /// waardoor de aanmeldingen op de website vastliepen. Honderden mails horen niet binnen één HTTP-verzoek.
     /// </summary>
     public async Task<SplitInviteResult> InviteAsync(IReadOnlyCollection<Guid>? memberIds, string websiteBaseUrl, CancellationToken cancellationToken)
     {
@@ -100,7 +122,10 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
             throw new DomainException(ErrorCodes.Validation, "Alleen tweepersoonsleden zonder gekoppeld tweede lid kunnen een uitnodiging krijgen.");
         }
 
+        var now = clock.UtcNow.UtcDateTime;
+        var interval = TimeSpan.FromHours(1) / mailingOptions.Value.EffectiveMaxPerHour;
         int invited = 0, withoutEmail = 0, skipped = 0;
+        var last = now;
         foreach (var target in targets)
         {
             if (target.State == SplitState.Applied)
@@ -115,32 +140,39 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
                 continue;
             }
 
-            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             var invitation = await db.MembershipSplitInvitations.SingleOrDefaultAsync(i => i.MemberId == target.MemberId, cancellationToken);
             if (invitation is null)
             {
-                invitation = new MembershipSplitInvitation { Id = IdGenerator.NewId(), MemberId = target.MemberId, TokenHash = Hash(token), SentTo = address };
+                invitation = new MembershipSplitInvitation { Id = IdGenerator.NewId(), MemberId = target.MemberId, TokenHash = string.Empty, SentTo = address };
                 db.MembershipSplitInvitations.Add(invitation);
             }
 
-            invitation.TokenHash = Hash(token);
+            // De link wordt pas in de handler gemaakt, zodat alleen de hash in de database komt (zie
+            // MembershipSplitInvitation) en er nooit een leesbare link in de outbox staat. Een lege hash betekent
+            // daarom "staat in de wachtrij" en laat de eerdere link meteen vervallen.
+            invitation.TokenHash = string.Empty;
             invitation.SentTo = address;
-            invitation.SentAt = clock.UtcNow.UtcDateTime;
+            invitation.SentAt = now;
             invitation.SentBy = actor.UserId;
-            invitation.TimesSent++;
 
-            var member = await db.Members.AsNoTracking().SingleAsync(m => m.Id == target.MemberId, cancellationToken);
-            await email.SendAsync(InvitationMail(address, member.FirstName ?? member.FullName, member.SecondMemberName,
-                $"{websiteBaseUrl.TrimEnd('/')}/lid-worden/?splitsen={token}"), cancellationToken);
-            await db.SaveChangesAsync(cancellationToken);
+            last = now + (interval * invited);
+            outbox.Enqueue(InviteMailMessageType, new InviteMail(target.MemberId, websiteBaseUrl), invited == 0 ? null : last);
             invited++;
         }
 
-        var result = new SplitInviteResult(invited, withoutEmail, skipped);
+        await db.SaveChangesAsync(cancellationToken);
+        var result = new SplitInviteResult(invited, withoutEmail, skipped, last);
         await audit.WriteAsync(new AuditEntry("member.split-invited", "Member", "split", null, JsonSerializer.Serialize(result, JsonSerializerOptions.Web)),
             cancellationToken);
         return result;
     }
+
+    /// <summary>Eén uitnodigingsmail. Het adres van de website zit erbij omdat de worker geen HTTP-verzoek heeft om het uit te lezen.</summary>
+    public sealed record InviteMail(Guid MemberId, string WebsiteBaseUrl);
+
+    /// <summary>Een nieuwe link; alleen de <see cref="Hash(string)"/> ervan wordt bewaard.</summary>
+    public static string NewToken() =>
+        Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     /// <summary>Het hoofdlid bij een link, of een 404 als de link onbekend of verlopen is of het lid al gesplitst is.</summary>
     public async Task<Member> ResolveAsync(string token, CancellationToken cancellationToken)
@@ -196,6 +228,44 @@ public sealed class MemberSplits(DrammersDbContext db, IEmailSender email, IAudi
             <p>De link is 90 dagen geldig.</p>
             <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
             """;
-        return new EmailMessage(to, Subject, text, html, ReplyTo, Sender);
+        // ViaMailbox: via de mailbox secretaris@ in Microsoft 365 en dus niet uit de ACS-pot van 100 mails per uur, die
+        // de aanmeldingen op de website deelt. Staat secretaris@ niet in Email__MailboxSenders, dan valt hij terug op ACS.
+        return new EmailMessage(to, Subject, text, html, ReplyTo, Sender, ViaMailbox: true);
+    }
+}
+
+/// <summary>
+/// Verstuurt één uitnodiging uit de outbox. De link wordt hier gemaakt en alleen als hash vastgelegd; een uitnodiging
+/// met een lege hash staat nog in de wachtrij. Mislukt het versturen, dan blijft de hash leeg en biedt de outbox het
+/// bericht later opnieuw aan — het hoofdlid krijgt dus nooit een link die niet werkt. Geeft de outbox het na vijf
+/// pogingen op, dan blijft de uitnodiging op "in de wachtrij" staan en is opnieuw mailen nodig.
+///
+/// Omdat een gevulde hash "al verstuurd" betekent, levert twee keer klikken één mail op, en telt
+/// <see cref="MembershipSplitInvitation.TimesSent"/> verstuurde mails in plaats van kliks.
+/// </summary>
+public sealed class MemberSplitInviteMailHandler(DrammersDbContext db, IEmailSender email, IClock clock) : IOutboxMessageHandler
+{
+    public string Type => MemberSplits.InviteMailMessageType;
+
+    public async Task HandleAsync(OutboxEnvelope message, CancellationToken cancellationToken)
+    {
+        var payload = JsonSerializer.Deserialize<MemberSplits.InviteMail>(message.Payload, JsonSerializerOptions.Web)!;
+        var invitation = await db.MembershipSplitInvitations.SingleOrDefaultAsync(i => i.MemberId == payload.MemberId, cancellationToken);
+        var member = invitation is null
+            ? null
+            : await db.Members.AsNoTracking().SingleOrDefaultAsync(m => m.Id == payload.MemberId, cancellationToken);
+        if (invitation is null || member is null || invitation.TokenHash.Length > 0)
+        {
+            // Teruggedraaid, lid weg, of al verstuurd (het bericht is opnieuw aangeboden): niets te doen.
+            return;
+        }
+
+        var token = MemberSplits.NewToken();
+        await email.SendAsync(MemberSplits.InvitationMail(invitation.SentTo, member.FirstName ?? member.FullName, member.SecondMemberName,
+            $"{payload.WebsiteBaseUrl.TrimEnd('/')}/lid-worden/?splitsen={token}"), cancellationToken);
+        invitation.TokenHash = MemberSplits.Hash(token);
+        invitation.SentAt = clock.UtcNow.UtcDateTime;
+        invitation.TimesSent++;
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

@@ -10,6 +10,7 @@ using Drammers.IntegrationTests.Infrastructure;
 using Drammers.Modules.Membership.Applications;
 using Drammers.Modules.Membership.Members;
 using Drammers.SharedKernel.Identifiers;
+using Drammers.Worker.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -85,6 +86,20 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         var verify = await _anonymous.PostAsJsonAsync($"/api/v1/membership-applications/{id}/verify-email", new { code = LastCodeFor(email) });
         Assert.Equal(HttpStatusCode.NoContent, verify.StatusCode);
         return id;
+    }
+
+    /// <summary>Verwerkt de uitnodigingen die in de wachtrij staan; die gaan sinds 11-11-2026 via de outbox.</summary>
+    private async Task RunSplitInvitesAsync()
+    {
+        var messages = await WithDbAsync(db => db.Outbox.AsNoTracking()
+            .Where(m => m.ProcessedAt == null && m.Type == MemberSplits.InviteMailMessageType).OrderBy(m => m.CreatedAt).ToListAsync());
+        foreach (var message in messages)
+        {
+            using var scope = _api.Services.CreateScope();
+            var handler = scope.ServiceProvider.GetServices<IOutboxMessageHandler>().Single(h => h.Type == message.Type);
+            await handler.HandleAsync(new OutboxEnvelope(message.Id, message.Type, message.Payload, 0), CancellationToken.None);
+            await WithDbAsync(db => db.Outbox.Where(m => m.Id == message.Id).ExecuteUpdateAsync(x => x.SetProperty(m => m.ProcessedAt, DateTime.UtcNow)));
+        }
     }
 
     private async Task RunProvisioningAsync()
@@ -553,6 +568,17 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
 
         var invite = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/memberships/splits/invite", new { })).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal((1, 1), (invite.GetProperty("invited").GetInt32(), invite.GetProperty("withoutEmail").GetInt32()));
+
+        // De uitnodiging staat nu eerst in de wachtrij: nog geen mail, en de link bestaat nog niet.
+        Assert.Contains("Queued", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray()
+            .Select(c => c.GetProperty("state").GetString()));
+        Assert.DoesNotContain(_api.Emails.Sent, m => m.Subject.Contains("tweede lid", StringComparison.Ordinal));
+
+        // De eerste mag meteen; bij meer uitnodigingen schuift elke volgende op met MailingOptions.EffectiveMaxPerHour.
+        Assert.Null(Assert.Single(await WithDbAsync(db => db.Outbox.AsNoTracking()
+            .Where(m => m.Type == MemberSplits.InviteMailMessageType).Select(m => m.LockedUntil).ToListAsync())));
+
+        await RunSplitInvitesAsync();
         var mail = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject.Contains("tweede lid", StringComparison.Ordinal));
         Assert.Equal("secretaris@vrolijkedrammers.nl", mail.ReplyTo);
         Assert.Contains("Marie de Vries", mail.PlainText);
@@ -655,6 +681,13 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
 
         var invite = await (await _bestuur.PostAsJsonAsync("/api/v1/admin/memberships/splits/invite", new { })).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal((1, 1), (invite.GetProperty("invited").GetInt32(), invite.GetProperty("withoutEmail").GetInt32()));
+
+        // De uitnodiging staat nu eerst in de wachtrij: nog geen mail, en de link bestaat nog niet.
+        Assert.Contains("Queued", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray()
+            .Select(c => c.GetProperty("state").GetString()));
+        Assert.DoesNotContain(_api.Emails.Sent, m => m.Subject.Contains("tweede lid", StringComparison.Ordinal));
+
+        await RunSplitInvitesAsync();
         var mail = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject.Contains("tweede lid", StringComparison.Ordinal));
         Assert.Equal("secretaris@vrolijkedrammers.nl", mail.ReplyTo);
         Assert.Contains("Marie de Vries", mail.PlainText);

@@ -54,4 +54,13 @@ public class AanmeldcodeRouteTests
     public void De_splitsuitnodiging_blijft_van_het_secretariaat() =>
         Assert.Equal("secretaris@vrolijkedrammers.nl",
             EmailSenderAddress.For(MemberSplits.InvitationMail("lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc"), Options));
+
+    /// <summary>
+    /// En de splitsuitnodiging gaat sinds 11-11-2026 óók via de mailbox, dus niet meer uit de ACS-pot. Dat was de
+    /// tweede helft van de storing: 134 uitnodigingen legden de pot van 100 per uur leeg.
+    /// </summary>
+    [Fact]
+    public void De_splitsuitnodiging_gaat_via_de_mailbox_en_niet_via_ACS() =>
+        Assert.Equal("secretaris@vrolijkedrammers.nl", MailboxEmailSender.Mailbox(
+            MemberSplits.InvitationMail("lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc"), Options));
 }

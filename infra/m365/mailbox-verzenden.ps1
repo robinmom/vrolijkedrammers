@@ -101,6 +101,6 @@ foreach ($mailbox in $Mailboxes) {
 }
 
 Write-Host ''
-Write-Host 'Klaar. Zet in GitHub (environment prod) DVD_EMAIL_MAILBOX_SENDERS=voorzitter,secretaris,dansgardefestival en draai de Deploy (prod).' -ForegroundColor Green
+Write-Host 'Klaar. Zet in GitHub (environment prod) DVD_EMAIL_MAILBOX_SENDERS=voorzitter,secretaris,dansgardefestival,app en draai de Deploy (prod).' -ForegroundColor Green
 Write-Host 'Rechten in Exchange kunnen tot een uur nodig hebben voordat ze werken; tot die tijd gaat de mail via Azure.'
 Disconnect-ExchangeOnline -Confirm:$false

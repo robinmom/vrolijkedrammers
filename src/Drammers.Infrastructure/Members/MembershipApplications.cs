@@ -75,6 +75,13 @@ public sealed class MembershipApplications(
 
     public const int MaxCodeResends = 3;
 
+    /// <summary>
+    /// Afzender vóór de @ voor de verificatiecode: de mailbox app@ in Microsoft 365, niet ACS. ACS knijpt af op 100 mails
+    /// per uur per abonnement, en die pot deelt een mailing met de aanmeldingen: één mailing naar de leden legde op
+    /// 11-11-2026 het hele aanmeldformulier plat. Een aanmelding mag nooit achter een mailing in de rij staan.
+    /// </summary>
+    public const string Sender = "app";
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public sealed record ProvisionMessage(Guid ApplicationId);
@@ -871,7 +878,7 @@ public sealed class MembershipApplications(
             <p>Heb je je niet aangemeld? Dan kun je deze e-mail negeren.</p>
             <p>Groeten,<br>De Vrolijke Drammers</p>
             """;
-        return new EmailMessage(to, Subject, text, html);
+        return new EmailMessage(to, Subject, text, html, From: Sender, ViaMailbox: true);
     }
 
     /// <summary>

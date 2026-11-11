@@ -69,7 +69,23 @@ public sealed class EmailOptions
 /// <summary>Verstuurt via Azure Communication Services Email met de managed identity van de API.</summary>
 internal sealed partial class AcsEmailSender(IOptions<EmailOptions> options, TokenCredential credential, ILogger<AcsEmailSender> logger) : IEmailSender
 {
-    private readonly EmailClient _client = new(options.Value.Endpoint!, credential);
+    // ACS knijpt af op 100 mails per uur per abonnement en antwoordt dan met 429. Het SDK wacht daar standaard lang op
+    // en probeert het tot tien keer opnieuw; op 11-11-2026 liet dat een aanmelding 240 seconden hangen tot App Service
+    // het verzoek afkapte, en elke herpoging telt zelf óók mee voor de limiet. Dus snel opgeven: de outbox mag het later
+    // nog eens proberen, een wachtende bezoeker kan dat niet.
+    private static readonly EmailClientOptions ThrottleAware = new()
+    {
+        Retry =
+        {
+            MaxRetries = 1,
+            Mode = RetryMode.Fixed,
+            Delay = TimeSpan.FromSeconds(1),
+            MaxDelay = TimeSpan.FromSeconds(3),
+            NetworkTimeout = TimeSpan.FromSeconds(15),
+        },
+    };
+
+    private readonly EmailClient _client = new(options.Value.Endpoint!, credential, ThrottleAware);
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {

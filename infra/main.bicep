@@ -101,7 +101,10 @@ param passwordSignIn bool = false
 param malwareScanning bool = false
 
 // Afzenders op het eigen domein, gelijk aan de contactadressen (besluit 2026-09-30); DoNotReply maakt ACS zelf aan.
+// app@ hoort bij de mailbox in Microsoft 365 en verstuurt de verificatiecode van een aanmelding; hij staat hier zodat
+// de terugval via ACS dezelfde afzender houdt als Graph onverhoopt niet kan.
 var emailSenders = {
+  app: 'De Vrolijke Drammers'
   secretaris: 'De Vrolijke Drammers – Secretariaat'
   optocht: 'De Vrolijke Drammers – Optocht'
   penningmeester: 'De Vrolijke Drammers – Penningmeester'

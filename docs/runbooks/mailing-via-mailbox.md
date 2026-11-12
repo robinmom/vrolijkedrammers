@@ -9,6 +9,9 @@ echte mailbox in Microsoft 365, met Microsoft Graph. De koppen voor afmelden met
 - Elke verstuurde mail staat ook bij **Verzonden items** van die mailbox.
 - Alle andere mail (welkomstmails, facturen, optocht, contactformulier) blijft via ACS gaan.
 - Heeft de app (nog) geen rechten op de mailbox, dan gaat de mailing automatisch via ACS. Er gaat dus niets verloren.
+- Hapert Microsoft 365 zelf, dan volgt een tweede poging (maximaal 20 seconden per poging). Lukt het dan nog niet, dan
+  gaat een bericht dat niet kan wachten — de verificatiecode van een aanmelding — alsnog via ACS; een mailing blijft in
+  de outbox staan en wordt later opnieuw aangeboden. Zie *Als Microsoft 365 hapert* hieronder.
 
 Limieten van Microsoft 365: 30 berichten per minuut en 10.000 ontvangers per dag per mailbox. De mailing verstuurt
 standaard 90 per uur, dus ruim daaronder.
@@ -76,3 +79,27 @@ DMARC alleen op SPF. Dit geldt ook voor gewone mail vanuit Outlook.
    ```
    pwsh infra/m365/mailbox-verzenden.ps1 -Dkim -Enable
    ```
+
+## Als Microsoft 365 hapert
+
+Op 12-11-2026 gaf Exchange Online ruim vier uur lang bij ongeveer een derde van de aanroepen een 500 of een 504 terug,
+op élke mailbox van de vereniging. Microsoft meldde er niets over. Het aanmeldformulier op de website ging daardoor
+onderuit: de verificatiecode kon niet weg en de bezoeker kreeg een foutmelding, terwijl ACS gewoon werkte.
+
+**Zo zie je of het aan Microsoft ligt.** Vergelijk een aanroep op Exchange met een aanroep op de directory — zelfde
+Graph, zelfde token. Gaat de directory goed en Exchange niet, dan ligt het niet aan ons:
+
+```bash
+TOKEN=$(az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv)
+for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TOKEN" \
+  "https://graph.microsoft.com/v1.0/users/app@vrolijkedrammers.nl/mailFolders/inbox"; done | sort | uniq -c
+for i in $(seq 1 20); do curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TOKEN" \
+  "https://graph.microsoft.com/v1.0/users/app@vrolijkedrammers.nl?\$select=id"; done | sort | uniq -c
+```
+
+Een 403 op de eerste is goed nieuws: Exchange antwoordde netjes, alleen mag het token die map niet lezen. Een 502 of
+504 is de storing. Kijk daarnaast op **admin.microsoft.com → Status**; die melding kan de app zelf niet uitlezen.
+
+**Noodgreep als het lang duurt.** Haal de betreffende afzender uit de GitHub-variabele `DVD_EMAIL_MAILBOX_SENDERS` van
+de omgeving `prod` en rol uit; die mail gaat dan weer via ACS. Let op de ACS-limiet van 100 mails per uur per
+abonnement, dus plan in die periode geen mailing. Zet de afzender terug zodra Microsoft het opgelost heeft.

@@ -14,11 +14,22 @@ namespace Drammers.Infrastructure.Email;
 /// staat hij ook bij Verzonden items. Alleen voor berichten met <see cref="EmailMessage.ViaMailbox"/> en een afzender uit
 /// <see cref="EmailOptions.MailboxSenders"/>; de rest, en elke mail als de mailbox niet mag (nog geen rechten), gaat via ACS.
 /// De managed identity mag alleen namens die mailboxen versturen (Exchange RBAC for Applications, infra/m365).
+/// Hapert Microsoft 365 zelf, dan volgt een tweede poging; daarna gaat een bericht met
+/// <see cref="EmailMessage.MailboxOptional"/> alsnog via ACS en blijft bulkmail in de outbox wachten.
 /// </summary>
 public sealed partial class MailboxEmailSender(
     IEmailSender fallback, HttpClient http, TokenCredential credential, IOptions<EmailOptions> options, ILogger<MailboxEmailSender> logger) : IEmailSender
 {
     private static readonly string[] GraphScope = ["https://graph.microsoft.com/.default"];
+
+    /// <summary>
+    /// Twee pogingen, en per poging niet langer wachten dan dit. Op 12-11-2026 liet Exchange Online ongeveer een derde
+    /// van de aanroepen vallen met een 500 of een 504 na dertig seconden; met twee pogingen komt vrijwel alles er alsnog
+    /// doorheen, en blijft een bezoeker die op zijn aanmeldcode wacht nooit langer dan veertig seconden hangen.
+    /// </summary>
+    private const int Attempts = 2;
+
+    private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(20);
 
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
@@ -34,28 +45,78 @@ public sealed partial class MailboxEmailSender(
         prepared = prepared with { Html = EmailBranding.WithLogo(prepared.Html, settings.LogoUrl) };
         var mime = MimeMessage.Build(mailbox, prepared, DateTimeOffset.UtcNow);
         var token = await credential.GetTokenAsync(new TokenRequestContext(GraphScope), cancellationToken);
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"{settings.GraphBaseUrl.TrimEnd('/')}/v1.0/users/{Uri.EscapeDataString(mailbox)}/sendMail")
+        var url = $"{settings.GraphBaseUrl.TrimEnd('/')}/v1.0/users/{Uri.EscapeDataString(mailbox)}/sendMail";
+        // Graph verwacht de MIME-tekst base64-gecodeerd met Content-Type text/plain (geen HTML naar een browser).
+        var body = Encoding.ASCII.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(mime)));
+
+        HttpStatusCode? status = null;
+        for (var attempt = 1; attempt <= Attempts; attempt++)
         {
-            // Graph verwacht de MIME-tekst base64-gecodeerd met Content-Type text/plain (geen HTML naar een browser).
-            Content = new ByteArrayContent(Encoding.ASCII.GetBytes(Convert.ToBase64String(Encoding.UTF8.GetBytes(mime)))),
-        };
-        request.Content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
-        using var response = await http.SendAsync(request, cancellationToken);
-        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound)
+            var (code, detail) = await TrySendAsync(url, body, token.Token, cancellationToken);
+            status = code;
+            if (code is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound)
+            {
+                // Nog geen rechten op deze mailbox (of geen mailbox): niet blijven proberen, via ACS versturen.
+                LogMailboxUnavailable((int)code.Value);
+                await fallback.SendAsync(message, cancellationToken);
+                return;
+            }
+
+            if (code is not null && (int)code.Value is >= 200 and < 300)
+            {
+                return;
+            }
+
+            LogMailboxAttemptFailed(attempt, code is null ? 0 : (int)code.Value, detail);
+        }
+
+        if (message.MailboxOptional)
         {
-            // Nog geen rechten op deze mailbox (of geen mailbox): niet blijven hangen, via ACS versturen.
-            LogMailboxUnavailable((int)response.StatusCode);
+            // Iemand wacht op dit bericht en de mailbox komt er niet doorheen; dan is ACS beter dan niets. De aanmelding
+            // liep hier op 12-11-2026 op stuk: de bezoeker kreeg een foutmelding terwijl ACS gewoon werkte.
+            LogMailboxFallback(status is null ? 0 : (int)status.Value);
             await fallback.SendAsync(message, cancellationToken);
             return;
         }
 
-        if (!response.IsSuccessStatusCode)
+        // Een mailing blijft wachten op de mailbox: de outbox biedt hem later opnieuw aan, en bulkmail hoort niet alsnog
+        // uit de ACS-pot van honderd per uur te komen die het aanmeldformulier deelt.
+        throw new HttpRequestException($"Versturen via de mailbox mislukte ({Describe(status)}).", null, status);
+    }
+
+    /// <summary>Eén poging. Geeft de statuscode terug, of <c>null</c> als er binnen de tijd geen antwoord kwam.</summary>
+    private async Task<(HttpStatusCode? Status, string? Detail)> TrySendAsync(
+        string url, byte[] body, string token, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = new ByteArrayContent(body) };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var attempt = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        attempt.CancelAfter(AttemptTimeout);
+        try
         {
-            // Andere fouten (bijv. 429 of 5xx): de outbox probeert het later opnieuw.
-            throw new HttpRequestException($"Versturen via de mailbox mislukte ({(int)response.StatusCode}).", null, response.StatusCode);
+            using var response = await http.SendAsync(request, attempt.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                return (response.StatusCode, null);
+            }
+
+            // Het antwoord van Graph bevat de foutcode en het request-id dat Microsoft bij een melding vraagt, en geen
+            // persoonsgegevens (docs/06 §9). Zonder dit wisten we op 12-11-2026 alleen de statuscode.
+            var detail = await response.Content.ReadAsStringAsync(attempt.Token);
+            return (response.StatusCode, detail.Length > 500 ? detail[..500] : detail);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return (null, "geen antwoord binnen de tijd");
+        }
+        catch (HttpRequestException ex)
+        {
+            return (null, ex.Message);
         }
     }
+
+    private static string Describe(HttpStatusCode? status) => status is null ? "geen antwoord" : $"{(int)status.Value}";
 
     /// <summary>Het mailboxadres voor dit bericht, of <c>null</c> als het via ACS gaat.</summary>
     public static string? Mailbox(EmailMessage message, EmailOptions options)
@@ -71,6 +132,12 @@ public sealed partial class MailboxEmailSender(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Mailbox in Microsoft 365 niet beschikbaar ({Status}); verstuurd via ACS.")]
     private partial void LogMailboxUnavailable(int status);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Poging {Attempt} om via de mailbox te versturen mislukte ({Status}): {Detail}")]
+    private partial void LogMailboxAttemptFailed(int attempt, int status, string? detail);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "De mailbox kwam er niet doorheen ({Status}); dit bericht kan niet wachten en gaat via ACS.")]
+    private partial void LogMailboxFallback(int status);
 }
 
 /// <summary>

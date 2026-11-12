@@ -94,9 +94,11 @@ public class MailboxEmailSenderTests
     [InlineData(HttpStatusCode.NotFound)]
     public async Task Zonder_rechten_op_de_mailbox_via_ACS(HttpStatusCode status)
     {
-        var (sender, _, fallback) = Create(status);
+        var (sender, handler, fallback) = Create(status);
         await sender.SendAsync(Mailing(), CancellationToken.None);
         Assert.Single(fallback.Sent);
+        // Geen rechten is geen hapering: opnieuw proberen heeft geen zin.
+        Assert.Single(handler.Requests);
     }
 
     [Fact]
@@ -105,15 +107,45 @@ public class MailboxEmailSenderTests
         var (sender, handler, fallback) = Create(HttpStatusCode.TooManyRequests);
         await Assert.ThrowsAsync<HttpRequestException>(() => sender.SendAsync(Mailing(), CancellationToken.None));
         Assert.Empty(fallback.Sent);
+        // Twee pogingen, en daarna blijft een mailing van de mailbox afhankelijk: de outbox biedt hem later opnieuw aan.
+        Assert.Equal(2, handler.Requests.Count);
 
         await sender.SendAsync(Mailing(viaMailbox: false), CancellationToken.None);
         Assert.Single(fallback.Sent);
-        Assert.Single(handler.Requests);
+        Assert.Equal(2, handler.Requests.Count);
     }
 
-    private static (MailboxEmailSender Sender, StubHandler Handler, Recorder Fallback) Create(HttpStatusCode status)
+    /// <summary>
+    /// 12-11-2026: Exchange Online gaf uren achtereen 500 en 504, waarna het aanmeldformulier de bezoeker een
+    /// foutmelding gaf terwijl ACS gewoon werkte. Een bericht dat niet kan wachten gaat nu alsnog via ACS.
+    /// </summary>
+    [Theory]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    public async Task Een_bericht_dat_niet_kan_wachten_gaat_na_twee_pogingen_via_ACS(HttpStatusCode status)
     {
-        var handler = new StubHandler(status);
+        var (sender, handler, fallback) = Create(status);
+        await sender.SendAsync(Mailing() with { MailboxOptional = true }, CancellationToken.None);
+
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Single(fallback.Sent);
+    }
+
+    /// <summary>Hapert het maar even, dan is de tweede poging genoeg en komt ACS er niet aan te pas.</summary>
+    [Fact]
+    public async Task Een_tweede_poging_vangt_een_hapering_op()
+    {
+        var (sender, handler, fallback) = Create(HttpStatusCode.InternalServerError, HttpStatusCode.Accepted);
+        await sender.SendAsync(Mailing(), CancellationToken.None);
+
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Empty(fallback.Sent);
+    }
+
+    private static (MailboxEmailSender Sender, StubHandler Handler, Recorder Fallback) Create(params HttpStatusCode[] statuses)
+    {
+        var handler = new StubHandler(statuses);
         var fallback = new Recorder();
         var sender = new MailboxEmailSender(fallback, new HttpClient(handler), new StaticToken(), Microsoft.Extensions.Options.Options.Create(Options),
             NullLogger<MailboxEmailSender>.Instance);
@@ -140,14 +172,15 @@ public class MailboxEmailSenderTests
             ValueTask.FromResult(GetToken(requestContext, cancellationToken));
     }
 
-    private sealed class StubHandler(HttpStatusCode status) : HttpMessageHandler
+    /// <summary>Antwoordt met de statuscodes op volgorde; de laatste blijft gelden zolang er pogingen komen.</summary>
+    private sealed class StubHandler(params HttpStatusCode[] statuses) : HttpMessageHandler
     {
         public List<(string Url, string? Authorization, string Body)> Requests { get; } = [];
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add((request.RequestUri!.AbsoluteUri, request.Headers.Authorization?.ToString(), await request.Content!.ReadAsStringAsync(cancellationToken)));
-            return new HttpResponseMessage(status);
+            return new HttpResponseMessage(statuses[Math.Min(Requests.Count - 1, statuses.Length - 1)]);
         }
     }
 }

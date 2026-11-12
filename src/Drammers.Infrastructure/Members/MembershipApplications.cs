@@ -878,7 +878,9 @@ public sealed class MembershipApplications(
             <p>Heb je je niet aangemeld? Dan kun je deze e-mail negeren.</p>
             <p>Groeten,<br>De Vrolijke Drammers</p>
             """;
-        return new EmailMessage(to, Subject, text, html, From: Sender, ViaMailbox: true);
+        // MailboxOptional: hapert Microsoft 365, dan alsnog via ACS. De bezoeker staat op deze code te wachten en kan
+        // zonder niet verder; op 12-11-2026 liep de aanmelding hierop vast terwijl ACS gewoon werkte.
+        return new EmailMessage(to, Subject, text, html, From: Sender, ViaMailbox: true, MailboxOptional: true);
     }
 
     /// <summary>

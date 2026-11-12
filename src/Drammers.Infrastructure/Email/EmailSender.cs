@@ -14,10 +14,14 @@ namespace Drammers.Infrastructure.Email;
 /// <paramref name="UnsubscribeUrl"/>: afmelden met één klik (koppen List-Unsubscribe en List-Unsubscribe-Post, RFC 8058),
 /// alleen bij nieuwsbrieven en uitnodigingen; mailprogramma's tonen dan een eigen afmeldknop. <paramref name="ViaMailbox"/>:
 /// versturen via de echte mailbox in Microsoft 365 als die afzender daarvoor is ingesteld (<see cref="MailboxEmailSender"/>).
+/// <paramref name="MailboxOptional"/>: hapert die mailbox, dan alsnog via ACS in plaats van de fout doorgeven. Zet dit op
+/// berichten die iemand staat af te wachten (12-11-2026: Exchange Online gaf uren achtereen 500 en 504, waardoor het
+/// aanmeldformulier onderuit ging); een mailing laat je juist staan, want die biedt de outbox later opnieuw aan.
 /// </summary>
 public sealed record EmailMessage(
     string To, string Subject, string PlainText, string Html, string? ReplyTo = null, string? From = null,
-    IReadOnlyList<EmailFile>? Attachments = null, string? UnsubscribeUrl = null, bool ViaMailbox = false);
+    IReadOnlyList<EmailFile>? Attachments = null, string? UnsubscribeUrl = null, bool ViaMailbox = false,
+    bool MailboxOptional = false);
 
 /// <summary>Een bijlage, bijvoorbeeld de factuur als PDF (fase 27e).</summary>
 public sealed record EmailFile(string Name, string ContentType, byte[] Content);

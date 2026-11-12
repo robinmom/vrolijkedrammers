@@ -30,6 +30,18 @@ public class AanmeldcodeRouteTests
         Assert.Equal("app@vrolijkedrammers.nl", EmailSenderAddress.For(Code(), Options));
 
     /// <summary>
+    /// En die terugval moet ook echt gebeuren. Op 12-11-2026 gaf Exchange Online uren achtereen 500 en 504; de code bleef
+    /// toen steken en de bezoeker kreeg een foutmelding, terwijl ACS gewoon werkte. Een mailing valt juist niet terug:
+    /// die biedt de outbox later opnieuw aan en hoort niet uit de ACS-pot te komen.
+    /// </summary>
+    [Fact]
+    public void De_code_wacht_niet_op_een_haperende_mailbox()
+    {
+        Assert.True(Code().MailboxOptional);
+        Assert.False(MemberSplits.InvitationMail("lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc").MailboxOptional);
+    }
+
+    /// <summary>
     /// Staat app@ nog niet in <see cref="EmailOptions.MailboxSenders"/>, dan gaat de code gewoon via ACS. Dat is de
     /// toestand vlak na deze wijziging en vóór het zetten van DVD_EMAIL_MAILBOX_SENDERS: werkend, maar zonder de
     /// bescherming tegen de limiet.

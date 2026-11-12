@@ -1517,6 +1517,8 @@ export class MockApi {
         overdue: t.id === 't-3',
         assignees: [{ memberId: 'm-1', name: 'Robin Mom' }],
         updatedAt: '2026-10-12T10:00:00Z',
+        // 2026-11-12: de opmerking die de uitvoerder in de app bijhoudt.
+        note: t.id === 't-1' ? 'Ereleden zijn verstuurd, de sponsoren volgen.' : null,
       };
     });
     const counted = tasks.filter((t) => t.effectiveProgress !== null);

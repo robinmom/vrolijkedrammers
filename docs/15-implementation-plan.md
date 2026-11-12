@@ -1294,6 +1294,32 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
 
 **23d — Rabobank Business Direct Debit API (later).** Batches rechtstreeks aanleveren en de status ophalen (pain.002), zodra Rabobank aansluiting als directe aansluiter bevestigt (developer portal, overeenkomst Rabo Banking Link, sandbox).
 
+### Takenlijst carnaval in de app (gebouwd, 2026-11-12)
+
+De takenlijst die het bestuur in het portal bijhoudt, is nu ook in de app te zien. **Alleen voor het kader**: de knop
+staat onder Meer bij wie op de kaderlijst van de website staat, wie het recht `task.view-own` via een rol heeft
+(Kaderlid, Raad van Elf, Bestuur), **of** wie door het bestuur op minstens één taak is gezet. Een gewoon lid krijgt
+`allowed: false` en ziet de knop niet; de schrijfacties geven 403 of 404.
+
+- **Alleen eigen taken.** `GET /api/v1/me/tasks` geeft de taken van het lopende carnavalsjaar waar het lid zelf op
+  staat, met de categorie als kop. Taken van anderen komen er niet in voor.
+- **Stand bijwerken.** `PUT /api/v1/me/tasks/{id}`: status, voortgang en een opmerking. Nieuw is de status
+  **"Niet van toepassing"** (het bestaande `Cancelled`): de taak gaat van de lijst en telt niet mee in de voortgang,
+  maar blijft voor het bestuur gewoon staan.
+- **Afgerond onderaan.** De app zet afgeronde taken in een eigen groep onder aan de lijst; ze blijven aan te tikken en
+  aan te passen als er toch iets verandert.
+- **Zelf een taak toevoegen.** `POST /api/v1/me/tasks`, onder een van de bestaande categorieën; de taak komt op naam
+  van het lid in de lijst van het bestuur. **Verwijderen kan niet** — dat blijft in het portal, net als mensen
+  toewijzen en categorieën beheren.
+- **Nieuw veld `note`** op `content.CarnivalTask` (500 tekens): de opmerking van degene die de taak doet. Het bestuur
+  leest en bewerkt die in het taakdialoog van het portal.
+- **Gebouwd met wat de app al heeft:** chips voor de keuzes en de `ScoreSlider` uit het jury-scherm voor het
+  percentage. "Verwacht klaar" zijn vier snelkeuzes (geen datum / deze week / deze maand / voor carnaval), omdat de app
+  geen datumkiezer heeft; die toevoegen zou een native pakket en dus een nieuwe store-build kosten. Het bestuur kan in
+  het portal alsnog een precieze datum zetten. Daardoor kan deze wijziging per **OTA** mee.
+- Ontwerp: Figma-sectie "✅ Voorstel — Takenlijst in de app (iOS)". Nieuw icoon `Icon/taken` (lijn-icoon, stroke 2 —
+  `Icon.tsx` kleurt alleen `stroke` om, dus een gevuld icoon zou niet meekleuren).
+
 ## 5. Buiten het plan (LATER)
 
 Nieuwsbrief (in-app + e-mail, OQ-43), pasfoto in de scanner (OQ-22), VNet/private endpoints/Front Door (OQ-72), migratie naar Notification Hubs, Mollie next-gen webhooks (OQ-24), uitslagenmodule (OQ-40), 

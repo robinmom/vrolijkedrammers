@@ -23183,6 +23183,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyTaskList"];
+                        "application/json": components["schemas"]["MyTaskList"];
+                        "text/json": components["schemas"]["MyTaskList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewMyTaskRequest"];
+                    "text/json": components["schemas"]["NewMyTaskRequest"];
+                    "application/*+json": components["schemas"]["NewMyTaskRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MyTaskRequest"];
+                    "text/json": components["schemas"]["MyTaskRequest"];
+                    "application/*+json": components["schemas"]["MyTaskRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/news": {
         parameters: {
             query?: never;
@@ -29280,6 +29429,68 @@ export interface components {
             /** @default false */
             isJubilee: boolean;
         };
+        /**
+         * @description Eén taak van het lid zelf. People is de leesregel "samen met ..." (de andere leden en de losse
+         *     namen) of `null` als het lid er alleen op staat.
+         */
+        MyTask: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            categoryId: string;
+            categoryName: string;
+            title: string;
+            description: null | string;
+            status: components["schemas"]["CarnivalTaskStatus"];
+            /** Format: int32 */
+            progress: number;
+            /** Format: date */
+            startedOn: null | string;
+            /** Format: date */
+            dueOn: null | string;
+            /** Format: date */
+            completedOn: null | string;
+            overdue: boolean;
+            note: null | string;
+            people: null | string;
+        };
+        /** @description Een categorie om een nieuwe taak onder te hangen; alleen de actieve categorieën van de takenlijst carnaval. */
+        MyTaskCategory: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description Allowed is `false` voor een gewoon lid: de app laat de knop dan niet zien en de lijst is leeg. */
+        MyTaskList: {
+            allowed: boolean;
+            /** Format: int32 */
+            yearId: number;
+            yearName: string;
+            /** Format: date */
+            carnivalStartDate: null | string;
+            /** Format: int32 */
+            daysUntilCarnival: number;
+            summary: components["schemas"]["MyTaskSummary"];
+            items: components["schemas"]["MyTask"][];
+            categories: components["schemas"]["MyTaskCategory"][];
+        };
+        MyTaskRequest: {
+            status: components["schemas"]["CarnivalTaskStatus"];
+            /** Format: int32 */
+            progress: number;
+            note: null | string;
+        };
+        /** @description Percent is de gemiddelde voortgang; geannuleerde taken tellen nergens in mee. */
+        MyTaskSummary: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            done: number;
+            /** Format: int32 */
+            overdue: number;
+            /** Format: int32 */
+            percent: number;
+        };
         /** @description "Mijn QR": alles wat de app nodig heeft om de code te maken (geen persoonsgegevens in de code zelf). */
         MyTicket: {
             state: components["schemas"]["TicketState"];
@@ -29318,6 +29529,20 @@ export interface components {
             note: null | string;
             /** @default false */
             cashReceived: boolean;
+        };
+        NewMyTaskRequest: {
+            /** Format: uuid */
+            categoryId: string;
+            title: string;
+            description: null | string;
+            /** Format: date */
+            dueOn: null | string;
+            status?: components["schemas"]["CarnivalTaskStatus"];
+            /**
+             * Format: int32
+             * @default 0
+             */
+            progress: number;
         };
         /** @description Gekoppeld fotoalbum onder een nieuwsbericht: titel, aantal foto's en de eerste paar als voorbeeld. */
         NewsAlbumResponse: {
@@ -31176,6 +31401,7 @@ export interface components {
             dueOn: null | string;
             memberIds: null | string[];
             otherPeople?: null | string;
+            note?: null | string;
         };
         TasksCopiedResponse: {
             /** Format: int32 */
@@ -31222,6 +31448,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: null | string;
             otherPeople?: null | string;
+            note?: null | string;
         };
         TaskYearOption: {
             /** Format: int32 */

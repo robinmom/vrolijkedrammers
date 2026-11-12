@@ -149,9 +149,10 @@ public sealed record TaskRequest(
     [param: Range(0, 100)] int Progress,
     DateOnly? DueOn,
     [param: MaxLength(30)] IReadOnlyList<Guid>? MemberIds,
-    [param: StringLength(300)] string? OtherPeople = null)
+    [param: StringLength(300)] string? OtherPeople = null,
+    [param: StringLength(500)] string? Note = null)
 {
-    public TaskInput ToInput() => new(CategoryId, Title, Description, Status, Progress, DueOn, MemberIds ?? [], OtherPeople);
+    public TaskInput ToInput() => new(CategoryId, Title, Description, Status, Progress, DueOn, MemberIds ?? [], OtherPeople, Note);
 }
 
 public sealed record TaskCopyRequest(int FromYearId, [param: Required] IReadOnlyList<Guid> TaskIds);

@@ -17,7 +17,7 @@ public sealed record TaskPerson(Guid MemberId, string Name);
 public sealed record TaskView(
     Guid Id, Guid CategoryId, string CategoryName, string Title, string? Description, CarnivalTaskStatus Status, int Progress, int? EffectiveProgress,
     DateOnly? StartedOn, DateOnly? DueOn, DateOnly? CompletedOn, bool Overdue, IReadOnlyList<TaskPerson> Assignees, DateTime? UpdatedAt,
-    string? OtherPeople = null);
+    string? OtherPeople = null, string? Note = null);
 
 /// <summary>Totalen van een takenlijst; <c>Percent</c> is de gemiddelde voortgang van alle taken behalve geannuleerde.</summary>
 public sealed record TaskSummary(int Total, int Done, int InProgress, int NotStarted, int Cancelled, int Overdue, int Percent);
@@ -30,7 +30,7 @@ public sealed record TaskYearView(
 
 public sealed record TaskInput(
     Guid CategoryId, string Title, string? Description, CarnivalTaskStatus Status, int Progress, DateOnly? DueOn, IReadOnlyList<Guid> MemberIds,
-    string? OtherPeople = null);
+    string? OtherPeople = null, string? Note = null);
 
 /// <summary>Een regel uit het draaiboek (tabblad Actiepunten): een kopje (alleen <c>Action</c>) of een actie.</summary>
 public sealed record TaskImportRow(string Action, string? Who, DateOnly? Plan, string? Remarks);
@@ -233,7 +233,7 @@ public sealed partial class CarnivalTasks(DrammersDbContext db, IClock clock, IA
                 t.EffectiveProgress, t.StartedOn, t.DueOn, t.CompletedOn,
                 t.DueOn < today && t.Status is CarnivalTaskStatus.NotStarted or CarnivalTaskStatus.InProgress,
                 [.. t.Assignees.Where(a => names.ContainsKey(a.MemberId)).Select(a => new TaskPerson(a.MemberId, names[a.MemberId])).OrderBy(p => p.Name)],
-                t.UpdatedAt ?? t.CreatedAt, t.OtherPeople))];
+                t.UpdatedAt ?? t.CreatedAt, t.OtherPeople, t.Note))];
     }
 
     private async Task ApplyAsync(TaskList list, CarnivalTask task, TaskInput input, CancellationToken cancellationToken)
@@ -247,6 +247,11 @@ public sealed partial class CarnivalTasks(DrammersDbContext db, IClock clock, IA
         if (input.OtherPeople?.Trim().Length > 300)
         {
             throw new DomainException(ErrorCodes.Validation, "Overige personen: maximaal 300 tekens.");
+        }
+
+        if (input.Note?.Trim().Length > 500)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Opmerking: maximaal 500 tekens.");
         }
 
         if (!await db.TaskCategories.AnyAsync(c => c.Id == input.CategoryId && c.List == list, cancellationToken))
@@ -264,6 +269,7 @@ public sealed partial class CarnivalTasks(DrammersDbContext db, IClock clock, IA
         task.Title = title;
         task.Description = string.IsNullOrWhiteSpace(input.Description) ? null : input.Description.Trim();
         task.OtherPeople = string.IsNullOrWhiteSpace(input.OtherPeople) ? null : input.OtherPeople.Trim();
+        task.Note = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim();
         task.CategoryId = input.CategoryId;
         task.DueOn = input.DueOn;
         task.Status = input.Status;

@@ -30,6 +30,7 @@ export const queryKeys = {
   myMember: ['me', 'member'] as const,
   myMemberRequests: ['me', 'membership-requests'] as const,
   myAdvertisers: ['me', 'advertisers'] as const,
+  myTasks: ['me', 'tasks'] as const,
   myRoyal: ['me', 'royal'] as const,
   myDevices: ['me', 'devices'] as const,
   myChildren: ['me', 'children'] as const,
@@ -185,6 +186,19 @@ export const useMyAdvertisers = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.myAdvertisers,
     queryFn: () => unwrap(api.GET('/api/v1/me/advertisers')),
+    enabled: status === 'signedIn' && enabled,
+  });
+};
+
+/**
+ * De eigen taken uit de takenlijst carnaval (2026-11-12). Alleen het kader krijgt hier iets terug; een gewoon lid
+ * krijgt `allowed: false`, en dan blijft de knop onder Meer weg.
+ */
+export const useMyTasks = (enabled = true) => {
+  const status = useSessionStatus();
+  return useQuery({
+    queryKey: queryKeys.myTasks,
+    queryFn: () => unwrap(api.GET('/api/v1/me/tasks')),
     enabled: status === 'signedIn' && enabled,
   });
 };

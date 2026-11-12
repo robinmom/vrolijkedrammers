@@ -26,6 +26,7 @@ internal sealed class CarnivalTaskConfiguration : IEntityTypeConfiguration<Carni
         builder.Property(t => t.Title).HasMaxLength(200);
         builder.Property(t => t.Description).HasMaxLength(2000);
         builder.Property(t => t.OtherPeople).HasMaxLength(300);
+        builder.Property(t => t.Note).HasMaxLength(500);
         builder.Property(t => t.RowVersion).IsRowVersion();
         builder.Ignore(t => t.EffectiveProgress);
         builder.HasIndex(t => new { t.CarnivalYearId, t.CategoryId });

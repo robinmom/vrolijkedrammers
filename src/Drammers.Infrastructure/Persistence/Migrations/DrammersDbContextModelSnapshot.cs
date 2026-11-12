@@ -1965,6 +1965,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("due_on");
 
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("note");
+
                     b.Property<string>("OtherPeople")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)")
@@ -3364,6 +3369,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Financieel",
                             Code = "finance.read",
                             Description = "Inkomsten bekijken en exporteren (adverteerders en festival)"
+                        },
+                        new
+                        {
+                            Id = 57,
+                            Category = "Beheer",
+                            Code = "task.view-own",
+                            Description = "Eigen taken uit de takenlijst bijhouden in de app"
                         });
                 });
 
@@ -3769,6 +3781,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            RoleId = 3,
+                            PermissionId = 57
+                        },
+                        new
+                        {
                             RoleId = 4,
                             PermissionId = 1
                         },
@@ -3881,6 +3898,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 7,
                             PermissionId = 35
+                        },
+                        new
+                        {
+                            RoleId = 7,
+                            PermissionId = 57
                         },
                         new
                         {
@@ -4271,6 +4293,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 11,
                             PermissionId = 53
+                        },
+                        new
+                        {
+                            RoleId = 11,
+                            PermissionId = 57
                         },
                         new
                         {

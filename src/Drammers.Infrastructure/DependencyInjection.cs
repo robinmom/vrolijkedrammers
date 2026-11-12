@@ -331,6 +331,7 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, Festival.FestivalReportMailHandler>();
         services.AddScoped<Members.MemberHistory>();
         services.AddScoped<Tasks.CarnivalTasks>();
+        services.AddScoped<Tasks.MyTasks>();
         services.AddScoped<Sales.SaleAdministration>();
         services.AddScoped<Sales.PronkzittingSeating>();
         services.AddScoped<Sales.TokenCollection>();

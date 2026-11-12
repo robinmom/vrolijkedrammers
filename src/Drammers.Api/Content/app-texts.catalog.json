@@ -22,6 +22,16 @@
       ]
     },
     {
+      "id": "3026cfb2af68402d",
+      "text": " · nog ",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "97334f1385efb1b0",
       "text": " · swipe voor de volgende",
       "places": [
@@ -57,6 +67,16 @@
       "places": [
         {
           "file": "app/adverteerders/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "eb6ed21132d77850",
+      "text": " afgerond",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
           "where": "tekst"
         }
       ]
@@ -275,6 +295,10 @@
         },
         {
           "file": "app/jureren/index.tsx",
+          "where": "tekst"
+        },
+        {
+          "file": "app/taken/index.tsx",
           "where": "tekst"
         },
         {
@@ -1234,6 +1258,16 @@
       ]
     },
     {
+      "id": "b83d810319827602",
+      "text": "Bijv. wie er staat en op welke dagen.",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "placeholder"
+        }
+      ]
+    },
+    {
       "id": "970e91703a0c49b7",
       "text": "Bijvoorbeeld 21-03-2015",
       "places": [
@@ -1288,6 +1322,16 @@
       ]
     },
     {
+      "id": "5eac3c986bb6c49b",
+      "text": "Carnaval ",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "648cdf90e8501d40",
       "text": "Carnaval is voorbij",
       "places": [
@@ -1314,6 +1358,10 @@
         {
           "file": "app/optocht/[id].tsx",
           "where": "label"
+        },
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "tekst"
         }
       ]
     },
@@ -1612,6 +1660,26 @@
       ]
     },
     {
+      "id": "b44d13db1cfc777f",
+      "text": "De takenlijst is er voor het kader.",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "6d7693715d722664",
+      "text": "De takenlijst is er voor het kader. Staat er wel werk voor jou klaar? Vraag het bestuur je op de taak te zetten.",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "8f9d9557e9aa3aea",
       "text": "De uitslagcommissie maakt de uitslag bekend bij de prijsuitreiking.",
       "places": [
@@ -1702,12 +1770,32 @@
       ]
     },
     {
+      "id": "21289d7f24b95759",
+      "text": "Deze maand",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
       "id": "7b4e891aa4688513",
       "text": "Deze QR is al gescand.",
       "places": [
         {
           "file": "features/SaleParts.tsx",
           "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "e4d41fa7fe1e84b1",
+      "text": "Deze week",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "label"
         }
       ]
     },
@@ -1932,6 +2020,16 @@
       ]
     },
     {
+      "id": "d6a3bc2de4b61478",
+      "text": "Er zijn nog geen categorieën. Het bestuur maakt die aan in het portal.",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "0a724bb4480e103a",
       "text": "Er zijn nog geen kinderen aan je account gekoppeld.",
       "places": [
@@ -2058,6 +2156,16 @@
         {
           "file": "app/scannen.tsx",
           "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "03326b19e6a0df5c",
+      "text": "Geen datum",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "label"
         }
       ]
     },
@@ -2452,12 +2560,32 @@
       ]
     },
     {
+      "id": "9c4d6f0d7020a2d7",
+      "text": "Hij komt meteen in de takenlijst van het bestuur te staan, op jouw naam.",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "35956f835840fcf9",
       "text": "Hoe heet jullie groep?",
       "places": [
         {
           "file": "app/optocht/inschrijven.tsx",
           "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "855af41d3c1fa7b3",
+      "text": "Hoe ver ben je?",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "label"
         }
       ]
     },
@@ -2911,6 +3039,16 @@
       "places": [
         {
           "file": "app/account/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "bb7b5243bd7b570c",
+      "text": "Je ziet alleen de taken waar jij op staat.",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
           "where": "tekst"
         }
       ]
@@ -3600,6 +3738,16 @@
       ]
     },
     {
+      "id": "81912bae0d3c8879",
+      "text": "Markeer als afgerond",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
       "id": "b351912b60b7c62a",
       "text": "Maximaal 2 ouders of verzorgers per kind. Vanaf 15 jaar kan het bestuur je kind een eigen account geven.",
       "places": [
@@ -3671,6 +3819,10 @@
         },
         {
           "file": "app/meer/weergave.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/taken/index.tsx",
           "where": "label"
         }
       ]
@@ -3807,6 +3959,20 @@
         },
         {
           "file": "app/kinderen/koppelen.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "82615301cd6b3d48",
+      "text": "Mijn taken",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "title"
+        },
+        {
+          "file": "app/taken/nieuw.tsx",
           "where": "label"
         }
       ]
@@ -4142,6 +4308,16 @@
       ]
     },
     {
+      "id": "5a32f7183d2aae3c",
+      "text": "Niet van toepassing",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "title"
+        }
+      ]
+    },
+    {
       "id": "64ef50217160daf9",
       "text": "Nieuw rekeningnummer",
       "places": [
@@ -4196,6 +4372,20 @@
         {
           "file": "app/optocht/inschrijven.tsx",
           "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "dfc76a4a26bd64d5",
+      "text": "Nieuwe taak",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "label"
+        },
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "title"
         }
       ]
     },
@@ -4452,6 +4642,16 @@
       ]
     },
     {
+      "id": "37889b33889bf845",
+      "text": "Omschrijving (niet verplicht)",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
       "id": "b7ffff09e5668510",
       "text": "Onderwerp",
       "places": [
@@ -4530,6 +4730,10 @@
         {
           "file": "app/adverteerders/nieuw.tsx",
           "where": "label"
+        },
+        {
+          "file": "app/taken/index.tsx",
+          "where": "label"
         }
       ]
     },
@@ -4577,6 +4781,16 @@
         },
         {
           "file": "ui/QueryState.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "3caa6d88a258af55",
+      "text": "Opslaan",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
           "where": "label"
         }
       ]
@@ -5054,6 +5268,16 @@
       ]
     },
     {
+      "id": "920e413c7d411b61",
+      "text": "Status",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "731adcef70293a8d",
       "text": "Stopt",
       "places": [
@@ -5097,6 +5321,36 @@
         },
         {
           "file": "app/meer/aanmelden.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "d047c0b9bf980f5b",
+      "text": "Taak",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "337be164755b0de4",
+      "text": "Taak toevoegen",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "70ef2fbed7a68578",
+      "text": "Takenlijst",
+      "places": [
+        {
+          "file": "app/(tabs)/meer.tsx",
           "where": "label"
         }
       ]
@@ -5311,6 +5565,16 @@
       "places": [
         {
           "file": "features/TicketScreen.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "b96aa84f9e04aad6",
+      "text": "Toch nog iets veranderd? Tik erop en pas hem aan.",
+      "places": [
+        {
+          "file": "app/taken/index.tsx",
           "where": "tekst"
         }
       ]
@@ -5586,6 +5850,16 @@
       ]
     },
     {
+      "id": "2c24ea482200f07b",
+      "text": "Verwacht klaar",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "d6c44c3e95df5008",
       "text": "Verwijderen",
       "places": [
@@ -5663,6 +5937,16 @@
       "places": [
         {
           "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "495eaac954facb71",
+      "text": "Voor carnaval",
+      "places": [
+        {
+          "file": "app/taken/nieuw.tsx",
           "where": "label"
         }
       ]

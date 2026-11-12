@@ -61,6 +61,8 @@ public static class Permissions
     public const string FestivalManage = "festival.manage";
     public const string TaskManage = "task.manage";
 
+    public const string TaskViewOwn = "task.view-own";
+
     public const string FestivalJudge = "festival.judge";
 
     public const string FestivalHeadJury = "festival.head-jury";
@@ -132,6 +134,9 @@ public static class Permissions
         new(FestivalHeadJury, "Dansgardefestival: hoofdjury (uitslag voor de prijsuitreiking, prijsuitreiking afronden)", "Content"),
         // Fase 4a: gezamenlijk inkomstenoverzicht (adverteerders + festival) met CSV-export voor de boekhouding.
         new(FinanceRead, "Inkomsten bekijken en exporteren (adverteerders en festival)", "Financieel"),
+        // 2026-11-12: de eigen taken uit de takenlijst carnaval bijhouden in de app. Achteraan toegevoegd, want het Id
+        // van een permission is zijn plek in deze lijst (zie DefaultRoles.PermissionId).
+        new(TaskViewOwn, "Eigen taken uit de takenlijst bijhouden in de app", "Beheer"),
     ];
 }
 

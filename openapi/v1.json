@@ -27536,6 +27536,205 @@
         }
       }
     },
+    "/api/v1/me/tasks": {
+      "get": {
+        "tags": [
+          "MyTasks"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTaskList"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTaskList"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTaskList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "MyTasks"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMyTaskRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMyTaskRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMyTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tasks/{id}": {
+      "put": {
+        "tags": [
+          "MyTasks"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyTaskRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyTaskRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/news": {
       "get": {
         "tags": [
@@ -44211,6 +44410,210 @@
           }
         }
       },
+      "MyTask": {
+        "required": [
+          "id",
+          "categoryId",
+          "categoryName",
+          "title",
+          "description",
+          "status",
+          "progress",
+          "startedOn",
+          "dueOn",
+          "completedOn",
+          "overdue",
+          "note",
+          "people"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/CarnivalTaskStatus"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "startedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "completedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "overdue": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "people": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Eén taak van het lid zelf. People is de leesregel \"samen met ...\" (de andere leden en de losse\nnamen) of `null` als het lid er alleen op staat."
+      },
+      "MyTaskCategory": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "Een categorie om een nieuwe taak onder te hangen; alleen de actieve categorieën van de takenlijst carnaval."
+      },
+      "MyTaskList": {
+        "required": [
+          "allowed",
+          "yearId",
+          "yearName",
+          "carnivalStartDate",
+          "daysUntilCarnival",
+          "summary",
+          "items",
+          "categories"
+        ],
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "yearId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yearName": {
+            "type": "string"
+          },
+          "carnivalStartDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "daysUntilCarnival": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/MyTaskSummary"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyTask"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyTaskCategory"
+            }
+          }
+        },
+        "description": "Allowed is `false` voor een gewoon lid: de app laat de knop dan niet zien en de lijst is leeg."
+      },
+      "MyTaskRequest": {
+        "required": [
+          "status",
+          "progress",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CarnivalTaskStatus"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MyTaskSummary": {
+        "required": [
+          "total",
+          "done",
+          "overdue",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "done": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overdue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "percent": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Percent is de gemiddelde voortgang; geannuleerde taken tellen nergens in mee."
+      },
       "MyTicket": {
         "required": [
           "state",
@@ -44387,6 +44790,45 @@
           "cashReceived": {
             "type": "boolean",
             "default": false
+          }
+        }
+      },
+      "NewMyTaskRequest": {
+        "required": [
+          "categoryId",
+          "title",
+          "description",
+          "dueOn"
+        ],
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CarnivalTaskStatus"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -50960,6 +51402,12 @@
               "null",
               "string"
             ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -51109,6 +51557,12 @@
             "format": "date-time"
           },
           "otherPeople": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
             "type": [
               "null",
               "string"
@@ -52729,6 +53183,9 @@
     },
     {
       "name": "MyMembership"
+    },
+    {
+      "name": "MyTasks"
     },
     {
       "name": "News"

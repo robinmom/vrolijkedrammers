@@ -1,7 +1,7 @@
 import { brand, radius } from '@drammers/design-tokens';
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
-import { useMe, useMyAdvertisers } from '../../api/queries';
+import { useMe, useMyAdvertisers, useMyTasks } from '../../api/queries';
 import { useSessionStatus } from '../../auth/useSession';
 import { useUnreadCount } from '../../features/badges';
 import { themeLabels } from '../../theme/labels';
@@ -21,6 +21,8 @@ export default function MeerScreen() {
   const me = useMe();
   // Fase 27b-2: kaderleden halen adverteerders op.
   const advertisers = useMyAdvertisers(me.data?.memberId != null);
+  // 2026-11-12: de takenlijst carnaval; alleen het kader (en wie op een taak staat) krijgt hier iets terug.
+  const tasks = useMyTasks(me.data?.memberId != null);
   const unread = useUnreadCount();
   const settings: SettingsItem[] = [
     {
@@ -54,6 +56,9 @@ export default function MeerScreen() {
         <Button label="Kaarten" icon="ticket" variant="secondary" onPress={() => router.push('/kaarten')} />
         {advertisers.data?.isCollector ? (
           <Button label="Adverteerders ophalen" icon="megafoon" variant="secondary" onPress={() => router.push('/adverteerders')} />
+        ) : null}
+        {tasks.data?.allowed ? (
+          <Button label="Takenlijst" icon="taken" variant="secondary" onPress={() => router.push('/taken')} />
         ) : null}
         {me.data?.permissions.includes('sale.collect') ? (
           <Button label="Kassa: munten uitgeven" icon="munten" onPress={() => router.push('/kassa')} />

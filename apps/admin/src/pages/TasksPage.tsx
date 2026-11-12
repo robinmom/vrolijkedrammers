@@ -460,6 +460,7 @@ function TaskDialog({
     progress: task?.progress ?? 0,
     people: task?.assignees ?? ([] as Person[]),
     otherPeople: task?.otherPeople ?? '',
+    note: task?.note ?? '',
   });
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -477,6 +478,7 @@ function TaskDialog({
     dueOn: form.dueOn || null,
     memberIds: form.people.map((p) => p.memberId),
     otherPeople: form.otherPeople || null,
+    note: form.note || null,
   });
   const save = useApiMutation(
     () => (task ? tasksApi.update(task.id, body()) : tasksApi.create(yearId, body())),
@@ -631,6 +633,17 @@ function TaskDialog({
             </div>
           </div>
         ) : null}
+        <div className="field">
+          <label htmlFor="taak-opmerking">Opmerking van de uitvoerder</label>
+          <textarea
+            id="taak-opmerking"
+            rows={2}
+            maxLength={500}
+            value={form.note}
+            onChange={(e) => set({ note: e.target.value })}
+          />
+          <p className="muted small-text">Dit veld vult degene die de taak doet in de app; je kunt het hier bijwerken.</p>
+        </div>
         {task?.startedOn ? (
           <p className="muted small-text">
             Gestart op {formatDate(task.startedOn)}

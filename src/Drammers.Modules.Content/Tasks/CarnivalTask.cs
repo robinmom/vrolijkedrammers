@@ -71,6 +71,12 @@ public sealed class CarnivalTask : IAuditable
     /// <summary>Personen die geen lid zijn of een groep (bijv. "Raad van Elf, Hart van Loil"), vrije tekst.</summary>
     public string? OtherPeople { get; set; }
 
+    /// <summary>
+    /// Opmerking van degene die de taak uitvoert (2026-11-12, takenlijst in de app): hoe het ervoor staat, waar hij op
+    /// wacht. Naast <see cref="Description"/>, die van het bestuur is; het bestuur leest de opmerking in het portal.
+    /// </summary>
+    public string? Note { get; set; }
+
     public byte[] RowVersion { get; set; } = [];
 
     public DateTime CreatedAt { get; set; }

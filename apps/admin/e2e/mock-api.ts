@@ -903,6 +903,22 @@ export class MockApi {
     },
   ];
 
+  // Wens 2026-11-13: optochtinschrijvingen die blijven steken op de e-mailcode.
+  unconfirmedRegistrations = [
+    {
+      id: 'pr-9',
+      groupName: 'De Dorsvlegels',
+      contactName: 'Ria Peters',
+      contactEmail: 'ria@example.com' as string | null,
+      contactPhone: '06 12345678' as string | null,
+      createdAt: '2026-11-13T07:20:00Z',
+      codeExpiresAt: '2026-11-13T07:50:00Z' as string | null,
+      resends: 1,
+      attempts: 5,
+      deletesAt: '2026-11-15T07:20:00Z',
+    },
+  ];
+
   // Fase 9: accountverzoeken, provisioning en apparaten.
   accountRequests = [
     {
@@ -3525,6 +3541,19 @@ export class MockApi {
     }
     if (path.startsWith('/admin/parade-registrations')) {
       const r = this.registration;
+      if (path === '/admin/parade-registrations/unconfirmed') {
+        return json(this.unconfirmedRegistrations);
+      }
+      if (path.endsWith('/resend-code') && method === 'POST') {
+        const wachtend = this.unconfirmedRegistrations.find((x) => path.includes(x.id));
+        if (!wachtend) {
+          return json({ status: 404, title: 'Niet gevonden', code: 'REGISTRATION_NOT_FOUND' }, 404);
+        }
+        wachtend.resends += 1;
+        wachtend.attempts = 0;
+        wachtend.codeExpiresAt = '2099-01-01T09:00:00Z';
+        return noContent();
+      }
       if (path === '/admin/parade-registrations/summary') {
         const approved = ['Approved', 'StartNumberAssigned'].includes(r.status) ? 1 : 0;
         return json({

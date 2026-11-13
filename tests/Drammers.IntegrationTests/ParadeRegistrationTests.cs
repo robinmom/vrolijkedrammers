@@ -610,6 +610,51 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(RegistrationSource.WebForm, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.Source).SingleAsync()));
     }
 
+    /// <summary>
+    /// Wens 2026-11-13: wie zijn code nooit krijgt heeft geen opgavenummer en staat in geen enkele lijst. De commissie
+    /// moet hem zien en de code opnieuw kunnen sturen, ook als de inschrijver zelf al vastzit.
+    /// </summary>
+    [Fact]
+    public async Task De_commissie_ziet_wie_klem_staat_en_stuurt_de_code_opnieuw()
+    {
+        var guest = _api.CreateClient();
+        var body = JsonSerializer.SerializeToNode(Complete("", group: "De Dorsvlegels"))!;
+        body["contactEmail"] = "klem@example.com";
+        var id = (await JsonAsync(await guest.PostAsJsonAsync("/api/v1/parade/public-registrations", new { registration = body, rulesAccepted = true }), HttpStatusCode.Created))
+            .GetProperty("id").GetGuid();
+        var verify = $"/api/v1/parade/public-registrations/{id}/verify-email";
+        string Code() => System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "klem@example.com").PlainText, @"\b\d{6}\b").Value;
+
+        // Vijf keer de verkeerde code: de inschrijver komt er zelf niet meer in en krijgt ook geen nieuwe code meer.
+        for (var i = 0; i < ParadePublicRegistrations.MaxAttempts; i++)
+        {
+            await guest.PostAsJsonAsync(verify, new { code = Code() == "000000" ? "111111" : "000000" });
+        }
+
+        Assert.Equal(HttpStatusCode.Conflict, (await guest.PostAsync($"/api/v1/parade/public-registrations/{id}/resend-code", null)).StatusCode);
+
+        var (_, commissieOid) = await _api.CreateUserAsync("commissie@example.com", DefaultRoles.Lid, DefaultRoles.Optochtcommissie);
+        var commissie = _api.ClientFor(commissieOid);
+
+        // De commissie ziet hem wel, met e-mailadres en telefoonnummer om te bellen als de mail blijft hangen.
+        var row = (await commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-registrations/unconfirmed")).EnumerateArray().Single();
+        Assert.Equal("De Dorsvlegels", row.GetProperty("groupName").GetString());
+        Assert.Equal("klem@example.com", row.GetProperty("contactEmail").GetString());
+        Assert.Equal(ParadePublicRegistrations.MaxAttempts, row.GetProperty("attempts").GetInt32());
+        Assert.True(row.GetProperty("deletesAt").GetDateTime() > _api.Clock.UtcNow.UtcDateTime);
+        // Zonder opgavenummer staat hij nergens in de gewone lijst.
+        Assert.Equal(0, (await commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-registrations")).GetProperty("totalCount").GetInt32());
+
+        // En stuurt de code opnieuw: dat mag vaker dan de inschrijver zelf, en de pogingen gaan terug naar nul.
+        Assert.Equal(HttpStatusCode.NoContent, (await commissie.PostAsync($"/api/v1/admin/parade-registrations/{id}/resend-code", null)).StatusCode);
+        var verified = await JsonAsync(await guest.PostAsJsonAsync(verify, new { code = Code() }));
+        Assert.Equal(1, verified.GetProperty("registrationNumber").GetInt32());
+
+        // Bevestigd: weg uit deze lijst en in de lijst van de commissie.
+        Assert.Empty((await commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-registrations/unconfirmed")).EnumerateArray());
+        Assert.Equal(1, (await commissie.GetFromJsonAsync<JsonElement>("/api/v1/admin/parade-registrations")).GetProperty("totalCount").GetInt32());
+    }
+
     [Fact]
     public async Task Inschrijving_zonder_account_komt_bij_het_account_met_hetzelfde_e_mailadres()
     {

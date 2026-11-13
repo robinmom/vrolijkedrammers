@@ -641,6 +641,47 @@ test('fase 11a: optocht instellen en een categorie aanpassen', async ({ page }) 
   expect(api.paradeCategories[1]!.active).toBe(false);
 });
 
+/**
+ * Wens 2026-11-13: een groep die het formulier invulde maar de e-mailcode nooit bevestigde heeft geen opgavenummer en
+ * staat daarmee in geen enkele lijst. De commissie moet hem zien, kunnen bellen en de code opnieuw kunnen sturen.
+ */
+test('optocht: inschrijvingen die wachten op een bevestigde e-mailcode, met de code opnieuw sturen', async ({
+  page,
+}) => {
+  const api = new MockApi(['parade.read', 'parade.manage']);
+  await open(page, api, 'optocht/inschrijvingen');
+
+  const kaart = page.getByRole('region', { name: 'Wacht op bevestiging (1)' });
+  await expect(kaart).toBeVisible();
+  await expect(kaart.getByText('De Dorsvlegels')).toBeVisible();
+  await expect(kaart.getByText(/Ria Peters · ria@example.com/)).toBeVisible();
+  await expect(kaart.getByRole('link', { name: '06 12345678' })).toHaveAttribute('href', 'tel:0612345678');
+  await expect(kaart.getByText('code verlopen')).toBeVisible();
+  await expect(kaart.getByText(/2× verstuurd, 5 keer verkeerd ingevuld/)).toBeVisible();
+
+  await kaart.getByRole('button', { name: 'Code opnieuw sturen voor De Dorsvlegels' }).click();
+  await expect(page.getByText('Nieuwe code verstuurd naar ria@example.com. Hij is 24 uur geldig.')).toBeVisible();
+  expect(api.unconfirmedRegistrations[0]!.resends).toBe(2);
+  // De commissie doet dit met opzet; de pogingen van de inschrijver gaan terug naar nul.
+  expect(api.unconfirmedRegistrations[0]!.attempts).toBe(0);
+  await expect(kaart.getByText('code geldig')).toBeVisible();
+
+  await expectNoSeriousA11yIssues(page);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
+/** Zonder parade.manage geen knop: lezen mag, de code opnieuw sturen niet. */
+test('optocht: zonder parade.manage geen knop om de code opnieuw te sturen', async ({ page }) => {
+  const api = new MockApi(['parade.read']);
+  await open(page, api, 'optocht/inschrijvingen');
+  const kaart = page.getByRole('region', { name: 'Wacht op bevestiging (1)' });
+  await expect(kaart.getByText('De Dorsvlegels')).toBeVisible();
+  await expect(kaart.getByRole('button', { name: /Code opnieuw sturen/ })).toHaveCount(0);
+});
+
 test('fase 11: de optochtcommissie neemt een inschrijving in behandeling en keurt hem goed', async ({ page }) => {
   const api = new MockApi(['parade.read', 'parade.manage']);
   await open(page, api, 'optocht/inschrijvingen');

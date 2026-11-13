@@ -636,6 +636,22 @@ export function useParadeLineupSummary() {
   });
 }
 
+export type UnconfirmedRegistration = Schemas['UnconfirmedRegistrationResponse'];
+
+/**
+ * Inschrijvingen van het webformulier die blijven steken op de e-mailcode (wens 2026-11-13). Ververst elke minuut: zodra
+ * iemand zijn code invult verdwijnt hij hier en duikt hij op in de gewone lijst, met opgavenummer.
+ */
+export function useUnconfirmedRegistrations() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-registrations', 'unconfirmed'],
+    refetchInterval: 60_000,
+    retry: false,
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade-registrations/unconfirmed')).data),
+  });
+}
+
 export function useParadeRegistration(id: string) {
   const api = useApi();
   return useQuery({

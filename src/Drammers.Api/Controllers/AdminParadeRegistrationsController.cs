@@ -20,7 +20,7 @@ namespace Drammers.Api.Controllers;
 [ApiController]
 [Route("api/v1/admin/parade-registrations")]
 [RequirePermission(Permissions.ParadeRead)]
-public sealed class AdminParadeRegistrationsController(DrammersDbContext db, ParadeReview review, ParadeLineup lineup) : ControllerBase
+public sealed class AdminParadeRegistrationsController(DrammersDbContext db, ParadeReview review, ParadeLineup lineup, ParadePublicRegistrations publicRegistrations) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<PagedResult<ReviewSummary>>(StatusCodes.Status200OK)]
@@ -75,6 +75,44 @@ public sealed class AdminParadeRegistrationsController(DrammersDbContext db, Par
     public Task<PublishResult> PublishStartNumbers(CancellationToken cancellationToken) =>
         lineup.PublishStartNumbersAsync(CurrentUser.Get(HttpContext)!.UserId, cancellationToken);
 
+    /// <summary>
+    /// Inschrijvingen van het webformulier die hun e-mailcode nooit hebben bevestigd (wens 2026-11-13). Zonder nummer
+    /// en zonder status staan ze in geen enkele lijst, dus niemand ziet dat iemand klem staat. Meestal is de code in de
+    /// map Ongewenst beland of bleef de mail bij Microsoft hangen; daarom staan hier ook het e-mailadres en het
+    /// telefoonnummer, zodat de commissie kan bellen als de code opnieuw sturen niet helpt.
+    /// </summary>
+    [HttpGet("unconfirmed")]
+    [ProducesResponseType<IReadOnlyList<UnconfirmedRegistrationResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<UnconfirmedRegistrationResponse>> Unconfirmed(CancellationToken cancellationToken)
+    {
+        var rows = await db.ParadeRegistrations.AsNoTracking()
+            .Where(r => r.Source == RegistrationSource.WebForm && r.Status == RegistrationStatus.Draft)
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(200)
+            .ToListAsync(cancellationToken);
+        return
+        [
+            .. rows.Select(r => new UnconfirmedRegistrationResponse(
+                r.Id, r.GroupName, r.ContactName, r.ContactEmail, r.ContactPhone is null ? null : PhoneNormalizer.Display(r.ContactPhone),
+                r.CreatedAt, r.VerificationExpiresAt, r.VerificationResends, r.VerificationAttempts,
+                r.CreatedAt + ParadePublicRegistrations.UnverifiedLifetime)),
+        ];
+    }
+
+    /// <summary>
+    /// De code nog een keer naar het opgegeven e-mailadres sturen. Anders dan bij de inschrijver zelf geldt hier geen
+    /// maximum: de commissie doet dit met opzet, voor iemand die zijn code nooit heeft gekregen.
+    /// </summary>
+    [HttpPost("{id:guid}/resend-code")]
+    [RequirePermission(Permissions.ParadeManage)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResendCode(Guid id, CancellationToken cancellationToken)
+    {
+        await publicRegistrations.ResendCodeByCommissionAsync(id, cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType<AdminRegistrationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -114,6 +152,14 @@ public sealed class AdminParadeRegistrationsController(DrammersDbContext db, Par
     public async Task<DocumentLinkResponse> Download(Guid id, Guid documentId, CancellationToken cancellationToken) =>
         new(await review.DocumentUrlAsync(id, documentId, cancellationToken));
 }
+
+/// <summary>
+/// Een inschrijving van het webformulier die blijft steken op de e-mailcode (wens 2026-11-13). <c>DeletesAt</c> is het
+/// moment waarop de opruiming hem weggooit; daarna is het formulier weg en moet de groep opnieuw inschrijven.
+/// </summary>
+public sealed record UnconfirmedRegistrationResponse(
+    Guid Id, string? GroupName, string? ContactName, string? ContactEmail, string? ContactPhone,
+    DateTime CreatedAt, DateTime? CodeExpiresAt, int Resends, int Attempts, DateTime DeletesAt);
 
 public sealed record StartNumberRequest([Range(1, 9999)] int? StartNumber, bool Swap = false);
 

@@ -32,7 +32,7 @@ public sealed class MembershipApplicationsController(MembershipApplications appl
     public async Task<ActionResult<ApplicationStartedResponse>> Start(ApplicationRequest request, CancellationToken cancellationToken)
     {
         Guid? splitFrom = request.SplitToken is { Length: > 0 } token ? (await splits.ResolveAsync(token, cancellationToken)).Id : null;
-        var id = await applications.StartAsync(request.ToInput(splitFrom), HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        var id = await applications.StartAsync(request.ToInput(splitFrom), HttpContext.Connection.RemoteIpAddress?.ToString(), Request.PublicBaseUrlFor(), cancellationToken);
         return Created((string?)null, new ApplicationStartedResponse(id));
     }
 
@@ -53,7 +53,7 @@ public sealed class MembershipApplicationsController(MembershipApplications appl
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResendCode(Guid id, CancellationToken cancellationToken)
     {
-        await applications.ResendCodeAsync(id, cancellationToken);
+        await applications.ResendCodeAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
         return NoContent();
     }
 }

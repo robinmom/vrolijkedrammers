@@ -90,7 +90,7 @@ public sealed class ParadeController(DrammersDbContext db, ParadeAdministration 
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<PublicRegistrationStartedResponse>> StartPublic(PublicRegistrationRequest request, CancellationToken cancellationToken)
     {
-        var id = await publicRegistrations.StartAsync(request.Registration.ToInput(), request.RulesAccepted, cancellationToken);
+        var id = await publicRegistrations.StartAsync(request.Registration.ToInput(), request.RulesAccepted, Request.PublicBaseUrlFor(), cancellationToken);
         return Created((string?)null, new PublicRegistrationStartedResponse(id));
     }
 
@@ -112,7 +112,7 @@ public sealed class ParadeController(DrammersDbContext db, ParadeAdministration 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResendPublic(Guid id, CancellationToken cancellationToken)
     {
-        await publicRegistrations.ResendCodeAsync(id, cancellationToken);
+        await publicRegistrations.ResendCodeAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
         return NoContent();
     }
 

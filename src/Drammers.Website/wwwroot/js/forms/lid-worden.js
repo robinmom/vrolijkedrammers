@@ -158,4 +158,25 @@
     const response = await fetch(`${api}/${applicationId}/resend-code`, { method: 'POST' }).catch(() => null);
     fail(error, response?.ok ? 'Er is een nieuwe code verstuurd.' : 'Een nieuwe code sturen lukt nu niet.');
   });
+
+  // Terug met de link uit de code-mail (?bevestigen=…&code=…). Het id van de aanmelding leeft alleen in deze pagina,
+  // dus wie het tabblad sloot voordat de mail aankwam kon de code nergens meer invullen (13-11-2026: de bezorging deed
+  // er tot 106 minuten over). De code vullen we alleen in; bevestigen gebeurt pas als de bezoeker op de knop drukt.
+  const back = new URLSearchParams(location.search);
+  const confirmId = back.get('bevestigen');
+  if (confirmId && /^[0-9a-f-]{32,36}$/i.test(confirmId)) {
+    applicationId = confirmId;
+    const fromMail = (back.get('code') ?? '').trim();
+    if (/^\d{6}$/.test(fromMail)) {
+      verify.elements.code.value = fromMail;
+      document.getElementById('code-uitleg').textContent =
+        'De code uit je e-mail staat al klaar. Klik op Bevestigen om je aanmelding af te ronden.';
+    } else {
+      document.getElementById('code-uitleg').textContent = 'Vul de code van 6 cijfers uit onze e-mail hieronder in.';
+    }
+
+    show('code');
+    // De code hoort niet in de adresbalk te blijven staan (geschiedenis, schermafbeelding, doorgestuurde link).
+    history.replaceState(null, '', location.pathname);
+  }
 })();

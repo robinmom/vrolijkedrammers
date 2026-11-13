@@ -81,6 +81,46 @@ test('volwassene ziet geen ouder-sectie; een verkeerde code geeft een melding', 
   await expect(page.getByRole('group', { name: 'Ouder of verzorger' })).toBeHidden();
 });
 
+/**
+ * Wens 2026-11-13: het id van de aanmelding leeft alleen in de geopende pagina, dus wie het tabblad sloot voordat de
+ * code aankwam kon hem nergens meer invullen. De link uit de mail brengt hem terug, met de code al klaar.
+ */
+test('terug met de link uit de code-mail: de code staat klaar en bevestigen werkt', async ({ page }) => {
+  const api = { bodies: [] as unknown[] };
+  const verified: string[] = [];
+  await serve(page, api);
+  await page.route('**/api/v1/membership-applications/*/verify-email', (route) => {
+    verified.push(route.request().url());
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto('/lid-worden/?bevestigen=11111111-2222-3333-4444-555555555555&code=654321');
+
+  await expect(page.getByRole('heading', { name: 'Bevestig je e-mailadres' })).toBeVisible();
+  await expect(page.getByText('De code uit je e-mail staat al klaar.')).toBeVisible();
+  await expect(page.getByLabel('Code', { exact: true })).toHaveValue('654321');
+  // De code hoort niet in de adresbalk te blijven staan.
+  expect(new URL(page.url()).search).toBe('');
+
+  await page.getByRole('button', { name: 'Bevestigen' }).click();
+  await expect(page.getByRole('heading', { name: 'Bedankt voor je aanmelding!' })).toBeVisible();
+  expect(verified).toHaveLength(1);
+  expect(verified[0]).toContain('/11111111-2222-3333-4444-555555555555/verify-email');
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual(
+    [],
+  );
+});
+
+/** Zonder code in de link (bijvoorbeeld door een mailprogramma dat hem afkapt): gewoon zelf invullen. */
+test('de link zonder code opent wel de codestap', async ({ page }) => {
+  await serve(page, { bodies: [] });
+  await page.goto('/lid-worden/?bevestigen=11111111-2222-3333-4444-555555555555');
+  await expect(page.getByRole('heading', { name: 'Bevestig je e-mailadres' })).toBeVisible();
+  await expect(page.getByText('Vul de code van 6 cijfers uit onze e-mail hieronder in.')).toBeVisible();
+  await expect(page.getByLabel('Code', { exact: true })).toHaveValue('');
+});
+
 test('lid splitsen via de link uit de mail: alles ingevuld, geen IBAN', async ({ page }) => {
   const api = { bodies: [] as unknown[] };
   // Na serve(): de laatst geregistreerde route gaat voor.

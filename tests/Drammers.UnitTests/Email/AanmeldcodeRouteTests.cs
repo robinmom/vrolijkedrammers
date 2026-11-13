@@ -18,7 +18,24 @@ public class AanmeldcodeRouteTests
         MailboxSenders = "voorzitter,secretaris,dansgardefestival,app",
     };
 
-    private static EmailMessage Code() => MembershipApplications.CodeMail("nieuw.lid@example.com", "Dieke", "123456");
+    private static readonly Guid Aanmelding = Guid.Parse("4b1a4f3e-0000-4000-8000-000000000001");
+
+    private static EmailMessage Code() =>
+        MembershipApplications.CodeMail("nieuw.lid@example.com", "Dieke", "123456", Aanmelding, "https://dvd.test");
+
+    /// <summary>
+    /// De mail moet een link terug naar het formulier bevatten. Het id van de aanmelding leeft alleen in de geopende
+    /// pagina, dus wie het tabblad sluit voordat de code aankomt (13-11-2026: tot 106 minuten) kan hem zonder die link
+    /// nergens meer invullen.
+    /// </summary>
+    [Fact]
+    public void De_code_mail_wijst_de_weg_terug_naar_het_formulier()
+    {
+        var link = $"https://dvd.test/lid-worden/?bevestigen={Aanmelding}&code=123456";
+        Assert.Contains(link, Code().PlainText, StringComparison.Ordinal);
+        // In de HTML hoort de & als &amp; te staan; dat is geen fout maar de juiste codering.
+        Assert.Contains($"href=\"{link.Replace("&", "&amp;", StringComparison.Ordinal)}\"", Code().Html, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void De_code_gaat_via_de_mailbox_en_niet_via_ACS() =>

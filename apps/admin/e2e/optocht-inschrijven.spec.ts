@@ -131,6 +131,30 @@ test('optocht inschrijven via de webpagina: formulier, code, opgavenummer en sta
   expect(errors).toEqual([]);
 });
 
+/**
+ * Wens 2026-11-13: het id van de inschrijving leeft alleen in de geopende pagina. De link uit de code-mail brengt de
+ * groep terug op de codestap, met de code al klaar.
+ */
+test('optocht: terug met de link uit de code-mail, de code staat klaar', async ({ page }) => {
+  const api = { bodies: [] as unknown[] };
+  await serve(page, api);
+  await page.goto('/optocht-inschrijven/?bevestigen=11111111-2222-3333-4444-555555555555&code=654321');
+
+  await expect(page.getByRole('heading', { name: 'Bevestig je e-mailadres' })).toBeVisible();
+  await expect(page.getByText('De code uit je e-mail staat al klaar.')).toBeVisible();
+  await expect(page.getByLabel('Code', { exact: true })).toHaveValue('654321');
+  expect(new URL(page.url()).search).toBe('');
+
+  await page.getByRole('button', { name: 'Bevestigen' }).click();
+  await expect(page.getByRole('heading', { name: 'Je inschrijving is ingediend' })).toBeVisible();
+  await expect(page.getByText('7')).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual(
+    [],
+  );
+});
+
 test('optocht inschrijven: blokkerende meldingen van de API en een gesloten inschrijving', async ({ page }) => {
   const api = { bodies: [] as unknown[], startStatus: 422 };
   await serve(page, api);

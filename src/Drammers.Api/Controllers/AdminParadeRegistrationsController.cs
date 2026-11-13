@@ -109,7 +109,7 @@ public sealed class AdminParadeRegistrationsController(DrammersDbContext db, Par
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResendCode(Guid id, CancellationToken cancellationToken)
     {
-        await publicRegistrations.ResendCodeByCommissionAsync(id, cancellationToken);
+        await publicRegistrations.ResendCodeByCommissionAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
         return NoContent();
     }
 

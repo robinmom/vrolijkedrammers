@@ -41,7 +41,7 @@ public sealed class ParadePublicRegistrations(
 
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
-    public async Task<Guid> StartAsync(RegistrationInput input, bool rulesAccepted, CancellationToken cancellationToken)
+    public async Task<Guid> StartAsync(RegistrationInput input, bool rulesAccepted, string baseUrl, CancellationToken cancellationToken)
     {
         var parade = await parades.CurrentAsync(cancellationToken)
             ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Er is nog geen optocht om voor in te schrijven.", DomainErrorKind.NotFound);
@@ -88,11 +88,11 @@ public sealed class ParadePublicRegistrations(
         changeContext.Source = RegistrationSource.WebForm;
         db.ParadeRegistrations.Add(registration);
         await db.SaveChangesAsync(cancellationToken);
-        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code), cancellationToken);
+        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code, registration.Id, baseUrl), cancellationToken);
         return registration.Id;
     }
 
-    public async Task ResendCodeAsync(Guid id, CancellationToken cancellationToken)
+    public async Task ResendCodeAsync(Guid id, string baseUrl, CancellationToken cancellationToken)
     {
         var registration = await PendingAsync(id, cancellationToken);
         // Een rem op mail naar een (mogelijk vreemd) adres, en geen nieuwe pogingen door steeds een nieuwe code te vragen.
@@ -105,7 +105,7 @@ public sealed class ParadePublicRegistrations(
         registration.VerificationResends++;
         var code = NewCode(registration);
         await db.SaveChangesAsync(cancellationToken);
-        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code), cancellationToken);
+        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code, registration.Id, baseUrl), cancellationToken);
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ public sealed class ParadePublicRegistrations(
     /// Het aantal pogingen gaat wel terug naar nul, anders is een inschrijving na vijf verkeerde codes niet meer te
     /// redden. Bedoeld voor wie zijn code nooit heeft gekregen doordat de mail onderweg bleef hangen.
     /// </summary>
-    public async Task ResendCodeByCommissionAsync(Guid id, CancellationToken cancellationToken)
+    public async Task ResendCodeByCommissionAsync(Guid id, string baseUrl, CancellationToken cancellationToken)
     {
         var registration = await PendingAsync(id, cancellationToken);
         registration.VerificationResends++;
@@ -123,7 +123,7 @@ public sealed class ParadePublicRegistrations(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade-registration.code-resent", "ParadeRegistration", id.ToString(), null,
             JsonSerializer.Serialize(new { resends = registration.VerificationResends })), cancellationToken);
-        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code), cancellationToken);
+        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code, registration.Id, baseUrl), cancellationToken);
     }
 
     /// <summary>E-mailcode klopt: opgavenummer toekennen (ADR-011), statuslink maken en de bevestiging sturen.</summary>
@@ -215,11 +215,17 @@ public sealed class ParadePublicRegistrations(
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
-    public static EmailMessage CodeMail(string to, string name, string code)
+    /// <summary>
+    /// De code, met een link terug naar het formulier. Die link is nodig omdat het id van de inschrijving alleen in de
+    /// geopende pagina (of het app-scherm) leeft: wie het tabblad sluit voordat de mail aankomt, kan de code nergens meer
+    /// invullen. De code staat in de link zodat één klik genoeg is; bevestigen gebeurt pas na een druk op de knop.
+    /// </summary>
+    public static EmailMessage CodeMail(string to, string name, string code, Guid id, string baseUrl)
     {
         const string Subject = "Je code om de inschrijving voor de optocht te bevestigen";
-        var text = $"Beste {name},\n\nVul deze code in om jullie inschrijving voor de optocht te bevestigen:\n\n{code}\n\nDe code is 24 uur geldig. Pas na het bevestigen krijgen jullie een opgavenummer.\n\nHeb je niets ingevuld? Dan kun je deze e-mail negeren.\n\nGroeten,\nDe Vrolijke Drammers";
-        var html = $"<p>Beste {WebUtility.HtmlEncode(name)},</p><p>Vul deze code in om jullie inschrijving voor de optocht te bevestigen:</p><p style=\"font-size:24px;font-weight:bold;letter-spacing:4px\">{code}</p><p>De code is 24 uur geldig. Pas na het bevestigen krijgen jullie een opgavenummer.</p><p>Heb je niets ingevuld? Dan kun je deze e-mail negeren.</p><p>Groeten,<br>De Vrolijke Drammers</p>";
+        var link = $"{baseUrl.TrimEnd('/')}/optocht-inschrijven/?bevestigen={id}&code={code}";
+        var text = $"Beste {name},\n\nVul deze code in om jullie inschrijving voor de optocht te bevestigen:\n\n{code}\n\nOf open deze link, dan staat de code al klaar: {link}\n\nDe code is 24 uur geldig. Pas na het bevestigen krijgen jullie een opgavenummer.\n\nHeb je niets ingevuld? Dan kun je deze e-mail negeren.\n\nGroeten,\nDe Vrolijke Drammers";
+        var html = $"<p>Beste {WebUtility.HtmlEncode(name)},</p><p>Vul deze code in om jullie inschrijving voor de optocht te bevestigen:</p><p style=\"font-size:24px;font-weight:bold;letter-spacing:4px\">{code}</p><p><a href=\"{WebUtility.HtmlEncode(link)}\">Of bevestig de inschrijving met deze link</a>, dan staat de code al klaar.</p><p>De code is 24 uur geldig. Pas na het bevestigen krijgen jullie een opgavenummer.</p><p>Heb je niets ingevuld? Dan kun je deze e-mail negeren.</p><p>Groeten,<br>De Vrolijke Drammers</p>";
         return new EmailMessage(to, Subject, text, html);
     }
 

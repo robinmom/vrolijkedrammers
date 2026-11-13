@@ -71,7 +71,7 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ResendCode(Guid id, CancellationToken cancellationToken)
     {
-        await applications.ResendCodeByBoardAsync(id, cancellationToken);
+        await applications.ResendCodeByBoardAsync(id, Request.PublicBaseUrlFor(), cancellationToken);
         return NoContent();
     }
 

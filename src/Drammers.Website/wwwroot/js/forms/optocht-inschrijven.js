@@ -239,9 +239,30 @@
     renderMine();
   }
 
+  // Terug met de link uit de code-mail (?bevestigen=…&code=…). Het id van de inschrijving leeft alleen in deze pagina,
+  // dus wie het tabblad sloot voordat de mail aankwam kon de code nergens meer invullen (13-11-2026: de bezorging deed
+  // er tot 106 minuten over). De code vullen we alleen in; bevestigen gebeurt pas na een druk op de knop.
+  function showCodeFromMail(id, fromMail) {
+    registrationId = id;
+    const code = (fromMail ?? '').trim();
+    if (/^\d{6}$/.test(code)) {
+      verify.elements.code.value = code;
+      text('code-uitleg', 'De code uit je e-mail staat al klaar. Klik op Bevestigen om de inschrijving af te ronden.');
+    } else {
+      text('code-uitleg', 'Vul de code van 6 cijfers uit onze e-mail hieronder in.');
+    }
+
+    show('code');
+    // De code hoort niet in de adresbalk te blijven staan (geschiedenis, schermafbeelding, doorgestuurde link).
+    history.replaceState(null, '', location.pathname);
+  }
+
   async function start() {
-    const token = new URLSearchParams(location.search).get('status');
+    const back = new URLSearchParams(location.search);
+    const token = back.get('status');
     if (token) return showStatus(token);
+    const confirmId = back.get('bevestigen');
+    if (confirmId && /^[0-9a-f-]{32,36}$/i.test(confirmId)) return showCodeFromMail(confirmId, back.get('code'));
     if (login) await login.init('/optocht-inschrijven/');
     const [paradeResponse, categoryResponse] = await Promise.all([fetch(`${api}/current`).catch(() => null), fetch(`${api}/categories`).catch(() => null)]);
     if (!paradeResponse?.ok) {

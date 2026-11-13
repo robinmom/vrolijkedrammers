@@ -95,7 +95,7 @@ public sealed class MembershipApplications(
     // ----- Aanvrager ----------------------------------------------------------------------------------------------
 
     /// <summary>Legt de aanmelding vast als concept en stuurt een code naar het e-mailadres; geeft het (geheime) ID.</summary>
-    public async Task<Guid> StartAsync(ApplicationInput input, string? ipAddress, CancellationToken cancellationToken)
+    public async Task<Guid> StartAsync(ApplicationInput input, string? ipAddress, string baseUrl, CancellationToken cancellationToken)
     {
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
         var application = Validate(input, today);
@@ -108,11 +108,11 @@ public sealed class MembershipApplications(
         var code = NewCode(application);
         db.MembershipApplications.Add(application);
         await db.SaveChangesAsync(cancellationToken);
-        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code), cancellationToken);
+        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code, application.Id, baseUrl), cancellationToken);
         return application.Id;
     }
 
-    public async Task ResendCodeAsync(Guid id, CancellationToken cancellationToken)
+    public async Task ResendCodeAsync(Guid id, string baseUrl, CancellationToken cancellationToken)
     {
         var application = await FindDraftAsync(id, cancellationToken);
         // Een rem op mail naar een (mogelijk vreemd) adres, en geen nieuwe pogingen door steeds een nieuwe code te vragen.
@@ -126,7 +126,7 @@ public sealed class MembershipApplications(
         var code = NewCode(application);
         await db.SaveChangesAsync(cancellationToken);
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
-        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code), cancellationToken);
+        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code, application.Id, baseUrl), cancellationToken);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public sealed class MembershipApplications(
     /// tussen. Het aantal pogingen gaat wel terug naar nul, anders is een aanmelding na vijf verkeerde codes niet meer
     /// te redden. Bedoeld voor wie zijn code nooit heeft gekregen doordat de mail onderweg bleef hangen.
     /// </summary>
-    public async Task ResendCodeByBoardAsync(Guid id, CancellationToken cancellationToken)
+    public async Task ResendCodeByBoardAsync(Guid id, string baseUrl, CancellationToken cancellationToken)
     {
         var application = await FindDraftAsync(id, cancellationToken);
         application.VerificationResends++;
@@ -144,7 +144,7 @@ public sealed class MembershipApplications(
         var values = JsonSerializer.Serialize(new { resends = application.VerificationResends }, Json);
         await SaveWithAuditAsync("membership-application.code-resent", application, values, cancellationToken);
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
-        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code), cancellationToken);
+        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code, application.Id, baseUrl), cancellationToken);
     }
 
     /// <summary>Bevestigt het e-mailadres met de code; daarmee is de aanmelding ingediend (wachtrij van het bestuur).</summary>
@@ -877,15 +877,24 @@ public sealed class MembershipApplications(
 
     // ----- E-mails (concepten; het bestuur keurt de teksten goed) --------------------------------------------------
 
-    public static EmailMessage CodeMail(string to, string name, string code)
+    /// <summary>
+    /// De code, met een link terug naar het formulier. Die link is nodig omdat het id van de aanmelding alleen in de
+    /// geopende pagina (of het app-scherm) leeft: wie het tabblad sluit voordat de mail aankomt, kan de code nergens
+    /// meer invullen. Op 13-11-2026 deed de bezorging er tot 106 minuten over, dus dat was eerder regel dan uitzondering.
+    /// De code staat in de link zodat één klik genoeg is; bevestigen gebeurt pas als de bezoeker op de knop drukt.
+    /// </summary>
+    public static EmailMessage CodeMail(string to, string name, string code, Guid id, string baseUrl)
     {
         const string Subject = "Je code om je aanmelding te bevestigen";
+        var link = $"{baseUrl.TrimEnd('/')}/lid-worden/?bevestigen={id}&code={code}";
         var text = $"""
             Beste {name},
 
             Bedankt voor je aanmelding bij De Vrolijke Drammers! Vul deze code in om je e-mailadres te bevestigen:
 
             {code}
+
+            Of open deze link, dan staat de code al klaar: {link}
 
             De code is 24 uur geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.
 
@@ -898,6 +907,7 @@ public sealed class MembershipApplications(
             <p>Beste {System.Net.WebUtility.HtmlEncode(name)},</p>
             <p>Bedankt voor je aanmelding bij De Vrolijke Drammers! Vul deze code in om je e-mailadres te bevestigen:</p>
             <p style="font-size:24px;font-weight:bold;letter-spacing:4px">{code}</p>
+            <p><a href="{System.Net.WebUtility.HtmlEncode(link)}">Of bevestig je aanmelding met deze link</a>, dan staat de code al klaar.</p>
             <p>De code is 24 uur geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.</p>
             <p>Heb je je niet aangemeld? Dan kun je deze e-mail negeren.</p>
             <p>Groeten,<br>De Vrolijke Drammers</p>

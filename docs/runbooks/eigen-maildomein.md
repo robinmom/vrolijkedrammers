@@ -62,3 +62,39 @@ limits". Vermeld: vereniging, nieuwsbrief aan alle leden, geverifieerd eigen dom
 ## Terugdraaien
 
 `DVD_EMAIL_DOMAIN_VERIFIED` weghalen en Deploy `prod`: de app verstuurt dan weer via `DoNotReply@…azurecomm.net`.
+
+## Als de verificatie ineens weg is
+
+**Symptoom.** Mail van het eigen domein komt niet aan — ook niet in Ongewenst. ACS antwoordt gewoon met 202, dus in de
+logs lijkt alles goed. Wat er gebeurt: staat de verificatie op `NotStarted`, dan ondertekent ACS de mail niet met DKIM;
+met `v=DMARC1; p=quarantine;` gooit de ontvanger hem daarna weg.
+
+**Controleren:**
+
+```bash
+DOM="/subscriptions/cd4711a3-2b4c-488d-8c01-1dd5c4dabd9e/resourceGroups/rg-dvd-prod/providers/Microsoft.Communication/emailServices/ecs-dvd-prod/domains/vrolijkedrammers.nl"
+az resource show --ids "$DOM" --api-version 2023-04-01 --query "properties.verificationStates" -o json
+```
+
+Domain, SPF, DKIM en DKIM2 horen op `Verified` te staan. DMARC mag `NotStarted` blijven: dat is in ACS alleen een
+informatieve controle, het record zelf staat gewoon in DNS.
+
+**Herstellen** (de DNS hoeft niet aangeraakt; dit laat ACS de records opnieuw controleren):
+
+```bash
+for t in Domain SPF DKIM DKIM2; do
+  az rest --method post --url "https://management.azure.com${DOM}/initiateVerification?api-version=2023-04-01" \
+    --body "{\"verificationType\":\"$t\"}"
+done
+```
+
+**Oorzaak, en waarom het nu niet meer hoort te gebeuren.** Elke `Domain_CreateOrUpdate` op de domeinresource zet de
+verificatie terug. Tot 12-11-2026 deed de deploy dat bij elke uitrol, waardoor de mailbezorging stilletjes stukging
+(11-11 hersteld, 12-11 weer weg). Sindsdien maakt `infra/modules/email.bicep` het domein alleen nog aan zolang
+`customDomainVerified` op false staat; daarna blijft het ongemoeid. Kom je dit tóch weer tegen, kijk dan in het
+activiteitenlogboek wie de resource heeft weggeschreven:
+
+```bash
+az monitor activity-log list -g rg-dvd-prod --start-time <begin> --max-events 300 \
+  --query "[?status.value=='Succeeded'].operationName.localizedValue" -o tsv | sort | uniq -c | sort -rn
+```

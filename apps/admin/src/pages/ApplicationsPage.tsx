@@ -1,8 +1,16 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { euro } from '../api/advertisers';
 import { useApi } from '../api/ApiContext';
-import { useApiMutation, useApplication, useApplications, type ApplicationStatus, type ApplicationSummary } from '../api/hooks';
+import {
+  useApiMutation,
+  useApplication,
+  useApplications,
+  useUnconfirmedApplications,
+  type ApplicationStatus,
+  type ApplicationSummary,
+  type UnconfirmedApplication,
+} from '../api/hooks';
 import { DataTable, columnHelper } from '../components/DataTable';
 import { ConfirmDialog, Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
@@ -53,11 +61,17 @@ const columns = [
  * Aanmeldingen (fase 9b, ADR-014): nieuwe leden via de app of de webpagina, na bevestiging van hun e-mailadres. Het
  * bestuur beoordeelt altijd handmatig; na goedkeuring maakt het systeem het lid aan in de eigen ledenadministratie (met IBAN
  * en machtiging voor de incasso) en het account.
+ *
+ * Daarnaast de lijst "wacht op bevestiging" (wens 2026-11-13): wie het formulier invulde maar de code nooit invulde.
+ * Die staat in geen enkele wachtrij, dus zonder deze lijst ziet niemand dat iemand klem staat.
  */
 export function ApplicationsPage() {
   const [status, setStatus] = useState<ApplicationStatus | ''>('Submitted');
   const [page, setPage] = useState(1);
+  const onbevestigd = status === 'Draft';
   const applications = useApplications(status, page);
+  const unconfirmed = useUnconfirmedApplications(true);
+  const wachtend = unconfirmed.data?.length ?? 0;
 
   return (
     <>
@@ -71,39 +85,179 @@ export function ApplicationsPage() {
           </p>
         </div>
       </div>
-      <ProblemAlert error={applications.error} />
-      <DataTable
-        caption="Aanmeldingen"
-        columns={columns}
-        data={applications.data?.items ?? []}
-        emptyText={status === 'Submitted' ? 'Geen nieuwe aanmeldingen.' : 'Geen aanmeldingen.'}
-        header={
-          <div className="toolbar">
-            <div className="field">
-              <label htmlFor="aanmelding-status">Status</label>
-              <select
-                id="aanmelding-status"
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value as ApplicationStatus | '');
-                  setPage(1);
-                }}
-              >
-                {(['Submitted', 'InReview', 'ProvisioningFailed', 'Activated', 'Rejected'] as const).map((value) => (
-                  <option key={value} value={value}>
-                    {applicationStatusLabels[value]}
-                  </option>
-                ))}
-                <option value="">Alle</option>
-              </select>
-            </div>
+      {wachtend > 0 && !onbevestigd ? (
+        <div className="alert alert-warning banner" role="status">
+          <Icon name="waarschuwing" size={22} />
+          <div className="banner-text">
+            <strong>
+              {wachtend === 1 ? 'Eén aanmelding wacht' : `${wachtend} aanmeldingen wachten`} op een bevestigde e-mailcode
+            </strong>
+            <p>
+              Deze mensen hebben het formulier ingevuld maar hun code nooit ingevuld — meestal belandde de mail in de map
+              Ongewenst. Kies hieronder <strong>Wacht op bevestiging</strong> om ze te zien en de code opnieuw te sturen.
+            </p>
           </div>
-        }
-        footer={
-          applications.data ? (
-            <Pagination page={applications.data.page} pageSize={applications.data.pageSize} totalCount={applications.data.totalCount} onPage={setPage} noun="aanmeldingen" />
-          ) : null
-        }
+        </div>
+      ) : null}
+      <ProblemAlert error={applications.error ?? unconfirmed.error} />
+      {onbevestigd ? (
+        <UnconfirmedApplications rows={unconfirmed.data ?? []} header={<StatusFilter value={status} onChange={setStatus} onPage={setPage} wachtend={wachtend} />} />
+      ) : (
+        <DataTable
+          caption="Aanmeldingen"
+          columns={columns}
+          data={applications.data?.items ?? []}
+          emptyText={status === 'Submitted' ? 'Geen nieuwe aanmeldingen.' : 'Geen aanmeldingen.'}
+          header={<StatusFilter value={status} onChange={setStatus} onPage={setPage} wachtend={wachtend} />}
+          footer={
+            applications.data ? (
+              <Pagination page={applications.data.page} pageSize={applications.data.pageSize} totalCount={applications.data.totalCount} onPage={setPage} noun="aanmeldingen" />
+            ) : null
+          }
+        />
+      )}
+    </>
+  );
+}
+
+function StatusFilter({
+  value,
+  onChange,
+  onPage,
+  wachtend,
+}: {
+  value: ApplicationStatus | '';
+  onChange: (status: ApplicationStatus | '') => void;
+  onPage: (page: number) => void;
+  wachtend: number;
+}) {
+  return (
+    <div className="toolbar">
+      <div className="field">
+        <label htmlFor="aanmelding-status">Status</label>
+        <select
+          id="aanmelding-status"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value as ApplicationStatus | '');
+            onPage(1);
+          }}
+        >
+          <option value="Draft">Wacht op bevestiging{wachtend > 0 ? ` (${wachtend})` : ''}</option>
+          {(['Submitted', 'InReview', 'ProvisioningFailed', 'Activated', 'Rejected'] as const).map((status) => (
+            <option key={status} value={status}>
+              {applicationStatusLabels[status]}
+            </option>
+          ))}
+          <option value="">Alle</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+const onbevestigdHelper = columnHelper<UnconfirmedApplication>();
+
+/**
+ * Wie het formulier invulde maar zijn e-mailadres nooit bevestigde. Geen detailpagina: zolang de code niet is ingevuld
+ * is dit nog geen aanmelding, en de bankgegevens horen niemand onder ogen te komen. Wel het e-mailadres en het
+ * telefoonnummer, zodat het bestuur kan bellen als de code opnieuw sturen niet helpt.
+ */
+function UnconfirmedApplications({ rows, header }: { rows: UnconfirmedApplication[]; header: ReactNode }) {
+  const api = useApi();
+  const [message, setMessage] = useState<string | null>(null);
+  const resend = useApiMutation(
+    (row: UnconfirmedApplication) => api.POST('/api/v1/admin/membership-applications/{id}/resend-code', { params: { path: { id: row.id } } }),
+    [['applications-unconfirmed']],
+  );
+
+  const columns = [
+    onbevestigdHelper.accessor('createdAt', { header: 'Ingevuld', cell: (info) => formatDateTime(info.getValue()) }),
+    onbevestigdHelper.accessor('fullName', {
+      header: 'Naam',
+      cell: (info) => (
+        <>
+          {info.getValue()}{' '}
+          {info.row.original.minor ? <span className="badge info">via ouder</span> : null}
+          {info.row.original.membershipType === 'Dansgarde' ? <span className="badge">Dansgarde</span> : null}
+        </>
+      ),
+    }),
+    onbevestigdHelper.accessor('email', { header: 'E-mailadres' }),
+    onbevestigdHelper.display({
+      id: 'telefoon',
+      header: 'Telefoon',
+      cell: (info) => {
+        const row = info.row.original;
+        const phone = row.minor ? (row.guardianPhone ?? row.phone) : row.phone;
+        return phone ? (
+          <>
+            <a href={`tel:${phone.replace(/\s/g, '')}`}>{phone}</a>
+            {row.minor && row.guardianName ? <div className="muted small-text">{row.guardianName}</div> : null}
+          </>
+        ) : (
+          <span className="muted">—</span>
+        );
+      },
+    }),
+    onbevestigdHelper.accessor('source', { header: 'Via', cell: (info) => applicationSourceLabels[info.getValue()] ?? info.getValue() }),
+    onbevestigdHelper.display({
+      id: 'code',
+      header: 'Code',
+      cell: (info) => {
+        const row = info.row.original;
+        const verlopen = !row.codeExpiresAt || new Date(row.codeExpiresAt) < new Date();
+        return (
+          <>
+            <span className={`badge ${verlopen ? 'neutral' : 'warn'}`}>{verlopen ? 'verlopen' : 'geldig'}</span>
+            <div className="muted small-text">
+              {row.resends === 0 ? '1× verstuurd' : `${row.resends + 1}× verstuurd`}
+              {row.attempts > 0 ? `, ${row.attempts} keer verkeerd ingevuld` : ''}
+            </div>
+          </>
+        );
+      },
+    }),
+    onbevestigdHelper.accessor('deletesAt', {
+      header: 'Verdwijnt',
+      // formatDate wil een datum zonder tijd; dit is een moment, en alleen de dag is hier interessant.
+      cell: (info) => (
+        <>
+          {formatDate(info.getValue().slice(0, 10))}
+          <div className="muted small-text">daarna opnieuw aanmelden</div>
+        </>
+      ),
+    }),
+    onbevestigdHelper.display({
+      id: 'acties',
+      header: () => <span className="visually-hidden">Acties</span>,
+      cell: (info) => {
+        const row = info.row.original;
+        return (
+          <button
+            type="button"
+            className="button small"
+            disabled={resend.isPending}
+            aria-label={`Code opnieuw sturen naar ${row.email}`}
+            onClick={() => resend.mutate(row, { onSuccess: () => setMessage(`Nieuwe code verstuurd naar ${row.email}. Hij is 24 uur geldig.`) })}
+          >
+            Code opnieuw sturen
+          </button>
+        );
+      },
+    }),
+  ];
+
+  return (
+    <>
+      <SuccessMessage message={message} />
+      <ProblemAlert error={resend.error} />
+      <DataTable
+        caption="Aanmeldingen die wachten op een bevestigde e-mailcode"
+        columns={columns}
+        data={rows}
+        emptyText="Niemand staat klem: alle aanmeldingen zijn bevestigd."
+        header={header}
       />
     </>
   );

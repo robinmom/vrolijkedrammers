@@ -8,12 +8,14 @@ import {
   useParadeLineupSummary,
   useParadeRegistration,
   useParadeRegistrations,
+  useUnconfirmedRegistrations,
   type AdminRegistration,
   type LineupSummary,
   type PublishResult,
   type RegistrationFilter,
   type ReviewAction,
   type ReviewSummary,
+  type UnconfirmedRegistration,
 } from '../api/hooks';
 import { DataTable, columnHelper } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
@@ -22,7 +24,7 @@ import { ImportStartNumbers } from '../components/ParadeExchange';
 import { Pagination } from '../components/Pagination';
 import { ProblemAlert, SuccessMessage } from '../components/ProblemAlert';
 import { ApiError, describeProblem } from '../api/errors';
-import { formatDateTime, registrationSourceLabels, registrationStatusLabels } from '../format';
+import { formatDate, formatDateTime, registrationSourceLabels, registrationStatusLabels } from '../format';
 
 const statusTone: Record<string, string> = {
   Submitted: 'warn',
@@ -164,6 +166,86 @@ function LineupKpis({ summary }: { summary: LineupSummary }) {
 }
 
 /**
+ * Inschrijvingen die het formulier wel invulden maar hun e-mailcode nooit bevestigden (wens 2026-11-13). Die hebben nog
+ * geen opgavenummer en staan daarmee in geen enkele lijst, dus zonder deze kaart ziet niemand dat een groep klem staat.
+ * Alleen zichtbaar als er iemand in staat; na 48 uur ruimt het systeem ze op en is het formulier weg.
+ */
+function UnconfirmedRegistrations({ canManage }: { canManage: boolean }) {
+  const api = useApi();
+  const unconfirmed = useUnconfirmedRegistrations();
+  const [message, setMessage] = useState<string | null>(null);
+  const resend = useApiMutation(
+    (row: UnconfirmedRegistration) =>
+      api.POST('/api/v1/admin/parade-registrations/{id}/resend-code', { params: { path: { id: row.id } } }),
+    [['parade-registrations']],
+  );
+  const rows = unconfirmed.data ?? [];
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="card" aria-labelledby="onbevestigd">
+      <h2 id="onbevestigd">Wacht op bevestiging ({rows.length})</h2>
+      <p className="muted small-text">
+        Deze groepen vulden het formulier in maar bevestigden hun e-mailadres nooit, dus ze hebben nog geen
+        opgavenummer. Meestal belandde de code in de map Ongewenst. Stuur hem opnieuw, of bel ze: na 48 uur ruimt het
+        systeem de inschrijving op en moeten ze helemaal opnieuw beginnen.
+      </p>
+      <SuccessMessage message={message} />
+      <ProblemAlert error={resend.error ?? unconfirmed.error} />
+      <ul className="list">
+        {rows.map((row) => {
+          const expired = !row.codeExpiresAt || new Date(row.codeExpiresAt) < new Date();
+          return (
+            <li key={row.id} className="list-row">
+              <div>
+                <strong>{row.groupName ?? 'Zonder naam'}</strong>{' '}
+                <span className={`badge ${expired ? '' : 'warn'}`}>{expired ? 'code verlopen' : 'code geldig'}</span>
+                <div className="muted small-text">
+                  {row.contactName ?? 'Zonder contactpersoon'} · {row.contactEmail ?? 'geen e-mailadres'}
+                  {row.contactPhone ? (
+                    <>
+                      {' · '}
+                      <a href={`tel:${row.contactPhone.replace(/\s/g, '')}`}>{row.contactPhone}</a>
+                    </>
+                  ) : null}
+                </div>
+                <div className="muted small-text">
+                  Ingevuld {formatDateTime(row.createdAt)} · {row.resends === 0 ? '1×' : `${row.resends + 1}×`}{' '}
+                  verstuurd
+                  {row.attempts > 0 ? `, ${row.attempts} keer verkeerd ingevuld` : ''} · verdwijnt{' '}
+                  {formatDate(row.deletesAt.slice(0, 10))}
+                </div>
+              </div>
+              {canManage ? (
+                <button
+                  type="button"
+                  className="button secondary small"
+                  disabled={resend.isPending}
+                  aria-label={`Code opnieuw sturen voor ${row.groupName ?? 'deze inschrijving'}`}
+                  onClick={() =>
+                    resend.mutate(row, {
+                      onSuccess: () =>
+                        setMessage(
+                          `Nieuwe code verstuurd naar ${row.contactEmail ?? 'het opgegeven e-mailadres'}. Hij is 24 uur geldig.`,
+                        ),
+                    })
+                  }
+                >
+                  Code opnieuw sturen
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/**
  * Optochtinschrijvingen. Fase 11: elke inschrijving wordt door de Optochtcommissie beoordeeld; pas na goedkeuring is ze
  * definitief. Fase 12a: filters en snelle weergaven, totalen per categorie, startnummers publiceren.
  */
@@ -171,6 +253,7 @@ export function ParadeRegistrationsPage() {
   const api = useApi();
   const me = useMe();
   const canAssign = (me.data?.permissions ?? []).includes('parade.assign-start-number');
+  const canManage = (me.data?.permissions ?? []).includes('parade.manage');
   const [filter, setFilter] = useState<RegistrationFilter>({});
   const [page, setPage] = useState(1);
   const [publishing, setPublishing] = useState(false);
@@ -209,6 +292,7 @@ export function ParadeRegistrationsPage() {
       </div>
       <SuccessMessage message={message} />
       {summary.data ? <LineupKpis summary={summary.data} /> : null}
+      <UnconfirmedRegistrations canManage={canManage} />
       {summary.data && summary.data.categories.length ? (
         <details className="card">
           <summary>Per categorie</summary>

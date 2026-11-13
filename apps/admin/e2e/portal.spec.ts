@@ -439,6 +439,39 @@ test('fase 9b: aanmelding van een kind beoordelen en goedkeuren', async ({ page 
   await expect(page.getByText('Opgeslagen bij het lid (versleuteld)')).toBeVisible();
 });
 
+/**
+ * Wens 2026-11-13: wie het formulier invulde maar zijn code nooit invulde staat in geen enkele wachtrij. Het bestuur
+ * moet hem zien, kunnen bellen en de code opnieuw kunnen sturen.
+ */
+test('aanmeldingen die wachten op een bevestigde e-mailcode: zien, bellen en de code opnieuw sturen', async ({
+  page,
+}) => {
+  const api = new MockApi();
+  await open(page, api, 'aanmeldingen');
+
+  // Het valt op zonder eerst te filteren.
+  await expect(page.getByText('Eén aanmelding wacht op een bevestigde e-mailcode')).toBeVisible();
+
+  await page.getByLabel('Status').selectOption('Draft');
+  await expect(page.getByRole('cell', { name: 'marieke@example.com', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: '0612345678' })).toHaveAttribute('href', 'tel:0612345678');
+  await expect(page.getByText('3× verstuurd, 5 keer verkeerd ingevuld')).toBeVisible();
+  await expect(page.getByText('verlopen')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Code opnieuw sturen naar marieke@example.com' }).click();
+  await expect(page.getByText('Nieuwe code verstuurd naar marieke@example.com. Hij is 24 uur geldig.')).toBeVisible();
+  expect(api.unconfirmedApplications[0]!.resends).toBe(3);
+  // Het bestuur doet dit met opzet; de pogingen van de bezoeker gaan terug naar nul.
+  expect(api.unconfirmedApplications[0]!.attempts).toBe(0);
+  await expect(page.getByText('4× verstuurd')).toBeVisible();
+
+  await expectNoSeriousA11yIssues(page);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
 test('fase 9b: aanmelding afwijzen met reden', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'aanmeldingen/ap-1');
@@ -606,6 +639,47 @@ test('fase 11a: optocht instellen en een categorie aanpassen', async ({ page }) 
   await page.getByRole('dialog').getByRole('button', { name: 'Opslaan' }).click();
   await expect(page.getByText('Categorie opgeslagen.')).toBeVisible();
   expect(api.paradeCategories[1]!.active).toBe(false);
+});
+
+/**
+ * Wens 2026-11-13: een groep die het formulier invulde maar de e-mailcode nooit bevestigde heeft geen opgavenummer en
+ * staat daarmee in geen enkele lijst. De commissie moet hem zien, kunnen bellen en de code opnieuw kunnen sturen.
+ */
+test('optocht: inschrijvingen die wachten op een bevestigde e-mailcode, met de code opnieuw sturen', async ({
+  page,
+}) => {
+  const api = new MockApi(['parade.read', 'parade.manage']);
+  await open(page, api, 'optocht/inschrijvingen');
+
+  const kaart = page.getByRole('region', { name: 'Wacht op bevestiging (1)' });
+  await expect(kaart).toBeVisible();
+  await expect(kaart.getByText('De Dorsvlegels')).toBeVisible();
+  await expect(kaart.getByText(/Ria Peters · ria@example.com/)).toBeVisible();
+  await expect(kaart.getByRole('link', { name: '06 12345678' })).toHaveAttribute('href', 'tel:0612345678');
+  await expect(kaart.getByText('code verlopen')).toBeVisible();
+  await expect(kaart.getByText(/2× verstuurd, 5 keer verkeerd ingevuld/)).toBeVisible();
+
+  await kaart.getByRole('button', { name: 'Code opnieuw sturen voor De Dorsvlegels' }).click();
+  await expect(page.getByText('Nieuwe code verstuurd naar ria@example.com. Hij is 24 uur geldig.')).toBeVisible();
+  expect(api.unconfirmedRegistrations[0]!.resends).toBe(2);
+  // De commissie doet dit met opzet; de pogingen van de inschrijver gaan terug naar nul.
+  expect(api.unconfirmedRegistrations[0]!.attempts).toBe(0);
+  await expect(kaart.getByText('code geldig')).toBeVisible();
+
+  await expectNoSeriousA11yIssues(page);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
+/** Zonder parade.manage geen knop: lezen mag, de code opnieuw sturen niet. */
+test('optocht: zonder parade.manage geen knop om de code opnieuw te sturen', async ({ page }) => {
+  const api = new MockApi(['parade.read']);
+  await open(page, api, 'optocht/inschrijvingen');
+  const kaart = page.getByRole('region', { name: 'Wacht op bevestiging (1)' });
+  await expect(kaart.getByText('De Dorsvlegels')).toBeVisible();
+  await expect(kaart.getByRole('button', { name: /Code opnieuw sturen/ })).toHaveCount(0);
 });
 
 test('fase 11: de optochtcommissie neemt een inschrijving in behandeling en keurt hem goed', async ({ page }) => {

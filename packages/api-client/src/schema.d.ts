@@ -9749,6 +9749,99 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/membership-applications/unconfirmed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Aanmeldingen die het formulier hebben ingevuld maar hun e-mailadres nooit hebben bevestigd (wens 2026-11-13).
+         *     Die staan in geen enkele wachtrij, dus zonder deze lijst ziet niemand dat iemand klem staat. Meestal is de
+         *     code in de map Ongewenst beland of bleef de mail bij Microsoft hangen (12-11-2026); daarom staan hier ook het
+         *     e-mailadres en het telefoonnummer, zodat het bestuur kan bellen als de code opnieuw sturen niet helpt.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UnconfirmedApplicationResponse"][];
+                        "application/json": components["schemas"]["UnconfirmedApplicationResponse"][];
+                        "text/json": components["schemas"]["UnconfirmedApplicationResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/membership-applications/{id}/resend-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * De code nog een keer naar het opgegeven e-mailadres sturen. Anders dan bij de bezoeker zelf geldt hier geen
+         *     maximum: het bestuur doet dit met opzet, voor iemand die zijn code nooit heeft gekregen.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/membership-applications/{id}": {
         parameters: {
             query?: never;
@@ -12342,6 +12435,99 @@ export interface paths {
                         "text/plain": components["schemas"]["PublishResult"];
                         "application/json": components["schemas"]["PublishResult"];
                         "text/json": components["schemas"]["PublishResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/unconfirmed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inschrijvingen van het webformulier die hun e-mailcode nooit hebben bevestigd (wens 2026-11-13). Zonder nummer
+         *     en zonder status staan ze in geen enkele lijst, dus niemand ziet dat iemand klem staat. Meestal is de code in de
+         *     map Ongewenst beland of bleef de mail bij Microsoft hangen; daarom staan hier ook het e-mailadres en het
+         *     telefoonnummer, zodat de commissie kan bellen als de code opnieuw sturen niet helpt.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UnconfirmedRegistrationResponse"][];
+                        "application/json": components["schemas"]["UnconfirmedRegistrationResponse"][];
+                        "text/json": components["schemas"]["UnconfirmedRegistrationResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-registrations/{id}/resend-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * De code nog een keer naar het opgegeven e-mailadres sturen. Anders dan bij de inschrijver zelf geldt hier geen
+         *     maximum: de commissie doet dit met opzet, voor iemand die zijn code nooit heeft gekregen.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -31531,6 +31717,54 @@ export interface components {
         };
         /** @enum {unknown} */
         TokenScanOutcome: "Ready" | "Issued" | "Refused";
+        /**
+         * @description Een aanmelding die blijft steken op de e-mailcode (wens 2026-11-13). `DeletesAt` is het moment waarop de
+         *     nachtelijke opruiming hem weggooit; daarna is het formulier weg en moet de aanvrager helemaal opnieuw beginnen.
+         */
+        UnconfirmedApplicationResponse: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            email: string;
+            phone: null | string;
+            minor: boolean;
+            guardianName: null | string;
+            guardianPhone: null | string;
+            source: components["schemas"]["ApplicationSource"];
+            membershipType: components["schemas"]["MembershipType"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            codeExpiresAt: null | string;
+            /** Format: int32 */
+            resends: number;
+            /** Format: int32 */
+            attempts: number;
+            /** Format: date-time */
+            deletesAt: string;
+        };
+        /**
+         * @description Een inschrijving van het webformulier die blijft steken op de e-mailcode (wens 2026-11-13). `DeletesAt` is het
+         *     moment waarop de opruiming hem weggooit; daarna is het formulier weg en moet de groep opnieuw inschrijven.
+         */
+        UnconfirmedRegistrationResponse: {
+            /** Format: uuid */
+            id: string;
+            groupName: null | string;
+            contactName: null | string;
+            contactEmail: null | string;
+            contactPhone: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            codeExpiresAt: null | string;
+            /** Format: int32 */
+            resends: number;
+            /** Format: int32 */
+            attempts: number;
+            /** Format: date-time */
+            deletesAt: string;
+        };
         UpdateRegistrationRequest: {
             version: null | string;
             groupName: null | string;

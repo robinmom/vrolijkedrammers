@@ -27,7 +27,12 @@ public sealed record PublicStatus(
 public sealed class ParadePublicRegistrations(
     DrammersDbContext db, ParadeAdministration parades, IEmailSender email, IAuditLogger audit, ParadeChangeContext changeContext, IClock clock)
 {
-    public static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(30);
+    /// <summary>
+    /// Geldigheid van de e-mailcode. Een dag, geen half uur: op 13-11-2026 deed Microsoft er 25 tot 106 minuten over om
+    /// een mail te bezorgen, waardoor bij "Lid worden" elke code al verlopen in de inbox lag. Brute kracht blijft dicht
+    /// via <see cref="MaxAttempts"/>: zes cijfers en hoogstens vijf pogingen, hoe lang de code ook geldig is.
+    /// </summary>
+    public static readonly TimeSpan CodeLifetime = TimeSpan.FromHours(24);
     public static readonly TimeSpan UnverifiedLifetime = TimeSpan.FromHours(48);
     public const int MaxAttempts = 5;
 
@@ -100,6 +105,24 @@ public sealed class ParadePublicRegistrations(
         registration.VerificationResends++;
         var code = NewCode(registration);
         await db.SaveChangesAsync(cancellationToken);
+        await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code), cancellationToken);
+    }
+
+    /// <summary>
+    /// De commissie stuurt de code opnieuw (wens 2026-11-13). De rem van <see cref="MaxResends"/> geldt hier niet: die
+    /// zit er tegen mail naar een vreemd adres en tegen eindeloos nieuwe codes, en nu zit er een commissielid tussen.
+    /// Het aantal pogingen gaat wel terug naar nul, anders is een inschrijving na vijf verkeerde codes niet meer te
+    /// redden. Bedoeld voor wie zijn code nooit heeft gekregen doordat de mail onderweg bleef hangen.
+    /// </summary>
+    public async Task ResendCodeByCommissionAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var registration = await PendingAsync(id, cancellationToken);
+        registration.VerificationResends++;
+        registration.VerificationAttempts = 0;
+        var code = NewCode(registration);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade-registration.code-resent", "ParadeRegistration", id.ToString(), null,
+            JsonSerializer.Serialize(new { resends = registration.VerificationResends })), cancellationToken);
         await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code), cancellationToken);
     }
 
@@ -195,8 +218,8 @@ public sealed class ParadePublicRegistrations(
     public static EmailMessage CodeMail(string to, string name, string code)
     {
         const string Subject = "Je code om de inschrijving voor de optocht te bevestigen";
-        var text = $"Beste {name},\n\nVul deze code in om jullie inschrijving voor de optocht te bevestigen:\n\n{code}\n\nDe code is 30 minuten geldig. Pas na het bevestigen krijgen jullie een opgavenummer.\n\nHeb je niets ingevuld? Dan kun je deze e-mail negeren.\n\nGroeten,\nDe Vrolijke Drammers";
-        var html = $"<p>Beste {WebUtility.HtmlEncode(name)},</p><p>Vul deze code in om jullie inschrijving voor de optocht te bevestigen:</p><p style=\"font-size:24px;font-weight:bold;letter-spacing:4px\">{code}</p><p>De code is 30 minuten geldig. Pas na het bevestigen krijgen jullie een opgavenummer.</p><p>Heb je niets ingevuld? Dan kun je deze e-mail negeren.</p><p>Groeten,<br>De Vrolijke Drammers</p>";
+        var text = $"Beste {name},\n\nVul deze code in om jullie inschrijving voor de optocht te bevestigen:\n\n{code}\n\nDe code is 24 uur geldig. Pas na het bevestigen krijgen jullie een opgavenummer.\n\nHeb je niets ingevuld? Dan kun je deze e-mail negeren.\n\nGroeten,\nDe Vrolijke Drammers";
+        var html = $"<p>Beste {WebUtility.HtmlEncode(name)},</p><p>Vul deze code in om jullie inschrijving voor de optocht te bevestigen:</p><p style=\"font-size:24px;font-weight:bold;letter-spacing:4px\">{code}</p><p>De code is 24 uur geldig. Pas na het bevestigen krijgen jullie een opgavenummer.</p><p>Heb je niets ingevuld? Dan kun je deze e-mail negeren.</p><p>Groeten,<br>De Vrolijke Drammers</p>";
         return new EmailMessage(to, Subject, text, html);
     }
 

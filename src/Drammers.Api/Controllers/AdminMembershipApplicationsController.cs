@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Drammers.Api.Authorization;
 using Drammers.Api.Contracts;
+using Drammers.Infrastructure.Configuration;
 using Drammers.Infrastructure.Members;
 using Drammers.Infrastructure.Persistence;
 using Drammers.Modules.Identity.Provisioning;
@@ -34,6 +35,44 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
         return new PagedResult<ApplicationSummaryResponse>(
             [.. rows.Select(a => new ApplicationSummaryResponse(a.Id, a.FullName, a.City, a.AgeOn(today), a.IsMinorOn(today), a.Status, a.Source, a.SubmittedAt, a.MembershipType, a.SplitFromMemberId != null))],
             p, size, total);
+    }
+
+    /// <summary>
+    /// Aanmeldingen die het formulier hebben ingevuld maar hun e-mailadres nooit hebben bevestigd (wens 2026-11-13).
+    /// Die staan in geen enkele wachtrij, dus zonder deze lijst ziet niemand dat iemand klem staat. Meestal is de
+    /// code in de map Ongewenst beland of bleef de mail bij Microsoft hangen (12-11-2026); daarom staan hier ook het
+    /// e-mailadres en het telefoonnummer, zodat het bestuur kan bellen als de code opnieuw sturen niet helpt.
+    /// </summary>
+    [HttpGet("unconfirmed")]
+    [ProducesResponseType<IReadOnlyList<UnconfirmedApplicationResponse>>(StatusCodes.Status200OK)]
+    public async Task<IReadOnlyList<UnconfirmedApplicationResponse>> Unconfirmed(CancellationToken cancellationToken)
+    {
+        var rows = await db.MembershipApplications.AsNoTracking()
+            .Where(a => a.Status == ApplicationStatus.Draft)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(200)
+            .ToListAsync(cancellationToken);
+        var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        return
+        [
+            .. rows.Select(a => new UnconfirmedApplicationResponse(
+                a.Id, a.FullName, a.Email, a.Phone, a.IsMinorOn(today), a.GuardianName, a.GuardianPhone, a.Source, a.MembershipType,
+                a.CreatedAt, a.VerificationExpiresAt, a.VerificationResends, a.VerificationAttempts,
+                a.CreatedAt + DataRetentionJob.DraftLifetime)),
+        ];
+    }
+
+    /// <summary>
+    /// De code nog een keer naar het opgegeven e-mailadres sturen. Anders dan bij de bezoeker zelf geldt hier geen
+    /// maximum: het bestuur doet dit met opzet, voor iemand die zijn code nooit heeft gekregen.
+    /// </summary>
+    [HttpPost("{id:guid}/resend-code")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResendCode(Guid id, CancellationToken cancellationToken)
+    {
+        await applications.ResendCodeByBoardAsync(id, cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("{id:guid}")]
@@ -139,6 +178,15 @@ public sealed class AdminMembershipApplicationsController(DrammersDbContext db, 
 public sealed record ApplicationSummaryResponse(
     Guid Id, string FullName, string City, int Age, bool Minor, ApplicationStatus Status, ApplicationSource Source, DateTime? SubmittedAt,
     MembershipType MembershipType, bool Split = false);
+
+/// <summary>
+/// Een aanmelding die blijft steken op de e-mailcode (wens 2026-11-13). <c>DeletesAt</c> is het moment waarop de
+/// nachtelijke opruiming hem weggooit; daarna is het formulier weg en moet de aanvrager helemaal opnieuw beginnen.
+/// </summary>
+public sealed record UnconfirmedApplicationResponse(
+    Guid Id, string FullName, string Email, string? Phone, bool Minor, string? GuardianName, string? GuardianPhone,
+    ApplicationSource Source, MembershipType MembershipType, DateTime CreatedAt, DateTime? CodeExpiresAt,
+    int Resends, int Attempts, DateTime DeletesAt);
 
 public sealed record ApplicationProvisioningResponse(Guid Id, ProvisioningStep Step, string? MemberNumber, int Attempts, string? LastError);
 

@@ -683,6 +683,22 @@ export function useApplication(id: string) {
   });
 }
 
+export type UnconfirmedApplication = Schemas['UnconfirmedApplicationResponse'];
+
+/**
+ * Aanmeldingen die blijven steken op de e-mailcode (wens 2026-11-13). Ververst elke minuut, want zodra iemand zijn
+ * code invult verdwijnt hij uit deze lijst en duikt hij op bij de nieuwe aanmeldingen.
+ */
+export function useUnconfirmedApplications(enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['applications-unconfirmed'],
+    enabled,
+    refetchInterval: 60_000,
+    queryFn: async () => required((await api.GET('/api/v1/admin/membership-applications/unconfirmed')).data),
+  });
+}
+
 // ----- Fase 9b-2: AVG-verzoeken ----------------------------------------------------------------------------------
 
 export type PrivacyRequest = Schemas['PrivacyRequestResponse'];

@@ -143,6 +143,8 @@ Scanresultaat:
 | GET | `/admin/sync-jobs` · `/admin/sync-jobs/{id}` (+ items) | import.run |
 | GET/POST | `/admin/sync-conflicts` · `/{id}/resolve` | import.run |
 | GET | `/admin/membership-applications` | member.approve |
+| GET | `/admin/membership-applications/unconfirmed` | member.approve |
+| POST | `/admin/membership-applications/{id}/resend-code` (de e-mailcode nog eens sturen, zonder het maximum van de bezoeker) | member.approve |
 | POST | `/admin/membership-applications/{id}/start-review` · `/approve` (start de provisioning: e-Boekhouden → lokaal → Entra) · `/reject` | member.approve |
 
 ### Content

@@ -11458,6 +11458,89 @@
         }
       }
     },
+    "/api/v1/admin/membership-applications/unconfirmed": {
+      "get": {
+        "tags": [
+          "AdminMembershipApplications"
+        ],
+        "summary": "Aanmeldingen die het formulier hebben ingevuld maar hun e-mailadres nooit hebben bevestigd (wens 2026-11-13).\nDie staan in geen enkele wachtrij, dus zonder deze lijst ziet niemand dat iemand klem staat. Meestal is de\ncode in de map Ongewenst beland of bleef de mail bij Microsoft hangen (12-11-2026); daarom staan hier ook het\ne-mailadres en het telefoonnummer, zodat het bestuur kan bellen als de code opnieuw sturen niet helpt.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnconfirmedApplicationResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnconfirmedApplicationResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnconfirmedApplicationResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/membership-applications/{id}/resend-code": {
+      "post": {
+        "tags": [
+          "AdminMembershipApplications"
+        ],
+        "summary": "De code nog een keer naar het opgegeven e-mailadres sturen. Anders dan bij de bezoeker zelf geldt hier geen\nmaximum: het bestuur doet dit met opzet, voor iemand die zijn code nooit heeft gekregen.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/membership-applications/{id}": {
       "get": {
         "tags": [
@@ -51876,6 +51959,88 @@
           "Issued",
           "Refused"
         ]
+      },
+      "UnconfirmedApplicationResponse": {
+        "required": [
+          "id",
+          "fullName",
+          "email",
+          "phone",
+          "minor",
+          "guardianName",
+          "guardianPhone",
+          "source",
+          "membershipType",
+          "createdAt",
+          "codeExpiresAt",
+          "resends",
+          "attempts",
+          "deletesAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "minor": {
+            "type": "boolean"
+          },
+          "guardianName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "guardianPhone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/ApplicationSource"
+          },
+          "membershipType": {
+            "$ref": "#/components/schemas/MembershipType"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "codeExpiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "resends": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "attempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deletesAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Een aanmelding die blijft steken op de e-mailcode (wens 2026-11-13). `DeletesAt` is het moment waarop de\nnachtelijke opruiming hem weggooit; daarna is het formulier weg en moet de aanvrager helemaal opnieuw beginnen."
       },
       "UpdateRegistrationRequest": {
         "required": [

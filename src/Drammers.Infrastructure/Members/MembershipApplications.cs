@@ -123,6 +123,24 @@ public sealed class MembershipApplications(
         await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code), cancellationToken);
     }
 
+    /// <summary>
+    /// Het bestuur stuurt de code opnieuw (wens 2026-11-13). De rem van <see cref="MaxCodeResends"/> geldt hier niet:
+    /// die zit er tegen mail naar een vreemd adres en tegen eindeloos nieuwe codes, en nu zit er een bestuurslid
+    /// tussen. Het aantal pogingen gaat wel terug naar nul, anders is een aanmelding na vijf verkeerde codes niet meer
+    /// te redden. Bedoeld voor wie zijn code nooit heeft gekregen doordat de mail onderweg bleef hangen.
+    /// </summary>
+    public async Task ResendCodeByBoardAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var application = await FindDraftAsync(id, cancellationToken);
+        application.VerificationResends++;
+        application.VerificationAttempts = 0;
+        var code = NewCode(application);
+        var values = JsonSerializer.Serialize(new { resends = application.VerificationResends }, Json);
+        await SaveWithAuditAsync("membership-application.code-resent", application, values, cancellationToken);
+        var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        await email.SendAsync(CodeMail(application.Email, application.IsMinorOn(today) ? application.GuardianName! : application.FirstName, code), cancellationToken);
+    }
+
     /// <summary>Bevestigt het e-mailadres met de code; daarmee is de aanmelding ingediend (wachtrij van het bestuur).</summary>
     public async Task VerifyAsync(Guid id, string code, CancellationToken cancellationToken)
     {

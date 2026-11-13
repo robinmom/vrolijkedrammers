@@ -883,6 +883,26 @@ export class MockApi {
     },
   ];
 
+  // Wens 2026-11-13: aanmeldingen die blijven steken op de e-mailcode.
+  unconfirmedApplications = [
+    {
+      id: 'ap-3',
+      fullName: 'Marieke de Wit',
+      email: 'marieke@example.com',
+      phone: '0612345678' as string | null,
+      minor: false,
+      guardianName: null as string | null,
+      guardianPhone: null as string | null,
+      source: 'Website',
+      membershipType: 'Individual',
+      createdAt: '2026-11-10T07:10:00Z',
+      codeExpiresAt: '2026-11-10T07:40:00Z' as string | null,
+      resends: 2,
+      attempts: 5,
+      deletesAt: '2026-11-17T07:10:00Z',
+    },
+  ];
+
   // Fase 9: accountverzoeken, provisioning en apparaten.
   accountRequests = [
     {
@@ -4233,6 +4253,19 @@ export class MockApi {
           submittedAt: a.submittedAt,
         }));
       return json({ items, page: 1, pageSize: 25, totalCount: items.length });
+    }
+    if (path === '/admin/membership-applications/unconfirmed') {
+      return json(this.unconfirmedApplications);
+    }
+    if ((m = path.match(/^\/admin\/membership-applications\/([^/]+)\/resend-code$/))) {
+      const wachtend = this.unconfirmedApplications.find((a) => a.id === m![1]);
+      if (!wachtend) {
+        return json({ status: 404, title: 'Niet gevonden', code: 'APPLICATION_NOT_FOUND' }, 404);
+      }
+      wachtend.resends += 1;
+      wachtend.attempts = 0;
+      wachtend.codeExpiresAt = '2099-01-01T09:00:00Z';
+      return noContent();
     }
     if (
       (m = path.match(

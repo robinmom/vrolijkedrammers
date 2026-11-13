@@ -356,6 +356,42 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         Assert.Equal(HttpStatusCode.NoContent, (await _anonymous.PostAsJsonAsync($"/api/v1/membership-applications/{id}/verify-email", new { code = LastCodeFor("opnieuw@example.com") })).StatusCode);
     }
 
+    /// <summary>
+    /// Wens 2026-11-13: wie zijn code nooit krijgt, staat in geen enkele wachtrij. Het bestuur moet hem kunnen zien en
+    /// de code opnieuw kunnen sturen — ook als de bezoeker zelf al vastzit.
+    /// </summary>
+    [Fact]
+    public async Task Het_bestuur_ziet_wie_klem_staat_en_stuurt_de_code_opnieuw()
+    {
+        var start = await _anonymous.PostAsJsonAsync("/api/v1/membership-applications", Form("klem@example.com", 30));
+        var id = (await start.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        var verify = $"/api/v1/membership-applications/{id}/verify-email";
+
+        // Vijf keer de verkeerde code: de bezoeker komt er zelf niet meer in en krijgt ook geen nieuwe code meer.
+        for (var i = 0; i < MembershipApplications.MaxCodeAttempts; i++)
+        {
+            await _anonymous.PostAsJsonAsync(verify, new { code = LastCodeFor("klem@example.com") == "000000" ? "111111" : "000000" });
+        }
+
+        Assert.Equal(HttpStatusCode.Conflict, (await _anonymous.PostAsync($"/api/v1/membership-applications/{id}/resend-code", null)).StatusCode);
+
+        // Het bestuur ziet hem wel, met e-mailadres en telefoonnummer om te bellen als de mail blijft hangen.
+        var row = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/membership-applications/unconfirmed")).EnumerateArray().Single();
+        Assert.Equal("klem@example.com", row.GetProperty("email").GetString());
+        Assert.Equal("0612345678", row.GetProperty("phone").GetString());
+        Assert.Equal(MembershipApplications.MaxCodeAttempts, row.GetProperty("attempts").GetInt32());
+        Assert.Equal(0, row.GetProperty("resends").GetInt32());
+        Assert.True(row.GetProperty("deletesAt").GetDateTime() > _api.Clock.UtcNow.UtcDateTime);
+
+        // En stuurt de code opnieuw: dat mag vaker dan de bezoeker zelf, en de pogingen gaan terug naar nul.
+        Assert.Equal(HttpStatusCode.NoContent, (await _bestuur.PostAsync($"/api/v1/admin/membership-applications/{id}/resend-code", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _anonymous.PostAsJsonAsync(verify, new { code = LastCodeFor("klem@example.com") })).StatusCode);
+
+        // Bevestigd: weg uit deze lijst en in de wachtrij van het bestuur.
+        Assert.Empty((await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/membership-applications/unconfirmed")).EnumerateArray());
+        Assert.Equal(1, (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/membership-applications")).GetProperty("totalCount").GetInt32());
+    }
+
     [Fact]
     public async Task Afwijzen_vraagt_een_reden_wist_de_bankgegevens_en_is_definitief()
     {

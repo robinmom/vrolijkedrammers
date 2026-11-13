@@ -439,6 +439,41 @@ test('fase 9b: aanmelding van een kind beoordelen en goedkeuren', async ({ page 
   await expect(page.getByText('Opgeslagen bij het lid (versleuteld)')).toBeVisible();
 });
 
+/**
+ * Wens 2026-11-13: wie het formulier invulde maar zijn code nooit invulde staat in geen enkele wachtrij. Het bestuur
+ * moet hem zien, kunnen bellen en de code opnieuw kunnen sturen.
+ */
+test('aanmeldingen die wachten op een bevestigde e-mailcode: zien, bellen en de code opnieuw sturen', async ({
+  page,
+}) => {
+  const api = new MockApi();
+  await open(page, api, 'aanmeldingen');
+
+  // Het valt op zonder eerst te filteren.
+  await expect(page.getByText('Eén aanmelding wacht op een bevestigde e-mailcode')).toBeVisible();
+
+  await page.getByLabel('Status').selectOption('Draft');
+  await expect(page.getByRole('cell', { name: 'marieke@example.com', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: '0612345678' })).toHaveAttribute('href', 'tel:0612345678');
+  await expect(page.getByText('3× verstuurd, 5 keer verkeerd ingevuld')).toBeVisible();
+  await expect(page.getByText('verlopen')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Code opnieuw sturen naar marieke@example.com' }).click();
+  await expect(
+    page.getByText('Nieuwe code verstuurd naar marieke@example.com. Hij is 30 minuten geldig.'),
+  ).toBeVisible();
+  expect(api.unconfirmedApplications[0]!.resends).toBe(3);
+  // Het bestuur doet dit met opzet; de pogingen van de bezoeker gaan terug naar nul.
+  expect(api.unconfirmedApplications[0]!.attempts).toBe(0);
+  await expect(page.getByText('4× verstuurd')).toBeVisible();
+
+  await expectNoSeriousA11yIssues(page);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
 test('fase 9b: aanmelding afwijzen met reden', async ({ page }) => {
   const api = new MockApi();
   await open(page, api, 'aanmeldingen/ap-1');

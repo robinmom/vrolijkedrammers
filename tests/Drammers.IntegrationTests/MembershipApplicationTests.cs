@@ -314,7 +314,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         var url = $"/api/v1/membership-applications/{id}/verify-email";
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _anonymous.PostAsJsonAsync(url, new { code = "000000" == LastCodeFor("code@example.com") ? "111111" : "000000" })).StatusCode);
-        _api.Clock.Advance(TimeSpan.FromMinutes(31));
+        _api.Clock.Advance(MembershipApplications.CodeLifetime + TimeSpan.FromMinutes(1));
         Assert.Equal(HttpStatusCode.Conflict, (await _anonymous.PostAsJsonAsync(url, new { code = LastCodeFor("code@example.com") })).StatusCode);
 
         Assert.Equal(HttpStatusCode.NoContent, (await _anonymous.PostAsync($"/api/v1/membership-applications/{id}/resend-code", null)).StatusCode);

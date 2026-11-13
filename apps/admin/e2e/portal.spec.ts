@@ -459,9 +459,7 @@ test('aanmeldingen die wachten op een bevestigde e-mailcode: zien, bellen en de 
   await expect(page.getByText('verlopen')).toBeVisible();
 
   await page.getByRole('button', { name: 'Code opnieuw sturen naar marieke@example.com' }).click();
-  await expect(
-    page.getByText('Nieuwe code verstuurd naar marieke@example.com. Hij is 30 minuten geldig.'),
-  ).toBeVisible();
+  await expect(page.getByText('Nieuwe code verstuurd naar marieke@example.com. Hij is 24 uur geldig.')).toBeVisible();
   expect(api.unconfirmedApplications[0]!.resends).toBe(3);
   // Het bestuur doet dit met opzet; de pogingen van de bezoeker gaan terug naar nul.
   expect(api.unconfirmedApplications[0]!.attempts).toBe(0);

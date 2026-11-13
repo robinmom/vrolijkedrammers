@@ -68,8 +68,14 @@ public sealed class MembershipApplications(
 {
     public const string ProvisionMessageType = "membership.provision";
 
-    /// <summary>Geldigheid van de e-mailcode, het maximale aantal pogingen (over alle codes samen) en nieuwe codes.</summary>
-    public static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(30);
+    /// <summary>
+    /// Geldigheid van de e-mailcode, het maximale aantal pogingen (over alle codes samen) en nieuwe codes. Een dag,
+    /// geen half uur: op 13-11-2026 deed Microsoft er 25 tot 106 minuten over om een mail te bezorgen, waardoor elke
+    /// code al verlopen in de inbox lag en niemand zich kon aanmelden. Een nieuwe code aanvragen hielp niet, want die
+    /// was bij aankomst óók verlopen. Brute kracht blijft dicht via <see cref="MaxCodeAttempts"/>: zes cijfers en
+    /// hoogstens vijf pogingen, hoe lang de code ook geldig is.
+    /// </summary>
+    public static readonly TimeSpan CodeLifetime = TimeSpan.FromHours(24);
 
     public const int MaxCodeAttempts = 5;
 
@@ -881,7 +887,7 @@ public sealed class MembershipApplications(
 
             {code}
 
-            De code is 30 minuten geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.
+            De code is 24 uur geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.
 
             Heb je je niet aangemeld? Dan kun je deze e-mail negeren.
 
@@ -892,7 +898,7 @@ public sealed class MembershipApplications(
             <p>Beste {System.Net.WebUtility.HtmlEncode(name)},</p>
             <p>Bedankt voor je aanmelding bij De Vrolijke Drammers! Vul deze code in om je e-mailadres te bevestigen:</p>
             <p style="font-size:24px;font-weight:bold;letter-spacing:4px">{code}</p>
-            <p>De code is 30 minuten geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.</p>
+            <p>De code is 24 uur geldig. Wanneer de code juist is ingevoerd, beoordeelt de ledenadministratie je inschrijving. Je krijgt zo snel mogelijk bericht.</p>
             <p>Heb je je niet aangemeld? Dan kun je deze e-mail negeren.</p>
             <p>Groeten,<br>De Vrolijke Drammers</p>
             """;

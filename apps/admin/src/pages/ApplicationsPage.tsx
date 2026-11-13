@@ -239,7 +239,7 @@ function UnconfirmedApplications({ rows, header }: { rows: UnconfirmedApplicatio
             className="button small"
             disabled={resend.isPending}
             aria-label={`Code opnieuw sturen naar ${row.email}`}
-            onClick={() => resend.mutate(row, { onSuccess: () => setMessage(`Nieuwe code verstuurd naar ${row.email}. Hij is 30 minuten geldig.`) })}
+            onClick={() => resend.mutate(row, { onSuccess: () => setMessage(`Nieuwe code verstuurd naar ${row.email}. Hij is 24 uur geldig.`) })}
           >
             Code opnieuw sturen
           </button>

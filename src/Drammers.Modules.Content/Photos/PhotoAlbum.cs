@@ -97,6 +97,9 @@ public sealed class Photo
 
     public PhotoProcessingStatus ProcessingStatus { get; set; }
 
+    /// <summary>Bestandsnaam zoals geüpload, zodat het portal de foto's op naam kan sorteren.</summary>
+    public string? FileName { get; set; }
+
     public int SortOrder { get; set; }
 
     public int? Width { get; set; }

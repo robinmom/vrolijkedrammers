@@ -93,6 +93,8 @@ const processingLabels: Record<string, string> = { Pending: 'In verwerking', Rea
 type QueueItem = { key: string; file: File; progress: number; status: 'waiting' | 'uploading' | 'done' | 'failed'; error?: string };
 const PARALLEL_UPLOADS = 3;
 const accepted = ['image/jpeg', 'image/png', 'image/webp'];
+/** Sorteren zoals een mens verwacht: "foto 2" vóór "foto 10", hoofdletters maken niet uit. */
+const byName = new Intl.Collator('nl', { sensitivity: 'base', numeric: true });
 
 /**
  * Bulk-upload (fase 21b): onbeperkt veel foto's slepen of kiezen; ze gaan één voor één (drie tegelijk) naar de server, met
@@ -204,6 +206,7 @@ export function AlbumEditorPage() {
     [['admin-albums'], ['admin-album', id]],
   );
   const photos = album.data?.photos ?? [];
+  const canSortByName = photos.filter((p) => p.fileName).length > 1;
   const pending = photos.filter((p) => p.processingStatus === 'Pending').length;
   const uploading = uploads.queue.filter((i) => i.status === 'waiting' || i.status === 'uploading').length;
   const failed = uploads.queue.filter((i) => i.status === 'failed').length;
@@ -235,6 +238,18 @@ export function AlbumEditorPage() {
     [order[index], order[to]] = [order[to]!, order[index]!];
     await api.PUT('/api/v1/admin/photo-albums/{id}/photo-order', { params: { path: { id } }, body: { photoIds: order } });
     await album.refetch();
+  }
+
+  /**
+   * Alle foto's op bestandsnaam zetten, zodat "foto 1, foto 2, foto 3" ook zo op de website en in de app staan.
+   * Foto's zonder bewaarde bestandsnaam (geüpload vóór deze functie) blijven achteraan in hun huidige volgorde.
+   */
+  async function sortByFileName() {
+    const named = photos.filter((p) => p.fileName).sort((a, b) => byName.compare(a.fileName!, b.fileName!));
+    const order = [...named, ...photos.filter((p) => !p.fileName)].map((p) => p.id);
+    await api.PUT('/api/v1/admin/photo-albums/{id}/photo-order', { params: { path: { id } }, body: { photoIds: order } });
+    await album.refetch();
+    setMessage("Foto's gesorteerd op bestandsnaam.");
   }
 
   function submit(event: FormEvent) {
@@ -392,6 +407,9 @@ export function AlbumEditorPage() {
             <div className="card-header">
               <h2 id="fotos-titel">Foto's ({photos.length})</h2>
               <div className="actions">
+                <button type="button" className="button secondary small" disabled={!canSortByName} onClick={() => void sortByFileName()}>
+                  Sorteren op naam
+                </button>
                 <button type="button" className="button ghost small" disabled={photos.length === 0} onClick={() => setSelected(new Set(photos.map((p) => p.id)))}>
                   Alles selecteren
                 </button>
@@ -402,6 +420,13 @@ export function AlbumEditorPage() {
                 ) : null}
               </div>
             </div>
+            <p className="muted">
+              Deze volgorde is ook de volgorde op de website en in de app. Nieuwe foto's komen achteraan, in de volgorde waarin ze zijn geüpload; met{' '}
+              <strong>Sorteren op naam</strong> zet je ze op bestandsnaam (foto 1, foto 2, foto 10).
+            </p>
+            {photos.length > 0 && !canSortByName ? (
+              <p className="muted">Van deze foto's is geen bestandsnaam bewaard: sorteren op naam kan alleen bij foto's die hierna geüpload worden.</p>
+            ) : null}
             {selected.size > 0 ? (
               <div className="bulk-bar" role="region" aria-label="Acties voor de geselecteerde foto's">
                 <strong>{selected.size} geselecteerd</strong>
@@ -460,6 +485,11 @@ export function AlbumEditorPage() {
                       <span className="visually-hidden">Foto {index + 1} selecteren</span>
                       {photo.thumbnailUrl ? <img src={photo.thumbnailUrl} alt={photo.caption ?? `Foto ${index + 1}`} /> : <div className="placeholder" />}
                     </label>
+                    {photo.fileName ? (
+                      <p className="photo-name muted" title={photo.fileName}>
+                        {photo.fileName}
+                      </p>
+                    ) : null}
                     <p>
                       {photo.processingStatus !== 'Ready' ? <span className="badge">{processingLabels[photo.processingStatus]}</span> : null}
                       {photo.hidden ? <span className="badge warn">Verborgen</span> : null}

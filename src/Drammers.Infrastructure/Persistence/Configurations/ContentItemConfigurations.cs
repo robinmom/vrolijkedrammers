@@ -129,6 +129,7 @@ internal sealed class PhotoConfiguration : IEntityTypeConfiguration<Photo>
         builder.Property(p => p.OriginalBlobPath).HasMaxLength(300);
         builder.Property(p => p.DisplayBlobPath).HasMaxLength(300);
         builder.Property(p => p.ThumbnailBlobPath).HasMaxLength(300);
+        builder.Property(p => p.FileName).HasMaxLength(260);
         builder.Property(p => p.Caption).HasMaxLength(500);
         builder.Property(p => p.Photographer).HasMaxLength(100);
         builder.HasOne<PhotoAlbum>().WithMany().HasForeignKey(p => p.AlbumId).OnDelete(DeleteBehavior.Cascade);

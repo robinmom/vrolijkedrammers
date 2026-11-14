@@ -229,6 +229,7 @@ export class MockApi {
           caption: null,
           photographer: null,
           thumbnailUrl: null as string | null,
+          fileName: 'foto 1.jpg' as string | null,
         },
       ],
     },
@@ -4089,6 +4090,8 @@ export class MockApi {
       // Bulk-upload in het portal: één foto per verzoek.
       const album = this.albums.find((a) => a.id === m![1])!;
       const id = `p-${Math.random().toString(36).slice(2, 8)}`;
+      // De bestandsnaam staat in de multipart-body; de server bewaart hem ook.
+      const uploaded = request.postData()?.match(/filename="([^"]+)"/)?.[1] ?? null;
       album.photos.push({
         id,
         processingStatus: 'Ready',
@@ -4096,8 +4099,15 @@ export class MockApi {
         caption: null,
         photographer: null,
         thumbnailUrl: PIXEL,
+        fileName: uploaded,
       });
       return json([{ id }], 201);
+    }
+    if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)\/photo-order$/)) && method === 'PUT') {
+      const album = this.albums.find((a) => a.id === m![1])!;
+      const ids = body.photoIds as string[];
+      album.photos = ids.map((photoId) => album.photos.find((p) => p.id === photoId)!);
+      return noContent();
     }
     if ((m = path.match(/^\/admin\/photo-albums\/([^/]+)\/photos\/bulk$/))) {
       const album = this.albums.find((a) => a.id === m![1])!;

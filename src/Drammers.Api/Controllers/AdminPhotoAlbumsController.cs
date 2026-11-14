@@ -53,7 +53,7 @@ public sealed class AdminPhotoAlbumsController(DrammersDbContext db, ContentAdmi
         foreach (var p in photos)
         {
             items.Add(new AdminPhotoResponse(p.Id, p.ProcessingStatus, p.Hidden, p.Caption, p.Photographer,
-                await urls.ForAsync(FileContainers.PhotosDerived, p.ThumbnailBlobPath, cancellationToken)));
+                await urls.ForAsync(FileContainers.PhotosDerived, p.ThumbnailBlobPath, cancellationToken), p.FileName));
         }
 
         return new AdminAlbumResponse(album.Id, album.Title, album.AlbumDate, album.Description, album.EventId, album.CoverPhotoId,
@@ -167,4 +167,6 @@ public sealed record PhotoBulkRequest(
 
 public sealed record PhotoBulkResponse(int Count);
 
-public sealed record AdminPhotoResponse(Guid Id, PhotoProcessingStatus ProcessingStatus, bool Hidden, string? Caption, string? Photographer, string? ThumbnailUrl);
+public sealed record AdminPhotoResponse(
+    Guid Id, PhotoProcessingStatus ProcessingStatus, bool Hidden, string? Caption, string? Photographer, string? ThumbnailUrl,
+    string? FileName = null);

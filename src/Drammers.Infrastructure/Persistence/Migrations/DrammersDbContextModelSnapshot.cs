@@ -1738,6 +1738,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(300)")
                         .HasColumnName("display_blob_path");
 
+                    b.Property<string>("FileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)")
+                        .HasColumnName("file_name");
+
                     b.Property<int?>("Height")
                         .HasColumnType("int")
                         .HasColumnName("height");

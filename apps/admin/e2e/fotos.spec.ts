@@ -89,3 +89,31 @@ test('fase 21b: foto’s selecteren en in één keer verbergen, verplaatsen en v
   expect(api.audit.map((a) => a.action)).toEqual(['photo.bulk-delete', 'photo.bulk-move', 'photo.bulk-hide']);
   await expectNoSeriousA11yIssues(page);
 });
+
+test('foto’s in één keer op bestandsnaam sorteren', async ({ page }) => {
+  const api = new MockApi(['photo.manage']);
+  const album = api.albums[0]!;
+  // Door de drie-tegelijk-upload staan ze vaak dooreen; één foto heeft geen bewaarde naam (van vóór deze functie).
+  album.photos = ['foto 10.jpg', null, 'foto 2.jpg', 'Foto 1.jpg'].map((fileName, i) => ({
+    ...album.photos[0]!,
+    id: `p-${i + 1}`,
+    fileName,
+  }));
+  await open(page, api, 'fotos/a-1');
+
+  await page.getByRole('button', { name: 'Sorteren op naam' }).click();
+  await expect(page.getByText("Foto's gesorteerd op bestandsnaam.")).toBeVisible();
+  // "foto 2" vóór "foto 10", hoofdletters maken niet uit, en de foto zonder naam blijft achteraan.
+  expect(album.photos.map((p) => p.fileName)).toEqual(['Foto 1.jpg', 'foto 2.jpg', 'foto 10.jpg', null]);
+  await expect(page.locator('.photo-name')).toHaveText(['Foto 1.jpg', 'foto 2.jpg', 'foto 10.jpg']);
+  await expectNoSeriousA11yIssues(page);
+});
+
+test('zonder bewaarde bestandsnamen kan er niet gesorteerd worden', async ({ page }) => {
+  const api = new MockApi(['photo.manage']);
+  const album = api.albums[0]!;
+  album.photos = album.photos.map((p) => ({ ...p, fileName: null }));
+  await open(page, api, 'fotos/a-1');
+  await expect(page.getByRole('button', { name: 'Sorteren op naam' })).toBeDisabled();
+  await expect(page.getByText(/geen bestandsnaam bewaard/)).toBeVisible();
+});

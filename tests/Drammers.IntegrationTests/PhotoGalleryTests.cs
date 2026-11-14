@@ -39,13 +39,16 @@ public class PhotoGalleryTests(SqlServerFixture sql) : IAsyncLifetime
         return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
     }
 
-    private async Task<List<Guid>> UploadAsync(Guid album, int count)
+    private Task<List<Guid>> UploadAsync(Guid album, int count) =>
+        UploadAsync(album, [.. Enumerable.Range(0, count).Select(i => $"IMG_{i}.jpg")]);
+
+    private async Task<List<Guid>> UploadAsync(Guid album, IReadOnlyList<string> fileNames)
     {
         var ids = new List<Guid>();
-        for (var i = 0; i < count; i++)
+        foreach (var fileName in fileNames)
         {
             // Zoals het portal: één foto per verzoek (voortgang en opnieuw proberen per foto).
-            var response = await _admin.PostAsync($"/api/v1/admin/photo-albums/{album}/photos", ContentTests.Multipart("files", $"IMG_{i}.jpg", TestImages.JpegWithGps()));
+            var response = await _admin.PostAsync($"/api/v1/admin/photo-albums/{album}/photos", ContentTests.Multipart("files", fileName, TestImages.JpegWithGps()));
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             ids.Add((await response.Content.ReadFromJsonAsync<List<JsonElement>>())![0].GetProperty("id").GetGuid());
         }
@@ -111,5 +114,29 @@ public class PhotoGalleryTests(SqlServerFixture sql) : IAsyncLifetime
 
         var audit = await _admin.GetFromJsonAsync<JsonElement>("/api/v1/admin/audit-log?entityType=PhotoAlbum");
         Assert.Contains(audit.GetProperty("items").EnumerateArray(), e => e.GetProperty("action").GetString() == "photo.bulk-delete");
+    }
+
+    /// <summary>De bestandsnaam blijft bewaard, zodat het portal "foto 1, foto 2, foto 10" op naam kan zetten.</summary>
+    [Fact]
+    public async Task Fotos_op_bestandsnaam_sorteren_werkt_door_naar_de_website()
+    {
+        var album = await AlbumAsync("Pronkzitting 2027", "Pronkzitting");
+        // Het portal uploadt drie tegelijk, dus ze komen dooreen binnen: de volgorde is die van het uploaden.
+        var ids = await UploadAsync(album, ["foto 10.jpg", "foto 2.jpg", "Foto 1.jpg"]);
+        var before = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/photo-albums/{album}");
+        Assert.Equal(["foto 10.jpg", "foto 2.jpg", "Foto 1.jpg"],
+            before.GetProperty("photos").EnumerateArray().Select(p => p.GetProperty("fileName").GetString()));
+
+        var sorted = new[] { ids[2], ids[1], ids[0] };
+        var response = await _admin.PutAsJsonAsync($"/api/v1/admin/photo-albums/{album}/photo-order", new { photoIds = sorted });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var after = await _admin.GetFromJsonAsync<JsonElement>($"/api/v1/admin/photo-albums/{album}");
+        Assert.Equal(["Foto 1.jpg", "foto 2.jpg", "foto 10.jpg"],
+            after.GetProperty("photos").EnumerateArray().Select(p => p.GetProperty("fileName").GetString()));
+
+        // De website en de app volgen dezelfde volgorde (sort_order).
+        var publik = await _api.CreateClient().GetFromJsonAsync<List<JsonElement>>($"/api/v1/photo-albums/{album}/photos") ?? [];
+        Assert.Equal(sorted, publik.Select(p => p.GetProperty("id").GetGuid()));
     }
 }

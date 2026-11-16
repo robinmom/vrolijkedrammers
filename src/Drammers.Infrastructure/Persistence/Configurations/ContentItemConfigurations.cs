@@ -97,6 +97,33 @@ internal sealed class NewsAudienceConfiguration : IEntityTypeConfiguration<NewsA
     }
 }
 
+/// <summary>Vergaderingen (bestuur en raad van elf) hangen aan een agenda-item; de agendapunten horen bij de vergadering.</summary>
+internal sealed class MeetingConfiguration : IEntityTypeConfiguration<Modules.Content.Meetings.Meeting>
+{
+    public void Configure(EntityTypeBuilder<Modules.Content.Meetings.Meeting> builder)
+    {
+        builder.ToTable("Meeting", Schemas.Content);
+        builder.Property(m => m.Id).ValueGeneratedNever();
+        builder.Property(m => m.Intro).HasMaxLength(2000);
+        builder.HasOne<Event>().WithMany().HasForeignKey(m => m.EventId).OnDelete(DeleteBehavior.Cascade);
+        // Eén vergadering per agenda-item: anders zouden twee vergaderingen dezelfde bijlagen delen.
+        builder.HasIndex(m => m.EventId).IsUnique();
+        builder.HasMany(m => m.AgendaItems).WithOne().HasForeignKey(a => a.MeetingId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class MeetingAgendaItemConfiguration : IEntityTypeConfiguration<Modules.Content.Meetings.MeetingAgendaItem>
+{
+    public void Configure(EntityTypeBuilder<Modules.Content.Meetings.MeetingAgendaItem> builder)
+    {
+        builder.ToTable("MeetingAgendaItem", Schemas.Content);
+        builder.Property(a => a.Id).ValueGeneratedNever();
+        builder.Property(a => a.Title).HasMaxLength(200);
+        builder.Property(a => a.Note).HasMaxLength(1000);
+        builder.HasIndex(a => new { a.MeetingId, a.SortOrder });
+    }
+}
+
 internal sealed class PhotoAlbumConfiguration : IEntityTypeConfiguration<PhotoAlbum>
 {
     public void Configure(EntityTypeBuilder<PhotoAlbum> builder)

@@ -1566,6 +1566,112 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Meetings.Meeting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AgendaRecipientCount")
+                        .HasColumnType("int")
+                        .HasColumnName("agenda_recipient_count");
+
+                    b.Property<DateTime?>("AgendaSentAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("agenda_sent_at");
+
+                    b.Property<Guid?>("AgendaSentBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("agenda_sent_by");
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("audience");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("Intro")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("intro");
+
+                    b.Property<string>("Sender")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("sender");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("PK_Meeting");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Meeting_event_id");
+
+                    b.ToTable("Meeting", "content", t =>
+                        {
+                            t.HasCheckConstraint("CK_Meeting_audience", "[audience] IN ('Board', 'CouncilOfEleven', 'Both')");
+
+                            t.HasCheckConstraint("CK_Meeting_sender", "[sender] IN ('Secretary', 'Chairman')");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Meetings.MeetingAgendaItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("MeetingId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("meeting_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("note");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("PK_MeetingAgendaItem");
+
+                    b.HasIndex("MeetingId", "SortOrder")
+                        .HasDatabaseName("IX_MeetingAgendaItem_meeting_id_sort_order");
+
+                    b.ToTable("MeetingAgendaItem", "content");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsAudience", b =>
                 {
                     b.Property<Guid>("NewsId")
@@ -3376,6 +3482,13 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                             Category = "Beheer",
                             Code = "task.view-own",
                             Description = "Eigen taken uit de takenlijst bijhouden in de app"
+                        },
+                        new
+                        {
+                            Id = 58,
+                            Category = "Beheer",
+                            Code = "meeting.manage",
+                            Description = "Vergaderingen: agenda maken, notulen bewaren en de agenda versturen"
                         });
                 });
 
@@ -4303,6 +4416,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 11,
                             PermissionId = 56
+                        },
+                        new
+                        {
+                            RoleId = 11,
+                            PermissionId = 58
                         },
                         new
                         {
@@ -10307,6 +10425,24 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Content.Meetings.Meeting", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Events.Event", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Meetings.MeetingAgendaItem", b =>
+                {
+                    b.HasOne("Drammers.Modules.Content.Meetings.Meeting", null)
+                        .WithMany("AgendaItems")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsAudience", b =>
                 {
                     b.HasOne("Drammers.Modules.Content.News.NewsItem", null)
@@ -11273,6 +11409,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Drammers.Modules.Content.Festival.DanceFestivalRegistration", b =>
                 {
                     b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Content.Meetings.Meeting", b =>
+                {
+                    b.Navigation("AgendaItems");
                 });
 
             modelBuilder.Entity("Drammers.Modules.Content.News.NewsItem", b =>

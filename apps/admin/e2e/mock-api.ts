@@ -234,6 +234,59 @@ export class MockApi {
     },
   ];
 
+  /** Vergaderingen (2026-11-16): bestuur en raad van elf, met agendapunten en documenten bij het agenda-item. */
+  meetings = [
+    {
+      id: 'v-1',
+      eventId: 'e-1',
+      audience: 'Board' as string,
+      title: 'Bestuursvergadering',
+      startAt: '2027-01-12T19:00:00Z',
+      endAt: '2027-01-12T21:00:00Z',
+      locationName: 'Kantine' as string | null,
+      intro: null as string | null,
+      sender: 'Secretary' as string,
+      agendaSentAt: null as string | null,
+      agendaRecipientCount: 0,
+      agendaItems: [
+        { id: 'ap-1', title: 'Opening', note: null as string | null },
+        { id: 'ap-2', title: 'Notulen vorige vergadering', note: 'ter vaststelling' as string | null },
+      ],
+      documents: [
+        {
+          id: 'doc-1',
+          fileName: 'notulen-december.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 23000,
+          url: 'https://example.invalid/notulen.pdf',
+        },
+      ],
+    },
+    {
+      id: 'v-2',
+      eventId: 'e-2',
+      audience: 'CouncilOfEleven' as string,
+      title: 'Vergadering Raad van Elf',
+      startAt: '2027-01-19T19:30:00Z',
+      endAt: null as string | null,
+      locationName: null as string | null,
+      intro: null as string | null,
+      sender: 'Secretary' as string,
+      agendaSentAt: '2026-12-01T10:00:00Z' as string | null,
+      agendaRecipientCount: 11,
+      agendaItems: [] as { id: string; title: string; note: string | null }[],
+      documents: [] as { id: string; fileName: string; contentType: string; sizeBytes: number; url: string }[],
+    },
+  ];
+
+  /** Wie de agenda krijgt; in de echte API zijn dit de houders van de rol Bestuur en/of Raad van Elf. */
+  meetingRecipients = [
+    { email: 'voorzitter@example.com', name: 'Anke Jansen', roleName: 'Bestuur' },
+    { email: 'secretaris@example.com', name: 'Bert de Vries', roleName: 'Bestuur' },
+  ];
+
+  meetingsWithoutEmail: string[] = ['Chris Zonder Mail'];
+
   members = [
     {
       id: 'm-1',
@@ -4059,6 +4112,119 @@ export class MockApi {
           showOnWebsite: n.showOnWebsite ?? false,
         })),
       );
+    }
+    if (path === '/admin/meetings' && method === 'POST') {
+      const id = `v-${this.meetings.length + 1}`;
+      const linked = body.eventId as string | null;
+      this.meetings.push({
+        ...structuredClone(this.meetings[0]!),
+        id,
+        eventId: linked ?? `e-${id}`,
+        audience: body.audience as string,
+        title: linked ? 'Gekoppeld agenda-item' : (body.title as string),
+        startAt: (body.startAt as string) ?? '2027-02-02T19:00:00Z',
+        endAt: (body.endAt as string) ?? null,
+        locationName: (body.locationName as string) ?? null,
+        agendaSentAt: null,
+        agendaRecipientCount: 0,
+        agendaItems: [],
+        documents: [],
+      });
+      this.record('meeting.created', 'Meeting', id, { audience: body.audience });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/meetings') {
+      const audience = url.searchParams.get('audience');
+      return json(
+        this.meetings
+          .filter((v) => !audience || v.audience === audience)
+          .map((v) => ({
+            id: v.id,
+            eventId: v.eventId,
+            audience: v.audience,
+            title: v.title,
+            startAt: v.startAt,
+            locationName: v.locationName,
+            agendaItems: v.agendaItems.length,
+            documents: v.documents.length,
+            agendaSentAt: v.agendaSentAt,
+            agendaRecipientCount: v.agendaRecipientCount,
+          })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)\/agenda\/preview$/)) && method === 'POST') {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      this.mailingPreviewHtml = `<!doctype html><title>Agenda</title><h1>${meeting.title}</h1>`;
+      return json({
+        subject: `Agenda ${meeting.title} – 12 januari 2027`,
+        plainText: `Agenda ${meeting.title}`,
+        previewUrl: `/mailing-voorbeeld/${'1'.repeat(32)}`,
+        recipients: this.meetingRecipients.length + ((body.extraEmails as string[] | undefined)?.length ?? 0),
+      });
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)\/agenda\/send$/)) && method === 'POST') {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      const extra = (body.extraEmails as string[] | undefined) ?? [];
+      meeting.agendaRecipientCount = this.meetingRecipients.length + extra.length;
+      meeting.agendaSentAt = new Date().toISOString();
+      this.record('meeting.agenda-sent', 'Meeting', meeting.id, {
+        recipients: meeting.agendaRecipientCount,
+        attachments: ((body.documentIds as string[] | undefined) ?? []).length,
+      });
+      return json({ recipients: meeting.agendaRecipientCount, lastAt: meeting.agendaSentAt });
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)\/agenda\/copy-previous$/)) && method === 'POST') {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      const previous = this.meetings.find((v) => v.id !== meeting.id && v.agendaItems.length > 0);
+      if (!previous) return json({ title: 'Geen eerdere vergadering (mock)' }, 422);
+      meeting.agendaItems = previous.agendaItems.map((a, i) => ({ ...a, id: `${meeting.id}-ap-${i + 1}` }));
+      return json({ items: meeting.agendaItems.length });
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)\/agenda$/)) && method === 'PUT') {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      meeting.agendaItems = (body.items as { title: string; note: string | null }[]).map((a, i) => ({
+        id: `${meeting.id}-ap-${i + 1}`,
+        title: a.title,
+        note: a.note,
+      }));
+      this.record('meeting.agenda-saved', 'Meeting', meeting.id, { items: meeting.agendaItems.length });
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)\/documents$/)) && method === 'POST') {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      const name = request.postData()?.match(/filename="([^"]+)"/)?.[1] ?? 'document.pdf';
+      const id = `doc-${meeting.documents.length + 2}`;
+      meeting.documents.push({
+        id,
+        fileName: name,
+        contentType: 'application/pdf',
+        sizeBytes: 12000,
+        url: 'https://example.invalid/doc.pdf',
+      });
+      return json({ id }, 201);
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)\/documents\/([^/]+)$/)) && method === 'DELETE') {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      meeting.documents = meeting.documents.filter((d) => d.id !== m![2]);
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/meetings\/([^/]+)$/))) {
+      const meeting = this.meetings.find((v) => v.id === m![1])!;
+      if (method === 'PUT') {
+        Object.assign(meeting, body);
+        this.record('meeting.updated', 'Meeting', meeting.id, { title: meeting.title });
+        return noContent();
+      }
+      if (method === 'DELETE') {
+        this.meetings = this.meetings.filter((v) => v.id !== meeting.id);
+        return noContent();
+      }
+      const { documents, ...view } = meeting;
+      return json({
+        meeting: view,
+        documents,
+        audience: { recipients: this.meetingRecipients, withoutEmail: this.meetingsWithoutEmail },
+      });
     }
     if (path === '/admin/photo-albums' && method === 'POST') {
       const id = `a-${this.albums.length + 1}`;

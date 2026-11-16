@@ -1901,6 +1901,18 @@ fieldset {
   background: #fafaf7;
 }
 
+/* Agendapunten van een vergadering: genummerd, met de velden per punt onder elkaar. */
+.agenda-items {
+  margin: 0 0 16px;
+  padding-left: 22px;
+}
+
+.agenda-items li + li {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dvd-border);
+}
+
 .mailing-text {
   white-space: pre-wrap;
   font-size: 13px;

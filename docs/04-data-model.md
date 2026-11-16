@@ -231,6 +231,13 @@ News: `id`, `title`, `summary`, `body`, `image_blob_path`, `author_user_id`, `ca
 
 **Gebouwd in fase 5:** doelgroepen alleen van het type `Role` (`audience_ref` = rolcode); `Group` en `Member` volgen in fase 8. Foto krijgt `processing_status` (`Pending`, `Ready`, `Rejected`); `original_blob_path` wijst tijdens de verwerking naar de quarantaine. Event- en nieuwsbestanden staan in de container `content`, foto's in `photos-original` en `photos-derived`.
 
+### Meeting / MeetingAgendaItem (2026-11-16)
+- Meeting: `id`, `audience` (`Board`, `CouncilOfEleven`, `Both`), `event_id` (uniek: één vergadering per agenda-item), `intro`, `sender` (`Secretary`, `Chairman`), `agenda_sent_at`, `agenda_sent_by`, `agenda_recipient_count`.
+- MeetingAgendaItem: `id`, `meeting_id`, `sort_order`, `title`, `note`.
+- Datum, tijd, locatie en titel staan in het gekoppelde Event; de agenda en de notulen zijn EventAttachments, zodat ze
+  ook in de app bij de activiteit staan. Het agenda-item is `Restricted` met de rollen `bestuur` en/of `raad-van-elf`,
+  dus een vergadering komt nooit op de website. De agendamail gaat via de outbox naar de houders van die rollen.
+
 ### Newsletter (voorbereid, R5)
 `id`, `title`, `body`, `channels` (`InApp`, `Email`), `audience…`, `status`, `sent_at`.
 

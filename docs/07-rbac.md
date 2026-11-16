@@ -29,6 +29,7 @@
 | `news.manage` | Nieuws beheren en publiceren | alle |
 | `photo.read` | Ledenfoto's bekijken | — |
 | `photo.manage` | Albums en foto's beheren | alle |
+| `meeting.manage` | Vergaderingen (bestuur/raad van elf): agenda maken, notulen bewaren, agenda versturen | alle |
 | `notification.read.own` | Eigen inbox | eigen |
 | `notification.send` | Meldingen versturen naar elke doelgroep | alle |
 | `notification.send.group` | Meldingen versturen naar eigen groep(en) (bijv. dansgarde-leiding) | eigen groepen |

@@ -153,6 +153,10 @@ Scanresultaat:
 | CRUD | `/admin/events` (+ `/audiences`, `/attachments`) | event.manage |
 | CRUD | `/admin/news` (+ `/publish`, `/schedule`, `/archive`) | news.manage |
 | CRUD | `/admin/photo-albums` · POST `/admin/photo-albums/{id}/photos` (upload) · PATCH volgorde/hidden | photo.manage |
+| CRUD | `/admin/meetings` (vergaderingen bestuur/raad van elf; maakt of koppelt het agenda-item) | meeting.manage |
+| PUT | `/admin/meetings/{id}/agenda` · POST `/agenda/copy-previous` (agendapunten) | meeting.manage |
+| POST | `/admin/meetings/{id}/documents` · DELETE `/documents/{documentId}` (agenda en notulen; bijlagen van het agenda-item) | meeting.manage |
+| POST | `/admin/meetings/{id}/agenda/preview` · `/agenda/send` (agendamail in de huisstijl naar de rolhouders) | meeting.manage |
 | CRUD | `/admin/carnival-years` (+ `/activate`, `/access-windows`) | config.manage |
 | CRUD | `/admin/groups` (+ leden) | member.update |
 

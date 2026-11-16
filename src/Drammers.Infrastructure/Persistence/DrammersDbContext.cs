@@ -162,6 +162,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<EventAttachment> EventAttachments => Set<EventAttachment>();
 
+    public DbSet<Modules.Content.Meetings.Meeting> Meetings => Set<Modules.Content.Meetings.Meeting>();
+
+    public DbSet<Modules.Content.Meetings.MeetingAgendaItem> MeetingAgendaItems => Set<Modules.Content.Meetings.MeetingAgendaItem>();
+
     public DbSet<NewsItem> News => Set<NewsItem>();
 
     public DbSet<PhotoAlbum> PhotoAlbums => Set<PhotoAlbum>();

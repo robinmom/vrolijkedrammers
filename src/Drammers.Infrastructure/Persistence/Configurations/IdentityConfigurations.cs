@@ -82,7 +82,7 @@ public static class DefaultRoles
              P.PaymentRead, P.ReportView, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge, P.SaleManage,
              P.WebsiteManage, P.JuryManage, P.JuryAssign, P.ContributionManage, P.MailingManage, P.AdvertiserManage, P.FestivalManage, P.TaskManage,
              P.TaskViewOwn,
-             P.FinanceRead]),
+             P.FinanceRead, P.MeetingManage]),
         new(12, BeheerderIt, "Beheerder (IT)", "Technisch beheer, zonder inhoudelijke rechten op betalingen en goedkeuringen (systeemrol)",
             IsSystem: true, IsAssignableBySync: false,
             [.. MemberBasics, P.MemberRead, P.MemberUpdate, P.MemberBlock, P.ImportRun, P.AuditRead, P.RoleManage, P.ConfigManage, P.MemberPurge]),

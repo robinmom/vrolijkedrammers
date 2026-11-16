@@ -26703,6 +26703,7 @@ export interface components {
             caption: null | string;
             photographer: null | string;
             thumbnailUrl: null | string;
+            fileName?: null | string;
         };
         AdminRegistrationResponse: {
             /** Format: uuid */

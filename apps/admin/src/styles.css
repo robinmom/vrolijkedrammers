@@ -1195,6 +1195,15 @@ ul.alert {
   justify-content: flex-start;
 }
 
+/* Bestandsnaam onder de foto: op één regel, lange namen afgekapt. */
+.photo-name {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---------- Kleine schermen ---------- */
 
 @media (max-width: 1100px) {

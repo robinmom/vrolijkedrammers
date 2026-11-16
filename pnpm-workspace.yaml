@@ -27,14 +27,22 @@ overrides:
   # GHSA-86w9-cpqp-85rv (2026-11-01): alleen via @expo/cli (bouwtooling); 1.4.1 is gepatcht en blijft CommonJS, dus
   # @expo/cli kan ermee overweg.
   node-forge: ^1.4.1
+  # GHSA-3g3m-2fjr-6pw4 (2026-11-16): via de bouwtooling van Expo (@expo/cli, config-plugins, metro-config,
+  # fingerprint, expo-updates); 14.0.2 levert nog CommonJS, dus die tooling kan ermee overweg. Alleen de kwetsbare
+  # reeks (>=9) wordt opgetild: jest gebruikt glob 7 met de oude callback-API en zou breken op 14.
+  'glob@>=9': ^14.0.2
+  # GHSA-g3hv-75wg-m249 (2026-11-16): via @expo/fingerprint en @typescript-eslint; 11.0.1 levert nog CommonJS. Ook
+  # hier alleen de kwetsbare reeks (>=7): eslint gebruikt minimatch 3, dat een losse functie exporteert in plaats van
+  # de named exports van 11.
+  'minimatch@>=7': ^11.0.1
 
 # Bewuste uitzonderingen op `pnpm audit` (CI-stap "Kwetsbare npm-pakketten"). Alleen voor advisories zonder
 # gepatchte versie en buiten de geleverde app. De workflow "Dagelijkse audit" faalt zodra er een patch is.
 auditConfig:
   ignoreGhsas:
     # decode-uri-component <=0.5.0 (2026-11-01): via expo-router>query-string, dus wél in de app-bundel.
-    # [geen-bruikbare-patch] 0.5.1 is alleen-ESM en query-string@7 laadt het met require(); forceren breekt
-    # expo-router. Vervalt zodra Expo naar een query-string gaat die de gepatchte versie kan laden. Impact hier is
+    # [geen-bruikbare-patch] zowel 0.5.0 als 0.5.1 is alleen-ESM en query-string@7 laadt het met require(); forceren
+    # breekt expo-router. Vervalt zodra Expo naar een query-string gaat die de gepatchte versie kan laden. Impact hier is
     # beperkt: expo-router ontleedt er deeplinks mee, dus een misvormde link kan de app laten vastlopen.
     - GHSA-qr28-fpjm-wq7f
     # braces (2026-10-03): alleen via Metro (bundler van Expo), zit niet in de app-bundel.

@@ -350,6 +350,7 @@ public sealed class ContentAdministration(
                 AlbumId = albumId,
                 OriginalBlobPath = quarantinePath,
                 ProcessingStatus = PhotoProcessingStatus.Pending,
+                FileName = PhotoFileName(upload.FileName),
                 SortOrder = nextOrder++,
                 UploadedBy = actor.UserId,
                 UploadedAt = clock.UtcNow.UtcDateTime,
@@ -361,6 +362,13 @@ public sealed class ContentAdministration(
 
         await db.SaveChangesAsync(cancellationToken);
         return ids;
+    }
+
+    /// <summary>Alleen de bestandsnaam zelf bewaren (geen pad), afgekapt op de kolomlengte.</summary>
+    private static string? PhotoFileName(string name)
+    {
+        var bare = Path.GetFileName(name.Replace('\\', '/')).Trim();
+        return bare.Length == 0 ? null : bare[..Math.Min(bare.Length, 260)];
     }
 
     public async Task SetPhotoOrderAsync(Guid albumId, IReadOnlyList<Guid> photoIds, CancellationToken cancellationToken)

@@ -265,6 +265,9 @@ public static class DependencyInjection
         services.AddScoped<IOutboxMessageHandler, JubileeInvitationMailHandler>();
         // Fase 27a: mailings (nieuwsbrief, uitnodigingen).
         services.AddScoped<Mailings.MailingService>();
+        // 2026-11-16: vergaderingen van bestuur en raad van elf, met de agendamail in de huisstijl.
+        services.AddScoped<Meetings.MeetingAdministration>();
+        services.AddScoped<IOutboxMessageHandler, Meetings.MeetingAgendaMailHandler>();
         // Fase 27b: adverteerders.
         services.AddScoped<Advertisers.AdvertiserAdministration>();
         services.AddSingleton<Advertisers.AdvertiserIbanProtector>();

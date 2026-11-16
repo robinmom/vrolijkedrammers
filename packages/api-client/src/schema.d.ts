@@ -8920,6 +8920,509 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    audience?: components["schemas"]["MeetingAudience"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MeetingSummary"][];
+                        "application/json": components["schemas"]["MeetingSummary"][];
+                        "text/json": components["schemas"]["MeetingSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MeetingCreateRequest"];
+                    "text/json": components["schemas"]["MeetingCreateRequest"];
+                    "application/*+json": components["schemas"]["MeetingCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MeetingResponse"];
+                        "application/json": components["schemas"]["MeetingResponse"];
+                        "text/json": components["schemas"]["MeetingResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MeetingRequest"];
+                    "text/json": components["schemas"]["MeetingRequest"];
+                    "application/*+json": components["schemas"]["MeetingRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Haalt de vergadering weg; het agenda-item met de bijlagen blijft in de agenda staan. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}/agenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MeetingAgendaRequest"];
+                    "text/json": components["schemas"]["MeetingAgendaRequest"];
+                    "application/*+json": components["schemas"]["MeetingAgendaRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}/agenda/copy-previous": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Neemt de agendapunten over van de vorige vergadering van dezelfde soort. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MeetingAgendaCopiedResponse"];
+                        "application/json": components["schemas"]["MeetingAgendaCopiedResponse"];
+                        "text/json": components["schemas"]["MeetingAgendaCopiedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De agenda of de notulen bewaren: een bijlage van het agenda-item, dus ook te lezen in de app. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}/documents/{documentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    documentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}/agenda/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Voorbeeld van de agendamail zoals de ontvanger hem krijgt (niet verstuurd, niet opgeslagen). */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MeetingSendRequest"];
+                    "text/json": components["schemas"]["MeetingSendRequest"];
+                    "application/*+json": components["schemas"]["MeetingSendRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MeetingPreviewResponse"];
+                        "application/json": components["schemas"]["MeetingPreviewResponse"];
+                        "text/json": components["schemas"]["MeetingPreviewResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/meetings/{id}/agenda/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MeetingSendRequest"];
+                    "text/json": components["schemas"]["MeetingSendRequest"];
+                    "application/*+json": components["schemas"]["MeetingSendRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MeetingSendResponse"];
+                        "application/json": components["schemas"]["MeetingSendResponse"];
+                        "text/json": components["schemas"]["MeetingSendResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/member-requests": {
         parameters: {
             query?: never;
@@ -29111,6 +29614,136 @@ export interface components {
         MeasuredLengthRequest: {
             /** Format: double */
             measuredLengthMeters: null | number;
+        };
+        MeetingAgendaCopiedResponse: {
+            /** Format: int32 */
+            items: number;
+        };
+        MeetingAgendaItemRequest: {
+            title: string;
+            note: null | string;
+        };
+        MeetingAgendaItemView: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            note: null | string;
+        };
+        MeetingAgendaRequest: {
+            items: components["schemas"]["MeetingAgendaItemRequest"][];
+        };
+        /**
+         * @description Voor wie de vergadering is; bepaalt de doelgroep van het agenda-item én wie de agenda per mail krijgt.
+         * @enum {unknown}
+         */
+        MeetingAudience: "Board" | "CouncilOfEleven" | "Both";
+        MeetingAudienceResponse: {
+            recipients: components["schemas"]["MeetingRecipient"][];
+            withoutEmail: string[];
+        };
+        MeetingCreateRequest: {
+            audience: components["schemas"]["MeetingAudience"];
+            /** Format: uuid */
+            eventId: null | string;
+            title: null | string;
+            /** Format: date-time */
+            startAt: null | string;
+            /** Format: date-time */
+            endAt: null | string;
+            locationName: null | string;
+        };
+        MeetingDocumentResponse: {
+            /** Format: uuid */
+            id: string;
+            fileName: string;
+            contentType: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            url: string;
+        };
+        MeetingPreviewResponse: {
+            subject: string;
+            plainText: string;
+            previewUrl: string;
+            /** Format: int32 */
+            recipients: number;
+        };
+        /** @description Eén ontvanger van de agendamail. */
+        MeetingRecipient: {
+            email: string;
+            name: string;
+            roleName: string;
+        };
+        MeetingRequest: {
+            audience: components["schemas"]["MeetingAudience"];
+            title: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: null | string;
+            locationName: null | string;
+            intro: null | string;
+            sender: components["schemas"]["MeetingSender"];
+        };
+        MeetingResponse: {
+            meeting: components["schemas"]["MeetingView"];
+            documents: components["schemas"]["MeetingDocumentResponse"][];
+            audience: components["schemas"]["MeetingAudienceResponse"];
+        };
+        /**
+         * @description Namens wie de agenda de deur uit gaat; hetzelfde onderscheid als bij een mailing.
+         * @enum {unknown}
+         */
+        MeetingSender: "Secretary" | "Chairman";
+        /** @description Welke documenten meegaan en welke losse adressen er nog bij; leeg = alleen de rolhouders. */
+        MeetingSendRequest: {
+            documentIds: null | string[];
+            extraEmails: null | string[];
+        };
+        MeetingSendResponse: {
+            /** Format: int32 */
+            recipients: number;
+            /** Format: date-time */
+            lastAt: string;
+        };
+        MeetingSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            eventId: string;
+            audience: components["schemas"]["MeetingAudience"];
+            title: string;
+            /** Format: date-time */
+            startAt: string;
+            locationName: null | string;
+            /** Format: int32 */
+            agendaItems: number;
+            /** Format: int32 */
+            documents: number;
+            /** Format: date-time */
+            agendaSentAt: null | string;
+            /** Format: int32 */
+            agendaRecipientCount: number;
+        };
+        MeetingView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            eventId: string;
+            audience: components["schemas"]["MeetingAudience"];
+            title: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: null | string;
+            locationName: null | string;
+            intro: null | string;
+            sender: components["schemas"]["MeetingSender"];
+            /** Format: date-time */
+            agendaSentAt: null | string;
+            /** Format: int32 */
+            agendaRecipientCount: number;
+            agendaItems: components["schemas"]["MeetingAgendaItemView"][];
         };
         MemberAccess: {
             current: null | components["schemas"]["AccessEvent"];

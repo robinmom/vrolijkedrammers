@@ -12,6 +12,7 @@ export interface NavItem {
   /** Kop in de zijbalk; zonder sectie staat het item bovenaan. */
   section?:
     | 'Content'
+    | 'Vergaderingen'
     | 'Website'
     | 'Mailing'
     | 'Adverteerders'
@@ -38,6 +39,8 @@ export const navItems: readonly NavItem[] = [
     icon: 'meldingen',
     section: 'Content',
   },
+  // 2026-11-16: vergaderingen van bestuur en raad van elf, met agenda, notulen en de agendamail.
+  { label: 'Overzicht', to: '/vergaderingen', permission: 'meeting.manage', icon: 'agenda', section: 'Vergaderingen' },
   // Fase 21a: beheer van de website.
   { label: 'Homepage', to: '/website/homepage', permission: 'website.manage', icon: 'home', section: 'Website' },
   { label: "Pagina's", to: '/website/paginas', permission: 'website.manage', icon: 'rapport', section: 'Website' },

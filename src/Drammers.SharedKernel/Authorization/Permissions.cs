@@ -67,6 +67,8 @@ public static class Permissions
 
     public const string FestivalHeadJury = "festival.head-jury";
 
+    public const string MeetingManage = "meeting.manage";
+
     /// <summary>Alle permissions met omschrijving en categorie; bron voor de seed en <c>GET /admin/permissions</c>.</summary>
     public static readonly IReadOnlyList<PermissionDefinition> All =
     [
@@ -137,6 +139,9 @@ public static class Permissions
         // 2026-11-12: de eigen taken uit de takenlijst carnaval bijhouden in de app. Achteraan toegevoegd, want het Id
         // van een permission is zijn plek in deze lijst (zie DefaultRoles.PermissionId).
         new(TaskViewOwn, "Eigen taken uit de takenlijst bijhouden in de app", "Beheer"),
+        // 2026-11-16: vergaderingen van het bestuur en de raad van elf, met agenda, notulen en de agendamail. Ook deze
+        // staat achteraan, want het Id van een permission is zijn plek in deze lijst (zie DefaultRoles.PermissionId).
+        new(MeetingManage, "Vergaderingen: agenda maken, notulen bewaren en de agenda versturen", "Beheer"),
     ];
 }
 

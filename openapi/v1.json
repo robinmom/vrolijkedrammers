@@ -10522,6 +10522,676 @@
         }
       }
     },
+    "/api/v1/admin/meetings": {
+      "get": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "parameters": [
+          {
+            "name": "audience",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MeetingAudience"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MeetingSummary"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MeetingSummary"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MeetingSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingCreateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingCreateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}": {
+      "get": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "summary": "Haalt de vergadering weg; het agenda-item met de bijlagen blijft in de agenda staan.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}/agenda": {
+      "put": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingAgendaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingAgendaRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingAgendaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}/agenda/copy-previous": {
+      "post": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "summary": "Neemt de agendapunten over van de vorige vergadering van dezelfde soort.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingAgendaCopiedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingAgendaCopiedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingAgendaCopiedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}/documents": {
+      "post": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "summary": "De agenda of de notulen bewaren: een bijlage van het agenda-item, dus ook te lezen in de app.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}/documents/{documentId}": {
+      "delete": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}/agenda/preview": {
+      "post": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "summary": "Voorbeeld van de agendamail zoals de ontvanger hem krijgt (niet verstuurd, niet opgeslagen).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingSendRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingSendRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingPreviewResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingPreviewResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingPreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/meetings/{id}/agenda/send": {
+      "post": {
+        "tags": [
+          "AdminMeetings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingSendRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingSendRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingSendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingSendResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingSendResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingSendResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/member-requests": {
       "get": {
         "tags": [
@@ -42510,6 +43180,481 @@
           }
         }
       },
+      "MeetingAgendaCopiedResponse": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MeetingAgendaItemRequest": {
+        "required": [
+          "title",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MeetingAgendaItemView": {
+        "required": [
+          "id",
+          "title",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MeetingAgendaRequest": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingAgendaItemRequest"
+            }
+          }
+        }
+      },
+      "MeetingAudience": {
+        "enum": [
+          "Board",
+          "CouncilOfEleven",
+          "Both"
+        ],
+        "description": "Voor wie de vergadering is; bepaalt de doelgroep van het agenda-item én wie de agenda per mail krijgt."
+      },
+      "MeetingAudienceResponse": {
+        "required": [
+          "recipients",
+          "withoutEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingRecipient"
+            }
+          },
+          "withoutEmail": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "MeetingCreateRequest": {
+        "required": [
+          "audience",
+          "eventId",
+          "title",
+          "startAt",
+          "endAt",
+          "locationName"
+        ],
+        "type": "object",
+        "properties": {
+          "audience": {
+            "$ref": "#/components/schemas/MeetingAudience"
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MeetingDocumentResponse": {
+        "required": [
+          "id",
+          "fileName",
+          "contentType",
+          "sizeBytes",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "MeetingPreviewResponse": {
+        "required": [
+          "subject",
+          "plainText",
+          "previewUrl",
+          "recipients"
+        ],
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "plainText": {
+            "type": "string"
+          },
+          "previewUrl": {
+            "type": "string"
+          },
+          "recipients": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MeetingRecipient": {
+        "required": [
+          "email",
+          "name",
+          "roleName"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          }
+        },
+        "description": "Eén ontvanger van de agendamail."
+      },
+      "MeetingRequest": {
+        "required": [
+          "audience",
+          "title",
+          "startAt",
+          "endAt",
+          "locationName",
+          "intro",
+          "sender"
+        ],
+        "type": "object",
+        "properties": {
+          "audience": {
+            "$ref": "#/components/schemas/MeetingAudience"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "intro": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sender": {
+            "$ref": "#/components/schemas/MeetingSender"
+          }
+        }
+      },
+      "MeetingResponse": {
+        "required": [
+          "meeting",
+          "documents",
+          "audience"
+        ],
+        "type": "object",
+        "properties": {
+          "meeting": {
+            "$ref": "#/components/schemas/MeetingView"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingDocumentResponse"
+            }
+          },
+          "audience": {
+            "$ref": "#/components/schemas/MeetingAudienceResponse"
+          }
+        }
+      },
+      "MeetingSender": {
+        "enum": [
+          "Secretary",
+          "Chairman"
+        ],
+        "description": "Namens wie de agenda de deur uit gaat; hetzelfde onderscheid als bij een mailing."
+      },
+      "MeetingSendRequest": {
+        "required": [
+          "documentIds",
+          "extraEmails"
+        ],
+        "type": "object",
+        "properties": {
+          "documentIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "extraEmails": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Welke documenten meegaan en welke losse adressen er nog bij; leeg = alleen de rolhouders."
+      },
+      "MeetingSendResponse": {
+        "required": [
+          "recipients",
+          "lastAt"
+        ],
+        "type": "object",
+        "properties": {
+          "recipients": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MeetingSummary": {
+        "required": [
+          "id",
+          "eventId",
+          "audience",
+          "title",
+          "startAt",
+          "locationName",
+          "agendaItems",
+          "documents",
+          "agendaSentAt",
+          "agendaRecipientCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/MeetingAudience"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "agendaItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "documents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "agendaSentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "agendaRecipientCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MeetingView": {
+        "required": [
+          "id",
+          "eventId",
+          "audience",
+          "title",
+          "startAt",
+          "endAt",
+          "locationName",
+          "intro",
+          "sender",
+          "agendaSentAt",
+          "agendaRecipientCount",
+          "agendaItems"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/MeetingAudience"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "intro": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sender": {
+            "$ref": "#/components/schemas/MeetingSender"
+          },
+          "agendaSentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "agendaRecipientCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "agendaItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingAgendaItemView"
+            }
+          }
+        }
+      },
       "MemberAccess": {
         "required": [
           "current",
@@ -53368,6 +54513,9 @@
     },
     {
       "name": "AdminMailing"
+    },
+    {
+      "name": "AdminMeetings"
     },
     {
       "name": "AdminMemberRequests"

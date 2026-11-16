@@ -15,6 +15,7 @@ import { FinanceOverviewPage, FinanceStatisticsPage } from './pages/FinanceOverv
 import { FacturenPage } from './pages/FacturenPage';
 import { VerzamelfacturenPage } from './pages/VerzamelfacturenPage';
 import { EventEditorPage, EventsPage } from './pages/EventsPage';
+import { MeetingPage, MeetingsPage } from './pages/MeetingsPage';
 import { GroupDetailPage, GroupsPage } from './pages/GroupsPage';
 import { MemberDetailPage } from './pages/MemberDetailPage';
 import { MembersPage } from './pages/MembersPage';
@@ -85,6 +86,8 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/', component: guarded('report.view', DashboardPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/agenda', component: guarded('event.manage', EventsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/agenda/$id', component: guarded('event.manage', EventEditorPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/vergaderingen', component: guarded('meeting.manage', MeetingsPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/vergaderingen/$id', component: guarded('meeting.manage', MeetingPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/nieuws', component: guarded('news.manage', NewsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/nieuws/$id', component: guarded('news.manage', NewsEditorPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/fotos', component: guarded('photo.manage', PhotosPage) }),

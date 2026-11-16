@@ -235,6 +235,31 @@ export function useAdminAlbum(id: string | null, pollWhilePending = false) {
   });
 }
 
+// --- Vergaderingen (2026-11-16): bestuur en raad van elf ---
+
+export type MeetingSummary = Schemas['MeetingSummary'];
+export type MeetingAudience = NonNullable<Schemas['MeetingAudience']>;
+export type MeetingRequest = Schemas['MeetingRequest'];
+export type MeetingCreateRequest = Schemas['MeetingCreateRequest'];
+
+export function useMeetings(audience: MeetingAudience | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['meetings', audience],
+    queryFn: async () =>
+      required((await api.GET('/api/v1/admin/meetings', { params: { query: audience ? { audience } : {} } })).data),
+  });
+}
+
+export function useMeeting(id: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['meeting', id],
+    enabled: id !== null,
+    queryFn: async () => required((await api.GET('/api/v1/admin/meetings/{id}', { params: { path: { id: id! } } })).data),
+  });
+}
+
 // --- Leden en ledensync (fase 8) ---
 
 export type MemberSummary = Schemas['MemberSummaryResponse'];

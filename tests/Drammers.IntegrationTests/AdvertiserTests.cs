@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -928,7 +929,10 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Guid Id(int number) => list.Single(a => a.GetProperty("number").GetInt32() == number).GetProperty("id").GetGuid();
         await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(1)}/years/2027", new { status = "Collected", amount = 100m, note = (string?)null });
         await _bestuur.PutAsJsonAsync($"/api/v1/admin/advertisers/{Id(2)}/years/2027", new { status = "Collected", amount = 50m, note = (string?)null });
-        Assert.Equal(2, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = "2026-11-02", year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
+        // Factuurdatum van vandaag: met een vaste datum in het verleden slaat de stand na de betaaltermijn (14 dagen) om
+        // naar "Vervallen" en faalt deze test vanaf een willekeurige dag. Dat gebeurde op 2026-11-17.
+        var factuurdatum = DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        Assert.Equal(2, (await (await _bestuur.PostAsJsonAsync("/api/v1/admin/advertisers/invoices", new { date = factuurdatum, year = (int?)null })).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
         Assert.Equal(2, (await (await _bestuur.PostAsync("/api/v1/admin/advertisers/invoices/send", null)).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("count").GetInt32());
         using (var scope = _api.Services.CreateScope())
         {
@@ -962,7 +966,7 @@ public class AdvertiserTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(new byte[] { 0xEF, 0xBB, 0xBF }, bytes[..3]);
         var csv = System.Text.Encoding.UTF8.GetString(bytes[3..]);
         Assert.StartsWith("Bron;Nummer;Partij;Datum;Bedrag excl. btw;Btw;Servicekosten;Totaal incl. btw;Betaalwijze;Status;Betaald op;Mollie-id", csv, StringComparison.Ordinal);
-        Assert.Contains("Advertentie;ADV-2027-0001;Bakkerij De Test;2026-11-02;100,00;21,00;0,00;121,00;iDEAL (Mollie);Verstuurd;;", csv, StringComparison.Ordinal);
+        Assert.Contains($"Advertentie;ADV-2027-0001;Bakkerij De Test;{factuurdatum};100,00;21,00;0,00;121,00;iDEAL (Mollie);Verstuurd;;", csv, StringComparison.Ordinal);
 
         // Alleen met het recht Inkomsten bekijken (de penningmeester binnen het bestuur): een gewoon lid mag er niet bij.
         var lid = _api.ClientFor((await _api.CreateUserAsync("geen-recht@example.com", DefaultRoles.Lid)).ObjectId);

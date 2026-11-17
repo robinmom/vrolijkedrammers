@@ -188,4 +188,38 @@ public class MyTaskTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.UnprocessableEntity,
             (await app.PostAsJsonAsync("/api/v1/me/tasks", new { categoryId = Guid.NewGuid(), title = "Onzin" })).StatusCode);
     }
+
+    /// <summary>
+    /// De rechtencontrole van de takenlijst zit op de afgeleide controllers (<c>task.manage</c> voor carnaval,
+    /// <c>festival.manage</c> voor het festival), niet op de basisklasse met de endpoints. CodeQL kijkt naar de
+    /// basisklasse en meldt daarom "missing authorization check"; deze test legt vast dat de controle er wél is.
+    /// </summary>
+    [Fact]
+    public async Task Taken_en_categorieen_wijzigen_vraagt_het_beheerrecht()
+    {
+        var lid = await AddMemberAsync("50", "Gewoon Lid");
+        await OnCommitteeAsync(lid, "Gewoon Lid");
+        var zonderRecht = await SignInAsync("zonderrecht@example.com", lid, DefaultRoles.Lid);
+
+        var categorie = await CreatedIdAsync(await _bestuur.PostAsJsonAsync("/api/v1/admin/tasks/categories", new { name = "Zaal", sortOrder = 1 }));
+        var yearId = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/tasks")).GetProperty("yearId").GetInt32();
+        var taak = await AddTaskAsync(yearId, categorie, "Tent opzetten", "NotStarted", 0, []);
+
+        HttpResponseMessage[] antwoorden =
+        [
+            await zonderRecht.PutAsJsonAsync($"/api/v1/admin/tasks/{taak}", new { categoryId = categorie, title = "Gekaapt", status = "Done", progress = 100 }),
+            await zonderRecht.DeleteAsync($"/api/v1/admin/tasks/{taak}"),
+            await zonderRecht.PutAsJsonAsync($"/api/v1/admin/tasks/categories/{categorie}", new { name = "Gekaapt", sortOrder = 1 }),
+            await zonderRecht.DeleteAsync($"/api/v1/admin/tasks/categories/{categorie}"),
+            await zonderRecht.PutAsJsonAsync($"/api/v1/admin/festival/tasks/{taak}", new { categoryId = categorie, title = "Gekaapt", status = "Done", progress = 100 }),
+            await zonderRecht.DeleteAsync($"/api/v1/admin/festival/tasks/categories/{categorie}"),
+        ];
+        Assert.All(antwoorden, a => Assert.Equal(HttpStatusCode.Forbidden, a.StatusCode));
+
+        // De taak en de categorie staan er nog, onaangeroerd.
+        var jaar = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/tasks");
+        Assert.Equal("Tent opzetten", jaar.GetProperty("tasks").EnumerateArray().Single(t => t.GetProperty("id").GetGuid() == taak).GetProperty("title").GetString());
+        var categorieen = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/tasks/categories");
+        Assert.Equal("Zaal", categorieen.EnumerateArray().Single(c => c.GetProperty("id").GetGuid() == categorie).GetProperty("name").GetString());
+    }
 }

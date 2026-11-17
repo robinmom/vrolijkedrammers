@@ -56,8 +56,13 @@ public sealed class AdminFestivalTasksController(CarnivalTasks tasks) : TaskList
     }
 }
 
-/// <summary>De endpoints van een takenlijst; de lijst en het recht komen van de afgeleide controller.</summary>
+/// <summary>
+/// De endpoints van een takenlijst; de lijst en het recht komen van de afgeleide controller. De ondergrens staat hier
+/// expliciet (een actief, bekend account): zo is een afgeleide controller zonder <c>RequirePermission</c> nooit open,
+/// en ziet code-analyse de controle ook zonder de afgeleide klasse mee te nemen.
+/// </summary>
 [ApiController]
+[RequireActiveUser]
 public abstract class TaskListControllerBase(CarnivalTasks tasks) : ControllerBase
 {
     protected abstract TaskList List { get; }

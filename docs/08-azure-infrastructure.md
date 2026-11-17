@@ -30,7 +30,7 @@
 | Subscription | Gedeeld "DVD-NonProd" | Gedeeld "DVD-NonProd" | Aparte "DVD-Prod" (aanbevolen) |
 | Resource group | `rg-dvd-dev` | `rg-dvd-acc` | `rg-dvd-prod` |
 | Entra External ID | Eén tenant `dvd`; app-registraties `*-dev`, alleen testers (user assignment + claim `environmentAccess`) | Idem `*-acc` | App-registraties `*-prod`, alle leden/ouders (B-02) |
-| App Service | Gedeeld B1-plan (dev+acc) of F1 | Gedeeld B1-plan | Eigen B1 (S1/P0v3 tijdens carnaval) |
+| App Service | F1 (gratis, geen Always On; sinds 18-11-2026) | Gedeeld B1-plan | Eigen B1 (S1/P0v3 tijdens carnaval) |
 | SQL | **Free offer** (100k vCore-s/mnd, auto-pause) | Free offer of Basic (5 DTU) | S1 (20 DTU) of serverless GP 1 vCore |
 
 > **Serverless en de worker (2026-09-27).** Het gratis tegoed (100.000 vCore-seconden per maand) is alleen genoeg als de database bij rust kan pauzeren (na 60 minuten). De worker raakt de database daarom niet meer aan zonder werk: de outbox wordt in hetzelfde proces gewekt na het opslaan van een bericht en slaapt anders tot het eerstvolgende geplande of opnieuw te proberen bericht; geplande publicatie loopt via een outbox-bericht op het publicatiemoment; de ledensync en een inhaalrun voor publicatie draaien alleen om 03:00/03:15; de heartbeat staat in het geheugen. Daarvoor pollde de worker elke 5 seconden, waardoor de database nooit pauzeerde en het tegoed na een paar dagen op was (Dev was toen tot de 1e onbereikbaar). Dev staat sindsdien op `sqlFreeLimitExhaustionBehavior = 'BillOverUsage'`: bij een opgebruikt tegoed doorgaan tegen betaling in plaats van een maand pauzeren.
@@ -38,7 +38,7 @@
 | Mollie | Test-key | Test-key | Live-key |
 | e-Boekhouden | Mock (WireMock) / testadministratie | Testadministratie (OQ-04) of read-only prod met dry-run | Prod-token |
 | Push | Expo (dev build) | Expo (preview build, TestFlight/Internal testing) | Expo (store build) |
-| Deploy | Automatisch op merge naar `main` | Automatisch na Dev-succes (of release-tag) | Handmatige goedkeuring |
+| Deploy | Automatisch op merge naar `main`, alleen bij wijzigingen in de API, de portal of de infrastructuur (padfilter in `deploy.yml`, 18-11-2026); anders handmatig | Automatisch na Dev-succes (of release-tag) | Handmatige goedkeuring |
 | Naamgeving | `app-dvd-api-dev`, `sql-dvd-dev`, `kv-dvd-dev`, `stdvddev` (portal: `app-dvd-api-dev/beheer`) | …`-acc` | …`-prod` |
 
 Scheiding: aparte resource groups, aparte managed identities, aparte Key Vaults, aparte app-registraties per omgeving in één gedeelde Entra-tenant (B-02), aparte Mollie-keys. Omdat de tenant gedeeld is, worden tenantwijzigingen (user flow, branding, CA) via een checklist doorgevoerd en direct in alle omgevingen gecontroleerd. Geen enkele identiteit heeft rechten in meerdere omgevingen.
@@ -212,10 +212,15 @@ Action group: e-mail naar IT-beheer + optioneel SMS/Teams tijdens carnaval.
 
 | Component | € / mnd |
 |---|---|
-| App Service (gedeeld B1 met Acc, of F1 gratis) | ~6 of 0 |
-| SQL Free offer | 0 |
-| Overig | ~1–3 |
-| **Totaal** | **≈ € 0–10** |
+| App Service F1 (gratis, geen Always On) | 0 |
+| SQL Basic (5 DTU) | ~4 |
+| Overig (opslag, Key Vault) | < 1 |
+| **Totaal** | **≈ € 4** |
+
+> **Gemeten 18-11-2026.** Prod ± € 36, Dev ± € 4, samen ± € 40 per maand. In oktober was dat nog € 152: de
+> serverless databases (€ 200 per maand op Prod) en het B1-plan van Dev zijn eruit — zie
+> `docs/runbooks/kosten-omlaag.md`. Het F1-plan heeft 1 GB schijf voor alle bewaarde uitrolpakketten samen; daarom
+> publiceert de Deploy met `-r linux-x64`, want anders is één pakket 267 MB (SkiaSharp-natives voor 22 platforms).
 
 ### Eenmalig en overig
 

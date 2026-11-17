@@ -8,6 +8,24 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Alleen uitrollen naar Dev als er ook echt iets aan de API, de portal of de infrastructuur verandert
+    # (besluit 18-11-2026). Een merge met alleen documentatie, de mobiele app of tests slaat de uitrol over;
+    # met Actions -> Deploy -> omgeving dev rol je zo'n wijziging alsnog handmatig uit.
+    paths:
+      - src/**
+      - tools/**
+      - packages/**
+      - apps/admin/**
+      - infra/**
+      - openapi/**
+      - Directory.Build.props
+      - Drammers.sln
+      - dotnet-tools.json
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - tsconfig.base.json
+      - .github/workflows/deploy.yml
   workflow_dispatch:
     inputs:
       environment:
@@ -38,14 +56,19 @@ jobs:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: 10.0.x
+      # Alleen voor het platform waarop het draait (linux-x64). Zonder -r levert SkiaSharp (via QuestPDF) de native
+      # bestanden voor 22 platforms mee, inclusief 285 MB Windows-debugsymbolen: 683 MB in plaats van 118 MB. Het
+      # gratis F1-plan van Dev heeft maar 1 GB schijf voor alle bewaarde uitrolpakketten samen.
       - name: Publish API
-        run: dotnet publish src/Drammers.Api -c Release -o publish/api -p:SourceRevisionId=${{ github.sha }}
+        run: |
+          dotnet publish src/Drammers.Api -c Release -r linux-x64 --self-contained false -o publish/api \
+            -p:SourceRevisionId=${{ github.sha }}
       - name: Migratiescript (idempotent) en databasetool
         run: |
           dotnet tool restore
           dotnet ef migrations script --idempotent -p src/Drammers.Infrastructure -s src/Drammers.Infrastructure \
             -o publish/db/migrations.sql
-          dotnet publish tools/Drammers.DbSetup -c Release -o publish/db/tool
+          dotnet publish tools/Drammers.DbSetup -c Release -r linux-x64 --self-contained false -o publish/db/tool
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

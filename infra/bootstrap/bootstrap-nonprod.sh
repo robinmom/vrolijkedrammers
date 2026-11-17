@@ -3,8 +3,8 @@
 # Uitvoeren door een beheerder met Owner op de subscription, ingelogd in de tenant van de subscription:
 #   az login --tenant <tenant-id-vereniging>
 #   AZURE_SUBSCRIPTION_ID=<id> DVD_LOCATION=swedencentral infra/bootstrap/bootstrap-nonprod.sh [--what-if]
-# Na de livegang Dev afschalen naar het gratis plan: DVD_PLAN_SKU=F1 (en GitHub-variabele DVD_ALWAYS_ON=false in
-# environment dev, want F1 kent geen Always On). Terug naar B1: DVD_PLAN_SKU=B1.
+# Dev staat sinds 18-11-2026 op het gratis F1-plan (GitHub-variabele DVD_ALWAYS_ON=false in environment dev, want F1
+# kent geen Always On). Tijdelijk terug naar B1: DVD_PLAN_SKU=B1.
 # Idempotent: opnieuw uitvoeren is veilig.
 set -euo pipefail
 

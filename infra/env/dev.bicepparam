@@ -41,7 +41,8 @@ param requiredEnvironmentAccess = 'dev'
 param budgetAmount = 25
 param budgetStartDate = '2026-09-01'
 param budgetContactEmails = filter(split(readEnvironmentVariable('DVD_BUDGET_EMAIL', ''), ','), email => !empty(email))
-// Na de livegang staat Dev op het gratis F1-plan zonder Always On (GitHub-variabele DVD_ALWAYS_ON=false).
+// Dev staat op het gratis F1-plan, dat geen Always On kent (18-11-2026). De workflow geeft de variabele altijd mee,
+// ook leeg, en alleen de letterlijke waarde 'true' zet Always On aan: leeg of ontbrekend is dus uit.
 param alwaysOn = readEnvironmentVariable('DVD_ALWAYS_ON', 'true') == 'true'
 param customHostNames = filter(split(readEnvironmentVariable('DVD_CUSTOM_HOSTNAMES', ''), ','), host => !empty(host))
 param boundHostNames = filter(split(readEnvironmentVariable('DVD_BOUND_HOSTNAMES', ''), ','), host => !empty(host))

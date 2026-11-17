@@ -10,9 +10,9 @@ param githubRepository string
 // Acc is opgeheven (2026-10-07); alleen Dev is non-prod.
 param environments array = ['dev']
 
-@description('SKU van het gedeelde plan (B1, of F1 om na de livegang kosten te besparen).')
+@description('SKU van het gedeelde plan. Sinds 18-11-2026 F1 (gratis); B1 alleen als Dev tijdelijk Always On nodig heeft.')
 @allowed(['B1', 'F1'])
-param planSku string = 'B1'
+param planSku string = 'F1'
 
 @description('Maandbudget voor de gedeelde resources (plan).')
 param sharedBudgetAmount int = 20

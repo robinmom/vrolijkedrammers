@@ -100,6 +100,13 @@ public sealed class ParadeRegistration : IAuditable
 
     public RegistrationStatus Status { get; set; }
 
+    /// <summary>
+    /// De carnavalsgroep uit het register (wens 2026-11-17). Bij indienen koppelt de inschrijving zichzelf als de
+    /// naam exact overeenkomt met een groep; anders legt de commissie de koppeling in het portal. Leeg = nog niet
+    /// gekoppeld.
+    /// </summary>
+    public Guid? CarnivalGroupId { get; set; }
+
     /// <summary>Actuele waarschuwingen (JSON), bijv. deelnemers buiten bereik bij een categorie met <c>Warn</c>.</summary>
     public string? ValidationWarnings { get; set; }
 

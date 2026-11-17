@@ -96,6 +96,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
 
+    public DbSet<Modules.Membership.Board.BoardSeat> BoardSeats => Set<Modules.Membership.Board.BoardSeat>();
+
     public DbSet<SyncJob> SyncJobs => Set<SyncJob>();
 
     public DbSet<SyncJobItem> SyncJobItems => Set<SyncJobItem>();
@@ -223,6 +225,10 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
     public DbSet<Modules.Parade.Registrations.ParadeBuildLocation> ParadeBuildLocations => Set<Modules.Parade.Registrations.ParadeBuildLocation>();
 
     public DbSet<Modules.Parade.Registrations.ParadeStatusEditPolicy> ParadeStatusEditPolicies => Set<Modules.Parade.Registrations.ParadeStatusEditPolicy>();
+
+    public DbSet<Modules.Parade.Groups.CarnivalGroup> CarnivalGroups => Set<Modules.Parade.Groups.CarnivalGroup>();
+
+    public DbSet<Modules.Parade.Groups.CarnivalGroupSeason> CarnivalGroupSeasons => Set<Modules.Parade.Groups.CarnivalGroupSeason>();
 
     public DbSet<Modules.Notification.Notifications.Notification> Notifications => Set<Modules.Notification.Notifications.Notification>();
 

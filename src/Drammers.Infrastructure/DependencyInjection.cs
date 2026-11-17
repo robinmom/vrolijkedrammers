@@ -282,6 +282,7 @@ public static class DependencyInjection
         services.AddSingleton<Mailings.MailingUnsubscribeTokens>();
         services.AddScoped<IOutboxMessageHandler, Mailings.MailingRecipientMailHandler>();
         services.AddScoped<GroupAdministration>();
+        services.AddScoped<BoardAdministration>();
         services.AddScoped<Guardians>();
         services.AddScoped<ParadeManagement.ParadeExchange>();
         services.AddScoped<ParadeManagement.ParadeArrivals>();
@@ -314,6 +315,7 @@ public static class DependencyInjection
         services.AddScoped<ParadeJury>();
         services.AddScoped<ParadeJudging>();
         services.AddScoped<ParadeResults>();
+        services.AddScoped<CarnivalGroups>();
         services.AddScoped<ParadeRegistrations>();
         services.AddScoped<IOutboxMessageHandler, ParadeSubmittedMailHandler>();
         services.AddScoped<ParadeReview>();

@@ -818,3 +818,59 @@ export function useArrivalTimes() {
     queryFn: async () => required((await api.GET('/api/v1/admin/parade/arrival-times')).data),
   });
 }
+
+// ----- Carnavalsgroepen (2026-11-17): het register onder Optocht -----
+
+export type CarnivalGroupSummary = Schemas['CarnivalGroupSummary'];
+export type CarnivalGroupDetail = Schemas['CarnivalGroupDetail'];
+export type CarnivalGroupYear = Schemas['CarnivalGroupYear'];
+export type CarnivalGroupRequest = Schemas['CarnivalGroupRequest'];
+export type CarnivalGroupYearRequest = Schemas['CarnivalGroupYearRequest'];
+export type UnlinkedRegistration = Schemas['UnlinkedRegistration'];
+
+export const GROUP_KEYS = [['parade-groups'], ['parade-groups', 'unlinked']];
+
+export function useCarnivalGroups(search: string, includeInactive: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-groups', search, includeInactive],
+    queryFn: async () =>
+      required(
+        (await api.GET('/api/v1/admin/parade-groups', { params: { query: { search: search || undefined, includeInactive } } })).data,
+      ),
+  });
+}
+
+export function useCarnivalGroup(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-group', id],
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade-groups/{id}', { params: { path: { id } } })).data),
+  });
+}
+
+/** Ingediende inschrijvingen die nog aan geen groep hangen, met een voorstel op naam. */
+export function useUnlinkedRegistrations(enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['parade-groups', 'unlinked'],
+    enabled,
+    retry: false,
+    queryFn: async () => required((await api.GET('/api/v1/admin/parade-groups/unlinked')).data),
+  });
+}
+
+// ----- Bestuur en raad van elf (2026-11-17) -----
+
+export type BoardSeat = Schemas['BoardSeatView'];
+export type BoardTerm = Schemas['BoardTermView'];
+export type GoverningBody = Schemas['GoverningBody'];
+export type BoardSeatRequest = Schemas['BoardSeatRequest'];
+
+export function useBoardSeats(body: GoverningBody, includePast: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['board', body, includePast],
+    queryFn: async () => required((await api.GET('/api/v1/admin/board', { params: { query: { body, includePast } } })).data),
+  });
+}

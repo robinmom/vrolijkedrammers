@@ -241,6 +241,29 @@ Standaardbeleid:
 ### ParadeRegistrationManager
 `registration_id`, `user_id`, `role` (`Owner`, `CoManager`), `added_at`. Alleen voor inschrijvingen van leden via de app (managers zijn leden). Een groep kan meerdere beheerders hebben. Autorisatie: de groepsverantwoordelijke ziet en bewerkt alleen inschrijvingen waar hij/zij manager is. Inschrijvingen via het webformulier hebben geen managers; de communicatie loopt via `contact_email`.
 
+### CarnivalGroup / CarnivalGroupSeason (2026-11-17)
+
+Het register van de carnavalsgroepen van het dorp: wagens, loopgroepen en individuele deelnemers. De groep blijft over
+de jaren bestaan, een inschrijving niet.
+
+- `CarnivalGroup`: `id`, `name`, `match_name` (UQ), `contact_name`, `contact_phone`, `contact_email`,
+  `participating_since NULL` (het eerste jaar, zelf in te vullen), `notes`, `active`.
+- `CarnivalGroupSeason`: `group_id` + `year` als PK, `float_name NULL`, `category_id NULL`, `place NULL`,
+  `place_from_results_at NULL`, `notes`.
+- `ParadeRegistration.carnival_group_id NULL` legt de koppeling. Bij indienen koppelt de inschrijving zichzelf als
+  `match_name` exact overeenkomt met een actieve groep (`match_name` = alleen letters en cijfers, in kleine letters, dus
+  "C.V. de Kuitenbijters" = "CV de Kuitenbijters"). Lukt dat niet, dan staat de inschrijving in het portal onder "nog
+  koppelen", met de groep die er het meest op lijkt als voorstel.
+
+De gegevens van een inschrijving worden **niet gekopieerd**: adres, contactpersoon en aantallen worden via de koppeling
+uit de inschrijving gelezen. Een leeg veld in een jaarrij betekent "neem over van de inschrijving" (`float_name` ←
+`subject`, `category_id` ← `category_id`), zodat een eigen antwoord nooit stilletjes overschreven wordt. Een jaar kan
+hier staan zonder inschrijving (de geschiedenis van vóór de app) en een inschrijving kan er zijn zonder jaarrij.
+
+`place` komt automatisch uit de uitslag bij het publiceren (`place_from_results_at` gevuld); een plaats die met de hand
+is ingevuld blijft staan. Verwijderen van een groep kan alleen zolang er geen inschrijving aan hangt; een groep die
+gestopt is, zet je op `active = 0`.
+
 ## 10. Afgeleide berekeningen (§39)
 
 Als SQL-view `reporting.vParadeLengthSummary` / queries:

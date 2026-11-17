@@ -2800,3 +2800,65 @@ html[data-environment='acc'] .env-banner {
 .app-text .actions {
   justify-content: flex-start;
 }
+
+/* Bestuur (2026-11-17): de balk met het aantal jaren, met elke drie jaar (één bestuursperiode) een streep. */
+.term-bar-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 180px;
+}
+
+.term-bar {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  min-width: 120px;
+  border-radius: 7px;
+  background: var(--dvd-surface-muted);
+  overflow: hidden;
+}
+
+.term-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 7px;
+  background: var(--dvd-action-secondary);
+}
+
+.term-bar-ticks {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(var(--term-step) - 2px),
+    var(--dvd-text-primary) calc(var(--term-step) - 2px),
+    var(--dvd-text-primary) var(--term-step)
+  );
+  opacity: 0.45;
+}
+
+/* Einde van de huidige periode; staat los van de strepen omdat een verlenging het opschuift. */
+.term-bar-end {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--dvd-accent-text);
+}
+
+.term-bar-label {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Verlengen en een nieuwe periode: alleen bij een periode die (bijna) afloopt, direct onder de datum. */
+.term-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}

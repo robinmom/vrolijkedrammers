@@ -48,6 +48,7 @@ public sealed class ParadeResults(
     Content.ContentAdministration content,
     IEmailSender email,
     IOptions<ResultsOptions> options,
+    CarnivalGroups groups,
     IAuditLogger audit,
     ICurrentActor actor,
     IClock clock)
@@ -153,7 +154,8 @@ public sealed class ParadeResults(
             return already;
         }
 
-        var notReady = (await CalculateAsync(paradeId, cancellationToken)).Where(c => !c.Ready).Select(c => c.Name).ToList();
+        var categories = await CalculateAsync(paradeId, cancellationToken);
+        var notReady = categories.Where(c => !c.Ready).Select(c => c.Name).ToList();
         if (notReady.Count > 0)
         {
             throw new DomainException(ErrorCodes.ResultsNotReady,
@@ -170,6 +172,10 @@ public sealed class ParadeResults(
 
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade.results-published", "Parade", paradeId.ToString(), null, JsonSerializer.Serialize(new { prizeCeremonyHeld }, Json)), cancellationToken);
+        // De plaats per inzending bij de carnavalsgroepen zetten (wens 2026-11-17), zodat het register van de groepen
+        // zichzelf bijhoudt. Een plaats die met de hand is ingevuld blijft staan.
+        await groups.SavePlacesAsync(paradeId, parade.ParadeDate.Year,
+            [.. categories.SelectMany(c => c.Rows).Select(r => (r.RegistrationId, r.Place))], cancellationToken);
 
         var who = actor.UserId is { } userId ? await db.Users.Where(u => u.Id == userId).Select(u => u.DisplayName).FirstOrDefaultAsync(cancellationToken) : null;
         foreach (var address in options.Value.NotifyAddresses.Where(a => !string.IsNullOrWhiteSpace(a)).Distinct(StringComparer.OrdinalIgnoreCase))

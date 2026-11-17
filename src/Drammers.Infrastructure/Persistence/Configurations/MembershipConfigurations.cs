@@ -363,3 +363,25 @@ internal sealed class MemberYearStatConfiguration : IEntityTypeConfiguration<Mem
         builder.Property(s => s.CarnivalYear).ValueGeneratedNever();
     }
 }
+
+internal sealed class BoardSeatConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Board.BoardSeat>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Board.BoardSeat> builder)
+    {
+        builder.ToTable("BoardSeat", Schemas.Membership);
+        builder.Property(s => s.Id).ValueGeneratedNever();
+        builder.Property(s => s.Name).HasMaxLength(100);
+        builder.Property(s => s.Function).HasMaxLength(60);
+        builder.Property(s => s.Notes).HasMaxLength(2000);
+        builder.HasOne<Member>().WithMany().HasForeignKey(s => s.MemberId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(s => new { s.Body, s.EndDate });
+        // De periodes horen bij één plek en worden altijd samen gelezen en geschreven; als JSON blijven ze bij elkaar.
+        builder.OwnsMany(s => s.Terms, t =>
+        {
+            t.ToJson("terms");
+            t.Property(x => x.Note).HasMaxLength(200);
+            t.Ignore(x => x.EndDate);
+        });
+        builder.ToTable(t => t.HasCheckConstraint("CK_BoardSeat_period", "[end_date] IS NULL OR [end_date] >= [start_date]"));
+    }
+}

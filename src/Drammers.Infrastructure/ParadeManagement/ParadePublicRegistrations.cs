@@ -25,7 +25,8 @@ public sealed record PublicStatus(
 /// lezen). Niet-bevestigde inschrijvingen worden na 48 uur opgeruimd. De commissie beoordeelt daarna zoals bij leden.
 /// </summary>
 public sealed class ParadePublicRegistrations(
-    DrammersDbContext db, ParadeAdministration parades, IEmailSender email, IAuditLogger audit, ParadeChangeContext changeContext, IClock clock)
+    DrammersDbContext db, ParadeAdministration parades, IEmailSender email, IAuditLogger audit, ParadeChangeContext changeContext,
+    CarnivalGroups groups, IClock clock)
 {
     /// <summary>
     /// Geldigheid van de e-mailcode. Een dag, geen half uur: op 13-11-2026 deed Microsoft er 25 tot 106 minuten over om
@@ -170,6 +171,7 @@ public sealed class ParadePublicRegistrations(
         registration.StatusTokenHash = Hash(token);
         db.ParadeStatusHistory.Add(new ParadeStatusHistory { RegistrationId = id, FromStatus = RegistrationStatus.Draft, ToStatus = RegistrationStatus.Submitted, OccurredAt = Now });
         changeContext.Source = RegistrationSource.WebForm;
+        await groups.LinkOnSubmitAsync(registration, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade-registration.submitted", "ParadeRegistration", id.ToString(), null,
             JsonSerializer.Serialize(new { registrationNumber = number, source = "WebForm" })), cancellationToken);

@@ -39,6 +39,76 @@ interface MockAdvertiser {
 const PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
+/** Carnavalsgroep in de mock, met per jaar de inschrijving erbij. */
+interface MockCarnivalGroupYear {
+  year: number;
+  floatName: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  place: number | null;
+  placeFromResults: boolean;
+  notes: string | null;
+  hasOwnRow: boolean;
+  registration: Record<string, unknown> | null;
+}
+
+interface MockCarnivalGroup {
+  id: string;
+  name: string;
+  active: boolean;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  participatingSince: number | null;
+  notes: string | null;
+  years: MockCarnivalGroupYear[];
+}
+
+/** Plek in het bestuur of de raad van elf; de mock rekent de dagen en het einde van de periode zelf uit. */
+interface MockBoardSeat {
+  id: string;
+  body: 'Board' | 'CouncilOfEleven';
+  memberId: string | null;
+  name: string;
+  function: string | null;
+  startDate: string;
+  endDate: string | null;
+  notes: string | null;
+  terms: { startDate: string; extensionYears: number; note: string | null }[];
+}
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** Einde van een periode: begin + 3 jaar + de verlenging, net als de API (hele jaren, geen 365,25 dagen). */
+function termEndDate(start: string, extensionYears: number) {
+  const date = new Date(`${start}T00:00:00Z`);
+  date.setUTCFullYear(date.getUTCFullYear() + 3 + extensionYears);
+  return date.toISOString().slice(0, 10);
+}
+
+/** Dezelfde afgeleide waarden als de API: hoeveel dagen iemand erin zit en waar de huidige periode eindigt. */
+function boardSeatView(seat: MockBoardSeat) {
+  const until = seat.endDate ? Date.parse(seat.endDate) : Date.now();
+  const daysServed = Math.max(0, Math.round((until - Date.parse(seat.startDate)) / DAY));
+  const terms = [...seat.terms].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const current = terms.at(-1);
+  const end = current ? termEndDate(current.startDate, current.extensionYears) : null;
+  return {
+    ...seat,
+    daysServed,
+    termEnd: end,
+    daysUntilTermEnd: end ? Math.round((Date.parse(end) - Date.now()) / DAY) : null,
+    terms: terms.map((t, i) => ({
+      number: i + 1,
+      startDate: t.startDate,
+      endDate: termEndDate(t.startDate, t.extensionYears),
+      extensionYears: t.extensionYears,
+      note: t.note,
+      isCurrent: current !== undefined && t.startDate === current.startDate,
+    })),
+  };
+}
+
 /** In-memory API voor de end-to-endtests; vorm gelijk aan het OpenAPI-contract. */
 export class MockApi {
   permissions: string[];
@@ -236,6 +306,136 @@ export class MockApi {
   ];
 
   /** Vergaderingen (2026-11-16): bestuur en raad van elf, met agendapunten en documenten bij het agenda-item. */
+  /** Carnavalsgroepen (2026-11-17): het register onder Optocht, met per jaar wagen, categorie en plaats. */
+  paradeGroups: MockCarnivalGroup[] = [
+    {
+      id: 'cg-1',
+      name: 'CV de Kuitenbijters',
+      active: true,
+      contactName: 'Jan Jansen',
+      contactPhone: '+31612345678',
+      contactEmail: 'jan@example.com',
+      participatingSince: 1998,
+      notes: 'Bouwen in de schuur aan de Bosweg.',
+      years: [
+        {
+          year: 2027,
+          floatName: null,
+          categoryId: 1,
+          categoryName: 'Volwassenen Getrokken wagens',
+          place: null,
+          placeFromResults: false,
+          notes: null,
+          hasOwnRow: false,
+          registration: {
+            id: 'r-1',
+            registrationNumber: 3,
+            startNumber: 7,
+            status: 'Approved',
+            groupName: 'CV de Kuitenbijters',
+            contactName: 'Jan Jansen',
+            contactPhone: '+31612345678',
+            contactEmail: 'jan@example.com',
+            categoryId: 1,
+            subject: 'Loil in de ruimte',
+            subjectDescription: 'Een raket met elf astronauten.',
+            childrenCount: 4,
+            adultCount: 12,
+            hasMusic: true,
+            buildAddress: 'Bosweg 3, 6999 AA Loil',
+            juryAddress: 'Bosweg 3, 6999 AA Loil',
+            estimatedLengthMeters: 12,
+            measuredLengthMeters: null,
+            submittedAt: '2026-12-01T10:00:00Z',
+          },
+        },
+        {
+          year: 2026,
+          floatName: 'Drammers in de rondte',
+          categoryId: 1,
+          categoryName: 'Volwassenen Getrokken wagens',
+          place: 2,
+          placeFromResults: true,
+          notes: null,
+          hasOwnRow: true,
+          registration: null,
+        },
+      ],
+    },
+    {
+      id: 'cg-2',
+      name: 'De Loopse Lopers',
+      active: true,
+      contactName: null,
+      contactPhone: null,
+      contactEmail: null,
+      participatingSince: null,
+      notes: null,
+      years: [],
+    },
+  ];
+
+  /** Een ingediende inschrijving die nog aan geen groep hangt. */
+  unlinkedRegistrations = [
+    {
+      id: 'r-9',
+      registrationNumber: 11,
+      groupName: 'Kuitenbijters',
+      contactName: 'Jan Jansen',
+      contactEmail: 'jan@example.com',
+      year: 2027,
+      status: 'Submitted',
+      suggestedGroupId: 'cg-1' as string | null,
+      suggestedGroupName: 'CV de Kuitenbijters' as string | null,
+    },
+  ];
+
+  paradeGroupCategories = [
+    { id: 1, name: 'Volwassenen Getrokken wagens', active: true },
+    { id: 3, name: 'Volwassenen Loopgroepen groot (10+)', active: true },
+  ];
+
+  /** Bestuur en raad van elf (2026-11-17); de periodes staan los, want ze kunnen verlengd worden. */
+  boardSeats: MockBoardSeat[] = [
+    {
+      id: 'b-1',
+      body: 'Board',
+      memberId: null,
+      name: 'Test Bestuurder',
+      function: 'Voorzitter',
+      startDate: '2019-03-01',
+      endDate: null,
+      notes: null,
+      terms: [
+        { startDate: '2019-03-01', extensionYears: 0, note: null },
+        { startDate: '2022-03-01', extensionYears: 0, note: null },
+        { startDate: '2025-03-01', extensionYears: 0, note: null },
+      ],
+    },
+    {
+      id: 'b-2',
+      body: 'Board',
+      memberId: null,
+      name: 'Nieuwe Penningmeester',
+      function: 'Penningmeester',
+      startDate: '2024-03-01',
+      endDate: null,
+      notes: null,
+      terms: [{ startDate: '2024-03-01', extensionYears: 0, note: null }],
+    },
+    {
+      id: 'b-3',
+      body: 'CouncilOfEleven',
+      memberId: null,
+      name: 'Raadslid Riet',
+      function: null,
+      startDate: '2014-11-11',
+      endDate: null,
+      notes: null,
+      terms: [],
+    },
+  ];
+
   meetings = [
     {
       id: 'v-1',
@@ -4113,6 +4313,191 @@ export class MockApi {
           showOnWebsite: n.showOnWebsite ?? false,
         })),
       );
+    }
+    // Carnavalsgroepen (2026-11-17): het register onder Optocht.
+    if (path === '/admin/parade-groups/categories') return json(this.paradeGroupCategories);
+    if (path === '/admin/parade-groups/unlinked') return json(this.unlinkedRegistrations);
+    if (path === '/admin/parade-groups/link' && method === 'POST') {
+      const registration = this.unlinkedRegistrations.find((r) => r.id === body.registrationId);
+      let groupId = body.groupId as string | null;
+      if (!groupId && body.createNew) {
+        groupId = `cg-${this.paradeGroups.length + 1}`;
+        this.paradeGroups.push({
+          id: groupId,
+          name: registration?.groupName ?? 'Nieuwe groep',
+          active: true,
+          contactName: registration?.contactName ?? null,
+          contactPhone: null,
+          contactEmail: registration?.contactEmail ?? null,
+          participatingSince: null,
+          notes: null,
+          years: [],
+        });
+      }
+      this.unlinkedRegistrations = this.unlinkedRegistrations.filter((r) => r.id !== body.registrationId);
+      this.record('carnival-group.linked', 'ParadeRegistration', String(body.registrationId), { groupId });
+      return json({ groupId });
+    }
+    if (path === '/admin/parade-groups/unlink' && method === 'POST') {
+      this.record('carnival-group.unlinked', 'ParadeRegistration', String(body.registrationId), null);
+      return noContent();
+    }
+    if (path === '/admin/parade-groups' && method === 'POST') {
+      const id = `cg-${this.paradeGroups.length + 1}`;
+      this.paradeGroups.push({
+        id,
+        name: body.name as string,
+        active: body.active !== false,
+        contactName: (body.contactName as string) ?? null,
+        contactPhone: (body.contactPhone as string) ?? null,
+        contactEmail: (body.contactEmail as string) ?? null,
+        participatingSince: (body.participatingSince as number) ?? null,
+        notes: (body.notes as string) ?? null,
+        years: [],
+      });
+      this.record('carnival-group.created', 'CarnivalGroup', id, { name: body.name });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/parade-groups') {
+      const search = (url.searchParams.get('search') ?? '').toLowerCase();
+      const includeInactive = url.searchParams.get('includeInactive') === 'true';
+      return json(
+        this.paradeGroups
+          .filter((g) => (includeInactive || g.active) && (!search || g.name.toLowerCase().includes(search)))
+          .map((g) => {
+            const last = g.years.at(0);
+            return {
+              id: g.id,
+              name: g.name,
+              active: g.active,
+              participatingSince: g.participatingSince,
+              firstYear: g.years.at(-1)?.year ?? null,
+              yearCount: g.years.length,
+              lastYear: last?.year ?? null,
+              lastFloatName: last?.floatName ?? (last?.registration?.subject as string) ?? null,
+              lastPlace: last?.place ?? null,
+              registeredForCurrentParade: g.years.some((y) => y.registration !== null),
+            };
+          }),
+      );
+    }
+    if ((m = path.match(/^\/admin\/parade-groups\/([^/]+)\/years\/(\d+)$/))) {
+      const group = this.paradeGroups.find((g) => g.id === m![1])!;
+      const year = Number(m[2]);
+      if (method === 'DELETE') {
+        group.years = group.years.filter((y) => y.year !== year || y.registration !== null);
+        return noContent();
+      }
+      const existing = group.years.find((y) => y.year === year);
+      const category = this.paradeGroupCategories.find((c) => c.id === body.categoryId);
+      const saved = {
+        year,
+        floatName: (body.floatName as string) ?? null,
+        categoryId: (body.categoryId as number) ?? null,
+        categoryName: category?.name ?? null,
+        place: (body.place as number) ?? null,
+        placeFromResults: false,
+        notes: (body.notes as string) ?? null,
+        hasOwnRow: true,
+        registration: existing?.registration ?? null,
+      };
+      group.years = [...group.years.filter((y) => y.year !== year), saved].sort((a, b) => b.year - a.year);
+      this.record('carnival-group.year-saved', 'CarnivalGroup', group.id, { year, place: body.place });
+      return noContent();
+    }
+    if ((m = path.match(/^\/admin\/parade-groups\/([^/]+)$/))) {
+      const index = this.paradeGroups.findIndex((g) => g.id === m![1]);
+      const group = this.paradeGroups[index]!;
+      if (method === 'DELETE') {
+        this.paradeGroups.splice(index, 1);
+        return noContent();
+      }
+      if (method === 'PUT') {
+        Object.assign(group, {
+          name: body.name as string,
+          active: body.active !== false,
+          contactName: (body.contactName as string) ?? null,
+          contactPhone: (body.contactPhone as string) ?? null,
+          contactEmail: (body.contactEmail as string) ?? null,
+          participatingSince: (body.participatingSince as number) ?? null,
+          notes: (body.notes as string) ?? null,
+        });
+        this.record('carnival-group.updated', 'CarnivalGroup', group.id, { name: group.name });
+        return noContent();
+      }
+      // Net als de API: een leeg veld leent de waarde van de inschrijving.
+      return json({
+        ...group,
+        firstYear: group.years.at(-1)?.year ?? null,
+        years: group.years.map((y) => ({
+          ...y,
+          floatName: y.floatName ?? (y.registration?.subject as string) ?? null,
+        })),
+      });
+    }
+    // Bestuur en raad van elf (2026-11-17).
+    if (path === '/admin/board' && method === 'POST') {
+      const id = `b-${this.boardSeats.length + 1}`;
+      this.boardSeats.push({
+        id,
+        body: body.body as 'Board' | 'CouncilOfEleven',
+        memberId: (body.memberId as string) ?? null,
+        name: (body.name as string) ?? 'Zonder naam',
+        function: (body.function as string) ?? null,
+        startDate: body.startDate as string,
+        endDate: (body.endDate as string) ?? null,
+        notes: (body.notes as string) ?? null,
+        terms:
+          body.body === 'Board'
+            ? ((body.terms as MockBoardSeat['terms']) ?? [
+                { startDate: body.startDate as string, extensionYears: 0, note: null },
+              ])
+            : [],
+      });
+      this.record('board-seat.created', 'BoardSeat', id, { name: body.name });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/board') {
+      const which = url.searchParams.get('body');
+      const includePast = url.searchParams.get('includePast') === 'true';
+      return json(
+        this.boardSeats
+          .filter((s) => (!which || s.body === which) && (includePast || s.endDate === null))
+          .map(boardSeatView),
+      );
+    }
+    if ((m = path.match(/^\/admin\/board\/([^/]+)\/extend$/)) && method === 'POST') {
+      const seat = this.boardSeats.find((s) => s.id === m![1])!;
+      seat.terms.at(-1)!.extensionYears = body.years as number;
+      this.record('board-seat.extended', 'BoardSeat', seat.id, { years: body.years });
+      return json(boardSeatView(seat));
+    }
+    if ((m = path.match(/^\/admin\/board\/([^/]+)\/renew$/)) && method === 'POST') {
+      const seat = this.boardSeats.find((s) => s.id === m![1])!;
+      const previous = boardSeatView(seat).terms.at(-1)!;
+      seat.terms.push({ startDate: (body.startDate as string) ?? previous.endDate, extensionYears: 0, note: null });
+      this.record('board-seat.renewed', 'BoardSeat', seat.id, { start: seat.terms.at(-1)!.startDate });
+      return json(boardSeatView(seat));
+    }
+    if ((m = path.match(/^\/admin\/board\/([^/]+)$/))) {
+      const index = this.boardSeats.findIndex((s) => s.id === m![1]);
+      const seat = this.boardSeats[index]!;
+      if (method === 'DELETE') {
+        this.boardSeats.splice(index, 1);
+        return noContent();
+      }
+      Object.assign(seat, {
+        body: body.body as 'Board' | 'CouncilOfEleven',
+        memberId: (body.memberId as string) ?? null,
+        name: (body.name as string) ?? seat.name,
+        function: (body.function as string) ?? null,
+        startDate: body.startDate as string,
+        endDate: (body.endDate as string) ?? null,
+        notes: (body.notes as string) ?? null,
+        terms: body.body === 'Board' ? ((body.terms as MockBoardSeat['terms']) ?? seat.terms) : [],
+      });
+      this.record('board-seat.updated', 'BoardSeat', seat.id, { name: seat.name });
+      return noContent();
     }
     if (path === '/admin/meetings' && method === 'POST') {
       const id = `v-${this.meetings.length + 1}`;

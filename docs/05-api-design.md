@@ -159,6 +159,8 @@ Scanresultaat:
 | POST | `/admin/meetings/{id}/agenda/preview` · `/agenda/send` (agendamail in de huisstijl naar de rolhouders) | meeting.manage |
 | CRUD | `/admin/carnival-years` (+ `/activate`, `/access-windows`) | config.manage |
 | CRUD | `/admin/groups` (+ leden) | member.update |
+| GET | `/admin/board?body=Board\|CouncilOfEleven&includePast=` (bestuur en raad van elf, met jaren en periode) | member.read |
+| CRUD | `/admin/board` · POST `/{id}/extend` `{ years: 1\|2 }` · `/{id}/renew` (nieuwe periode van 3 jaar) | member.update |
 
 ### Meldingen
 | Methode | Pad | Permission |
@@ -190,6 +192,10 @@ Scanresultaat:
 | GET | `/admin/import-jobs/{id}` (+ rijen/fouten) | parade.import-arrival-times |
 | POST | `/admin/import-jobs/{id}/confirm` · `/cancel` | parade.import-arrival-times |
 | POST | `/admin/parades/{id}/arrival-times/publish` `{ notify: true }` | parade.import-arrival-times |
+| GET | `/admin/parade-groups` (register van de carnavalsgroepen) · `/{id}` · `/categories` | parade.read |
+| GET | `/admin/parade-groups/unlinked` (ingediende inschrijvingen zonder groep, met voorstel op naam) | parade.read |
+| CRUD | `/admin/parade-groups` · PUT/DELETE `/{id}/years/{year}` (per jaar wagen, categorie, plaats) | parade.manage |
+| POST | `/admin/parade-groups/link` `{ registrationId, groupId \| createNew }` · `/unlink` | parade.manage |
 
 ### Tickets, scanners, betalingen
 | Methode | Pad | Permission |

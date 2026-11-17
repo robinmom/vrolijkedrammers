@@ -84,6 +84,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Accountverzoeken', to: '/accountverzoeken', permission: 'member.approve', icon: 'gebruiker', section: 'Leden' },
   { label: 'Koppelverzoeken', to: '/koppelverzoeken', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
+  // 2026-11-17: bestuursperiodes van drie jaar (verlengbaar) en de raad van elf.
+  { label: 'Bestuur en raad van elf', to: '/bestuur', permission: 'member.read', icon: 'rollen', section: 'Leden' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden', requiresEBoekhouden: true },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
   // Fase 25: lidmaatschappen (soorten, tarieven, splitsen); contributie is het overzicht per lid.
@@ -100,6 +102,8 @@ export const navItems: readonly NavItem[] = [
   { label: 'Takenlijst', to: '/taken', permission: 'task.manage', icon: 'audit', section: 'Carnaval' },
   { label: 'Rapportage taken', to: '/taken/rapportage', permission: 'task.manage', icon: 'rapport', section: 'Carnaval' },
   { label: 'Inschrijvingen', to: '/optocht/inschrijvingen', permission: 'parade.read', icon: 'optocht', section: 'Optocht' },
+  // 2026-11-17: het register van de carnavalsgroepen, met per jaar wagen, categorie en plaats.
+  { label: 'Carnavalsgroepen', to: '/optocht/groepen', permission: 'parade.read', icon: 'groepen', section: 'Optocht' },
   { label: 'Samenstellen', to: '/optocht/samenstellen', permission: 'parade.read', icon: 'audit', section: 'Optocht' },
   { label: 'Aanrijtijden', to: '/optocht/aanrijtijden', permission: 'parade.import-arrival-times', icon: 'agenda', section: 'Optocht' },
   // Fase 22a: jury; de hoofdjury ziet in het portal alleen deze pagina.

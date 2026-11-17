@@ -100,4 +100,6 @@ public static class ErrorCodes
     public const string OrderAlreadyPaid = "ORDER_ALREADY_PAID";
     public const string TooManyOpenOrders = "TOO_MANY_OPEN_ORDERS";
     public const string WaitlistNotFound = "WAITLIST_NOT_FOUND";
+    public const string CarnivalGroupInUse = "CARNIVAL_GROUP_IN_USE";
+    public const string BoardSeatNotFound = "BOARD_SEAT_NOT_FOUND";
 }

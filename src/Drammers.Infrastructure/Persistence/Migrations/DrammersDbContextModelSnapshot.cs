@@ -17,7 +17,7 @@ namespace Drammers.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -5931,6 +5931,80 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Board.BoardSeat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Function")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("function");
+
+                    b.Property<Guid?>("MemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("member_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("PK_BoardSeat");
+
+                    b.HasIndex("MemberId")
+                        .HasDatabaseName("IX_BoardSeat_member_id");
+
+                    b.HasIndex("Body", "EndDate")
+                        .HasDatabaseName("IX_BoardSeat_body_end_date");
+
+                    b.ToTable("BoardSeat", "membership", t =>
+                        {
+                            t.HasCheckConstraint("CK_BoardSeat_body", "[body] IN ('Board', 'CouncilOfEleven')");
+
+                            t.HasCheckConstraint("CK_BoardSeat_period", "[end_date] IS NULL OR [end_date] >= [start_date]");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Finance.CollectiveInvoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8183,6 +8257,128 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Parade.Groups.CarnivalGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit")
+                        .HasColumnName("active");
+
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)")
+                        .HasColumnName("contact_email");
+
+                    b.Property<string>("ContactName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("ContactPhone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("contact_phone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("MatchName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("match_name");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int?>("ParticipatingSince")
+                        .HasColumnType("int")
+                        .HasColumnName("participating_since");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("PK_CarnivalGroup");
+
+                    b.HasIndex("MatchName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CarnivalGroup_match_name");
+
+                    b.ToTable("CarnivalGroup", "parade", t =>
+                        {
+                            t.HasCheckConstraint("CK_CarnivalGroup_since", "[participating_since] IS NULL OR [participating_since] BETWEEN 1900 AND 2200");
+                        });
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Parade.Groups.CarnivalGroupSeason", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("group_id");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int")
+                        .HasColumnName("year");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int")
+                        .HasColumnName("category_id");
+
+                    b.Property<string>("FloatName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("float_name");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int?>("Place")
+                        .HasColumnType("int")
+                        .HasColumnName("place");
+
+                    b.Property<DateTime?>("PlaceFromResultsAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("place_from_results_at");
+
+                    b.HasKey("GroupId", "Year")
+                        .HasName("PK_CarnivalGroupSeason");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("IX_CarnivalGroupSeason_category_id");
+
+                    b.ToTable("CarnivalGroupSeason", "parade", t =>
+                        {
+                            t.HasCheckConstraint("CK_CarnivalGroupSeason_place", "[place] IS NULL OR [place] > 0");
+
+                            t.HasCheckConstraint("CK_CarnivalGroupSeason_year", "[year] BETWEEN 1900 AND 2200");
+                        });
+                });
+
             modelBuilder.Entity("Drammers.Modules.Parade.Judging.JudgingComment", b =>
                 {
                     b.Property<Guid>("RegistrationId")
@@ -8692,6 +8888,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("time")
                         .HasColumnName("arrival_time");
 
+                    b.Property<Guid?>("CarnivalGroupId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("carnival_group_id");
+
                     b.Property<int>("CarnivalYearId")
                         .HasColumnType("int")
                         .HasColumnName("carnival_year_id");
@@ -8867,6 +9067,9 @@ namespace Drammers.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK_ParadeRegistration");
+
+                    b.HasIndex("CarnivalGroupId")
+                        .HasDatabaseName("IX_ParadeRegistration_carnival_group_id");
 
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("IX_ParadeRegistration_category_id");
@@ -10651,6 +10854,43 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Board.BoardSeat", b =>
+                {
+                    b.HasOne("Drammers.Modules.Membership.Members.Member", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.OwnsMany("Drammers.Modules.Membership.Board.BoardTerm", "Terms", b1 =>
+                        {
+                            b1.Property<Guid>("BoardSeatId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<int>("ExtensionYears");
+
+                            b1.Property<string>("Note")
+                                .HasMaxLength(200);
+
+                            b1.Property<DateOnly>("StartDate");
+
+                            b1.HasKey("BoardSeatId", "__synthesizedOrdinal")
+                                .HasName("PK_BoardSeat");
+
+                            b1.ToTable("BoardSeat", "membership");
+
+                            b1
+                                .ToJson("terms")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BoardSeatId");
+                        });
+
+                    b.Navigation("Terms");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Finance.CollectiveInvoiceLine", b =>
                 {
                     b.HasOne("Drammers.Modules.Membership.Finance.CollectiveInvoice", null)
@@ -10885,6 +11125,20 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Parade.Groups.CarnivalGroupSeason", b =>
+                {
+                    b.HasOne("Drammers.Modules.Parade.Categories.ParadeCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Drammers.Modules.Parade.Groups.CarnivalGroup", null)
+                        .WithMany("Seasons")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Drammers.Modules.Parade.Judging.JudgingComment", b =>
                 {
                     b.HasOne("Drammers.Modules.Parade.Registrations.ParadeRegistration", null)
@@ -11103,6 +11357,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Drammers.Modules.Parade.Registrations.ParadeRegistration", b =>
                 {
+                    b.HasOne("Drammers.Modules.Parade.Groups.CarnivalGroup", null)
+                        .WithMany()
+                        .HasForeignKey("CarnivalGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Drammers.Modules.Parade.Categories.ParadeCategory", null)
                         .WithMany()
                         .HasForeignKey("CategoryId")
@@ -11473,6 +11732,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.Navigation("Groups");
 
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("Drammers.Modules.Parade.Groups.CarnivalGroup", b =>
+                {
+                    b.Navigation("Seasons");
                 });
 #pragma warning restore 612, 618
         }

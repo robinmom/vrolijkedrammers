@@ -54,6 +54,7 @@ public sealed class ParadeRegistrations(
     IOutbox outbox,
     IAuditLogger audit,
     ParadeChangeContext changeContext,
+    CarnivalGroups groups,
     IClock clock)
 {
     public const string SubmittedMailMessageType = "parade.submitted-mail";
@@ -370,6 +371,7 @@ public sealed class ParadeRegistrations(
             NotificationCategory.Parade, new NotificationAudience(UserIds: managers), "drammers://optocht"), cancellationToken);
         outbox.Enqueue(SubmittedMailMessageType, new SubmittedMail(id));
         await RememberLocationAsync(userId, registration.BuildAddress, cancellationToken);
+        await groups.LinkOnSubmitAsync(registration, cancellationToken);
         changeContext.Source = RegistrationSource.App;
         try
         {

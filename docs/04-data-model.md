@@ -174,6 +174,20 @@ Voor doelgroepen die geen rol zijn: `Dansgarde meisjes`, `Dansgarde leiding`, `J
 
 > **Rol vs groep**: een *rol* geeft rechten (permissions); een *groep* is een doelgroep voor content en meldingen. Voorbeeld: "Dansgarde leiding" is een groep + de rol `dansgarde-leiding` (recht om de eigen groep te berichten).
 
+> **Let op**: de carnavalsgroepen die meedoen aan de optocht staan **niet** hier maar in `parade.CarnivalGroup`
+> (2026-11-17). Dat zijn groepen van het dorp met hun eigen geschiedenis per jaar, geen doelgroep van leden.
+
+### BoardSeat (2026-11-17)
+Wie in het bestuur of de raad van elf zit, en hoe lang al. Met de hand bijgehouden: het volgt niet uit de rollen of uit
+het kader op de website, en de geschiedenis staat nergens anders.
+- `BoardSeat`: `id`, `body` (`Board`, `CouncilOfEleven`), `member_id NULL` (naam volgt dan de ledenlijst), `name`,
+  `function NULL` (bijv. Voorzitter, Vorst), `start_date`, `end_date NULL` (gestopt), `notes`, `terms` (JSON).
+- `terms` is een lijst periodes `{ start_date, extension_years, note }`, alleen voor het bestuur: dat is verkiesbaar en
+  een periode duurt **drie jaar**, te verlengen met **één of twee** jaar (einde = begin + 3 + verlenging). De raad van
+  elf begint en stopt wanneer iemand dat zelf wil en heeft dus geen periodes.
+- Het portal tekent per persoon een balk met het aantal jaren en elke drie jaar een streep, plus een markering waar de
+  huidige periode eindigt.
+
 ### MembershipApplication
 | Kolom | Opm. |
 |---|---|
@@ -352,7 +366,7 @@ Geen tabel; gegenereerd uit `Ticket.status`/`credential_version` en `Device.devi
 
 ## 9. Schema `parade`
 
-Zie [14-parade-data-model.md](14-parade-data-model.md): `Parade`, `ParadeCategory`, `ParadeRegistration`, `ParadeRegistrationHistory`, `ParadeStatusHistory`, `ParadeDocument`, `ParadeArrivalTime`, `ParadeNumberSequence`, `ParadeStatusEditPolicy`, `ParadeRegistrationManager`.
+Zie [14-parade-data-model.md](14-parade-data-model.md): `Parade`, `ParadeCategory`, `ParadeRegistration`, `ParadeRegistrationHistory`, `ParadeStatusHistory`, `ParadeDocument`, `ParadeArrivalTime`, `ParadeNumberSequence`, `ParadeStatusEditPolicy`, `ParadeRegistrationManager`, `CarnivalGroup`, `CarnivalGroupSeason`.
 
 ## 10. Schema `import`
 

@@ -1,4 +1,5 @@
 using Drammers.Modules.Parade.Categories;
+using Drammers.Modules.Parade.Groups;
 using Drammers.Modules.Parade.Parades;
 using Drammers.Modules.Parade.Registrations;
 using Microsoft.EntityFrameworkCore;
@@ -97,6 +98,7 @@ internal sealed class ParadeRegistrationConfiguration : IEntityTypeConfiguration
         builder.HasIndex(r => new { r.ParadeId, r.RegistrationNumber }).IsUnique().HasFilter("[registration_number] IS NOT NULL");
         builder.HasIndex(r => new { r.ParadeId, r.StartNumber }).IsUnique().HasFilter("[start_number] IS NOT NULL");
         builder.HasIndex(r => new { r.ParadeId, r.Status });
+        builder.HasOne<CarnivalGroup>().WithMany().HasForeignKey(r => r.CarnivalGroupId).OnDelete(DeleteBehavior.SetNull);
     }
 
     private static void OwnsAddress(
@@ -275,5 +277,41 @@ internal sealed class JudgingOutsideReviewConfiguration : IEntityTypeConfigurati
         builder.Property(r => r.Decision).HasConversion<string>().HasMaxLength(20);
         builder.HasOne<Parade>().WithMany().HasForeignKey(r => r.ParadeId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<ParadeRegistration>().WithMany().HasForeignKey(r => r.RegistrationId).OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+internal sealed class CarnivalGroupConfiguration : IEntityTypeConfiguration<CarnivalGroup>
+{
+    public void Configure(EntityTypeBuilder<CarnivalGroup> builder)
+    {
+        builder.ToTable("CarnivalGroup", Schemas.Parade);
+        builder.Property(g => g.Id).ValueGeneratedNever();
+        builder.Property(g => g.Name).HasMaxLength(100);
+        builder.Property(g => g.MatchName).HasMaxLength(100);
+        builder.Property(g => g.ContactName).HasMaxLength(100);
+        builder.Property(g => g.ContactPhone).HasMaxLength(20).IsUnicode(false);
+        builder.Property(g => g.ContactEmail).HasMaxLength(254);
+        builder.Property(g => g.Notes).HasMaxLength(2000);
+        // Twee groepen met dezelfde naam zouden het automatisch koppelen willekeurig maken.
+        builder.HasIndex(g => g.MatchName).IsUnique();
+        builder.HasMany(g => g.Seasons).WithOne().HasForeignKey(s => s.GroupId).OnDelete(DeleteBehavior.Cascade);
+        builder.ToTable(t => t.HasCheckConstraint("CK_CarnivalGroup_since", "[participating_since] IS NULL OR [participating_since] BETWEEN 1900 AND 2200"));
+    }
+}
+
+internal sealed class CarnivalGroupSeasonConfiguration : IEntityTypeConfiguration<CarnivalGroupSeason>
+{
+    public void Configure(EntityTypeBuilder<CarnivalGroupSeason> builder)
+    {
+        builder.ToTable("CarnivalGroupSeason", Schemas.Parade);
+        builder.HasKey(s => new { s.GroupId, s.Year });
+        builder.Property(s => s.FloatName).HasMaxLength(150);
+        builder.Property(s => s.Notes).HasMaxLength(2000);
+        builder.HasOne<ParadeCategory>().WithMany().HasForeignKey(s => s.CategoryId).OnDelete(DeleteBehavior.Restrict);
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_CarnivalGroupSeason_year", "[year] BETWEEN 1900 AND 2200");
+            t.HasCheckConstraint("CK_CarnivalGroupSeason_place", "[place] IS NULL OR [place] > 0");
+        });
     }
 }

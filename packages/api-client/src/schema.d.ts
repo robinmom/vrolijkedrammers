@@ -3781,6 +3781,807 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    body?: components["schemas"]["GoverningBody"];
+                    includePast?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BoardSeatView"][];
+                        "application/json": components["schemas"]["BoardSeatView"][];
+                        "text/json": components["schemas"]["BoardSeatView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BoardSeatRequest"];
+                    "text/json": components["schemas"]["BoardSeatRequest"];
+                    "application/*+json": components["schemas"]["BoardSeatRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/board/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BoardSeatRequest"];
+                    "text/json": components["schemas"]["BoardSeatRequest"];
+                    "application/*+json": components["schemas"]["BoardSeatRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/board/{id}/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** De huidige bestuursperiode met één of twee jaar verlengen. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ExtendTermRequest"];
+                    "text/json": components["schemas"]["ExtendTermRequest"];
+                    "application/*+json": components["schemas"]["ExtendTermRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BoardSeatView"];
+                        "application/json": components["schemas"]["BoardSeatView"];
+                        "text/json": components["schemas"]["BoardSeatView"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/board/{id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Herverkozen: een nieuwe periode van drie jaar, standaard aansluitend op de vorige. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RenewTermRequest"];
+                    "text/json": components["schemas"]["RenewTermRequest"];
+                    "application/*+json": components["schemas"]["RenewTermRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BoardSeatView"];
+                        "application/json": components["schemas"]["BoardSeatView"];
+                        "text/json": components["schemas"]["BoardSeatView"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    includeInactive?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CarnivalGroupSummary"][];
+                        "application/json": components["schemas"]["CarnivalGroupSummary"][];
+                        "text/json": components["schemas"]["CarnivalGroupSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CarnivalGroupRequest"];
+                    "text/json": components["schemas"]["CarnivalGroupRequest"];
+                    "application/*+json": components["schemas"]["CarnivalGroupRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CreatedResponse"];
+                        "application/json": components["schemas"]["CreatedResponse"];
+                        "text/json": components["schemas"]["CreatedResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups/unlinked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ingediende inschrijvingen die nog aan geen groep hangen, met de groep die er het meest op lijkt. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UnlinkedRegistration"][];
+                        "application/json": components["schemas"]["UnlinkedRegistration"][];
+                        "text/json": components["schemas"]["UnlinkedRegistration"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** De categorieën om bij een jaar te kiezen. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ParadeCategoryOption"][];
+                        "application/json": components["schemas"]["ParadeCategoryOption"][];
+                        "text/json": components["schemas"]["ParadeCategoryOption"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CarnivalGroupDetail"];
+                        "application/json": components["schemas"]["CarnivalGroupDetail"];
+                        "text/json": components["schemas"]["CarnivalGroupDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CarnivalGroupRequest"];
+                    "text/json": components["schemas"]["CarnivalGroupRequest"];
+                    "application/*+json": components["schemas"]["CarnivalGroupRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Kan alleen zolang er geen inschrijving aan hangt; anders zet je de groep op niet actief. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups/{id}/years/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Een jaar van de groep opslaan; ook een jaar van vóór de app, dus zonder inschrijving. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CarnivalGroupYearRequest"];
+                    "text/json": components["schemas"]["CarnivalGroupYearRequest"];
+                    "application/*+json": components["schemas"]["CarnivalGroupYearRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Een inschrijving aan een groep hangen: aan een bestaande, of aan een nieuwe met de naam uit de inschrijving. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkRegistrationRequest"];
+                    "text/json": components["schemas"]["LinkRegistrationRequest"];
+                    "application/*+json": components["schemas"]["LinkRegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LinkedResponse"];
+                        "application/json": components["schemas"]["LinkedResponse"];
+                        "text/json": components["schemas"]["LinkedResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/parade-groups/unlink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UnlinkRegistrationRequest"];
+                    "text/json": components["schemas"]["UnlinkRegistrationRequest"];
+                    "application/*+json": components["schemas"]["UnlinkRegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/carnival-years": {
         parameters: {
             query?: never;
@@ -27412,6 +28213,63 @@ export interface components {
             challenge: null | string;
             signature: null | string;
         };
+        BoardSeatRequest: {
+            body: components["schemas"]["GoverningBody"];
+            /** Format: uuid */
+            memberId: null | string;
+            name: null | string;
+            function: null | string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: null | string;
+            notes: null | string;
+            terms: null | components["schemas"]["BoardTermRequest"][];
+        };
+        /**
+         * @description Een plek in het bestuur of de raad van elf, met alles wat het portal nodig heeft om de balk te tekenen: hoeveel
+         *     dagen iemand er in zit en waar de periode van drie jaar eindigt.
+         */
+        BoardSeatView: {
+            /** Format: uuid */
+            id: string;
+            body: components["schemas"]["GoverningBody"];
+            /** Format: uuid */
+            memberId: null | string;
+            name: string;
+            function: null | string;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: null | string;
+            notes: null | string;
+            /** Format: int32 */
+            daysServed: number;
+            /** Format: date */
+            termEnd: null | string;
+            /** Format: int32 */
+            daysUntilTermEnd: null | number;
+            terms: components["schemas"]["BoardTermView"][];
+        };
+        BoardTermRequest: {
+            /** Format: date */
+            startDate: string;
+            /** Format: int32 */
+            extensionYears: number;
+            note: null | string;
+        };
+        BoardTermView: {
+            /** Format: int32 */
+            number: number;
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
+            /** Format: int32 */
+            extensionYears: number;
+            note: null | string;
+            isCurrent: boolean;
+        };
         BreakRequestItem: {
             /** Format: uuid */
             id: string;
@@ -27451,6 +28309,72 @@ export interface components {
         };
         CancelOrderRequest: {
             reason: null | string;
+        };
+        CarnivalGroupDetail: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            active: boolean;
+            contactName: null | string;
+            contactPhone: null | string;
+            contactEmail: null | string;
+            /** Format: int32 */
+            participatingSince: null | number;
+            notes: null | string;
+            /** Format: int32 */
+            firstYear: null | number;
+            years: components["schemas"]["CarnivalGroupYear"][];
+        };
+        CarnivalGroupRequest: {
+            name: string;
+            contactName: null | string;
+            contactPhone: null | string;
+            contactEmail: null | string;
+            /** Format: int32 */
+            participatingSince: null | number;
+            notes: null | string;
+            active: boolean;
+        };
+        CarnivalGroupSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            active: boolean;
+            /** Format: int32 */
+            participatingSince: null | number;
+            /** Format: int32 */
+            firstYear: null | number;
+            /** Format: int32 */
+            yearCount: number;
+            /** Format: int32 */
+            lastYear: null | number;
+            lastFloatName: null | string;
+            /** Format: int32 */
+            lastPlace: null | number;
+            registeredForCurrentParade: boolean;
+        };
+        /** @description Een jaar van een groep: eigen antwoorden, aangevuld met de inschrijving van dat jaar. */
+        CarnivalGroupYear: {
+            /** Format: int32 */
+            year: number;
+            floatName: null | string;
+            /** Format: int32 */
+            categoryId: null | number;
+            categoryName: null | string;
+            /** Format: int32 */
+            place: null | number;
+            placeFromResults: boolean;
+            notes: null | string;
+            hasOwnRow: boolean;
+            registration: null | components["schemas"]["GroupRegistrationView"];
+        };
+        CarnivalGroupYearRequest: {
+            floatName: null | string;
+            /** Format: int32 */
+            categoryId: null | number;
+            /** Format: int32 */
+            place: null | number;
+            notes: null | string;
         };
         /** @enum {unknown} */
         CarnivalTaskStatus: "NotStarted" | "InProgress" | "Done" | "Cancelled";
@@ -28299,6 +29223,11 @@ export interface components {
             excludedAt: string;
             excludedBy: null | string;
         };
+        ExtendTermRequest: {
+            /** Format: int32 */
+            years: number;
+            note: null | string;
+        };
         FeatureFlagRequest: {
             enabled: boolean;
             description: null | string;
@@ -28722,6 +29651,8 @@ export interface components {
             /** Format: int32 */
             changed: number;
         };
+        /** @enum {unknown} */
+        GoverningBody: "Board" | "CouncilOfEleven";
         GrantWaitlistRequest: {
             payment: components["schemas"]["PortalPayment"];
         };
@@ -28770,6 +29701,37 @@ export interface components {
             validFrom: null | string;
             /** Format: date */
             validTo: null | string;
+        };
+        /** @description De inschrijving van dat jaar, zoals de groep hem heeft ingediend. */
+        GroupRegistrationView: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            /** Format: int32 */
+            startNumber: null | number;
+            status: components["schemas"]["RegistrationStatus"];
+            groupName: null | string;
+            contactName: null | string;
+            contactPhone: null | string;
+            contactEmail: null | string;
+            /** Format: int32 */
+            categoryId: null | number;
+            subject: null | string;
+            subjectDescription: null | string;
+            /** Format: int32 */
+            childrenCount: number;
+            /** Format: int32 */
+            adultCount: number;
+            hasMusic: null | boolean;
+            buildAddress: null | string;
+            juryAddress: null | string;
+            /** Format: double */
+            estimatedLengthMeters: null | number;
+            /** Format: double */
+            measuredLengthMeters: null | number;
+            /** Format: date-time */
+            submittedAt: null | string;
         };
         GroupRequest: {
             name: string;
@@ -29423,10 +30385,21 @@ export interface components {
             };
             categories: components["schemas"]["CategoryTotals"][];
         };
+        LinkedResponse: {
+            /** Format: uuid */
+            groupId: string;
+        };
         LinkGuardianRequest: {
             /** Format: uuid */
             userId: string;
             relationship: components["schemas"]["GuardianRelationship"];
+        };
+        LinkRegistrationRequest: {
+            /** Format: uuid */
+            registrationId: string;
+            /** Format: uuid */
+            groupId: null | string;
+            createNew: boolean;
         };
         MailingAddressRequest: {
             email: string;
@@ -30804,6 +31777,13 @@ export interface components {
             /** Format: int32 */
             totalCount: number;
         };
+        /** @description Categorie om bij een jaar te kiezen (ook de niet-actieve, want oude jaren horen soms bij een oude categorie). */
+        ParadeCategoryOption: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            active: boolean;
+        };
         ParadeCategoryResponse: {
             /** Format: int32 */
             id: number;
@@ -31415,6 +32395,11 @@ export interface components {
         };
         RenameDeviceRequest: {
             name: string;
+        };
+        RenewTermRequest: {
+            /** Format: date */
+            startDate: null | string;
+            note: null | string;
         };
         ReportRow: {
             label: string;
@@ -32398,6 +33383,26 @@ export interface components {
             attempts: number;
             /** Format: date-time */
             deletesAt: string;
+        };
+        /** @description Een ingediende inschrijving die nog aan geen groep hangt, met de groep die er het meest op lijkt. */
+        UnlinkedRegistration: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            groupName: null | string;
+            contactName: null | string;
+            contactEmail: null | string;
+            /** Format: int32 */
+            year: number;
+            status: components["schemas"]["RegistrationStatus"];
+            /** Format: uuid */
+            suggestedGroupId: null | string;
+            suggestedGroupName: null | string;
+        };
+        UnlinkRegistrationRequest: {
+            /** Format: uuid */
+            registrationId: string;
         };
         UpdateRegistrationRequest: {
             version: null | string;

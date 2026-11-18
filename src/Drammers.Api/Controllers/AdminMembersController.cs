@@ -72,7 +72,9 @@ public sealed class AdminMembersController(
     {
         var m = await db.Members.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new DomainException(ErrorCodes.MemberNotFound, "Lid niet gevonden.", DomainErrorKind.NotFound);
-        var account = await db.Users.AsNoTracking().Where(u => u.MemberId == id)
+        // Een opgeheven account is geen account: overal elders in de code staat dezelfde voorwaarde. Zonder dit liet de
+        // kaart "App-account" een verwijderd account zien (status "Verwijderd") en bleef "App-account aanmaken" weg.
+        var account = await db.Users.AsNoTracking().Where(u => u.MemberId == id && u.AccountStatus != AccountStatus.Deleted)
             .Select(u => new MemberAccountResponse(u.Id, u.Email, u.AccountStatus.ToString(), u.LastLoginAt, u.ExternalObjectId.StartsWith(PendingObjectId.Prefix), u.WelcomeSentAt))
             .SingleOrDefaultAsync(cancellationToken);
         var mapping = await settings.GetMappingAsync(cancellationToken);

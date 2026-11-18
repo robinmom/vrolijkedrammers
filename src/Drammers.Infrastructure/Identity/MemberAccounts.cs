@@ -583,6 +583,17 @@ public sealed class MemberAccounts(
             };
             db.Users.Add(user);
         }
+        else if (user.AccountStatus == AccountStatus.Deleted)
+        {
+            // Een eerder opgeheven account wordt opnieuw gekoppeld, bijvoorbeeld nadat een gedeeld e-mailadres is
+            // gesplitst en de volwassene zijn eigen adres krijgt. Zonder dit bleef de status "verwijderd" staan: het lid
+            // leek een account te hebben, maar de app weigerde elke aanroep als "inactive" en er kon ook geen nieuw
+            // account worden aangemaakt. Het verhaspelde adres en de naam "Verwijderd account" (zie
+            // AccountAdministration.DeleteUserAsync) gaan daarom ook terug naar de echte waarden.
+            user.AccountStatus = AccountStatus.Active;
+            user.Email = loginEmail;
+            user.DisplayName = displayName;
+        }
 
         // Een bestaand account (bijv. een beheerder die ook lid is) wordt gekoppeld en krijgt de rol erbij. Eén account
         // hoort bij hooguit één lid: een adres dat al bij een ander lid hoort, wordt niet stil overgenomen. Uitzondering
@@ -600,6 +611,10 @@ public sealed class MemberAccounts(
                 await MoveChildAccountToParentAsync(user, other, cancellationToken);
             }
 
+            // Hangt er nog een opgeheven account aan dit lid, dan laat dat los: er mag maar één account aan een lid
+            // hangen (unieke index op member_id), en een verwijderd account heeft die plek niet nodig.
+            await db.Users.Where(u => u.MemberId == id && u.Id != user.Id && u.AccountStatus == AccountStatus.Deleted)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.MemberId, (Guid?)null), cancellationToken);
             user.MemberId = id;
         }
 

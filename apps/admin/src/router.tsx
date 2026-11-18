@@ -54,6 +54,7 @@ import { TaskReportPage, TasksPage } from './pages/TasksPage';
 import { RoyalPage } from './pages/RoyalPage';
 import { GuardianRequestsPage } from './pages/GuardianRequestsPage';
 import { AccessStatsPage } from './pages/AccessStatsPage';
+import { BoardBodiesPage } from './pages/BoardBodiesPage';
 import { BoardPage } from './pages/BoardPage';
 import { CarnivalGroupDetailPage, CarnivalGroupsPage } from './pages/CarnivalGroupsPage';
 import { ParadeRegistrationDetailPage, ParadeRegistrationsPage } from './pages/ParadeRegistrationsPage';
@@ -160,7 +161,8 @@ const routeTree = rootRoute.addChildren([
   createRoute({ getParentRoute: () => rootRoute, path: '/aanmeldingen/$id', component: guarded('member.approve', ApplicationDetailPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/accountverzoeken', component: guarded('member.approve', AccountRequestsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/groepen', component: guarded('member.read', GroupsPage) }),
-  createRoute({ getParentRoute: () => rootRoute, path: '/bestuur', component: guarded('member.read', BoardPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/kader', component: guarded('member.read', BoardPage) }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/kader/categorieen', component: guarded('member.read', BoardBodiesPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/koppelverzoeken', component: guarded('member.read', GuardianRequestsPage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/dansgarde', component: guarded('member.read', DansgardePage) }),
   createRoute({ getParentRoute: () => rootRoute, path: '/dansgarde/groepen', component: guarded('member.read', DanceGroupsPage) }),

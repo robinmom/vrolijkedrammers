@@ -4450,6 +4450,277 @@
         }
       }
     },
+    "/api/v1/admin/board/bodies": {
+      "get": {
+        "tags": [
+          "AdminBoard"
+        ],
+        "summary": "De categorieën in het kader, in de volgorde van het portal.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardBodyView"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardBodyView"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardBodyView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AdminBoard"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardBodyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardBodyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardBodyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/board/bodies/{id}": {
+      "put": {
+        "tags": [
+          "AdminBoard"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardBodyRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardBodyRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardBodyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AdminBoard"
+        ],
+        "summary": "Kan alleen als er niemand meer in de categorie staat.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/board": {
       "get": {
         "tags": [
@@ -4457,10 +4728,11 @@
         ],
         "parameters": [
           {
-            "name": "body",
+            "name": "bodyId",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/GoverningBody"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -36585,9 +36857,59 @@
           }
         }
       },
+      "BoardBodyRequest": {
+        "required": [
+          "name",
+          "hasTerms",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "hasTerms": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BoardBodyView": {
+        "required": [
+          "id",
+          "name",
+          "hasTerms",
+          "position",
+          "seats"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "hasTerms": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seats": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "BoardSeatRequest": {
         "required": [
-          "body",
+          "bodyId",
           "memberId",
           "name",
           "function",
@@ -36598,8 +36920,9 @@
         ],
         "type": "object",
         "properties": {
-          "body": {
-            "$ref": "#/components/schemas/GoverningBody"
+          "bodyId": {
+            "type": "string",
+            "format": "uuid"
           },
           "memberId": {
             "type": [
@@ -36651,7 +36974,9 @@
       "BoardSeatView": {
         "required": [
           "id",
+          "bodyId",
           "body",
+          "hasTerms",
           "memberId",
           "name",
           "function",
@@ -36659,8 +36984,11 @@
           "endDate",
           "notes",
           "daysServed",
+          "termNumber",
+          "termStart",
           "termEnd",
           "daysUntilTermEnd",
+          "termExtensionYears",
           "terms"
         ],
         "type": "object",
@@ -36669,8 +36997,15 @@
             "type": "string",
             "format": "uuid"
           },
+          "bodyId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "body": {
-            "$ref": "#/components/schemas/GoverningBody"
+            "type": "string"
+          },
+          "hasTerms": {
+            "type": "boolean"
           },
           "memberId": {
             "type": [
@@ -36709,6 +37044,20 @@
             "type": "integer",
             "format": "int32"
           },
+          "termNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "termStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
           "termEnd": {
             "type": [
               "null",
@@ -36723,6 +37072,10 @@
             ],
             "format": "int32"
           },
+          "termExtensionYears": {
+            "type": "integer",
+            "format": "int32"
+          },
           "terms": {
             "type": "array",
             "items": {
@@ -36730,7 +37083,7 @@
             }
           }
         },
-        "description": "Een plek in het bestuur of de raad van elf, met alles wat het portal nodig heeft om de balk te tekenen: hoeveel\ndagen iemand er in zit en waar de periode van drie jaar eindigt."
+        "description": "Een plek in het kader, met alles wat het portal nodig heeft om de balk te tekenen: hoeveel dagen iemand er in zit,\nin welke periode hij nu zit en waar die eindigt."
       },
       "BoardTermRequest": {
         "required": [
@@ -41661,12 +42014,6 @@
             "format": "int32"
           }
         }
-      },
-      "GoverningBody": {
-        "enum": [
-          "Board",
-          "CouncilOfEleven"
-        ]
       },
       "GrantWaitlistRequest": {
         "required": [

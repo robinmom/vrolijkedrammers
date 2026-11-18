@@ -96,6 +96,8 @@ public sealed class DrammersDbContext(DbContextOptions<DrammersDbContext> option
 
     public DbSet<GroupMembership> GroupMemberships => Set<GroupMembership>();
 
+    public DbSet<Modules.Membership.Board.BoardBody> BoardBodies => Set<Modules.Membership.Board.BoardBody>();
+
     public DbSet<Modules.Membership.Board.BoardSeat> BoardSeats => Set<Modules.Membership.Board.BoardSeat>();
 
     public DbSet<SyncJob> SyncJobs => Set<SyncJob>();

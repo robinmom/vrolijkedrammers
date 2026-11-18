@@ -364,6 +364,17 @@ internal sealed class MemberYearStatConfiguration : IEntityTypeConfiguration<Mem
     }
 }
 
+internal sealed class BoardBodyConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Board.BoardBody>
+{
+    public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Board.BoardBody> builder)
+    {
+        builder.ToTable("BoardBody", Schemas.Membership);
+        builder.Property(b => b.Id).ValueGeneratedNever();
+        builder.Property(b => b.Name).HasMaxLength(60);
+        builder.HasIndex(b => b.Name).IsUnique();
+    }
+}
+
 internal sealed class BoardSeatConfiguration : IEntityTypeConfiguration<Drammers.Modules.Membership.Board.BoardSeat>
 {
     public void Configure(EntityTypeBuilder<Drammers.Modules.Membership.Board.BoardSeat> builder)
@@ -374,7 +385,10 @@ internal sealed class BoardSeatConfiguration : IEntityTypeConfiguration<Drammers
         builder.Property(s => s.Function).HasMaxLength(60);
         builder.Property(s => s.Notes).HasMaxLength(2000);
         builder.HasOne<Member>().WithMany().HasForeignKey(s => s.MemberId).OnDelete(DeleteBehavior.SetNull);
-        builder.HasIndex(s => new { s.Body, s.EndDate });
+        // Een categorie met mensen erin mag niet verdwijnen; dat weigert BoardAdministration met een nette melding.
+        builder.HasOne<Drammers.Modules.Membership.Board.BoardBody>().WithMany().HasForeignKey(s => s.BodyId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(s => new { s.BodyId, s.EndDate });
         // De periodes horen bij één plek en worden altijd samen gelezen en geschreven; als JSON blijven ze bij elkaar.
         builder.OwnsMany(s => s.Terms, t =>
         {

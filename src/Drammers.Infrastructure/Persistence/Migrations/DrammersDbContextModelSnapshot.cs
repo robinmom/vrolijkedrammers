@@ -5931,18 +5931,61 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Drammers.Modules.Membership.Board.BoardBody", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("HasTerms")
+                        .HasColumnType("bit")
+                        .HasColumnName("has_terms");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int")
+                        .HasColumnName("position");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("PK_BoardBody");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BoardBody_name");
+
+                    b.ToTable("BoardBody", "membership");
+                });
+
             modelBuilder.Entity("Drammers.Modules.Membership.Board.BoardSeat", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(40)")
-                        .HasColumnName("body");
+                    b.Property<Guid>("BodyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("body_id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2(3)")
@@ -5994,13 +6037,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                     b.HasIndex("MemberId")
                         .HasDatabaseName("IX_BoardSeat_member_id");
 
-                    b.HasIndex("Body", "EndDate")
-                        .HasDatabaseName("IX_BoardSeat_body_end_date");
+                    b.HasIndex("BodyId", "EndDate")
+                        .HasDatabaseName("IX_BoardSeat_body_id_end_date");
 
                     b.ToTable("BoardSeat", "membership", t =>
                         {
-                            t.HasCheckConstraint("CK_BoardSeat_body", "[body] IN ('Board', 'CouncilOfEleven')");
-
                             t.HasCheckConstraint("CK_BoardSeat_period", "[end_date] IS NULL OR [end_date] >= [start_date]");
                         });
                 });
@@ -10856,6 +10897,12 @@ namespace Drammers.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Drammers.Modules.Membership.Board.BoardSeat", b =>
                 {
+                    b.HasOne("Drammers.Modules.Membership.Board.BoardBody", null)
+                        .WithMany()
+                        .HasForeignKey("BodyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Drammers.Modules.Membership.Members.Member", null)
                         .WithMany()
                         .HasForeignKey("MemberId")

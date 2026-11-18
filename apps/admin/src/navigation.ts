@@ -18,6 +18,7 @@ export interface NavItem {
     | 'Adverteerders'
     | 'Financieel'
     | 'Leden'
+    | 'Kader'
     | 'Dansgarde'
     | 'Prins'
     | 'Carnaval'
@@ -85,13 +86,14 @@ export const navItems: readonly NavItem[] = [
   { label: 'Koppelverzoeken', to: '/koppelverzoeken', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   { label: 'Groepen', to: '/groepen', permission: 'member.read', icon: 'groepen', section: 'Leden' },
   // 2026-11-17: bestuursperiodes van drie jaar (verlengbaar) en de raad van elf.
-  { label: 'Bestuur en raad van elf', to: '/bestuur', permission: 'member.read', icon: 'rollen', section: 'Leden' },
   { label: 'Ledensync', to: '/ledensync', permission: 'import.run', icon: 'sync', section: 'Leden', requiresEBoekhouden: true },
   { label: 'Rapportage', to: '/rapportage', permission: 'report.view', icon: 'rapport', section: 'Leden' },
   // Fase 25: lidmaatschappen (soorten, tarieven, splitsen); contributie is het overzicht per lid.
   { label: 'Lidmaatschappen', to: '/lidmaatschappen', permission: 'contribution.manage', icon: 'groepen', section: 'Leden' },
   // Fase 20: jubilarissen per carnavalsjaar.
   { label: 'Jubilarissen', to: '/jubilarissen', permission: 'member.read', icon: 'jaar', section: 'Leden' },
+  { label: 'Personen', to: '/kader', permission: 'member.read', icon: 'rollen', section: 'Kader' },
+  { label: 'Categorieën', to: '/kader/categorieen', permission: 'member.read', icon: 'instellingen', section: 'Kader' },
   { label: 'Overzicht', to: '/dansgarde', permission: 'member.read', icon: 'leden', section: 'Dansgarde' },
   { label: 'Dansgroepen', to: '/dansgarde/groepen', permission: 'member.read', icon: 'groepen', section: 'Dansgarde' },
   // 2026-10-12: Dansgardefestival; de organisatie (rol Dansgardefestival) ziet in het portal alleen dit.

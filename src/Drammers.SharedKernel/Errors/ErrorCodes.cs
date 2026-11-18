@@ -102,4 +102,7 @@ public static class ErrorCodes
     public const string WaitlistNotFound = "WAITLIST_NOT_FOUND";
     public const string CarnivalGroupInUse = "CARNIVAL_GROUP_IN_USE";
     public const string BoardSeatNotFound = "BOARD_SEAT_NOT_FOUND";
+    public const string BoardBodyNotFound = "BOARD_BODY_NOT_FOUND";
+    public const string BoardBodyNameTaken = "BOARD_BODY_NAME_TAKEN";
+    public const string BoardBodyInUse = "BOARD_BODY_IN_USE";
 }

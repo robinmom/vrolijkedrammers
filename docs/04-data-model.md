@@ -177,16 +177,21 @@ Voor doelgroepen die geen rol zijn: `Dansgarde meisjes`, `Dansgarde leiding`, `J
 > **Let op**: de carnavalsgroepen die meedoen aan de optocht staan **niet** hier maar in `parade.CarnivalGroup`
 > (2026-11-17). Dat zijn groepen van het dorp met hun eigen geschiedenis per jaar, geen doelgroep van leden.
 
-### BoardSeat (2026-11-17)
-Wie in het bestuur of de raad van elf zit, en hoe lang al. Met de hand bijgehouden: het volgt niet uit de rollen of uit
-het kader op de website, en de geschiedenis staat nergens anders.
-- `BoardSeat`: `id`, `body` (`Board`, `CouncilOfEleven`), `member_id NULL` (naam volgt dan de ledenlijst), `name`,
+### BoardBody en BoardSeat (2026-11-17, eigen categorieën 2026-11-18)
+Wie in het kader zit — bestuur, raad van elf of een eigen categorie — en hoe lang al. Met de hand bijgehouden: het
+volgt niet uit de rollen of uit het kader op de website, en de geschiedenis staat nergens anders.
+- `BoardBody`: `id`, `name` (uniek), `has_terms`, `position` (volgorde in het portal). "Bestuur" (met periodes) en
+  "Raad van Elf" (zonder) komen uit de migratie; de vereniging voegt zelf categorieën toe bij Kader → Categorieën.
+  Een categorie met mensen erin kan niet weg (`BOARD_BODY_IN_USE`); periodes uitzetten haalt ze bij die mensen weg.
+- `BoardSeat`: `id`, `body_id` → `BoardBody`, `member_id NULL` (naam volgt dan de ledenlijst), `name`,
   `function NULL` (bijv. Voorzitter, Vorst), `start_date`, `end_date NULL` (gestopt), `notes`, `terms` (JSON).
-- `terms` is een lijst periodes `{ start_date, extension_years, note }`, alleen voor het bestuur: dat is verkiesbaar en
-  een periode duurt **drie jaar**, te verlengen met **één of twee** jaar (einde = begin + 3 + verlenging). De raad van
-  elf begint en stopt wanneer iemand dat zelf wil en heeft dus geen periodes.
+- `terms` is een lijst periodes `{ start_date, extension_years, note }`, alleen bij een categorie met `has_terms`: een
+  periode duurt **drie jaar**, te verlengen met **één of twee** jaar (einde = begin + 3 + verlenging).
+- **De periodes lopen door.** Na de laatst vastgelegde periode volgt elke drie jaar een volgende (zonder verlenging),
+  zodat bij iemand van tien jaar het einde op zijn vierde periode staat en niet op zijn eerste drie jaar
+  (`BoardSeat.PeriodOn`). Verlengen of een nieuwe periode legt de doorgerekende periodes eerst vast.
 - Het portal tekent per persoon een balk met het aantal jaren en elke drie jaar een streep, plus een markering waar de
-  huidige periode eindigt.
+  lopende periode eindigt.
 
 ### MembershipApplication
 | Kolom | Opm. |

@@ -159,8 +159,10 @@ Scanresultaat:
 | POST | `/admin/meetings/{id}/agenda/preview` · `/agenda/send` (agendamail in de huisstijl naar de rolhouders) | meeting.manage |
 | CRUD | `/admin/carnival-years` (+ `/activate`, `/access-windows`) | config.manage |
 | CRUD | `/admin/groups` (+ leden) | member.update |
-| GET | `/admin/board?body=Board\|CouncilOfEleven&includePast=` (bestuur en raad van elf, met jaren en periode) | member.read |
+| GET | `/admin/board?bodyId=&includePast=` (het kader, met jaren en de lopende periode) | member.read |
 | CRUD | `/admin/board` · POST `/{id}/extend` `{ years: 1\|2 }` · `/{id}/renew` (nieuwe periode van 3 jaar) | member.update |
+| GET | `/admin/board/bodies` (categorieën in het kader, met aantal mensen) | member.read |
+| CRUD | `/admin/board/bodies` (eigen categorie; verwijderen kan alleen zonder mensen erin) | member.update |
 
 ### Meldingen
 | Methode | Pad | Permission |

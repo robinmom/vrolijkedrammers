@@ -860,17 +860,29 @@ export function useUnlinkedRegistrations(enabled = true) {
   });
 }
 
-// ----- Bestuur en raad van elf (2026-11-17) -----
+// ----- Kader: bestuur, raad van elf en eigen categorieën (2026-11-17, categorieën 2026-11-18) -----
 
 export type BoardSeat = Schemas['BoardSeatView'];
 export type BoardTerm = Schemas['BoardTermView'];
-export type GoverningBody = Schemas['GoverningBody'];
+export type BoardBody = Schemas['BoardBodyView'];
 export type BoardSeatRequest = Schemas['BoardSeatRequest'];
+export type BoardBodyRequest = Schemas['BoardBodyRequest'];
 
-export function useBoardSeats(body: GoverningBody, includePast: boolean) {
+export const BOARD_KEYS = [['board'], ['board-bodies']];
+
+export function useBoardBodies() {
   const api = useApi();
   return useQuery({
-    queryKey: ['board', body, includePast],
-    queryFn: async () => required((await api.GET('/api/v1/admin/board', { params: { query: { body, includePast } } })).data),
+    queryKey: ['board-bodies'],
+    queryFn: async () => required((await api.GET('/api/v1/admin/board/bodies')).data),
+  });
+}
+
+export function useBoardSeats(bodyId: string | undefined, includePast: boolean) {
+  const api = useApi();
+  return useQuery({
+    enabled: bodyId !== undefined,
+    queryKey: ['board', bodyId, includePast],
+    queryFn: async () => required((await api.GET('/api/v1/admin/board', { params: { query: { bodyId, includePast } } })).data),
   });
 }

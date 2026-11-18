@@ -64,10 +64,18 @@ interface MockCarnivalGroup {
   years: MockCarnivalGroupYear[];
 }
 
-/** Plek in het bestuur of de raad van elf; de mock rekent de dagen en het einde van de periode zelf uit. */
+/** Categorie in het kader (2026-11-18); de vereniging voegt er zelf aan toe. */
+interface MockBoardBody {
+  id: string;
+  name: string;
+  hasTerms: boolean;
+  position: number;
+}
+
+/** Plek in het kader; de mock rekent de dagen en de lopende periode zelf uit. */
 interface MockBoardSeat {
   id: string;
-  body: 'Board' | 'CouncilOfEleven';
+  bodyId: string;
   memberId: string | null;
   name: string;
   function: string | null;
@@ -86,25 +94,73 @@ function termEndDate(start: string, extensionYears: number) {
   return date.toISOString().slice(0, 10);
 }
 
-/** Dezelfde afgeleide waarden als de API: hoeveel dagen iemand erin zit en waar de huidige periode eindigt. */
-function boardSeatView(seat: MockBoardSeat) {
+/**
+ * De periode waarin iemand op <code>on</code> zit, net als BoardSeat.PeriodOn: na de laatst vastgelegde periode volgt
+ * elke drie jaar een volgende, zodat het einde meeloopt met de jaren.
+ */
+function boardPeriod(seat: MockBoardSeat, on: string) {
+  const terms = [...seat.terms].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const last = terms.at(-1);
+  if (!last) {
+    return null;
+  }
+
+  const until = seat.endDate && seat.endDate < on ? seat.endDate : on;
+  let [number, start, end, extension] = [
+    terms.length,
+    last.startDate,
+    termEndDate(last.startDate, last.extensionYears),
+    last.extensionYears,
+  ];
+  while (end <= until) {
+    [number, start, end, extension] = [number + 1, end, termEndDate(end, 0), 0];
+  }
+
+  return { number, start, end, extension, recorded: start === last.startDate };
+}
+
+/** Legt de doorgerekende periodes vast tot en met die van vandaag, net als BoardAdministration bij verlengen. */
+function recordBoardPeriods(seat: MockBoardSeat) {
+  const today = new Date().toISOString().slice(0, 10);
+  const period = boardPeriod(seat, today);
+  if (!period || period.recorded) {
+    return;
+  }
+
+  const last = [...seat.terms].sort((a, b) => a.startDate.localeCompare(b.startDate)).at(-1)!;
+  for (
+    let start = termEndDate(last.startDate, last.extensionYears);
+    start <= period.start;
+    start = termEndDate(start, 0)
+  ) {
+    seat.terms.push({ startDate: start, extensionYears: 0, note: null });
+  }
+}
+
+/** Dezelfde afgeleide waarden als de API: hoeveel dagen iemand erin zit en waar de lopende periode eindigt. */
+function boardSeatView(seat: MockBoardSeat, bodies: MockBoardBody[]) {
+  const body = bodies.find((b) => b.id === seat.bodyId)!;
   const until = seat.endDate ? Date.parse(seat.endDate) : Date.now();
   const daysServed = Math.max(0, Math.round((until - Date.parse(seat.startDate)) / DAY));
   const terms = [...seat.terms].sort((a, b) => a.startDate.localeCompare(b.startDate));
-  const current = terms.at(-1);
-  const end = current ? termEndDate(current.startDate, current.extensionYears) : null;
+  const period = boardPeriod(seat, new Date().toISOString().slice(0, 10));
   return {
     ...seat,
+    body: body.name,
+    hasTerms: body.hasTerms,
     daysServed,
-    termEnd: end,
-    daysUntilTermEnd: end ? Math.round((Date.parse(end) - Date.now()) / DAY) : null,
+    termNumber: period?.number ?? null,
+    termStart: period?.start ?? null,
+    termEnd: period?.end ?? null,
+    daysUntilTermEnd: period ? Math.round((Date.parse(period.end) - Date.now()) / DAY) : null,
+    termExtensionYears: period?.extension ?? 0,
     terms: terms.map((t, i) => ({
       number: i + 1,
       startDate: t.startDate,
       endDate: termEndDate(t.startDate, t.extensionYears),
       extensionYears: t.extensionYears,
       note: t.note,
-      isCurrent: current !== undefined && t.startDate === current.startDate,
+      isCurrent: period !== null && period.recorded && t.startDate === period.start,
     })),
   };
 }
@@ -395,11 +451,17 @@ export class MockApi {
     { id: 3, name: 'Volwassenen Loopgroepen groot (10+)', active: true },
   ];
 
-  /** Bestuur en raad van elf (2026-11-17); de periodes staan los, want ze kunnen verlengd worden. */
+  /** De categorieën in het kader; "Bestuur" en "Raad van Elf" staan er vanaf de migratie in. */
+  boardBodies: MockBoardBody[] = [
+    { id: 'bb-1', name: 'Bestuur', hasTerms: true, position: 1 },
+    { id: 'bb-2', name: 'Raad van Elf', hasTerms: false, position: 2 },
+  ];
+
+  /** Plekken in het kader (2026-11-17); de periodes staan los, want ze kunnen verlengd worden. */
   boardSeats: MockBoardSeat[] = [
     {
       id: 'b-1',
-      body: 'Board',
+      bodyId: 'bb-1',
       memberId: null,
       name: 'Test Bestuurder',
       function: 'Voorzitter',
@@ -414,7 +476,7 @@ export class MockApi {
     },
     {
       id: 'b-2',
-      body: 'Board',
+      bodyId: 'bb-1',
       memberId: null,
       name: 'Nieuwe Penningmeester',
       function: 'Penningmeester',
@@ -425,7 +487,7 @@ export class MockApi {
     },
     {
       id: 'b-3',
-      body: 'CouncilOfEleven',
+      bodyId: 'bb-2',
       memberId: null,
       name: 'Raadslid Riet',
       function: null,
@@ -4435,49 +4497,116 @@ export class MockApi {
         })),
       });
     }
-    // Bestuur en raad van elf (2026-11-17).
+    // Het kader (2026-11-17, eigen categorieën 2026-11-18).
+    if (path === '/admin/board/bodies' && method === 'POST') {
+      if (this.boardBodies.some((b) => b.name === body.name)) {
+        return json(
+          { status: 409, code: 'BOARD_BODY_NAME_TAKEN', detail: 'Er is al een categorie met deze naam.' },
+          409,
+        );
+      }
+
+      const id = `bb-${this.boardBodies.length + 1}`;
+      this.boardBodies.push({
+        id,
+        name: body.name as string,
+        hasTerms: body.hasTerms === true,
+        position: (body.position as number) ?? this.boardBodies.length + 1,
+      });
+      this.record('board-body.created', 'BoardBody', id, { name: body.name });
+      return json({ id }, 201);
+    }
+    if (path === '/admin/board/bodies') {
+      return json(
+        [...this.boardBodies]
+          .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
+          .map((b) => ({ ...b, seats: this.boardSeats.filter((s) => s.bodyId === b.id).length })),
+      );
+    }
+    if ((m = path.match(/^\/admin\/board\/bodies\/([^/]+)$/))) {
+      const index = this.boardBodies.findIndex((b) => b.id === m![1]);
+      const category = this.boardBodies[index]!;
+      if (method === 'DELETE') {
+        if (this.boardSeats.some((s) => s.bodyId === category.id)) {
+          return json(
+            { status: 409, code: 'BOARD_BODY_IN_USE', detail: 'Er staan nog mensen in deze categorie.' },
+            409,
+          );
+        }
+
+        this.boardBodies.splice(index, 1);
+        return noContent();
+      }
+      if (this.boardBodies.some((b) => b.id !== category.id && b.name === body.name)) {
+        return json(
+          { status: 409, code: 'BOARD_BODY_NAME_TAKEN', detail: 'Er is al een categorie met deze naam.' },
+          409,
+        );
+      }
+
+      const hadTerms = category.hasTerms;
+      Object.assign(category, {
+        name: body.name as string,
+        hasTerms: body.hasTerms === true,
+        position: (body.position as number) ?? category.position,
+      });
+      if (hadTerms && !category.hasTerms) {
+        for (const seat of this.boardSeats.filter((s) => s.bodyId === category.id)) {
+          seat.terms = [];
+        }
+      }
+
+      this.record('board-body.updated', 'BoardBody', category.id, { name: category.name });
+      return noContent();
+    }
     if (path === '/admin/board' && method === 'POST') {
       const id = `b-${this.boardSeats.length + 1}`;
+      const hasTerms = this.boardBodies.find((b) => b.id === body.bodyId)?.hasTerms === true;
       this.boardSeats.push({
         id,
-        body: body.body as 'Board' | 'CouncilOfEleven',
+        bodyId: body.bodyId as string,
         memberId: (body.memberId as string) ?? null,
         name: (body.name as string) ?? 'Zonder naam',
         function: (body.function as string) ?? null,
         startDate: body.startDate as string,
         endDate: (body.endDate as string) ?? null,
         notes: (body.notes as string) ?? null,
-        terms:
-          body.body === 'Board'
-            ? ((body.terms as MockBoardSeat['terms']) ?? [
-                { startDate: body.startDate as string, extensionYears: 0, note: null },
-              ])
-            : [],
+        terms: hasTerms
+          ? ((body.terms as MockBoardSeat['terms']) ?? [
+              { startDate: body.startDate as string, extensionYears: 0, note: null },
+            ])
+          : [],
       });
       this.record('board-seat.created', 'BoardSeat', id, { name: body.name });
       return json({ id }, 201);
     }
     if (path === '/admin/board') {
-      const which = url.searchParams.get('body');
+      const which = url.searchParams.get('bodyId');
       const includePast = url.searchParams.get('includePast') === 'true';
       return json(
         this.boardSeats
-          .filter((s) => (!which || s.body === which) && (includePast || s.endDate === null))
-          .map(boardSeatView),
+          .filter((s) => (!which || s.bodyId === which) && (includePast || s.endDate === null))
+          .map((s) => boardSeatView(s, this.boardBodies)),
       );
     }
     if ((m = path.match(/^\/admin\/board\/([^/]+)\/extend$/)) && method === 'POST') {
       const seat = this.boardSeats.find((s) => s.id === m![1])!;
+      recordBoardPeriods(seat);
       seat.terms.at(-1)!.extensionYears = body.years as number;
       this.record('board-seat.extended', 'BoardSeat', seat.id, { years: body.years });
-      return json(boardSeatView(seat));
+      return json(boardSeatView(seat, this.boardBodies));
     }
     if ((m = path.match(/^\/admin\/board\/([^/]+)\/renew$/)) && method === 'POST') {
       const seat = this.boardSeats.find((s) => s.id === m![1])!;
-      const previous = boardSeatView(seat).terms.at(-1)!;
-      seat.terms.push({ startDate: (body.startDate as string) ?? previous.endDate, extensionYears: 0, note: null });
+      recordBoardPeriods(seat);
+      const previous = seat.terms.at(-1)!;
+      seat.terms.push({
+        startDate: (body.startDate as string) ?? termEndDate(previous.startDate, previous.extensionYears),
+        extensionYears: 0,
+        note: null,
+      });
       this.record('board-seat.renewed', 'BoardSeat', seat.id, { start: seat.terms.at(-1)!.startDate });
-      return json(boardSeatView(seat));
+      return json(boardSeatView(seat, this.boardBodies));
     }
     if ((m = path.match(/^\/admin\/board\/([^/]+)$/))) {
       const index = this.boardSeats.findIndex((s) => s.id === m![1]);
@@ -4487,14 +4616,17 @@ export class MockApi {
         return noContent();
       }
       Object.assign(seat, {
-        body: body.body as 'Board' | 'CouncilOfEleven',
+        bodyId: body.bodyId as string,
         memberId: (body.memberId as string) ?? null,
         name: (body.name as string) ?? seat.name,
         function: (body.function as string) ?? null,
         startDate: body.startDate as string,
         endDate: (body.endDate as string) ?? null,
         notes: (body.notes as string) ?? null,
-        terms: body.body === 'Board' ? ((body.terms as MockBoardSeat['terms']) ?? seat.terms) : [],
+        terms:
+          this.boardBodies.find((b) => b.id === body.bodyId)?.hasTerms === true
+            ? ((body.terms as MockBoardSeat['terms']) ?? seat.terms)
+            : [],
       });
       this.record('board-seat.updated', 'BoardSeat', seat.id, { name: seat.name });
       return noContent();

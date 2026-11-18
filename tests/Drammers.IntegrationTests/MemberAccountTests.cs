@@ -568,4 +568,58 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         await AddMemberAsync("0706", "nummer@example.com");
         Assert.Equal(HttpStatusCode.Accepted, (await RequestAccountAsync("0706", "nummer@example.com")).StatusCode);
     }
+
+    [Fact]
+    public async Task Een_opgeheven_account_leeft_weer_op_als_het_lid_opnieuw_een_account_krijgt()
+    {
+        // Zo gaat het bij een gedeeld e-mailadres: het account wordt opgeheven, maar de inlog bij Entra blijft staan
+        // (SharedEmailAccounts.ResolveAsync). Krijgt het lid daarna opnieuw een account op hetzelfde adres, dan vindt de
+        // provisioning diezelfde inlog terug.
+        var memberId = await AddMemberAsync("0610", "gesplitst@example.com");
+        await RequestAccountAsync("0610", "gesplitst@example.com");
+        await RunProvisioningAsync();
+        Assert.Equal(HttpStatusCode.OK, (await SignUpAndSignIn("gesplitst@example.com").GetAsync("/api/v1/me")).StatusCode);
+        var objectId = _api.Entra.AccountsByEmail["gesplitst@example.com"];
+        var userId = await WithDbAsync(db => db.Users.AsNoTracking().Where(u => u.MemberId == memberId).Select(u => u.Id).SingleAsync());
+
+        using (var scope = _api.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<AccountAdministration>().DeleteUserAsync(userId, CancellationToken.None);
+        }
+
+        Assert.Equal(objectId, _api.Entra.AccountsByEmail["gesplitst@example.com"]);
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null)).StatusCode);
+        Assert.Equal(0, await RunProvisioningAsync());
+
+        // Dezelfde regel leeft weer, met het echte adres en de echte naam in plaats van "Verwijderd account".
+        var user = await WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.MemberId == memberId));
+        Assert.Equal((userId, AccountStatus.Active, "gesplitst@example.com"), (user.Id, user.AccountStatus, user.Email));
+        Assert.DoesNotContain("Verwijderd", user.DisplayName, StringComparison.Ordinal);
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{memberId}");
+        Assert.Equal("Active", detail.GetProperty("account").GetProperty("accountStatus").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await _api.ClientFor(objectId).GetAsync("/api/v1/me")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Een_verwijderd_account_dat_nog_aan_het_lid_hangt_geldt_niet_als_account()
+    {
+        var memberId = await AddMemberAsync("0611", "blijfthangen@example.com");
+        await RequestAccountAsync("0611", "blijfthangen@example.com");
+        await RunProvisioningAsync();
+        Assert.Equal(HttpStatusCode.OK, (await SignUpAndSignIn("blijfthangen@example.com").GetAsync("/api/v1/me")).StatusCode);
+
+        // De stand die in productie voorkwam: status verwijderd, maar de koppeling met het lid staat er nog.
+        await WithDbAsync(db => db.Users.Where(u => u.MemberId == memberId)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.AccountStatus, AccountStatus.Deleted)));
+
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{memberId}");
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("account").ValueKind);
+
+        // En het bestuur kan er gewoon weer een account van maken; dat herstelt dezelfde regel.
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null)).StatusCode);
+        Assert.Equal(0, await RunProvisioningAsync());
+        var user = await WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.MemberId == memberId));
+        Assert.Equal((AccountStatus.Active, "blijfthangen@example.com"), (user.AccountStatus, user.Email));
+    }
 }
+

@@ -329,6 +329,7 @@ public sealed class MemberAccounts(
         await EnsureEligibleAsync(memberId, cancellationToken);
         var sourceId = $"member:{memberId}";
         var saga = await GetOrCreateSagaAsync(ProvisioningSourceType.Manual, sourceId, memberId, cancellationToken);
+        RestartSaga(saga, loginEmail: null);
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(ProvisioningSourceType.Manual, sourceId));
@@ -359,13 +360,7 @@ public sealed class MemberAccounts(
 
         var sourceId = Members.Guardians.OwnAccountSource(memberId);
         var saga = await GetOrCreateSagaAsync(ProvisioningSourceType.Manual, sourceId, memberId, cancellationToken);
-        if (saga.UserId is null)
-        {
-            saga.LoginEmail = loginEmail;
-            saga.EntraObjectId = null;
-            saga.Step = ProvisioningStep.Pending;
-            saga.CompletedAt = null;
-        }
+        RestartSaga(saga, loginEmail);
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         outbox.Enqueue(ProvisionMessageType, new ProvisionMessage(ProvisioningSourceType.Manual, sourceId));
@@ -678,6 +673,30 @@ public sealed class MemberAccounts(
             default:
                 throw new InvalidOperationException($"Onbekende provisioningbron {message.SourceType}/{message.SourceId}");
         }
+    }
+
+    /// <summary>
+    /// Een eerdere poging voor dit lid mag een nieuwe niet in de weg staan. De saga hangt aan het lid, niet aan de
+    /// poging: is die voltooid en wordt het account later verwijderd, dan stapt <see cref="RunProvisioningAsync"/> er
+    /// meteen weer uit en doet de knop in het portal niets (zonder foutmelding). Hier is al vastgesteld dat het lid
+    /// geen account meer heeft, dus de saga begint opnieuw: ook zonder de inlog van de vorige keer, want die kan bij
+    /// Entra zijn opgeruimd.
+    /// </summary>
+    private static void RestartSaga(AccountProvisioning saga, string? loginEmail)
+    {
+        if (saga.Step == ProvisioningStep.Pending && saga.UserId is null)
+        {
+            saga.LoginEmail = loginEmail;
+            return;
+        }
+
+        saga.Step = ProvisioningStep.Pending;
+        saga.UserId = null;
+        saga.EntraObjectId = null;
+        saga.LoginEmail = loginEmail;
+        saga.CompletedAt = null;
+        saga.LastError = null;
+        saga.Attempts = 0;
     }
 
     private async Task<AccountProvisioning> GetOrCreateSagaAsync(

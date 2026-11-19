@@ -621,5 +621,35 @@ public class MemberAccountTests(SqlServerFixture sql) : IAsyncLifetime
         var user = await WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.MemberId == memberId));
         Assert.Equal((AccountStatus.Active, "blijfthangen@example.com"), (user.AccountStatus, user.Email));
     }
+
+    [Fact]
+    public async Task Een_afgeronde_poging_zonder_account_blokkeert_een_nieuw_account_niet()
+    {
+        // Zo kwam het in productie voor: het lid had een account op een gedeeld e-mailadres, dat account bleek bij de
+        // partner te horen en het lid kreeg zijn eigen adres. De poging bleef op "voltooid" staan, en daar stapte de
+        // worker meteen weer uit: de knop in het portal gaf 202, maar er gebeurde niets - geen account, geen fout.
+        var memberId = await AddMemberAsync("0612", "gedeeld@example.com");
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null)).StatusCode);
+        Assert.Equal(0, await RunProvisioningAsync());
+
+        var partnerId = await AddMemberAsync("0613", "gedeeld@example.com");
+        await WithDbAsync(db => db.Users.Where(u => u.MemberId == memberId).ExecuteUpdateAsync(s => s.SetProperty(u => u.MemberId, partnerId)));
+        await WithDbAsync(db => db.Members.Where(m => m.Id == memberId).ExecuteUpdateAsync(s => s.SetProperty(m => m.Email, "eigenadres@example.com")));
+
+        // Het portal laat de knop staan (AdminMembersController kijkt alleen naar een lopende poging) ...
+        var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/members/{memberId}");
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("account").ValueKind);
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("provisioning").ValueKind);
+
+        // ... en nu doet die knop ook echt iets.
+        Assert.Equal(HttpStatusCode.Accepted, (await _bestuur.PostAsync($"/api/v1/admin/members/{memberId}/provision-account", null)).StatusCode);
+        Assert.Equal(0, await RunProvisioningAsync());
+
+        var user = await WithDbAsync(db => db.Users.AsNoTracking().SingleAsync(u => u.MemberId == memberId));
+        Assert.Equal((AccountStatus.Active, "eigenadres@example.com"), (user.AccountStatus, user.Email));
+        var saga = await WithDbAsync(db => db.AccountProvisioning.AsNoTracking().SingleAsync(p => p.SourceId == $"member:{memberId}"));
+        Assert.Equal((ProvisioningStep.Completed, user.Id), (saga.Step, saga.UserId));
+        Assert.Equal(HttpStatusCode.OK, (await SignUpAndSignIn("eigenadres@example.com").GetAsync("/api/v1/me")).StatusCode);
+    }
 }
 

@@ -36,8 +36,11 @@ public sealed record ParadeResultOverview(
     Guid ParadeId, string ParadeName, DateOnly ParadeDate, DateTime? PublishedAt, IReadOnlyList<CategoryResult> Categories, Guid? AlbumId = null);
 
 /// <summary>
-/// Uitslag van de optocht (fase 22c). Per jurylid en criterium telt het gemiddelde van de ingevulde passages; per
-/// criterium de som over de juryleden, maal de weging van de categorie; het totaal is de som van de vier criteria.
+/// Uitslag van de optocht (fase 22c). Een wagen trekt drie keer voorbij, en het jurylid stelt zijn cijfer elke keer bij:
+/// per jurylid en criterium telt daarom alleen de <b>laatste ingevulde passage</b> (besluit 2026-11-19). Dat is geen
+/// optelling en geen gemiddelde van de drie keren; wie passage 3 niet invulde, houdt zijn cijfer van passage 2 of 1.
+/// Per criterium de som over de juryleden, maal de weging van de categorie; het totaal is de som van de vier criteria.
+/// Bij een gelijk totaal geeft <b>carnavalesk</b> de doorslag; is ook dat gelijk, dan delen ze de plaats.
 /// Mee tellen: de scores van juryleden die hebben ingediend, in hun eigen categorieën, plus beoordelingen buiten
 /// categorie waar het bestuur of de hoofdjury akkoord op gaf. Een categorie is klaar als al haar juryleden hebben
 /// ingediend. Alleen de uitslagcommissie ziet de uitslag; publiceren kan pas na de prijsuitreiking.
@@ -117,14 +120,18 @@ public sealed class ParadeResults(
                     var points = Enum.GetValues<JudgingCriterion>().Select(criterion => counted
                         .Where(s => s.Criterion == criterion)
                         .GroupBy(s => s.UserId)
-                        .Sum(g => (decimal)g.Average(s => s.Value)) * w.WeightOf(criterion)).ToArray();
+                        .Sum(g => (decimal)g.MaxBy(s => s.Pass)!.Value) * w.WeightOf(criterion)).ToArray();
                     rows.Add((entry, points));
                 }
             }
 
-            var ordered = rows.Select(r => (r.Entry, r.Points, Total: Math.Round(r.Points.Sum(), 1))).OrderByDescending(r => r.Total).ThenBy(r => r.Entry.StartNumber ?? int.MaxValue).ToList();
+            // Gelijke stand: carnavalesk beslist (besluit 2026-11-19). Is ook dat gelijk, dan delen ze de plaats en staat
+            // het laagste startnummer bovenaan.
+            var ordered = rows.Select(r => (r.Entry, r.Points, Total: Math.Round(r.Points.Sum(), 1), Carnivalesque: r.Points[(int)JudgingCriterion.Carnivalesque]))
+                .OrderByDescending(r => r.Total).ThenByDescending(r => r.Carnivalesque).ThenBy(r => r.Entry.StartNumber ?? int.MaxValue).ToList();
             var ranked = ordered.Select((r, i) => new ResultRow(
-                ordered.FindIndex(o => o.Total == r.Total) + 1, r.Entry.RegistrationId, r.Entry.StartNumber, r.Entry.GroupName, r.Entry.Motto,
+                ordered.FindIndex(o => o.Total == r.Total && o.Carnivalesque == r.Carnivalesque) + 1,
+                r.Entry.RegistrationId, r.Entry.StartNumber, r.Entry.GroupName, r.Entry.Motto,
                 Math.Round(r.Points[0], 1), Math.Round(r.Points[1], 1), Math.Round(r.Points[2], 1), Math.Round(r.Points[3], 1), r.Total,
                 photos.Where(f => f.RegistrationId == r.Entry.RegistrationId).Select(f => new ResultPhoto(f.Id, f.ThumbnailBlobPath, f.DisplayBlobPath)).FirstOrDefault(),
                 photos.Count(f => f.RegistrationId == r.Entry.RegistrationId))).ToList();

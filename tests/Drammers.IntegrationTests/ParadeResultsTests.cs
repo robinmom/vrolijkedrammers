@@ -103,7 +103,7 @@ public class ParadeResultsTests(SqlServerFixture sql) : IAsyncLifetime
         var t = _api.Clock.UtcNow;
         async Task Save(int juror, object scores) =>
             Assert.True((await jurors[juror].Client.PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new { scores })).IsSuccessStatusCode);
-        // J1: wagen A passage 1 = 80, passage 2 = 70 (gemiddeld 75); B = 60. J2: A = 90, B = 70. J3: C = 50 en A = 50 (buiten categorie).
+        // J1: wagen A passage 1 = 80, passage 2 = 70 (de laatste telt: 70); B = 60. J2: A = 90, B = 70. J3: C = 50 en A = 50 (buiten categorie).
         await Save(0, ((object[])Scores(a, 1, 80, 80, 80, 80, t)).Concat((object[])Scores(a, 2, 70, 70, 70, 70, t)).Concat((object[])Scores(b, 1, 60, 60, 60, 60, t)).ToArray());
         await Save(1, ((object[])Scores(a, 1, 90, 90, 90, 90, t)).Concat((object[])Scores(b, 1, 70, 70, 70, 70, t)).ToArray());
         await Save(2, ((object[])Scores(c, 1, 50, 50, 50, 50, t)).Concat((object[])Scores(a, 1, 50, 50, 50, 50, t)).ToArray());
@@ -121,20 +121,20 @@ public class ParadeResultsTests(SqlServerFixture sql) : IAsyncLifetime
             Assert.Equal(HttpStatusCode.OK, (await client.PostAsync($"/api/v1/jury/parades/{_paradeId}/submit", null)).StatusCode);
         }
 
-        // A: per criterium 75 + 90 = 165 (buiten categorie telt nog niet), kwaliteit 2x → 165·4 + 165 = 825. B: 130·5 = 650.
+        // A: per criterium 70 + 90 = 160 (buiten categorie telt nog niet), kwaliteit 2x → 160·5 = 800. B: 130·5 = 650.
         overview = await _uitslag.GetFromJsonAsync<JsonElement>("/api/v1/admin/results");
         wagonResult = overview.GetProperty("categories").EnumerateArray().Single(x => x.GetProperty("categoryId").GetInt32() == wagons);
         Assert.Equal((2, 1000), (wagonResult.GetProperty("jurors").GetInt32(), wagonResult.GetProperty("maxPoints").GetInt32()));
         var rows = wagonResult.GetProperty("rows").EnumerateArray().ToList();
-        Assert.Equal([("De Snotapen", 1, 825m), ("De Beunhazen", 2, 650m)],
+        Assert.Equal([("De Snotapen", 1, 800m), ("De Beunhazen", 2, 650m)],
             rows.Select(r => (r.GetProperty("groupName").GetString(), r.GetProperty("place").GetInt32(), r.GetProperty("total").GetDecimal())));
-        Assert.Equal(330m, rows[0].GetProperty("quality").GetDecimal());
+        Assert.Equal(320m, rows[0].GetProperty("quality").GetDecimal());
 
-        // Akkoord op de beoordeling buiten categorie: J3 telt mee voor A (50 per criterium erbij → 825 + 250 = 1075).
+        // Akkoord op de beoordeling buiten categorie: J3 telt mee voor A (50 per criterium erbij → 800 + 250 = 1050).
         await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/outside",
             new { decisions = new[] { new { userId = jurors[2].Id, registrationId = a, decision = "Approved" } } });
         overview = await _uitslag.GetFromJsonAsync<JsonElement>("/api/v1/admin/results");
-        Assert.Equal(1075m, overview.GetProperty("categories").EnumerateArray().Single(x => x.GetProperty("categoryId").GetInt32() == wagons)
+        Assert.Equal(1050m, overview.GetProperty("categories").EnumerateArray().Single(x => x.GetProperty("categoryId").GetInt32() == wagons)
             .GetProperty("rows")[0].GetProperty("total").GetDecimal());
 
         // Excel: uitslag per categorie en de zaallijst (laatste plaats eerst).
@@ -164,6 +164,55 @@ public class ParadeResultsTests(SqlServerFixture sql) : IAsyncLifetime
             var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
             Assert.Equal(ParadeStatus.Completed, await db.Parades.Where(p => p.Id == _paradeId).Select(p => p.Status).SingleAsync());
         }
+    }
+
+    [Fact]
+    public async Task Bij_een_gelijk_totaal_beslist_carnavalesk()
+    {
+        int wagons;
+        Guid a, b, c;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<DrammersDbContext>();
+            wagons = (await db.ParadeCategories.OrderBy(x => x.SortOrder).FirstAsync(x => x.HasVehicle)).Id;
+            ParadeRegistration Entry(int number, int start, string name) => new()
+            {
+                Id = IdGenerator.NewId(),
+                ParadeId = _paradeId,
+                CarnivalYearId = 1,
+                RegistrationNumber = number,
+                StartNumber = start,
+                CategoryId = wagons,
+                GroupName = name,
+                Subject = $"Motto van {name}",
+                Status = RegistrationStatus.Approved,
+                Source = RegistrationSource.App,
+            };
+            var entries = new[] { Entry(1, 7, "De Hekkensluiters"), Entry(2, 5, "De Voorlopers"), Entry(3, 6, "De Gelijkspelers") };
+            db.ParadeRegistrations.AddRange(entries);
+            await db.SaveChangesAsync();
+            (a, b, c) = (entries[0].Id, entries[1].Id, entries[2].Id);
+        }
+
+        await _bestuur.GetAsync("/api/v1/admin/jury");
+        var (jurorId, objectId) = await _api.CreateUserAsync("jury@example.com", DefaultRoles.Jury);
+        await _bestuur.PutAsJsonAsync($"/api/v1/admin/jury/parades/{_paradeId}/jurors/{jurorId}/categories", new { categoryIds = new[] { wagons } });
+        var juror = _api.ClientFor(objectId);
+
+        // Alle drie 350 punten (kwaliteit telt dubbel bij wagens), maar verschillend op carnavalesk.
+        var t = _api.Clock.UtcNow;
+        var scores = ((object[])Scores(a, 3, 60, 80, 70, 70, t))
+            .Concat((object[])Scores(b, 3, 80, 60, 70, 70, t))
+            .Concat((object[])Scores(c, 3, 80, 60, 70, 70, t)).ToArray();
+        Assert.True((await juror.PutAsJsonAsync($"/api/v1/jury/parades/{_paradeId}/scores", new { scores })).IsSuccessStatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await juror.PostAsync($"/api/v1/jury/parades/{_paradeId}/submit", null)).StatusCode);
+
+        // De hoogste carnavalesk staat bovenaan, ook met het hoogste startnummer; wie ook daarop gelijk staat, deelt de plaats.
+        var overview = await _uitslag.GetFromJsonAsync<JsonElement>("/api/v1/admin/results");
+        var rows = overview.GetProperty("categories").EnumerateArray().Single(x => x.GetProperty("categoryId").GetInt32() == wagons)
+            .GetProperty("rows").EnumerateArray().ToList();
+        Assert.Equal([("De Hekkensluiters", 1, 350m), ("De Voorlopers", 2, 350m), ("De Gelijkspelers", 2, 350m)],
+            rows.Select(r => (r.GetProperty("groupName").GetString(), r.GetProperty("place").GetInt32(), r.GetProperty("total").GetDecimal())));
     }
 
     [Fact]

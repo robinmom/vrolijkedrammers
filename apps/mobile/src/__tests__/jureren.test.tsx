@@ -243,6 +243,39 @@ describe('Jureren (fase 22b)', () => {
     expect(await screen.findByText('2 van 2')).toBeTruthy();
   });
 
+  it('overzicht: van de drie voorbijtrekkens telt het laatste dat is ingevuld', async () => {
+    const scored = (pass: number, criterion: string, value: number) => ({
+      registrationId: 'r-5',
+      pass,
+      criterion,
+      value,
+      scoredAt: '2027-02-07T13:40:00Z',
+    });
+    mockApi({
+      ...api,
+      '/api/v1/me': me,
+      // Voorbij 1 en 2 zijn ingevuld; het jurylid stelde zijn cijfer bij, dus voorbij 2 is zijn oordeel.
+      '/api/v1/jury/current': {
+        ...session(),
+        scores: [
+          scored(1, 'Originality', 48),
+          scored(1, 'Carnivalesque', 40),
+          scored(1, 'Quality', 35),
+          scored(1, 'Overall', 42),
+          scored(2, 'Originality', 60),
+          scored(2, 'Carnivalesque', 50),
+          scored(2, 'Quality', 40),
+          scored(2, 'Overall', 50),
+        ],
+      },
+    });
+    await renderApp(routes, '/jureren/beoordelen?einde=1');
+    expect(await screen.findByText('Klaar met jureren?')).toBeTruthy();
+
+    // 60×1 + 50×1 + 40×2 + 50×1 = 240: niet het gemiddelde van de twee keren (220) en niet de som (440).
+    expect(screen.getByLabelText(/nr\. 5 De Beunhazen, 240 punten van 500/)).toBeTruthy();
+  });
+
   it('foto: na versturen verdwijnt "wacht op internet" en staat er dat hij verwerkt wordt', async () => {
     let photos: unknown[] = [];
     mockApi({

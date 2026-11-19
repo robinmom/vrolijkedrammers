@@ -860,8 +860,8 @@
       ]
     },
     {
-      "id": "1221042b7bf1561c",
-      "text": "Alleen jouw eigen punten, zoals ze meetellen: per criterium het gemiddelde over de voorbijtrekkens die je hebt ingevuld, maal de weging van de categorie. Tik op een wagen of groep om hem na te kijken.",
+      "id": "be2cd6d59c004fc4",
+      "text": "Alleen jouw eigen punten, zoals ze meetellen: per criterium je cijfer uit het laatste voorbijtrekken dat je invulde, maal de weging van de categorie. De drie keren worden niet opgeteld. Tik op een wagen of groep om hem na te kijken.",
       "places": [
         {
           "file": "app/jureren/beoordelen.tsx",
@@ -1900,8 +1900,8 @@
       ]
     },
     {
-      "id": "3bae19f085d658ee",
-      "text": "Een gemiste passage telt niet mee: het gemiddelde gaat over de passages die je wel hebt ingevuld.",
+      "id": "08e0c20f2e568b98",
+      "text": "Een gemiste passage telt niet mee: van elk criterium geldt je cijfer uit de laatste keer die je invulde.",
       "places": [
         {
           "file": "app/jureren/beoordelen.tsx",

@@ -1150,7 +1150,7 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
 - Een optocht hoort bij een carnavalsjaar; er kunnen meerdere optochten per jaar zijn.
 - Juryleden zijn accounts zonder ledenbestand en loggen in met e-mail en code. Per optocht worden ze in categorieën ingedeeld.
 - De hoofdjury (portal, alleen Jury) en het bestuur delen in en keuren beoordelingen buiten categorie goed, zonder de scores te zien.
-- Er wordt 3x beoordeeld op 4 criteria van 0 tot 100. Per jurylid telt het gemiddelde van de ingevulde passages; per criterium de som over de juryleden maal de weging.
+- Er wordt 3x beoordeeld op 4 criteria van 0 tot 100. Het jurylid stelt zijn cijfer per keer bij, dus per jurylid telt alleen de laatste ingevulde passage; per criterium de som over de juryleden maal de weging.
 - Alleen de uitslagcommissie ziet de uitslag. Publiceren gebeurt pas na de prijsuitreiking, met een mail naar de secretaris en de voorzitter.
 
 **22a — optocht en jury in het portal (gebouwd).**
@@ -1202,10 +1202,11 @@ Ontwerp in Figma, pagina "⚖️ Jury": app-schermen J1–J8 en de portalscherme
 
 **22c — uitslag (gebouwd).**
 - **Rekenregel** (`ParadeResults`):
-  - per jurylid en criterium het gemiddelde van de ingevulde passages;
+  - per jurylid en criterium de waarde uit de laatste passage die hij invulde (besluit 2026-11-19): de wagen trekt drie
+    keer voorbij en het cijfer wordt per keer bijgesteld, dus geen optelling en geen gemiddelde van de drie;
   - per criterium de som over de juryleden, maal de weging;
   - het totaal is de som van de vier criteria, afgerond op 1 decimaal;
-  - bij een gelijk totaal dezelfde plaats.
+  - bij een gelijk totaal beslist carnavalesk (besluit 2026-11-19); is ook dat gelijk, dan dezelfde plaats.
 - **Wat meetelt:**
   - alleen juryleden die hebben ingediend;
   - in hun eigen categorieën, plus beoordelingen buiten categorie met akkoord.

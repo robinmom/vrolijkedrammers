@@ -470,8 +470,9 @@ export default function BeoordelenScreen() {
                     Jouw punten
                   </AppText>
                   <AppText variant="caption" color={colors.textSecondary}>
-                    Alleen jouw eigen punten, zoals ze meetellen: per criterium het gemiddelde over de voorbijtrekkens die je hebt
-                    ingevuld, maal de weging van de categorie. Tik op een wagen of groep om hem na te kijken.
+                    Alleen jouw eigen punten, zoals ze meetellen: per criterium je cijfer uit het laatste voorbijtrekken dat je
+                    invulde, maal de weging van de categorie. De drie keren worden niet opgeteld. Tik op een wagen of groep om hem
+                    na te kijken.
                   </AppText>
                   {assigned.map((e) => {
                     const total = entryTotal(judging.scores, e, s.weights);
@@ -549,7 +550,7 @@ export default function BeoordelenScreen() {
                         </AppText>
                       ))}
                     <AppText variant="caption" color={brand.navy}>
-                      Een gemiste passage telt niet mee: het gemiddelde gaat over de passages die je wel hebt ingevuld.
+                      Een gemiste passage telt niet mee: van elk criterium geldt je cijfer uit de laatste keer die je invulde.
                     </AppText>
                     {/* Direct naar het eerste gat, zodat je niet zelf hoeft te zoeken waar je gebleven was. */}
                     <Button

@@ -173,9 +173,10 @@ const weightKeys: Record<Criterion, 'originality' | 'carnivalesque' | 'quality' 
 };
 
 /**
- * Het totaal van dit jurylid voor één inzending, op dezelfde manier als de uiteindelijke uitslag: per criterium het
- * gemiddelde over de ingevulde voorbijtrekkens, maal de weging van de categorie. Een gemist voorbijtrekken verlaagt het
- * gemiddelde dus niet. `null` als er nog niets is ingevuld of de weging onbekend is.
+ * Het totaal van dit jurylid voor één inzending, op dezelfde manier als de uiteindelijke uitslag: per criterium de
+ * waarde uit het laatste voorbijtrekken dat hij invulde, maal de weging van de categorie. De drie keren worden dus niet
+ * opgeteld en niet gemiddeld; het jurylid stelt zijn cijfer per keer bij en de laatste stand telt. `null` als er nog
+ * niets is ingevuld of de weging onbekend is.
  */
 export function entryTotal(
   scores: Map<string, LocalScore>,
@@ -188,10 +189,10 @@ export function entryTotal(
   let total = 0;
   let scored = false;
   for (const c of criteria) {
-    const values = passes.map((p) => valueOf(scores, entry.registrationId, p, c.key)).filter((v): v is number => v !== null);
-    if (values.length === 0) continue;
+    const last = [...passes].reverse().find((p) => valueOf(scores, entry.registrationId, p, c.key) !== null);
+    if (last === undefined) continue;
     scored = true;
-    total += (values.reduce((sum, v) => sum + v, 0) / values.length) * weight[weightKeys[c.key]];
+    total += valueOf(scores, entry.registrationId, last, c.key)! * weight[weightKeys[c.key]];
   }
   // Eén decimaal, net als de uitslag.
   return scored ? Math.round(total * 10) / 10 : null;

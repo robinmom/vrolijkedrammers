@@ -90,7 +90,8 @@ public sealed class ParadeController(DrammersDbContext db, ParadeAdministration 
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<PublicRegistrationStartedResponse>> StartPublic(PublicRegistrationRequest request, CancellationToken cancellationToken)
     {
-        var id = await publicRegistrations.StartAsync(request.Registration.ToInput(), request.RulesAccepted, Request.PublicBaseUrlFor(), cancellationToken);
+        var id = await publicRegistrations.StartAsync(request.Registration.ToInput(), request.Youth?.ToInput(), request.RulesAccepted,
+            Request.PublicBaseUrlFor(), cancellationToken);
         return Created((string?)null, new PublicRegistrationStartedResponse(id));
     }
 
@@ -103,7 +104,7 @@ public sealed class ParadeController(DrammersDbContext db, ParadeAdministration 
     public async Task<PublicRegistrationSubmittedResponse> VerifyPublic(Guid id, VerifyCodeRequest request, CancellationToken cancellationToken)
     {
         var result = await publicRegistrations.VerifyAsync(id, request.Code, Request.PublicBaseUrlFor(), cancellationToken);
-        return new PublicRegistrationSubmittedResponse(result.RegistrationNumber, result.StatusToken);
+        return new PublicRegistrationSubmittedResponse(result.RegistrationNumber, result.StatusToken, result.YouthRegistrationNumber);
     }
 
     [HttpPost("public-registrations/{id:guid}/resend-code")]
@@ -125,11 +126,12 @@ public sealed class ParadeController(DrammersDbContext db, ParadeAdministration 
         publicRegistrations.StatusAsync(token, cancellationToken);
 }
 
-public sealed record PublicRegistrationRequest([Required] UpdateRegistrationRequest Registration, bool RulesAccepted);
+/// <summary><c>Youth</c> is de jeugdinschrijving aan het eind van het formulier (wens 2026-11-21); leeg = geen jeugd.</summary>
+public sealed record PublicRegistrationRequest([Required] UpdateRegistrationRequest Registration, bool RulesAccepted, YouthRegistrationRequest? Youth = null);
 
 public sealed record PublicRegistrationStartedResponse(Guid Id);
 
-public sealed record PublicRegistrationSubmittedResponse(int RegistrationNumber, string StatusToken);
+public sealed record PublicRegistrationSubmittedResponse(int RegistrationNumber, string StatusToken, int? YouthRegistrationNumber);
 
 public sealed record VerifyCodeRequest([Required, StringLength(6, MinimumLength = 6)] string Code);
 

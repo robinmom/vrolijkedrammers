@@ -15,8 +15,21 @@ const parade = {
   infoHtml: '<p>Lees eerst het <strong>reglement</strong>.</p>',
 };
 const categories = [
-  { id: 3, name: 'Volwassenen Loopgroepen groot (10+)', minimumParticipants: 10, maximumParticipants: null },
-  { id: 4, name: 'Praalwagens', minimumParticipants: null, maximumParticipants: null },
+  {
+    id: 3,
+    name: 'Volwassenen Loopgroepen groot (10+)',
+    ageGroup: 'Adult',
+    minimumParticipants: 10,
+    maximumParticipants: null,
+  },
+  { id: 4, name: 'Praalwagens', ageGroup: 'Adult', minimumParticipants: null, maximumParticipants: null },
+  {
+    id: 7,
+    name: 'Jeugd Loopgroepen groot (10+)',
+    ageGroup: 'Youth',
+    minimumParticipants: 10,
+    maximumParticipants: null,
+  },
 ];
 
 async function serve(
@@ -71,7 +84,11 @@ async function serve(
 
 async function fillForm(page: Page) {
   await page.getByLabel('Naam van de groep').fill('De Bouwers');
-  await page.getByLabel('Categorie').selectOption({ label: 'Volwassenen Loopgroepen groot (10+)' });
+  // Twee velden heten "Categorie" (de groep en de jeugd), dus kiezen binnen het blok Groep.
+  await page
+    .getByRole('group', { name: 'Groep' })
+    .getByLabel('Categorie')
+    .selectOption({ label: 'Volwassenen Loopgroepen groot (10+)' });
   await expect(page.getByText('Deze categorie is voor minimaal 10 deelnemers.')).toBeVisible();
   await page.getByLabel('Naam', { exact: true }).fill('Piet Test');
   await page.getByLabel('Telefoon', { exact: true }).fill('0612345678');
@@ -129,6 +146,55 @@ test('optocht inschrijven via de webpagina: formulier, code, opgavenummer en sta
   await expect(page.getByText('Aanvulling gevraagd')).toBeVisible();
   await expect(page.getByText('Toelichting van de commissie: Graag de lengte doorgeven.')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+/** Wens 2026-11-21: ook jeugd inschrijven; dat wordt een eigen inschrijving met een eigen opgavenummer. */
+test('optocht inschrijven via de webpagina: ook jeugd erbij', async ({ page }) => {
+  const api = { bodies: [] as unknown[] };
+  await serve(page, api, {});
+  await page.route('**/api/v1/parade/public-registrations/*/verify-email', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ registrationNumber: 7, statusToken: 'goed', youthRegistrationNumber: 8 }),
+    }),
+  );
+  await page.goto('/optocht-inschrijven/');
+  await fillForm(page);
+
+  // De velden verschijnen pas als je het vinkje aanzet, en er staan alleen jeugdcategorieën in.
+  const jeugd = page.getByRole('group', { name: 'Jeugd inschrijven' });
+  await expect(jeugd.getByLabel('Naam van de jeugdgroep')).toBeHidden();
+  await jeugd.getByLabel('We schrijven ook jeugd in').check();
+  await jeugd.getByLabel('Naam van de jeugdgroep').fill('De Kruumels');
+  await expect(jeugd.getByLabel('Categorie van de jeugd').locator('option')).toHaveCount(2);
+  await jeugd.getByLabel('Categorie van de jeugd').selectOption({ label: 'Jeugd Loopgroepen groot (10+)' });
+  await jeugd.getByLabel('Aantal kinderen').fill('14');
+  await jeugd.getByLabel('Onderwerp van de jeugd').fill('Ridders');
+  await jeugd.getByLabel('Tekst voor het boekje (optioneel)').fill('Tekst voor het boekje');
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual(
+    [],
+  );
+
+  await page.getByRole('button', { name: 'Inschrijving versturen' }).click();
+  await expect(page.getByRole('heading', { name: 'Bevestig je e-mailadres' })).toBeVisible();
+  expect(api.bodies[0]).toMatchObject({
+    registration: { groupName: 'De Bouwers' },
+    youth: {
+      groupName: 'De Kruumels',
+      categoryId: 7,
+      count: 14,
+      subject: 'Ridders',
+      subjectDescription: 'Tekst voor het boekje',
+    },
+  });
+
+  await page.getByLabel('Code', { exact: true }).fill('123456');
+  await page.getByRole('button', { name: 'Bevestigen' }).click();
+  await expect(page.getByRole('heading', { name: 'Je inschrijving is ingediend' })).toBeVisible();
+  await expect(page.getByText(/De jeugdinschrijving heeft opgavenummer/)).toContainText('8');
 });
 
 /**

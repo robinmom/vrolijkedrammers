@@ -134,6 +134,23 @@
       </div>
     </fieldset>
 
+    <fieldset id="jeugd-blok">
+      <legend>Jeugd inschrijven</legend>
+      <label class="check"><input name="jeugd" type="checkbox" />
+        <span>We schrijven ook jeugd in</span></label>
+      <p class="muted">
+        De jeugd wordt een eigen inschrijving met een eigen opgavenummer en een eigen jurering. De contactpersoon, de
+        bouwlocatie, de locatie voor de jury, de muziek en de lengte nemen we over van de gegevens hierboven.
+      </p>
+      <div id="jeugd-velden" hidden>
+        <label>Naam van de jeugdgroep<input name="jeugdGroupName" maxlength="100" /></label>
+        <label>Categorie van de jeugd<select name="jeugdCategoryId"><option value="">Kies een categorie</option></select></label>
+        <label>Aantal kinderen<input name="jeugdCount" type="number" min="1" max="1000" inputmode="numeric" /></label>
+        <label><span id="label-jeugd-onderwerp">Onderwerp van de jeugd</span><input name="jeugdSubject" maxlength="150" /></label>
+        <label>Tekst voor het boekje (optioneel)<textarea name="jeugdSubjectDescription" maxlength="2000"></textarea></label>
+      </div>
+    </fieldset>
+
     <fieldset>
       <legend>Overig</legend>
       <label>Extra informatie voor de commissie (optioneel)<textarea name="additionalInformation" maxlength="4000"></textarea></label>
@@ -162,6 +179,10 @@
 <section id="klaar" class="form-card" aria-labelledby="titel-klaar" hidden>
   <h2 id="titel-klaar" tabindex="-1">Je inschrijving is ingediend</h2>
   <p>Je opgavenummer is <strong id="opgavenummer"></strong>.</p>
+  <p id="klaar-jeugd" hidden>
+    De jeugdinschrijving heeft opgavenummer <strong id="jeugd-opgavenummer"></strong>; dat is een eigen inschrijving met
+    een eigen beoordeling en jurering.
+  </p>
   <p>
     De optochtcommissie beoordeelt je inschrijving; pas na goedkeuring is hij definitief. Je krijgt bij elke stap een e-mail. In de
     bevestigingsmail staat een link waarmee je de status altijd kunt bekijken.

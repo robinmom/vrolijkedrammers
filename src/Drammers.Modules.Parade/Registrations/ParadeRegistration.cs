@@ -107,6 +107,13 @@ public sealed class ParadeRegistration : IAuditable
     /// </summary>
     public Guid? CarnivalGroupId { get; set; }
 
+    /// <summary>
+    /// Deze inschrijving is de <b>jeugdinschrijving</b> van die hoofdinschrijving (wens 2026-11-21). De
+    /// groepsverantwoordelijke vult haar in aan het eind van zijn eigen formulier; het blijft een eigen inschrijving
+    /// met een eigen opgavenummer, startnummer, categorie en jurering. Leeg = een gewone inschrijving.
+    /// </summary>
+    public Guid? YouthOfRegistrationId { get; set; }
+
     /// <summary>Actuele waarschuwingen (JSON), bijv. deelnemers buiten bereik bij een categorie met <c>Warn</c>.</summary>
     public string? ValidationWarnings { get; set; }
 

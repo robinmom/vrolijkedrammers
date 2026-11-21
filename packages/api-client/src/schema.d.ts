@@ -25783,6 +25783,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/parade/registrations/{id}/youth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * De jeugdinschrijving bij deze inschrijving klaarzetten of bijwerken (wens 2026-11-21). Het blijft een eigen
+         *     inschrijving met een eigen opgavenummer en eigen jurering; ze wordt samen met de hoofdinschrijving ingediend.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["YouthRegistrationRequest"];
+                    "text/json": components["schemas"]["YouthRegistrationRequest"];
+                    "application/*+json": components["schemas"]["YouthRegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["YouthResponse"];
+                        "application/json": components["schemas"]["YouthResponse"];
+                        "text/json": components["schemas"]["YouthResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/parade/registrations/{id}/validate": {
         parameters: {
             query?: never;
@@ -27735,6 +27858,8 @@ export interface components {
             changes: components["schemas"]["FieldChangeResponse"][];
             documents: components["schemas"]["DocumentResponse"][];
             hasMusic: null | boolean;
+            youthOf: null | components["schemas"]["RelatedRegistrationResponse"];
+            youth: null | components["schemas"]["RelatedRegistrationResponse"];
         };
         AdminSaleProductResponse: {
             /** Format: uuid */
@@ -32437,9 +32562,11 @@ export interface components {
             maxPoints: number;
             rows: components["schemas"]["PublicResultRowResponse"][];
         };
+        /** @description `Youth` is de jeugdinschrijving aan het eind van het formulier (wens 2026-11-21); leeg = geen jeugd. */
         PublicRegistrationRequest: {
             registration: components["schemas"]["UpdateRegistrationRequest"];
             rulesAccepted: boolean;
+            youth?: null | components["schemas"]["YouthRegistrationRequest"];
         };
         PublicRegistrationStartedResponse: {
             /** Format: uuid */
@@ -32449,6 +32576,8 @@ export interface components {
             /** Format: int32 */
             registrationNumber: number;
             statusToken: string;
+            /** Format: int32 */
+            youthRegistrationNumber: null | number;
         };
         PublicResultRowResponse: {
             /** Format: int32 */
@@ -32578,6 +32707,9 @@ export interface components {
             hasMusic: null | boolean;
             arrivalTime: null | string;
             arrivalLocation: null | string;
+            youth: null | components["schemas"]["YouthResponse"];
+            /** Format: uuid */
+            youthOfRegistrationId: null | string;
         };
         /** @enum {unknown} */
         RegistrationSource: "App" | "WebForm" | "Portal";
@@ -32599,6 +32731,8 @@ export interface components {
             /** Format: uuid */
             paradeId: string;
             paradeName: string;
+            /** Format: uuid */
+            youthOfRegistrationId: null | string;
         };
         RejectAccountRequestRequest: {
             reason: null | string;
@@ -32608,6 +32742,17 @@ export interface components {
         };
         RejectGuardianRequest: {
             reason: null | string;
+        };
+        /** @description De inschrijving die bij deze hoort: de hoofdinschrijving bij een jeugdinschrijving, of omgekeerd. */
+        RelatedRegistrationResponse: {
+            /** Format: uuid */
+            id: string;
+            groupName: null | string;
+            /** Format: int32 */
+            registrationNumber: null | number;
+            /** Format: int32 */
+            startNumber: null | number;
+            status: components["schemas"]["RegistrationStatus"];
         };
         RenameDeviceRequest: {
             name: string;
@@ -33896,6 +34041,32 @@ export interface components {
         };
         WithdrawRequest: {
             reason: null | string;
+        };
+        YouthRegistrationRequest: {
+            groupName: null | string;
+            /** Format: int32 */
+            categoryId: null | number;
+            /** Format: int32 */
+            count: number;
+            subject: null | string;
+            subjectDescription: null | string;
+        };
+        /** @description Wat de groepsverantwoordelijke voor de jeugd invulde, met de stand van die eigen inschrijving. */
+        YouthResponse: {
+            /** Format: uuid */
+            id: string;
+            groupName: null | string;
+            /** Format: int32 */
+            categoryId: null | number;
+            /** Format: int32 */
+            count: number;
+            subject: null | string;
+            subjectDescription: null | string;
+            status: components["schemas"]["RegistrationStatus"];
+            /** Format: int32 */
+            registrationNumber: null | number;
+            /** Format: int32 */
+            startNumber: null | number;
         };
     };
     responses: never;

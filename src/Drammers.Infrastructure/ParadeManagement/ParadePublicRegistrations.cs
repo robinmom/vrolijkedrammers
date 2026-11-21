@@ -14,7 +14,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Drammers.Infrastructure.ParadeManagement;
 
-public sealed record PublicSubmitted(int RegistrationNumber, string StatusToken);
+/// <summary><paramref name="YouthRegistrationNumber"/> is gevuld als er ook jeugd is ingeschreven (wens 2026-11-21).</summary>
+public sealed record PublicSubmitted(int RegistrationNumber, string StatusToken, int? YouthRegistrationNumber);
 
 public sealed record PublicStatus(
     string ParadeName, string? GroupName, int? RegistrationNumber, RegistrationStatus Status, int? StartNumber, string? CategoryName, string? Reason);
@@ -42,7 +43,8 @@ public sealed class ParadePublicRegistrations(
 
     private DateTime Now => clock.UtcNow.UtcDateTime;
 
-    public async Task<Guid> StartAsync(RegistrationInput input, bool rulesAccepted, string baseUrl, CancellationToken cancellationToken)
+    public async Task<Guid> StartAsync(
+        RegistrationInput input, YouthRegistrationInput? youth, bool rulesAccepted, string baseUrl, CancellationToken cancellationToken)
     {
         var parade = await parades.CurrentAsync(cancellationToken)
             ?? throw new DomainException(ErrorCodes.ParadeNotFound, "Er is nog geen optocht om voor in te schrijven.", DomainErrorKind.NotFound);
@@ -88,6 +90,25 @@ public sealed class ParadePublicRegistrations(
         var code = NewCode(registration);
         changeContext.Source = RegistrationSource.WebForm;
         db.ParadeRegistrations.Add(registration);
+
+        // Ook jeugd ingeschreven (wens 2026-11-21): een eigen inschrijving die alles overneemt behalve haar vier eigen
+        // velden. Ze wordt nu al vastgelegd als concept en krijgt haar nummer bij dezelfde e-mailcode.
+        if (youth is not null)
+        {
+            var youthRegistration = ParadeRegistrations.NewYouthFor(registration, youth);
+            var youthCategory = (await parades.CategoriesForAsync(parade.Id, activeOnly: true, cancellationToken)).SingleOrDefault(c => c.Id == youth.CategoryId);
+            var youthIssues = ParadeRegistrations.YouthIssues(youthRegistration, youthCategory, parade.SubjectRequired, forSubmit: true);
+            if (youthIssues.Any(i => i.Severity == IssueSeverity.Block))
+            {
+                throw new DomainException(ErrorCodes.RegistrationInvalid, "De jeugdinschrijving is nog niet goed ingevuld.")
+                {
+                    Issues = [.. youthIssues.Select(i => new FieldIssue(i.Field, i.Message, i.Severity.ToString()))],
+                };
+            }
+
+            db.ParadeRegistrations.Add(youthRegistration);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
         await email.SendAsync(CodeMail(registration.ContactEmail!, registration.ContactName!, code, registration.Id, baseUrl), cancellationToken);
         return registration.Id;
@@ -175,9 +196,38 @@ public sealed class ParadePublicRegistrations(
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(new AuditEntry("parade-registration.submitted", "ParadeRegistration", id.ToString(), null,
             JsonSerializer.Serialize(new { registrationNumber = number, source = "WebForm" })), cancellationToken);
+        var youth = await db.ParadeRegistrations.SingleOrDefaultAsync(r => r.YouthOfRegistrationId == id, cancellationToken);
+        string? youthToken = null;
+        if (youth is { Status: RegistrationStatus.Draft })
+        {
+            youthToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+            youth.RegistrationNumber = await ParadeRegistrations.NextNumberAsync(db, parade.Id, cancellationToken);
+            youth.Status = RegistrationStatus.Submitted;
+            youth.SubmittedAt = Now;
+            youth.ContactEmailVerifiedAt = Now;
+            youth.StatusTokenHash = Hash(youthToken);
+            db.ParadeStatusHistory.Add(new ParadeStatusHistory
+            {
+                RegistrationId = youth.Id,
+                FromStatus = RegistrationStatus.Draft,
+                ToStatus = RegistrationStatus.Submitted,
+                OccurredAt = Now,
+            });
+            await groups.LinkOnSubmitAsync(youth, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+            await audit.WriteAsync(new AuditEntry("parade-registration.submitted", "ParadeRegistration", youth.Id.ToString(), null,
+                JsonSerializer.Serialize(new { registrationNumber = youth.RegistrationNumber, youthOf = id, source = "WebForm" })), cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
         await email.SendAsync(ConfirmationMail(registration, parade.Name, token, baseUrl), cancellationToken);
-        return new PublicSubmitted(number, token);
+        if (youth is not null && youthToken is not null)
+        {
+            // Een eigen bevestiging met een eigen statuslink: de jeugd is een eigen inschrijving.
+            await email.SendAsync(ConfirmationMail(youth, parade.Name, youthToken, baseUrl), cancellationToken);
+        }
+
+        return new PublicSubmitted(number, token, youth?.RegistrationNumber);
     }
 
     /// <summary>Status via de statuslink: alleen de eigen inschrijving, zonder contactgegevens.</summary>
@@ -194,13 +244,18 @@ public sealed class ParadePublicRegistrations(
         return new PublicStatus(parade, r.GroupName, r.RegistrationNumber, r.Status, r.Status is RegistrationStatus.StartNumberAssigned or RegistrationStatus.Final ? r.StartNumber : null, category, reason);
     }
 
-    /// <summary>Opruimen: niet-bevestigde inschrijvingen van het webformulier ouder dan 48 uur (zonder nummer).</summary>
-    public Task<int> PurgeUnverifiedAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Opruimen: niet-bevestigde inschrijvingen van het webformulier ouder dan 48 uur (zonder nummer). Eerst de
+    /// jeugdinschrijvingen: die verwijzen naar hun hoofdinschrijving, en die verwijzing staat op Restrict (een
+    /// zelfverwijzende cascade staat SQL Server niet toe), dus in één delete zou de volgorde fout kunnen uitpakken.
+    /// </summary>
+    public async Task<int> PurgeUnverifiedAsync(CancellationToken cancellationToken)
     {
         var before = Now - UnverifiedLifetime;
-        return db.ParadeRegistrations
-            .Where(r => r.Source == RegistrationSource.WebForm && r.Status == RegistrationStatus.Draft && r.CreatedAt < before)
-            .ExecuteDeleteAsync(cancellationToken);
+        var stale = db.ParadeRegistrations
+            .Where(r => r.Source == RegistrationSource.WebForm && r.Status == RegistrationStatus.Draft && r.CreatedAt < before);
+        var youth = await stale.Where(r => r.YouthOfRegistrationId != null).ExecuteDeleteAsync(cancellationToken);
+        return youth + await stale.Where(r => r.YouthOfRegistrationId == null).ExecuteDeleteAsync(cancellationToken);
     }
 
     private async Task<ParadeRegistration> PendingAsync(Guid id, CancellationToken cancellationToken) =>

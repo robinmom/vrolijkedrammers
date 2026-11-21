@@ -38,6 +38,14 @@ public sealed record RegistrationInput(
     string? AdditionalInformation,
     bool? HasMusic = null);
 
+/// <summary>
+/// De jeugdinschrijving aan het eind van het formulier (wens 2026-11-21): dit zijn de enige vier vragen. Al het andere
+/// — contactpersoon, bouwlocatie, locatie voor de jury, muziek, lengte en de extra informatie — komt van de
+/// hoofdinschrijving. <paramref name="Count"/> gaat naar de kinderen, want de jeugdcategorieën tellen alleen kinderen
+/// (OQ-10).
+/// </summary>
+public sealed record YouthRegistrationInput(string? GroupName, int? CategoryId, int Count, string? Subject, string? SubjectDescription);
+
 public sealed record UploadedDocument(string FileName, long Length, DocumentType Type, Func<Stream> Open);
 
 /// <summary>
@@ -190,7 +198,9 @@ public sealed class ParadeRegistrations(
             ? await db.Members.AsNoTracking().Where(m => m.Id == memberId).Select(m => new { m.FullName, m.MobilePhone, m.Phone, m.Email, m.ParadeGroupName }).SingleOrDefaultAsync(cancellationToken)
             : null;
         // Eén inschrijving per persoon per optocht (besluit product owner 2026-09-28); na intrekken mag het opnieuw.
-        if (await db.ParadeRegistrations.AnyAsync(r => r.ParadeId == parade.Id && r.OwnerUserId == user.UserId && r.Status != RegistrationStatus.Withdrawn, cancellationToken))
+        // De jeugdinschrijving hoort bij een hoofdinschrijving en telt hier niet mee (wens 2026-11-21).
+        if (await db.ParadeRegistrations.AnyAsync(r => r.ParadeId == parade.Id && r.OwnerUserId == user.UserId
+            && r.YouthOfRegistrationId == null && r.Status != RegistrationStatus.Withdrawn, cancellationToken))
         {
             throw new DomainException(ErrorCodes.RegistrationExists,
                 "Je hebt al een inschrijving voor deze optocht. Open die via Mijn inschrijving.", DomainErrorKind.Conflict);
@@ -241,6 +251,9 @@ public sealed class ParadeRegistrations(
         }
 
         var documents = await db.ParadeDocuments.Where(d => d.RegistrationId == id).ToListAsync(cancellationToken);
+        // Het jeugdconcept hangt eraan en gaat mee; de verwijzing zou anders een ingediende inschrijving blokkeren.
+        var youth = await db.ParadeRegistrations.Where(r => r.YouthOfRegistrationId == id).ToListAsync(cancellationToken);
+        db.ParadeRegistrations.RemoveRange(youth);
         db.ParadeRegistrations.Remove(registration);
         await db.SaveChangesAsync(cancellationToken);
         foreach (var document in documents)
@@ -313,6 +326,214 @@ public sealed class ParadeRegistrations(
         return issues;
     }
 
+    // ----- Jeugdinschrijving (wens 2026-11-21) ------------------------------------------------------------------------
+
+    /// <summary>De jeugdinschrijving die bij deze hoofdinschrijving hoort, of <c>null</c>.</summary>
+    public Task<ParadeRegistration?> YouthOfAsync(Guid parentId, CancellationToken cancellationToken) =>
+        db.ParadeRegistrations.AsNoTracking().SingleOrDefaultAsync(r => r.YouthOfRegistrationId == parentId, cancellationToken);
+
+    /// <summary>
+    /// Zet de jeugdinschrijving bij deze hoofdinschrijving klaar of werkt haar bij. Bestaat ze nog niet, dan neemt ze
+    /// alles over van de hoofdinschrijving en vult de groepsverantwoordelijke alleen de vier eigen velden in. Kan
+    /// zolang de hoofdinschrijving een concept is; daarna loopt wijzigen via de optochtcommissie, net als bij elk
+    /// ander veld na indienen.
+    /// </summary>
+    public async Task<ParadeRegistration> SaveYouthAsync(Guid userId, Guid parentId, YouthRegistrationInput input, CancellationToken cancellationToken)
+    {
+        var parent = await TrackedAsync(userId, parentId, cancellationToken);
+        EnsureYouthDraft(parent);
+        var youth = await db.ParadeRegistrations.SingleOrDefaultAsync(r => r.YouthOfRegistrationId == parentId, cancellationToken);
+        var isNew = youth is null;
+        if (youth is null)
+        {
+            youth = NewYouthFor(parent, input);
+            db.ParadeRegistrations.Add(youth);
+            db.ParadeStatusHistory.Add(new ParadeStatusHistory
+            {
+                RegistrationId = youth.Id,
+                ToStatus = RegistrationStatus.Draft,
+                ActorUserId = userId,
+                OccurredAt = Now,
+            });
+            // Dezelfde beheerders: wie de hoofdinschrijving ziet, ziet ook de jeugdinschrijving.
+            var managers = await db.ParadeRegistrationManagers.AsNoTracking().Where(m => m.RegistrationId == parent.Id).ToListAsync(cancellationToken);
+            foreach (var manager in managers)
+            {
+                db.ParadeRegistrationManagers.Add(new ParadeRegistrationManager
+                {
+                    RegistrationId = youth.Id,
+                    UserId = manager.UserId,
+                    Role = manager.Role,
+                    AddedAt = Now,
+                });
+            }
+        }
+
+        Inherit(youth, parent);
+        ApplyYouth(youth, input);
+        var parade = await db.Parades.AsNoTracking().SingleAsync(p => p.Id == parent.ParadeId, cancellationToken);
+        var issues = await YouthIssuesAsync(youth, parade, forSubmit: false, cancellationToken);
+        if (issues.Any(i => i.Severity == IssueSeverity.Block))
+        {
+            throw Invalid("De jeugdinschrijving is nog niet goed ingevuld.", issues);
+        }
+
+        youth.ValidationWarnings = Warnings(issues);
+        changeContext.Source = parent.Source;
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry(isNew ? "parade-registration.youth-added" : "parade-registration.youth-changed",
+            "ParadeRegistration", youth.Id.ToString(), null, JsonSerializer.Serialize(new { youthOf = parent.Id }, Json)), cancellationToken);
+        return youth;
+    }
+
+    /// <summary>Haalt de jeugdinschrijving weg; alleen zolang beide nog concept zijn.</summary>
+    public async Task RemoveYouthAsync(Guid userId, Guid parentId, CancellationToken cancellationToken)
+    {
+        var parent = await TrackedAsync(userId, parentId, cancellationToken);
+        EnsureYouthDraft(parent);
+        var youth = await db.ParadeRegistrations.SingleOrDefaultAsync(r => r.YouthOfRegistrationId == parentId, cancellationToken);
+        if (youth is null)
+        {
+            return;
+        }
+
+        if (youth.Status != RegistrationStatus.Draft)
+        {
+            throw new DomainException(ErrorCodes.InvalidStatusTransition,
+                "De jeugdinschrijving is al ingediend; die kun je alleen nog intrekken.", DomainErrorKind.Conflict);
+        }
+
+        db.ParadeRegistrations.Remove(youth);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade-registration.youth-removed", "ParadeRegistration", youth.Id.ToString(), null,
+            JsonSerializer.Serialize(new { youthOf = parentId }, Json)), cancellationToken);
+    }
+
+    /// <summary>
+    /// De jeugdinschrijving samen met de hoofdinschrijving indienen: een eigen opgavenummer, een eigen bevestiging en
+    /// daarmee een eigen beoordeling en jurering. Gaat het hier mis, dan draait de transactie van de hoofdinschrijving
+    /// terug en is er dus ook geen nummer vergeven.
+    /// </summary>
+    private async Task SubmitYouthAsync(Guid userId, ParadeRegistration parent, Parade parade, CancellationToken cancellationToken)
+    {
+        var youth = await db.ParadeRegistrations.SingleOrDefaultAsync(r => r.YouthOfRegistrationId == parent.Id, cancellationToken);
+        if (youth is null || youth.Status != RegistrationStatus.Draft)
+        {
+            return;
+        }
+
+        // De hoofdinschrijving kan ná het invullen van de jeugd nog zijn gewijzigd; het overgenomen deel loopt mee.
+        Inherit(youth, parent);
+        var issues = await YouthIssuesAsync(youth, parade, forSubmit: true, cancellationToken);
+        if (issues.Any(i => i.Severity == IssueSeverity.Block))
+        {
+            throw Invalid("De jeugdinschrijving is nog niet goed ingevuld.", issues);
+        }
+
+        youth.RegistrationNumber = await NextNumberAsync(db, parade.Id, cancellationToken);
+        youth.Status = RegistrationStatus.Submitted;
+        youth.SubmittedAt = Now;
+        youth.ValidationWarnings = Warnings(issues);
+        db.ParadeStatusHistory.Add(new ParadeStatusHistory
+        {
+            RegistrationId = youth.Id,
+            FromStatus = RegistrationStatus.Draft,
+            ToStatus = RegistrationStatus.Submitted,
+            ActorUserId = userId == Guid.Empty ? null : userId,
+            OccurredAt = Now,
+        });
+        var managers = await db.ParadeRegistrationManagers.Where(m => m.RegistrationId == youth.Id).Select(m => m.UserId).ToListAsync(cancellationToken);
+        if (managers.Count > 0)
+        {
+            await notifications.EnqueueAsync(new SystemNotification(
+                $"Jeugdinschrijving optocht ontvangen: nr. {youth.RegistrationNumber}",
+                $"{youth.GroupName} heeft opgavenummer {youth.RegistrationNumber} (volgorde van binnenkomst). De jeugd is een eigen inschrijving en wordt ook apart gejureerd.",
+                NotificationCategory.Parade, new NotificationAudience(UserIds: managers), "drammers://optocht"), cancellationToken);
+        }
+
+        outbox.Enqueue(SubmittedMailMessageType, new SubmittedMail(youth.Id));
+        await groups.LinkOnSubmitAsync(youth, cancellationToken);
+        await audit.WriteAsync(new AuditEntry("parade-registration.submitted", "ParadeRegistration", youth.Id.ToString(), null,
+            JsonSerializer.Serialize(new { registrationNumber = youth.RegistrationNumber, youthOf = parent.Id }, Json)), cancellationToken);
+    }
+
+    private static void EnsureYouthDraft(ParadeRegistration parent)
+    {
+        if (parent.YouthOfRegistrationId is not null)
+        {
+            throw new DomainException(ErrorCodes.Validation, "Een jeugdinschrijving heeft zelf geen jeugdinschrijving.");
+        }
+
+        if (parent.Status != RegistrationStatus.Draft)
+        {
+            throw new DomainException(ErrorCodes.InvalidStatusTransition,
+                "Je inschrijving is al ingediend. Neem contact op met de optochtcommissie om de jeugd nog toe te voegen of te wijzigen.",
+                DomainErrorKind.Conflict);
+        }
+    }
+
+    /// <summary>
+    /// Een nieuwe jeugdinschrijving bij deze hoofdinschrijving. Ook voor het webformulier zonder account, waar beide in
+    /// één keer worden ingestuurd; daar is de hoofdinschrijving zelf nog nieuw.
+    /// </summary>
+    public static ParadeRegistration NewYouthFor(ParadeRegistration parent, YouthRegistrationInput input)
+    {
+        var youth = new ParadeRegistration
+        {
+            Id = IdGenerator.NewId(),
+            ParadeId = parent.ParadeId,
+            CarnivalYearId = parent.CarnivalYearId,
+            Status = RegistrationStatus.Draft,
+            Source = parent.Source,
+            OwnerUserId = parent.OwnerUserId,
+            YouthOfRegistrationId = parent.Id,
+        };
+        Inherit(youth, parent);
+        ApplyYouth(youth, input);
+        return youth;
+    }
+
+    /// <summary>De gewone regels, plus: de categorie van de jeugd moet een jeugdcategorie zijn.</summary>
+    public static List<ValidationIssue> YouthIssues(ParadeRegistration youth, ParadeCategory? category, bool subjectRequired, bool forSubmit)
+    {
+        var issues = RegistrationRules.Validate(youth, category, subjectRequired, forSubmit);
+        if (category is not null && category.AgeGroup != AgeGroup.Youth)
+        {
+            issues.Add(new ValidationIssue(RegistrationFields.Category, "Kies voor de jeugd een jeugdcategorie.", IssueSeverity.Block));
+        }
+
+        return issues;
+    }
+
+    /// <summary>Wat de jeugdinschrijving overneemt van de hoofdinschrijving (keuze 2026-11-21: alles behalve de vier eigen velden).</summary>
+    private static void Inherit(ParadeRegistration youth, ParadeRegistration parent)
+    {
+        youth.ContactName = parent.ContactName;
+        youth.ContactPhone = parent.ContactPhone;
+        youth.ContactEmail = parent.ContactEmail;
+        youth.ContactEmailVerifiedAt = parent.ContactEmailVerifiedAt;
+        youth.HasMusic = parent.HasMusic;
+        youth.EstimatedLengthMeters = parent.EstimatedLengthMeters;
+        youth.AdditionalInformation = parent.AdditionalInformation;
+        youth.BuildAddress = CloneAddress(parent.BuildAddress);
+        youth.JuryInspectionSameAsBuildAddress = parent.JuryInspectionSameAsBuildAddress;
+        youth.JuryInspectionAddress = CloneAddress(parent.JuryInspectionAddress);
+    }
+
+    private static void ApplyYouth(ParadeRegistration youth, YouthRegistrationInput input)
+    {
+        youth.GroupName = Clean(input.GroupName);
+        youth.CategoryId = input.CategoryId;
+        youth.Subject = Clean(input.Subject);
+        youth.SubjectDescription = Clean(input.SubjectDescription);
+        youth.ChildrenCount = Math.Max(input.Count, 0);
+        youth.AdultCount = 0;
+    }
+
+    private async Task<List<ValidationIssue>> YouthIssuesAsync(
+        ParadeRegistration youth, Parade parade, bool forSubmit, CancellationToken cancellationToken) =>
+        YouthIssues(youth, await CategoryAsync(youth.CategoryId, parade.Id, cancellationToken), parade.SubjectRequired, forSubmit);
+
     // ----- Indienen (ADR-011) -----------------------------------------------------------------------------------------
 
     /// <summary>
@@ -372,6 +593,7 @@ public sealed class ParadeRegistrations(
         outbox.Enqueue(SubmittedMailMessageType, new SubmittedMail(id));
         await RememberLocationAsync(userId, registration.BuildAddress, cancellationToken);
         await groups.LinkOnSubmitAsync(registration, cancellationToken);
+        await SubmitYouthAsync(userId, registration, parade, cancellationToken);
         changeContext.Source = RegistrationSource.App;
         try
         {

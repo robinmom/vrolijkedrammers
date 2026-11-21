@@ -133,8 +133,17 @@ public sealed class AdminParadeRegistrationsController(DrammersDbContext db, Par
             r.ContactEmail, category, r.Subject, r.SubjectDescription, r.ChildrenCount, r.AdultCount, AddressDto.From(r.BuildAddress),
             r.JuryInspectionSameAsBuildAddress, AddressDto.From(r.EffectiveJuryAddress), r.EstimatedLengthMeters, r.MeasuredLengthMeters, r.AdditionalInformation, r.SubmittedAt,
             managers, [.. warnings.Select(w => w.Message)], [.. ParadeReview.AllowedActions(r.Status)], statuses, changes,
-            [.. (await review.DocumentsAsync(id, cancellationToken)).Select(DocumentResponse.From)], r.HasMusic);
+            [.. (await review.DocumentsAsync(id, cancellationToken)).Select(DocumentResponse.From)], r.HasMusic,
+            await RelatedAsync(r.YouthOfRegistrationId, cancellationToken),
+            await RelatedAsync(await db.ParadeRegistrations.AsNoTracking().Where(x => x.YouthOfRegistrationId == id).Select(x => (Guid?)x.Id).SingleOrDefaultAsync(cancellationToken),
+                cancellationToken));
     }
+
+    /// <summary>De hoofd- of jeugdinschrijving die hierbij hoort, zodat de commissie het paar ziet (wens 2026-11-21).</summary>
+    private async Task<RelatedRegistrationResponse?> RelatedAsync(Guid? id, CancellationToken cancellationToken) =>
+        id is not { } other ? null : await db.ParadeRegistrations.AsNoTracking().Where(r => r.Id == other)
+            .Select(r => new RelatedRegistrationResponse(r.Id, r.GroupName, r.RegistrationNumber, r.StartNumber, r.Status))
+            .SingleOrDefaultAsync(cancellationToken);
 
     [HttpPost("{id:guid}/review")]
     [RequirePermission(Permissions.ParadeManage)]
@@ -177,4 +186,7 @@ public sealed record AdminRegistrationResponse(
     AddressDto BuildAddress, bool JuryInspectionSameAsBuildAddress, AddressDto JuryAddress, decimal? EstimatedLengthMeters, decimal? MeasuredLengthMeters, string? AdditionalInformation,
     DateTime? SubmittedAt, IReadOnlyList<string> Managers, IReadOnlyList<string> Warnings, IReadOnlyList<ReviewAction> AllowedActions,
     IReadOnlyList<StatusChangeResponse> StatusHistory, IReadOnlyList<FieldChangeResponse> Changes, IReadOnlyList<DocumentResponse> Documents,
-    bool? HasMusic);
+    bool? HasMusic, RelatedRegistrationResponse? YouthOf, RelatedRegistrationResponse? Youth);
+
+/// <summary>De inschrijving die bij deze hoort: de hoofdinschrijving bij een jeugdinschrijving, of omgekeerd.</summary>
+public sealed record RelatedRegistrationResponse(Guid Id, string? GroupName, int? RegistrationNumber, int? StartNumber, RegistrationStatus Status);

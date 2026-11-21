@@ -169,7 +169,31 @@
     f.jurySame.checked = r.juryInspectionSameAsBuildAddress !== false;
     f.jurySame.dispatchEvent(new Event('change'));
     set('additionalInformation', r.additionalInformation);
+    const youth = r.youth;
+    f.jeugd.checked = Boolean(youth);
+    if (youth) {
+      set('jeugdGroupName', youth.groupName);
+      set('jeugdCategoryId', youth.categoryId == null ? '' : String(youth.categoryId));
+      set('jeugdCount', String(youth.count ?? ''));
+      set('jeugdSubject', youth.subject);
+      set('jeugdSubjectDescription', youth.subjectDescription);
+    }
+
+    f.jeugd.dispatchEvent(new Event('change'));
     categoryHint();
+  }
+
+  // Wat er voor de jeugd is ingevuld, of null als het vakje niet aan staat.
+  function youthFromForm() {
+    const f = form.elements;
+    if (!f.jeugd.checked) return null;
+    return {
+      groupName: f.jeugdGroupName.value,
+      categoryId: f.jeugdCategoryId.value ? Number(f.jeugdCategoryId.value) : null,
+      count: Number(f.jeugdCount.value || 0),
+      subject: f.jeugdSubject.value || null,
+      subjectDescription: f.jeugdSubjectDescription.value || null,
+    };
   }
 
   // Alleen de inschrijving van de huidige optocht is "Mijn inschrijving"; die van eerdere optochten staan eronder.
@@ -187,6 +211,7 @@
       const head = document.createElement('p');
       const name = document.createElement('strong');
       name.textContent = r.groupName || 'Inschrijving zonder naam';
+      if (r.youthOfRegistrationId) name.textContent += ' (jeugd)';
       const badge = document.createElement('span');
       badge.className = 'status';
       badge.textContent = label;
@@ -207,7 +232,7 @@
     document.getElementById('eerder').hidden = earlier.childElementCount === 0;
     const open = Boolean(parade?.registrationOpen);
     document.getElementById('nieuw').hidden = !open || active.length > 0;
-    document.getElementById('verder').hidden = !open || !active.some((r) => r.status === 'Draft');
+    document.getElementById('verder').hidden = !open || !active.some((r) => r.status === 'Draft' && !r.youthOfRegistrationId);
     show('mijn');
   }
 
@@ -283,7 +308,13 @@
       option.value = String(category.id);
       option.textContent = category.name;
       form.elements.categoryId.append(option);
+      // De jeugdinschrijving kent alleen jeugdcategorieën; de server weigert een volwassenencategorie.
+      if (category.ageGroup === 'Youth') form.elements.jeugdCategoryId.append(option.cloneNode(true));
     }
+    text(
+      'label-jeugd-onderwerp',
+      parade.subjectRequired ? 'Onderwerp van de jeugd' : 'Onderwerp van de jeugd (optioneel)',
+    );
     if (signedIn()) return startSignedIn();
     if (showClosed()) return;
     // Altijd eerst de keuze om in te loggen; zonder werkende login direct het formulier.
@@ -295,7 +326,8 @@
     const error = document.getElementById('mijn-fout');
     error.hidden = true;
     try {
-      const existing = currentMine().find((r) => r.status === 'Draft');
+      // Niet de jeugdinschrijving: die vul je in bij de hoofdinschrijving, en openen doe je die laatste.
+      const existing = currentMine().find((r) => r.status === 'Draft' && !r.youthOfRegistrationId);
       const response = create
         ? await login.fetch(`${api}/registrations`, { method: 'POST' })
         : await login.fetch(`${api}/registrations/${existing.id}`);
@@ -314,7 +346,7 @@
     }
   }
 
-  async function submitSignedIn(registration, error) {
+  async function submitSignedIn(registration, youth, error) {
     let response = await login.fetch(`${api}/registrations/${draft.id}`, {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -322,14 +354,31 @@
     });
     if (!response.ok) return fail(error, await problem(response));
     draft = await response.json();
+    // De jeugd is een eigen inschrijving; die wordt bij het indienen van deze meegenomen.
+    response = youth
+      ? await login.fetch(`${api}/registrations/${draft.id}/youth`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(youth),
+        })
+      : draft.youth
+        ? await login.fetch(`${api}/registrations/${draft.id}/youth`, { method: 'DELETE' })
+        : null;
+    if (response && !response.ok) return fail(error, await problem(response));
     response = await login.fetch(`${api}/registrations/${draft.id}/submit`, { method: 'POST' });
     if (!response.ok) return fail(error, await problem(response));
     const submitted = await response.json();
     text('opgavenummer', String(submitted.registrationNumber));
+    showYouthNumber(submitted.youth?.registrationNumber);
     document.getElementById('klaar-status').hidden = true;
     document.getElementById('naar-mijn').hidden = false;
     draft = null;
     show('klaar');
+  }
+
+  function showYouthNumber(number) {
+    document.getElementById('klaar-jeugd').hidden = !number;
+    if (number) text('jeugd-opgavenummer', String(number));
   }
 
   document.getElementById('inloggen').addEventListener('click', () => login.signIn());
@@ -352,6 +401,14 @@
       if (!same) form.elements.buildStreet.focus();
     });
   }
+  form.elements.jeugd.addEventListener('change', () => {
+    const youth = form.elements.jeugd.checked;
+    document.getElementById('jeugd-velden').hidden = !youth;
+    for (const name of ['jeugdGroupName', 'jeugdCategoryId', 'jeugdCount']) form.elements[name].required = youth;
+    form.elements.jeugdSubject.required = youth && Boolean(parade?.subjectRequired);
+    if (youth) form.elements.jeugdGroupName.focus();
+  });
+
   form.elements.jurySame.addEventListener('change', () => {
     const separate = !form.elements.jurySame.checked;
     document.getElementById('jury').hidden = !separate;
@@ -388,9 +445,10 @@
     };
     const button = form.querySelector('button[type=submit]');
     button.disabled = true;
+    const youth = youthFromForm();
     if (draft && signedIn()) {
       try {
-        await submitSignedIn(registration, error);
+        await submitSignedIn(registration, youth, error);
       } catch {
         fail(error, { message: 'Geen verbinding. Probeer het opnieuw.' });
       } finally {
@@ -402,7 +460,7 @@
       const response = await fetch(`${api}/public-registrations`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ registration, rulesAccepted: f.rulesAccepted.checked }),
+        body: JSON.stringify({ registration, rulesAccepted: f.rulesAccepted.checked, youth }),
       });
       if (!response.ok) return fail(error, await problem(response));
       registrationId = (await response.json()).id;
@@ -431,6 +489,7 @@
       if (!response.ok) return fail(error, await problem(response));
       const result = await response.json();
       text('opgavenummer', String(result.registrationNumber));
+      showYouthNumber(result.youthRegistrationNumber);
       document.getElementById('status-link').href = `?status=${encodeURIComponent(result.statusToken)}`;
       show('klaar');
     } catch {

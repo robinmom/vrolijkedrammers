@@ -99,6 +99,10 @@ internal sealed class ParadeRegistrationConfiguration : IEntityTypeConfiguration
         builder.HasIndex(r => new { r.ParadeId, r.StartNumber }).IsUnique().HasFilter("[start_number] IS NOT NULL");
         builder.HasIndex(r => new { r.ParadeId, r.Status });
         builder.HasOne<CarnivalGroup>().WithMany().HasForeignKey(r => r.CarnivalGroupId).OnDelete(DeleteBehavior.SetNull);
+        // De jeugdinschrijving hangt aan de hoofdinschrijving; hoogstens één per hoofdinschrijving. Restrict: een
+        // ingediende hoofdinschrijving wordt nooit verwijderd, en een concept ruimt zijn jeugdconcept zelf op.
+        builder.HasOne<ParadeRegistration>().WithMany().HasForeignKey(r => r.YouthOfRegistrationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(r => r.YouthOfRegistrationId).IsUnique().HasFilter("[youth_of_registration_id] IS NOT NULL");
     }
 
     private static void OwnsAddress(

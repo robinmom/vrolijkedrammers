@@ -33,7 +33,8 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
         var paradeIds = mine.Select(r => r.ParadeId).Distinct().ToList();
         var parades = await db.Parades.AsNoTracking().Where(p => paradeIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
         return [.. mine.Select(r => new RegistrationSummaryResponse(
-            r.Id, r.GroupName, r.Status, r.RegistrationNumber, r.StartNumber, r.SubmittedAt, r.CreatedAt, r.ParadeId, parades.GetValueOrDefault(r.ParadeId, "")))];
+            r.Id, r.GroupName, r.Status, r.RegistrationNumber, r.StartNumber, r.SubmittedAt, r.CreatedAt, r.ParadeId,
+            parades.GetValueOrDefault(r.ParadeId, ""), r.YouthOfRegistrationId))];
     }
 
     [HttpPost]
@@ -68,6 +69,28 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
     public async Task<IActionResult> DeleteDraft(Guid id, CancellationToken cancellationToken)
     {
         await registrations.DeleteDraftAsync(UserId, id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// De jeugdinschrijving bij deze inschrijving klaarzetten of bijwerken (wens 2026-11-21). Het blijft een eigen
+    /// inschrijving met een eigen opgavenummer en eigen jurering; ze wordt samen met de hoofdinschrijving ingediend.
+    /// </summary>
+    [HttpPut("{id:guid}/youth")]
+    [ProducesResponseType<YouthResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<YouthResponse> SaveYouth(Guid id, YouthRegistrationRequest request, CancellationToken cancellationToken) =>
+        YouthResponse.From(await registrations.SaveYouthAsync(UserId, id, request.ToInput(), cancellationToken))!;
+
+    [HttpDelete("{id:guid}/youth")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteYouth(Guid id, CancellationToken cancellationToken)
+    {
+        await registrations.RemoveYouthAsync(UserId, id, cancellationToken);
         return NoContent();
     }
 
@@ -169,7 +192,8 @@ public sealed class ParadeRegistrationsController(ParadeRegistrations registrati
             r.EstimatedLengthMeters, r.AdditionalInformation, r.SubmittedAt, r.WithdrawnAt,
             [.. fields.Order(StringComparer.Ordinal)], canWithdraw,
             [.. warnings.Select(w => w with { Severity = "Warn" })], [.. issues.Select(ValidationIssueResponse.From)],
-            await registrations.ReviewReasonAsync(r, cancellationToken), r.HasMusic, arrivalTime, arrivalLocation);
+            await registrations.ReviewReasonAsync(r, cancellationToken), r.HasMusic, arrivalTime, arrivalLocation,
+            YouthResponse.From(await registrations.YouthOfAsync(r.Id, cancellationToken)), r.YouthOfRegistrationId);
     }
 }
 
@@ -218,11 +242,30 @@ public sealed record RegistrationResponse(
     int ChildrenCount, int AdultCount, AddressDto BuildAddress, bool JuryInspectionSameAsBuildAddress, AddressDto JuryInspectionAddress,
     decimal? EstimatedLengthMeters, string? AdditionalInformation, DateTime? SubmittedAt, DateTime? WithdrawnAt,
     IReadOnlyList<string> EditableFields, bool CanWithdraw, IReadOnlyList<ValidationIssueResponse> Warnings, IReadOnlyList<ValidationIssueResponse> Issues,
-    string? ReviewReason, bool? HasMusic, string? ArrivalTime, string? ArrivalLocation);
+    string? ReviewReason, bool? HasMusic, string? ArrivalTime, string? ArrivalLocation, YouthResponse? Youth, Guid? YouthOfRegistrationId);
+
+/// <summary>Wat de groepsverantwoordelijke voor de jeugd invulde, met de stand van die eigen inschrijving.</summary>
+public sealed record YouthResponse(
+    Guid Id, string? GroupName, int? CategoryId, int Count, string? Subject, string? SubjectDescription,
+    RegistrationStatus Status, int? RegistrationNumber, int? StartNumber)
+{
+    public static YouthResponse? From(ParadeRegistration? r) => r is null ? null : new(
+        r.Id, r.GroupName, r.CategoryId, r.ChildrenCount, r.Subject, r.SubjectDescription, r.Status, r.RegistrationNumber, r.StartNumber);
+}
+
+public sealed record YouthRegistrationRequest(
+    [StringLength(100)] string? GroupName,
+    int? CategoryId,
+    [Range(0, 1000)] int Count,
+    [StringLength(150)] string? Subject,
+    [StringLength(2000)] string? SubjectDescription)
+{
+    public YouthRegistrationInput ToInput() => new(GroupName, CategoryId, Count, Subject, SubjectDescription);
+}
 
 public sealed record RegistrationSummaryResponse(
     Guid Id, string? GroupName, RegistrationStatus Status, int? RegistrationNumber, int? StartNumber, DateTime? SubmittedAt, DateTime CreatedAt,
-    Guid ParadeId, string ParadeName);
+    Guid ParadeId, string ParadeName, Guid? YouthOfRegistrationId);
 
 public sealed record BuildLocationResponse(Guid Id, AddressDto Address, DateTime LastUsedAt);
 

@@ -16,6 +16,7 @@ import {
   addressForm,
   categoryRule,
   emptyForm,
+  emptyYouth,
   formatAddress,
   formFromRegistration,
   lengthInput,
@@ -26,6 +27,9 @@ import {
   stepsFor,
   stepTitles,
   toRequest,
+  toYouthRequest,
+  youthFromRegistration,
+  youthMissing,
   type AddressForm,
   type ParadeCategory,
   type Problem,
@@ -33,6 +37,7 @@ import {
   type RegistrationForm,
   type StepKey,
   type ValidationIssue,
+  type YouthForm,
 } from '../../features/parade';
 import { showAlert } from '../../lib/alert';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -67,18 +72,24 @@ export default function InschrijvenScreen() {
   const [guestId, setGuestId] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [number, setNumber] = useState<number | null>(null);
+  const [youth, setYouth] = useState<YouthForm>(emptyYouth);
+  const [youthNumber, setYouthNumber] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [supplemented, setSupplemented] = useState(false);
   const started = useRef(false);
 
-  const steps = stepsFor(guest);
-  const step = steps[Math.min(stepIndex, steps.length - 1)]!;
   const draft = !registration || registration.status === 'Draft';
+  const steps = stepsFor(guest, draft);
+  const step = steps[Math.min(stepIndex, steps.length - 1)]!;
   // De commissie vroeg om een aanvulling: alles is te wijzigen en de groep dient de aanvulling opnieuw in.
   const supplement = registration?.status === 'AdditionalInformationRequired';
   const subjectRequired = parade.data?.subjectRequired ?? true;
   const set = <K extends keyof RegistrationForm>(key: K, value: RegistrationForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
+    setSaved(false);
+  };
+  const setYouthField = <K extends keyof YouthForm>(key: K, value: YouthForm[K]) => {
+    setYouth((current) => ({ ...current, [key]: value }));
     setSaved(false);
   };
 
@@ -93,6 +104,7 @@ export default function InschrijvenScreen() {
       if (result.data) {
         setRegistration(result.data);
         setForm(formFromRegistration(result.data));
+        setYouth(youthFromRegistration(result.data));
         setWarnings(result.data.warnings);
         if (!params.id) queryClient.invalidateQueries({ queryKey: queryKeys.myRegistrations });
       } else {
@@ -119,16 +131,50 @@ export default function InschrijvenScreen() {
     return true;
   }
 
+  /**
+   * De jeugdinschrijving is een eigen inschrijving; die wordt apart bewaard en bij het indienen van deze
+   * inschrijving meegenomen. Staat het vinkje uit en bestond ze al, dan gaat ze weg.
+   */
+  async function saveYouth(): Promise<boolean> {
+    if (guest || !registration || !draft) return true;
+    if (youth.enabled) {
+      const { data, error, response } = await api.PUT('/api/v1/parade/registrations/{id}/youth', {
+        params: { path: { id: registration.id } },
+        body: toYouthRequest(youth),
+      });
+      if (!data) {
+        setProblem(problemFrom(response.status, error));
+        return false;
+      }
+
+      setRegistration({ ...registration, youth: data });
+      return true;
+    }
+
+    if (!registration.youth) return true;
+    const { error, response } = await api.DELETE('/api/v1/parade/registrations/{id}/youth', {
+      params: { path: { id: registration.id } },
+    });
+    if (!response.ok) {
+      setProblem(problemFrom(response.status, error));
+      return false;
+    }
+
+    setRegistration({ ...registration, youth: null });
+    return true;
+  }
+
   async function next() {
     setProblem(null);
-    const missing = stepMissing(step, form, subjectRequired);
+    const missing = step === 'youth' ? youthMissing(youth, subjectRequired) : stepMissing(step, form, subjectRequired);
     if (missing) {
       setProblem({ message: missing, issues: [] });
       return;
     }
     setBusy(true);
     try {
-      if (await save()) setStepIndex((i) => Math.min(i + 1, steps.length - 1));
+      const stored = step === 'youth' ? await save().then((ok) => ok && saveYouth()) : await save();
+      if (stored) setStepIndex((i) => Math.min(i + 1, steps.length - 1));
     } catch {
       setProblem({
         message: 'Geen verbinding. Je gegevens zijn nog niet opgeslagen; probeer het opnieuw.',
@@ -152,16 +198,22 @@ export default function InschrijvenScreen() {
     setProblem(null);
     setBusy(true);
     try {
+      const missingYouth = youthMissing(youth, subjectRequired);
+      if (missingYouth) return setProblem({ message: missingYouth, issues: [] });
       if (guest) {
         const { data, error, response } = await api.POST('/api/v1/parade/public-registrations', {
-          body: { registration: toRequest(form, null), rulesAccepted },
+          body: {
+            registration: toRequest(form, null),
+            rulesAccepted,
+            youth: youth.enabled ? toYouthRequest(youth) : null,
+          },
         });
         if (!data) return setProblem(problemFrom(response.status, error));
         setGuestId(data.id);
         setPhase('code');
         return;
       }
-      if (!(await save()) || !registration) return;
+      if (!(await save()) || !registration || !(await saveYouth())) return;
       if (!draft && !supplement) {
         // Een ingediende inschrijving aanpassen: opslaan is genoeg (de commissie ziet de wijzigingen).
         queryClient.invalidateQueries({ queryKey: queryKeys.myRegistrations });
@@ -174,6 +226,7 @@ export default function InschrijvenScreen() {
       setSupplemented(supplement);
       setRegistration(data);
       setNumber(data.registrationNumber ?? null);
+      setYouthNumber(data.youth?.registrationNumber ?? null);
       setPhase('done');
       queryClient.invalidateQueries({ queryKey: queryKeys.myRegistrations });
       queryClient.invalidateQueries({ queryKey: queryKeys.myBuildLocations });
@@ -194,6 +247,7 @@ export default function InschrijvenScreen() {
       });
       if (!data) return setProblem(problemFrom(response.status, error));
       setNumber(data.registrationNumber);
+      setYouthNumber(data.youthRegistrationNumber ?? null);
       setPhase('done');
     } catch {
       setProblem({ message: 'Geen verbinding. Probeer het opnieuw.', issues: [] });
@@ -254,6 +308,12 @@ export default function InschrijvenScreen() {
             <AppText variant="largeTitle" color={colors.accentText} style={styles.number}>
               {number ?? '–'}
             </AppText>
+            {youthNumber ? (
+              <AppText variant="body" color={colors.textSecondary}>
+                De jeugdinschrijving van {youth.groupName} heeft opgavenummer {youthNumber}. Dat is een eigen
+                inschrijving, met een eigen beoordeling en jurering.
+              </AppText>
+            ) : null}
             <AppText variant="body" color={colors.textSecondary}>
               De optochtcommissie beoordeelt jullie inschrijving; pas na goedkeuring is hij definitief. Het opgavenummer
               is de volgorde van binnenkomst, niet jullie startnummer.
@@ -477,6 +537,15 @@ export default function InschrijvenScreen() {
           <DocumentsStep registrationId={registration.id} maxSizeMb={parade.data?.maxDocumentSizeMb ?? 10} />
         ) : null}
 
+        {step === 'youth' ? (
+          <YouthStep
+            youth={youth}
+            categories={(categories.data ?? []).filter((c) => c.ageGroup === 'Youth')}
+            subjectRequired={subjectRequired}
+            onChange={setYouthField}
+          />
+        ) : null}
+
         {step === 'review' ? (
           <ReviewStep
             form={form}
@@ -542,6 +611,99 @@ function ProblemText({ problem }: { problem: Problem | null }) {
         </AppText>
       ))}
     </View>
+  );
+}
+
+/**
+ * Jeugd inschrijven (wens 2026-11-21). Vier vragen; contactpersoon, bouwlocatie, muziek en lengte komen van de
+ * hoofdinschrijving. Het wordt een eigen inschrijving met een eigen opgavenummer en een eigen jurering.
+ */
+function YouthStep({
+  youth,
+  categories,
+  subjectRequired,
+  onChange,
+}: {
+  youth: YouthForm;
+  categories: ParadeCategory[];
+  subjectRequired: boolean;
+  onChange: <K extends keyof YouthForm>(key: K, value: YouthForm[K]) => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <>
+      <Card style={styles.card}>
+        <CheckboxRow
+          label="We schrijven ook jeugd in"
+          checked={youth.enabled}
+          onChange={(v) => onChange('enabled', v)}
+        />
+        <AppText variant="body" color={colors.textSecondary}>
+          De jeugd wordt een eigen inschrijving met een eigen opgavenummer en een eigen jurering. De contactpersoon, de
+          bouwlocatie, de muziek en de lengte nemen we over van de gegevens die je hiervoor invulde.
+        </AppText>
+      </Card>
+      {youth.enabled ? (
+        <>
+          <Card style={styles.card}>
+            <TextField
+              label="Naam groep"
+              value={youth.groupName}
+              onChangeText={(v) => onChange('groupName', v)}
+              maxLength={100}
+            />
+          </Card>
+          <AppText variant="label" color={colors.textSecondary}>
+            CATEGORIE
+          </AppText>
+          <View style={styles.group} accessibilityRole="radiogroup" accessibilityLabel="Categorie van de jeugd">
+            {categories.map((c) => {
+              const selected = c.id === youth.categoryId;
+              return (
+                <Pressable
+                  key={c.id}
+                  onPress={() => onChange('categoryId', c.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  style={[
+                    styles.option,
+                    { borderColor: selected ? colors.linkText : colors.border, backgroundColor: colors.surface },
+                  ]}
+                >
+                  <AppText variant="bodyStrong">{c.name}</AppText>
+                  <AppText variant="caption" color={colors.textSecondary}>
+                    {categoryRule(c)}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Card style={styles.card}>
+            <Counter
+              label="Aantal"
+              hint="Het aantal kinderen dat meeloopt of meerijdt."
+              value={youth.count}
+              onChange={(v) => onChange('count', v)}
+            />
+            <TextField
+              label={subjectRequired ? 'Onderwerp' : 'Onderwerp (optioneel)'}
+              hint={subjectRequired ? 'Verplicht, maximaal 150 tekens.' : 'Maximaal 150 tekens.'}
+              value={youth.subject}
+              onChangeText={(v) => onChange('subject', v)}
+              maxLength={150}
+            />
+            <TextField
+              label="Tekst boekje (optioneel)"
+              hint="Deze tekst komt in het programmaboekje. Maximaal 2000 tekens."
+              value={youth.subjectDescription}
+              onChangeText={(v) => onChange('subjectDescription', v)}
+              multiline
+              maxLength={2000}
+            />
+          </Card>
+        </>
+      ) : null}
+    </>
   );
 }
 

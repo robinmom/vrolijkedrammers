@@ -30907,6 +30907,188 @@
         }
       }
     },
+    "/api/v1/parade/registrations/{id}/youth": {
+      "put": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "summary": "De jeugdinschrijving bij deze inschrijving klaarzetten of bijwerken (wens 2026-11-21). Het blijft een eigen\ninschrijving met een eigen opgavenummer en eigen jurering; ze wordt samen met de hoofdinschrijving ingediend.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/YouthRegistrationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/YouthRegistrationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/YouthRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/YouthResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YouthResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YouthResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ParadeRegistrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/parade/registrations/{id}/validate": {
       "post": {
         "tags": [
@@ -34088,7 +34270,9 @@
           "statusHistory",
           "changes",
           "documents",
-          "hasMusic"
+          "hasMusic",
+          "youthOf",
+          "youth"
         ],
         "type": "object",
         "properties": {
@@ -34242,6 +34426,26 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "youthOf": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RelatedRegistrationResponse"
+              }
+            ]
+          },
+          "youth": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RelatedRegistrationResponse"
+              }
             ]
           }
         }
@@ -51398,8 +51602,19 @@
           },
           "rulesAccepted": {
             "type": "boolean"
+          },
+          "youth": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/YouthRegistrationRequest"
+              }
+            ]
           }
-        }
+        },
+        "description": "`Youth` is de jeugdinschrijving aan het eind van het formulier (wens 2026-11-21); leeg = geen jeugd."
       },
       "PublicRegistrationStartedResponse": {
         "required": [
@@ -51416,7 +51631,8 @@
       "PublicRegistrationSubmittedResponse": {
         "required": [
           "registrationNumber",
-          "statusToken"
+          "statusToken",
+          "youthRegistrationNumber"
         ],
         "type": "object",
         "properties": {
@@ -51426,6 +51642,13 @@
           },
           "statusToken": {
             "type": "string"
+          },
+          "youthRegistrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -51757,7 +51980,9 @@
           "reviewReason",
           "hasMusic",
           "arrivalTime",
-          "arrivalLocation"
+          "arrivalLocation",
+          "youth",
+          "youthOfRegistrationId"
         ],
         "type": "object",
         "properties": {
@@ -51922,6 +52147,23 @@
               "null",
               "string"
             ]
+          },
+          "youth": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/YouthResponse"
+              }
+            ]
+          },
+          "youthOfRegistrationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         },
         "description": "Inschrijving met `Version` (meesturen bij de volgende opslag), `EditableFields` (statusbeleid),\n`Warnings` (blokkeren indienen niet) en `Issues` (alle meldingen van deze opslag, bij een concept ook blokkerende)."
@@ -51956,7 +52198,8 @@
           "submittedAt",
           "createdAt",
           "paradeId",
-          "paradeName"
+          "paradeName",
+          "youthOfRegistrationId"
         ],
         "type": "object",
         "properties": {
@@ -52004,6 +52247,13 @@
           },
           "paradeName": {
             "type": "string"
+          },
+          "youthOfRegistrationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -52045,6 +52295,46 @@
             ]
           }
         }
+      },
+      "RelatedRegistrationResponse": {
+        "required": [
+          "id",
+          "groupName",
+          "registrationNumber",
+          "startNumber",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "registrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          }
+        },
+        "description": "De inschrijving die bij deze hoort: de hoofdinschrijving bij een jeugdinschrijving, of omgekeerd."
       },
       "RenameDeviceRequest": {
         "required": [
@@ -56742,6 +57032,114 @@
             ]
           }
         }
+      },
+      "YouthRegistrationRequest": {
+        "required": [
+          "groupName",
+          "categoryId",
+          "count",
+          "subject",
+          "subjectDescription"
+        ],
+        "type": "object",
+        "properties": {
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "subject": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "subjectDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "YouthResponse": {
+        "required": [
+          "id",
+          "groupName",
+          "categoryId",
+          "count",
+          "subject",
+          "subjectDescription",
+          "status",
+          "registrationNumber",
+          "startNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "subject": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "subjectDescription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          },
+          "registrationNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "startNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "Wat de groepsverantwoordelijke voor de jeugd invulde, met de stand van die eigen inschrijving."
       }
     }
   },

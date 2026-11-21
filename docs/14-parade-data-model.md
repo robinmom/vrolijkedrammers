@@ -112,6 +112,7 @@ erDiagram
 | contact_email_verified_at | datetime2 | ja | Webformulier: e-mail bevestigd (vereist vóór `Submitted`) |
 | status_token_hash | varbinary(32) | ja | Webformulier: hash van het token voor de ondertekende statuslink (roteerbaar) |
 | source | varchar(10) | nee | `App`, `WebForm` (niet-leden, zonder account), `Portal` (door commissie ingevoerd) |
+| youth_of_registration_id | uuid | ja | Deze inschrijving is de **jeugdinschrijving** van die hoofdinschrijving (wens 2026-11-21); NULL = gewone inschrijving |
 | created_at, created_by, updated_at, updated_by | | | |
 | row_version | rowversion | nee | Optimistic concurrency |
 
@@ -124,6 +125,24 @@ Constraints:
 - `CHECK (measured_length_meters IS NULL OR (measured_length_meters > 0 AND measured_length_meters <= 100))`
 - `CHECK (status <> 'Draft' OR registration_number IS NULL)`: een concept heeft nooit een opgavenummer
 - `CHECK (status = 'Draft' OR registration_number IS NOT NULL)`: na indienen altijd een nummer (behalve `Draft`)
+- `UNIQUE (youth_of_registration_id) WHERE youth_of_registration_id IS NOT NULL`: hoogstens één jeugdinschrijving per hoofdinschrijving. De FK naar zichzelf staat op `RESTRICT` (SQL Server staat een zelfverwijzende cascade niet toe), dus een concept ruimt zijn jeugdconcept zelf op en de opruiming van niet-bevestigde webformulieren verwijdert eerst de jeugd
+
+### Jeugdinschrijving (wens 2026-11-21)
+
+De groepsverantwoordelijke kan aan het eind van het formulier ook jeugd inschrijven. Dat wordt een **eigen**
+`ParadeRegistration` met een eigen opgavenummer, startnummer, categorie en jurering, gekoppeld via
+`youth_of_registration_id`. Alleen vier velden worden gevraagd — groepsnaam, aantal (gaat naar `children_count`, want de
+jeugdcategorieën tellen alleen kinderen), onderwerp en de tekst voor het boekje (`subject_description`) — en de
+categorie, die een jeugdcategorie moet zijn. Al het andere (contactpersoon, bouwlocatie, locatie voor de jury, muziek,
+lengte, extra informatie) wordt overgenomen van de hoofdinschrijving en bij het indienen opnieuw gelijkgetrokken.
+
+- De jeugdinschrijving erft de beheerders van de hoofdinschrijving en telt niet mee voor "één inschrijving per persoon
+  per optocht".
+- Invullen of weghalen kan zolang de hoofdinschrijving een **concept** is (`PUT`/`DELETE /parade/registrations/{id}/youth`);
+  daarna loopt het via de optochtcommissie, zoals bij elk ander veld na indienen.
+- Indienen gebeurt samen met de hoofdinschrijving, in dezelfde transactie: elk krijgt een eigen opgavenummer en een
+  eigen bevestiging (bij het webformulier met een eigen statuslink). Is de jeugd niet goed ingevuld, dan gaat de hele
+  inzending terug en is er dus ook geen nummer vergeven.
 
 > **Toekomstvelden** gaan eerst in `extra_fields` (JSON, gevalideerd tegen een versieerbaar schema in code). Velden die vaak gefilterd of gerapporteerd worden, promoveren later naar echte kolommen via een migratie. Dit voorkomt nu overengineering (geen EAV-model).
 

@@ -8,6 +8,7 @@ export type ParadeCategory = Schemas['ParadeCategoryResponse'];
 export type BuildLocation = Schemas['BuildLocationResponse'];
 export type ValidationIssue = Schemas['ValidationIssueResponse'];
 export type Address = Schemas['AddressDto'];
+export type YouthRegistration = Schemas['YouthResponse'];
 
 /** Formulier van de wizard (Figma 🏁 Optocht-wizard): alles als tekst, zoals de invoervelden het kennen. */
 export interface RegistrationForm {
@@ -56,6 +57,57 @@ export const emptyForm: RegistrationForm = {
   estimatedLength: '',
   additionalInformation: '',
 };
+
+/**
+ * De jeugdinschrijving aan het eind van de wizard (wens 2026-11-21). Vier vragen; al het andere komt van de
+ * hoofdinschrijving. Het aantal staat als tekst in het formulier, zoals de andere invoervelden.
+ */
+export interface YouthForm {
+  enabled: boolean;
+  groupName: string;
+  categoryId: number | null;
+  count: number;
+  subject: string;
+  subjectDescription: string;
+}
+
+export const emptyYouth: YouthForm = {
+  enabled: false,
+  groupName: '',
+  categoryId: null,
+  count: 0,
+  subject: '',
+  subjectDescription: '',
+};
+
+export const youthFromRegistration = (r: Registration): YouthForm =>
+  r.youth
+    ? {
+        enabled: true,
+        groupName: r.youth.groupName ?? '',
+        categoryId: r.youth.categoryId ?? null,
+        count: r.youth.count,
+        subject: r.youth.subject ?? '',
+        subjectDescription: r.youth.subjectDescription ?? '',
+      }
+    : emptyYouth;
+
+export const toYouthRequest = (youth: YouthForm): Schemas['YouthRegistrationRequest'] => ({
+  groupName: youth.groupName.trim() || null,
+  categoryId: youth.categoryId,
+  count: youth.count,
+  subject: youth.subject.trim() || null,
+  subjectDescription: youth.subjectDescription.trim() || null,
+});
+
+/** Minimale controle vóór indienen; de server controleert ook de grenzen van de jeugdcategorie. */
+export function youthMissing(youth: YouthForm, subjectRequired: boolean): string | null {
+  if (!youth.enabled) return null;
+  if (!youth.groupName.trim()) return 'Vul de naam van de jeugdgroep in.';
+  if (youth.categoryId == null) return 'Kies een categorie voor de jeugd.';
+  if (youth.count < 1) return 'Vul het aantal kinderen in.';
+  return subjectRequired && !youth.subject.trim() ? 'Vul het onderwerp van de jeugd in.' : null;
+}
 
 export const addressForm = (a: Address | null | undefined): AddressForm => ({
   street: a?.street ?? '',
@@ -127,8 +179,17 @@ export const sameAddress = (a: AddressForm, b: AddressForm) =>
   a.houseNumber.trim() === b.houseNumber.trim() &&
   a.addition.trim().toUpperCase() === b.addition.trim().toUpperCase();
 
-/** Stappen van de wizard (Figma); gasten hebben geen documentenstap. */
-export type StepKey = 'group' | 'contact' | 'category' | 'subject' | 'location' | 'length' | 'documents' | 'review';
+/** Stappen van de wizard (Figma). */
+export type StepKey =
+  | 'group'
+  | 'contact'
+  | 'category'
+  | 'subject'
+  | 'location'
+  | 'length'
+  | 'documents'
+  | 'youth'
+  | 'review';
 
 export const stepTitles: Record<StepKey, string> = {
   group: 'Groepsgegevens',
@@ -138,13 +199,20 @@ export const stepTitles: Record<StepKey, string> = {
   location: 'Bouwlocatie',
   length: 'Lengte en extra informatie',
   documents: 'Documenten',
+  youth: 'Jeugd inschrijven',
   review: 'Controleren en indienen',
 };
 
-export const stepsFor = (guest: boolean): StepKey[] =>
-  guest
-    ? ['group', 'contact', 'category', 'subject', 'location', 'length', 'review']
-    : ['group', 'contact', 'category', 'subject', 'location', 'length', 'documents', 'review'];
+/**
+ * Stappen van de wizard; gasten hebben geen documentenstap. De jeugdstap is er alleen zolang het een concept is: na
+ * indienen loopt toevoegen of wijzigen via de optochtcommissie, net als bij de andere velden (wens 2026-11-21).
+ */
+export const stepsFor = (guest: boolean, draft = true): StepKey[] => {
+  const steps: StepKey[] = guest
+    ? ['group', 'contact', 'category', 'subject', 'location', 'length', 'youth', 'review']
+    : ['group', 'contact', 'category', 'subject', 'location', 'length', 'documents', 'youth', 'review'];
+  return draft ? steps : steps.filter((s) => s !== 'youth');
+};
 
 /** Welke meldingen van de API bij welke stap horen. */
 export const stepFields: Record<StepKey, string[]> = {
@@ -155,6 +223,7 @@ export const stepFields: Record<StepKey, string[]> = {
   location: ['buildAddress', 'juryInspection'],
   length: ['estimatedLengthMeters', 'additionalInformation'],
   documents: ['documents'],
+  youth: [],
   review: [],
 };
 

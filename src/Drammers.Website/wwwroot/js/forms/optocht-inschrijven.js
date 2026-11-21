@@ -311,7 +311,10 @@
       // De jeugdinschrijving kent alleen jeugdcategorieën; de server weigert een volwassenencategorie.
       if (category.ageGroup === 'Youth') form.elements.jeugdCategoryId.append(option.cloneNode(true));
     }
-    text('label-jeugd-onderwerp', parade.subjectRequired ? 'Onderwerp' : 'Onderwerp (optioneel)');
+    text(
+      'label-jeugd-onderwerp',
+      parade.subjectRequired ? 'Onderwerp van de jeugd' : 'Onderwerp van de jeugd (optioneel)',
+    );
     if (signedIn()) return startSignedIn();
     if (showClosed()) return;
     // Altijd eerst de keuze om in te loggen; zonder werkende login direct het formulier.

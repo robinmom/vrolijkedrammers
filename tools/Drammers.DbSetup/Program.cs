@@ -65,10 +65,13 @@ switch (command)
 }
 
 // Een gepauzeerde serverless database geeft bij het eerste contact direct fout 40613 ("not currently available") terwijl
-// hij opstart; dan tot ruim twee minuten opnieuw proberen in plaats van de deploy te laten crashen.
+// hij opstart; dan tot ruim twee minuten opnieuw proberen in plaats van de deploy te laten crashen. Dezelfde behandeling
+// voor de andere tijdelijke fouten die Azure SQL geeft: de gateway kan de verbinding dichtgooien (10053/10054/10060),
+// de TLS-handshake halverwege laten vallen (20, "error occurred during the pre-login handshake", brak de prod-deploy af
+// op 19-11-2026) of even vol zitten (10928/10929). Ze verdwijnen allemaal bij een tweede poging.
 static async Task<SqlConnection> OpenWithRetryAsync(string connectionString, string? accessToken)
 {
-    int[] transient = [40613, 40197, 40501, 49918, 49919, 49920, 4060];
+    int[] transient = [40613, 40197, 40501, 49918, 49919, 49920, 4060, 20, -2, 64, 233, 10053, 10054, 10060, 10928, 10929, 11001];
     for (var attempt = 1; ; attempt++)
     {
         var connection = new SqlConnection(connectionString);
@@ -85,7 +88,7 @@ static async Task<SqlConnection> OpenWithRetryAsync(string connectionString, str
         catch (SqlException ex) when (attempt < 8 && transient.Contains(ex.Number))
         {
             await connection.DisposeAsync();
-            Console.WriteLine($"Database nog niet beschikbaar ({ex.Number}); poging {attempt}, over 20 s opnieuw.");
+            Console.WriteLine($"Verbinden met de database mislukt ({ex.Number}: {ex.Message.TrimEnd()}); poging {attempt}, over 20 s opnieuw.");
             await Task.Delay(TimeSpan.FromSeconds(20));
         }
     }

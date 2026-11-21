@@ -31,11 +31,19 @@ public enum SplitState
 
     /// <summary>Aanmelding van het tweede lid ingediend; wacht op het bestuur.</summary>
     Applied,
+
+    /// <summary>Klaar: het tweede lid is een eigen lid en hangt als partner aan het hoofdlid.</summary>
+    Split,
 }
 
+/// <summary>
+/// Een tweepersoonslid met de stand van het splitsen. <paramref name="SecondMemberId"/> en <paramref name="SplitAt"/>
+/// zijn alleen gevuld bij <see cref="SplitState.Split"/>: het tweede lid zoals het nu in de administratie staat, en
+/// wanneer het bestuur die aanmelding goedkeurde.
+/// </summary>
 public sealed record SplitCandidate(
     Guid MemberId, string MemberNumber, string FullName, string? Email, string? SecondMemberName, SplitState State, DateTime? InvitedAt,
-    int TimesInvited, Guid? ApplicationId);
+    int TimesInvited, Guid? ApplicationId, Guid? SecondMemberId, DateTime? SplitAt);
 
 /// <summary><paramref name="Invited"/> is het aantal uitnodigingen dat in de wachtrij staat; <paramref name="LastAt"/> is wanneer de laatste mail ongeveer weggaat.</summary>
 public sealed record SplitInviteResult(int Invited, int WithoutEmail, int Skipped, DateTime LastAt);
@@ -68,35 +76,54 @@ public sealed class MemberSplits(
     /// <summary>Hoe lang een link geldig is.</summary>
     public static readonly TimeSpan LinkLifetime = TimeSpan.FromDays(90);
 
-    /// <summary>Actieve tweepersoonsleden zonder gekoppelde partner, met de stand van de uitnodiging.</summary>
+    /// <summary>
+    /// Alle actieve tweepersoonsleden met de stand van het splitsen, ook de leden die al gesplitst zijn
+    /// (<see cref="SplitState.Split"/>). Die stonden er eerst niet bij, maar het bestuur wil kunnen zien wie klaar is
+    /// en wie niet, en zelf aanvinken wie een (nieuwe) uitnodiging krijgt (wens 2026-11-21).
+    /// </summary>
     public async Task<IReadOnlyList<SplitCandidate>> CandidatesAsync(CancellationToken cancellationToken)
     {
         var members = await db.Members.AsNoTracking()
             .Where(m => (m.LocalStatusOverride ?? m.MembershipStatus) == MembershipStatus.Active)
-            .Where(m => !db.Members.Any(p => p.PayerMemberId == m.Id))
             .Select(m => new { m.Id, m.MemberNumber, m.FullName, m.LastName, m.FirstName, m.Email, m.SecondMemberName, m.MembershipKind, m.EbStatusRaw })
             .ToListAsync(cancellationToken);
         var twoPersons = members.Where(m => (m.MembershipKind ?? Contributions.KindFromEBoekhouden(m.EbStatusRaw)) == MembershipKind.TwoPersons).ToList();
         var ids = twoPersons.Select(m => m.Id).ToList();
         var invitations = await db.MembershipSplitInvitations.AsNoTracking().Where(i => ids.Contains(i.MemberId))
             .ToDictionaryAsync(i => i.MemberId, cancellationToken);
+        var partners = await db.Members.AsNoTracking()
+            .Where(p => p.PayerMemberId != null && ids.Contains(p.PayerMemberId.Value))
+            .Select(p => new { p.Id, p.FullName, PayerMemberId = p.PayerMemberId!.Value })
+            .ToListAsync(cancellationToken);
+        var second = partners.GroupBy(p => p.PayerMemberId).ToDictionary(g => g.Key, g => g.First());
         var applications = await db.MembershipApplications.AsNoTracking()
             .Where(a => a.SplitFromMemberId != null && ids.Contains(a.SplitFromMemberId.Value)
                 && (a.Status == ApplicationStatus.Submitted || a.Status == ApplicationStatus.InReview || a.Status == ApplicationStatus.Approved
-                    || a.Status == ApplicationStatus.Provisioning || a.Status == ApplicationStatus.ProvisioningFailed))
-            .Select(a => new { a.Id, MemberId = a.SplitFromMemberId!.Value })
+                    || a.Status == ApplicationStatus.Provisioning || a.Status == ApplicationStatus.ProvisioningFailed
+                    || a.Status == ApplicationStatus.Activated))
+            .Select(a => new { a.Id, a.Status, a.DecisionAt, MemberId = a.SplitFromMemberId!.Value })
             .ToListAsync(cancellationToken);
-        var applied = applications.GroupBy(a => a.MemberId).ToDictionary(g => g.Key, g => g.First().Id);
+        // Een goedgekeurde aanmelding is "klaar" zodra het tweede lid eraan hangt; tot die tijd wacht hij nog op het
+        // bestuur of op de worker, en blijft het hoofdlid bij de leden die nog niet gesplitst zijn staan.
+        var applied = applications.Where(a => !second.ContainsKey(a.MemberId)).GroupBy(a => a.MemberId)
+            .ToDictionary(g => g.Key, g => g.First().Id);
+        var splitAt = applications.GroupBy(a => a.MemberId)
+            .ToDictionary(g => g.Key, g => g.Max(a => a.DecisionAt));
 
         return [.. twoPersons.OrderBy(m => m.LastName ?? m.FullName).ThenBy(m => m.FirstName).Select(m =>
         {
             var invitation = invitations.GetValueOrDefault(m.Id);
-            var state = applied.ContainsKey(m.Id) ? SplitState.Applied
+            var state = second.ContainsKey(m.Id) ? SplitState.Split
+                : applied.ContainsKey(m.Id) ? SplitState.Applied
                 : invitation is null ? SplitState.NotInvited
                 : invitation.TokenHash.Length == 0 ? SplitState.Queued
                 : SplitState.Invited;
-            return new SplitCandidate(m.Id, m.MemberNumber, m.FullName, m.Email, m.SecondMemberName, state, invitation?.SentAt,
-                invitation?.TimesSent ?? 0, applied.TryGetValue(m.Id, out var appId) ? appId : null);
+            // Is er gesplitst, dan is de naam van het tweede lid zoals het nu in de administratie staat leidend; het
+            // vrije veld uit e-Boekhouden was alleen een beginpunt voor het formulier.
+            var partner = second.GetValueOrDefault(m.Id);
+            return new SplitCandidate(m.Id, m.MemberNumber, m.FullName, m.Email, partner?.FullName ?? m.SecondMemberName, state,
+                invitation?.SentAt, invitation?.TimesSent ?? 0, applied.TryGetValue(m.Id, out var appId) ? appId : null,
+                partner?.Id, state == SplitState.Split ? splitAt.GetValueOrDefault(m.Id) : null);
         })];
     }
 
@@ -116,7 +143,7 @@ public sealed class MemberSplits(
         var candidates = await CandidatesAsync(cancellationToken);
         var targets = memberIds is null
             ? candidates.Where(c => c.State == SplitState.NotInvited).ToList()
-            : candidates.Where(c => memberIds.Contains(c.MemberId)).ToList();
+            : candidates.Where(c => memberIds.Contains(c.MemberId) && c.State != SplitState.Split).ToList();
         if (memberIds is not null && targets.Count != memberIds.Count)
         {
             throw new DomainException(ErrorCodes.Validation, "Alleen tweepersoonsleden zonder gekoppeld tweede lid kunnen een uitnodiging krijgen.");

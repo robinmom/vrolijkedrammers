@@ -54083,7 +54083,9 @@
           "state",
           "invitedAt",
           "timesInvited",
-          "applicationId"
+          "applicationId",
+          "secondMemberId",
+          "splitAt"
         ],
         "type": "object",
         "properties": {
@@ -54129,8 +54131,23 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "secondMemberId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "splitAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
-        }
+        },
+        "description": "Een tweepersoonslid met de stand van het splitsen. SecondMemberId en SplitAt\nzijn alleen gevuld bij SplitState.Split: het tweede lid zoals het nu in de administratie staat, en\nwanneer het bestuur die aanmelding goedkeurde."
       },
       "SplitInviteRequest": {
         "required": [
@@ -54237,7 +54254,8 @@
           "NotInvited",
           "Queued",
           "Invited",
-          "Applied"
+          "Applied",
+          "Split"
         ]
       },
       "StartNumberChange": {

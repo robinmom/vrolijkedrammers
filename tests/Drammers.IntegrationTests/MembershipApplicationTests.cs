@@ -782,9 +782,16 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         Assert.Equal(MembershipKind.TwoPersons, mainAfter.MembershipKind);
         Assert.Equal(1, users);
 
-        // Het tweede lid staat niet meer in de lijst; de combinatie betaalt het hoofdlid.
-        Assert.DoesNotContain((await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray(),
-            c => c.GetProperty("memberId").GetGuid() == main);
+        // Het hoofdlid staat nu bij de gesplitste leden, met het tweede lid erbij; de combinatie betaalt het hoofdlid.
+        var split = (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray()
+            .Single(c => c.GetProperty("memberId").GetGuid() == main);
+        Assert.Equal(("Split", "Marie de Vries", partner.Id), (split.GetProperty("state").GetString(),
+            split.GetProperty("secondMemberName").GetString(), split.GetProperty("secondMemberId").GetGuid()));
+        Assert.NotEqual(JsonValueKind.Null, split.GetProperty("splitAt").ValueKind);
+
+        // En een nieuwe uitnodiging kan niet meer: er is al een tweede lid.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _bestuur.PostAsJsonAsync(
+            "/api/v1/admin/memberships/splits/invite", new { memberIds = new[] { main } })).StatusCode);
         var overview = await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/overview");
         Assert.Contains(overview.GetProperty("byKind").EnumerateArray(), r => r.GetProperty("label").GetString() == "Combinatie");
 

@@ -643,6 +643,8 @@ export class MockApi {
       invitedAt: null as string | null,
       timesInvited: 0,
       applicationId: null as string | null,
+      secondMemberId: null as string | null,
+      splitAt: null as string | null,
     },
     {
       memberId: 'm-2',
@@ -654,6 +656,22 @@ export class MockApi {
       invitedAt: null as string | null,
       timesInvited: 0,
       applicationId: null as string | null,
+      secondMemberId: null as string | null,
+      splitAt: null as string | null,
+    },
+    // Al gesplitst: het tweede lid is een eigen lid en hangt als partner aan het hoofdlid.
+    {
+      memberId: 'm-3',
+      memberNumber: '003',
+      fullName: 'Henk Bruggink',
+      email: 'henk@example.com' as string | null,
+      secondMemberName: 'Truus Bruggink' as string | null,
+      state: 'Split',
+      invitedAt: '2026-09-01T10:00:00Z' as string | null,
+      timesInvited: 1,
+      applicationId: null as string | null,
+      secondMemberId: 'm-4' as string | null,
+      splitAt: '2026-09-20T12:00:00Z' as string | null,
     },
   ];
   // Fase 24: handmatig aangepaste velden per lid.

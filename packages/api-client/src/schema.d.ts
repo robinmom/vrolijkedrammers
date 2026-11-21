@@ -33184,6 +33184,11 @@ export interface components {
         };
         /** @enum {unknown} */
         ShowStyle: "Character" | "Modern" | null;
+        /**
+         * @description Een tweepersoonslid met de stand van het splitsen. SecondMemberId en SplitAt
+         *     zijn alleen gevuld bij SplitState.Split: het tweede lid zoals het nu in de administratie staat, en
+         *     wanneer het bestuur die aanmelding goedkeurde.
+         */
         SplitCandidate: {
             /** Format: uuid */
             memberId: string;
@@ -33198,6 +33203,10 @@ export interface components {
             timesInvited: number;
             /** Format: uuid */
             applicationId: null | string;
+            /** Format: uuid */
+            secondMemberId: null | string;
+            /** Format: date-time */
+            splitAt: null | string;
         };
         SplitInviteRequest: {
             memberIds: null | string[];
@@ -33227,7 +33236,7 @@ export interface components {
             city: null | string;
         };
         /** @enum {unknown} */
-        SplitState: "NotInvited" | "Queued" | "Invited" | "Applied";
+        SplitState: "NotInvited" | "Queued" | "Invited" | "Applied" | "Split";
         StartNumberChange: {
             /** Format: uuid */
             id: string;

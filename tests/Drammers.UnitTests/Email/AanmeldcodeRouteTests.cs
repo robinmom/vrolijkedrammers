@@ -42,6 +42,10 @@ public class AanmeldcodeRouteTests
         Assert.Equal("app@vrolijkedrammers.nl", MailboxEmailSender.Mailbox(Code(), Options));
 
     /// <summary>Kan Graph de mailbox niet aan, dan valt ACS terug op hetzelfde adres — niet op DoNotReply.</summary>
+    /// <summary>De splitsuitnodiging aan het hoofdlid; de contactlink is de uitweg voor een tweede lid zonder eigen adres.</summary>
+    private static EmailMessage Uitnodiging() => MemberSplits.InvitationMail(
+        "lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc", "https://dvd.test" + MemberSplits.ContactPath);
+
     [Fact]
     public void De_terugval_via_ACS_houdt_dezelfde_afzender() =>
         Assert.Equal("app@vrolijkedrammers.nl", EmailSenderAddress.For(Code(), Options));
@@ -55,7 +59,7 @@ public class AanmeldcodeRouteTests
     public void De_code_wacht_niet_op_een_haperende_mailbox()
     {
         Assert.True(Code().MailboxOptional);
-        Assert.False(MemberSplits.InvitationMail("lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc").MailboxOptional);
+        Assert.False(Uitnodiging().MailboxOptional);
     }
 
     /// <summary>
@@ -82,7 +86,7 @@ public class AanmeldcodeRouteTests
     [Fact]
     public void De_splitsuitnodiging_blijft_van_het_secretariaat() =>
         Assert.Equal("secretaris@vrolijkedrammers.nl",
-            EmailSenderAddress.For(MemberSplits.InvitationMail("lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc"), Options));
+            EmailSenderAddress.For(Uitnodiging(), Options));
 
     /// <summary>
     /// En de splitsuitnodiging gaat sinds 11-11-2026 óók via de mailbox, dus niet meer uit de ACS-pot. Dat was de
@@ -91,5 +95,5 @@ public class AanmeldcodeRouteTests
     [Fact]
     public void De_splitsuitnodiging_gaat_via_de_mailbox_en_niet_via_ACS() =>
         Assert.Equal("secretaris@vrolijkedrammers.nl", MailboxEmailSender.Mailbox(
-            MemberSplits.InvitationMail("lid@example.com", "Piet", "Marie", "https://dvd.test/lid-worden/?splitsen=abc"), Options));
+            Uitnodiging(), Options));
 }

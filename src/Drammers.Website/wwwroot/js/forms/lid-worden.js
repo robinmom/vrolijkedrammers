@@ -52,7 +52,7 @@
         set('city', p.city);
         // Geen e-mailadres invullen: hier hoort het eigen adres van het tweede lid.
         splitReady = true;
-        splitInfo.textContent = `Je registreert het tweede lid van het lidmaatschap van ${p.mainMemberName}. De contributie blijft via ${p.mainMemberName} lopen; een IBAN is niet nodig. Vul het eigen e-mailadres van het tweede lid in.`;
+        splitInfo.textContent = `Je registreert het tweede lid van het lidmaatschap van ${p.mainMemberName}. De contributie blijft via ${p.mainMemberName} lopen; een IBAN is niet nodig. Vul hieronder het eigen e-mailadres van het tweede lid in: het adres van ${p.mainMemberName} kan er niet nog een keer voor gebruikt worden.`;
         applyMode();
       })
       .catch(() => {
@@ -87,19 +87,40 @@
   });
 
   async function problem(response) {
-    if (response.status === 429) return 'Te veel pogingen vanaf dit netwerk. Probeer het over tien minuten opnieuw.';
+    if (response.status === 429) return { message: 'Te veel pogingen vanaf dit netwerk. Probeer het over tien minuten opnieuw.' };
     try {
       const body = await response.json();
-      if (body.detail) return body.detail;
-      if (body.errors) return 'Controleer de ingevulde gegevens.';
+      if (body.detail) return { message: body.detail, code: body.code };
+      if (body.errors) return { message: 'Controleer de ingevulde gegevens.' };
     } catch {
       /* geen JSON */
     }
-    return 'Er ging iets mis. Probeer het later opnieuw.';
+    return { message: 'Er ging iets mis. Probeer het later opnieuw.' };
   }
 
-  function fail(element, message) {
-    element.textContent = message;
+  // Het hoofdlid gebruikt dit adres al: hier hoort een link naar het contactformulier bij. De tekst en de link komen
+  // uit dit script en niet uit het antwoord van de server, zodat er nooit HTML van buiten in de pagina komt.
+  function sameEmailMessage(element) {
+    const bold = document.createElement('strong');
+    bold.textContent = 'Het hoofdlid gebruikt dit e-mailadres al.';
+    const link = document.createElement('a');
+    link.href = '/contact?aan=secretaris#formulier';
+    link.textContent = 'Neem dan contact met ons op';
+    element.replaceChildren(
+      bold,
+      document.createTextNode(
+        ' Vul hieronder het eigen e-mailadres van het tweede lid in: daar hoort zijn eigen plek in de app bij. Heeft het tweede lid geen eigen e-mailadres? ',
+      ),
+      link,
+      document.createTextNode(', dan regelen we het samen.'),
+    );
+    form.elements.email.focus();
+  }
+
+  function fail(element, result) {
+    const { message, code } = typeof result === 'string' ? { message: result } : result;
+    if (code === 'SPLIT_EMAIL_MAIN_MEMBER') sameEmailMessage(element);
+    else element.textContent = message;
     element.hidden = false;
   }
 

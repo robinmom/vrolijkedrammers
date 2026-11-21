@@ -561,10 +561,11 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
     }
 
     [Fact]
-    public async Task Tweede_lid_met_het_adres_van_het_hoofdlid_krijgt_wel_een_welkomstmail()
+    public async Task Tweede_lid_moet_een_eigen_adres_invullen_en_het_adres_van_iemand_anders_geeft_geen_account()
     {
-        // Hoofdlid met app-account; het tweede lid staat alleen als naam in vrij veld 2.
+        // Hoofdlid met app-account; het tweede lid staat alleen als naam in vrij veld 2. Oma heeft een eigen account.
         var (userId, _) = await _api.CreateUserAsync("jan@example.com", DefaultRoles.Lid);
+        var (omaUserId, _) = await _api.CreateUserAsync("oma@example.com", DefaultRoles.Lid);
         var main = await WithDbAsync(async db =>
         {
             var member = new Member
@@ -593,8 +594,21 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
                 EbStatusRaw = "Tweepersoonslid DVD",
                 MembershipStatus = MembershipStatus.Active,
             });
+            var oma = new Member
+            {
+                Id = IdGenerator.NewId(),
+                MemberNumber = "502",
+                FullName = "Oma de Vries",
+                FirstName = "Oma",
+                LastName = "Vries",
+                Email = "oma@example.com",
+                MembershipKind = MembershipKind.OnePerson,
+                MembershipStatus = MembershipStatus.Active,
+            };
+            db.Members.Add(oma);
             await db.SaveChangesAsync();
             (await db.Users.SingleAsync(u => u.Id == userId)).MemberId = member.Id;
+            (await db.Users.SingleAsync(u => u.Id == omaUserId)).MemberId = oma.Id;
             await db.SaveChangesAsync();
             return member.Id;
         });
@@ -626,8 +640,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             prefill.GetProperty("secondFirstName").GetString(), prefill.GetProperty("secondLastName").GetString(), prefill.GetProperty("addressLine").GetString()));
         Assert.Equal(HttpStatusCode.NotFound, (await _anonymous.GetAsync("/api/v1/membership-applications/split/onzin")).StatusCode);
 
-        // Het tweede lid meldt zich aan met het e-mailadres van het hoofdlid en zonder IBAN.
-        var form = new
+        object Form(string email) => new
         {
             firstName = "Marie",
             namePrefix = "de",
@@ -637,7 +650,7 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             addressLine = "Kerkstraat 2",
             postalCode = "6999 AB",
             city = "Loil",
-            email = "jan@example.com",
+            email,
             phone = (string?)null,
             guardianName = (string?)null,
             guardianPhone = (string?)null,
@@ -650,7 +663,19 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
             membershipType = "Individual",
             splitToken = token,
         };
-        var id = await SubmitAsync(form, "jan@example.com");
+
+        // Het adres van het hoofdlid wordt geweigerd (wens 2026-11-21): het tweede lid heeft een eigen adres nodig voor
+        // zijn eigen plek in de app. Er is dan nog niets vastgelegd en er gaat geen code naar het hoofdlid.
+        var same = await _anonymous.PostAsJsonAsync("/api/v1/membership-applications", Form("jan@example.com"));
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, same.StatusCode);
+        var refused = await same.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("SPLIT_EMAIL_MAIN_MEMBER", refused.GetProperty("code").GetString());
+        Assert.StartsWith("Het hoofdlid gebruikt dit e-mailadres al.", refused.GetProperty("detail").GetString(), StringComparison.Ordinal);
+        Assert.Empty(await WithDbAsync(db => db.MembershipApplications.AsNoTracking().ToListAsync()));
+        Assert.DoesNotContain(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject.Contains("code", StringComparison.Ordinal));
+
+        // Een adres dat bij het account van iemand anders hoort mag wel; dan krijgt het tweede lid (nog) geen eigen account.
+        var id = await SubmitAsync(Form("oma@example.com"), "oma@example.com");
         Assert.Equal("Applied", (await _bestuur.GetFromJsonAsync<JsonElement>("/api/v1/admin/memberships/splits")).EnumerateArray()
             .Single(c => c.GetProperty("memberId").GetGuid() == main).GetProperty("state").GetString());
         var detail = await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}");
@@ -661,10 +686,10 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         await RunProvisioningAsync();
         Assert.Equal("Activated", (await _bestuur.GetFromJsonAsync<JsonElement>($"/api/v1/admin/membership-applications/{id}")).GetProperty("status").GetString());
 
-        // Geen eigen account (het adres hoort bij Jan), wel een welkomstmail zonder inloguitleg.
-        var welcome = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject == "Welkom als lid van De Vrolijke Drammers");
+        // Geen eigen account (het adres hoort bij Oma), wel een welkomstmail zonder inloguitleg.
+        var welcome = Assert.Single(_api.Emails.Sent, m => m.To == "oma@example.com" && m.Subject == "Welkom als lid van De Vrolijke Drammers");
         Assert.Contains("lidmaatschap van Jan de Vries", welcome.PlainText);
-        Assert.Equal(1, await WithDbAsync(db => db.Users.AsNoTracking().CountAsync(u => u.Email == "jan@example.com")));
+        Assert.Equal(1, await WithDbAsync(db => db.Users.AsNoTracking().CountAsync(u => u.Email == "oma@example.com")));
 
         // De afgeronde poging blokkeert "App-account aanmaken" in het portal niet.
         var partnerId = await WithDbAsync(db => db.Members.AsNoTracking().Where(m => m.PayerMemberId == main).Select(m => m.Id).SingleAsync());
@@ -727,6 +752,9 @@ public partial class MembershipApplicationTests(SqlServerFixture sql) : IAsyncLi
         var mail = Assert.Single(_api.Emails.Sent, m => m.To == "jan@example.com" && m.Subject.Contains("tweede lid", StringComparison.Ordinal));
         Assert.Equal("secretaris@vrolijkedrammers.nl", mail.ReplyTo);
         Assert.Contains("Marie de Vries", mail.PlainText);
+        // De mail zegt vooraf dat het tweede lid een eigen adres nodig heeft, met het contactformulier als uitweg.
+        Assert.Contains("eigen e-mailadres nodig", mail.PlainText, StringComparison.Ordinal);
+        Assert.Contains(MemberSplits.ContactPath, mail.PlainText, StringComparison.Ordinal);
         var token = Regex.Match(mail.PlainText, @"/lid-worden/\?splitsen=([A-Za-z0-9_-]+)").Groups[1].Value;
         Assert.NotEmpty(token);
 

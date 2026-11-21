@@ -572,6 +572,91 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         await DraftAsync(lid);
     }
 
+    /// <summary>
+    /// Wens 2026-11-21: aan het eind van het formulier kan de groepsverantwoordelijke ook jeugd inschrijven. Dat is een
+    /// eigen inschrijving met een eigen opgavenummer en eigen categorie, en dus ook een eigen jurering.
+    /// </summary>
+    [Fact]
+    public async Task Jeugd_erbij_is_een_eigen_inschrijving_met_een_eigen_opgavenummer()
+    {
+        var (_, lid) = await LidAsync("piet@example.com");
+        var draft = await DraftAsync(lid);
+        var id = draft.GetProperty("id").GetGuid();
+        var saved = await SaveAsync(lid, draft, Complete(draft.GetProperty("version").GetString()!));
+        Assert.Equal(JsonValueKind.Null, saved.GetProperty("youth").ValueKind);
+
+        // Een volwassenencategorie mag niet voor de jeugd.
+        var wrong = await lid.PutAsJsonAsync($"/api/v1/parade/registrations/{id}/youth",
+            new { groupName = "De Kruumels", categoryId = 3, count = 14, subject = "Ridders", subjectDescription = "Tekst voor het boekje" });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, wrong.StatusCode);
+
+        var youth = await JsonAsync(await lid.PutAsJsonAsync($"/api/v1/parade/registrations/{id}/youth",
+            new { groupName = "De Kruumels", categoryId = 7, count = 14, subject = "Ridders", subjectDescription = "Tekst voor het boekje" }));
+        Assert.Equal(("De Kruumels", 7, 14, "Draft"), (youth.GetProperty("groupName").GetString(), youth.GetProperty("categoryId").GetInt32(),
+            youth.GetProperty("count").GetInt32(), youth.GetProperty("status").GetString()));
+
+        // Opnieuw opslaan verandert alleen de vier velden; het blijft dezelfde inschrijving.
+        var again = await JsonAsync(await lid.PutAsJsonAsync($"/api/v1/parade/registrations/{id}/youth",
+            new { groupName = "De Kruumels", categoryId = 7, count = 16, subject = "Ridders en jonkvrouwen", subjectDescription = (string?)null }));
+        Assert.Equal((youth.GetProperty("id").GetGuid(), 16), (again.GetProperty("id").GetGuid(), again.GetProperty("count").GetInt32()));
+
+        // Het overgenomen deel komt van de hoofdinschrijving; de jeugd heeft nul volwassenen.
+        var youthId = youth.GetProperty("id").GetGuid();
+        var inherited = await WithDbAsync(db => db.ParadeRegistrations.AsNoTracking().SingleAsync(r => r.Id == youthId));
+        Assert.Equal(("Piet Lid", "+31612345678", "piet@example.com"), (inherited.ContactName, inherited.ContactPhone, inherited.ContactEmail));
+        Assert.Equal(("Dorpsstraat", "6999 AA", 0), (inherited.BuildAddress.Street, inherited.BuildAddress.PostalCode, inherited.AdultCount));
+        Assert.Equal((true, 12.5m), (inherited.HasMusic, inherited.EstimatedLengthMeters));
+
+        // Indienen geeft beide een eigen nummer, in volgorde van binnenkomst.
+        var submitted = await JsonAsync(await lid.PostAsync($"/api/v1/parade/registrations/{id}/submit", null));
+        Assert.Equal(1, submitted.GetProperty("registrationNumber").GetInt32());
+        Assert.Equal(("Submitted", 2), (submitted.GetProperty("youth").GetProperty("status").GetString(),
+            submitted.GetProperty("youth").GetProperty("registrationNumber").GetInt32()));
+
+        // Twee bevestigingen, want twee inschrijvingen; en de jeugd staat ook onder Mijn inschrijving.
+        await RunOutboxAsync();
+        Assert.Equal(2, _api.Emails.Sent.Count(m => m.To == "piet@example.com"));
+        Assert.Contains(_api.Emails.Sent, m => m.Subject.Contains("opgavenummer 2", StringComparison.Ordinal) && m.PlainText.Contains("De Kruumels", StringComparison.Ordinal));
+        var mine = await lid.GetFromJsonAsync<JsonElement>("/api/v1/parade/registrations");
+        Assert.Equal(2, mine.GetArrayLength());
+        Assert.Equal(id, mine.EnumerateArray().Single(r => r.GetProperty("groupName").GetString() == "De Kruumels").GetProperty("youthOfRegistrationId").GetGuid());
+
+        // De commissie ziet het paar bij elkaar.
+        var (_, commissieOid) = await _api.CreateUserAsync("commissie@example.com", DefaultRoles.Lid, DefaultRoles.Optochtcommissie);
+        var detail = await _api.ClientFor(commissieOid).GetFromJsonAsync<JsonElement>($"/api/v1/admin/parade-registrations/{youthId}");
+        Assert.Equal(("De Knotwilgen", 1), (detail.GetProperty("youthOf").GetProperty("groupName").GetString(),
+            detail.GetProperty("youthOf").GetProperty("registrationNumber").GetInt32()));
+        Assert.Equal("Jeugd Loopgroepen groot (10+)", detail.GetProperty("categoryName").GetString());
+
+        // Na indienen gaat wijzigen via de commissie; de jeugd blokkeert ook geen nieuwe inschrijving volgend jaar.
+        Assert.Equal(HttpStatusCode.Conflict, (await lid.PutAsJsonAsync($"/api/v1/parade/registrations/{id}/youth",
+            new { groupName = "De Kruumels", categoryId = 7, count = 16, subject = "Ridders", subjectDescription = (string?)null })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await lid.DeleteAsync($"/api/v1/parade/registrations/{id}/youth")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Jeugd_weghalen_kan_zolang_het_een_concept_is()
+    {
+        var (_, lid) = await LidAsync("piet@example.com");
+        var draft = await DraftAsync(lid);
+        var id = draft.GetProperty("id").GetGuid();
+        await SaveAsync(lid, draft, Complete(draft.GetProperty("version").GetString()!));
+        await JsonAsync(await lid.PutAsJsonAsync($"/api/v1/parade/registrations/{id}/youth",
+            new { groupName = "De Kruumels", categoryId = 9, count = 2, subject = "Ridders", subjectDescription = (string?)null }));
+        Assert.Equal(2, await WithDbAsync(db => db.ParadeRegistrations.CountAsync()));
+
+        Assert.Equal(HttpStatusCode.NoContent, (await lid.DeleteAsync($"/api/v1/parade/registrations/{id}/youth")).StatusCode);
+        Assert.Equal(1, await WithDbAsync(db => db.ParadeRegistrations.CountAsync()));
+        var reloaded = await lid.GetFromJsonAsync<JsonElement>($"/api/v1/parade/registrations/{id}");
+        Assert.Equal(JsonValueKind.Null, reloaded.GetProperty("youth").ValueKind);
+
+        // En het concept verwijderen neemt een jeugdconcept mee.
+        await JsonAsync(await lid.PutAsJsonAsync($"/api/v1/parade/registrations/{id}/youth",
+            new { groupName = "De Kruumels", categoryId = 9, count = 2, subject = "Ridders", subjectDescription = (string?)null }));
+        Assert.Equal(HttpStatusCode.NoContent, (await lid.DeleteAsync($"/api/v1/parade/registrations/{id}")).StatusCode);
+        Assert.Equal(0, await WithDbAsync(db => db.ParadeRegistrations.CountAsync()));
+    }
+
     [Fact]
     public async Task Gast_schrijft_in_zonder_account_pas_na_de_e_mailcode_een_opgavenummer_en_een_statuslink()
     {
@@ -608,6 +693,40 @@ public class ParadeRegistrationTests(SqlServerFixture sql) : IAsyncLifetime
         Assert.False(status.TryGetProperty("contactEmail", out _));
         Assert.Equal(HttpStatusCode.NotFound, (await guest.GetAsync("/api/v1/parade/public-registrations/status?token=onzin")).StatusCode);
         Assert.Equal(RegistrationSource.WebForm, await WithDbAsync(db => db.ParadeRegistrations.Where(r => r.Id == id).Select(r => r.Source).SingleAsync()));
+    }
+
+    [Fact]
+    public async Task Gast_schrijft_ook_jeugd_in_en_krijgt_twee_opgavenummers_met_elk_een_eigen_statuslink()
+    {
+        var guest = _api.CreateClient();
+        var body = JsonSerializer.SerializeToNode(Complete("", group: "Buurtvereniging Oost"))!;
+        body["contactEmail"] = "gast@example.com";
+        object Youth(int category) => new { groupName = "De Kruumels", categoryId = category, count = 12, subject = "Ridders", subjectDescription = "Tekst voor het boekje" };
+
+        // Een volwassenencategorie voor de jeugd wordt geweigerd, en dan is er nog niets vastgelegd.
+        var wrong = await guest.PostAsJsonAsync("/api/v1/parade/public-registrations", new { registration = body, rulesAccepted = true, youth = Youth(3) });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, wrong.StatusCode);
+        Assert.Equal(0, await WithDbAsync(db => db.ParadeRegistrations.CountAsync()));
+
+        var started = await JsonAsync(
+            await guest.PostAsJsonAsync("/api/v1/parade/public-registrations", new { registration = body, rulesAccepted = true, youth = Youth(7) }),
+            HttpStatusCode.Created);
+        var id = started.GetProperty("id").GetGuid();
+        // Twee concepten, nog zonder nummer; één e-mailcode voor beide.
+        Assert.Equal(2, await WithDbAsync(db => db.ParadeRegistrations.CountAsync(r => r.RegistrationNumber == null)));
+        Assert.Single(_api.Emails.Sent, m => m.To == "gast@example.com");
+
+        var code = System.Text.RegularExpressions.Regex.Match(_api.Emails.Sent.Last(m => m.To == "gast@example.com").PlainText, @"\b\d{6}\b").Value;
+        var verified = await JsonAsync(await guest.PostAsJsonAsync($"/api/v1/parade/public-registrations/{id}/verify-email", new { code }));
+        Assert.Equal((1, 2), (verified.GetProperty("registrationNumber").GetInt32(), verified.GetProperty("youthRegistrationNumber").GetInt32()));
+
+        // Elke inschrijving krijgt haar eigen bevestiging met haar eigen statuslink.
+        var youthMail = Assert.Single(_api.Emails.Sent, m => m.PlainText.Contains("De Kruumels", StringComparison.Ordinal));
+        Assert.Contains("opgavenummer 2", youthMail.Subject, StringComparison.Ordinal);
+        var youthToken = System.Text.RegularExpressions.Regex.Match(youthMail.PlainText, @"\?status=([A-Za-z0-9_-]+)").Groups[1].Value;
+        var status = await guest.GetFromJsonAsync<JsonElement>($"/api/v1/parade/public-registrations/status?token={youthToken}");
+        Assert.Equal(("De Kruumels", 2, "Jeugd Loopgroepen groot (10+)"), (status.GetProperty("groupName").GetString(),
+            status.GetProperty("registrationNumber").GetInt32(), status.GetProperty("categoryName").GetString()));
     }
 
     /// <summary>

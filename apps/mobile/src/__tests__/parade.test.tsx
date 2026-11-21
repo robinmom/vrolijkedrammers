@@ -49,6 +49,20 @@ const categories = [
     active: true,
     sortOrder: 1,
   },
+  {
+    id: 7,
+    code: 'YOUTH_WALK_L',
+    name: 'Jeugd loopgroep groot',
+    ageGroup: 'Youth',
+    type: 'WalkingGroupLarge',
+    minimumParticipants: 10,
+    maximumParticipants: null,
+    participantCountBasis: 'ChildrenOnly',
+    validationMode: 'Block',
+    hasVehicle: false,
+    active: true,
+    sortOrder: 2,
+  },
 ];
 const address = {
   street: 'Dorpsstraat',
@@ -116,7 +130,11 @@ describe('Optocht inschrijven (fase 11)', () => {
     mockApi({
       ...paradeApi,
       '/api/v1/parade/public-registrations': { status: 201, body: { id: 'g-1' } },
-      '/api/v1/parade/public-registrations/g-1/verify-email': { registrationNumber: 4, statusToken: 't' },
+      '/api/v1/parade/public-registrations/g-1/verify-email': {
+        registrationNumber: 4,
+        statusToken: 't',
+        youthRegistrationNumber: 5,
+      },
     });
     await renderApp(routes, '/optocht');
     await screen.findByText(/Inschrijven kan tot/);
@@ -146,7 +164,17 @@ describe('Optocht inschrijven (fase 11)', () => {
     expect(screen.getByLabelText('Geschatte lengte (meter)').props.value).toBe('12,5');
     await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
 
-    expect(await screen.findByText('STAP 7 VAN 7 · OPTOCHT')).toBeTruthy();
+    // Jeugd erbij (wens 2026-11-21): een eigen inschrijving met een eigen opgavenummer.
+    expect(await screen.findByText('STAP 7 VAN 8 · OPTOCHT')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'We schrijven ook jeugd in' }));
+    await fireEvent.changeText(await screen.findByLabelText('Naam groep'), 'De Kruumels');
+    await fireEvent.press(screen.getByRole('radio', { name: /Jeugd loopgroep groot/ }));
+    for (let i = 0; i < 14; i++) await fireEvent.press(screen.getByRole('button', { name: 'Aantal plus 1' }));
+    await fireEvent.changeText(screen.getByLabelText('Onderwerp'), 'Ridders');
+    await fireEvent.changeText(screen.getByLabelText('Tekst boekje (optioneel)'), 'Tekst voor het boekje');
+    await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
+
+    expect(await screen.findByText('STAP 8 VAN 8 · OPTOCHT')).toBeTruthy();
     await fireEvent.press(screen.getByRole('checkbox', { name: /optochtreglement/ }));
     await fireEvent.press(screen.getByRole('button', { name: 'Inschrijving indienen' }));
     expect(await screen.findByText('Bevestig je e-mailadres')).toBeTruthy();
@@ -159,12 +187,20 @@ describe('Optocht inschrijven (fase 11)', () => {
         hasMusic: false,
         buildAddress: { street: 'Kerkstraat', city: 'Loil' },
       },
+      youth: {
+        groupName: 'De Kruumels',
+        categoryId: 7,
+        count: 14,
+        subject: 'Ridders',
+        subjectDescription: 'Tekst voor het boekje',
+      },
     });
 
     await fireEvent.changeText(screen.getByLabelText('Code'), '123456');
     await fireEvent.press(screen.getByRole('button', { name: 'Bevestigen' }));
     expect(await screen.findByText('Ingeschreven!')).toBeTruthy();
     expect(screen.getByText('4')).toBeTruthy();
+    expect(screen.getByText(/jeugdinschrijving van De Kruumels heeft opgavenummer 5/)).toBeTruthy();
   });
 
   it('lid zonder recht Groepsverantwoordelijke ziet de informatiepagina uit het portal', async () => {
@@ -210,6 +246,67 @@ describe('Optocht inschrijven (fase 11)', () => {
     expect(screen.getByRole('button', { name: 'Verwijder Dorpsstraat 12, 6999 AA Loil' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('radio', { name: '+ Andere locatie' }));
     expect((await screen.findByLabelText('Straat')).props.value).toBe('');
+  });
+
+  it('groepsverantwoordelijke schrijft ook jeugd in: dat wordt een eigen inschrijving', async () => {
+    setSessionForTest('signedIn');
+    const full = {
+      ...draft,
+      categoryId: 3,
+      subject: 'Wilde westen',
+      adultCount: 12,
+      hasMusic: true,
+      estimatedLengthMeters: 12.5,
+    };
+    const youth = {
+      id: 'y-1',
+      groupName: 'De Kruumels',
+      categoryId: 7,
+      count: 14,
+      subject: 'Ridders',
+      subjectDescription: null,
+      status: 'Draft',
+      registrationNumber: null,
+      startNumber: null,
+    };
+    mockApi({
+      ...paradeApi,
+      '/api/v1/me': me(['parade.register']),
+      '/api/v1/parade/registrations/r-1': full,
+      '/api/v1/parade/registrations/r-1/youth': youth,
+      '/api/v1/parade/registrations/r-1/documents': [],
+      '/api/v1/parade/build-locations': [],
+      '/api/v1/parade/registrations/r-1/submit': {
+        ...full,
+        status: 'Submitted',
+        registrationNumber: 3,
+        youth: { ...youth, status: 'Submitted', registrationNumber: 4 },
+      },
+    });
+    // Rechtstreeks naar de jeugdstap (de wizard onthoudt de stap in de link).
+    await renderApp(routes, '/optocht/inschrijven?id=r-1&stap=7');
+    expect(await screen.findByRole('header', { name: 'Jeugd inschrijven' })).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'We schrijven ook jeugd in' }));
+    await fireEvent.changeText(await screen.findByLabelText('Naam groep'), 'De Kruumels');
+    await fireEvent.press(screen.getByRole('radio', { name: /Jeugd loopgroep groot/ }));
+    for (let i = 0; i < 14; i++) await fireEvent.press(screen.getByRole('button', { name: 'Aantal plus 1' }));
+    await fireEvent.changeText(screen.getByLabelText('Onderwerp'), 'Ridders');
+    await fireEvent.press(screen.getByRole('button', { name: 'Volgende' }));
+
+    expect(await screen.findByRole('header', { name: 'Controleren en indienen' })).toBeTruthy();
+    expect(await bodyOf('/api/v1/parade/registrations/r-1/youth')).toMatchObject({
+      groupName: 'De Kruumels',
+      categoryId: 7,
+      count: 14,
+      subject: 'Ridders',
+    });
+
+    await fireEvent.press(screen.getByRole('checkbox', { name: /optochtreglement/ }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Inschrijving indienen' }));
+    expect(await screen.findByText('Ingeschreven!')).toBeTruthy();
+    expect(screen.getByText('3')).toBeTruthy();
+    expect(screen.getByText(/jeugdinschrijving van De Kruumels heeft opgavenummer 4/)).toBeTruthy();
   });
 
   it('lengte: hoogstens 1 decimaal, komma of punt', () => {

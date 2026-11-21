@@ -102,6 +102,16 @@
       ]
     },
     {
+      "id": "df5f543e336d9aa8",
+      "text": " heeft opgavenummer ",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "2f120e857857def4",
       "text": " in de app akkoord geven. Daarna beoordeelt de ledenadministratie het.",
       "places": [
@@ -368,6 +378,16 @@
       ]
     },
     {
+      "id": "c1b0e4b8df83f30e",
+      "text": ". Dat is een eigen inschrijving, met een eigen beoordeling en jurering.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "f46a6dd769e1115f",
       "text": ". Delen kan alleen binnen je eigen groep.",
       "places": [
@@ -549,6 +569,16 @@
       "places": [
         {
           "file": "app/(tabs)/optocht.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
+      "id": "80f17696b152ac16",
+      "text": "Aantal",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
           "where": "label"
         }
       ]
@@ -1366,6 +1396,16 @@
       ]
     },
     {
+      "id": "52a343d3fbc864cd",
+      "text": "CATEGORIE",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "20e495aeb9b38215",
       "text": "Categorie en deelnemers",
       "places": [
@@ -1610,6 +1650,26 @@
       ]
     },
     {
+      "id": "b9db34e3b1a7b64b",
+      "text": "De jeugd wordt een eigen inschrijving met een eigen opgavenummer en een eigen jurering. De contactpersoon, de bouwlocatie, de muziek en de lengte nemen we over van de gegevens die je hiervoor invulde.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "8ddf1d64fbf05dc7",
+      "text": "De jeugdinschrijving van ",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "tekst"
+        }
+      ]
+    },
+    {
       "id": "d728de4f2261af92",
       "text": "De kaartverkoop voor de pronkzitting is nog niet open.",
       "places": [
@@ -1786,6 +1846,16 @@
         {
           "file": "features/SaleParts.tsx",
           "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "1ede1b9d17e68bf9",
+      "text": "Deze tekst komt in het programmaboekje. Maximaal 2000 tekens.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
         }
       ]
     },
@@ -2458,6 +2528,16 @@
         {
           "file": "features/push.ts",
           "where": "description"
+        }
+      ]
+    },
+    {
+      "id": "bfd4455db090f335",
+      "text": "Het aantal kinderen dat meeloopt of meerijdt.",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "hint"
         }
       ]
     },
@@ -4140,6 +4220,16 @@
       ]
     },
     {
+      "id": "96bd2e9e4475a224",
+      "text": "Naam groep",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
       "id": "015cd1827a1baa53",
       "text": "Naam ouder/verzorger",
       "places": [
@@ -5376,6 +5466,16 @@
       ]
     },
     {
+      "id": "5d8815ac94816a66",
+      "text": "Tekst boekje (optioneel)",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
+        }
+      ]
+    },
+    {
       "id": "5d54efb51f2c6aec",
       "text": "Telefoon",
       "places": [
@@ -6174,6 +6274,16 @@
         {
           "file": "app/kinderen/koppelen.tsx",
           "where": "tekst"
+        }
+      ]
+    },
+    {
+      "id": "4986c7ad49ae60a4",
+      "text": "We schrijven ook jeugd in",
+      "places": [
+        {
+          "file": "app/optocht/inschrijven.tsx",
+          "where": "label"
         }
       ]
     },

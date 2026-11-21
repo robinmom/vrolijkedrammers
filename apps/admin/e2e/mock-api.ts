@@ -1097,6 +1097,15 @@ export class MockApi {
     ],
     changes: [] as unknown[],
     documents: [] as unknown[],
+    // Deze groep schreef ook jeugd in; dat is een eigen inschrijving (wens 2026-11-21).
+    youthOf: null as { id: string; groupName: string | null; registrationNumber: number | null } | null,
+    youth: { id: 'r-2', groupName: 'De Kruumels', registrationNumber: 2, startNumber: null, status: 'Submitted' } as {
+      id: string;
+      groupName: string | null;
+      registrationNumber: number | null;
+      startNumber: number | null;
+      status: string;
+    } | null,
   };
   paradeCategories = [
     {

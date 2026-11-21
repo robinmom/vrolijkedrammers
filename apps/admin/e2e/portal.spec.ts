@@ -687,6 +687,12 @@ test('fase 11: de optochtcommissie neemt een inschrijving in behandeling en keur
   await open(page, api, 'optocht/inschrijvingen');
   await page.getByRole('link', { name: 'De Bouwers' }).click();
   await expect(page.getByRole('heading', { name: /De Bouwers/ })).toBeVisible();
+  // De jeugd van deze groep is een eigen inschrijving; de commissie ziet het paar bij elkaar (wens 2026-11-21).
+  await expect(page.getByText(/Deze groep schreef ook jeugd in/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'De Kruumels' })).toHaveAttribute(
+    'href',
+    '/beheer/optocht/inschrijvingen/r-2',
+  );
   await expectNoSeriousA11yIssues(page);
   await page.getByRole('button', { name: 'In behandeling nemen' }).click();
   await expect(page.getByText('In behandeling nemen: gelukt. De groep is ingelicht.')).toBeVisible();

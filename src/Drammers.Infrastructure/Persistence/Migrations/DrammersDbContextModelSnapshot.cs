@@ -9106,6 +9106,10 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("withdrawn_at");
 
+                    b.Property<Guid?>("YouthOfRegistrationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("youth_of_registration_id");
+
                     b.HasKey("Id")
                         .HasName("PK_ParadeRegistration");
 
@@ -9119,6 +9123,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_ParadeRegistration_status_token_hash")
                         .HasFilter("[status_token_hash] IS NOT NULL");
+
+                    b.HasIndex("YouthOfRegistrationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ParadeRegistration_youth_of_registration_id")
+                        .HasFilter("[youth_of_registration_id] IS NOT NULL");
 
                     b.HasIndex("ParadeId", "RegistrationNumber")
                         .IsUnique()
@@ -11419,6 +11428,11 @@ namespace Drammers.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParadeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Drammers.Modules.Parade.Registrations.ParadeRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("YouthOfRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.OwnsOne("Drammers.Modules.Parade.Registrations.Address", "BuildAddress", b1 =>
                         {

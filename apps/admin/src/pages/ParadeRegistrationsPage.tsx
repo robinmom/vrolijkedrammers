@@ -612,6 +612,29 @@ export function ParadeRegistrationDetailPage() {
           {r.warnings.join(' ')}
         </div>
       ) : null}
+      {r.youthOf || r.youth ? (
+        <div className="alert" role="status">
+          {r.youthOf ? (
+            <>
+              Dit is de <strong>jeugdinschrijving</strong> bij{' '}
+              <Link to="/optocht/inschrijvingen/$id" params={{ id: r.youthOf.id }}>
+                {r.youthOf.groupName ?? 'de hoofdinschrijving'}
+              </Link>
+              {r.youthOf.registrationNumber ? ` (opgavenummer ${r.youthOf.registrationNumber})` : ''}. Ze wordt apart
+              beoordeeld en apart gejureerd.
+            </>
+          ) : (
+            <>
+              Deze groep schreef ook jeugd in:{' '}
+              <Link to="/optocht/inschrijvingen/$id" params={{ id: r.youth!.id }}>
+                {r.youth!.groupName ?? 'de jeugdinschrijving'}
+              </Link>
+              {r.youth!.registrationNumber ? ` (opgavenummer ${r.youth!.registrationNumber})` : ''}. Dat is een eigen
+              inschrijving met een eigen beoordeling en jurering.
+            </>
+          )}
+        </div>
+      ) : null}
       {r.additionalInformation ? (
         <section className="alert alert-warning" aria-labelledby="extra-info">
           <h2 id="extra-info" className="alert-title">

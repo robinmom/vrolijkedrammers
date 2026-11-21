@@ -77,6 +77,12 @@ public sealed class MemberSplits(
     public static readonly TimeSpan LinkLifetime = TimeSpan.FromDays(90);
 
     /// <summary>
+    /// Het contactformulier op de website, met het secretariaat al als ontvanger. Geen e-mailadressen in de mail
+    /// (fase 21i); dit is de uitweg voor een tweede lid zonder eigen e-mailadres.
+    /// </summary>
+    public const string ContactPath = "/contact?aan=secretaris#formulier";
+
+    /// <summary>
     /// Alle actieve tweepersoonsleden met de stand van het splitsen, ook de leden die al gesplitst zijn
     /// (<see cref="SplitState.Split"/>). Die stonden er eerst niet bij, maar het bestuur wil kunnen zien wie klaar is
     /// en wie niet, en zelf aanvinken wie een (nieuwe) uitnodiging krijgt (wens 2026-11-21).
@@ -231,7 +237,12 @@ public sealed class MemberSplits(
 
     public static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
-    public static EmailMessage InvitationMail(string to, string firstName, string? secondMemberName, string link)
+    /// <summary>
+    /// De uitnodiging aan het hoofdlid. Zegt met zoveel woorden dat het tweede lid een <b>eigen</b> e-mailadres nodig
+    /// heeft (wens 2026-11-21): dat adres hoort bij zijn eigen plek in de app, en het formulier weigert het adres van
+    /// het hoofdlid. Wie geen eigen adres heeft, krijgt het contactformulier als uitweg.
+    /// </summary>
+    public static EmailMessage InvitationMail(string to, string firstName, string? secondMemberName, string link, string contactLink)
     {
         const string Subject = "Registreer het tweede lid van je lidmaatschap";
         var who = string.IsNullOrWhiteSpace(secondMemberName) ? "het tweede lid" : secondMemberName.Trim();
@@ -242,6 +253,11 @@ public sealed class MemberSplits(
             plek in de app. Daarvoor vragen we je om {who} te registreren. De contributie blijft gelijk: jullie betalen samen het
             combinatietarief, en dat wordt zoals altijd van jouw rekening geïncasseerd.
 
+            Houd bij het invullen één ding bij de hand: {who} heeft een eigen e-mailadres nodig. Dat adres hoort bij de eigen plek in
+            de app, dus jouw e-mailadres kan daar niet nog een keer voor gebruikt worden. Heeft {who} geen eigen e-mailadres? Laat het
+            ons dan weten via het contactformulier, dan regelen we het samen:
+            {contactLink}
+
             Registreren gaat via deze persoonlijke link (90 dagen geldig):
             {link}
 
@@ -251,6 +267,7 @@ public sealed class MemberSplits(
         var html = $"""
             <p>Beste {WebUtility.HtmlEncode(firstName)},</p>
             <p>Je bent samen met {WebUtility.HtmlEncode(who)} lid van CV De Vrolijke Drammers. Voortaan krijgt ieder lid een eigen lidmaatschap, met een eigen plek in de app. Daarvoor vragen we je om {WebUtility.HtmlEncode(who)} te registreren. De contributie blijft gelijk: jullie betalen samen het combinatietarief, en dat wordt zoals altijd van jouw rekening geïncasseerd.</p>
+            <p>Houd bij het invullen één ding bij de hand: {WebUtility.HtmlEncode(who)} heeft een <strong>eigen e-mailadres</strong> nodig. Dat adres hoort bij de eigen plek in de app, dus jouw e-mailadres kan daar niet nog een keer voor gebruikt worden. Heeft {WebUtility.HtmlEncode(who)} geen eigen e-mailadres? Laat het ons dan weten via <a href="{WebUtility.HtmlEncode(contactLink)}">het contactformulier</a>, dan regelen we het samen.</p>
             <p><a href="{WebUtility.HtmlEncode(link)}" style="display:inline-block;background:#ED0012;color:#fff;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:600">Tweede lid registreren</a></p>
             <p>De link is 90 dagen geldig.</p>
             <p>Met vriendelijke groet,<br>De Vrolijke Drammers</p>
@@ -288,8 +305,9 @@ public sealed class MemberSplitInviteMailHandler(DrammersDbContext db, IEmailSen
         }
 
         var token = MemberSplits.NewToken();
+        var website = payload.WebsiteBaseUrl.TrimEnd('/');
         await email.SendAsync(MemberSplits.InvitationMail(invitation.SentTo, member.FirstName ?? member.FullName, member.SecondMemberName,
-            $"{payload.WebsiteBaseUrl.TrimEnd('/')}/lid-worden/?splitsen={token}"), cancellationToken);
+            $"{website}/lid-worden/?splitsen={token}", website + MemberSplits.ContactPath), cancellationToken);
         invitation.TokenHash = MemberSplits.Hash(token);
         invitation.SentAt = clock.UtcNow.UtcDateTime;
         invitation.TimesSent++;

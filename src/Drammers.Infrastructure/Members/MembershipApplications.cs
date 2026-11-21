@@ -99,6 +99,7 @@ public sealed class MembershipApplications(
     {
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
         var application = Validate(input, today);
+        await EnsureSecondMemberHasOwnEmailAsync(application, cancellationToken);
         application.Id = IdGenerator.NewId();
         application.MandateReference = $"DVD-{application.Id:N}"[..24].ToUpperInvariant();
         application.CreatedAt = clock.UtcNow.UtcDateTime;
@@ -745,6 +746,29 @@ public sealed class MembershipApplications(
     }
 
     // ----- Hulpfuncties -------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Lid splitsen: het tweede lid moet een eigen e-mailadres hebben (wens 2026-11-21). Vulde het dat van het hoofdlid
+    /// in, dan stopt de aanmelding hier — dus vóórdat er iets is vastgelegd en vóórdat de code naar dat adres gaat.
+    /// Eerder mocht dit wel: het tweede lid kreeg dan (nog) geen eigen app-account. Het bestuur kan zo'n lid in het
+    /// portal nog steeds met de hand aanmaken; alleen het formulier weigert het.
+    /// </summary>
+    private async Task EnsureSecondMemberHasOwnEmailAsync(MembershipApplication application, CancellationToken cancellationToken)
+    {
+        if (application.SplitFromMemberId is not { } mainId)
+        {
+            return;
+        }
+
+        var mainEmail = await db.Members.AsNoTracking().Where(m => m.Id == mainId).Select(m => m.Email).SingleOrDefaultAsync(cancellationToken);
+        if (mainEmail is { Length: > 0 } && string.Equals(mainEmail.Trim(), application.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DomainException(ErrorCodes.SplitEmailMainMember,
+                "Het hoofdlid gebruikt dit e-mailadres al. Vul het eigen e-mailadres van het tweede lid in. Heeft het tweede lid "
+                + "geen eigen e-mailadres? Neem dan contact met ons op via het contactformulier op de website.",
+                DomainErrorKind.Validation);
+        }
+    }
 
     private static MembershipApplication Validate(ApplicationInput input, DateOnly today)
     {

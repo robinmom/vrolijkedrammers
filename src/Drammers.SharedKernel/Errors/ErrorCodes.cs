@@ -85,6 +85,9 @@ public static class ErrorCodes
     public const string GuardianRequestDecided = "GUARDIAN_REQUEST_DECIDED";
     public const string OwnAccountNotAllowed = "OWN_ACCOUNT_NOT_ALLOWED";
     public const string EmailInUse = "EMAIL_IN_USE";
+
+    /// <summary>Lid splitsen: het tweede lid vulde het e-mailadres van het hoofdlid in (wens 2026-11-21).</summary>
+    public const string SplitEmailMainMember = "SPLIT_EMAIL_MAIN_MEMBER";
     public const string NotDansgarde = "NOT_DANSGARDE";
     public const string PaymentsNotConfigured = "PAYMENTS_NOT_CONFIGURED";
     public const string PaymentFailed = "PAYMENT_FAILED";
